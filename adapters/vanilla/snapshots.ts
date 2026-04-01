@@ -231,9 +231,23 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 		case 'energy':
 		case 'power':
 			return snapshotDroppedResource(obj);
+		case 'tombstone':
+			return snapshotTombstone(obj);
 		default:
 			return null;
 	}
+}
+
+function snapshotTombstone(obj: any): TombstoneSnapshot {
+	return {
+		kind: 'tombstone',
+		id: obj._id,
+		pos: snapPos(obj),
+		creepName: obj.creepName ?? '',
+		deathTime: obj.deathTime ?? 0,
+		store: snapStore(obj),
+		ticksToDecay: obj.decayTime ? obj.decayTime - (obj.deathTime ?? 0) : 0,
+	};
 }
 
 function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
