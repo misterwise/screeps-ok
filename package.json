@@ -1,0 +1,32 @@
+{
+  "name": "screeps-ok",
+  "version": "0.1.0",
+  "description": "Behavioral conformance suite for Screeps server implementations",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:vanilla": "SCREEPS_OK_ADAPTER=./adapters/vanilla/index.js vitest run",
+    "test:xxscreeps": "SCREEPS_OK_ADAPTER=./adapters/xxscreeps/index.js vitest run",
+    "test:watch": "vitest",
+    "parity": "node scripts/parity-report.js",
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "bin": {
+    "screeps-ok": "./bin/run.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@screeps/common": "^2.15.5",
+    "@types/node": "^24",
+    "typescript": "^5.7",
+    "vitest": "^3"
+  },
+  "private": true,
+  "license": "MIT"
+}
