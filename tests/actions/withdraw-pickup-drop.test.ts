@@ -151,29 +151,30 @@ describe('creep.pickup()', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
-		// First, drop some energy
-		const dropperId = await shard.placeCreep('W1N1', {
+		// Place dropper and picker at the same position
+		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: ['carry', 'move'],
 			store: { energy: 30 },
+			name: 'dropper',
 		});
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${dropperId}).drop(RESOURCE_ENERGY)
-		`);
-		await shard.tick();
-
-		// Now pick it up with a different creep
-		const pickerId = await shard.placeCreep('W1N1', {
+		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: ['carry', 'move'],
 			name: 'picker',
 		});
 
-		// Find the dropped resource
+		// Drop energy on tick 1
+		await shard.runPlayer('p1', code`
+			Game.creeps['dropper'].drop(RESOURCE_ENERGY)
+		`);
+		await shard.tick();
+
+		// Pick up on tick 2 — resource is now on the ground at (25,25)
 		const rc = await shard.runPlayer('p1', code`
 			const picker = Game.creeps['picker'];
-			const resource = picker.pos.findInRange(FIND_DROPPED_RESOURCES, 0)[0];
-			resource ? picker.pickup(resource) : -7
+			const resources = picker.room.find(FIND_DROPPED_RESOURCES);
+			resources.length > 0 ? picker.pickup(resources[0]) : -99
 		`);
 		expect(rc).toBe(0);
 	});

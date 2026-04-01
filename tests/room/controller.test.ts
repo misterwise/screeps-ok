@@ -14,6 +14,9 @@ describe('controller mechanics', () => {
 			body: ['claim', 'move'],
 		});
 
+		// Tick so the engine registers the creep and grants visibility
+		await shard.tick();
+
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
 			const ctrl = creep.room.controller;
@@ -52,6 +55,8 @@ describe('controller mechanics', () => {
 			body: ['claim', 'claim', 'move'],
 		});
 
+		await shard.tick();
+
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
 			creep.reserveController(creep.room.controller)
@@ -71,6 +76,8 @@ describe('controller mechanics', () => {
 			pos: [2, 1], owner: 'p1',
 			body: ['claim', 'move'],
 		});
+
+		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});

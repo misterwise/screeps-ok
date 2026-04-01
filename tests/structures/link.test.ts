@@ -12,6 +12,7 @@ describe('StructureLink', () => {
 		});
 		const link2 = await shard.placeStructure('W1N1', {
 			pos: [25, 35], structureType: 'link', owner: 'p1',
+			store: { energy: 0 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
@@ -41,6 +42,7 @@ describe('StructureLink', () => {
 		});
 		const link2 = await shard.placeStructure('W1N1', {
 			pos: [25, 35], structureType: 'link', owner: 'p1',
+			store: { energy: 0 },
 		});
 
 		await shard.runPlayer('p1', code`

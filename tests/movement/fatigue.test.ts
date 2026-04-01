@@ -117,10 +117,11 @@ describe('movement: fatigue', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
-		// 1 full CARRY + 0 MOVE = 2 fatigue, 0 removed
+		// 2 full CARRY + 1 MOVE: CARRY parts with cargo count as weighted
+		// Need to fill capacity to make them count (50 per CARRY = 100 total)
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: ['carry', 'carry', 'move'],
-			store: { energy: 1 }, // at least 1 energy makes carry "full" for weight
+			store: { energy: 100 }, // fills both CARRY parts
 		});
 		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
 		await shard.tick();

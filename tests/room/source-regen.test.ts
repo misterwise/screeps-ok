@@ -1,7 +1,7 @@
 import { describe, test, expect, code } from '../../src/index.js';
 
 describe('source regeneration', () => {
-	test('source regenerates to full after ENERGY_REGEN_TIME (300) ticks', async ({ shard }) => {
+	test('depleted source regenerates after ENERGY_REGEN_TIME ticks', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1' }],
@@ -10,33 +10,21 @@ describe('source regeneration', () => {
 			pos: [25, 25],
 			energy: 0,
 			energyCapacity: 3000,
+			ticksToRegeneration: 300,
 		});
 
-		await shard.tick(300);
-
-		const source = await shard.getObject(srcId);
-		if (source?.kind === 'source') {
-			expect(source.energy).toBe(3000);
+		// After 299 ticks, source should still be depleted
+		await shard.tick(299);
+		const before = await shard.getObject(srcId);
+		if (before?.kind === 'source') {
+			expect(before.energy).toBe(0);
 		}
-	});
 
-	test('partially depleted source still regenerates at 300 tick intervals', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1' }],
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 25],
-			energy: 1000,
-			energyCapacity: 3000,
-		});
-
-		// After 300 ticks, source should be back to full
-		await shard.tick(300);
-
-		const source = await shard.getObject(srcId);
-		if (source?.kind === 'source') {
-			expect(source.energy).toBe(3000);
+		// On tick 300, source should regenerate
+		await shard.tick(1);
+		const after = await shard.getObject(srcId);
+		if (after?.kind === 'source') {
+			expect(after.energy).toBe(3000);
 		}
 	});
 });

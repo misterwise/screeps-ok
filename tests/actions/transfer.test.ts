@@ -13,6 +13,7 @@ describe('creep.transfer()', () => {
 		});
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: 'container',
+			store: {},
 		});
 
 		const rc = await shard.runPlayer('p1', code`
@@ -42,6 +43,7 @@ describe('creep.transfer()', () => {
 		});
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: 'container',
+			store: {},
 		});
 
 		const rc = await shard.runPlayer('p1', code`

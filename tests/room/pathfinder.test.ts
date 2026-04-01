@@ -76,8 +76,8 @@ describe('Game.map', () => {
 		const dist = await shard.runPlayer('p1', code`
 			Game.map.getRoomLinearDistance('W1N1', 'W5N5')
 		`);
-		expect(dist).toBe(8); // |5-1| + |5-1| = 8? No, it's Chebyshev: max(4,4) = 4
-		// Actually getRoomLinearDistance uses Chebyshev distance
+		// getRoomLinearDistance uses Chebyshev distance: max(|5-1|, |5-1|) = 4
+		expect(dist).toBe(4);
 	});
 
 	test('describeExits returns exit directions', async ({ shard }) => {
