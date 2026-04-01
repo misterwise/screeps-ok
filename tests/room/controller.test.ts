@@ -10,11 +10,10 @@ describe('controller mechanics', () => {
 			],
 		});
 		const creepId = await shard.placeCreep('W2N1', {
-			pos: [2, 1], owner: 'p1', // adjacent to controller at (1,1)
+			pos: [2, 1], owner: 'p1',
 			body: ['claim', 'move'],
 		});
 
-		// Tick so the engine registers the creep and grants visibility
 		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`

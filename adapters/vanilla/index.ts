@@ -101,7 +101,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				username,
 				cpu: 100,
 				cpuAvailable: 10000,
-				gcl: 1,
+				gcl: 10000000, // High GCL to allow claiming multiple rooms
 				active: 10000,
 				badge: { type: 1, color1: '#000', color2: '#000', color3: '#000', flip: false, param: 0 },
 			});
@@ -155,6 +155,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			this.reversePlayerMap.set(user._id, handle);
 			this.users.set(handle, userObj);
 		}
+
+		// Warm-up tick: the engine needs one tick to load user code into
+		// isolated-vm and initialize the runtime. Without this, the first
+		// runPlayer call may fail silently.
+		await this.server.tick();
 	}
 
 	async placeCreep(roomName: string, spec: CreepSpec): Promise<string> {
@@ -395,7 +400,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			};
 			case 'road': return {
 				hits: C.ROAD_HITS, hitsMax: C.ROAD_HITS,
-				nextDecayTime: 0,
+				nextDecayTime: Infinity,
 			};
 			case 'constructedWall': return {
 				hits: 1, hitsMax: C.WALL_HITS_MAX,
