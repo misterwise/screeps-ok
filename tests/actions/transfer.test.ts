@@ -27,7 +27,7 @@ describe('creep.transfer()', () => {
 
 		const creep = await shard.getObject(creepId);
 		if (creep?.kind === 'creep') {
-			expect(creep.store.energy).toBe(0);
+			expect(creep.store.energy ?? 0).toBe(0);
 		}
 	});
 

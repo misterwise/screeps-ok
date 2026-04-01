@@ -400,14 +400,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			};
 			case 'road': return {
 				hits: C.ROAD_HITS, hitsMax: C.ROAD_HITS,
-				nextDecayTime: Infinity,
+				nextDecayTime: 9999999,
 			};
 			case 'constructedWall': return {
 				hits: 1, hitsMax: C.WALL_HITS_MAX,
 			};
 			case 'rampart': return {
 				hits: 1, hitsMax: C.RAMPART_HITS_MAX?.[8] ?? 300000000,
-				isPublic: false, nextDecayTime: 0,
+				isPublic: false, nextDecayTime: 9999999,
 			};
 			case 'lab': return {
 				hits: C.LAB_HITS ?? 500, hitsMax: C.LAB_HITS ?? 500,

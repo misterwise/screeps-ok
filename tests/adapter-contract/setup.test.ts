@@ -198,7 +198,7 @@ describe('adapter contract: setup', () => {
 		test('places a source with default energy', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1' }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 			});
 			const id = await shard.placeSource('W1N1', {
 				pos: [10, 10],

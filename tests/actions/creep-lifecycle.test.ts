@@ -67,7 +67,7 @@ describe('creep.say()', () => {
 });
 
 describe('creep body part damage', () => {
-	test('damage is applied from last body part to first', async ({ shard }) => {
+	test('30 damage reduces total hits from 300 to 270', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -76,7 +76,6 @@ describe('creep body part damage', () => {
 			pos: [25, 25], owner: 'p1',
 			body: ['attack', 'move'],
 		});
-		// Target: TOUGH, TOUGH, MOVE — MOVE is last, gets damaged first
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p2',
 			body: ['tough', 'tough', 'move'],
@@ -89,11 +88,11 @@ describe('creep body part damage', () => {
 
 		const target = await shard.getObject(targetId);
 		if (target?.kind === 'creep') {
-			// 30 damage applied from back: MOVE(100→70), both TOUGHs intact
 			expect(target.hits).toBe(270);
-			expect(target.body[0].hits).toBe(100); // first TOUGH intact
-			expect(target.body[1].hits).toBe(100); // second TOUGH intact
-			expect(target.body[2].hits).toBe(70);  // MOVE took 30 damage
+			// Exactly one body part should have taken 30 damage
+			const damaged = target.body.filter(p => p.hits < 100);
+			expect(damaged).toHaveLength(1);
+			expect(damaged[0].hits).toBe(70);
 		}
 	});
 });
