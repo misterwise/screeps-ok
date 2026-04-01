@@ -137,6 +137,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
 		const id = this.nextId();
 		const userId = spec.owner ? this.resolvePlayer(spec.owner) : undefined;
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:${spec.structureType}`, id);
 
 		this.queueOp(roomName, room => {
 			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
@@ -179,6 +180,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeSource(roomName: string, spec: SourceSpec): Promise<string> {
 		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:source`, id);
 
 		this.queueOp(roomName, room => {
 			const source = new Source();
@@ -195,6 +197,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeMineral(roomName: string, spec: MineralSpec): Promise<string> {
 		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:mineral`, id);
 
 		this.queueOp(roomName, room => {
 			const mineral = new Mineral();

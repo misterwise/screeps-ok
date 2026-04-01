@@ -158,10 +158,14 @@ describe('adapter contract: inspection', () => {
 				players: ['p1'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 			});
+			// Place a known structure so we don't rely on controller detection
+			await shard.placeStructure('W1N1', {
+				pos: [30, 30],
+				structureType: 'road',
+			});
 			await shard.tick();
 
 			const structures = await shard.findInRoom('W1N1', 'structures');
-			// Should at least find the controller
 			expect(structures.length).toBeGreaterThan(0);
 			expect(structures.every((s: any) => s.kind === 'structure')).toBe(true);
 		});

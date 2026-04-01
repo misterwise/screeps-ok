@@ -202,13 +202,22 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 	};
 }
 
+function getStructureType(obj: any): string | undefined {
+	try {
+		return obj.structureType;
+	} catch {
+		return undefined;
+	}
+}
+
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
 	// Determine type from xxscreeps object shape
 	// Order matters: check more specific types before general ones
 	if (obj.body && obj.fatigue !== undefined) return snapshotCreep(obj, resolver);
 	if (obj.progressTotal !== undefined) return snapshotSite(obj, resolver);
-	if (obj.structureType) return snapshotStructure(obj, resolver);
-	if (obj.energyCapacity !== undefined && obj.energy !== undefined) return snapshotSource(obj);
+	const sType = getStructureType(obj);
+	if (sType) return snapshotStructure(obj, resolver);
+	if (obj.energyCapacity !== undefined) return snapshotSource(obj);
 	if (obj.mineralType !== undefined) return snapshotMineral(obj);
 	// TODO: tombstone, ruin, droppedResource
 	return null;
@@ -226,10 +235,10 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				match = obj.progressTotal !== undefined;
 				break;
 			case 'structures':
-				match = obj.structureType !== undefined && obj.progressTotal === undefined;
+				match = !!getStructureType(obj) && obj.progressTotal === undefined;
 				break;
 			case 'sources':
-				match = obj.energyCapacity !== undefined && obj.mineralType === undefined;
+				match = obj.energyCapacity !== undefined && !getStructureType(obj);
 				break;
 			case 'minerals':
 				match = obj.mineralType !== undefined;

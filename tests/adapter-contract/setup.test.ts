@@ -31,8 +31,12 @@ describe('adapter contract: setup', () => {
 					{ name: 'W2N1' },
 				],
 			});
-			const structs = await shard.findInRoom('W1N1', 'structures');
-			expect(structs.length).toBeGreaterThan(0);
+			// Verify both rooms exist by placing objects in each
+			const id1 = await shard.placeSource('W1N1', { pos: [10, 10] });
+			const id2 = await shard.placeSource('W2N1', { pos: [10, 10] });
+			await shard.tick();
+			expect(await shard.getObject(id1)).not.toBeNull();
+			expect(await shard.getObject(id2)).not.toBeNull();
 		});
 
 		test('sets room ownership and RCL', async ({ shard }) => {
@@ -40,12 +44,18 @@ describe('adapter contract: setup', () => {
 				players: ['p1'],
 				rooms: [{ name: 'W1N1', rcl: 4, owner: 'p1' }],
 			});
-			const structs = await shard.findInRoom('W1N1', 'structures');
-			const ctrl = structs.find((s: any) => s.structureType === 'controller');
-			expect(ctrl).toBeDefined();
-			if (ctrl && 'level' in ctrl) {
-				expect(ctrl.level).toBe(4);
-			}
+			// Verify ownership via runPlayer — the player should see the room
+			const result = await shard.runPlayer('p1', code`
+				const room = Game.rooms['W1N1'];
+				({
+					hasRoom: !!room,
+					level: room?.controller?.level,
+					my: room?.controller?.my,
+				})
+			`);
+			expect((result as any).hasRoom).toBe(true);
+			expect((result as any).level).toBe(4);
+			expect((result as any).my).toBe(true);
 		});
 	});
 

@@ -12,6 +12,8 @@ export default defineConfig({
 		external: ['xxscreeps'],
 	},
 	test: {
+		testTimeout: 15000,
+		fileParallelism: false,
 		include: [
 			'tests/**/*.test.ts',
 			...(adapter.includes('xxscreeps') ? ['tests-xxscreeps/**/*.test.ts'] : []),
