@@ -9,8 +9,11 @@ import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
-import { PathFinder } from 'xxscreeps/game/path-finder/index.js';
+import { search as pfSearch, CostMatrix } from 'xxscreeps/game/path-finder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
+
+// Build synthetic PathFinder object matching the Screeps global API
+const PathFinder = { search: pfSearch, CostMatrix };
 import { simulate } from 'xxscreeps/test/simulate.js';
 import { snapshotObject, snapshotRoom } from './snapshots.js';
 
@@ -382,6 +385,20 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async getGameTime(): Promise<number> {
 		await this.ensureSimulation();
 		return this.simulation!.shard.time;
+	}
+
+	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {
+		await this.ensureSimulation();
+		return this.simulation!.peekRoom(roomName, (room: any) => {
+			for (const obj of room['#objects']) {
+				try {
+					if (obj.structureType === 'controller') {
+						return { x: obj.pos.x, y: obj.pos.y };
+					}
+				} catch {}
+			}
+			return null;
+		});
 	}
 
 	async teardown(): Promise<void> {

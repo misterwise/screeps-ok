@@ -145,5 +145,9 @@ export interface ScreepsOkAdapter {
 	findInRoom(room: string, type: string): Promise<ObjectSnapshot[]>;
 
 	getGameTime(): Promise<number>;
+
+	/** Get the controller position for a room. Returns null if no controller. */
+	getControllerPos(room: string): Promise<{ x: number; y: number } | null>;
+
 	teardown(): Promise<void>;
 }

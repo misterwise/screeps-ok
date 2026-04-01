@@ -21,7 +21,8 @@ declare module 'xxscreeps/game/position.js' {
 }
 
 declare module 'xxscreeps/game/path-finder/index.js' {
-	export const PathFinder: any;
+	export const search: any;
+	export const CostMatrix: any;
 }
 
 declare module 'xxscreeps/game/constants/index.js' {

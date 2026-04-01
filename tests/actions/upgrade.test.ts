@@ -6,8 +6,11 @@ describe('creep.upgradeController()', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [2, 1], owner: 'p1', // adjacent to controller at (1,1)
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['work', 'carry', 'move'],
 			store: { energy: 50 },
 		});
@@ -25,8 +28,11 @@ describe('creep.upgradeController()', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['work', 'work', 'carry', 'move'],
 			store: { energy: 50 },
 		});
@@ -49,7 +55,7 @@ describe('creep.upgradeController()', () => {
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', // far from controller at (1,1)
+			pos: [25, 25], owner: 'p1',
 			body: ['work', 'carry', 'move'],
 			store: { energy: 50 },
 		});
@@ -66,8 +72,11 @@ describe('creep.upgradeController()', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['work', 'carry', 'move'],
 		});
 

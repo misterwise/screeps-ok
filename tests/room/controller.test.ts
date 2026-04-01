@@ -9,8 +9,12 @@ describe('controller mechanics', () => {
 				{ name: 'W2N1' }, // unowned
 			],
 		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		expect(ctrlPos).not.toBeNull();
+
 		const creepId = await shard.placeCreep('W2N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['claim', 'move'],
 		});
 
@@ -29,8 +33,11 @@ describe('controller mechanics', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['move'],
 		});
 
@@ -49,8 +56,11 @@ describe('controller mechanics', () => {
 				{ name: 'W2N1' },
 			],
 		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+
 		const creepId = await shard.placeCreep('W2N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['claim', 'claim', 'move'],
 		});
 
@@ -71,8 +81,11 @@ describe('controller mechanics', () => {
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+
 		const creepId = await shard.placeCreep('W2N1', {
-			pos: [2, 1], owner: 'p1',
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
 			body: ['claim', 'move'],
 		});
 

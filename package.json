@@ -7,6 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "postinstall": "node scripts/build-xxscreeps.js",
     "test": "node scripts/test.js",
     "test:watch": "vitest",
     "parity": "node scripts/parity-report.js",
@@ -26,7 +27,7 @@
     "screeps-server-mockup": "^1.5.1",
     "typescript": "^5.7",
     "vitest": "^3",
-    "xxscreeps": "file:../xxscreeps"
+    "xxscreeps": "file:../xxscreeps-ok-upstream"
   },
   "private": true,
   "license": "MIT"

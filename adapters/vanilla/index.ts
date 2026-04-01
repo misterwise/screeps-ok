@@ -330,6 +330,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return this.server.world.gameTime;
 	}
 
+	async getControllerPos(_room: string): Promise<{ x: number; y: number } | null> {
+		// Vanilla always places controllers at (1, 1) in createShard
+		return { x: 1, y: 1 };
+	}
+
 	async teardown(): Promise<void> {
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
