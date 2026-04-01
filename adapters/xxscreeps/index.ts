@@ -9,6 +9,7 @@ import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
+import * as C from 'xxscreeps/game/constants/index.js';
 import { simulate } from 'xxscreeps/test/simulate.js';
 import { snapshotObject, snapshotRoom } from './snapshots.js';
 
@@ -310,11 +311,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		try {
 			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
-				// Use indirect eval so the last expression is returned
-				// Wrap in parens to handle object literals, strip trailing semicolons
+				// Build a context with Game + all Screeps constants
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
-				const fn = new Function('Game', `with({}) { return eval(${JSON.stringify(trimmed)}); }`);
-				result = fn(Game) as PlayerReturnValue;
+				const constNames = Object.keys(C);
+				const constValues = Object.values(C);
+				const fn = new Function('Game', ...constNames,
+					`return eval(${JSON.stringify(trimmed)})`);
+				result = fn(Game, ...constValues) as PlayerReturnValue;
 
 				if (result !== null && typeof result === 'object') {
 					try {
