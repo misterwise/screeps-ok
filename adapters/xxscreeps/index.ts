@@ -111,6 +111,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const id = this.nextId();
 		const userId = this.resolvePlayer(spec.owner);
 		const name = spec.name ?? `creep-${id}`;
+		this.nameToSyntheticId.set(name, id);
 
 		this.queueOp(roomName, room => {
 			const creep = createCreep(
@@ -119,7 +120,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				name,
 				userId,
 			);
-			creep.id = id;
 			if (spec.ticksToLive !== undefined) {
 				creep['#ageTime'] = spec.ticksToLive + 1;
 			}
@@ -159,6 +159,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async placeSite(roomName: string, spec: SiteSpec): Promise<string> {
 		const id = this.nextId();
 		const userId = this.resolvePlayer(spec.owner);
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:constructionSite`, id);
 
 		this.queueOp(roomName, room => {
 			const site = createSite(
@@ -232,14 +233,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('setTerrain not yet implemented');
 	}
 
+	// Map our synthetic IDs → engine-generated IDs (populated during setup flush)
+	private idMap = new Map<string, string>();
+
 	private async ensureSimulation(): Promise<void> {
 		if (this.simulation) return;
 		if (!this.shardSpec) throw new Error('createShard not called');
 
-		const roomInits: Record<string, (room: Room) => void> = {};
+		const idMap = this.idMap;
+		const roomInits: Record<string, (room: any) => void> = {};
 		for (const roomName of this.rooms) {
 			const ops = this.pendingSetup.get(roomName);
-			roomInits[roomName] = room => {
+			roomInits[roomName] = (room: any) => {
 				if (ops) {
 					for (const op of ops) op(room);
 				}
@@ -248,6 +253,45 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		this.simulation = await createSimulation(roomInits);
 		this.pendingSetup.clear();
+
+		// After simulation init, objects have been saved and reloaded.
+		// Build the ID map by scanning rooms for objects placed by name/position.
+		for (const roomName of this.rooms) {
+			await this.simulation.peekRoom(roomName, (room: any) => {
+				for (const obj of room['#objects']) {
+					// Match by name for creeps
+					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
+						idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
+					}
+					// Match by pos+type for structures/sites/sources/minerals
+					// Try multiple key formats since type identification varies
+					const x = obj.pos?.x;
+					const y = obj.pos?.y;
+					if (x !== undefined && y !== undefined) {
+						const keys = [
+							`${roomName}:${x}:${y}:${obj.structureType}`,
+							`${roomName}:${x}:${y}:${obj.constructor?.name}`,
+							`${roomName}:${x}:${y}:constructionSite`,
+							`${roomName}:${x}:${y}:source`,
+							`${roomName}:${x}:${y}:mineral`,
+						];
+						for (const key of keys) {
+							if (this.posToSyntheticId.has(key)) {
+								idMap.set(this.posToSyntheticId.get(key)!, obj.id);
+							}
+						}
+					}
+				}
+			});
+		}
+	}
+
+	// Tracking maps for ID resolution
+	private nameToSyntheticId = new Map<string, string>();
+	private posToSyntheticId = new Map<string, string>();
+
+	private resolveId(syntheticId: string): string {
+		return this.idMap.get(syntheticId) ?? syntheticId;
 	}
 
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
@@ -255,9 +299,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const engineUserId = this.resolvePlayer(userId);
 		let result: PlayerReturnValue = null;
 
+		// Replace synthetic IDs with engine IDs in the code string
+		let codeStr = String(playerCode);
+		for (const [syntheticId, engineId] of this.idMap) {
+			codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
+		}
+
 		try {
 			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
-				const fn = new Function('Game', `with({}) { return (function() { ${String(playerCode)} })(); }`);
+				// Use indirect eval so the last expression is returned
+				// Wrap in parens to handle object literals, strip trailing semicolons
+				const trimmed = codeStr.trimEnd().replace(/;$/, '');
+				const fn = new Function('Game', `with({}) { return eval(${JSON.stringify(trimmed)}); }`);
 				result = fn(Game) as PlayerReturnValue;
 
 				if (result !== null && typeof result === 'object') {
@@ -287,10 +340,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
 		await this.ensureSimulation();
+		const engineId = this.resolveId(id);
 		for (const roomName of this.rooms) {
 			const snapshot = await this.simulation!.peekRoom(roomName, (room: any) => {
 				for (const obj of room['#objects']) {
-					if (obj.id === id) return snapshotObject(obj, this);
+					if (obj.id === engineId) return snapshotObject(obj, this);
 				}
 				return null;
 			});
@@ -319,6 +373,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.pendingSetup.clear();
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
+		this.idMap.clear();
+		this.nameToSyntheticId.clear();
+		this.posToSyntheticId.clear();
 		this.idCounter = 0;
 	}
 }

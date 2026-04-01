@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { test as base, describe, expect } from 'vitest';
 import type { ScreepsOkAdapter } from './adapter.js';
 
@@ -11,10 +12,12 @@ async function getAdapterModule(): Promise<AdapterFactory> {
 		if (!adapterPath) {
 			throw new Error(
 				'SCREEPS_OK_ADAPTER env var not set. Point it at an adapter module ' +
-				'(e.g., SCREEPS_OK_ADAPTER=./adapters/xxscreeps/index.js)'
+				'(e.g., SCREEPS_OK_ADAPTER=./adapters/xxscreeps/index.ts)'
 			);
 		}
-		adapterModule = await import(adapterPath) as AdapterFactory;
+		// Resolve relative to project root, not to vite-node internals
+		const absPath = resolve(process.cwd(), adapterPath);
+		adapterModule = await import(absPath) as AdapterFactory;
 	}
 	return adapterModule;
 }
