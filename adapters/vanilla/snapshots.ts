@@ -228,9 +228,23 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 		case 'invaderCore':
 		case 'portal':
 			return snapshotStructure(obj, resolver);
+		case 'energy':
+		case 'power':
+			return snapshotDroppedResource(obj);
 		default:
 			return null;
 	}
+}
+
+function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
+	const resourceType = obj.resourceType ?? obj.type ?? 'energy';
+	return {
+		kind: 'resource',
+		id: obj._id,
+		pos: snapPos(obj),
+		resourceType,
+		amount: obj.amount ?? obj[resourceType] ?? obj.energy ?? 0,
+	};
 }
 
 const findTypeMap: Record<string, string[]> = {
@@ -246,7 +260,7 @@ const findTypeMap: Record<string, string[]> = {
 	minerals: ['mineral'],
 	tombstones: ['tombstone'],
 	ruins: ['ruin'],
-	droppedResources: ['resource'],
+	droppedResources: ['energy', 'power', 'resource'],
 };
 
 export function snapshotRoomObjects(
