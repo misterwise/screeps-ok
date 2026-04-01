@@ -55,6 +55,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		market: false,
 		observer: true,
 		nuke: false,
+		terrain: false,
 	};
 
 	private playerMap = new Map<string, string>();

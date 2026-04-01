@@ -90,7 +90,7 @@ describe('movement: directions', () => {
 	});
 
 	test('move into wall is blocked', async ({ shard }) => {
-		// Build terrain with a wall — requires adapter terrain support
+		if (!shard.capabilities.terrain) return; // skip — no custom terrain support
 		const terrain = new Array(2500).fill(0);
 		terrain[24 * 50 + 25] = 1; // wall at (25, 24) — directly above
 		await shard.createShard({

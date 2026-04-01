@@ -97,6 +97,7 @@ export interface AdapterCapabilities {
 	market: boolean;
 	observer: boolean;
 	nuke: boolean;
+	terrain: boolean;
 }
 
 // ── Return value constraints ─────────────────────────────────

@@ -32,6 +32,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		market: true,
 		observer: true,
 		nuke: true,
+		terrain: true,
 	};
 
 	private server: any = null;
