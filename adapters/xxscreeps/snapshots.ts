@@ -5,8 +5,6 @@ import type {
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
 	TombstoneSnapshot, DroppedResourceSnapshot,
 } from '../../src/snapshots/common.js';
-import type { Room } from 'xxscreeps/game/room/index.js';
-
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
@@ -215,7 +213,7 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 	return null;
 }
 
-export function snapshotRoom(room: Room, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {
+export function snapshotRoom(room: any, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {
 	const results: ObjectSnapshot[] = [];
 	for (const obj of room['#objects']) {
 		let match = false;
