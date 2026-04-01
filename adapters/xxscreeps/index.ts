@@ -191,6 +191,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			source['#posId'] = source.pos['#id'];
 			source.energyCapacity = spec.energyCapacity ?? 3000;
 			source.energy = spec.energy ?? source.energyCapacity;
+			// Set regen timer if source is depleted
+			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
+				source['#nextRegenerationTime'] = 1 + spec.ticksToRegeneration; // game starts at tick 1
+			} else if (source.energy < source.energyCapacity) {
+				source['#nextRegenerationTime'] = 1 + 300; // ENERGY_REGEN_TIME
+			}
 			room['#insertObject'](source);
 		});
 

@@ -22,7 +22,11 @@ function snapOwner(obj: any, resolver: PlayerResolver): string | undefined {
 function snapStore(obj: any): Record<string, number> {
 	const store: Record<string, number> = {};
 	if (obj.store) {
-		for (const [resource, amount] of Object.entries(obj.store)) {
+		// xxscreeps stores have a #entries() method; plain objects use Object.entries
+		const entries = typeof obj.store['#entries'] === 'function'
+			? obj.store['#entries']()
+			: Object.entries(obj.store);
+		for (const [resource, amount] of entries) {
 			if (typeof amount === 'number' && amount > 0) {
 				store[resource] = amount;
 			}
@@ -210,16 +214,39 @@ function getStructureType(obj: any): string | undefined {
 	}
 }
 
+function snapshotTombstone(obj: any, resolver: PlayerResolver): TombstoneSnapshot {
+	return {
+		kind: 'tombstone',
+		id: obj.id,
+		pos: snapPos(obj),
+		creepName: obj.name ?? obj.creepName ?? '',
+		deathTime: obj.deathTime ?? 0,
+		store: snapStore(obj),
+		ticksToDecay: obj.ticksToDecay ?? 0,
+	};
+}
+
+function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
+	return {
+		kind: 'resource',
+		id: obj.id,
+		pos: snapPos(obj),
+		resourceType: obj.resourceType ?? 'energy',
+		amount: obj.amount ?? 0,
+	};
+}
+
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
 	// Determine type from xxscreeps object shape
 	// Order matters: check more specific types before general ones
 	if (obj.body && obj.fatigue !== undefined) return snapshotCreep(obj, resolver);
 	if (obj.progressTotal !== undefined) return snapshotSite(obj, resolver);
+	if (obj.deathTime !== undefined && !obj.body) return snapshotTombstone(obj, resolver);
+	if (obj.resourceType !== undefined && obj.amount !== undefined) return snapshotDroppedResource(obj);
 	const sType = getStructureType(obj);
 	if (sType) return snapshotStructure(obj, resolver);
 	if (obj.energyCapacity !== undefined) return snapshotSource(obj);
 	if (obj.mineralType !== undefined) return snapshotMineral(obj);
-	// TODO: tombstone, ruin, droppedResource
 	return null;
 }
 
@@ -242,6 +269,12 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				break;
 			case 'minerals':
 				match = obj.mineralType !== undefined;
+				break;
+			case 'tombstones':
+				match = obj.deathTime !== undefined && !obj.body;
+				break;
+			case 'droppedResources':
+				match = obj.resourceType !== undefined && obj.amount !== undefined;
 				break;
 			default:
 				match = true;
