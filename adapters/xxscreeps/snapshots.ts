@@ -206,7 +206,7 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 	};
 }
 
-function getStructureType(obj: any): string | undefined {
+export function getStructureType(obj: any): string | undefined {
 	try {
 		return obj.structureType;
 	} catch {

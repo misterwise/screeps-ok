@@ -15,7 +15,7 @@ import * as C from 'xxscreeps/game/constants/index.js';
 // Build synthetic PathFinder object matching the Screeps global API
 const PathFinder = { search: pfSearch, CostMatrix };
 import { simulate } from 'xxscreeps/test/simulate.js';
-import { snapshotObject, snapshotRoom } from './snapshots.js';
+import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
 
 // Object creation imports
 import { create as createCreep } from 'xxscreeps/mods/creep/creep.js';
@@ -79,7 +79,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return this.reversePlayerMap.get(userId) ?? userId;
 	}
 
+	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
+
 	private queueOp(room: string, fn: (room: Room) => void): void {
+		if (this.simulation) {
+			// Simulation already running — queue for poke
+			this.pokeQueue.push({ room, fn });
+			return;
+		}
 		let ops = this.pendingSetup.get(room);
 		if (!ops) {
 			ops = [];
@@ -259,6 +266,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		for (const roomName of this.rooms) {
 			const ops = this.pendingSetup.get(roomName);
 			roomInits[roomName] = (room: any) => {
+				// Strip shard.json sources and minerals — tests place their own
+				for (const obj of [...room['#objects']]) {
+					try {
+						const st = getStructureType(obj);
+						if (!st && obj.energyCapacity !== undefined) room['#removeObject'](obj);
+						if (obj.mineralType !== undefined) room['#removeObject'](obj);
+					} catch {}
+				}
 				if (ops) {
 					for (const op of ops) op(room);
 				}
@@ -308,8 +323,53 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return this.idMap.get(syntheticId) ?? syntheticId;
 	}
 
+	private async flushPokeQueue(): Promise<void> {
+		if (!this.simulation || this.pokeQueue.length === 0) return;
+		// Group by room for efficiency
+		const byRoom = new Map<string, Array<(room: any) => void>>();
+		for (const { room, fn } of this.pokeQueue) {
+			let ops = byRoom.get(room);
+			if (!ops) { ops = []; byRoom.set(room, ops); }
+			ops.push(fn);
+		}
+		this.pokeQueue.length = 0;
+
+		for (const [roomName, ops] of byRoom) {
+			await this.simulation.poke(roomName, undefined, (_game: any, room: any) => {
+				for (const op of ops) op(room);
+			});
+		}
+
+		// Rebuild ID map after poke (new objects need mapping)
+		for (const roomName of this.rooms) {
+			await this.simulation.peekRoom(roomName, (room: any) => {
+				for (const obj of room['#objects']) {
+					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
+						this.idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
+					}
+					const x = obj.pos?.x;
+					const y = obj.pos?.y;
+					if (x !== undefined && y !== undefined) {
+						const keys = [
+							`${roomName}:${x}:${y}:${getStructureType(obj)}`,
+							`${roomName}:${x}:${y}:constructionSite`,
+							`${roomName}:${x}:${y}:source`,
+							`${roomName}:${x}:${y}:mineral`,
+						];
+						for (const key of keys) {
+							if (this.posToSyntheticId.has(key)) {
+								this.idMap.set(this.posToSyntheticId.get(key)!, obj.id);
+							}
+						}
+					}
+				}
+			});
+		}
+	}
+
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
+		await this.flushPokeQueue();
 		const engineUserId = this.resolvePlayer(userId);
 		let result: PlayerReturnValue = null;
 
@@ -357,6 +417,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async tick(count = 1): Promise<void> {
 		await this.ensureSimulation();
+		await this.flushPokeQueue();
 		await this.simulation!.tick(count);
 	}
 
@@ -407,6 +468,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			this.simulation = null;
 		}
 		this.pendingSetup.clear();
+		this.pokeQueue.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.idMap.clear();
