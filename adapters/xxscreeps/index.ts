@@ -9,6 +9,7 @@ import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
+import { PathFinder } from 'xxscreeps/game/path-finder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
 import { simulate } from 'xxscreeps/test/simulate.js';
 import { snapshotObject, snapshotRoom } from './snapshots.js';
@@ -311,13 +312,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		try {
 			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
-				// Build a context with Game + all Screeps constants
+				// Build a context with Game + all Screeps constants + globals
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
-				const constNames = Object.keys(C);
-				const constValues = Object.values(C);
-				const fn = new Function('Game', ...constNames,
+
+				// Collect all available globals from the game environment
+				const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
+				// Add all constants (TOP, WORK, FIND_MY_CREEPS, etc.)
+				Object.assign(globals, C);
+
+				const names = Object.keys(globals);
+				const values = Object.values(globals);
+				const fn = new Function(...names,
 					`return eval(${JSON.stringify(trimmed)})`);
-				result = fn(Game, ...constValues) as PlayerReturnValue;
+				result = fn(...values) as PlayerReturnValue;
 
 				if (result !== null && typeof result === 'object') {
 					try {
@@ -386,7 +393,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 }
 
-function buildStructure(structureType: string, pos: RoomPosition, owner?: string): any {
+function buildStructure(structureType: string, pos: any, owner?: string): any {
 	switch (structureType) {
 		case 'spawn': return createSpawn(pos, owner!, `Spawn-${pos.x}-${pos.y}`);
 		case 'extension': return createExtension(pos, 8, owner!);

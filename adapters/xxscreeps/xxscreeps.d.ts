@@ -14,13 +14,14 @@ declare module 'xxscreeps/game/room/index.js' {
 }
 
 declare module 'xxscreeps/game/position.js' {
-	export class RoomPosition {
-		constructor(x: number, y: number, roomName: string);
-		readonly x: number;
-		readonly y: number;
-		readonly roomName: string;
-		'#id': any;
-	}
+	export const RoomPosition: {
+		new(x: number, y: number, roomName: string): any;
+		[key: string]: any;
+	};
+}
+
+declare module 'xxscreeps/game/path-finder/index.js' {
+	export const PathFinder: any;
 }
 
 declare module 'xxscreeps/game/constants/index.js' {
