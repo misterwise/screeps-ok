@@ -268,6 +268,7 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 - **Link transferEnergy**: xxscreeps doesn't process link transfer intents correctly — store and cooldown unchanged after tick
 - **Body part damage order**: Vanilla applies damage to `body[0]` in DB, xxscreeps to `body[last]`. Under investigation — may be a DB storage order difference, not a behavioral difference.
 - **Multi-player vanilla**: Second player without an owned room can't execute code reliably
+- **Headless vanilla player execution**: The adapter-contract test for a second player with no owned room is skipped on vanilla. The mockup driver disables users that own no `rooms.objects`; upstream support would let this test become universal again.
 - **Tower repair**: xxscreeps tower.repair() doesn't apply repair to roads
 - **Controller claim**: xxscreeps claimController fails in unowned rooms — controller access issue
 - **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store

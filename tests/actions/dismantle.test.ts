@@ -25,7 +25,7 @@ describe('creep.dismantle()', () => {
 		expect(wall.hits).toBe(950); // 1 WORK = 50 HP dismantled
 	});
 
-	test('returns energy equal to 0.25 * damage dealt', async ({ shard }) => {
+	test('rounds energy gain down for a single 100-damage dismantle tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -45,8 +45,8 @@ describe('creep.dismantle()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// 2 WORK = 100 damage, 0.25 * 100 = 25 energy returned
-		expect(creep.store?.energy ?? 0).toBeGreaterThan(0);
+		// Vanilla uses DISMANTLE_COST = 0.005, so floor(100 * 0.005) = 0.
+		expect(creep.store?.energy ?? 0).toBe(0);
 	});
 
 	test('returns ERR_NOT_IN_RANGE', async ({ shard }) => {

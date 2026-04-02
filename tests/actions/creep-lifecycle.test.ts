@@ -18,7 +18,7 @@ describe('creep.suicide()', () => {
 		expect(creep).toBeNull();
 	});
 
-	test('creates a tombstone with carried resources', async ({ shard }) => {
+	test('creates a tombstone with carried resources and reclaimed body energy', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -37,7 +37,8 @@ describe('creep.suicide()', () => {
 		const tomb = tombstones.find((t: any) => t.kind === 'tombstone' && t.creepName === 'SuicideCreep');
 		expect(tomb).toBeDefined();
 		if (tomb?.kind === 'tombstone') {
-			expect(tomb.store.energy).toBe(30);
+			// Vanilla also reclaims 19 energy from the [CARRY, MOVE] body at death.
+			expect(tomb.store.energy).toBe(49);
 		}
 	});
 });
