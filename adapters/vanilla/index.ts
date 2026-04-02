@@ -261,11 +261,82 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return result._id;
 	}
 
-	async placeFlag(_r: string, _s: FlagSpec): Promise<string> { throw new Error('not implemented'); }
-	async placeTombstone(_r: string, _s: TombstoneSpec): Promise<string> { throw new Error('not implemented'); }
-	async placeRuin(_r: string, _s: RuinSpec): Promise<string> { throw new Error('not implemented'); }
-	async placeDroppedResource(_r: string, _s: DroppedResourceSpec): Promise<string> { throw new Error('not implemented'); }
-	async placeObject(_r: string, _t: string, _s: Record<string, unknown>): Promise<string> { throw new Error('not implemented'); }
+	async placeFlag(roomName: string, spec: FlagSpec): Promise<string> {
+		const userId = this.resolvePlayer(spec.owner);
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: 'flag',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			user: userId,
+			name: spec.name,
+			color: spec.color ?? 1,
+			secondaryColor: spec.secondaryColor ?? spec.color ?? 1,
+		});
+		return result._id;
+	}
+
+	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
+		const gameTime = await this.server.world.gameTime;
+		const deathTime = spec.deathTime ?? gameTime;
+		const ticksToDecay = spec.ticksToDecay ?? 500;
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: 'tombstone',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			creepName: spec.creepName,
+			deathTime,
+			decayTime: deathTime + ticksToDecay,
+			store: spec.store ?? {},
+			creepBody: [],
+			creepTicksToLive: 0,
+			creepId: null,
+		});
+		// Activate room
+		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+		return result._id;
+	}
+
+	async placeRuin(roomName: string, spec: RuinSpec): Promise<string> {
+		const gameTime = await this.server.world.gameTime;
+		const destroyTime = spec.destroyTime ?? gameTime;
+		const ticksToDecay = spec.ticksToDecay ?? 500;
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: 'ruin',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			structureType: spec.structureType,
+			destroyTime,
+			decayTime: destroyTime + ticksToDecay,
+			store: spec.store ?? {},
+		});
+		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+		return result._id;
+	}
+
+	async placeDroppedResource(roomName: string, spec: DroppedResourceSpec): Promise<string> {
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: spec.resourceType === 'energy' ? 'energy' : 'resource',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			resourceType: spec.resourceType,
+			amount: spec.amount,
+			[spec.resourceType]: spec.amount,
+		});
+		// Activate room
+		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+		return result._id;
+	}
+
+	async placeObject(_r: string, _t: string, _s: Record<string, unknown>): Promise<string> {
+		throw new Error('generic placeObject not yet implemented — use typed helpers');
+	}
 
 	async setTerrain(room: string, terrain: TerrainSpec): Promise<void> {
 		await this.server.world.setTerrain(room, this.buildTerrain(terrain));
@@ -424,6 +495,36 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			};
 			case 'observer': return {
 				hits: C.OBSERVER_HITS ?? 500, hitsMax: C.OBSERVER_HITS ?? 500,
+			};
+			case 'terminal': return {
+				hits: C.TERMINAL_HITS ?? 3000, hitsMax: C.TERMINAL_HITS ?? 3000,
+				store: {},
+				storeCapacity: C.TERMINAL_CAPACITY ?? 300000,
+				cooldown: 0,
+			};
+			case 'factory': return {
+				hits: C.FACTORY_HITS ?? 1000, hitsMax: C.FACTORY_HITS ?? 1000,
+				store: {},
+				storeCapacity: C.FACTORY_CAPACITY ?? 50000,
+				cooldown: 0,
+				level: 0,
+			};
+			case 'extractor': return {
+				hits: C.EXTRACTOR_HITS ?? 500, hitsMax: C.EXTRACTOR_HITS ?? 500,
+				cooldown: 0,
+			};
+			case 'nuker': return {
+				hits: C.NUKER_HITS ?? 1000, hitsMax: C.NUKER_HITS ?? 1000,
+				store: { energy: 0 },
+				storeCapacityResource: { energy: C.NUKER_ENERGY_CAPACITY ?? 300000, G: C.NUKER_GHODIUM_CAPACITY ?? 5000 },
+				storeCapacity: (C.NUKER_ENERGY_CAPACITY ?? 300000) + (C.NUKER_GHODIUM_CAPACITY ?? 5000),
+				cooldown: 0,
+			};
+			case 'powerSpawn': return {
+				hits: C.POWER_SPAWN_HITS ?? 5000, hitsMax: C.POWER_SPAWN_HITS ?? 5000,
+				store: { energy: 0 },
+				storeCapacityResource: { energy: C.POWER_SPAWN_ENERGY_CAPACITY ?? 5000, power: C.POWER_SPAWN_POWER_CAPACITY ?? 100 },
+				storeCapacity: (C.POWER_SPAWN_ENERGY_CAPACITY ?? 5000) + (C.POWER_SPAWN_POWER_CAPACITY ?? 100),
 			};
 			default: return {};
 		}

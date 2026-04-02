@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD } from '../../src/index.js';
 
 describe('adapter contract: setup', () => {
 	describe('createShard', () => {
@@ -61,69 +61,50 @@ describe('adapter contract: setup', () => {
 
 	describe('placeCreep', () => {
 		test('places a creep and returns a valid ID', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25],
 				owner: 'p1',
-				body: ['move'],
+				body: [MOVE],
 			});
 			expect(typeof id).toBe('string');
 			expect(id.length).toBeGreaterThan(0);
 		});
 
 		test('creep is retrievable by ID after tick', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25],
 				owner: 'p1',
-				body: ['move', 'carry', 'work'],
+				body: [MOVE, CARRY, WORK],
 			});
 			await shard.tick();
 
-			const creep = await shard.getObject(id);
-			expect(creep).not.toBeNull();
-			expect(creep!.kind).toBe('creep');
-			if (creep!.kind === 'creep') {
-				expect(creep!.body).toHaveLength(3);
-				expect(creep!.owner).toBe('p1');
-			}
+			const creep = await shard.expectObject(id, 'creep');
+			expect(creep.body).toHaveLength(3);
+			expect(creep.owner).toBe('p1');
 		});
 
 		test('creep store is initialized', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [10, 10],
 				owner: 'p1',
-				body: ['carry', 'move'],
+				body: [CARRY, MOVE],
 				store: { energy: 25 },
 			});
 			await shard.tick();
 
-			const creep = await shard.getObject(id);
-			expect(creep).not.toBeNull();
-			if (creep?.kind === 'creep') {
-				expect(creep.store.energy).toBe(25);
-			}
+			const creep = await shard.expectObject(id, 'creep');
+			expect(creep.store.energy).toBe(25);
 		});
 
 		test('creep appears in findInRoom', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			await shard.placeCreep('W1N1', {
 				pos: [25, 25],
 				owner: 'p1',
-				body: ['move'],
+				body: [MOVE],
 			});
 			await shard.tick();
 
@@ -135,13 +116,10 @@ describe('adapter contract: setup', () => {
 
 	describe('placeStructure', () => {
 		test('places a spawn', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeStructure('W1N1', {
 				pos: [30, 30],
-				structureType: 'spawn',
+				structureType: STRUCTURE_SPAWN,
 				owner: 'p1',
 			});
 			await shard.tick();
@@ -158,60 +136,43 @@ describe('adapter contract: setup', () => {
 			});
 			const id = await shard.placeStructure('W1N1', {
 				pos: [20, 20],
-				structureType: 'container',
+				structureType: STRUCTURE_CONTAINER,
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			if (obj?.kind === 'structure') {
-				expect(obj.structureType).toBe('container');
-			}
+			const obj = await shard.expectStructure(id, STRUCTURE_CONTAINER);
+			expect(obj.structureType).toBe('container');
 		});
 	});
 
 	describe('placeSite', () => {
 		test('places a construction site', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeSite('W1N1', {
 				pos: [25, 26],
 				owner: 'p1',
-				structureType: 'road',
+				structureType: STRUCTURE_ROAD,
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('site');
-			if (obj!.kind === 'site') {
-				expect(obj!.structureType).toBe('road');
-				expect(obj!.progress).toBe(0);
-				expect(obj!.progressTotal).toBeGreaterThan(0);
-			}
+			const obj = await shard.expectObject(id, 'site');
+			expect(obj.structureType).toBe('road');
+			expect(obj.progress).toBe(0);
+			expect(obj.progressTotal).toBeGreaterThan(0);
 		});
 	});
 
 	describe('placeSource', () => {
 		test('places a source with default energy', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeSource('W1N1', {
 				pos: [10, 10],
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('source');
-			if (obj!.kind === 'source') {
-				expect(obj!.energyCapacity).toBe(3000);
-				expect(obj!.energy).toBe(3000);
-			}
+			const obj = await shard.expectObject(id, 'source');
+			expect(obj.energyCapacity).toBe(3000);
+			expect(obj.energy).toBe(3000);
 		});
 
 		test('places a depleted source', async ({ shard }) => {
@@ -226,10 +187,8 @@ describe('adapter contract: setup', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			if (obj?.kind === 'source') {
-				expect(obj.energy).toBe(0);
-			}
+			const obj = await shard.expectObject(id, 'source');
+			expect(obj.energy).toBe(0);
 		});
 	});
 
@@ -245,13 +204,9 @@ describe('adapter contract: setup', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('mineral');
-			if (obj!.kind === 'mineral') {
-				expect(obj!.mineralType).toBe('H');
-				expect(obj!.mineralAmount).toBe(100000);
-			}
+			const obj = await shard.expectObject(id, 'mineral');
+			expect(obj.mineralType).toBe('H');
+			expect(obj.mineralAmount).toBe(100000);
 		});
 	});
 });

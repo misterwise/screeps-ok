@@ -1,17 +1,14 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE } from '../../src/index.js';
 
 describe('creep.upgradeController()', () => {
 	test('returns OK when adjacent to own controller with energy', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['work', 'carry', 'move'],
+			body: [WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
@@ -20,20 +17,17 @@ describe('creep.upgradeController()', () => {
 			const ctrl = creep.room.controller;
 			creep.upgradeController(ctrl)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 
 	test('consumes 1 energy per WORK part per tick', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['work', 'work', 'carry', 'move'],
+			body: [WORK, WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
@@ -43,20 +37,15 @@ describe('creep.upgradeController()', () => {
 		`);
 		await shard.tick();
 
-		const creep = await shard.getObject(creepId);
-		if (creep?.kind === 'creep') {
-			expect(creep.store.energy).toBe(48); // 2 WORK = 2 energy/tick
-		}
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(48); // 2 WORK = 2 energy/tick
 	});
 
 	test('returns ERR_NOT_IN_RANGE when not within range 3', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['work', 'carry', 'move'],
+			body: [WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
@@ -64,26 +53,23 @@ describe('creep.upgradeController()', () => {
 			const creep = Game.getObjectById(${creepId});
 			creep.upgradeController(creep.room.controller)
 		`);
-		expect(rc).toBe(-9);
+		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
 	test('returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['work', 'carry', 'move'],
+			body: [WORK, CARRY, MOVE],
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
 			creep.upgradeController(creep.room.controller)
 		`);
-		expect(rc).toBe(-6);
+		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 });

@@ -104,3 +104,23 @@ declare module 'xxscreeps/config/mods/import/game.js' {}
 declare module 'xxscreeps/engine/processor/index.js' {
 	export function initializeIntentConstraints(): void;
 }
+
+declare module 'xxscreeps/mods/market/terminal.js' {
+	export function create(pos: any, owner: string): any;
+}
+
+declare module 'xxscreeps/mods/factory/factory.js' {
+	export function create(pos: any, owner: string): any;
+}
+
+declare module 'xxscreeps/mods/mineral/extractor.js' {
+	export function create(pos: any, owner: string): any;
+}
+
+declare module 'xxscreeps/mods/resource/resource.js' {
+	export function create(pos: any, resourceType: any, amount: number): any;
+}
+
+declare module 'xxscreeps/mods/flag/game.js' {
+	export function createFlag(name: string, posInt: number | null, color: any, secondaryColor: any): any;
+}

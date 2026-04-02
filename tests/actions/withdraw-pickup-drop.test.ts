@@ -1,120 +1,99 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, STRUCTURE_CONTAINER } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
 	test('withdraws energy from container', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 		});
 		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: 'container',
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
 			store: { energy: 500 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
-		const creep = await shard.getObject(creepId);
-		if (creep?.kind === 'creep') {
-			expect(creep.store.energy).toBe(50); // 1 CARRY = 50 capacity
-		}
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(50); // 1 CARRY = 50 capacity
 	});
 
 	test('withdraws partial amount', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 		});
 		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: 'container',
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
 			store: { energy: 500 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY, 10)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
-		const creep = await shard.getObject(creepId);
-		if (creep?.kind === 'creep') {
-			expect(creep.store.energy).toBe(10);
-		}
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(10);
 	});
 
 	test('returns ERR_NOT_IN_RANGE', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [10, 10], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 		});
 		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: 'container',
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
 			store: { energy: 500 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
 		`);
-		expect(rc).toBe(-9);
+		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
 	test('returns ERR_NOT_ENOUGH_RESOURCES from empty container', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 		});
 		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: 'container',
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
 		`);
-		expect(rc).toBe(-6);
+		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 });
 
 describe('creep.drop()', () => {
 	test('drops energy on the ground', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
-		const creep = await shard.getObject(creepId);
-		if (creep?.kind === 'creep') {
-			expect(creep.store.energy ?? 0).toBe(0);
-		}
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy ?? 0).toBe(0);
 
 		// Should create a dropped resource
 		const resources = await shard.findInRoom('W1N1', 'droppedResources');
@@ -122,45 +101,37 @@ describe('creep.drop()', () => {
 	});
 
 	test('drops partial amount', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY, 20)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
-		const creep = await shard.getObject(creepId);
-		if (creep?.kind === 'creep') {
-			expect(creep.store.energy).toBe(30);
-		}
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(30);
 	});
 });
 
 describe('creep.pickup()', () => {
 	test('picks up dropped resource', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		// Place dropper and picker at the same position
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 			store: { energy: 30 },
 			name: 'dropper',
 		});
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 			name: 'picker',
 		});
 
@@ -176,6 +147,6 @@ describe('creep.pickup()', () => {
 			const resources = picker.room.find(FIND_DROPPED_RESOURCES);
 			resources.length > 0 ? picker.pickup(resources[0]) : -99
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 });

@@ -33,6 +33,16 @@ import { create as createStorage } from 'xxscreeps/mods/logistics/storage.js';
 import { create as createLink } from 'xxscreeps/mods/logistics/link.js';
 import { create as createContainer } from 'xxscreeps/mods/resource/container.js';
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
+import { create as createTerminal } from 'xxscreeps/mods/market/terminal.js';
+import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
+import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
+import { createFlag } from 'xxscreeps/mods/flag/game.js';
+
+// Optional mods — not all xxscreeps builds include these
+let createFactory: ((pos: any, owner: string) => any) | undefined;
+try {
+	({ create: createFactory } = await import('xxscreeps/mods/factory/factory.js'));
+} catch {}
 
 // Module-level initialization
 import { importMods } from 'xxscreeps/config/mods/index.js';
@@ -231,28 +241,99 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	async placeFlag(_roomName: string, _spec: FlagSpec): Promise<string> {
-		throw new Error('placeFlag not yet implemented');
+	async placeFlag(roomName: string, spec: FlagSpec): Promise<string> {
+		const name = spec.name;
+		this.nameToSyntheticId.set(name, name); // flags use name as ID
+
+		this.queueOp(roomName, room => {
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const flag = createFlag(
+				name,
+				pos['#id'],
+				(spec.color ?? 1) as any,
+				(spec.secondaryColor ?? spec.color ?? 1) as any,
+			);
+			room['#insertObject'](flag);
+		});
+
+		return name;
 	}
 
-	async placeTombstone(_roomName: string, _spec: TombstoneSpec): Promise<string> {
-		throw new Error('placeTombstone not yet implemented');
+	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
+		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:tombstone`, id);
+
+		this.queueOp(roomName, room => {
+			// Create a minimal tombstone-like object directly
+			const tombstone: any = Object.create(null);
+			tombstone.id = id;
+			tombstone.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			tombstone['#posId'] = tombstone.pos['#id'];
+			tombstone.deathTime = spec.deathTime ?? 0;
+			tombstone.ticksToDecay = spec.ticksToDecay ?? 500;
+			tombstone.creepName = spec.creepName;
+			// Store as plain object — tombstone stores are read-only
+			tombstone.store = {};
+			if (spec.store) {
+				for (const [resource, amount] of Object.entries(spec.store)) {
+					tombstone.store[resource] = amount;
+				}
+			}
+			room['#insertObject'](tombstone);
+		});
+
+		return id;
 	}
 
-	async placeRuin(_roomName: string, _spec: RuinSpec): Promise<string> {
-		throw new Error('placeRuin not yet implemented');
+	async placeRuin(roomName: string, spec: RuinSpec): Promise<string> {
+		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:ruin`, id);
+
+		this.queueOp(roomName, room => {
+			const ruin: any = Object.create(null);
+			ruin.id = id;
+			ruin.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			ruin['#posId'] = ruin.pos['#id'];
+			ruin.structureType = spec.structureType;
+			ruin.destroyTime = spec.destroyTime ?? 0;
+			ruin.ticksToDecay = spec.ticksToDecay ?? 500;
+			ruin.store = {};
+			if (spec.store) {
+				for (const [resource, amount] of Object.entries(spec.store)) {
+					ruin.store[resource] = amount;
+				}
+			}
+			room['#insertObject'](ruin);
+		});
+
+		return id;
 	}
 
-	async placeDroppedResource(_roomName: string, _spec: DroppedResourceSpec): Promise<string> {
-		throw new Error('placeDroppedResource not yet implemented');
+	async placeDroppedResource(roomName: string, spec: DroppedResourceSpec): Promise<string> {
+		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:resource`, id);
+
+		this.queueOp(roomName, room => {
+			const resource = createResource(
+				new RoomPosition(spec.pos[0], spec.pos[1], roomName),
+				spec.resourceType as any,
+				spec.amount,
+			);
+			resource.id = id;
+			room['#insertObject'](resource);
+		});
+
+		return id;
 	}
 
 	async placeObject(_room: string, _type: string, _spec: Record<string, unknown>): Promise<string> {
-		throw new Error('generic placeObject not yet implemented');
+		throw new Error('generic placeObject not yet implemented — use typed helpers');
 	}
 
 	async setTerrain(_room: string, _terrain: TerrainSpec): Promise<void> {
-		throw new Error('setTerrain not yet implemented');
+		// xxscreeps terrain is baked into the shard.json world data at simulation creation.
+		// Modifying it post-creation requires TerrainWriter which isn't exposed via simulate().
+		throw new Error('setTerrain not supported on xxscreeps adapter — use RoomSpec.terrain in createShard');
 	}
 
 	// Map our synthetic IDs → engine-generated IDs (populated during setup flush)
@@ -492,6 +573,11 @@ function buildStructure(structureType: string, pos: any, owner?: string): any {
 		case 'road': return createRoad(pos);
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
+		case 'terminal': return createTerminal(pos, owner!);
+		case 'factory':
+			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
+			return createFactory(pos, owner!);
+		case 'extractor': return createExtractor(pos, owner!);
 		default: throw new Error(`Unsupported structure type: ${structureType}`);
 	}
 }

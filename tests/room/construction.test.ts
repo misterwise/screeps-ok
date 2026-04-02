@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, OK, WORK, CARRY, MOVE, STRUCTURE_ROAD, body } from '../../src/index.js';
 
 describe('room.createConstructionSite()', () => {
 	test('creates a construction site via player code', async ({ shard }) => {
@@ -10,7 +10,7 @@ describe('room.createConstructionSite()', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].createConstructionSite(30, 30, STRUCTURE_ROAD)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
 		const sites = await shard.findInRoom('W1N1', 'constructionSites');
@@ -27,13 +27,12 @@ describe('room.createConstructionSite()', () => {
 		// Wait, build is 5 per WORK per tick. So 5 WORK = 25 progress/tick. 300/25 = 12 ticks.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [30, 30], owner: 'p1',
-			body: ['work', 'work', 'work', 'work', 'work',
-			       'carry', 'carry', 'carry', 'carry', 'carry', 'move'],
+			body: body(5, WORK, 5, CARRY, MOVE),
 			store: { energy: 250 },
 		});
 		const siteId = await shard.placeSite('W1N1', {
 			pos: [30, 31], owner: 'p1',
-			structureType: 'road',
+			structureType: STRUCTURE_ROAD,
 			progress: 275, // almost done, need 25 more
 		});
 

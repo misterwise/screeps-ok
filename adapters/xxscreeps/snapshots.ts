@@ -2,8 +2,11 @@ import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot, StructureSnapshotBase,
 	ControllerSnapshot, SpawnSnapshot, LabSnapshot, TowerSnapshot,
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
+	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
+	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
-	TombstoneSnapshot, DroppedResourceSnapshot,
+	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 } from '../../src/snapshots/common.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
@@ -167,6 +170,97 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToDecay: obj.ticksToDecay ?? 0,
 			} satisfies RampartSnapshot;
 
+		case 'terminal':
+			return {
+				...base,
+				structureType: 'terminal',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies TerminalSnapshot;
+
+		case 'factory':
+			return {
+				...base,
+				structureType: 'factory',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				cooldown: obj.cooldown ?? 0,
+				level: obj.level ?? 0,
+			} satisfies FactorySnapshot;
+
+		case 'extension':
+			return {
+				...base,
+				structureType: 'extension',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+			} satisfies ExtensionSnapshot;
+
+		case 'container':
+			return {
+				...base,
+				structureType: 'container',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				ticksToDecay: obj.ticksToDecay ?? 0,
+			} satisfies ContainerSnapshot;
+
+		case 'extractor':
+			return {
+				...base,
+				structureType: 'extractor',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies ExtractorSnapshot;
+
+		case 'road':
+			return {
+				...base,
+				structureType: 'road',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				ticksToDecay: obj.ticksToDecay ?? 0,
+			} satisfies RoadSnapshot;
+
+		case 'nuker':
+			return {
+				...base,
+				structureType: 'nuker',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies NukerSnapshot;
+
+		case 'powerSpawn':
+			return {
+				...base,
+				structureType: 'powerSpawn',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				store: snapStore(obj),
+				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+			} satisfies PowerSpawnSnapshot;
+
+		case 'constructedWall':
+			return {
+				...base,
+				structureType: 'constructedWall',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+			} satisfies WallSnapshot;
+
 		default:
 			return base;
 	}
@@ -236,12 +330,25 @@ function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
 	};
 }
 
+function snapshotRuin(obj: any, resolver: PlayerResolver): RuinSnapshot {
+	return {
+		kind: 'ruin',
+		id: obj.id,
+		pos: snapPos(obj),
+		structureType: obj.structureType ?? '',
+		destroyTime: obj.destroyTime ?? 0,
+		store: snapStore(obj),
+		ticksToDecay: obj.ticksToDecay ?? 0,
+	};
+}
+
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
 	// Determine type from xxscreeps object shape
 	// Order matters: check more specific types before general ones
 	if (obj.body && obj.fatigue !== undefined) return snapshotCreep(obj, resolver);
 	if (obj.progressTotal !== undefined) return snapshotSite(obj, resolver);
 	if (obj.deathTime !== undefined && !obj.body) return snapshotTombstone(obj, resolver);
+	if (obj.destroyTime !== undefined && obj.structureType !== undefined && !obj.hits) return snapshotRuin(obj, resolver);
 	if (obj.resourceType !== undefined && obj.amount !== undefined) return snapshotDroppedResource(obj);
 	const sType = getStructureType(obj);
 	if (sType) return snapshotStructure(obj, resolver);
@@ -275,6 +382,9 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				break;
 			case 'droppedResources':
 				match = obj.resourceType !== undefined && obj.amount !== undefined;
+				break;
+			case 'ruins':
+				match = obj.destroyTime !== undefined && obj.structureType !== undefined && !obj.hits;
 				break;
 			default:
 				match = true;

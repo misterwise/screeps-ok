@@ -1,21 +1,15 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, STRUCTURE_SPAWN } from '../../src/index.js';
 
 describe('Game object API', () => {
 	test('Game.time is a positive number', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const time = await shard.runPlayer('p1', code`Game.time`);
 		expect(typeof time).toBe('number');
 		expect(time as number).toBeGreaterThan(0);
 	});
 
 	test('Game.rooms contains visible rooms', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const result = await shard.runPlayer('p1', code`
 			Object.keys(Game.rooms)
 		`) as string[];
@@ -23,13 +17,10 @@ describe('Game object API', () => {
 	});
 
 	test('Game.creeps contains owned creeps', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['move'], name: 'TestBot',
+			body: [MOVE], name: 'TestBot',
 		});
 
 		const names = await shard.runPlayer('p1', code`
@@ -39,12 +30,9 @@ describe('Game object API', () => {
 	});
 
 	test('Game.spawns contains owned spawns', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: 'spawn', owner: 'p1',
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
 		});
 
 		const result = await shard.runPlayer('p1', code`
@@ -54,10 +42,7 @@ describe('Game object API', () => {
 	});
 
 	test('Game.getObjectById returns null for invalid ID', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const result = await shard.runPlayer('p1', code`
 			Game.getObjectById('nonexistent_id_12345')
 		`);
@@ -65,13 +50,10 @@ describe('Game object API', () => {
 	});
 
 	test('Room.find returns array of objects', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['move'], name: 'FindTest',
+			body: [MOVE], name: 'FindTest',
 		});
 
 		const count = await shard.runPlayer('p1', code`
@@ -81,13 +63,10 @@ describe('Game object API', () => {
 	});
 
 	test('Room.lookForAt returns objects at position', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['move'], name: 'LookTest',
+			body: [MOVE], name: 'LookTest',
 		});
 
 		const count = await shard.runPlayer('p1', code`
@@ -97,10 +76,7 @@ describe('Game object API', () => {
 	});
 
 	test('RoomPosition can be constructed', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const result = await shard.runPlayer('p1', code`
 			const pos = new RoomPosition(10, 20, 'W1N1');
 			({ x: pos.x, y: pos.y, roomName: pos.roomName })
@@ -111,15 +87,12 @@ describe('Game object API', () => {
 	});
 
 	test('RoomPosition.findInRange works', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Near',
 		});
 		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: ['move'], name: 'Near',
-		});
-		await shard.placeCreep('W1N1', {
-			pos: [40, 40], owner: 'p1', body: ['move'], name: 'Far',
+			pos: [40, 40], owner: 'p1', body: [MOVE], name: 'Far',
 		});
 
 		const count = await shard.runPlayer('p1', code`
@@ -129,14 +102,11 @@ describe('Game object API', () => {
 	});
 
 	test('RoomPosition.findClosestByPath works', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeSource('W1N1', { pos: [10, 10] });
 		await shard.placeSource('W1N1', { pos: [30, 30] });
 		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: ['move'], name: 'Finder',
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Finder',
 		});
 
 		const result = await shard.runPlayer('p1', code`

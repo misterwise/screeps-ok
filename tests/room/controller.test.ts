@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, OK, CLAIM, MOVE } from '../../src/index.js';
 
 describe('controller mechanics', () => {
 	test('claimController returns OK for unowned room', async ({ shard }) => {
@@ -15,7 +15,7 @@ describe('controller mechanics', () => {
 		const creepId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['claim', 'move'],
+			body: [CLAIM, MOVE],
 		});
 		expect (creepId).not.toBeNull();
 
@@ -26,27 +26,24 @@ describe('controller mechanics', () => {
 			const ctrl = creep.room.controller;
 			creep.claimController(ctrl)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 
 	test('signController writes a sign', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['move'],
+			body: [MOVE],
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
 			creep.signController(creep.room.controller, 'screeps-ok was here')
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 
 	test('reserveController returns OK for unowned controller', async ({ shard }) => {
@@ -62,7 +59,7 @@ describe('controller mechanics', () => {
 		const creepId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['claim', 'claim', 'move'],
+			body: [CLAIM, CLAIM, MOVE],
 		});
 
 		await shard.tick();
@@ -71,7 +68,7 @@ describe('controller mechanics', () => {
 			const creep = Game.getObjectById(${creepId});
 			creep.reserveController(creep.room.controller)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 
 	test('attackController reduces downgrade timer on hostile controller', async ({ shard }) => {
@@ -87,7 +84,7 @@ describe('controller mechanics', () => {
 		const creepId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: ['claim', 'move'],
+			body: [CLAIM, MOVE],
 		});
 
 		await shard.tick();
@@ -96,6 +93,6 @@ describe('controller mechanics', () => {
 			const creep = Game.getObjectById(${creepId});
 			creep.attackController(creep.room.controller)
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 });

@@ -2,10 +2,7 @@ import { describe, test, expect, code } from '../../src/index.js';
 
 describe('PathFinder', () => {
 	test('finds a path between two points', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
 			const goal = { pos: new RoomPosition(40, 40, 'W1N1'), range: 1 };
@@ -23,10 +20,7 @@ describe('PathFinder', () => {
 	});
 
 	test('CostMatrix sets tile costs', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
 			const cm = new PathFinder.CostMatrix();
@@ -40,10 +34,7 @@ describe('PathFinder', () => {
 
 	test.skip('respects CostMatrix when routing', async ({ shard }) => {
 		// TODO: PathFinder roomCallback needs terrain data in TERRAIN_DATA env key
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
 			// Block the direct path with a wall of 255-cost tiles
@@ -69,10 +60,7 @@ describe('PathFinder', () => {
 
 describe('Game.map', () => {
 	test('getRoomLinearDistance returns correct distance', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 
 		const dist = await shard.runPlayer('p1', code`
 			Game.map.getRoomLinearDistance('W1N1', 'W5N5')
@@ -82,10 +70,7 @@ describe('Game.map', () => {
 	});
 
 	test('describeExits returns exit directions', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 
 		const exits = await shard.runPlayer('p1', code`
 			Game.map.describeExits('W1N1')

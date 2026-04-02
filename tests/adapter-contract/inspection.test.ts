@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, WORK, CARRY, MOVE, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER } from '../../src/index.js';
 
 describe('adapter contract: inspection', () => {
 	describe('getObject', () => {
@@ -12,82 +12,59 @@ describe('adapter contract: inspection', () => {
 		});
 
 		test('creep snapshot has correct kind and required fields', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25],
 				owner: 'p1',
-				body: ['work', 'carry', 'move'],
+				body: [WORK, CARRY, MOVE],
 				name: 'TestCreep',
 				store: { energy: 10 },
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('creep');
-
-			if (obj!.kind === 'creep') {
-				expect(obj!.id).toBeDefined();
-				expect(obj!.name).toBe('TestCreep');
-				expect(obj!.pos.x).toBe(25);
-				expect(obj!.pos.y).toBe(25);
-				expect(obj!.pos.roomName).toBe('W1N1');
-				expect(typeof obj!.hits).toBe('number');
-				expect(typeof obj!.hitsMax).toBe('number');
-				expect(typeof obj!.fatigue).toBe('number');
-				expect(obj!.body).toHaveLength(3);
-				expect(obj!.owner).toBe('p1');
-				expect(typeof obj!.ticksToLive).toBe('number');
-				expect(typeof obj!.spawning).toBe('boolean');
-				expect(typeof obj!.store).toBe('object');
-				expect(typeof obj!.storeCapacity).toBe('number');
-			}
+			const obj = await shard.expectObject(id, 'creep');
+			expect(obj.id).toBeDefined();
+			expect(obj.name).toBe('TestCreep');
+			expect(obj.pos.x).toBe(25);
+			expect(obj.pos.y).toBe(25);
+			expect(obj.pos.roomName).toBe('W1N1');
+			expect(typeof obj.hits).toBe('number');
+			expect(typeof obj.hitsMax).toBe('number');
+			expect(typeof obj.fatigue).toBe('number');
+			expect(obj.body).toHaveLength(3);
+			expect(obj.owner).toBe('p1');
+			expect(typeof obj.ticksToLive).toBe('number');
+			expect(typeof obj.spawning).toBe('boolean');
+			expect(typeof obj.store).toBe('object');
+			expect(typeof obj.storeCapacity).toBe('number');
 		});
 
 		test('structure snapshot has correct kind', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeStructure('W1N1', {
 				pos: [30, 30],
-				structureType: 'road',
+				structureType: STRUCTURE_ROAD,
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('structure');
-			if (obj!.kind === 'structure') {
-				expect(obj!.structureType).toBe('road');
-				expect(obj!.pos.x).toBe(30);
-				expect(obj!.pos.y).toBe(30);
-			}
+			const obj = await shard.expectStructure(id, STRUCTURE_ROAD);
+			expect(obj.pos.x).toBe(30);
+			expect(obj.pos.y).toBe(30);
 		});
 
 		test('site snapshot has progress fields', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeSite('W1N1', {
 				pos: [25, 26],
 				owner: 'p1',
-				structureType: 'road',
+				structureType: STRUCTURE_ROAD,
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('site');
-			if (obj!.kind === 'site') {
-				expect(typeof obj!.progress).toBe('number');
-				expect(typeof obj!.progressTotal).toBe('number');
-				expect(obj!.owner).toBe('p1');
-			}
+			const obj = await shard.expectObject(id, 'site');
+			expect(typeof obj.progress).toBe('number');
+			expect(typeof obj.progressTotal).toBe('number');
+			expect(obj.owner).toBe('p1');
 		});
 
 		test('source snapshot has energy fields', async ({ shard }) => {
@@ -102,14 +79,10 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('source');
-			if (obj!.kind === 'source') {
-				expect(typeof obj!.energy).toBe('number');
-				expect(typeof obj!.energyCapacity).toBe('number');
-				expect(typeof obj!.ticksToRegeneration).toBe('number');
-			}
+			const obj = await shard.expectObject(id, 'source');
+			expect(typeof obj.energy).toBe('number');
+			expect(typeof obj.energyCapacity).toBe('number');
+			expect(typeof obj.ticksToRegeneration).toBe('number');
 		});
 
 		test('mineral snapshot has mineral fields', async ({ shard }) => {
@@ -124,27 +97,20 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id);
-			expect(obj).not.toBeNull();
-			expect(obj!.kind).toBe('mineral');
-			if (obj!.kind === 'mineral') {
-				expect(obj!.mineralType).toBe('O');
-				expect(obj!.mineralAmount).toBe(50000);
-			}
+			const obj = await shard.expectObject(id, 'mineral');
+			expect(obj.mineralType).toBe('O');
+			expect(obj.mineralAmount).toBe(50000);
 		});
 	});
 
 	describe('findInRoom', () => {
 		test('finds creeps', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			await shard.ownedRoom('p1');
+			await shard.placeCreep('W1N1', {
+				pos: [25, 25], owner: 'p1', body: [MOVE],
 			});
 			await shard.placeCreep('W1N1', {
-				pos: [25, 25], owner: 'p1', body: ['move'],
-			});
-			await shard.placeCreep('W1N1', {
-				pos: [26, 25], owner: 'p1', body: ['move'],
+				pos: [26, 25], owner: 'p1', body: [MOVE],
 			});
 			await shard.tick();
 
@@ -154,14 +120,11 @@ describe('adapter contract: inspection', () => {
 		});
 
 		test('finds structures', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			// Place a known structure so we don't rely on controller detection
 			await shard.placeStructure('W1N1', {
 				pos: [30, 30],
-				structureType: 'road',
+				structureType: STRUCTURE_ROAD,
 			});
 			await shard.tick();
 
@@ -171,12 +134,9 @@ describe('adapter contract: inspection', () => {
 		});
 
 		test('finds construction sites', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
+			await shard.ownedRoom('p1');
 			await shard.placeSite('W1N1', {
-				pos: [20, 20], owner: 'p1', structureType: 'road',
+				pos: [20, 20], owner: 'p1', structureType: STRUCTURE_ROAD,
 			});
 			await shard.tick();
 
@@ -244,14 +204,12 @@ describe('adapter contract: inspection', () => {
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25],
 				owner: 'alice',
-				body: ['move'],
+				body: [MOVE],
 			});
 			await shard.tick();
 
-			const creep = await shard.getObject(id);
-			if (creep?.kind === 'creep') {
-				expect(creep.owner).toBe('alice');
-			}
+			const creep = await shard.expectObject(id, 'creep');
+			expect(creep.owner).toBe('alice');
 		});
 	});
 });

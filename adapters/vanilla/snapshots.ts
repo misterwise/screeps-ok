@@ -2,8 +2,11 @@ import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot, StructureSnapshotBase,
 	ControllerSnapshot, SpawnSnapshot, LabSnapshot, TowerSnapshot,
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
+	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
+	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
-	TombstoneSnapshot, DroppedResourceSnapshot,
+	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 } from '../../src/snapshots/common.js';
 
 interface PlayerResolver {
@@ -162,6 +165,97 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToDecay: obj.nextDecayTime ?? 0,
 			} satisfies RampartSnapshot;
 
+		case 'terminal':
+			return {
+				...base,
+				structureType: 'terminal',
+				hits: obj.hits ?? 3000,
+				hitsMax: obj.hitsMax ?? 3000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 300000,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies TerminalSnapshot;
+
+		case 'factory':
+			return {
+				...base,
+				structureType: 'factory',
+				hits: obj.hits ?? 1000,
+				hitsMax: obj.hitsMax ?? 1000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 50000,
+				cooldown: obj.cooldown ?? 0,
+				level: obj.level ?? 0,
+			} satisfies FactorySnapshot;
+
+		case 'extension':
+			return {
+				...base,
+				structureType: 'extension',
+				hits: obj.hits ?? 1000,
+				hitsMax: obj.hitsMax ?? 1000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 200,
+			} satisfies ExtensionSnapshot;
+
+		case 'container':
+			return {
+				...base,
+				structureType: 'container',
+				hits: obj.hits ?? 250000,
+				hitsMax: obj.hitsMax ?? 250000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 2000,
+				ticksToDecay: obj.nextDecayTime ?? 0,
+			} satisfies ContainerSnapshot;
+
+		case 'extractor':
+			return {
+				...base,
+				structureType: 'extractor',
+				hits: obj.hits ?? 500,
+				hitsMax: obj.hitsMax ?? 500,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies ExtractorSnapshot;
+
+		case 'road':
+			return {
+				...base,
+				structureType: 'road',
+				hits: obj.hits ?? 5000,
+				hitsMax: obj.hitsMax ?? 5000,
+				ticksToDecay: obj.nextDecayTime ?? 0,
+			} satisfies RoadSnapshot;
+
+		case 'nuker':
+			return {
+				...base,
+				structureType: 'nuker',
+				hits: obj.hits ?? 1000,
+				hitsMax: obj.hitsMax ?? 1000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 305000,
+				cooldown: obj.cooldown ?? 0,
+			} satisfies NukerSnapshot;
+
+		case 'powerSpawn':
+			return {
+				...base,
+				structureType: 'powerSpawn',
+				hits: obj.hits ?? 5000,
+				hitsMax: obj.hitsMax ?? 5000,
+				store: snapStore(obj),
+				storeCapacity: obj.storeCapacity ?? 5100,
+			} satisfies PowerSpawnSnapshot;
+
+		case 'constructedWall':
+			return {
+				...base,
+				structureType: 'constructedWall',
+				hits: obj.hits ?? 1,
+				hitsMax: obj.hitsMax ?? 300000000,
+			} satisfies WallSnapshot;
+
 		default:
 			return base;
 	}
@@ -201,6 +295,18 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 	};
 }
 
+function snapshotRuin(obj: any): RuinSnapshot {
+	return {
+		kind: 'ruin',
+		id: obj._id,
+		pos: snapPos(obj),
+		structureType: obj.structureType ?? '',
+		destroyTime: obj.destroyTime ?? 0,
+		store: snapStore(obj),
+		ticksToDecay: obj.decayTime ? obj.decayTime - (obj.destroyTime ?? 0) : 0,
+	};
+}
+
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
 	switch (obj.type) {
 		case 'creep': return snapshotCreep(obj, resolver);
@@ -230,9 +336,12 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 			return snapshotStructure(obj, resolver);
 		case 'energy':
 		case 'power':
+		case 'resource':
 			return snapshotDroppedResource(obj);
 		case 'tombstone':
 			return snapshotTombstone(obj);
+		case 'ruin':
+			return snapshotRuin(obj);
 		default:
 			return null;
 	}

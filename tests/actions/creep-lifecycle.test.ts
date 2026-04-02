@@ -1,20 +1,17 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH } from '../../src/index.js';
 
 describe('creep.suicide()', () => {
 	test('destroys the creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['move'],
+			body: [MOVE],
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).suicide()
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 		await shard.tick();
 
 		const creep = await shard.getObject(id);
@@ -22,13 +19,10 @@ describe('creep.suicide()', () => {
 	});
 
 	test('creates a tombstone with carried resources', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['carry', 'move'],
+			body: [CARRY, MOVE],
 			store: { energy: 30 },
 			name: 'SuicideCreep',
 		});
@@ -50,19 +44,16 @@ describe('creep.suicide()', () => {
 
 describe('creep.say()', () => {
 	test('returns OK', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['move'],
+			body: [MOVE],
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).say('hello')
 		`);
-		expect(rc).toBe(0);
+		expect(rc).toBe(OK);
 	});
 });
 
@@ -74,11 +65,11 @@ describe('creep body part damage', () => {
 		});
 		const attackerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: ['attack', 'move'],
+			body: [ATTACK, MOVE],
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p2',
-			body: ['tough', 'tough', 'move'],
+			body: [TOUGH, TOUGH, MOVE],
 		});
 
 		await shard.runPlayer('p1', code`
@@ -86,13 +77,11 @@ describe('creep body part damage', () => {
 		`);
 		await shard.tick();
 
-		const target = await shard.getObject(targetId);
-		if (target?.kind === 'creep') {
-			expect(target.hits).toBe(270);
-			// Exactly one body part should have taken 30 damage
-			const damaged = target.body.filter(p => p.hits < 100);
-			expect(damaged).toHaveLength(1);
-			expect(damaged[0].hits).toBe(70);
-		}
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(target.hits).toBe(270);
+		// Exactly one body part should have taken 30 damage
+		const damaged = target.body.filter(p => p.hits < 100);
+		expect(damaged).toHaveLength(1);
+		expect(damaged[0].hits).toBe(70);
 	});
 });

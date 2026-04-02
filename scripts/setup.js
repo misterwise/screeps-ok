@@ -1,0 +1,68 @@
+import { execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import process from 'node:process';
+
+const require = createRequire(import.meta.url);
+const minNodeMajor = 24;
+const target = process.argv[2] ?? 'all';
+const validTargets = new Set(['all', 'xxscreeps', 'vanilla']);
+
+if (!validTargets.has(target)) {
+	console.error(`[screeps-ok] Unknown setup target '${target}'. Expected one of: ${[...validTargets].join(', ')}`);
+	process.exit(1);
+}
+
+const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
+if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
+	console.error(`[screeps-ok] Setup requires Node >=${minNodeMajor}. Current runtime is ${process.version}.`);
+	console.error('[screeps-ok] Switch to Node 24.x or newer and reinstall dependencies before building native addons.');
+	process.exit(1);
+}
+
+if (target === 'all' || target === 'xxscreeps') {
+	setupXxscreeps();
+}
+
+if (target === 'all' || target === 'vanilla') {
+	setupVanilla();
+}
+
+function setupXxscreeps() {
+	const root = resolvePackageRoot('xxscreeps');
+	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
+	run('npx tsc --noEmitOnError false', { cwd: root });
+	run('npx node-gyp rebuild --release', {
+		cwd: path.join(root, 'src/driver/path-finder'),
+	});
+}
+
+function setupVanilla() {
+	const driverRoot = resolvePackageRoot('@screeps/driver');
+	console.log(`[screeps-ok] Preparing vanilla dependencies in ${driverRoot}`);
+	run('NODE_PATH=../../.. npx webpack', { cwd: driverRoot });
+	run('npx node-gyp rebuild --release -C node_modules/isolated-vm', {
+		cwd: process.cwd(),
+	});
+	run('npx node-gyp rebuild --release -C node_modules/@screeps/driver/native', {
+		cwd: process.cwd(),
+	});
+}
+
+function resolvePackageRoot(packageName) {
+	try {
+		return path.dirname(require.resolve(`${packageName}/package.json`));
+	} catch {
+		console.error(`[screeps-ok] Required package '${packageName}' is not installed. Run npm install first.`);
+		process.exit(1);
+	}
+}
+
+function run(command, options) {
+	console.log(`[screeps-ok] ${command}`);
+	execSync(command, {
+		stdio: 'inherit',
+		shell: true,
+		...options,
+	});
+}

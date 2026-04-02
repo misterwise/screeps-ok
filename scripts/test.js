@@ -15,6 +15,16 @@ const vitestCmd = isWatch ? [] : ['run'];
 
 console.log(`Testing ${adapter} ${isWatch ? '(watch mode)' : ''}`);
 
+const preflight = spawnSync('node', ['scripts/preflight.js', adapter], {
+  stdio: 'inherit',
+  env: process.env,
+  shell: true
+});
+
+if ((preflight.status ?? 1) !== 0) {
+  process.exit(preflight.status ?? 1);
+}
+
 const env = { ...process.env, SCREEPS_OK_ADAPTER: `./adapters/${adapter}/index.ts` };
 const result = spawnSync('npx', ['vitest', ...vitestCmd, ...args], {
   stdio: 'inherit',

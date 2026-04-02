@@ -107,6 +107,79 @@ export interface RampartSnapshot extends StructureSnapshotBase {
 	ticksToDecay: number;
 }
 
+export interface TerminalSnapshot extends StructureSnapshotBase {
+	structureType: 'terminal';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+	cooldown: number;
+}
+
+export interface FactorySnapshot extends StructureSnapshotBase {
+	structureType: 'factory';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+	cooldown: number;
+	level: number;
+}
+
+export interface ExtensionSnapshot extends StructureSnapshotBase {
+	structureType: 'extension';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+}
+
+export interface ContainerSnapshot extends StructureSnapshotBase {
+	structureType: 'container';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+	ticksToDecay: number;
+}
+
+export interface ExtractorSnapshot extends StructureSnapshotBase {
+	structureType: 'extractor';
+	hits: number;
+	hitsMax: number;
+	cooldown: number;
+}
+
+export interface RoadSnapshot extends StructureSnapshotBase {
+	structureType: 'road';
+	hits: number;
+	hitsMax: number;
+	ticksToDecay: number;
+}
+
+export interface NukerSnapshot extends StructureSnapshotBase {
+	structureType: 'nuker';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+	cooldown: number;
+}
+
+export interface PowerSpawnSnapshot extends StructureSnapshotBase {
+	structureType: 'powerSpawn';
+	hits: number;
+	hitsMax: number;
+	store: Record<string, number>;
+	storeCapacity: number;
+}
+
+export interface WallSnapshot extends StructureSnapshotBase {
+	structureType: 'constructedWall';
+	hits: number;
+	hitsMax: number;
+}
+
 export type StructureSnapshot =
 	| ControllerSnapshot
 	| SpawnSnapshot
@@ -115,6 +188,15 @@ export type StructureSnapshot =
 	| StorageSnapshot
 	| LinkSnapshot
 	| RampartSnapshot
+	| TerminalSnapshot
+	| FactorySnapshot
+	| ExtensionSnapshot
+	| ContainerSnapshot
+	| ExtractorSnapshot
+	| RoadSnapshot
+	| NukerSnapshot
+	| PowerSpawnSnapshot
+	| WallSnapshot
 	| StructureSnapshotBase;
 
 // ── Construction Sites ───────────────────────────────────────
