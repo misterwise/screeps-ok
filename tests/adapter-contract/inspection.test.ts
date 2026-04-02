@@ -1,4 +1,8 @@
-import { describe, test, expect, code, WORK, CARRY, MOVE, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER } from '../../src/index.js';
+import {
+	describe, test, expect, code, WORK, CARRY, MOVE,
+	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
+	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
+} from '../../src/index.js';
 
 describe('adapter contract: inspection', () => {
 	describe('getObject', () => {
@@ -114,7 +118,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const creeps = await shard.findInRoom('W1N1', 'creeps');
+			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 			expect(creeps.length).toBeGreaterThanOrEqual(2);
 			expect(creeps.every((c: any) => c.kind === 'creep')).toBe(true);
 		});
@@ -128,7 +132,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const structures = await shard.findInRoom('W1N1', 'structures');
+			const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 			expect(structures.length).toBeGreaterThan(0);
 			expect(structures.every((s: any) => s.kind === 'structure')).toBe(true);
 		});
@@ -140,7 +144,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const sites = await shard.findInRoom('W1N1', 'constructionSites');
+			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
 			expect(sites.length).toBeGreaterThanOrEqual(1);
 			expect(sites.every((s: any) => s.kind === 'site')).toBe(true);
 		});
@@ -153,7 +157,7 @@ describe('adapter contract: inspection', () => {
 			await shard.placeSource('W1N1', { pos: [10, 10] });
 			await shard.tick();
 
-			const sources = await shard.findInRoom('W1N1', 'sources');
+			const sources = await shard.findInRoom('W1N1', FIND_SOURCES);
 			expect(sources.length).toBeGreaterThanOrEqual(1);
 			expect(sources.every((s: any) => s.kind === 'source')).toBe(true);
 		});
@@ -166,7 +170,7 @@ describe('adapter contract: inspection', () => {
 			await shard.placeMineral('W1N1', { pos: [40, 40], mineralType: 'H' });
 			await shard.tick();
 
-			const minerals = await shard.findInRoom('W1N1', 'minerals');
+			const minerals = await shard.findInRoom('W1N1', FIND_MINERALS);
 			expect(minerals.length).toBeGreaterThanOrEqual(1);
 			expect(minerals.every((m: any) => m.kind === 'mineral')).toBe(true);
 		});
@@ -178,7 +182,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const creeps = await shard.findInRoom('W1N1', 'creeps');
+			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 			expect(creeps).toEqual([]);
 		});
 	});

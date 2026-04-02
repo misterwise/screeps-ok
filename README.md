@@ -161,7 +161,7 @@ expect(link.cooldown).toBeGreaterThan(0);
 
 **`getObject(id)`** — returns a plain JSON snapshot of the object, or null if destroyed. Use this only when you need to assert null (destroyed/decayed objects).
 
-**`findInRoom(room, type)`** — returns all objects of a type in the room. Types: `'creeps'`, `'structures'`, `'constructionSites'`, `'sources'`, `'minerals'`, `'tombstones'`, `'ruins'`, `'droppedResources'`.
+**`findInRoom(room, type)`** — returns all objects of a type in the room using supported Screeps `FIND_*` constants: `FIND_CREEPS`, `FIND_STRUCTURES`, `FIND_CONSTRUCTION_SITES`, `FIND_SOURCES`, `FIND_MINERALS`, `FIND_TOMBSTONES`, `FIND_RUINS`, `FIND_DROPPED_RESOURCES`.
 
 ### Constants
 

@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 // Vanilla's mockup runtime disables users that own no room objects, so a
@@ -114,7 +114,7 @@ describe('adapter contract: setup', () => {
 			});
 			await shard.tick();
 
-			const creeps = await shard.findInRoom('W1N1', 'creeps');
+			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 			const placed = creeps.filter((c: any) => c.kind === 'creep');
 			expect(placed.length).toBeGreaterThanOrEqual(1);
 		});

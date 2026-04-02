@@ -4,6 +4,11 @@ import type {
 	SourceSnapshot, MineralSnapshot, TombstoneSnapshot, RuinSnapshot,
 	DroppedResourceSnapshot,
 } from './snapshots/common.js';
+import type { SupportedFindConstant } from './find.js';
+import {
+	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
+	FIND_MINERALS, FIND_TOMBSTONES, FIND_RUINS, FIND_DROPPED_RESOURCES,
+} from './constants.js';
 
 // ── Setup types ──────────────────────────────────────────────
 
@@ -156,16 +161,16 @@ export interface ScreepsOkAdapter {
 	/** Return a plain JSON snapshot for one object, or null if it no longer exists. */
 	getObject(id: string): Promise<ObjectSnapshot | null>;
 
-	/** Perspective-neutral room inspection using string selectors. */
-	findInRoom(room: string, type: 'creeps'): Promise<CreepSnapshot[]>;
-	findInRoom(room: string, type: 'structures'): Promise<StructureSnapshot[]>;
-	findInRoom(room: string, type: 'constructionSites'): Promise<SiteSnapshot[]>;
-	findInRoom(room: string, type: 'sources'): Promise<SourceSnapshot[]>;
-	findInRoom(room: string, type: 'minerals'): Promise<MineralSnapshot[]>;
-	findInRoom(room: string, type: 'tombstones'): Promise<TombstoneSnapshot[]>;
-	findInRoom(room: string, type: 'ruins'): Promise<RuinSnapshot[]>;
-	findInRoom(room: string, type: 'droppedResources'): Promise<DroppedResourceSnapshot[]>;
-	findInRoom(room: string, type: string): Promise<ObjectSnapshot[]>;
+	/** Perspective-neutral room inspection using supported Screeps FIND_* constants. */
+	findInRoom(room: string, type: typeof FIND_CREEPS): Promise<CreepSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_STRUCTURES): Promise<StructureSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_CONSTRUCTION_SITES): Promise<SiteSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_SOURCES): Promise<SourceSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_MINERALS): Promise<MineralSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_TOMBSTONES): Promise<TombstoneSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_RUINS): Promise<RuinSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_DROPPED_RESOURCES): Promise<DroppedResourceSnapshot[]>;
+	findInRoom(room: string, type: SupportedFindConstant): Promise<ObjectSnapshot[]>;
 
 	/** Current game time / tick number. */
 	getGameTime(): Promise<number>;

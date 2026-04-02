@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, FIND_TOMBSTONES } from '../../src/index.js';
 
 describe('creep.suicide()', () => {
 	test('destroys the creep', async ({ shard }) => {
@@ -32,7 +32,7 @@ describe('creep.suicide()', () => {
 		`);
 		await shard.tick();
 
-		const tombstones = await shard.findInRoom('W1N1', 'tombstones');
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		expect(tombstones.length).toBeGreaterThanOrEqual(1);
 		const tomb = tombstones.find((t: any) => t.kind === 'tombstone' && t.creepName === 'SuicideCreep');
 		expect(tomb).toBeDefined();

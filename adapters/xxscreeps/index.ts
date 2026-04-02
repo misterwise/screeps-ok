@@ -8,6 +8,7 @@ import type {
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
+import { selectorFromFindConstant } from '../../src/find.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/path-finder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
@@ -529,11 +530,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return null;
 	}
 
-	async findInRoom(roomName: string, type: string): Promise<any[]> {
+	async findInRoom(roomName: string, type: number): Promise<any[]> {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
+		const selector = selectorFromFindConstant(type);
 		return this.simulation!.peekRoom(roomName, (room: any) => {
-			return snapshotRoom(room, type, this);
+			return snapshotRoom(room, selector, this);
 		});
 	}
 

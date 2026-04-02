@@ -11,6 +11,7 @@ export type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 } from './adapter.js';
+export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 
 // Snapshots
 export type {

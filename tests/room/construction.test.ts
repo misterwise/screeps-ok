@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, WORK, CARRY, MOVE, STRUCTURE_ROAD, body } from '../../src/index.js';
+import { describe, test, expect, code, OK, WORK, CARRY, MOVE, FIND_CONSTRUCTION_SITES, FIND_STRUCTURES, STRUCTURE_ROAD, body } from '../../src/index.js';
 
 describe('room.createConstructionSite()', () => {
 	test('creates a construction site via player code', async ({ shard }) => {
@@ -13,7 +13,7 @@ describe('room.createConstructionSite()', () => {
 		expect(rc).toBe(OK);
 		await shard.tick();
 
-		const sites = await shard.findInRoom('W1N1', 'constructionSites');
+		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
 		const road = sites.find((s: any) => s.kind === 'site' && s.structureType === 'road');
 		expect(road).toBeDefined();
 	});
@@ -45,7 +45,7 @@ describe('room.createConstructionSite()', () => {
 		const site = await shard.getObject(siteId);
 		expect(site).toBeNull(); // construction complete
 
-		const structures = await shard.findInRoom('W1N1', 'structures');
+		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 		const road = structures.find((s: any) =>
 			s.kind === 'structure' && s.structureType === 'road' &&
 			s.pos.x === 30 && s.pos.y === 31);

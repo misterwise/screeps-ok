@@ -21,8 +21,8 @@ npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
 The `--preflight none` default is appropriate for new external adapters until
 the suite grows a more general capability-specific preflight contract.
 
-This guide follows the current shipped contract, which today uses string-based
-`findInRoom` selectors rather than `FIND_*` constants.
+This guide follows the current shipped contract, which today uses supported
+neutral `FIND_*` constants for `findInRoom`.
 
 ## What an Adapter Is
 

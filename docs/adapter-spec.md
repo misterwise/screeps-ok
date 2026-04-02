@@ -143,22 +143,22 @@ engine-private fields.
 
 ### `findInRoom`
 
-The current shipped contract uses string selectors, not `FIND_*` constants.
+The current shipped contract uses supported neutral `FIND_*` constants.
 
-Supported selectors are:
+Supported constants are:
 
-- `'creeps'`
-- `'structures'`
-- `'constructionSites'`
-- `'sources'`
-- `'minerals'`
-- `'tombstones'`
-- `'ruins'`
-- `'droppedResources'`
+- `FIND_CREEPS`
+- `FIND_STRUCTURES`
+- `FIND_CONSTRUCTION_SITES`
+- `FIND_SOURCES`
+- `FIND_MINERALS`
+- `FIND_TOMBSTONES`
+- `FIND_RUINS`
+- `FIND_DROPPED_RESOURCES`
 
 Inspection is perspective-neutral. There is no current-player context in test
-inspection, so adapters must not accept or require player-relative selectors
-such as "my creeps" or "hostile creeps" through this API.
+inspection, so adapters must not accept or require player-relative `FIND_*`
+constants such as `FIND_MY_CREEPS` or `FIND_HOSTILE_CREEPS` through this API.
 
 Tests should query the neutral collection and filter by `snapshot.owner` when
 needed.
@@ -232,7 +232,7 @@ changes.
 
 Examples:
 
-- changing `findInRoom` selector semantics
+- changing `findInRoom` constant semantics
 - changing snapshot shapes incompatibly
 - changing `runPlayer` error semantics
 

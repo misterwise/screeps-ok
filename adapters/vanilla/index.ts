@@ -6,6 +6,7 @@ import type {
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
+import { selectorFromFindConstant } from '../../src/find.js';
 import { snapshotObject, snapshotRoomObjects } from './snapshots.js';
 
 // @ts-expect-error -- screeps-server-mockup has no type declarations
@@ -393,9 +394,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return snapshotObject(obj, this);
 	}
 
-	async findInRoom(roomName: string, type: string): Promise<any[]> {
+	async findInRoom(roomName: string, type: number): Promise<any[]> {
 		const objects = await this.server.world.roomObjects(roomName);
-		return snapshotRoomObjects(objects, type, this);
+		return snapshotRoomObjects(objects, selectorFromFindConstant(type), this);
 	}
 
 	async getGameTime(): Promise<number> {

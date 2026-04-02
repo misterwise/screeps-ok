@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, STRUCTURE_CONTAINER } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
 	test('withdraws energy from container', async ({ shard }) => {
@@ -96,7 +96,7 @@ describe('creep.drop()', () => {
 		expect(creep.store.energy ?? 0).toBe(0);
 
 		// Should create a dropped resource
-		const resources = await shard.findInRoom('W1N1', 'droppedResources');
+		const resources = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		expect(resources.length).toBeGreaterThanOrEqual(1);
 	});
 
