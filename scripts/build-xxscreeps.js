@@ -1,12 +1,15 @@
 // Post-install helper: prepare xxscreeps JavaScript output when available.
 // Native addons are built explicitly via `npm run setup:xxscreeps`.
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 
+const require = createRequire(import.meta.url);
 const xxscreepsDir = resolve('node_modules/xxscreeps');
 const minNodeMajor = 24;
+const tscBin = require.resolve('typescript/bin/tsc');
 
 if (!existsSync(xxscreepsDir)) {
 	console.log('[screeps-ok] xxscreeps not installed, skipping build');
@@ -29,9 +32,9 @@ if (existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js'))) {
 
 console.log('[screeps-ok] Building xxscreeps JavaScript output...');
 try {
-	// Run tsc from within xxscreeps directory so it uses xxscreeps's own
-	// tsconfig and node_modules (avoids type conflicts with our deps)
-	execSync('npx tsc --noEmitOnError false', {
+	// Run the root project's TypeScript compiler from within xxscreeps so it
+	// uses xxscreeps's tsconfig without depending on nested devDependencies.
+	execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
 		cwd: xxscreepsDir,
 		stdio: 'inherit',
 	});

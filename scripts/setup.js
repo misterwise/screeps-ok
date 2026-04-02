@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const minNodeMajor = 24;
+const tscBin = require.resolve('typescript/bin/tsc');
 const target = process.argv[2] ?? 'all';
 const validTargets = new Set(['all', 'xxscreeps', 'vanilla']);
 
@@ -34,7 +35,7 @@ if (target === 'all' || target === 'vanilla') {
 function setupXxscreeps() {
 	const root = resolvePackageRoot('xxscreeps');
 	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
-	run('npx tsc --noEmitOnError false', { cwd: root });
+	runTypeScriptBuild(root);
 	run('npx node-gyp rebuild --release', {
 		cwd: path.join(root, 'src/driver/path-finder'),
 	});
@@ -83,6 +84,14 @@ function run(command, options) {
 		stdio: 'inherit',
 		shell: true,
 		...options,
+	});
+}
+
+function runTypeScriptBuild(cwd) {
+	console.log(`[screeps-ok] ${process.execPath} ${tscBin} --noEmitOnError false`);
+	execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
+		cwd,
+		stdio: 'inherit',
 	});
 }
 
