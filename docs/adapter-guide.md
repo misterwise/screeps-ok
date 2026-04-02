@@ -236,6 +236,10 @@ If a mechanic is missing or not wired through the adapter yet:
 Do not report support just to get more tests running. False positives are worse
 than honest skips because they turn missing features into misleading failures.
 
+Adapter-specific skips should be rare. In this repository, narrow built-in
+exceptions are centralized in `tests/support/limitations.ts` rather than
+scattered as raw adapter-name checks throughout the suite.
+
 ## Error Handling
 
 Map player execution failures to `RunPlayerError`.

@@ -1,8 +1,9 @@
 import { describe, test, expect, code, MOVE, CARRY, WORK, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD } from '../../src/index.js';
+import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 // Vanilla's mockup runtime disables users that own no room objects, so a
 // "headless" second player cannot execute code there today.
-const supportsHeadlessMultiPlayer = !(process.env.SCREEPS_OK_ADAPTER ?? '').includes('adapters/vanilla');
+const supportsHeadlessMultiPlayer = !hasDocumentedAdapterLimitation('headlessMultiPlayer');
 const multiPlayerTest = supportsHeadlessMultiPlayer ? test : test.skip;
 
 describe('adapter contract: setup', () => {

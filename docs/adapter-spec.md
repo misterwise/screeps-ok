@@ -200,6 +200,8 @@ They must:
 - be narrowly scoped
 - be explained inline in the test
 - be documented in the README or adapter docs
+- be routed through a shared limitation helper rather than ad hoc adapter-name
+  checks where practical
 - not become the default way to express missing feature support
 
 The intended long-term model is capability-based skipping, not adapter-name
