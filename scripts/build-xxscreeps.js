@@ -25,7 +25,10 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 	process.exit(0);
 }
 
-if (existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js'))) {
+if (
+	existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js')) &&
+	existsSync(resolve(xxscreepsDir, 'dist/config/mods.static/constants.js'))
+) {
 	console.log('[screeps-ok] xxscreeps JavaScript build already present');
 	process.exit(0);
 }
@@ -38,16 +41,27 @@ try {
 		cwd: xxscreepsDir,
 		stdio: 'inherit',
 	});
+	runGeneratedModsBootstrap();
 	console.log('[screeps-ok] xxscreeps JavaScript build complete');
 	console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
 } catch (err) {
 	// tsc may exit with errors due to type issues but still emit JS
 	// Check if the output exists
-	if (existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js'))) {
+	if (
+		existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js')) &&
+		existsSync(resolve(xxscreepsDir, 'dist/config/mods.static/constants.js'))
+	) {
 		console.log('[screeps-ok] xxscreeps JavaScript build completed with warnings');
 		console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
 	} else {
 		console.error('[screeps-ok] xxscreeps build failed:', err.message);
 		process.exit(1);
 	}
+}
+
+function runGeneratedModsBootstrap() {
+	execFileSync(process.execPath, ['dist/config/mods/index.js'], {
+		cwd: xxscreepsDir,
+		stdio: 'inherit',
+	});
 }

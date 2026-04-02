@@ -36,6 +36,7 @@ function setupXxscreeps() {
 	const root = resolvePackageRoot('xxscreeps');
 	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
 	runTypeScriptBuild(root);
+	runGeneratedModsBootstrap(root);
 	run('npx node-gyp rebuild --release', {
 		cwd: path.join(root, 'src/driver/path-finder'),
 	});
@@ -90,6 +91,14 @@ function run(command, options) {
 function runTypeScriptBuild(cwd) {
 	console.log(`[screeps-ok] ${process.execPath} ${tscBin} --noEmitOnError false`);
 	execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
+		cwd,
+		stdio: 'inherit',
+	});
+}
+
+function runGeneratedModsBootstrap(cwd) {
+	console.log(`[screeps-ok] ${process.execPath} dist/config/mods/index.js`);
+	execFileSync(process.execPath, ['dist/config/mods/index.js'], {
 		cwd,
 		stdio: 'inherit',
 	});

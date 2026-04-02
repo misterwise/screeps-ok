@@ -42,6 +42,21 @@ function checkXxscreeps() {
 		'xxscreeps JavaScript build output is missing.',
 		'Run npm run setup:xxscreeps',
 	);
+	checkFile(
+		path.join(root, 'dist/config/mods.static/constants.js'),
+		'xxscreeps generated mods constants bundle is missing.',
+		'Run npm run setup:xxscreeps',
+	);
+	checkFile(
+		path.join(root, 'dist/config/mods.static/game.js'),
+		'xxscreeps generated mods game bundle is missing.',
+		'Run npm run setup:xxscreeps',
+	);
+	checkFile(
+		path.join(root, 'dist/config/mods.static/config.js'),
+		'xxscreeps generated mods config bundle is missing.',
+		'Run npm run setup:xxscreeps',
+	);
 
 	const nativeId = `${process.arch}-${process.platform}-${process.version}`;
 	const pfNode = path.join(root, 'src/driver/path-finder/out', nativeId, 'pf.node');
