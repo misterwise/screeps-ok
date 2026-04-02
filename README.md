@@ -6,8 +6,8 @@ Behavioral conformance test suite for Screeps server implementations. Write a te
 
 | Engine | Passing | Notes |
 |--------|---------|-------|
-| xxscreeps | 130/138 (94%) | 7 failures are engine parity issues under investigation |
-| vanilla | 134/138 (97%) | 3 failures are adapter timing edge cases |
+| xxscreeps | 136/138 (99%) | 1 remaining failure is a real gameplay parity gap in suicide tombstones |
+| vanilla | 136/138 (99%) | 2 skips remain; no local vanilla failures |
 
 ## Quick Start
 
@@ -82,6 +82,11 @@ Built-in adapters can still be selected by name:
 ```bash
 npm exec screeps-ok -- --adapter vanilla -- tests/room/controller.test.ts
 ```
+
+## Adapter Docs
+
+- [docs/adapter-guide.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-guide.md) — practical authoring guide
+- [docs/adapter-spec.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-spec.md) — current normative adapter contract
 
 ## Writing Tests
 
@@ -265,10 +270,8 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 
 ## Known Issues
 
-- **Link transferEnergy**: xxscreeps doesn't process link transfer intents correctly — store and cooldown unchanged after tick
 - **Body part damage order**: Vanilla applies damage to `body[0]` in DB, xxscreeps to `body[last]`. Under investigation — may be a DB storage order difference, not a behavioral difference.
 - **Multi-player vanilla**: Second player without an owned room can't execute code reliably
 - **Headless vanilla player execution**: The adapter-contract test for a second player with no owned room is skipped on vanilla. The mockup driver disables users that own no `rooms.objects`; upstream support would let this test become universal again.
-- **Tower repair**: xxscreeps tower.repair() doesn't apply repair to roads
-- **Controller claim**: xxscreeps claimController fails in unowned rooms — controller access issue
 - **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store
+- **xxscreeps suicide tombstones**: `creep.suicide()` in xxscreeps preserves `floor(store * CREEP_CORPSE_RATE)` and does not match the vanilla tombstone resource result yet

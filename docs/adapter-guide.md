@@ -6,6 +6,9 @@ It is intentionally implementation-oriented, not fully normative. The goal is
 to help an engine author build a working adapter without reverse-engineering
 the existing `vanilla` and `xxscreeps` adapters.
 
+For the current normative contract, see
+[`docs/adapter-spec.md`](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-spec.md).
+
 The canonical tests live in `screeps-ok`. Your engine repository should own its
 adapter and point the `screeps-ok` runner at it.
 
@@ -17,6 +20,9 @@ npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
 
 The `--preflight none` default is appropriate for new external adapters until
 the suite grows a more general capability-specific preflight contract.
+
+This guide follows the current shipped contract, which today uses string-based
+`findInRoom` selectors rather than `FIND_*` constants.
 
 ## What an Adapter Is
 
