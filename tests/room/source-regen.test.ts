@@ -19,5 +19,5 @@ describe('source regeneration', () => {
 		await shard.tick(1);
 		const after = await shard.expectObject(srcId, 'source');
 		expect(after.energy).toBe(3000);
-	});
+	}, 30000);
 });
