@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out screeps-ok
+        uses: actions/checkout@v4
+
+      - name: Check out xxscreeps source
+        run: git clone --depth 1 https://github.com/laverdet/xxscreeps ../xxscreeps-ok-upstream
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - xxscreeps
+          - vanilla
+
+    steps:
+      - name: Check out screeps-ok
+        uses: actions/checkout@v4
+
+      - name: Check out xxscreeps source
+        run: git clone --depth 1 https://github.com/laverdet/xxscreeps ../xxscreeps-ok-upstream
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build adapter prerequisites
+        run: npm run setup:${{ matrix.adapter }}
+
+      - name: Run ${{ matrix.adapter }} suite
+        run: npm test ${{ matrix.adapter }}
+
+      - name: Upload ${{ matrix.adapter }} report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.adapter }}
+          path: reports/${{ matrix.adapter }}.json
+          if-no-files-found: ignore
