@@ -192,6 +192,8 @@ Rules:
 - report `false` when the engine or adapter does not currently support the
   feature area
 - capability-gated tests should skip when the capability is `false`
+- capability-gated tests should use an explicit runtime skip helper rather than
+  silently `return` from the test body
 
 Adapter-specific skips are allowed only as documented exceptions.
 
@@ -206,6 +208,9 @@ They must:
 
 The intended long-term model is capability-based skipping, not adapter-name
 branching.
+
+Suite coverage that is not implemented yet should use `test.todo`, not
+`test.skip`.
 
 ## Error Model
 

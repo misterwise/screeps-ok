@@ -1,4 +1,5 @@
 import { describe, test, expect, code, MOVE } from '../../src/index.js';
+import { requireCapability } from '../support/policy.js';
 
 describe('movement: directions', () => {
 	// Direction constants: TOP=1, TOP_RIGHT=2, RIGHT=3, BOTTOM_RIGHT=4,
@@ -64,8 +65,8 @@ describe('movement: directions', () => {
 		expect(c.pos.y).toBe(24);
 	});
 
-	test('move into wall is blocked', async ({ shard }) => {
-		if (!shard.capabilities.terrain) return; // skip — no custom terrain support
+	test('move into wall is blocked', async ({ shard, skip }) => {
+		requireCapability(shard, skip, 'terrain', 'custom terrain setup is required for wall-movement assertions');
 		const terrain = new Array(2500).fill(0);
 		terrain[24 * 50 + 25] = 1; // wall at (25, 24) — directly above
 		await shard.createShard({

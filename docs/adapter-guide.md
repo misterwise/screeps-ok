@@ -231,14 +231,20 @@ Use `capabilities` to describe what the engine currently supports.
 If a mechanic is missing or not wired through the adapter yet:
 
 - report `false`
-- let capability-gated tests skip
+- let capability-gated tests skip explicitly
 
 Do not report support just to get more tests running. False positives are worse
 than honest skips because they turn missing features into misleading failures.
 
+In this repository, capability-gated tests should use the shared helper in
+`tests/support/policy.ts` rather than silently returning from the test body.
+
 Adapter-specific skips should be rare. In this repository, narrow built-in
 exceptions are centralized in `tests/support/limitations.ts` rather than
 scattered as raw adapter-name checks throughout the suite.
+
+If a test represents planned coverage that the suite cannot exercise yet, use
+`test.todo` instead of `test.skip`.
 
 ## Error Handling
 

@@ -32,30 +32,9 @@ describe('PathFinder', () => {
 		expect(result.val).toBe(255);
 	});
 
-	test.skip('respects CostMatrix when routing', async ({ shard }) => {
-		// TODO: PathFinder roomCallback needs terrain data in TERRAIN_DATA env key
-		await shard.ownedRoom('p1');
-
-		const result = await shard.runPlayer('p1', code`
-			// Block the direct path with a wall of 255-cost tiles
-			const cm = new PathFinder.CostMatrix();
-			for (let y = 0; y < 50; y++) cm.set(25, y, 255);
-
-			const goal = { pos: new RoomPosition(30, 25, 'W1N1'), range: 0 };
-			const withWall = PathFinder.search(new RoomPosition(20, 25, 'W1N1'), goal, {
-				roomCallback: () => cm,
-			});
-			const without = PathFinder.search(new RoomPosition(20, 25, 'W1N1'), goal);
-
-			({
-				withWallLength: withWall.path.length,
-				withoutLength: without.path.length,
-			})
-		`) as any;
-
-		// Path with wall should be longer since it has to go around
-		expect(result.withWallLength).toBeGreaterThan(result.withoutLength);
-	});
+	// TODO: Enable once the suite can provide the terrain data PathFinder roomCallback
+	// needs through the current adapters without special-case harness setup.
+	test.todo('respects CostMatrix when routing');
 });
 
 describe('Game.map', () => {

@@ -274,5 +274,6 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 - **Multi-player vanilla**: Second player without an owned room can't execute code reliably
 - **Headless vanilla player execution**: The adapter-contract test for a second player with no owned room is skipped on vanilla. The mockup driver disables users that own no `rooms.objects`; upstream support would let this test become universal again.
 - **Documented test exceptions**: Narrow adapter-specific skips are centralized in `tests/support/limitations.ts` rather than scattered raw adapter-name checks.
+- **Capability gates**: Capability-based skips use `tests/support/policy.ts`; planned but unimplemented coverage should use `test.todo`, not `test.skip`.
 - **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store
 - **xxscreeps suicide tombstones**: `creep.suicide()` in xxscreeps preserves `floor(store * CREEP_CORPSE_RATE)` and does not match the vanilla tombstone resource result yet
