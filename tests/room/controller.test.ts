@@ -17,6 +17,7 @@ describe('controller mechanics', () => {
 			owner: 'p1',
 			body: ['claim', 'move'],
 		});
+		expect (creepId).not.toBeNull();
 
 		await shard.tick();
 

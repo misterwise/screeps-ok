@@ -4,7 +4,7 @@ describe('source regeneration', () => {
 	test('depleted source regenerates after ENERGY_REGEN_TIME ticks', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1' }],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],
