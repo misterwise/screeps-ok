@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
 const adapter = process.env.SCREEPS_OK_ADAPTER ?? '';
+const reportName = process.env.SCREEPS_OK_REPORT_NAME
+	?? adapter.replace(/.*\//, '').replace(/\..*/, '')
+	|| 'results';
 
 export default defineConfig({
 	resolve: {
@@ -28,7 +31,7 @@ export default defineConfig({
 		},
 		reporters: process.env.CI ? ['json', 'default'] : ['default'],
 		outputFile: process.env.CI
-			? `reports/${adapter.replace(/.*\//, '').replace(/\..*/, '')}.json`
+			? `reports/${reportName}.json`
 			: undefined,
 	},
 });

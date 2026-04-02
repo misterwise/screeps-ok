@@ -137,6 +137,7 @@ export function runSuite(options = {}) {
 		env: {
 			...env,
 			SCREEPS_OK_ADAPTER: resolved.adapterPath,
+			SCREEPS_OK_REPORT_NAME: sanitizeReportName(resolved.label),
 			SCREEPS_OK_PROJECT_ROOT: invokerCwd,
 		},
 		stdio,
@@ -147,4 +148,16 @@ export function runSuite(options = {}) {
 
 function isBuiltInAdapter(value) {
 	return Object.prototype.hasOwnProperty.call(builtInAdapters, value);
+}
+
+function sanitizeReportName(label) {
+	return label
+		.replace(/\\/g, '/')
+		.split('/')
+		.filter(Boolean)
+		.pop()
+		?.replace(/\.[^.]+$/, '')
+		.replace(/[^A-Za-z0-9._-]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		|| 'results';
 }
