@@ -1,9 +1,12 @@
 import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const minNodeMajor = 24;
 const target = process.argv[2] ?? 'all';
 const validTargets = new Set(['all', 'xxscreeps', 'vanilla']);
@@ -50,12 +53,28 @@ function setupVanilla() {
 }
 
 function resolvePackageRoot(packageName) {
-	try {
-		return path.dirname(require.resolve(`${packageName}/package.json`));
-	} catch {
-		console.error(`[screeps-ok] Required package '${packageName}' is not installed. Run npm install first.`);
-		process.exit(1);
+	const directNodeModulesPath = path.join(repoRoot, 'node_modules', ...packageName.split('/'));
+	if (existsSync(path.join(directNodeModulesPath, 'package.json'))) {
+		return directNodeModulesPath;
 	}
+
+	const resolutionCandidates = [
+		`${packageName}/package.json`,
+		packageName,
+	];
+
+	for (const candidate of resolutionCandidates) {
+		try {
+			const resolved = require.resolve(candidate);
+			const root = findPackageRoot(resolved);
+			if (root) return root;
+		} catch {
+			// Try the next resolution strategy.
+		}
+	}
+
+	console.error(`[screeps-ok] Required package '${packageName}' is not installed. Run npm install first.`);
+	process.exit(1);
 }
 
 function run(command, options) {
@@ -65,4 +84,16 @@ function run(command, options) {
 		shell: true,
 		...options,
 	});
+}
+
+function findPackageRoot(resolvedPath) {
+	let current = path.dirname(resolvedPath);
+	while (true) {
+		if (existsSync(path.join(current, 'package.json'))) {
+			return current;
+		}
+		const parent = path.dirname(current);
+		if (parent === current) return null;
+		current = parent;
+	}
 }

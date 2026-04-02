@@ -2,9 +2,10 @@ import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const minNodeMajor = 24;
 const adapter = process.argv[2] ?? 'all';
 const validAdapters = new Set(['all', 'xxscreeps', 'vanilla']);
@@ -97,16 +98,30 @@ async function checkVanilla() {
 }
 
 function resolvePackageRoot(packageName) {
-	let packageJsonPath;
-	try {
-		packageJsonPath = require.resolve(`${packageName}/package.json`);
-	} catch {
-		fail(
-			`Required package '${packageName}' is not installed.`,
-			['Run npm install from the repository root.'],
-		);
+	const directNodeModulesPath = path.join(repoRoot, 'node_modules', ...packageName.split('/'));
+	if (existsSync(path.join(directNodeModulesPath, 'package.json'))) {
+		return directNodeModulesPath;
 	}
-	return path.dirname(packageJsonPath);
+
+	const resolutionCandidates = [
+		`${packageName}/package.json`,
+		packageName,
+	];
+
+	for (const candidate of resolutionCandidates) {
+		try {
+			const resolved = require.resolve(candidate);
+			const root = findPackageRoot(resolved);
+			if (root) return root;
+		} catch {
+			// Try the next resolution strategy.
+		}
+	}
+
+	fail(
+		`Required package '${packageName}' is not installed.`,
+		['Run npm install from the repository root.'],
+	);
 }
 
 function checkFile(filePath, message, fix) {
@@ -121,4 +136,16 @@ function fail(message, details) {
 		console.error(`[screeps-ok] ${detail}`);
 	}
 	process.exit(1);
+}
+
+function findPackageRoot(resolvedPath) {
+	let current = path.dirname(resolvedPath);
+	while (true) {
+		if (existsSync(path.join(current, 'package.json'))) {
+			return current;
+		}
+		const parent = path.dirname(current);
+		if (parent === current) return null;
+		current = parent;
+	}
 }

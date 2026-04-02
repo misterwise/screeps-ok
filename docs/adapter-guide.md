@@ -9,6 +9,15 @@ the existing `vanilla` and `xxscreeps` adapters.
 The canonical tests live in `screeps-ok`. Your engine repository should own its
 adapter and point the `screeps-ok` runner at it.
 
+Typical downstream invocation:
+
+```bash
+npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
+```
+
+The `--preflight none` default is appropriate for new external adapters until
+the suite grows a more general capability-specific preflight contract.
+
 ## What an Adapter Is
 
 An adapter is the thin translation layer between:

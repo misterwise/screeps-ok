@@ -43,6 +43,11 @@ tests.
 npm test xxscreeps
 ```
 
+### Via the packaged CLI
+```bash
+npx screeps-ok --adapter xxscreeps
+```
+
 ### A specific test file
 ```bash
 npm test xxscreeps -- tests/actions/build.test.ts
@@ -61,6 +66,21 @@ npm test xxscreeps -- --watch
 ### Verbose output (see every test name)
 ```bash
 npm test xxscreeps -- --reporter=verbose
+```
+
+## Downstream Usage
+
+Other engine repositories should consume `screeps-ok` as a dependency and point
+the packaged runner at a local adapter module.
+
+```bash
+npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
+```
+
+Built-in adapters can still be selected by name:
+
+```bash
+npm exec screeps-ok -- --adapter vanilla -- tests/room/controller.test.ts
 ```
 
 ## Writing Tests
@@ -214,7 +234,9 @@ screeps-ok/
 
 ## Adapter Selection
 
-The `SCREEPS_OK_ADAPTER` environment variable points to the adapter module. The adapter is loaded once and provides a fresh shard per test via `createShard` + `teardown`.
+The runner sets `SCREEPS_OK_ADAPTER` to the selected adapter module. The
+adapter is loaded once and provides a fresh shard per test via `createShard` +
+`teardown`.
 
 ### xxscreeps adapter
 - Uses xxscreeps's `simulate()` API directly (in-process, fast)
