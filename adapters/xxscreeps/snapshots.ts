@@ -313,7 +313,7 @@ function snapshotTombstone(obj: any, resolver: PlayerResolver): TombstoneSnapsho
 		kind: 'tombstone',
 		id: obj.id,
 		pos: snapPos(obj),
-		creepName: obj.name ?? obj.creepName ?? '',
+		creepName: obj.creep?.name ?? obj['#creep']?.name ?? obj.name ?? obj.creepName ?? '',
 		deathTime: obj.deathTime ?? 0,
 		store: snapStore(obj),
 		ticksToDecay: obj.ticksToDecay ?? 0,

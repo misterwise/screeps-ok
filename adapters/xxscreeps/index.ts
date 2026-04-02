@@ -77,7 +77,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private idCounter = 0;
 
 	private nextId(): string {
-		return `screeps-ok-${++this.idCounter}`;
+		return (++this.idCounter).toString(16).padStart(24, '0');
 	}
 
 	private resolvePlayer(handle: string): string {
@@ -170,9 +170,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				structure.hits = spec.hits;
 			}
 			if (spec.store) {
-				for (const [resource, amount] of Object.entries(spec.store)) {
-					structure.store['#add'](resource, amount);
-				}
+				setStoreContentsExact(structure.store, spec.store);
 			}
 			room['#insertObject'](structure);
 		});
@@ -453,6 +451,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
 		const engineUserId = this.resolvePlayer(userId);
+		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
 		let result: PlayerReturnValue = null;
 
 		// Replace synthetic IDs with engine IDs in the code string
@@ -465,6 +464,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
 				// Build a context with Game + all Screeps constants + globals
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
+
+				// xxscreeps simulate() doesn't currently populate Game.gcl, but controller
+				// APIs assume it exists during claim checks.
+				if (!(Game as any).gcl) {
+					(Game as any).gcl = {
+						level: Math.max(ownedRoomCount + 1, 2),
+						progress: 0,
+						progressTotal: 1,
+						'#roomCount': ownedRoomCount,
+					};
+				}
 
 				// Collect all available globals from the game environment
 				const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
@@ -505,6 +515,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
 		await this.ensureSimulation();
+		await this.flushPokeQueue();
 		const engineId = this.resolveId(id);
 		for (const roomName of this.rooms) {
 			const snapshot = await this.simulation!.peekRoom(roomName, (room: any) => {
@@ -520,6 +531,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async findInRoom(roomName: string, type: string): Promise<any[]> {
 		await this.ensureSimulation();
+		await this.flushPokeQueue();
 		return this.simulation!.peekRoom(roomName, (room: any) => {
 			return snapshotRoom(room, type, this);
 		});
@@ -532,6 +544,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {
 		await this.ensureSimulation();
+		await this.flushPokeQueue();
 		return this.simulation!.peekRoom(roomName, (room: any) => {
 			for (const obj of room['#objects']) {
 				try {
@@ -579,6 +592,22 @@ function buildStructure(structureType: string, pos: any, owner?: string): any {
 			return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
 		default: throw new Error(`Unsupported structure type: ${structureType}`);
+	}
+}
+
+function setStoreContentsExact(store: any, desired: Record<string, number>): void {
+	const entries = typeof store?.['#entries'] === 'function'
+		? [...store['#entries']()]
+		: Object.entries(store ?? {});
+	for (const [resource, amount] of entries) {
+		if (typeof amount === 'number' && amount > 0) {
+			store['#subtract'](resource, amount);
+		}
+	}
+	for (const [resource, amount] of Object.entries(desired)) {
+		if (amount > 0) {
+			store['#add'](resource, amount);
+		}
 	}
 }
 
