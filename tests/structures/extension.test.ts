@@ -1,25 +1,37 @@
-import { describe, test, expect, code, OK, MOVE, STRUCTURE_SPAWN, STRUCTURE_EXTENSION } from '../../src/index.js';
+import { describe, test, expect, code, STRUCTURE_EXTENSION } from '../../src/index.js';
 
 describe('StructureExtension', () => {
-	test('extensions contribute energy to spawn', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		// Spawn with 100 energy, extension with 50 = 150 total
-		// MOVE(50) + MOVE(50) = 100 cost — should succeed
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 100 },
-		});
+	test('an active extension contributes exactly its stored energy to room.energyAvailable', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
 		await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			store: { energy: 50 },
+			pos: [25, 25],
+			structureType: STRUCTURE_EXTENSION,
+			owner: 'p1',
+			store: { energy: 37 },
 		});
+		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE, MOVE], 'ExtTest')
+		const energyAvailable = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].energyAvailable
 		`);
-		expect(rc).toBe(OK);
+
+		expect(energyAvailable).toBe(37);
+	});
+
+	test('an active extension contributes exactly its energy capacity to room.energyCapacityAvailable', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_EXTENSION,
+			owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const energyCapacityAvailable = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].energyCapacityAvailable
+		`);
+
+		expect(energyCapacityAvailable).toBe(50);
 	});
 });

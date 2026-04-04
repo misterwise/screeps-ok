@@ -1,14 +1,37 @@
 # screeps-ok Behavioral Catalog
 
 A comprehensive enumeration of every testable Screeps gameplay behavior,
-organized by game system and facet. Each checkbox maps 1:1 to a conformance
-test.
+organized by game system and facet. Each checkbox maps to one canonical
+conformance test or one generated test family.
 
 **How to read this document:**
 - **Area** = major game system (top-level heading)
 - **Facet** = specific mechanic within that system (sub-heading)
 - `- [ ]` = untested, `- [x]` = tested
 - Facets marked with a capability tag require that adapter capability
+- Migrated pilot entries use the inline form `` `ID` `class` `oracle` ``
+- `class` is one of `behavior` or `matrix`
+- `oracle` records the current reference status, such as
+  `verified_vanilla` or `needs_vanilla_verification`
+- Matrix-backed and scoped shared-rule definitions live in
+  `docs/behavior-matrices.md`
+- Legacy entries remain in the older checklist style until they are reviewed
+
+**Catalog entry rules:**
+- A checklist entry must describe one public, deterministic, directly testable
+  behavior with one clear interpretation.
+- `behavior` entries describe one concrete gameplay rule and should usually map
+  to one canonical test.
+- `matrix` entries describe one gameplay rule that expands into a generated
+  family of cases from a canonical table or data source.
+- Every `matrix` entry must have a companion definition in
+  `docs/behavior-matrices.md` covering canonical source, dimensions,
+  applicability, and exclusions.
+- If a statement requires unrelated assertions, split it into multiple entries.
+- Do not use checklist entries for editorial guidance, framework limitations,
+  inferred internal algorithms, or broad umbrella statements.
+- Keep non-normative material under section-local `Notes`, `Coverage Notes`, or
+  `Framework Notes`.
 
 **How to give feedback:**
 - "You're missing X" — which area/facet should it live in?
@@ -26,7 +49,9 @@ test.
 - [ ] `move()` into a wall tile returns OK but the creep does not move.
 - [ ] `move()` into an occupied tile returns OK but the creep may not move (collision).
 - [ ] `move()` accepts all 8 direction constants (TOP through TOP_LEFT).
-- [ ] `moveByPath()` follows a serialized path one step per tick.
+- [ ] `moveByPath()` moves the creep one step along a provided path array.
+- [ ] `moveByPath()` returns OK when the next step is a valid adjacent tile.
+- [ ] `moveByPath()` returns ERR_NOT_FOUND when the creep's position is not on the path.
 - [ ] `moveTo()` computes a path to the target and moves one step toward it.
 - [ ] `moveTo()` returns OK when the creep successfully moves.
 - [ ] `moveTo()` returns ERR_NO_PATH when no path to the target exists.
@@ -41,7 +66,9 @@ test.
 - [ ] Moving onto swamp generates fatigue equal to 10 per weighted body part.
 - [ ] Moving onto a road generates fatigue equal to 1 per weighted body part.
 - [ ] Each undamaged MOVE part reduces fatigue by 2 at the start of each tick.
-- [ ] Boosted MOVE parts reduce fatigue proportionally to the boost multiplier.
+- [ ] A MOVE part boosted with ZO reduces fatigue by 4 per tick instead of 2.
+- [ ] A MOVE part boosted with ZHO2 reduces fatigue by 6 per tick.
+- [ ] A MOVE part boosted with XZHO2 reduces fatigue by 8 per tick.
 - [ ] Damaged (0 HP) MOVE parts do not contribute to fatigue reduction.
 - [ ] A creep with fatigue > 0 cannot move and `move()` returns ERR_TIRED.
 - [ ] A creep with only MOVE parts generates 0 fatigue on any terrain.
@@ -70,13 +97,22 @@ test.
 - [ ] `pull()` on a non-adjacent creep returns ERR_NOT_IN_RANGE.
 
 ### 1.6 Collision Resolution
-- [ ] When multiple creeps target the same tile, the highest-priority creep wins.
-- [ ] Priority factor: creeps that would block other creeps rank higher.
-- [ ] Priority factor: pulled creeps rank higher than non-pulled.
-- [ ] Priority factor: pulling creeps rank higher than non-pulling.
-- [ ] Priority factor: higher MOVE-to-weight ratio ranks higher.
-- [ ] Two creeps moving toward each other can swap positions simultaneously.
-- [ ] Creeps that lose collision stay in place without an error code.
+- [ ] `MOVE-COLLISION-001` `behavior` `verified_vanilla`
+  When multiple creeps attempt to occupy the same tile in the same tick, at
+  most one creep occupies that tile after movement resolves.
+- [ ] `MOVE-COLLISION-002` `behavior` `verified_vanilla`
+  A creep that loses collision resolution remains on its original tile and does
+  not receive an action error code from `move()`.
+- [ ] `MOVE-COLLISION-003` `behavior` `verified_vanilla`
+  Two creeps moving into each other's starting tiles in the same tick can swap
+  positions.
+
+Coverage Notes
+- Same-input determinism should be proven through concrete repeated scenarios,
+  not kept as a standalone abstract catalog item.
+- The exact collision-priority algorithm is not catalog truth yet.
+- Replace inferred priority-factor bullets with a small set of verified,
+  observable tie-break scenarios.
 
 ### 1.7 Power Creep Movement
 - [ ] Power creeps generate no fatigue on any terrain.
@@ -138,7 +174,7 @@ test.
 
 ### 3.2 Mineral Harvest
 - [ ] Mineral harvesting requires an extractor structure in the room.
-- [ ] Each WORK part harvests mineral resources per tick.
+- [ ] Each WORK part harvests 1 unit of the mineral type per tick.
 - [ ] `harvest()` returns ERR_NOT_FOUND when no extractor is present.
 - [ ] Extractor goes on cooldown (EXTRACTOR_COOLDOWN) after each harvest.
 - [ ] The mineral type of the deposit determines the resource harvested.
@@ -300,14 +336,29 @@ test.
 - [ ] An owned controller at level 1 that loses its level becomes unowned.
 
 ### 6.8 Safe Mode Mechanics
-- [ ] `activateSafeMode()` starts safe mode for SAFE_MODE_DURATION (20000) ticks.
-- [ ] Safe mode has a cooldown of SAFE_MODE_COOLDOWN (50000) ticks.
-- [ ] Cannot activate when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD (5000).
-- [ ] Activation consumes one safeModeAvailable charge.
-- [ ] Hostile creeps cannot attack structures or creeps during safe mode.
-- [ ] Hostile creep movement is restricted near the owner's creeps during safe mode.
-- [ ] `activateSafeMode()` returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0.
-- [ ] `activateSafeMode()` returns ERR_TIRED when cooldown is active.
+- [ ] `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
+  `activateSafeMode()` consumes one available safe mode charge and starts safe
+  mode for SAFE_MODE_DURATION ticks when the controller is eligible.
+- [ ] `CTRL-SAFEMODE-002` `behavior` `verified_vanilla`
+  Safe mode activation starts a SAFE_MODE_COOLDOWN period during which
+  `activateSafeMode()` cannot be used again.
+- [ ] `CTRL-SAFEMODE-003` `behavior` `verified_vanilla`
+  `activateSafeMode()` returns ERR_NOT_ENOUGH_RESOURCES when
+  `safeModeAvailable` is 0.
+- [ ] `CTRL-SAFEMODE-004` `behavior` `verified_vanilla`
+  `activateSafeMode()` returns ERR_TIRED when the controller's safe mode
+  cooldown is active.
+- [ ] `CTRL-SAFEMODE-005` `behavior` `needs_vanilla_verification`
+  `activateSafeMode()` fails and does not activate when the controller's
+  downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD.
+- [ ] `CTRL-SAFEMODE-006` `matrix` `needs_vanilla_verification`
+  Hostile creep damage actions blocked by safe mode match the canonical blocked
+  action set across `attack()`, `rangedAttack()`, `rangedMassAttack()`, and
+  `dismantle()`.
+
+Notes
+- Any hostile movement restrictions during safe mode should be added only as
+  concrete observable outcomes, not as a broad summary rule.
 
 ### 6.9 Unclaim
 - [ ] `unclaim()` resets the controller to level 0 (unowned).
@@ -315,9 +366,16 @@ test.
 - [ ] Destroyed structures become ruins.
 
 ### 6.10 Structure Limits per RCL
-- [ ] Each structure type has a maximum count per RCL level.
-- [ ] Structures above the limit for the current RCL become inactive.
-- [ ] Container (5), road (2500), wall (2500), rampart (2500) limits are constant across all RCL levels.
+- [ ] `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
+  The maximum active owned structure count for each structure type and
+  controller level matches the canonical `CONTROLLER_STRUCTURES` table.
+- [ ] `CTRL-STRUCTLIMIT-002` `behavior` `verified_vanilla`
+  Owned structures above the room's current controller-level limit remain
+  present but inactive until the room again satisfies the limit.
+
+Coverage Notes
+- Constant-across-level limits for containers, roads, walls, and ramparts are
+  covered by the same structure-limit matrix.
 
 ---
 
@@ -362,14 +420,21 @@ test.
 - [ ] A creep can `rangedHeal()` and `rangedAttack()` in the same tick.
 
 ### 7.6 Body Part Damage Model
-- [ ] Damage is applied front-to-back (body[0] takes hits first).
-- [ ] Each body part has 100 HP.
-- [ ] A part at 0 HP is destroyed and loses its function.
-- [ ] The body is recalculated after damage (active part counts update).
-- [ ] Destroyed MOVE parts reduce the creep's fatigue recovery rate.
-- [ ] Destroyed WORK/CARRY/ATTACK/etc. parts reduce their respective effectiveness.
-- [ ] `hitsMax` equals body length multiplied by 100.
-- [ ] `getActiveBodyparts(type)` returns only undestroyed parts of that type.
+- [ ] `COMBAT-BODYPART-001` `behavior` `verified_vanilla`
+  Incoming damage is applied to the earliest surviving body part first, and
+  later parts remain unchanged until earlier parts are exhausted.
+- [ ] `COMBAT-BODYPART-002` `behavior` `verified_vanilla`
+  Each body part has 100 hits, and `hitsMax` equals body length multiplied by
+  100.
+- [ ] `COMBAT-BODYPART-003` `behavior` `verified_vanilla`
+  A body part at 0 hits is destroyed and is excluded from
+  `getActiveBodyparts(type)`.
+
+Coverage Notes
+- The gameplay consequences of destroyed MOVE, WORK, CARRY, ATTACK, HEAL, and
+  other body parts should be covered in their type-specific movement, combat,
+  harvesting, transfer, and controller-action sections rather than as one
+  umbrella statement here.
 
 ### 7.7 Boost Damage Reduction
 - [ ] Boosted TOUGH parts reduce incoming damage to themselves only.
@@ -386,40 +451,67 @@ test.
 - [ ] Multiple sources of damage and healing are summed independently.
 
 ### 7.9 Tower Attack
-- [ ] Tower attack costs TOWER_ENERGY_COST (10) energy per action.
-- [ ] Base damage is TOWER_POWER_ATTACK (600) at optimal range.
-- [ ] Full power within TOWER_OPTIMAL_RANGE (5 tiles).
-- [ ] Linear falloff from range 5 to TOWER_FALLOFF_RANGE (20 tiles).
-- [ ] Minimum damage at range 20+ is 150.
+- [ ] `TOWER-ATTACK-001` `behavior` `verified_vanilla`
+  When `tower.attack()` executes, the tower's energy decreases by
+  `TOWER_ENERGY_COST` in the same tick.
+- [ ] `TOWER-ATTACK-002` `matrix` `verified_vanilla`
+  Tower attack damage by range matches the canonical Screeps tower falloff
+  curve derived from the tower attack constants.
+- [ ] `TOWER-ATTACK-003` `matrix` `needs_vanilla_verification`
+  `tower.attack()` target acceptance and invalid-target behavior match the
+  canonical target matrix across creeps, power creeps, structures, and
+  non-attackable objects.
 
 ### 7.10 Tower Heal
-- [ ] Base healing is TOWER_POWER_HEAL (400) at optimal range.
-- [ ] Same distance falloff curve as tower attack.
-- [ ] Minimum healing at range 20+ is 100.
-- [ ] Can heal any friendly creep.
+- [ ] `TOWER-HEAL-001` `behavior` `verified_vanilla`
+  When `tower.heal()` executes, the tower's energy decreases by
+  `TOWER_ENERGY_COST` in the same tick.
+- [ ] `TOWER-HEAL-002` `matrix` `verified_vanilla`
+  Tower heal amount by range matches the canonical Screeps tower falloff curve
+  derived from the tower heal constants.
+- [ ] `TOWER-HEAL-003` `matrix` `needs_vanilla_verification`
+  `tower.heal()` target acceptance and invalid-target behavior match the
+  canonical target matrix across creeps, power creeps, structures, and
+  non-healable objects.
 
 ### 7.11 Tower Repair
-- [ ] Base repair is TOWER_POWER_REPAIR (800) at optimal range.
-- [ ] Same distance falloff curve as tower attack.
-- [ ] Minimum repair at range 20+ is 200.
-- [ ] Can repair any structure regardless of owner.
+- [ ] `TOWER-REPAIR-001` `behavior` `verified_vanilla`
+  When `tower.repair()` executes, the tower's energy decreases by
+  `TOWER_ENERGY_COST` in the same tick.
+- [ ] `TOWER-REPAIR-002` `matrix` `verified_vanilla`
+  Tower repair amount by range matches the canonical Screeps tower falloff
+  curve derived from the tower repair constants.
+- [ ] `TOWER-REPAIR-003` `matrix` `needs_vanilla_verification`
+  `tower.repair()` target acceptance and invalid-target behavior match the
+  canonical target matrix across repairable structures, non-repairable
+  structures, creeps, and other invalid targets.
 
 ### 7.12 Tower Action Priority
-- [ ] A tower can perform only one action per tick.
-- [ ] If multiple intents are submitted, priority is: heal > repair > attack.
-- [ ] The highest-priority intent executes; others are discarded.
+- [ ] `TOWER-INTENT-001` `behavior` `verified_vanilla`
+  A tower performs at most one of attack, heal, or repair in a tick.
+- [ ] `TOWER-INTENT-002` `behavior` `verified_vanilla`
+  When heal, repair, and attack intents are all queued for the same tower in
+  one tick, heal is preferred over repair and repair is preferred over attack.
+- [ ] `TOWER-INTENT-003` `behavior` `verified_vanilla`
+  Lower-priority tower intents submitted in the same tick do not execute after
+  the chosen tower action resolves.
 
 ### 7.13 Tower Power Effects
-- [ ] PWR_OPERATE_TOWER increases tower power by a percentage based on power level.
-- [ ] PWR_DISRUPT_TOWER reduces tower power by a percentage based on power level.
-- [ ] Operate and disrupt effects can stack on the same tower.
+- [ ] `TOWER-POWER-001` `matrix` `verified_vanilla`
+  `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` modify tower attack, heal, and
+  repair power according to `POWER_INFO` for each supported power level.
+- [ ] `TOWER-POWER-002` `behavior` `needs_vanilla_verification`
+  `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` can affect the same tower at the
+  same time.
 
 ### 7.14 Nukes — Launch `capability: nuke`
 - [ ] Launching requires NUKER_ENERGY_CAPACITY (300000) energy and NUKER_GHODIUM_CAPACITY (5000) ghodium.
 - [ ] Nuker cooldown is NUKER_COOLDOWN (100000 ticks).
 - [ ] Maximum range is NUKE_RANGE (10 rooms).
 - [ ] Creates an in-flight Nuke object visible in the target room.
-- [ ] Returns appropriate error codes for insufficient resources, cooldown, or range.
+- [ ] `launchNuke()` returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient.
+- [ ] `launchNuke()` returns ERR_TIRED when the nuker is on cooldown.
+- [ ] `launchNuke()` returns ERR_INVALID_TARGET when the target room is beyond NUKE_RANGE.
 
 ### 7.15 Nukes — Impact `capability: nuke`
 - [ ] Nuke lands after NUKE_LAND_TIME (50000 ticks).
@@ -453,711 +545,1529 @@ test.
 ### 8.2 Unboost
 - [ ] `Lab.unboostCreep()` removes boosts from an adjacent creep.
 - [ ] Returns compounds to the lab (LAB_UNBOOST_MINERAL = 15 per part).
-- [ ] Cooldown is proportional to the total compounds removed.
+- [ ] Lab cooldown after unboost equals the sum of REACTION_TIME for all compounds removed.
 - [ ] Returns ERR_NOT_IN_RANGE when creep is not adjacent.
 - [ ] Returns ERR_FULL when lab cannot hold the returned compounds.
 
-### 8.3 Attack Boosts
-- [ ] UH boosts ATTACK parts by +100% damage.
-- [ ] UH2O boosts ATTACK parts by +200% damage.
-- [ ] XUH2O boosts ATTACK parts by +300% damage.
-- [ ] Boost is applied per individual boosted ATTACK body part.
+### 8.3 Per-Part Boost Aggregation
+- [ ] `BOOST-AGGREGATION-001` `matrix` `verified_vanilla`
+  For additive boost mechanics, total effect equals the sum of each active
+  body part's individual boosted or unboosted contribution across attack,
+  ranged attack, heal, harvest, build, repair, dismantle, upgrade, move, and
+  carry capacity.
 
-### 8.4 Ranged Boosts
-- [ ] KO boosts RANGED_ATTACK parts by +100% damage.
-- [ ] KHO2 boosts RANGED_ATTACK parts by +200% damage.
-- [ ] XKHO2 boosts RANGED_ATTACK parts by +300% damage.
-- [ ] Boost is applied per individual boosted RANGED_ATTACK body part.
+Coverage Notes
+- `TOUGH` is excluded from this matrix because boosted `TOUGH` modifies damage
+  taken by the boosted part rather than contributing a simple additive output.
 
-### 8.5 Heal Boosts
-- [ ] LO boosts HEAL parts by +100% healing.
-- [ ] LHO2 boosts HEAL parts by +200% healing.
-- [ ] XLHO2 boosts HEAL parts by +300% healing.
-- [ ] Boost is applied per individual boosted HEAL body part.
+### 8.4 Attack Boosts
+- [ ] `BOOST-ATTACK-001` `matrix` `verified_vanilla`
+  ATTACK boost effect magnitudes match the canonical Screeps `BOOSTS` table for
+  `UH`, `UH2O`, and `XUH2O`.
 
-### 8.6 Tough Boosts
-- [ ] GO reduces incoming damage to boosted TOUGH parts by 30%.
-- [ ] GHO2 reduces incoming damage to boosted TOUGH parts by 50%.
-- [ ] XGHO2 reduces incoming damage to boosted TOUGH parts by 70%.
-- [ ] Damage reduction applies only to the boosted TOUGH part itself, not the whole creep.
+### 8.5 Ranged Boosts
+- [ ] `BOOST-RANGED-001` `matrix` `verified_vanilla`
+  `RANGED_ATTACK` boost effect magnitudes match the canonical Screeps `BOOSTS`
+  table for `KO`, `KHO2`, and `XKHO2`.
 
-### 8.7 Harvest Boosts
-- [ ] UO boosts WORK part harvest yield by +200%.
-- [ ] UHO2 boosts WORK part harvest yield by +400%.
-- [ ] XUHO2 boosts WORK part harvest yield by +600%.
-- [ ] Boost applies only during `harvest()`, not other WORK actions.
+### 8.6 Heal Boosts
+- [ ] `BOOST-HEAL-001` `matrix` `verified_vanilla`
+  `HEAL` boost effect magnitudes match the canonical Screeps `BOOSTS` table for
+  `LO`, `LHO2`, and `XLHO2`.
 
-### 8.8 Build/Repair Boosts
-- [ ] LH boosts WORK part build/repair by +50%.
-- [ ] LH2O boosts WORK part build/repair by +80%.
-- [ ] XLH2O boosts WORK part build/repair by +100%.
-- [ ] Build/repair boosts do not increase energy cost.
+### 8.7 Tough Boosts
+- [ ] `BOOST-TOUGH-001` `matrix` `verified_vanilla`
+  `TOUGH` damage-reduction magnitudes match the canonical Screeps `BOOSTS`
+  table for `GO`, `GHO2`, and `XGHO2`.
+- [ ] `BOOST-TOUGH-002` `behavior` `verified_vanilla`
+  Tough damage reduction applies only to the boosted `TOUGH` body part itself.
 
-### 8.9 Dismantle Boosts
-- [ ] ZH boosts WORK part dismantle by +100%.
-- [ ] ZH2O boosts WORK part dismantle by +200%.
-- [ ] XZH2O boosts WORK part dismantle by +300%.
-- [ ] Boost is applied per individual boosted WORK body part during `dismantle()`.
+### 8.8 Harvest Boosts
+- [ ] `BOOST-HARVEST-001` `matrix` `verified_vanilla`
+  Harvest boost effect magnitudes match the canonical Screeps `BOOSTS` table
+  for `UO`, `UHO2`, and `XUHO2`.
+- [ ] `BOOST-HARVEST-003` `behavior` `verified_vanilla`
+  Harvest boosts apply only during `harvest()`, not other `WORK` actions.
 
-### 8.10 Upgrade Boosts
-- [ ] GH boosts WORK part `upgradeController()` by +50%.
-- [ ] GH2O boosts WORK part `upgradeController()` by +80%.
-- [ ] XGH2O boosts WORK part `upgradeController()` by +100%.
-- [ ] Upgrade boosts do not increase energy cost.
+### 8.9 Build/Repair Boosts
+- [ ] `BOOST-BUILD-001` `matrix` `verified_vanilla`
+  Build and repair boost effect magnitudes match the canonical Screeps
+  `BOOSTS` table for `LH`, `LH2O`, and `XLH2O`.
+- [ ] `BOOST-BUILD-003` `behavior` `verified_vanilla`
+  Build and repair boosts do not increase energy cost.
 
-### 8.11 Move Boosts
-- [ ] ZO increases MOVE part fatigue reduction by +100%.
-- [ ] ZHO2 increases MOVE part fatigue reduction by +200%.
-- [ ] XZHO2 increases MOVE part fatigue reduction by +300%.
-- [ ] Boost is applied per individual boosted MOVE body part.
+### 8.10 Dismantle Boosts
+- [ ] `BOOST-DISMANTLE-001` `matrix` `verified_vanilla`
+  Dismantle boost effect magnitudes match the canonical Screeps `BOOSTS` table
+  for `ZH`, `ZH2O`, and `XZH2O`.
 
-### 8.12 Carry Boosts
-- [ ] KH increases CARRY capacity by +50 per boosted part.
-- [ ] KH2O increases CARRY capacity by +100 per boosted part.
-- [ ] XKH2O increases CARRY capacity by +150 per boosted part.
-- [ ] Boosted CARRY parts still contribute zero fatigue when empty.
+### 8.11 Upgrade Boosts
+- [ ] `BOOST-UPGRADE-001` `matrix` `verified_vanilla`
+  Upgrade boost effect magnitudes match the canonical Screeps `BOOSTS` table
+  for `GH`, `GH2O`, and `XGH2O`.
+- [ ] `BOOST-UPGRADE-003` `behavior` `verified_vanilla`
+  Upgrade boosts do not increase energy cost.
+
+### 8.12 Move Boosts
+- [ ] `BOOST-MOVE-001` `matrix` `verified_vanilla`
+  Move boost effect magnitudes match the canonical Screeps `BOOSTS` table for
+  `ZO`, `ZHO2`, and `XZHO2`.
+
+Coverage Notes
+- Concrete fatigue outcomes from move boosts are also covered in movement
+  section `1.2 Fatigue Calculation`.
+
+### 8.13 Carry Boosts
+- [ ] `BOOST-CARRY-001` `matrix` `verified_vanilla`
+  Carry boost capacity increases match the canonical Screeps `BOOSTS` table for
+  `KH`, `KH2O`, and `XKH2O`.
+- [ ] `BOOST-CARRY-003` `behavior` `verified_vanilla`
+  Boosted `CARRY` parts still contribute zero fatigue when empty.
 
 ---
 
 ## 9. Spawning & Creep Lifecycle
 
 ### 9.1 spawnCreep
-- [ ] Body must contain at least one part.
-- [ ] Body cannot exceed MAX_CREEP_SIZE (50) parts.
-- [ ] Creep name must be unique among all living and spawning creeps.
-- [ ] Energy cost equals the sum of BODYPART_COST for each part.
-- [ ] Energy is drawn from spawn and extensions (energyStructures option sets order).
-- [ ] Returns ERR_NOT_ENOUGH_ENERGY when insufficient energy is available.
-- [ ] Returns ERR_NAME_EXISTS when the name is already taken.
-- [ ] Returns ERR_BUSY when the spawn is already spawning.
-- [ ] `dryRun` option checks feasibility without actually spawning.
-- [ ] `memory` option sets the initial creep memory.
+- [ ] `SPAWN-CREATE-001` `behavior` `verified_vanilla`
+  `spawnCreep()` requires a non-empty body.
+- [ ] `SPAWN-CREATE-002` `behavior` `verified_vanilla`
+  `spawnCreep()` rejects bodies longer than `MAX_CREEP_SIZE` (50).
+- [ ] `SPAWN-CREATE-003` `behavior` `verified_vanilla`
+  `spawnCreep()` requires a name that is unique among living and spawning
+  creeps.
+- [ ] `SPAWN-CREATE-004` `behavior` `verified_vanilla`
+  Spawn cost equals the sum of `BODYPART_COST` for the requested body.
+- [ ] `SPAWN-CREATE-005` `behavior` `needs_vanilla_verification`
+  When `energyStructures` is provided, `spawnCreep()` draws energy only from
+  the listed structures.
+- [ ] `SPAWN-CREATE-006` `behavior` `needs_vanilla_verification`
+  When `energyStructures` is provided, `spawnCreep()` draws energy from the
+  listed structures in listed order.
+- [ ] `SPAWN-CREATE-007` `behavior` `verified_vanilla`
+  `spawnCreep()` returns `ERR_NOT_ENOUGH_ENERGY` when the selected energy
+  sources cannot pay the spawn cost.
+- [ ] `SPAWN-CREATE-008` `behavior` `verified_vanilla`
+  `spawnCreep()` returns `ERR_NAME_EXISTS` when the requested name is already
+  in use.
+- [ ] `SPAWN-CREATE-009` `behavior` `verified_vanilla`
+  `spawnCreep()` returns `ERR_BUSY` when the spawn is already spawning.
+- [ ] `SPAWN-CREATE-010` `behavior` `verified_vanilla`
+  `spawnCreep(..., { dryRun: true })` performs feasibility checks without
+  consuming energy or creating a creep.
+- [ ] `SPAWN-CREATE-011` `behavior` `verified_vanilla`
+  `spawnCreep(..., { memory })` seeds the spawned creep's initial memory.
+
+Coverage Notes
+- Default spawn-plus-extension drain order should be covered through concrete
+  scenarios if we decide that exact source ordering is part of the public
+  contract.
 
 ### 9.2 Spawning Duration & Direction
-- [ ] Spawning takes CREEP_SPAWN_TIME (3) ticks per body part.
-- [ ] The creep appears at the spawn position during spawning (spawning = true).
-- [ ] Default exit direction is TOP, then clockwise through available tiles.
-- [ ] Custom directions can be set via `opts.directions`.
-- [ ] Custom directions are ignored for 1-tick spawns (single body part + Operate Spawn).
-- [ ] The creep exits the spawn tile in the chosen direction when spawning completes.
+- [ ] `SPAWN-TIMING-001` `behavior` `verified_vanilla`
+  Spawn duration is `CREEP_SPAWN_TIME` (3) ticks per body part.
+- [ ] `SPAWN-TIMING-002` `behavior` `verified_vanilla`
+  While spawning, the creep remains on the spawn position with
+  `creep.spawning === true`.
+- [ ] `SPAWN-TIMING-003` `behavior` `verified_vanilla`
+  When `opts.directions` is omitted, the spawn chooses the first available exit
+  tile in the default priority order `TOP`, `TOP_RIGHT`, `RIGHT`,
+  `BOTTOM_RIGHT`, `BOTTOM`, `BOTTOM_LEFT`, `LEFT`, `TOP_LEFT`.
+- [ ] `SPAWN-TIMING-004` `behavior` `verified_vanilla`
+  When `opts.directions` is provided, the spawn chooses the first available
+  exit tile from that direction order.
+- [ ] `SPAWN-TIMING-005` `behavior` `needs_vanilla_verification`
+  Custom directions are ignored for 1-tick spawns created by single-part creeps
+  under `PWR_OPERATE_SPAWN`.
+- [ ] `SPAWN-TIMING-006` `behavior` `verified_vanilla`
+  When spawning completes, the creep exits the spawn tile in the chosen
+  direction.
 
 ### 9.3 Spawn Stomping
-- [ ] When all tiles around a spawn are blocked and a hostile creep occupies one, the spawn kills the hostile creep.
-- [ ] The newly spawned creep is placed on the tile where the hostile creep was.
-- [ ] The hostile creep is destroyed without normal combat mechanics.
+- [ ] `SPAWN-STOMP-001` `behavior` `needs_vanilla_verification`
+  If spawning completes with every adjacent tile blocked and a hostile creep
+  occupies a blocked chosen exit tile, the hostile creep is destroyed to free
+  an exit tile.
+- [ ] `SPAWN-STOMP-002` `behavior` `needs_vanilla_verification`
+  After spawn stomping, the new creep moves to the vacated tile.
+- [ ] `SPAWN-STOMP-003` `behavior` `needs_vanilla_verification`
+  Spawn stomping destroys the hostile creep outside normal combat damage
+  resolution.
+- [ ] `SPAWN-STOMP-004` `behavior` `needs_vanilla_verification`
+  Spawn stomping does not occur if any chosen exit tile is open when spawning
+  completes.
+- [ ] `SPAWN-STOMP-005` `behavior` `needs_vanilla_verification`
+  Spawn stomping does not occur when the blocked chosen exit tiles contain no
+  hostile creeps.
+- [ ] `SPAWN-STOMP-006` `behavior` `needs_vanilla_verification`
+  With restricted spawn directions, spawn stomping does not occur if an open
+  adjacent tile exists outside the chosen direction list.
 
 ### 9.4 Renew Creep
-- [ ] `renewCreep()` extends a creep's TTL on an adjacent creep.
-- [ ] TTL increase per tick is `floor(600 / body.length)`.
-- [ ] Energy cost is proportional to body size.
-- [ ] Renewing removes all boosts from the creep.
-- [ ] Creeps with CLAIM body parts cannot be renewed.
+- [ ] `RENEW-CREEP-001` `behavior` `verified_vanilla`
+  `renewCreep()` can target only an adjacent creep.
+- [ ] `RENEW-CREEP-002` `behavior` `verified_vanilla`
+  A successful `renewCreep()` returns `OK`, increases the target creep's
+  `ticksToLive` by
+  `floor(SPAWN_RENEW_RATIO * CREEP_LIFE_TIME / CREEP_SPAWN_TIME / body.length)`
+  in the same tick.
+- [ ] `RENEW-CREEP-003` `behavior` `verified_vanilla`
+  A successful `renewCreep()` returns `OK` and spends
+  `ceil(CREEP_SPAWN_TIME * body.length * BODYPART_COST_SUM / SPAWN_RENEW_RATIO / CREEP_LIFE_TIME)`
+  energy in the same tick.
+- [ ] `RENEW-CREEP-004` `behavior` `verified_vanilla`
+  A successful `renewCreep()` returns `OK` and removes all boosts from the
+  target creep.
+- [ ] `RENEW-CREEP-005` `behavior` `verified_vanilla`
+  A successful `renewCreep()` returns `OK` and does not refund the removed
+  boost compounds or boost energy.
+- [ ] `RENEW-CREEP-006` `behavior` `verified_vanilla`
+  If boost removal reduces `storeCapacity`, excess carried resources are
+  dropped until the creep's store fits the new capacity.
+- [ ] `RENEW-CREEP-007` `behavior` `verified_vanilla`
+  Creeps with any `CLAIM` part cannot be renewed.
 
 ### 9.5 Recycle Creep
-- [ ] `recycleCreep()` destroys an adjacent creep and returns resources.
-- [ ] Resources returned are proportional to remaining TTL and body cost.
-- [ ] Both energy and boost compounds are returned.
-- [ ] Resources drop as a tombstone (or into a container if one is on the tile).
+- [ ] `RECYCLE-CREEP-001` `behavior` `verified_vanilla`
+  `recycleCreep()` destroys an adjacent creep during the current tick's intent
+  resolution.
+- [ ] `RECYCLE-CREEP-002` `behavior` `verified_vanilla`
+  Recycled body value returned as energy equals
+  `CREEP_CORPSE_RATE * remainingTTL / CREEP_LIFE_TIME` of the creep's total
+  body cost.
+- [ ] `RECYCLE-CREEP-003` `behavior` `needs_vanilla_verification`
+  Recycling returns both energy and boost compounds from the target creep.
+
+Coverage Notes
+- Container-vs-tombstone placement of recycled resources should be kept as a
+  concrete scenario once we verify the exact vanilla outcome.
 
 ### 9.6 Creep Spawning State
-- [ ] `creep.spawning` is true while the creep is being spawned.
-- [ ] `creep.ticksToLive` is undefined during spawning.
-- [ ] A spawning creep cannot perform any actions.
-- [ ] Body parts are visible during spawning.
+- [ ] `CREEP-SPAWNING-001` `behavior` `verified_vanilla`
+  `creep.spawning` is `true` while the creep is being spawned.
+- [ ] `CREEP-SPAWNING-002` `behavior` `verified_vanilla`
+  `creep.ticksToLive` is `undefined` while the creep is spawning.
+- [ ] `CREEP-SPAWNING-003` `behavior` `verified_vanilla`
+  A spawning creep cannot perform creep actions.
+- [ ] `CREEP-SPAWNING-004` `behavior` `verified_vanilla`
+  A spawning creep's body parts are visible before spawning completes.
 
 ### 9.7 Aging & Death
-- [ ] ticksToLive decrements by 1 each tick.
-- [ ] Normal creep lifetime is CREEP_LIFE_TIME (1500).
-- [ ] Creeps with any CLAIM parts have CREEP_CLAIM_LIFE_TIME (600).
-- [ ] A creep dies when ticksToLive reaches 0.
-- [ ] A tombstone is created at the position of death.
-- [ ] Tombstone decay time is TOMBSTONE_DECAY_PER_PART (5) ticks per body part.
+- [ ] `CREEP-LIFETIME-001` `behavior` `verified_vanilla`
+  A living creep's `ticksToLive` decrements by 1 each completed tick.
+- [ ] `CREEP-LIFETIME-002` `behavior` `verified_vanilla`
+  Creeps without `CLAIM` parts start with `CREEP_LIFE_TIME` `ticksToLive`.
+- [ ] `CREEP-LIFETIME-003` `behavior` `verified_vanilla`
+  Creeps with any `CLAIM` part start with `CREEP_CLAIM_LIFE_TIME`
+  `ticksToLive`.
+- [ ] `CREEP-DEATH-001` `behavior` `verified_vanilla`
+  A creep with `ticksToLive === 1` dies during that tick's resolution and does
+  not appear on the next tick.
+- [ ] `CREEP-DEATH-002` `behavior` `verified_vanilla`
+  A creep's death creates a tombstone during that tick's resolution, and the
+  tombstone appears on the next tick at the position of death.
+- [ ] `CREEP-DEATH-003` `behavior` `verified_vanilla`
+  When a live container is on the death tile, death resources are diverted into
+  that container before any remainder is placed into the tombstone.
+- [ ] `CREEP-DEATH-004` `behavior` `verified_vanilla`
+  A creep tombstone stores any death resources not diverted into a same-tile
+  container.
+- [ ] `CREEP-DEATH-005` `behavior` `verified_vanilla`
+  Resource amounts stored in a tombstone do not decay before the tombstone
+  expires.
+- [ ] `CREEP-DEATH-006` `behavior` `verified_vanilla`
+  Tombstone decay time equals `TOMBSTONE_DECAY_PER_PART` (5) ticks per body
+  part.
+- [ ] `CREEP-DEATH-007` `behavior` `verified_vanilla`
+  When a tombstone decays, any remaining stored resources become dropped
+  resources on the same tile before the tombstone is removed.
+- [ ] `CREEP-DEATH-008` `matrix` `verified_vanilla`
+  Standard player-creep tombstone resource handling matches across death
+  sources that produce ordinary tombstones, including `ticksToLive` expiry and
+  `suicide()`.
 
 ### 9.8 Suicide
-- [ ] `suicide()` instantly kills the creep.
-- [ ] A tombstone is created with the creep's remaining store contents.
-- [ ] Returns OK on success.
+- [ ] `CREEP-SUICIDE-001` `behavior` `verified_vanilla`
+  A successful `suicide()` returns `OK` and removes the creep during the
+  current tick's intent resolution.
+- [ ] `CREEP-SUICIDE-002` `behavior` `verified_vanilla`
+  A successful `suicide()` returns `OK` and creates a tombstone during that
+  tick's resolution, and the tombstone appears on the next tick at the
+  creep's position.
+- [ ] `CREEP-SUICIDE-003` `behavior` `verified_vanilla`
+  `suicide()` returns `OK` on success.
+- [ ] `CREEP-SUICIDE-004` `behavior` `verified_vanilla`
+  `suicide()` returns `ERR_NOT_OWNER` when called on a creep that is not yours.
+- [ ] `CREEP-SUICIDE-005` `behavior` `verified_vanilla`
+  `suicide()` returns `ERR_BUSY` when called on a spawning creep.
 
 ### 9.9 Say
-- [ ] `say()` displays a message visible for one tick.
-- [ ] The `public` flag makes the message visible to all players.
-- [ ] Without the public flag, only the owner sees the message.
+- [ ] `CREEP-SAY-001` `behavior` `verified_vanilla`
+  `say()` displays a message visible for one tick.
+- [ ] `CREEP-SAY-002` `behavior` `verified_vanilla`
+  `say(message, true)` makes the message visible to all players.
+- [ ] `CREEP-SAY-003` `behavior` `verified_vanilla`
+  Without the public flag, only the owner sees the message.
 
 ### 9.10 cancelOrder
-- [ ] `cancelOrder(methodName)` removes the pending intent for that method.
-- [ ] Returns ERR_NOT_FOUND when no intent exists for the given method.
+Coverage Notes
+- Canonical `cancelOrder(methodName)` behaviors live in section `24.2 Intent
+  Resolution`, where they can be specified against queued same-tick intents
+  without duplicating the same rule surface in two places.
 
 ---
 
 ## 10. Structures — Energy & Storage
 
 ### 10.1 Extension
-- [ ] Extension energy capacity is 50 at RCL 1–6, 100 at RCL 7, 200 at RCL 8.
-- [ ] `isActive()` returns false when the extension exceeds the RCL structure limit.
-- [ ] Extension store accepts only energy.
-- [ ] Extensions contribute to `room.energyAvailable` and `room.energyCapacityAvailable`.
+- [ ] `EXTENSION-001` `behavior` `verified_vanilla`
+  An active extension contributes exactly its stored energy to
+  `room.energyAvailable`.
+- [ ] `EXTENSION-002` `behavior` `verified_vanilla`
+  An active extension contributes exactly its energy capacity to
+  `room.energyCapacityAvailable`.
+
+Coverage Notes
+- Extension inactivity from controller-structure limits is owned by section
+  `6.10 Structure Limits per RCL`.
+- Extension store-type semantics and capacity constants belong in section `23. Store API`.
 
 ### 10.2 Storage
-- [ ] Storage capacity is STORAGE_CAPACITY (1,000,000).
-- [ ] STORAGE_HITS is 10,000.
-- [ ] Storage is available at RCL 4+.
-- [ ] PWR_OPERATE_STORAGE increases capacity by a level-based amount.
+Coverage Notes
+- Storage durability belongs in section `15.1 Hits & Destruction`.
+- Storage controller availability belongs in section `6.10 Structure Limits per RCL`.
+- Storage store-type semantics and capacity constants belong in section `23. Store API`.
+- `PWR_OPERATE_STORAGE` effects belong in the power-effect sections.
 
 ### 10.3 Container
-- [ ] Container capacity is CONTAINER_CAPACITY (2000).
-- [ ] Containers accept any resource type.
-- [ ] Container decay in unowned rooms: CONTAINER_DECAY (5000 hits) per CONTAINER_DECAY_TIME (100 ticks).
-- [ ] Container decay in owned rooms: CONTAINER_DECAY (5000 hits) per CONTAINER_DECAY_TIME_OWNED (500 ticks).
-- [ ] Container contents spill as dropped resources when destroyed.
-- [ ] Containers are not owned — any player can withdraw.
+- [ ] `CONTAINER-001` `matrix` `verified_vanilla`
+  Container decay amount and decay interval match the canonical Screeps values
+  for owned and unowned rooms.
+- [ ] `CONTAINER-002` `behavior` `verified_vanilla`
+  When a container is destroyed, its remaining contents become dropped
+  resources on the same tile.
+- [ ] `CONTAINER-003` `behavior` `verified_vanilla`
+  A hostile creep adjacent to a container can successfully `withdraw()` from
+  it, subject to the normal `withdraw()` preconditions and blockers.
+
+Coverage Notes
+- Container store-type semantics and capacity constants belong in section `23. Store API`.
 
 ### 10.4 Link
-- [ ] `transferEnergy()` sends energy to a target link.
-- [ ] Energy lost in transfer is `ceil(amount * LINK_LOSS_RATIO)` (3%, rounded up).
-- [ ] Cooldown after transfer is LINK_COOLDOWN (1) per tile of distance to target.
-- [ ] Link capacity is LINK_CAPACITY (800).
-- [ ] Both links must be owned by the same player.
-- [ ] Sending 1 energy results in 0 received (entirely consumed by the 3% ceiling).
+- [ ] `LINK-001` `behavior` `verified_vanilla`
+  `transferEnergy()` requires a target that is a different `StructureLink`.
+- [ ] `LINK-002` `behavior` `verified_vanilla`
+  `transferEnergy()` requires the target link to be in the same room as the
+  source link.
+- [ ] `LINK-003` `behavior` `verified_vanilla`
+  A successful `transferEnergy()` returns `OK` and increases the target link's
+  energy by
+  `amount - ceil(amount * LINK_LOSS_RATIO)`.
+- [ ] `LINK-004` `behavior` `verified_vanilla`
+  A successful `transferEnergy()` returns `OK` and increases the source link's
+  cooldown by
+  `LINK_COOLDOWN * max(abs(dx), abs(dy))` between the source link and target
+  link.
+- [ ] `LINK-005` `behavior` `verified_vanilla`
+  `transferEnergy()` requires the target link to be owned by the same player as
+  the source link.
+- [ ] `LINK-006` `behavior` `verified_vanilla`
+  Sending 1 energy through a link delivers 0 energy to the target because the
+  transfer loss is rounded up.
+- [ ] `LINK-007` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_INVALID_ARGS` for a negative amount.
+- [ ] `LINK-008` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is missing,
+  not a link, or the source link itself.
+- [ ] `LINK-009` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_NOT_OWNER` when the target link is not yours.
+- [ ] `LINK-010` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_TIRED` while the source link has cooldown.
+- [ ] `LINK-011` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_RCL_NOT_ENOUGH` when the source link is
+  inactive.
+- [ ] `LINK-012` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_NOT_ENOUGH_ENERGY` when the source link lacks
+  enough energy for the requested transfer.
+- [ ] `LINK-013` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_FULL` when the target link lacks enough free
+  capacity for the requested transfer.
+- [ ] `LINK-014` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_NOT_IN_RANGE` when the target is in a
+  different room.
+
+Coverage Notes
+- Link store-type semantics and capacity constants belong in section `23. Store API`.
 
 ---
 
 ## 11. Structures — Production
 
 ### 11.1 Lab Reactions `capability: chemistry`
-- [ ] `runReaction(lab1, lab2)` combines minerals from two input labs.
-- [ ] Input labs must be within range 2 of the reacting lab.
-- [ ] Output compound is determined by the input mineral pair.
-- [ ] Each reaction produces LAB_REACTION_AMOUNT (5) units (or more with PWR_OPERATE_LAB).
-- [ ] Cooldown per reaction varies by compound type (REACTION_TIME).
-- [ ] Both input labs must contain the correct minerals.
-- [ ] Output is stored in the reacting lab.
-- [ ] Returns ERR_NOT_IN_RANGE when input labs are too far.
+- [ ] `LAB-RUN-001` `matrix` `verified_vanilla`
+  `runReaction(lab1, lab2)` produces the canonical reaction product for the
+  minerals currently stored in `lab1` and `lab2` for every valid input pair.
+- [ ] `LAB-RUN-002` `behavior` `verified_vanilla`
+  When `runReaction(lab1, lab2)` executes successfully, it consumes
+  `LAB_REACTION_AMOUNT` units from `lab1` and `lab2` and adds
+  `LAB_REACTION_AMOUNT` units to the lab calling `runReaction()` in the same
+  tick.
+- [ ] `LAB-RUN-003` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_LAB` is active on the lab calling `runReaction()`, a successful
+  `runReaction(lab1, lab2)` consumes and produces
+  `LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB].effect[level-1]` units in
+  the same tick.
+- [ ] `LAB-RUN-004` `behavior` `verified_vanilla`
+  A successful `runReaction(lab1, lab2)` returns `OK` and sets the cooldown of
+  the lab calling `runReaction()` to
+  `REACTION_TIME[the produced compound]`.
+- [ ] `LAB-RUN-005` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_NOT_IN_RANGE` when either `lab1` or
+  `lab2` is more than range 2 from the lab calling `runReaction()`.
+- [ ] `LAB-RUN-006` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_NOT_ENOUGH_RESOURCES` when either
+  `lab1` or `lab2` has less than the required reaction amount.
+- [ ] `LAB-RUN-007` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_FULL` when the lab calling
+  `runReaction()` lacks
+  enough free mineral capacity for the reaction output amount.
+- [ ] `LAB-RUN-008` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_INVALID_ARGS` when the minerals in
+  `lab1` and `lab2` do not define a product or the lab calling
+  `runReaction()` already holds a different mineral type.
+- [ ] `LAB-RUN-009` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_INVALID_TARGET` when either argument is
+  not another lab.
+- [ ] `LAB-RUN-010` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_TIRED` while the lab calling
+  `runReaction()` is on cooldown.
+- [ ] `LAB-RUN-011` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_RCL_NOT_ENOUGH` while the lab calling
+  `runReaction()` is inactive.
+- [ ] `LAB-RUN-012` `behavior` `verified_vanilla`
+  `runReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
+  `runReaction()` is not owned by the player.
 
 ### 11.2 Lab Reverse Reaction `capability: chemistry`
-- [ ] `reverseReaction(lab1, lab2)` splits a compound back into inputs.
-- [ ] Same range requirement as runReaction (input labs within range 2).
-- [ ] Inputs are deposited into the target labs.
+- [ ] `LAB-REVERSE-001` `matrix` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` splits each reversible compound into one valid
+  canonical input pair from `REACTIONS`.
+- [ ] `LAB-REVERSE-002` `behavior` `verified_vanilla`
+  When `reverseReaction(lab1, lab2)` executes successfully, it consumes
+  `LAB_REACTION_AMOUNT` units of the compound from the lab calling
+  `reverseReaction()` and adds
+  `LAB_REACTION_AMOUNT` units of each input mineral to `lab1` and `lab2` in the
+  same tick.
+- [ ] `LAB-REVERSE-003` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_LAB` is active on the lab calling `reverseReaction()`, a successful
+  `reverseReaction(lab1, lab2)` consumes and produces
+  `LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB].effect[level-1]` units in
+  the same tick.
+- [ ] `LAB-REVERSE-004` `behavior` `verified_vanilla`
+  A successful `reverseReaction(lab1, lab2)` returns `OK` and sets the
+  cooldown of the lab calling `reverseReaction()` to
+  `REACTION_TIME[the consumed compound]`.
+- [ ] `LAB-REVERSE-005` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_NOT_IN_RANGE` when either `lab1`
+  or `lab2` is more than range 2 from the lab calling `reverseReaction()`.
+- [ ] `LAB-REVERSE-006` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_NOT_ENOUGH_RESOURCES` when the
+  lab calling `reverseReaction()` has less than the required compound amount.
+- [ ] `LAB-REVERSE-007` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_FULL` when either `lab1` or `lab2`
+  lacks enough free mineral capacity for the returned amount.
+- [ ] `LAB-REVERSE-008` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_INVALID_ARGS` when the reacting lab
+  mineral has no matching reverse pair for the target lab mineral types or both
+  arguments refer to the same lab.
+- [ ] `LAB-REVERSE-009` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_INVALID_TARGET` when either
+  argument is not another lab.
+- [ ] `LAB-REVERSE-010` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_TIRED` while the lab calling
+  `reverseReaction()` is on cooldown.
+- [ ] `LAB-REVERSE-011` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_RCL_NOT_ENOUGH` while the lab
+  calling `reverseReaction()` is inactive.
+- [ ] `LAB-REVERSE-012` `behavior` `verified_vanilla`
+  `reverseReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
+  `reverseReaction()` is not owned by the player.
 
 ### 11.3 Reaction Chain `capability: chemistry`
-- [ ] Base reactions: H+O→OH, Z+K→ZK, U+L→UL, ZK+UL→G.
-- [ ] Tier 1: base mineral + H or O → hydride or oxide compound.
-- [ ] Tier 2: T1 compound + OH → acid or alkalide compound.
-- [ ] Tier 3: T2 compound + X → catalyzed compound.
-- [ ] All 30+ compound recipes produce the correct output.
+Coverage Notes
+- Base, tier-1, tier-2, and tier-3 compound chains should be generated from the
+  canonical `REACTIONS` table rather than maintained as separate hand-written
+  recipe bullets.
+- Conformance of the reaction table itself is covered by `LAB-RUN-001`.
 
 ### 11.4 Factory Production `capability: factory`
-- [ ] `produce(resourceType)` creates a commodity from input resources.
-- [ ] Input resources are validated against the recipe.
-- [ ] Level 0 recipes (bars, composites) work without a factory level.
-- [ ] Battery production converts 50 energy to 1 battery (reversible).
-- [ ] Bar production converts 500 mineral + 200 energy to a bar.
-- [ ] Factory cooldown is applied after production (varies by recipe).
-- [ ] Factory level is set permanently by PWR_OPERATE_FACTORY.
-- [ ] Returns ERR_NOT_ENOUGH_RESOURCES when inputs are insufficient.
+- [ ] `FACTORY-PRODUCE-001` `matrix` `verified_vanilla`
+  `produce(resourceType)` consumes the canonical
+  `COMMODITIES[resourceType].components` and produces
+  `COMMODITIES[resourceType].amount || 1` units for every factory-produced
+  resource.
+- [ ] `FACTORY-PRODUCE-002` `behavior` `verified_vanilla`
+  A successful `produce(resourceType)` returns `OK` and sets factory cooldown to
+  `COMMODITIES[resourceType].cooldown`.
+- [ ] `FACTORY-PRODUCE-003` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_NOT_ENOUGH_RESOURCES` when the factory
+  lacks any required recipe component amount.
+- [ ] `FACTORY-PRODUCE-004` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_FULL` when consuming the recipe inputs
+  and adding the output amount would exceed the factory's total store capacity.
+- [ ] `FACTORY-PRODUCE-005` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_BUSY` when the commodity's required level
+  effect from `PWR_OPERATE_FACTORY` is not currently active.
+- [ ] `FACTORY-PRODUCE-006` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_TIRED` while the factory is on cooldown.
+- [ ] `FACTORY-PRODUCE-007` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_RCL_NOT_ENOUGH` while the factory is
+  inactive.
+- [ ] `FACTORY-PRODUCE-008` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_INVALID_ARGS` when `resourceType` is not
+  a factory commodity.
+- [ ] `FACTORY-PRODUCE-009` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_INVALID_TARGET` when the commodity exists
+  but requires a different factory level than the structure's current level.
+- [ ] `FACTORY-PRODUCE-010` `behavior` `verified_vanilla`
+  `produce(resourceType)` returns `ERR_NOT_OWNER` when the factory is not owned
+  by the player.
 
 ### 11.5 Factory Commodity Chains `capability: factory`
-- [ ] Level 1–5 commodity chains: electronics, biological, mechanical, mystical.
-- [ ] Each chain has 6 tiers of production.
-- [ ] A leveled factory can only produce commodities matching its exact level while the power effect is active.
-- [ ] Without the power effect, a leveled factory can only produce level 0 commodities.
-- [ ] A factory without a level can only produce level 0 commodities.
-- [ ] Returns ERR_INVALID_ARGS when attempting to produce a commodity above or below the factory's level.
+- [ ] `FACTORY-COMMODITY-001` `matrix` `verified_vanilla`
+  Factory commodity level requirements and chain membership match the canonical
+  `COMMODITIES` table for all factory-produced resources.
+- [ ] `FACTORY-COMMODITY-002` `behavior` `verified_vanilla`
+  A factory without an active `PWR_OPERATE_FACTORY` effect can produce only
+  level 0 commodities.
+- [ ] `FACTORY-COMMODITY-003` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_FACTORY` is active at level N, a factory can produce only
+  level 0 commodities and level N commodities.
+
+Coverage Notes
+- Chain names and tier counts should be derived from `COMMODITIES`, not
+  maintained as separate hand-written bullets.
+- Factory error-code behavior for invalid commodity level requests is covered by
+  `FACTORY-PRODUCE-009`.
 
 ### 11.6 Power Spawn `capability: powerCreeps`
-- [ ] `processPower()` converts power + energy to GPL progress.
-- [ ] Energy cost is POWER_SPAWN_ENERGY_RATIO (50) energy per 1 power processed.
-- [ ] Power spawn energy capacity is POWER_SPAWN_ENERGY_CAPACITY (5000).
-- [ ] Power spawn power capacity is POWER_SPAWN_POWER_CAPACITY (100).
+- [ ] `POWER-SPAWN-001` `behavior` `verified_vanilla`
+  A successful `processPower()` returns `OK`, consumes 1 power and
+  `POWER_SPAWN_ENERGY_RATIO` energy and adds 1 GPL progress.
+- [ ] `POWER-SPAWN-002` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_POWER` is active, a successful `processPower()` returns
+  `OK`, consumes and converts
+  `1 + POWER_INFO[PWR_OPERATE_POWER].effect[level-1]` power, capped by the
+  power currently stored.
+- [ ] `POWER-SPAWN-003` `behavior` `verified_vanilla`
+  `processPower()` returns `ERR_NOT_ENOUGH_RESOURCES` when the power spawn lacks
+  enough power or energy for the amount that would be processed this tick.
+- [ ] `POWER-SPAWN-004` `behavior` `verified_vanilla`
+  `processPower()` returns `ERR_RCL_NOT_ENOUGH` while the power spawn is
+  inactive.
+- [ ] `POWER-SPAWN-005` `behavior` `verified_vanilla`
+  `processPower()` returns `ERR_NOT_OWNER` when the power spawn is not owned by
+  the player.
+
+Coverage Notes
+- Power spawn store-type semantics and capacity constants belong in section `23. Store API`.
 
 ---
 
 ## 12. Structures — Military
 
 ### 12.1 Rampart — Protection
-- [ ] Melee attack on a structure under a rampart redirects to the rampart.
-- [ ] `dismantle()` bypasses the rampart and damages the underlying structure directly.
-- [ ] Hostile creep movement is blocked by a non-public rampart.
-- [ ] `setPublic(true)` allows all players to move through the rampart.
-- [ ] Ramparts absorb nuke damage for structures underneath.
-- [ ] `setPublic(false)` restricts movement to the owner only.
+- [ ] `RAMPART-PROTECT-001` `behavior` `verified_vanilla`
+  A melee `attack()` targeting an object on a rampart tile damages the rampart
+  instead of the covered target.
+- [ ] `RAMPART-PROTECT-002` `behavior` `verified_vanilla`
+  `dismantle()` targeting an object on a rampart tile damages the rampart
+  instead of the covered target.
+- [ ] `RAMPART-PROTECT-003` `behavior` `verified_vanilla`
+  A non-public hostile rampart blocks hostile creep movement onto its tile.
+- [ ] `RAMPART-PROTECT-004` `behavior` `verified_vanilla`
+  A public rampart does not block hostile creep movement onto its tile.
+- [ ] `RAMPART-PROTECT-005` `behavior` `verified_vanilla`
+  `setPublic(true)` sets `isPublic` to `true` on the next tick.
+- [ ] `RAMPART-PROTECT-006` `behavior` `verified_vanilla`
+  `setPublic(false)` sets `isPublic` to `false` on the next tick.
+- [ ] `RAMPART-PROTECT-007` `behavior` `verified_vanilla`
+  `setPublic()` returns `ERR_NOT_OWNER` when the rampart is not owned by the
+  player.
+- [ ] `RAMPART-PROTECT-008` `behavior` `verified_vanilla`
+  Nuke damage is applied to a rampart on the target tile before remaining
+  damage is applied to other objects on that tile.
 
 ### 12.2 Rampart — Decay & Limits
-- [ ] Ramparts decay by RAMPART_DECAY_AMOUNT (300) per RAMPART_DECAY_TIME (100 ticks).
-- [ ] Initial rampart hits: 1.
-- [ ] Max rampart hits scale by RCL (2→300K, 3→1M, 4→3M, 5→10M, 6→30M, 7→100M, 8→300M).
-- [ ] PWR_FORTIFY makes a rampart invulnerable for the power's duration.
-- [ ] PWR_SHIELD creates a temporary invulnerable rampart.
+- [ ] `RAMPART-DECAY-001` `behavior` `verified_vanilla`
+  A rampart loses `RAMPART_DECAY_AMOUNT` hits every `RAMPART_DECAY_TIME` ticks.
+- [ ] `RAMPART-DECAY-002` `behavior` `verified_vanilla`
+  A rampart is removed in the same tick when decay reduces its hits to 0 or
+  below.
+- [ ] `RAMPART-DECAY-003` `matrix` `verified_vanilla`
+  Owned rampart `hitsMax` by room controller level matches the canonical
+  `RAMPART_HITS_MAX` table.
+- [ ] `RAMPART-DECAY-004` `behavior` `verified_vanilla`
+  `PWR_FORTIFY` prevents direct damage to a rampart while the effect is active.
+- [ ] `RAMPART-DECAY-005` `behavior` `verified_vanilla`
+  `PWR_SHIELD` creates a temporary rampart that is removed when the shield
+  effect expires.
+
+Coverage Notes
+- Initial rampart hits on creation belong with construction behavior rather than
+  ongoing rampart state.
 
 ### 12.3 Wall
-- [ ] Initial wall hits: WALL_HITS (1).
-- [ ] Maximum wall hits: WALL_HITS_MAX (300,000,000).
-- [ ] Walls do not decay.
+- [ ] `WALL-001` `behavior` `verified_vanilla`
+  Ordinary constructed walls do not decay.
+- [ ] `WALL-002` `behavior` `verified_vanilla`
+  A constructed wall has `hitsMax = WALL_HITS_MAX` only while the room
+  controller level allows constructed walls in that room.
+
+Coverage Notes
+- Initial wall hits on creation belong with construction behavior rather than
+  ongoing wall state.
+- Newbie and room-protection walls use separate `decayTime` behavior and should
+  not be conflated with ordinary permanent constructed walls.
 
 ### 12.4 Tower
-- [ ] Tower hits: TOWER_HITS (3000).
-- [ ] Tower energy capacity: TOWER_CAPACITY (1000).
-- [ ] Tower attack/heal/repair mechanics are defined in section 7.9–7.13.
+Coverage Notes
+- Tower attack, heal, repair, and tower power-effect behavior belongs in
+  section `7`.
+- Tower store-type semantics and capacity constants belong in section `23. Store API`.
 
 ---
 
 ## 13. Structures — Infrastructure
 
 ### 13.1 Road — Decay
-- [ ] Roads decay by ROAD_DECAY_AMOUNT (100) per ROAD_DECAY_TIME (1000 ticks).
-- [ ] Swamp roads decay at 5x the normal rate.
-- [ ] Wall terrain roads decay at 10x the normal rate.
-- [ ] A road is destroyed when its hits reach 0.
-- [ ] Road hits depend on the underlying terrain type.
+- [ ] `ROAD-DECAY-001` `matrix` `verified_vanilla`
+  Road decay amount by underlying terrain matches the canonical Screeps
+  constants for plain, swamp, and wall terrain.
+- [ ] `ROAD-DECAY-002` `behavior` `verified_vanilla`
+  A road loses decay hits every `ROAD_DECAY_TIME` ticks.
+- [ ] `ROAD-DECAY-003` `behavior` `verified_vanilla`
+  A road is removed in the same tick when decay reduces its hits to 0 or below.
+
+Coverage Notes
+- Initial road hits by terrain belong with construction behavior rather than
+  ongoing road state.
 
 ### 13.2 Road — Wear
-- [ ] Creep movement adds ROAD_WEAROUT (1) hit damage per body part.
-- [ ] Power creep movement adds ROAD_WEAROUT_POWER_CREEP (100) per move.
-- [ ] Wear is applied each time a creep moves onto the road tile.
+- [ ] `ROAD-WEAR-001` `matrix` `verified_vanilla`
+  When a unit moves onto a road tile, road wear advances `nextDecayTime` earlier
+  by the canonical amount for that mover type: `ROAD_WEAROUT * body.length` for
+  creeps and `ROAD_WEAROUT_POWER_CREEP` for power creeps.
+- [ ] `ROAD-WEAR-002` `behavior` `verified_vanilla`
+  Road wear is applied in the same tick each time a unit successfully moves onto
+  the road tile.
 
 ### 13.3 Terminal
-- [ ] `send()` transfers resources to a terminal in another room.
-- [ ] Energy cost formula: `ceil(amount * (1 - exp(-distance/30)))`.
-- [ ] Minimum send amount: TERMINAL_MIN_SEND (100).
-- [ ] Cooldown after send: TERMINAL_COOLDOWN (10 ticks).
-- [ ] Terminal capacity: TERMINAL_CAPACITY (300,000).
-- [ ] PWR_OPERATE_TERMINAL reduces send cost and cooldown.
+- [ ] `TERMINAL-SEND-001` `behavior` `verified_vanilla`
+  A successful `send(resourceType, amount, targetRoomName)` returns `OK`,
+  queues a transfer to the target room and, when the transfer resolves, sets
+  cooldown on the terminal calling `send()` to `TERMINAL_COOLDOWN`.
+- [ ] `TERMINAL-SEND-002` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_TERMINAL` is active, a successful
+  `send(resourceType, amount, targetRoomName)` returns `OK` and sets cooldown
+  on the terminal calling `send()` to
+  `round(TERMINAL_COOLDOWN * POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1])`.
+- [ ] `TERMINAL-SEND-003` `behavior` `verified_vanilla`
+  When a terminal send resolves, the sending terminal spends
+  `calcTerminalEnergyCost(amount, distance)` energy for the source room and
+  target room, and the receiving terminal does not pay the transfer cost.
+- [ ] `TERMINAL-SEND-004` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_TERMINAL` is active, terminal send energy cost is
+  multiplied by `POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1]` and rounded
+  up.
+- [ ] `TERMINAL-SEND-005` `behavior` `verified_vanilla`
+  `send(resourceType, amount, targetRoomName)` returns `ERR_INVALID_ARGS` when
+  `resourceType`, `targetRoomName`, or `description` is invalid.
+- [ ] `TERMINAL-SEND-006` `behavior` `verified_vanilla`
+  `send(resourceType, amount, targetRoomName)` returns
+  `ERR_NOT_ENOUGH_RESOURCES` when the terminal lacks the sent resource amount or
+  the required energy cost.
+- [ ] `TERMINAL-SEND-007` `behavior` `verified_vanilla`
+  `send(resourceType, amount, targetRoomName)` returns `ERR_TIRED` while the
+  terminal is on cooldown.
+- [ ] `TERMINAL-SEND-008` `behavior` `verified_vanilla`
+  `send(resourceType, amount, targetRoomName)` returns `ERR_RCL_NOT_ENOUGH`
+  while the terminal is inactive.
+- [ ] `TERMINAL-SEND-009` `behavior` `verified_vanilla`
+  `send(resourceType, amount, targetRoomName)` returns `ERR_NOT_OWNER` when the
+  terminal is not owned by the player.
+
+Coverage Notes
+- Terminal store-type semantics and capacity constants belong in section `23. Store API`.
+- Cooldown amount and market-order interactions should be derived from the
+  terminal send and market processor paths rather than maintained here as loose
+  summary bullets.
 
 ### 13.4 Observer
-- [ ] `observeRoom()` grants vision of a room on the next tick (not the current tick).
-- [ ] Maximum range: OBSERVER_RANGE (10 rooms).
-- [ ] PWR_OPERATE_OBSERVER grants unlimited observation range.
-- [ ] The observed room becomes visible in `Game.rooms` the following tick.
+- [ ] `OBSERVER-001` `behavior` `verified_vanilla`
+  A successful `observeRoom(roomName)` returns `OK` and makes the target room
+  visible on the next tick, not the current tick.
+- [ ] `OBSERVER-002` `behavior` `verified_vanilla`
+  `observeRoom(roomName)` returns `ERR_NOT_IN_RANGE` when the target room is
+  beyond `OBSERVER_RANGE`.
+- [ ] `OBSERVER-003` `behavior` `verified_vanilla`
+  While `PWR_OPERATE_OBSERVER` is active, `observeRoom(roomName)` ignores the
+  normal `OBSERVER_RANGE` limit.
+- [ ] `OBSERVER-004` `behavior` `verified_vanilla`
+  `observeRoom(roomName)` returns `ERR_INVALID_ARGS` when `roomName` is not a
+  valid room name.
+- [ ] `OBSERVER-005` `behavior` `verified_vanilla`
+  `observeRoom(roomName)` returns `ERR_RCL_NOT_ENOUGH` while the observer is
+  inactive.
+- [ ] `OBSERVER-006` `behavior` `verified_vanilla`
+  `observeRoom(roomName)` returns `ERR_NOT_OWNER` when the observer is not owned
+  by the player.
 
 ### 13.5 Extractor
-- [ ] An extractor is required in the room to harvest minerals.
-- [ ] Extractor cooldown is EXTRACTOR_COOLDOWN (5) after each harvest.
-- [ ] Extractor hits: EXTRACTOR_HITS (500).
+- [ ] `EXTRACTOR-001` `behavior` `verified_vanilla`
+  Harvesting a mineral deposit requires an extractor on that tile.
+- [ ] `EXTRACTOR-002` `behavior` `verified_vanilla`
+  A successful `harvest(mineral)` returns `OK` and sets extractor cooldown to
+  `EXTRACTOR_COOLDOWN`.
+- [ ] `EXTRACTOR-003` `behavior` `verified_vanilla`
+  `harvest(mineral)` returns `ERR_NOT_FOUND` when no extractor is present on the
+  mineral tile.
+- [ ] `EXTRACTOR-004` `behavior` `verified_vanilla`
+  `harvest(mineral)` returns `ERR_NOT_OWNER` when the extractor on the mineral
+  tile is not owned by the player.
+- [ ] `EXTRACTOR-005` `behavior` `verified_vanilla`
+  `harvest(mineral)` returns `ERR_RCL_NOT_ENOUGH` when the extractor is
+  inactive.
+- [ ] `EXTRACTOR-006` `behavior` `verified_vanilla`
+  `harvest(mineral)` returns `ERR_TIRED` while the extractor is on cooldown.
 
 ### 13.6 Portal
-- [ ] A portal teleports creeps to its destination.
-- [ ] Destination can be a RoomPosition (same shard) or {shard, room} (cross-shard).
-- [ ] Temporary portals decay after PORTAL_DECAY (30000 ticks); permanent portals do not.
+- [ ] `PORTAL-001` `behavior` `verified_vanilla`
+  A creep or power creep standing on a same-shard portal tile appears at the
+  portal destination on the next tick.
+- [ ] `PORTAL-002` `behavior` `verified_vanilla`
+  A same-shard portal exposes `portal.destination` as a `RoomPosition`.
+- [ ] `PORTAL-003` `behavior` `verified_vanilla`
+  A cross-shard portal exposes `portal.destination` as `{ shard, room }`.
+- [ ] `PORTAL-004` `behavior` `verified_vanilla`
+  A temporary portal exposes `ticksToDecay`, and a permanent portal returns
+  `undefined` for `ticksToDecay`.
 
 ---
 
 ## 14. Structures — NPC
 
 ### 14.1 Keeper Lair
-- [ ] `ticksToSpawn` counts down to the next source keeper spawn.
-- [ ] A source keeper is spawned when the timer reaches 0.
-- [ ] The keeper defends the nearby source or mineral.
-- [ ] Keeper lairs are indestructible.
+- [ ] `KEEPER-LAIR-001` `behavior` `verified_vanilla`
+  When a keeper lair has a scheduled spawn, `ticksToSpawn` decreases by 1 each
+  tick and stops being exposed when that spawn resolves.
+- [ ] `KEEPER-LAIR-002` `behavior` `verified_vanilla`
+  A keeper lair starts a new spawn timer when its current keeper is missing or
+  below full hits.
+- [ ] `KEEPER-LAIR-003` `behavior` `verified_vanilla`
+  When the spawn timer completes, the keeper lair spawns a source keeper on its
+  own tile in the same tick.
 
 ### 14.2 Invader Core
-- [ ] Core level determines invader creep strength.
-- [ ] `ticksToDeploy` counts down before the core activates.
-- [ ] The core spawns invader creeps after activation.
-- [ ] Stronghold mechanics span multiple rooms.
-- [ ] Collapse timer effect destroys the core when it expires.
+- [ ] `INVADER-CORE-001` `behavior` `verified_vanilla`
+  `ticksToDeploy` counts down to deployment while an invader core has a pending
+  deploy time.
+- [ ] `INVADER-CORE-002` `behavior` `verified_vanilla`
+  An invader core exposes its `level` as a public property.
+- [ ] `INVADER-CORE-003` `behavior` `verified_vanilla`
+  When an invader core has an active `spawning` state, the named creep is born
+  on the invader core tile when `spawning.spawnTime` completes, and the core's
+  `spawning` state clears in the same tick.
+- [ ] `INVADER-CORE-004` `behavior` `verified_vanilla`
+  When an invader core's `EFFECT_COLLAPSE_TIMER` expires, the room controller it
+  governs becomes unowned level 0 in the same tick, and its progress, safe
+  mode, power enablement, and controller effects are cleared.
+
+Coverage Notes
+- Stronghold orchestration across multiple rooms is too broad for one catalog
+- item and should be split into concrete observable behaviors later.
 
 ### 14.3 Power Bank `capability: powerCreeps`
-- [ ] Power bank has POWER_BANK_HITS (2,000,000) hit points.
-- [ ] Hit-back: the power bank deals POWER_BANK_HIT_BACK (50%) of received damage back to the attacker.
-- [ ] Power bank decays after POWER_BANK_DECAY (5000 ticks).
-- [ ] On destruction, power is dropped (between POWER_BANK_CAPACITY_MIN and POWER_BANK_CAPACITY_MAX).
-- [ ] Critical threshold (POWER_BANK_CAPACITY_CRIT = 0.3) affects dropped power amount.
+- [ ] `POWER-BANK-001` `behavior` `verified_vanilla`
+  When a power bank is attacked, it deals `POWER_BANK_HIT_BACK` of the received
+  damage back to the attacker in the same tick.
+- [ ] `POWER-BANK-002` `behavior` `verified_vanilla`
+  `ticksToDecay` counts down to power bank removal.
+- [ ] `POWER-BANK-003` `matrix` `needs_vanilla_verification`
+  The public `powerBank.power` value lies within the canonical power bank
+  capacity range.
+
+Coverage Notes
+- Concrete destruction-drop behavior for power banks should be written against
+  observable dropped resource outcomes, not only constant ranges.
+- The critical-threshold behavior for generated power needs a dedicated
+  observable rule before it belongs in the checklist.
+
+### 14.4 NPC Ownership Query Surface
+- [ ] `NPC-OWNERSHIP-001` `matrix` `needs_vanilla_verification`
+  For each NPC structure class listed in `docs/behavior-matrices.md` under
+  `NPC-OWNERSHIP`, the public `my` and `owner` properties match the values
+  defined for that class.
+
+Coverage Notes
+- This family is limited to public ownership query properties, not owner-gated
+  API behavior.
+
 
 ---
 
 ## 15. Structure Common
 
 ### 15.1 Hits & Destruction
-- [ ] All structures have hits and hitsMax (except controller, which is indestructible).
-- [ ] `destroy()` by the owner removes the structure instantly.
-- [ ] Structure destruction creates a ruin containing the structure's store.
-- [ ] `notifyWhenAttacked()` toggles email notifications.
-- [ ] A structure at 0 hits is destroyed.
+- [ ] `STRUCTURE-HITS-001` `matrix` `verified_vanilla`
+  Fixed durability values for structures with constant hit totals match the
+  canonical Screeps constants.
+- [ ] `STRUCTURE-HITS-002` `behavior` `verified_vanilla`
+  Destroyable structures expose `hits` and `hitsMax`.
+- [ ] `STRUCTURE-HITS-003` `behavior` `verified_vanilla`
+  A structure at 0 hits is destroyed in the same tick.
+- [ ] `STRUCTURE-HITS-004` `behavior` `verified_vanilla`
+  Destroying a structure by non-nuke means creates a ruin on that tile
+  containing the structure's remaining store.
 
 ### 15.2 isActive & RCL
-- [ ] Structures above the RCL limit for their type return false from `isActive()`.
-- [ ] Inactive structures exist but cannot be used for gameplay actions.
-- [ ] The structure becomes active again if the RCL is raised to support it.
-- [ ] The isActive check applies per structure type per RCL from the limits table.
+- [ ] `STRUCTURE-ACTIVE-001` `behavior` `verified_vanilla`
+  For owned structure types limited by `CONTROLLER_STRUCTURES`, `isActive()`
+  returns `true` only for the allowed same-type structures closest to the room
+  controller at the current controller level.
+- [ ] `STRUCTURE-ACTIVE-002` `behavior` `verified_vanilla`
+  Inactive structures still exist in the room but their gated gameplay actions
+  fail active-structure checks.
+- [ ] `STRUCTURE-ACTIVE-003` `behavior` `verified_vanilla`
+  A structure becomes active again if the room controller later satisfies its
+  active-limit requirements.
+- [ ] `STRUCTURE-ACTIVE-004` `behavior` `verified_vanilla`
+  Structures with no owner or no controller limit table entry return `true`
+  from `isActive()`.
+- [ ] `STRUCTURE-ACTIVE-005` `behavior` `verified_vanilla`
+  When same-type owned structures are at equal controller distance, `isActive()`
+  breaks the tie by the engine's object scan order.
 
 ### 15.3 Construction Costs
-- [ ] Each buildable structure type has a fixed energy cost (e.g., spawn 15000, extension 3000, road 300, wall 1).
-- [ ] A construction site's `progressTotal` equals its structure's construction cost.
+- [ ] `CONSTRUCTION-COST-001` `matrix` `verified_vanilla`
+  Buildable structure construction costs match the canonical
+  `CONSTRUCTION_COST` table.
+- [ ] `CONSTRUCTION-COST-002` `behavior` `verified_vanilla`
+  A construction site's `progressTotal` equals its structure's construction
+  cost.
+
+### 15.4 Structure APIs
+- [ ] `STRUCTURE-API-001` `behavior` `verified_vanilla`
+  `destroy()` returns `ERR_NOT_OWNER` when the room controller is missing or not
+  owned by the player.
+- [ ] `STRUCTURE-API-002` `behavior` `verified_vanilla`
+  `destroy()` returns `ERR_BUSY` when hostile creeps or hostile power creeps are
+  present in the room.
+- [ ] `STRUCTURE-API-003` `behavior` `verified_vanilla`
+  A successful `destroy()` returns `OK`, removes the structure in the same
+  tick, and creates a ruin on that tile containing the structure's remaining
+  store.
+- [ ] `STRUCTURE-API-004` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` when the structure is
+  not owned by the player or the room controller is hostile.
+- [ ] `STRUCTURE-API-005` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `ERR_INVALID_ARGS` when `enabled` is not
+  boolean.
+- [ ] `STRUCTURE-API-006` `behavior` `verified_vanilla`
+  A successful `notifyWhenAttacked(enabled)` returns `OK` and updates the
+  structure's attack notification setting on the next tick.
 
 ---
 
 ## 16. Room Mechanics
 
 ### 16.1 Visibility
-- [ ] A room is visible only when a player has a creep or owned structure in it.
-- [ ] Visible rooms have full object access via `Game.rooms`.
-- [ ] Non-visible rooms have no `Game.rooms` entry and no object access.
-- [ ] Observer grants visibility to the target room on the next tick.
-- [ ] A room becomes invisible when the last owned object leaves or is destroyed.
+- [ ] `ROOM-VIS-001` `behavior` `verified_vanilla`
+  A visible room has a `Game.rooms[roomName]` entry on that tick.
+- [ ] `ROOM-VIS-002` `behavior` `verified_vanilla`
+  A non-visible room has no `Game.rooms[roomName]` entry on that tick.
+
+Coverage Notes
+- Observer-provided visibility timing is owned by `13.4 Observer`.
 
 ### 16.2 Energy Tracking
-- [ ] `energyAvailable` equals the sum of energy in all spawns and extensions.
-- [ ] `energyCapacityAvailable` equals the sum of capacity of all spawns and extensions.
-- [ ] Both values update each tick.
+- [ ] `ROOM-ENERGY-001` `behavior` `verified_vanilla`
+  `room.energyAvailable` equals the sum of stored energy in the room's active
+  spawns and extensions.
+- [ ] `ROOM-ENERGY-002` `behavior` `verified_vanilla`
+  `room.energyCapacityAvailable` equals the sum of energy capacity in the
+  room's active spawns and extensions.
 
 ### 16.3 Find
-- [ ] `Room.find(type)` returns objects matching a FIND_* constant.
-- [ ] A filter option narrows results.
-- [ ] Player-relative constants (FIND_MY_CREEPS, FIND_HOSTILE_CREEPS) work in player code.
-- [ ] FIND_SOURCES_ACTIVE returns only sources with energy > 0.
-- [ ] FIND_EXIT_* returns walkable border tiles for that direction.
-- [ ] Return type varies by FIND constant.
+- [ ] `ROOM-FIND-001` `matrix` `verified_vanilla`
+  `Room.find()` result sets for supported `FIND_*` constants match the
+  canonical room-find mapping.
+- [ ] `ROOM-FIND-002` `behavior` `verified_vanilla`
+  `Room.find(type, {filter})` applies the filter to the selected result set
+  before returning it.
+- [ ] `ROOM-FIND-003` `behavior` `verified_vanilla`
+  `FIND_EXIT_TOP`, `FIND_EXIT_RIGHT`, `FIND_EXIT_BOTTOM`, and
+  `FIND_EXIT_LEFT` return walkable border positions on that side.
+- [ ] `ROOM-FIND-004` `behavior` `verified_vanilla`
+  `FIND_EXIT` returns the concatenation of the four side-specific exit result
+  sets.
+- [ ] `ROOM-FIND-005` `behavior` `verified_vanilla`
+  `FIND_SOURCES_ACTIVE` returns only sources whose current energy is greater
+  than `0`.
+- [ ] `ROOM-FIND-006` `behavior` `verified_vanilla`
+  Player-relative `FIND_*` constants such as `FIND_MY_CREEPS` and
+  `FIND_HOSTILE_CREEPS` evaluate from the current player's perspective.
 
 ### 16.4 Look
-- [ ] `lookAt(x, y)` returns all objects at a position.
-- [ ] `lookForAt(type, x, y)` returns objects of a specific LOOK_* type.
-- [ ] `lookAtArea(top, left, bottom, right)` returns objects in a rectangular region.
-- [ ] `lookForAtArea()` returns objects of a specific type in a rectangular region.
-- [ ] `asArray` parameter changes the return format from object to array.
+- [ ] `ROOM-LOOK-001` `behavior` `verified_vanilla`
+  `lookAt(x, y)` returns all public look entries at that position.
+- [ ] `ROOM-LOOK-002` `behavior` `verified_vanilla`
+  `lookForAt(type, x, y)` returns only entries of the requested `LOOK_*` type
+  at that position.
+- [ ] `ROOM-LOOK-003` `behavior` `verified_vanilla`
+  `lookAtArea(top, left, bottom, right)` returns a y-then-x keyed object by
+  default and returns an array of `{x, y, type, ...}` records when `asArray`
+  is true.
+- [ ] `ROOM-LOOK-004` `behavior` `verified_vanilla`
+  `lookForAtArea(type, top, left, bottom, right)` mirrors `lookAtArea()`
+  output shapes while restricting results to the requested `LOOK_*` type.
 
 ### 16.5 Terrain
-- [ ] `Room.Terrain` constructor creates a terrain accessor for a room.
-- [ ] `get(x, y)` returns 0 (plain), TERRAIN_MASK_WALL (1), or TERRAIN_MASK_SWAMP (2).
-- [ ] `getRawBuffer()` returns a 2500-byte Uint8Array of the room terrain.
-- [ ] `Game.map.getRoomTerrain()` provides equivalent access.
+- [ ] `ROOM-TERRAIN-001` `matrix` `verified_vanilla`
+  `Room.Terrain.get(x, y)` returns the canonical terrain mask values for
+  plain, swamp, and wall tiles.
+- [ ] `ROOM-TERRAIN-002` `behavior` `verified_vanilla`
+  `Room.Terrain.getRawBuffer()` returns the room terrain as a 2500-byte
+  `Uint8Array`.
+- [ ] `ROOM-TERRAIN-003` `behavior` `verified_vanilla`
+  `Game.map.getRoomTerrain(roomName)` provides equivalent terrain access to
+  `new Room.Terrain(roomName)`.
 
 ### 16.6 Event Log
-- [ ] `getEventLog()` returns all events from the current tick.
-- [ ] Event types include ATTACK, OBJECT_DESTROYED, BUILD, HARVEST, HEAL, REPAIR, RESERVE_CONTROLLER, UPGRADE_CONTROLLER, TRANSFER, EXIT, POWER, and ATTACK_CONTROLLER.
-- [ ] Each event includes the source object ID, target, and type-specific data.
-- [ ] `raw` parameter returns unparsed event data.
-- [ ] Events are only available for the current tick.
+- [ ] `ROOM-EVENTLOG-001` `behavior` `verified_vanilla`
+  `room.getEventLog()` returns the current tick's parsed room event array.
+- [ ] `ROOM-EVENTLOG-002` `matrix` `verified_vanilla`
+  Current-tick event entries use the canonical event-type and payload mapping.
+- [ ] `ROOM-EVENTLOG-003` `behavior` `verified_vanilla`
+  `room.getEventLog(true)` returns the current tick's raw event-log JSON
+  string.
+- [ ] `ROOM-EVENTLOG-004` `behavior` `verified_vanilla`
+  Room events are only exposed for the current tick.
 
 ### 16.7 Flags
-- [ ] `createFlag()` places a flag at a position with name, color, and secondaryColor.
-- [ ] Maximum flags per player: FLAGS_LIMIT (10000).
-- [ ] `Flag.remove()` removes the flag.
-- [ ] `Flag.setColor()` changes the flag's color.
-- [ ] `Flag.setPosition()` moves the flag to a new position.
-- [ ] Flags are player-specific and referenced by name (no object ID).
+- [ ] `FLAG-001` `behavior` `verified_vanilla`
+  `Room.createFlag()` and `RoomPosition.createFlag()` create a player flag at
+  the requested position and return the created flag name on success.
+- [ ] `FLAG-002` `behavior` `verified_vanilla`
+  A created flag stores its `name`, `color`, and `secondaryColor`.
+- [ ] `FLAG-003` `behavior` `verified_vanilla`
+  A player cannot exceed `FLAGS_LIMIT` total flags.
+- [ ] `FLAG-004` `behavior` `verified_vanilla`
+  `Flag.remove()` removes the flag from the player's flag set.
+- [ ] `FLAG-005` `behavior` `verified_vanilla`
+  `Flag.setColor()` updates the flag's `color` and `secondaryColor`.
+- [ ] `FLAG-006` `behavior` `verified_vanilla`
+  `Flag.setPosition()` moves the flag to the requested room position.
+- [ ] `FLAG-007` `behavior` `verified_vanilla`
+  Flags are player-scoped and referenced by name rather than object id.
 
 ---
 
 ## 17. Source, Mineral & Deposit Lifecycle
 
 ### 17.1 Source Regeneration
-- [ ] Sources regenerate to full energy every ENERGY_REGEN_TIME (300 ticks).
-- [ ] Source capacity in owned/reserved rooms: SOURCE_ENERGY_CAPACITY (3000).
-- [ ] Source capacity in neutral rooms: SOURCE_ENERGY_NEUTRAL_CAPACITY (1500).
-- [ ] Source capacity in keeper rooms: SOURCE_ENERGY_KEEPER_CAPACITY (4000).
-- [ ] `ticksToRegeneration` counts down to the next regeneration.
+- [ ] `SOURCE-REGEN-001` `matrix` `verified_vanilla`
+  Source capacity matches the canonical room-state mapping for neutral,
+  reserved or owned, and keeper rooms.
+- [ ] `SOURCE-REGEN-002` `behavior` `verified_vanilla`
+  When a source regeneration timer completes, the source restores to its
+  current room-state capacity in the same tick.
+- [ ] `SOURCE-REGEN-003` `behavior` `verified_vanilla`
+  A source below its current full capacity exposes `ticksToRegeneration`.
+- [ ] `SOURCE-REGEN-004` `behavior` `verified_vanilla`
+  While `source.ticksToRegeneration` is defined, it decreases by `1` each tick
+  until regeneration completes.
 
 ### 17.2 Source Power Effects
-- [ ] PWR_REGEN_SOURCE adds energy to a source periodically.
-- [ ] PWR_DISRUPT_SOURCE pauses source regeneration for the effect's duration.
-- [ ] REGEN_SOURCE amount and period scale with power level.
+- [ ] `SOURCE-POWER-001` `matrix` `verified_vanilla`
+  `PWR_REGEN_SOURCE` adds energy using the canonical effect, period, and
+  duration for each supported power level.
+- [ ] `SOURCE-POWER-002` `behavior` `needs_vanilla_verification`
+  `PWR_DISRUPT_SOURCE` prevents scheduled source regeneration from restoring
+  energy while the effect is active.
 
 ### 17.3 Mineral Regeneration
-- [ ] Minerals regenerate to full amount every MINERAL_REGEN_TIME (50000 ticks).
-- [ ] Mineral density can change on regeneration.
-- [ ] Four density levels: LOW (15K), MODERATE (35K), HIGH (70K), ULTRA (100K).
-- [ ] `ticksToRegeneration` counts down to the next regeneration.
-- [ ] Seven mineral types exist: H, O, U, L, K, Z, X.
+- [ ] `MINERAL-REGEN-001` `matrix` `verified_vanilla`
+  Mineral densities and full amounts match the canonical density mapping.
+- [ ] `MINERAL-REGEN-002` `behavior` `verified_vanilla`
+  When a mineral regeneration timer completes, the mineral restores to its
+  current density amount in the same tick.
+- [ ] `MINERAL-REGEN-003` `behavior` `verified_vanilla`
+  A full mineral returns `undefined` for `ticksToRegeneration`.
+- [ ] `MINERAL-REGEN-004` `behavior` `verified_vanilla`
+  A depleted mineral exposes `ticksToRegeneration`, and that value decreases
+  by `1` each tick until regeneration completes.
+- [ ] `MINERAL-REGEN-005` `behavior` `verified_vanilla`
+  A mineral's `mineralType` remains the same across regenerations.
 
 ### 17.4 Mineral Power Effects
-- [ ] PWR_REGEN_MINERAL adds mineral amount periodically.
-- [ ] REGEN_MINERAL amount and period scale with power level.
+- [ ] `MINERAL-POWER-001` `matrix` `verified_vanilla`
+  `PWR_REGEN_MINERAL` adds mineral amount using the canonical effect, period,
+  and duration for each supported power level.
 
 ### 17.5 Deposit Lifecycle `capability: deposit`
-- [ ] Harvest cooldown escalates exponentially with repeated harvesting.
-- [ ] Decay timer is set on first harvest (DEPOSIT_DECAY_TIME = 50000).
-- [ ] Four deposit types: silicon, metal, biomass, mist.
-- [ ] `lastCooldown` tracks the most recent cooldown applied.
+- [ ] `DEPOSIT-001` `matrix` `verified_vanilla`
+  Deposit objects expose the canonical `depositType` values.
+- [ ] `DEPOSIT-002` `behavior` `verified_vanilla`
+  `deposit.lastCooldown` equals
+  `ceil(DEPOSIT_EXHAUST_MULTIPLY * harvested^DEPOSIT_EXHAUST_POW)` for the
+  deposit's current harvested count.
+- [ ] `DEPOSIT-003` `behavior` `verified_vanilla`
+  After a successful harvest, `deposit.cooldown` exposes the remaining wait in
+  ticks until the next harvest becomes available, and returns `0` once that
+  wait has elapsed.
+- [ ] `DEPOSIT-004` `behavior` `verified_vanilla`
+  `deposit.ticksToDecay` becomes defined after the first successful harvest
+  and decreases by `1` each tick until the deposit is removed.
+- [ ] `DEPOSIT-005` `behavior` `verified_vanilla`
+  Repeated successful harvests can increase a deposit's exposed
+  `lastCooldown` and future `cooldown`.
 
 ---
 
 ## 18. Game Objects
 
 ### 18.1 Tombstone
-- [ ] A tombstone is created when a creep dies.
-- [ ] The tombstone contains the dead creep's store contents.
-- [ ] Tombstone decay time: TOMBSTONE_DECAY_PER_PART (5) ticks per body part.
-- [ ] Power creep tombstone decay: TOMBSTONE_DECAY_POWER_CREEP (500 ticks).
-- [ ] Any player can withdraw resources from a tombstone.
+- [ ] `TOMBSTONE-001` `behavior` `verified_vanilla`
+  A tombstone exposes snapshot fields for the dead creep or power creep,
+  along with its remaining `store`, `deathTime`, and `decayTime`.
+- [ ] `TOMBSTONE-002` `behavior` `verified_vanilla`
+  A creep tombstone's decay time is `body.length * TOMBSTONE_DECAY_PER_PART`.
+- [ ] `TOMBSTONE-003` `behavior` `verified_vanilla`
+  A power creep tombstone's decay time is `TOMBSTONE_DECAY_POWER_CREEP`.
 
 ### 18.2 Ruin
-- [ ] A ruin is created when a structure is destroyed by a player action.
-- [ ] The ruin contains the destroyed structure's store.
-- [ ] Ruin decay time: RUIN_DECAY (500 ticks).
-- [ ] Ruins track the original structureType and destroyTime.
+- [ ] `RUIN-001` `behavior` `verified_vanilla`
+  A ruin exposes the destroyed structure's `structureType`, `destroyTime`,
+  remaining `store`, and decay timer.
+- [ ] `RUIN-002` `matrix` `verified_vanilla`
+  Ruin decay time matches `RUIN_DECAY_STRUCTURES` when present and
+  `RUIN_DECAY` otherwise.
+- [ ] `RUIN-003` `behavior` `verified_vanilla`
+  Ruin resources can be withdrawn subject to the normal `withdraw()`
+  preconditions and blockers.
 
 ### 18.3 Nuke (In-Flight)
-- [ ] A Nuke object is created when a nuker launches.
-- [ ] Properties: launchRoomName and timeToLand.
-- [ ] The nuke is visible in the target room before landing.
+- [ ] `NUKE-FLIGHT-001` `behavior` `verified_vanilla`
+  Launching a nuke creates a `Nuke` object in the target room with
+  `launchRoomName` and `timeToLand`.
+- [ ] `NUKE-FLIGHT-002` `behavior` `verified_vanilla`
+  `nuke.timeToLand` decreases by `1` each tick until the landing tick.
+- [ ] `NUKE-FLIGHT-003` `behavior` `verified_vanilla`
+  An in-flight nuke is visible in the target room before it lands.
 
 ---
 
 ## 19. Power Creeps `capability: powerCreeps`
 
 ### 19.1 Lifecycle
-- [ ] `PowerCreep.create(name, className)` creates an unspawned power creep.
-- [ ] `spawn(powerSpawn)` spawns the power creep at a power spawn structure.
-- [ ] `renew(powerSpawn)` restores TTL at a power spawn or power bank.
-- [ ] `delete()` permanently deletes the power creep (with cooldown).
-- [ ] `upgrade(power)` spends a power level to unlock or upgrade a power.
-- [ ] Power creep TTL counts down each tick.
-- [ ] Power creep death creates a tombstone.
-- [ ] Power creep name must be unique.
+- [ ] `POWERCREEP-CREATE-001` `behavior` `verified_vanilla`
+  A successful `PowerCreep.create(name, className)` returns `OK` and queues a
+  new unspawned power creep with that name and class.
+- [ ] `POWERCREEP-CREATE-002` `matrix` `verified_vanilla`
+  `PowerCreep.create()` failure codes match the canonical validation matrix
+  for invalid arguments, duplicate name, and insufficient free power levels.
+- [ ] `POWERCREEP-SPAWN-001` `behavior` `verified_vanilla`
+  A successful `powerCreep.spawn(powerSpawn)` returns `OK`, places the power
+  creep on the power spawn's tile and restores full hits and full TTL when the
+  spawn resolves.
+- [ ] `POWERCREEP-SPAWN-002` `matrix` `verified_vanilla`
+  `powerCreep.spawn()` failure codes match the canonical validation matrix for
+  busy, invalid target, ownership, inactive power spawn, and spawn cooldown.
+- [ ] `POWERCREEP-LIFETIME-001` `behavior` `verified_vanilla`
+  A spawned power creep's `ticksToLive` decreases by `1` each tick.
+- [ ] `POWERCREEP-DEATH-001` `behavior` `verified_vanilla`
+  A power creep death creates a tombstone on the death tile with the power
+  creep snapshot fields and `TOMBSTONE_DECAY_POWER_CREEP` decay time.
+- [ ] `POWERCREEP-RENEW-001` `behavior` `verified_vanilla`
+  A successful `powerCreep.renew(target)` returns `OK` and resets
+  `ticksToLive` to `POWER_CREEP_LIFE_TIME` in the same tick.
+- [ ] `POWERCREEP-RENEW-002` `matrix` `verified_vanilla`
+  `powerCreep.renew()` failure codes match the canonical validation matrix for
+  invalid target, inactive power spawn, range, busy, and ownership.
+- [ ] `POWERCREEP-DELETE-001` `behavior` `verified_vanilla`
+  `powerCreep.delete()` queues deletion for an unspawned owned power creep.
+- [ ] `POWERCREEP-DELETE-002` `behavior` `verified_vanilla`
+  `powerCreep.delete()` returns `ERR_BUSY` for a spawned power creep.
+- [ ] `POWERCREEP-DELETE-003` `behavior` `verified_vanilla`
+  `powerCreep.delete()` returns `ERR_NOT_OWNER` for an unowned power creep.
+- [ ] `POWERCREEP-UPGRADE-001` `behavior` `verified_vanilla`
+  A successful `powerCreep.upgrade(power)` returns `OK`, increases the
+  specified power's level by `1`, increases the power creep's `level` by `1`,
+  increases `hitsMax` by `1000`, and increases `storeCapacity` by `100`.
+- [ ] `POWERCREEP-UPGRADE-002` `matrix` `verified_vanilla`
+  `powerCreep.upgrade()` failure codes match the canonical validation matrix
+  for ownership, free power levels, max level, invalid power selection, and
+  unmet level requirements.
 
 ### 19.2 Movement & Actions
-- [ ] Power creeps generate no fatigue on any terrain.
-- [ ] Power creep road wear is ROAD_WEAROUT_POWER_CREEP (100) per move.
-- [ ] Power creeps can transfer, withdraw, pickup, and drop resources.
-- [ ] Power creeps can use `say()`.
-- [ ] Power creeps cannot attack, heal, harvest, build, repair, dismantle, or claim.
+- [ ] `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
+  A successful power creep move generates no fatigue on plain, swamp, or road
+  terrain.
+- [ ] `POWERCREEP-MOVE-002` `behavior` `verified_vanilla`
+  A successful move onto a road applies `ROAD_WEAROUT_POWER_CREEP` road wear
+  in the same tick.
+- [ ] `POWERCREEP-ACTION-001` `matrix` `verified_vanilla`
+  While spawned, `transfer()`, `withdraw()`, `pickup()`, `drop()`, and `say()`
+  use the same public semantics and return codes as the corresponding creep
+  APIs.
+- [ ] `POWERCREEP-ACTION-002` `behavior` `verified_vanilla`
+  The resource and speech methods above return `ERR_BUSY` while the power
+  creep is unspawned.
+- [ ] `POWERCREEP-ACTION-003` `behavior` `verified_vanilla`
+  Power creeps do not expose the standard creep body-part action methods such
+  as `attack()`, `heal()`, `harvest()`, `build()`, `repair()`,
+  `dismantle()`, and `claimController()` on their public API.
 
 ### 19.3 Enable Room
-- [ ] `enableRoom(controller)` enables power usage in the room.
-- [ ] Sets `controller.isPowerEnabled` to true.
-- [ ] Powers cannot be used in a room until it is enabled.
+- [ ] `POWERCREEP-ENABLE-001` `behavior` `verified_vanilla`
+  A successful `powerCreep.enableRoom(controller)` returns `OK` and sets
+  `controller.isPowerEnabled` to `true` on the next tick.
+- [ ] `POWERCREEP-ENABLE-002` `matrix` `verified_vanilla`
+  `powerCreep.enableRoom()` failure codes match the canonical validation
+  matrix for invalid target, safe-mode-blocked hostile controller, range,
+  busy, and ownership.
 
 ### 19.4 Operate Powers
-- [ ] PWR_OPERATE_SPAWN reduces spawn time by a level-scaled percentage.
-- [ ] PWR_OPERATE_TOWER increases tower effectiveness by a level-scaled percentage.
-- [ ] PWR_OPERATE_STORAGE increases storage capacity by a level-scaled amount.
-- [ ] PWR_OPERATE_LAB increases reaction amount by a level-scaled value.
-- [ ] PWR_OPERATE_EXTENSION fills extensions from storage (level-scaled percentage).
-- [ ] PWR_OPERATE_OBSERVER grants unlimited observation range.
-- [ ] PWR_OPERATE_TERMINAL reduces send cost and cooldown.
-- [ ] PWR_OPERATE_CONTROLLER increases the per-tick upgrade limit.
-- [ ] PWR_OPERATE_FACTORY sets the factory level permanently.
-- [ ] PWR_OPERATE_POWER increases power processing rate.
-- [ ] Each operate power has a cooldown, range, and ops cost.
-- [ ] Operate powers require the room to be power-enabled.
+- [ ] `POWER-OPERATE-001` `matrix` `verified_vanilla`
+  Operate power effect magnitudes match `POWER_INFO[power].effect[level]` for
+  all numeric operate powers and supported power levels.
+- [ ] `POWER-OPERATE-002` `matrix` `verified_vanilla`
+  Operate power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
+  operate power.
+- [ ] `POWER-OPERATE-003` `behavior` `needs_vanilla_verification`
+  `PWR_OPERATE_OBSERVER` allows `observeRoom()` beyond the observer's normal
+  range while the effect is active.
+- [ ] `POWER-OPERATE-004` `behavior` `needs_vanilla_verification`
+  `PWR_OPERATE_FACTORY` changes the target factory's effective production level
+  according to the power level while the effect is active.
+- [ ] `POWER-OPERATE-005` `matrix` `needs_vanilla_verification`
+  For room-bound operate powers, target validity and failure in rooms without
+  power enabled match the canonical power-to-target matrix.
+
+Coverage Notes
+- The production consequences of `PWR_OPERATE_FACTORY` are owned by `11.5
+  Factory Commodity Chains`.
 
 ### 19.5 Disrupt Powers
-- [ ] PWR_DISRUPT_SPAWN pauses spawning for a level-scaled number of ticks.
-- [ ] PWR_DISRUPT_TOWER reduces tower effectiveness by a level-scaled percentage.
-- [ ] PWR_DISRUPT_SOURCE pauses source regeneration for a level-scaled duration.
-- [ ] PWR_DISRUPT_TERMINAL blocks terminal operations for a fixed duration.
-- [ ] Each disrupt power has a cooldown, range, and ops cost.
-- [ ] Disrupt powers can target hostile structures.
+- [ ] `POWER-DISRUPT-001` `matrix` `verified_vanilla`
+  Disrupt power effect values and durations match `POWER_INFO` for each disrupt
+  power and supported power level.
+- [ ] `POWER-DISRUPT-002` `matrix` `verified_vanilla`
+  Disrupt power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for
+  each disrupt power.
+- [ ] `POWER-DISRUPT-003` `matrix` `needs_vanilla_verification`
+  For disrupt powers with structure targets, target acceptance and
+  invalid-target behavior match the canonical power-to-target matrix.
 
 ### 19.6 Regen Powers
-- [ ] PWR_REGEN_SOURCE adds energy to a source periodically at a level-scaled amount.
-- [ ] PWR_REGEN_MINERAL adds mineral to a deposit periodically at a level-scaled amount.
-- [ ] Regen effects persist for a duration after activation.
-- [ ] Regen powers have a cooldown and range.
+- [ ] `POWER-REGEN-001` `matrix` `verified_vanilla`
+  Regen power effect amount, period, and duration match `POWER_INFO` for each
+  regen power and supported power level.
+- [ ] `POWER-REGEN-002` `matrix` `verified_vanilla`
+  Regen power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
+  regen power.
 
 ### 19.7 Combat Powers
-- [ ] PWR_SHIELD creates a temporary invulnerable rampart at the power creep's position.
-- [ ] PWR_FORTIFY makes a rampart or wall invulnerable for a level-scaled duration.
-- [ ] Shield HP and fortify duration scale with power level.
-- [ ] Shield rampart is removed when the effect expires.
+- [ ] `POWER-COMBAT-001` `matrix` `verified_vanilla`
+  `PWR_SHIELD` and `PWR_FORTIFY` effect magnitudes match `POWER_INFO` for each
+  supported power level.
+- [ ] `POWER-COMBAT-002` `behavior` `verified_vanilla`
+  A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
+  rampart at the power creep's position in the same tick.
+- [ ] `POWER-COMBAT-003` `behavior` `needs_vanilla_verification`
+  The rampart created by `PWR_SHIELD` is removed when the shield effect
+  expires.
 
 ### 19.8 Generate Ops
-- [ ] PWR_GENERATE_OPS creates ops resource in the power creep's store.
-- [ ] Amount scales with level: 1, 2, 4, 6, 8.
-- [ ] Cooldown is 50 ticks.
+- [ ] `POWER-GENERATE-OPS-001` `matrix` `verified_vanilla`
+  `PWR_GENERATE_OPS` amount, cooldown, and ops cost match `POWER_INFO` for
+  each supported power level.
+- [ ] `POWER-GENERATE-OPS-002` `behavior` `verified_vanilla`
+  A successful `usePower(PWR_GENERATE_OPS)` returns `OK` and adds ops to the
+  power creep's store in the same tick.
+- [ ] `POWER-GENERATE-OPS-003` `behavior` `verified_vanilla`
+  If generated ops would overflow the power creep's store capacity, the excess
+  is dropped on the same tile in the same tick.
 
 ---
 
 ## 20. Market `capability: market`
 
 ### 20.1 Terminal Send
-- [ ] Energy cost formula: `ceil(amount * (1 - exp(-distance/30)))`.
-- [ ] Minimum send amount: TERMINAL_MIN_SEND (100).
-- [ ] Cooldown after send: TERMINAL_COOLDOWN (10 ticks).
-- [ ] Resources arrive at the destination terminal instantly.
-- [ ] Energy cost is borne by the sender.
+Coverage Notes
+- Terminal `send()` behavior is owned by `13.3 Terminal`.
+- `Game.market.calcTransactionCost()` is covered under `20.4 Queries`.
 
 ### 20.2 Orders
-- [ ] `createOrder()` creates a buy or sell order with resource type, price, amount, and room.
-- [ ] Maximum orders per player: MARKET_MAX_ORDERS (300).
-- [ ] Order lifetime: MARKET_ORDER_LIFE_TIME (30 days).
-- [ ] `cancelOrder()` removes an order.
-- [ ] `changeOrderPrice()` updates an order's price.
-- [ ] `extendOrder()` adds additional amount to an order.
+- [ ] `MARKET-ORDER-001` `matrix` `verified_vanilla`
+  Successful `createOrder()` cases create an order with the requested type,
+  resource type, price, amount, and room for the canonical order-creation
+  matrix.
+- [ ] `MARKET-ORDER-002` `matrix` `verified_vanilla`
+  `createOrder()` failure codes match the canonical validation matrix for
+  invalid arguments, insufficient credits, missing owned terminal, and order
+  cap.
+- [ ] `MARKET-ORDER-003` `behavior` `verified_vanilla`
+  A successful `cancelOrder()` returns `OK` and removes the order so it no
+  longer appears in market queries.
+- [ ] `MARKET-ORDER-004` `behavior` `verified_vanilla`
+  `cancelOrder()` returns `ERR_INVALID_ARGS` when the order is not one of the
+  caller's current orders.
+- [ ] `MARKET-ORDER-005` `behavior` `verified_vanilla`
+  `changeOrderPrice()` updates the order price visible to later market queries.
+- [ ] `MARKET-ORDER-006` `matrix` `verified_vanilla`
+  `changeOrderPrice()` failure codes match the canonical validation matrix for
+  missing order, invalid price, and insufficient credits for the additional
+  fee.
+- [ ] `MARKET-ORDER-007` `behavior` `verified_vanilla`
+  `extendOrder()` increases the remaining amount on an existing order.
+- [ ] `MARKET-ORDER-008` `matrix` `verified_vanilla`
+  `extendOrder()` failure codes match the canonical validation matrix for
+  missing order, invalid added amount, and insufficient credits for the
+  extension fee.
+
+Notes
+- Order lifetime and expiry should be specified through observable query
+  behavior rather than only by restating MARKET_ORDER_LIFE_TIME.
 
 ### 20.3 Deal
-- [ ] `Game.market.deal()` executes a trade against an existing order.
-- [ ] Energy cost is always borne by the deal caller, not the order owner.
-- [ ] `deal()` is capped at 10 calls per tick (silent failure beyond).
-- [ ] MARKET_FEE (0.05) is applied to credit transactions.
-- [ ] Returns ERR_NOT_ENOUGH_RESOURCES when terminal lacks energy for the deal cost.
+- [ ] `MARKET-DEAL-001` `behavior` `verified_vanilla`
+  A successful `Game.market.deal()` returns `OK` and executes a trade against
+  the specified order.
+- [ ] `MARKET-DEAL-002` `behavior` `verified_vanilla`
+  For terminal-based deals, the energy transfer cost is paid by the caller's
+  terminal, not the order owner's terminal.
+- [ ] `MARKET-DEAL-003` `matrix` `verified_vanilla`
+  `Game.market.deal()` failure codes match the canonical validation matrix for
+  invalid arguments, missing owned terminal, insufficient terminal energy,
+  terminal cooldown, insufficient traded resource, insufficient credits, and
+  per-tick deal cap.
+
+Notes
+- `deal()` returns `ERR_FULL` when the per-tick cap is exceeded; it is not a
+  silent no-op.
+- Market fees are owned by order creation, price change, and extension, not by
+  `deal()`.
 
 ### 20.4 Queries
-- [ ] `getAllOrders(filter?)` returns orders matching the filter.
-- [ ] `getOrderById()` returns a specific order.
-- [ ] `getHistory()` returns recent transaction history.
+- [ ] `MARKET-QUERY-001` `behavior` `verified_vanilla`
+  `Game.market.calcTransactionCost(amount, roomName1, roomName2)` returns
+  `ceil(amount * (1 - exp(-distance / 30)))`, where `distance` is the room
+  distance between the two rooms.
+- [ ] `MARKET-QUERY-002` `behavior` `verified_vanilla`
+  `Game.market.getAllOrders(filter?)` returns orders matching the supplied
+  filter.
+- [ ] `MARKET-QUERY-003` `behavior` `verified_vanilla`
+  `Game.market.getOrderById(id)` returns the specified order or `null` when it
+  does not exist.
+- [ ] `MARKET-QUERY-004` `behavior` `verified_vanilla`
+  `Game.market.getHistory(resourceType?)` returns market history for the
+  requested resource scope.
+- [ ] `MARKET-QUERY-005` `behavior` `verified_vanilla`
+  Exposed order prices and market credits use public credit units rather than
+  the engine's internal milli-credit storage.
 
 ---
 
 ## 21. Map
 
 ### 21.1 Room Queries
-- [ ] `describeExits()` returns exit directions and adjacent room names.
-- [ ] `getRoomLinearDistance()` returns Manhattan distance in the room grid.
-- [ ] `getRoomLinearDistance()` with `continuous` flag wraps around the map.
-- [ ] `getRoomStatus()` returns normal, novice, or respawn area status.
-- [ ] `getWorldSize()` returns the world size.
+- [ ] `MAP-ROOM-001` `behavior` `verified_vanilla`
+  `Game.map.describeExits(roomName)` returns only exit direction keys with
+  adjacent room names as values for a valid room name, or `null` for an
+  invalid room name.
+- [ ] `MAP-ROOM-002` `behavior` `verified_vanilla`
+  `Game.map.getRoomLinearDistance(roomA, roomB)` returns the room-grid
+  Manhattan distance between the two rooms.
+- [ ] `MAP-ROOM-003` `behavior` `verified_vanilla`
+  `Game.map.getRoomLinearDistance(roomA, roomB, true)` allows distance to wrap
+  across opposite world edges before taking the shorter path.
+- [ ] `MAP-ROOM-004` `matrix` `verified_vanilla`
+  `Game.map.getRoomStatus(roomName)` returns the canonical status and timestamp
+  mapping for normal, novice, respawn, and closed rooms.
+- [ ] `MAP-ROOM-005` `behavior` `verified_vanilla`
+  `Game.map.getWorldSize()` returns the world size as the number of rooms along
+  one edge of the world map.
 
 ### 21.2 Route Finding
-- [ ] `findExit()` returns the exit direction constant to reach a destination room.
-- [ ] `findRoute()` returns an array of {exit, room} steps.
-- [ ] `routeCallback` option allows custom room costs in route finding.
-- [ ] Returns ERR_NO_PATH when no route exists.
-- [ ] Inaccessible rooms (novice/respawn belonging to others) are excluded.
+- [ ] `MAP-ROUTE-001` `behavior` `verified_vanilla`
+  `Game.map.findRoute(fromRoom, toRoom)` returns an array of `{exit, room}`
+  steps for a found route.
+- [ ] `MAP-ROUTE-002` `behavior` `verified_vanilla`
+  `Game.map.findRoute(fromRoom, toRoom)` returns `ERR_NO_PATH` for invalid room
+  names or when no route exists.
+- [ ] `MAP-ROUTE-003` `behavior` `verified_vanilla`
+  `Game.map.findRoute(fromRoom, toRoom, {routeCallback})` excludes rooms whose
+  callback cost is `Infinity` from routing.
+- [ ] `MAP-ROUTE-004` `behavior` `verified_vanilla`
+  `Game.map.findExit(fromRoom, toRoom)` returns the first route step's exit
+  constant for a found route.
+- [ ] `MAP-ROUTE-005` `behavior` `verified_vanilla`
+  `Game.map.findExit(fromRoom, toRoom)` returns `ERR_NO_PATH` when no route
+  exists and `ERR_INVALID_ARGS` when the rooms are the same.
 
 ### 21.3 Terrain
-- [ ] `getRoomTerrain()` returns a Room.Terrain object for any room.
-- [ ] Works for non-visible rooms (terrain is always accessible).
-- [ ] Terrain is immutable — it never changes during the game.
+- [ ] `MAP-TERRAIN-001` `behavior` `verified_vanilla`
+  `Game.map.getRoomTerrain(roomName)` returns terrain access for visible and
+  non-visible rooms alike.
 
 ---
 
 ## 22. RoomPosition
 
 ### 22.1 Construction & Properties
-- [ ] `new RoomPosition(x, y, roomName)` creates a position object.
-- [ ] Properties: x, y, roomName.
-- [ ] Coordinate range is 0–49 for both x and y.
+- [ ] `ROOMPOS-001` `behavior` `verified_vanilla`
+  A `RoomPosition` exposes `x`, `y`, and `roomName`.
+- [ ] `ROOMPOS-002` `behavior` `verified_vanilla`
+  `RoomPosition` coordinates are limited to the inclusive `0..49` range within
+  a room.
 
 ### 22.2 Spatial Queries
-- [ ] `getRangeTo()` returns Chebyshev distance to a target.
-- [ ] `inRangeTo()` returns true if the target is within the specified range.
-- [ ] `isNearTo()` returns true if the target is at range 1 or less.
-- [ ] `isEqualTo()` returns true if the target is on the same tile.
-- [ ] `getDirectionTo()` returns a direction constant (1–8) toward a target.
-- [ ] Cross-room positions return Infinity for `getRangeTo()`.
+- [ ] `ROOMPOS-SPATIAL-001` `behavior` `verified_vanilla`
+  `getRangeTo()` returns Chebyshev distance to a target in the same room.
+- [ ] `ROOMPOS-SPATIAL-002` `behavior` `verified_vanilla`
+  `inRangeTo()` returns `true` when the target is within the specified range.
+- [ ] `ROOMPOS-SPATIAL-003` `behavior` `verified_vanilla`
+  `isNearTo()` returns `true` when the target is within range `1`.
+- [ ] `ROOMPOS-SPATIAL-004` `behavior` `verified_vanilla`
+  `isEqualTo()` returns `true` when the target is on the same tile.
+- [ ] `ROOMPOS-SPATIAL-005` `matrix` `verified_vanilla`
+  `getDirectionTo()` returns the expected Screeps direction constant for the
+  canonical direction-offset matrix.
+- [ ] `ROOMPOS-SPATIAL-006` `behavior` `verified_vanilla`
+  `getRangeTo()` returns `Infinity` for a target in another room.
 
 ### 22.3 Find Helpers
-- [ ] `findClosestByPath()` uses pathfinding to find the closest reachable target.
-- [ ] `findClosestByRange()` uses linear distance only.
-- [ ] `findInRange()` returns all matching objects within the given range.
-- [ ] `findPathTo()` returns a path from this position to a target.
-- [ ] Filter option works on all find methods.
+- [ ] `ROOMPOS-FIND-001` `behavior` `verified_vanilla`
+  `findClosestByPath()` returns a target already on the same tile before
+  considering other targets.
+- [ ] `ROOMPOS-FIND-002` `behavior` `verified_vanilla`
+  `findClosestByPath()` ignores unreachable targets.
+- [ ] `ROOMPOS-FIND-003` `behavior` `verified_vanilla`
+  `findClosestByRange()` returns the target with the smallest linear range.
+- [ ] `ROOMPOS-FIND-004` `behavior` `verified_vanilla`
+  `findInRange()` returns all matching objects within the given range.
+- [ ] `ROOMPOS-FIND-005` `behavior` `verified_vanilla`
+  `findPathTo()` returns a path from this position to the target.
+- [ ] `ROOMPOS-FIND-006` `behavior` `verified_vanilla`
+  `opts.filter` applies to the candidate set for the RoomPosition find helper
+  methods that accept it.
 
 ### 22.4 Look
-- [ ] `look()` returns all objects at this position.
-- [ ] `lookFor(type)` returns objects of a specific LOOK_* type at this position.
-- [ ] Returns an empty array when no objects of the given type exist.
+- [ ] `ROOMPOS-LOOK-001` `behavior` `verified_vanilla`
+  `look()` returns an array of `{type, ...}` records for the objects and
+  terrain at this position.
+- [ ] `ROOMPOS-LOOK-002` `behavior` `verified_vanilla`
+  `lookFor(type)` returns an array of values for the requested `LOOK_*` type at
+  this position.
+- [ ] `ROOMPOS-LOOK-003` `behavior` `verified_vanilla`
+  `lookFor(type)` returns an empty array when no entries of that type exist at
+  this position.
 
 ### 22.5 Actions
-- [ ] `createConstructionSite()` places a construction site at this position.
-- [ ] `createFlag()` places a flag at this position.
-- [ ] Behavior is identical to the Room equivalents with the position implicit.
+- [ ] `ROOMPOS-ACTION-001` `behavior` `verified_vanilla`
+  A successful `RoomPosition.createConstructionSite()` returns `OK` and creates
+  the construction site at the RoomPosition's coordinates on the next tick.
+- [ ] `ROOMPOS-ACTION-002` `behavior` `verified_vanilla`
+  A successful `RoomPosition.createFlag()` returns the flag name and creates
+  the flag at the RoomPosition's coordinates in the same tick.
 
 ---
 
 ## 23. Store API
 
 ### 23.1 Resource Access
-- [ ] `store[RESOURCE_TYPE]` returns the amount of that resource.
-- [ ] `store.getUsedCapacity()` returns total used capacity across all resources.
-- [ ] `store.getUsedCapacity(type)` returns used capacity for a specific resource.
-- [ ] `store.getFreeCapacity()` returns total free capacity.
-- [ ] `store.getCapacity()` returns total capacity.
-- [ ] `store.getCapacity(type)` returns capacity for a specific resource type.
+- [ ] `STORE-ACCESS-001` `behavior` `verified_vanilla`
+  `store[RESOURCE_TYPE]` returns the stored amount for that resource, or `0`
+  when the store currently holds none of it.
+- [ ] `STORE-ACCESS-002` `behavior` `verified_vanilla`
+  `store.getCapacity(type)`, `store.getUsedCapacity(type)`, and
+  `store.getFreeCapacity(type)` return `null` when the store cannot hold that
+  resource type.
 
-### 23.2 Store Types
-- [ ] Open stores (storage, terminal, container, factory) accept any resource type.
-- [ ] Restricted stores (lab) accept specific resources with separate capacity per resource.
-- [ ] Single stores (spawn, extension, tower, link, nuker, power spawn) accept one resource type.
-- [ ] `getCapacity()` without a type argument returns null for restricted stores.
+### 23.2 Open Stores
+- [ ] `STORE-OPEN-001` `matrix` `verified_vanilla`
+  For open stores, all stored resources share one total capacity pool.
+- [ ] `STORE-OPEN-002` `matrix` `verified_vanilla`
+  Open-store capacity constants match the canonical Screeps capacities for
+  storage, terminal, container, and factory.
+- [ ] `STORE-OPEN-003` `matrix` `verified_vanilla`
+  For open stores, `getCapacity()`, `getUsedCapacity()`, and
+  `getFreeCapacity()` without a resource argument report the shared total,
+  shared used amount, and shared remaining capacity.
+
+### 23.3 Single-Resource Stores
+- [ ] `STORE-SINGLE-001` `matrix` `verified_vanilla`
+  Single-resource stores accept only their configured resource type for
+  canonical single-store structures, including spawn, extension, tower, and
+  link.
+- [ ] `STORE-SINGLE-002` `matrix` `verified_vanilla`
+  Single-store capacity constants match the canonical Screeps capacities for
+  spawn, extension by RCL, tower, and link.
+- [ ] `STORE-SINGLE-003` `matrix` `verified_vanilla`
+  For single-resource stores, `getCapacity(type)`, `getUsedCapacity(type)`,
+  and `getFreeCapacity(type)` return numeric values for the configured
+  resource type.
+- [ ] `STORE-SINGLE-004` `matrix` `verified_vanilla`
+  For single-resource stores, `getCapacity()`, `getUsedCapacity()`, and
+  `getFreeCapacity()` without a resource argument return `null`.
+
+### 23.4 Restricted Stores
+- [ ] `STORE-RESTRICTED-001` `matrix` `verified_vanilla`
+  For restricted stores, each allowed resource type has its own capacity
+  limit.
+- [ ] `STORE-RESTRICTED-002` `matrix` `verified_vanilla`
+  Restricted-store capacity constants match the canonical Screeps capacities
+  for lab, power spawn, and nuker.
+- [ ] `STORE-RESTRICTED-003` `matrix` `verified_vanilla`
+  For restricted stores, `getCapacity(type)`, `getUsedCapacity(type)`, and
+  `getFreeCapacity(type)` return numeric values for allowed resource types.
+- [ ] `STORE-RESTRICTED-004` `matrix` `verified_vanilla`
+  For restricted stores, `getCapacity(type)`, `getUsedCapacity(type)`, and
+  `getFreeCapacity(type)` return `null` for disallowed resource types.
+- [ ] `STORE-RESTRICTED-005` `matrix` `verified_vanilla`
+  For restricted stores, `getCapacity()`, `getUsedCapacity()`, and
+  `getFreeCapacity()` without a resource argument return `null`.
+
+### 23.5 Timer Models
+- [ ] `TIMER-COOLDOWN-001` `behavior` `needs_vanilla_verification`
+  For APIs gated by `cooldownTime`, the action becomes available in the same
+  tick the exposed cooldown reaches `0`.
+- [ ] `TIMER-SAFEMODE-001` `behavior` `needs_vanilla_verification`
+  Effects gated by `safeMode` stop blocking in the same tick the exposed safe
+  mode timer reaches `0`.
+
+Coverage Notes
+- Shared timer rules should not be treated as settled until their full
+  applicability inventory is explicit and verified.
+- `endTime` effect expiration is not one shared timer model; some checks use
+  `endTime > time` while others use `endTime >= time`, so those behaviors should
+  stay with their local mechanics.
+- `decayTime`, `nextDecayTime`, `spawnTime`, and `landTime` also use
+  family-specific edge conditions and should stay local unless a stricter shared
+  sub-model emerges.
 
 ---
 
 ## 24. Intent Resolution
 
-### 24.1 Tick Processing Order
-- [ ] Pre-tick phases run first: nuke, keeper, invader, invader core pretick.
-- [ ] Spawn energy is calculated before user intents.
-- [ ] All user intents from all players are collected before any resolve.
-- [ ] Movement collision resolution runs after all other intents.
-- [ ] Post-intent processing handles decay, regeneration, and lifecycle.
-- [ ] The tick number increments after all processing is complete.
+### 24.1 Creep Action Priority
+- [ ] `INTENT-CREEP-001` `matrix` `verified_vanilla`
+  For each method pair listed under `INTENT-CREEP-001` in
+  `docs/behavior-matrices.md`, the higher-priority blocking creep intent
+  prevents the lower-priority intent from resolving in the same tick.
+- [ ] `INTENT-CREEP-005` `matrix` `needs_vanilla_verification`
+  For creep methods with single-intent overwrite semantics, repeated same-tick
+  calls keep only the last intent for that method.
+- [ ] `INTENT-CREEP-006` `matrix` `needs_vanilla_verification`
+  For creep methods that support `cancelOrder(methodName)`, canceling a queued
+  same-tick intent prevents that method's intent from resolving.
 
-### 24.2 Creep Action Priority
-- [ ] Priority chain (higher blocks lower): rangedHeal → attackController → dismantle → repair → build → attack → harvest → rangedMassAttack → rangedAttack.
-- [ ] If a higher-priority action is present, lower-priority actions in the chain are skipped.
-- [ ] Non-blocking actions execute independently: drop, transfer, withdraw, pickup, heal, move, pull, say, suicide.
-- [ ] Calling the same method twice in one tick: the last call's intent wins.
-- [ ] `cancelOrder()` can remove a specific method's intent before the tick resolves.
-- [ ] `move()` always executes regardless of other actions.
-- [ ] `heal()` (melee) is non-blocking and can combine with any action.
-- [ ] `rangedHeal()` blocks all lower-priority actions in the chain.
+Coverage Notes
+- `move()` and `heal()` compatibility with the blocking creep action priority
+  chain should be expressed through concrete same-tick scenarios rather than as
+  abstract independence claims.
+- Non-blocking action combinations should be captured through concrete
+  compatibility scenarios rather than as one umbrella sentence.
 
-### 24.3 Same-Tick Resource Visibility
-- [ ] Each action sees the creep's resources as of the tick start.
-- [ ] Energy from `withdraw()` is not available for `upgradeController()` in the same tick.
-- [ ] `transfer()` removes resources from the sender immediately but the recipient sees them next tick.
-- [ ] Multiple actions consuming the same resource type each see the full starting amount.
+### 24.2 Same-Tick Resource Visibility
+- [ ] `INTENT-RESOURCE-001` `behavior` `needs_vanilla_verification`
+  Resources gained by `withdraw()` are not available to other actions by that
+  creep until the next tick.
+- [ ] `INTENT-RESOURCE-002` `behavior` `needs_vanilla_verification`
+  `transfer()` removes resources from the sender in the same tick, but the
+  recipient does not receive the resources until the next tick.
+- [ ] `INTENT-RESOURCE-003` `behavior` `needs_vanilla_verification`
+  When multiple same-tick actions compete for the same stored resource, each
+  action resolves against the creep's tick-start resources.
+- [ ] `INTENT-RESOURCE-004` `behavior` `needs_vanilla_verification`
+  When same-tick capacity conflicts exist between these actions, `withdraw()`
+  is preferred over `pickup()` and `pickup()` is preferred over `transfer()`.
 
-### 24.4 Intent Limits
-- [ ] `Game.market.deal()` is capped at 10 intents per tick.
-- [ ] `cancelOrder()`, `changeOrderPrice()`, `extendOrder()` are each capped at 50 per tick.
-- [ ] Power creep management actions (spawn, suicide, delete, upgrade, rename, create) are each capped at 50 per tick.
-- [ ] Exceeding a cap returns OK but the intent is silently dropped.
+### 24.3 Intent Limits
+- [ ] `INTENT-LIMIT-001` `matrix` `verified_vanilla`
+  Per-tick intent caps for market and power-creep management actions match the
+  canonical Screeps limit table.
+- [ ] `INTENT-LIMIT-002` `matrix` `needs_vanilla_verification`
+  For each capped intent family, calls beyond the per-tick cap return `OK` but
+  do not take effect.
 
-### 24.5 Simultaneous Actions
-- [ ] `move()` + `rangedMassAttack()` + `heal()` can all execute in the same tick.
-- [ ] `build()` and `repair()` cannot execute in the same tick (same pipeline).
-- [ ] When capacity conflicts exist, priority is: withdraw > pickup > transfer.
-- [ ] Healing a healthy creep returns OK and still blocks lower-priority pipeline actions.
-- [ ] `rangedAttack()` and `rangedHeal()` cannot both execute (rangedHeal has higher priority).
+### 24.4 Simultaneous Actions
+- [ ] `INTENT-SIMULT-001` `behavior` `needs_vanilla_verification`
+  `move()`, `rangedMassAttack()`, and `heal()` can all execute in the same
+  tick on the same creep.
+- [ ] `INTENT-SIMULT-004` `behavior` `needs_vanilla_verification`
+  `heal()` on a healthy creep returns `OK` and still blocks lower-priority
+  actions in the blocking creep action chain.
+
+Coverage Notes
+- Same-pipeline exclusions already implied by `24.2 Creep Action Priority`
+  should not be duplicated here.
 
 ---
 
 ## 25. Memory
 
 ### 25.1 Main Memory
-- [ ] `Memory` is auto-parsed from JSON on first access each tick.
-- [ ] `Memory` is auto-serialized to JSON at tick end.
-- [ ] Memory has a 2 MB size limit — exceeding it causes an error.
+- [ ] `MEMORY-001` `behavior` `verified_vanilla`
+  If `RawMemory.set()` is called before the first `Memory` access in a tick,
+  the first `Memory` access reflects the new raw memory string.
+- [ ] `MEMORY-002` `behavior` `verified_vanilla`
+  After `Memory` has been accessed in a tick, later `RawMemory.set()` calls do
+  not replace the already-parsed `Memory` object for that tick.
+- [ ] `MEMORY-003` `behavior` `verified_vanilla`
+  If `Memory` was parsed or mutated during the tick, it is serialized back to
+  `RawMemory` at tick end.
+- [ ] `MEMORY-004` `behavior` `verified_vanilla`
+  `RawMemory.set()` throws when the raw memory string exceeds the `2 MB`
+  limit.
 
 ### 25.2 RawMemory
-- [ ] `RawMemory.get()` returns the raw memory string.
-- [ ] `RawMemory.set()` replaces the raw memory string.
-- [ ] 100 segments are available, each up to 100 KB.
-- [ ] `setActiveSegments(ids)` activates up to 10 segments, available next tick.
-- [ ] `segments[id]` accesses the content of an active segment.
+- [ ] `RAWMEMORY-001` `behavior` `verified_vanilla`
+  `RawMemory.get()` returns the current raw memory string.
+- [ ] `RAWMEMORY-002` `behavior` `verified_vanilla`
+  `RawMemory.set(value)` replaces the raw memory string when `value` is a
+  string within the size limit.
+- [ ] `RAWMEMORY-003` `matrix` `verified_vanilla`
+  Raw memory segment ids, per-segment size limit, and active-segment count
+  limits match the canonical memory-segment limits.
+- [ ] `RAWMEMORY-004` `behavior` `verified_vanilla`
+  After `RawMemory.setActiveSegments(ids)`, those segment ids become the active
+  `RawMemory.segments` set on the next tick.
+- [ ] `RAWMEMORY-005` `behavior` `verified_vanilla`
+  `RawMemory.segments[id]` exposes the content of currently active segments.
 
 ### 25.3 Foreign Segments
-- [ ] `setActiveForeignSegment(username, id?)` requests another player's public segment.
-- [ ] `foreignSegment` is available the next tick with {username, id, data}.
-- [ ] `setDefaultPublicSegment()` sets which segment other players see by default.
+- [ ] `RAWMEMORY-FOREIGN-001` `behavior` `verified_vanilla`
+  `RawMemory.setActiveForeignSegment(username, id?)` does not replace
+  `RawMemory.foreignSegment` in the same tick.
+- [ ] `RAWMEMORY-FOREIGN-002` `behavior` `verified_vanilla`
+  `RawMemory.foreignSegment` exposes `{username, id, data}` when a foreign
+  segment is available.
+- [ ] `RAWMEMORY-FOREIGN-003` `behavior` `verified_vanilla`
+  After `RawMemory.setPublicSegments(ids)`, only those segment ids are exposed
+  as the player's public segments to foreign-segment readers.
+- [ ] `RAWMEMORY-FOREIGN-004` `behavior` `verified_vanilla`
+  After `RawMemory.setDefaultPublicSegment(id)`, foreign-segment readers
+  without an explicit id receive that segment by default.
 
 ---
 
 ## Summary
 
-| # | Area | Facets | Behaviors |
-|---|------|--------|-----------|
-| 1 | Movement | 7 | 46 |
-| 2 | Pathfinding | 4 | 25 |
-| 3 | Harvesting | 3 | 22 |
-| 4 | Resource Transfer | 5 | 29 |
-| 5 | Construction & Repair | 4 | 33 |
-| 6 | Controller | 10 | 55 |
-| 7 | Combat | 16 | 82 |
-| 8 | Boosts | 12 | 52 |
-| 9 | Spawning & Lifecycle | 10 | 46 |
-| 10 | Structures — Energy & Storage | 4 | 22 |
-| 11 | Structures — Production | 6 | 34 |
-| 12 | Structures — Military | 4 | 17 |
-| 13 | Structures — Infrastructure | 6 | 24 |
-| 14 | Structures — NPC | 3 | 14 |
-| 15 | Structure Common | 3 | 11 |
-| 16 | Room Mechanics | 7 | 34 |
-| 17 | Source, Mineral & Deposit | 5 | 19 |
-| 18 | Game Objects | 3 | 12 |
-| 19 | Power Creeps | 8 | 45 |
-| 20 | Market | 4 | 19 |
-| 21 | Map | 3 | 13 |
-| 22 | RoomPosition | 5 | 20 |
-| 23 | Store API | 2 | 10 |
-| 24 | Intent Resolution | 5 | 27 |
-| 25 | Memory | 3 | 11 |
-| | **Total** | **136** | **~762** |
-
-Coverage will grow toward 800–1200 as edge cases, boundary values, and
-multi-player interaction scenarios are added during sentence review.
+Coverage counts are temporarily omitted. The facet and behavior totals need to
+be recomputed after the current normalization pass is complete.
 
 ### Deliberately excluded (per spec.md non-goals):
 - CPU/heap metrics (engine-specific values)

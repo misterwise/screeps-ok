@@ -2,6 +2,12 @@
 
 Behavioral conformance test suite for Screeps server implementations. Write a test once, run it against any engine.
 
+The suite is governed by three companion docs:
+
+- `behaviors.md` for the behavioral catalog
+- `docs/behavior-matrices.md` for matrix-backed case-family definitions
+- `docs/test-authoring.md` for canonical test-writing rules
+
 **Current status:** 138 tests across movement, combat, actions, structures, room mechanics, and Game API.
 
 | Engine | Passing | Notes |

@@ -1,7 +1,12 @@
-import { describe, test, expect, code, OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS, WORK, CARRY, MOVE, STRUCTURE_SPAWN } from '../../src/index.js';
+import {
+	describe, test, expect, code,
+	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS,
+	WORK, CARRY, MOVE,
+	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
+} from '../../src/index.js';
 
 describe('StructureSpawn', () => {
-	test('spawnCreep returns OK with valid body and energy', async ({ shard }) => {
+	test('spawnCreep returns OK with a valid body and sufficient selected energy', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -17,24 +22,31 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('spawnCreep returns ERR_NOT_ENOUGH_ENERGY without sufficient energy', async ({ shard }) => {
+	test('spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
 		});
-		// Spawn with only 50 energy — WORK(100)+CARRY(50)+MOVE(50) costs 200
-		// Total available energy in room must be < 200
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 0 },
+		});
+		const ext1 = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const ext2 = await shard.placeStructure('W1N1', {
+			pos: [27, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
 			store: { energy: 50 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([WORK, CARRY, MOVE], 'Worker1')
+			Game.getObjectById(${spawnId}).spawnCreep(
+				[WORK, CARRY, MOVE],
+				'Worker1',
+				{ energyStructures: [Game.getObjectById(${ext1}), Game.getObjectById(${ext2})] }
+			)
 		`);
-		// Note: spawn draws from all extensions + spawn. If addBot created a spawn
-		// with default energy, total might exceed 200. This test may need adjustment
-		// per adapter if addBot contributes extra energy.
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
 
@@ -60,20 +72,30 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(ERR_NAME_EXISTS);
 	});
 
-	test('spawnCreep body part costs: WORK=100, CARRY=50, MOVE=50', async ({ shard }) => {
+	test('spawnCreep(..., { dryRun: true }) does not consume energy or create a creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
 		});
-
-		// WORK(100) + CARRY(50) + MOVE(50) = 200
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
 			store: { energy: 200 },
 		});
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([WORK, CARRY, MOVE], 'TestExact')
-		`);
-		expect(rc).toBe(OK);
+
+		const result = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const rc = spawn.spawnCreep([WORK, CARRY, MOVE], 'DryRunWorker', { dryRun: true });
+			({
+				rc,
+				energy: spawn.store.energy,
+				hasCreep: !!Game.creeps['DryRunWorker'],
+			})
+		`) as { rc: number; energy: number; hasCreep: boolean };
+
+		expect(result).toEqual({
+			rc: OK,
+			energy: 200,
+			hasCreep: false,
+		});
 	});
 });

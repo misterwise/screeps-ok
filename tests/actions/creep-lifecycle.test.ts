@@ -59,7 +59,20 @@ describe('creep.say()', () => {
 });
 
 describe('creep body part damage', () => {
-	test('30 damage reduces total hits from 300 to 270', async ({ shard }) => {
+	test('each body part has 100 hits and contributes to hitsMax', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [TOUGH, TOUGH, MOVE],
+		});
+
+		const creep = await shard.expectObject(id, 'creep');
+		expect(creep.hits).toBe(300);
+		expect(creep.hitsMax).toBe(300);
+		expect(creep.body.map(part => part.hits)).toEqual([100, 100, 100]);
+	});
+
+	test('incoming damage is applied to the earliest surviving body part first', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -80,9 +93,33 @@ describe('creep body part damage', () => {
 
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(target.hits).toBe(270);
-		// Exactly one body part should have taken 30 damage
-		const damaged = target.body.filter(p => p.hits < 100);
-		expect(damaged).toHaveLength(1);
-		expect(damaged[0].hits).toBe(70);
+		expect(target.body.map(part => part.hits)).toEqual([70, 100, 100]);
+	});
+
+	test('a body part at 0 hits is destroyed before later parts continue taking damage', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2',
+			body: [TOUGH, MOVE, MOVE],
+		});
+
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(target.hits).toBe(180);
+		expect(target.body.map(part => part.hits)).toEqual([0, 80, 100]);
 	});
 });
