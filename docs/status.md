@@ -4,76 +4,79 @@
 
 > _If your engine agrees, it's Screeps._
 
-This page is the generated result of running the canonical suite against 
-each supported adapter. Vanilla is the oracle baseline; every other adapter 
-is measured against that baseline.
+![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-183%20passing%2C%2011%20expected--fail-green)
 
-## Adapter summary
+## Adapters
 
-| Adapter | Status | Passed | Expected failures | Unexpected failures | Skipped | Total | Last run |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| **vanilla** | OK | 199 | 0 | 0 | 1 | 200 | 2026-04-04 21:42:13Z |
-| **xxscreeps** | OK | 183 | 11 | 0 | 6 | 200 | 2026-04-04 21:42:01Z |
+| | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
+| :-: | --- | --: | --: | --: | --: | --- |
+| 🟢 | **vanilla** | 199 | 0 | 0 | 1 | 2026-04-04 21:42 UTC |
+| 🟢 | **xxscreeps** | 183 | 11 | 0 | 6 | 2026-04-04 21:42 UTC |
 
-**Status key.**
-- `OK` — no unexpected failures and no unexpected passes (every failing test is a registered parity gap).
-- `RED` — unexpected failures or unexpected passes exist. See the detail tables below.
-- **Expected failures** are tests tagged with a canonical parity gap id that this adapter currently declares in its `parity.json`. They assert vanilla behavior and remain live as regression traps.
-- **Unexpected failures** are tests that broke outside the known-gap list; these should block a release.
+🟢 all failing tests are registered parity gaps · 🔴 unexpected failures or unexpected passes · **expected-fail** tests stay live as regression traps
 
 ## Parity gaps
 
-Each row is a canonical behavior where at least one adapter disagrees with 
-vanilla. Gap IDs are stable and adapter-neutral; the per-adapter detail comes 
-from each adapter's `parity.json` companion file.
+Behaviors where at least one adapter disagrees with vanilla. Click a row to expand affected tests and engine-specific notes.
 
-### `creep-owner-undefined`
+<details>
+<summary><strong><code>creep-owner-undefined</code></strong> — Creep.owner is undefined on the engine (the key exists but the value is undefined). Vanilla populates it as { username: string } per public docs. <em>(xxscreeps)</em></summary>
 
-Creep.owner is undefined on the engine (the key exists but the value is undefined). Vanilla populates it as { username: string } per public docs.
+**xxscreeps** — 2 tests
 
-| Adapter | Tests affected |
-| --- | --- |
-| xxscreeps | `signController writes the provided text to the controller sign`<br>`reserveController returns OK and creates a reservation for the player` |
+- `signController writes the provided text to the controller sign`
+- `reserveController returns OK and creates a reservation for the player`
 
-**xxscreeps note:** xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.
+> xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.
 
-### `extension-rcl-capacity`
+</details>
 
-StructureExtension reports the RCL 8 capacity (200) regardless of room controller level, and isActive() returns true even when CONTROLLER_STRUCTURES.extension forbids extensions at that RCL.
+<details>
+<summary><strong><code>extension-rcl-capacity</code></strong> — StructureExtension reports the RCL 8 capacity (200) regardless of room controller level, and isActive() returns true even when CONTROLLER_STRUCTURES.extension forbids extensions at that RCL. <em>(xxscreeps)</em></summary>
 
-| Adapter | Tests affected |
-| --- | --- |
-| xxscreeps | `EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable`<br>`ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension`<br>`ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions`<br>`ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension` |
+**xxscreeps** — 4 tests
 
-**xxscreeps note:** xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL, and isActive() returns true even at RCL 1 where CONTROLLER_STRUCTURES.extension[1] is 0.
+- `EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable`
+- `ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension`
+- `ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions`
+- `ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension`
 
-### `describe-exits-topology`
+> xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL, and isActive() returns true even at RCL 1 where CONTROLLER_STRUCTURES.extension[1] is 0.
 
-Game.map.describeExits filters returned directions by which neighbor rooms exist in the current shard rather than returning all four coordinate-derived neighbors.
+</details>
 
-| Adapter | Tests affected |
-| --- | --- |
-| xxscreeps | `MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name` |
+<details>
+<summary><strong><code>describe-exits-topology</code></strong> — Game.map.describeExits filters returned directions by which neighbor rooms exist in the current shard rather than returning all four coordinate-derived neighbors. <em>(xxscreeps)</em></summary>
 
-**xxscreeps note:** xxscreeps Game.map.describeExits only returns exits whose neighbor room was instantiated in the current shard. Vanilla returns all four coordinate-derived neighbors regardless.
+**xxscreeps** — 1 test
 
-### `pathfinder-suboptimal`
+- `MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name`
 
-PathFinder.search returns a suboptimal (longer) path on open plains where vanilla finds a straight diagonal.
+> xxscreeps Game.map.describeExits only returns exits whose neighbor room was instantiated in the current shard. Vanilla returns all four coordinate-derived neighbors regardless.
 
-| Adapter | Tests affected |
-| --- | --- |
-| xxscreeps | `PathFinder.search accepts a single goal position with range` |
+</details>
 
-**xxscreeps note:** xxscreeps PathFinder picks a 35-step zigzag where vanilla finds a 29-step straight diagonal on open plains from (10,10) to (39,39).
+<details>
+<summary><strong><code>pathfinder-suboptimal</code></strong> — PathFinder.search returns a suboptimal (longer) path on open plains where vanilla finds a straight diagonal. <em>(xxscreeps)</em></summary>
 
-### `tombstone-corpse-rate`
+**xxscreeps** — 1 test
 
-Tombstone stores are reduced by CREEP_CORPSE_RATE on both suicide and ticksToLive death, and no body energy is reclaimed on suicide at high remaining TTL.
+- `PathFinder.search accepts a single goal position with range`
 
-| Adapter | Tests affected |
-| --- | --- |
-| xxscreeps | `suicide at high remaining TTL also reclaims body energy into the tombstone`<br>`CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone`<br>`CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone` |
+> xxscreeps PathFinder picks a 35-step zigzag where vanilla finds a 29-step straight diagonal on open plains from (10,10) to (39,39).
 
-**xxscreeps note:** xxscreeps tombstones preserve floor(store * CREEP_CORPSE_RATE) on both suicide and ticksToLive death paths. Vanilla preserves the full store on both paths and also reclaims body energy on suicide at high remaining TTL.
+</details>
+
+<details>
+<summary><strong><code>tombstone-corpse-rate</code></strong> — Tombstone stores are reduced by CREEP_CORPSE_RATE on both suicide and ticksToLive death, and no body energy is reclaimed on suicide at high remaining TTL. <em>(xxscreeps)</em></summary>
+
+**xxscreeps** — 3 tests
+
+- `suicide at high remaining TTL also reclaims body energy into the tombstone`
+- `CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone`
+- `CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone`
+
+> xxscreeps tombstones preserve floor(store * CREEP_CORPSE_RATE) on both suicide and ticksToLive death paths. Vanilla preserves the full store on both paths and also reclaims body energy on suicide at high remaining TTL.
+
+</details>
 

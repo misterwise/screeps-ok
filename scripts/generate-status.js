@@ -129,21 +129,83 @@ function summarizeReport(report) {
 
 function formatTimestamp(report) {
 	if (!report?.startTime) return 'never';
-	return new Date(report.startTime).toISOString().replace('T', ' ').replace(/\..*$/, 'Z');
+	// Produce "YYYY-MM-DD HH:MM UTC" without the seconds noise.
+	const iso = new Date(report.startTime).toISOString();
+	return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
+}
+
+function stripGapPrefix(fullName) {
+	return fullName.replace(/.*?\[known-gap:[^\]]+\]\s*/, '');
+}
+
+function isAdapterOk(summary) {
+	return summary.failed === 0 && summary.unexpectedPasses.length === 0;
+}
+
+function adapterStatusIcon(summary) {
+	if (!summary.loaded) return '⚪';
+	return isAdapterOk(summary) ? '🟢' : '🔴';
+}
+
+function shieldBadge(label, message, color) {
+	const enc = s => encodeURIComponent(s).replace(/-/g, '--').replace(/_/g, '__');
+	return `https://img.shields.io/badge/${enc(label)}-${enc(message)}-${color}`;
+}
+
+function renderHeaderBadges(summaries) {
+	const badges = [];
+	for (const [adapter, data] of Object.entries(summaries)) {
+		const s = data.summary;
+		if (!s.loaded) {
+			badges.push(`![${adapter}](${shieldBadge(adapter, 'no report', 'lightgrey')})`);
+			continue;
+		}
+		const ok = isAdapterOk(s);
+		const color = !ok ? 'red' : s.expectedFailure > 0 ? 'green' : 'brightgreen';
+		const msg = !ok
+			? `${s.failed} failing`
+			: s.expectedFailure > 0
+				? `${s.passed} passing, ${s.expectedFailure} expected-fail`
+				: `${s.passed} passing`;
+		badges.push(`![${adapter}](${shieldBadge(adapter, msg, color)})`);
+	}
+	return badges.join(' ');
 }
 
 function renderAdapterRow(adapter, report, summary) {
 	if (!summary.loaded) {
-		return `| **${adapter}** | _no report_ | — | — | — | — | — | — |`;
+		return `| ⚪ | **${adapter}** | — | — | — | — | _no report_ |`;
 	}
-	const status = summary.failed === 0 && summary.unexpectedPasses.length === 0
-		? 'OK'
-		: 'RED';
-	return `| **${adapter}** | ${status} | ${summary.passed} | ${summary.expectedFailure} | ${summary.failed} | ${summary.skipped} | ${summary.total} | ${formatTimestamp(report)} |`;
+	const icon = adapterStatusIcon(summary);
+	return `| ${icon} | **${adapter}** | ${summary.passed} | ${summary.expectedFailure} | ${summary.failed} | ${summary.skipped} | ${formatTimestamp(report)} |`;
+}
+
+function renderGapDetails(gapId, row) {
+	const lines = [];
+	const adapterNames = row.adapters.map(a => a.name).join(', ');
+	lines.push(`<details>`);
+	lines.push(`<summary><strong><code>${gapId}</code></strong> — ${row.summary} <em>(${adapterNames})</em></summary>`);
+	lines.push('');
+	for (const adapter of row.adapters) {
+		const testCount = adapter.tests.length;
+		lines.push(`**${adapter.name}** — ${testCount} test${testCount === 1 ? '' : 's'}`);
+		lines.push('');
+		if (testCount > 0) {
+			for (const testName of adapter.tests) {
+				lines.push(`- \`${stripGapPrefix(testName)}\``);
+			}
+			lines.push('');
+		}
+		if (adapter.note) {
+			lines.push(`> ${adapter.note}`);
+			lines.push('');
+		}
+	}
+	lines.push(`</details>`);
+	return lines.join('\n');
 }
 
 function renderParityGapSection(summaries, canonicalSummaries) {
-	// Build a gap → { adapters: [{ name, tests: [testNames], note: string }] } map
 	const gapRows = {};
 	for (const gapId of Object.keys(canonicalSummaries)) {
 		gapRows[gapId] = { summary: canonicalSummaries[gapId], adapters: [] };
@@ -169,38 +231,23 @@ function renderParityGapSection(summaries, canonicalSummaries) {
 	const lines = [];
 	if (activeGaps.length === 0) {
 		lines.push('_No adapter currently declares any expected failures._');
+		lines.push('');
 	} else {
 		for (const [gapId, row] of activeGaps) {
-			lines.push(`### \`${gapId}\``);
-			lines.push('');
-			lines.push(row.summary);
-			lines.push('');
-			lines.push('| Adapter | Tests affected |');
-			lines.push('| --- | --- |');
-			for (const adapter of row.adapters) {
-				const testList = adapter.tests.length > 0
-					? adapter.tests.map(t => t.replace(/.*\[known-gap:[^\]]+\]\s*/, '')).map(t => `\`${t}\``).join('<br>')
-					: '_no tagged tests found in last run_';
-				lines.push(`| ${adapter.name} | ${testList} |`);
-			}
-			for (const adapter of row.adapters) {
-				if (adapter.note) {
-					lines.push('');
-					lines.push(`**${adapter.name} note:** ${adapter.note}`);
-				}
-			}
+			lines.push(renderGapDetails(gapId, row));
 			lines.push('');
 		}
 	}
 
 	if (unusedGaps.length > 0) {
-		lines.push('### Registered but unused');
-		lines.push('');
-		lines.push('Canonical gap IDs that are not currently listed by any adapter.');
+		lines.push('<details>');
+		lines.push(`<summary>${unusedGaps.length} registered gap${unusedGaps.length === 1 ? '' : 's'} not currently exhibited by any adapter</summary>`);
 		lines.push('');
 		for (const [gapId, row] of unusedGaps) {
 			lines.push(`- \`${gapId}\` — ${row.summary}`);
 		}
+		lines.push('');
+		lines.push('</details>');
 		lines.push('');
 	}
 
@@ -215,56 +262,50 @@ function render(summaries, canonicalSummaries) {
 	lines.push('');
 	lines.push('> _If your engine agrees, it\'s Screeps._');
 	lines.push('');
-	lines.push('This page is the generated result of running the canonical suite against ');
-	lines.push('each supported adapter. Vanilla is the oracle baseline; every other adapter ');
-	lines.push('is measured against that baseline.');
+	lines.push(renderHeaderBadges(summaries));
 	lines.push('');
-	lines.push('## Adapter summary');
+
+	// Adapter table
+	lines.push('## Adapters');
 	lines.push('');
-	lines.push('| Adapter | Status | Passed | Expected failures | Unexpected failures | Skipped | Total | Last run |');
-	lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
+	lines.push('| | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |');
+	lines.push('| :-: | --- | --: | --: | --: | --: | --- |');
 	for (const [adapter, data] of Object.entries(summaries)) {
 		lines.push(renderAdapterRow(adapter, data.report, data.summary));
 	}
 	lines.push('');
-	lines.push('**Status key.**');
-	lines.push('- `OK` — no unexpected failures and no unexpected passes (every failing test is a registered parity gap).');
-	lines.push('- `RED` — unexpected failures or unexpected passes exist. See the detail tables below.');
-	lines.push('- **Expected failures** are tests tagged with a canonical parity gap id that this adapter currently declares in its `parity.json`. They assert vanilla behavior and remain live as regression traps.');
-	lines.push('- **Unexpected failures** are tests that broke outside the known-gap list; these should block a release.');
+	lines.push('🟢 all failing tests are registered parity gaps · 🔴 unexpected failures or unexpected passes · **expected-fail** tests stay live as regression traps');
 	lines.push('');
 
-	// Unexpected passes
+	// Unexpected passes section — only renders when triggered
 	const unexpectedAdapters = Object.entries(summaries).filter(
 		([, d]) => d.summary.unexpectedPasses.length > 0,
 	);
 	if (unexpectedAdapters.length > 0) {
-		lines.push('## Unexpected passes (regression traps triggered)');
+		lines.push('## 🚨 Regression traps triggered');
 		lines.push('');
-		lines.push('A test tagged as a known parity gap has started passing on this adapter. ');
-		lines.push('Investigate, and drop the gap from the adapter\'s `parity.json` if the engine ');
-		lines.push('has fixed the behavior.');
+		lines.push('Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter\'s `parity.json` if the engine has fixed the behavior.');
 		lines.push('');
 		for (const [adapter, data] of unexpectedAdapters) {
-			lines.push(`**${adapter}:**`);
+			lines.push(`**${adapter}**`);
 			for (const t of data.summary.unexpectedPasses) {
-				lines.push(`- ${t.fullName}`);
+				lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
 			}
 			lines.push('');
 		}
 	}
 
-	// Unexpected failures
+	// Unexpected failures — only renders when present
 	const failedAdapters = Object.entries(summaries).filter(
 		([, d]) => d.summary.failed > 0,
 	);
 	if (failedAdapters.length > 0) {
-		lines.push('## Unexpected failures');
+		lines.push('## 🚨 Unexpected failures');
 		lines.push('');
 		for (const [adapter, data] of failedAdapters) {
-			lines.push(`**${adapter}:**`);
+			lines.push(`**${adapter}**`);
 			for (const t of data.summary.failingTests) {
-				lines.push(`- ${t.fullName}`);
+				lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
 			}
 			lines.push('');
 		}
@@ -272,9 +313,7 @@ function render(summaries, canonicalSummaries) {
 
 	lines.push('## Parity gaps');
 	lines.push('');
-	lines.push('Each row is a canonical behavior where at least one adapter disagrees with ');
-	lines.push('vanilla. Gap IDs are stable and adapter-neutral; the per-adapter detail comes ');
-	lines.push('from each adapter\'s `parity.json` companion file.');
+	lines.push('Behaviors where at least one adapter disagrees with vanilla. Click a row to expand affected tests and engine-specific notes.');
 	lines.push('');
 	lines.push(renderParityGapSection(summaries, canonicalSummaries));
 
