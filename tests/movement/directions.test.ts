@@ -1,17 +1,20 @@
 import {
 	describe, test, expect, code,
 	MOVE, OK,
-	TOP, TOP_RIGHT, RIGHT, BOTTOM, LEFT,
+	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
 } from '../../src/index.js';
 import { requireCapability } from '../support/policy.js';
 
 describe('movement: directions', () => {
 	const cases = [
 		{ label: 'TOP', direction: TOP, expected: { x: 25, y: 24 } },
-		{ label: 'BOTTOM', direction: BOTTOM, expected: { x: 25, y: 26 } },
-		{ label: 'LEFT', direction: LEFT, expected: { x: 24, y: 25 } },
-		{ label: 'RIGHT', direction: RIGHT, expected: { x: 26, y: 25 } },
 		{ label: 'TOP_RIGHT', direction: TOP_RIGHT, expected: { x: 26, y: 24 } },
+		{ label: 'RIGHT', direction: RIGHT, expected: { x: 26, y: 25 } },
+		{ label: 'BOTTOM_RIGHT', direction: BOTTOM_RIGHT, expected: { x: 26, y: 26 } },
+		{ label: 'BOTTOM', direction: BOTTOM, expected: { x: 25, y: 26 } },
+		{ label: 'BOTTOM_LEFT', direction: BOTTOM_LEFT, expected: { x: 24, y: 26 } },
+		{ label: 'LEFT', direction: LEFT, expected: { x: 24, y: 25 } },
+		{ label: 'TOP_LEFT', direction: TOP_LEFT, expected: { x: 24, y: 24 } },
 	] as const;
 
 	for (const { label, direction, expected } of cases) {

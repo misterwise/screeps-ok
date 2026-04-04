@@ -252,7 +252,9 @@ Each definition should include:
 - `Exclusions`
   Energy cost, intent priority, target validity, and tower power effects
 - `Verification Notes`
-  This family covers falloff/output by range only.
+  This family covers falloff/output by range only. The current generated suite
+  uses representative exact cases at range `3`, `10`, and `20` to cover close,
+  interpolated, and max-falloff behavior.
 
 ### TOWER-TARGETS
 
@@ -336,6 +338,9 @@ Each definition should include:
   Nonstandard NPC death paths and power creep death
 - `Verification Notes`
   This family exists to ensure equivalent tombstone handling across multiple
+  death sources, even if vanilla currently shares a helper. The current
+  generated suite covers `suicide()` and `ticksToLive` expiry for carried
+  resource preservation only; reclaimed body energy remains source-specific.
   death sources, even if vanilla currently shares a helper.
 
 ### CONTAINER-DECAY
@@ -476,8 +481,9 @@ Each definition should include:
 - `Exclusions`
   Filter behavior, exit concatenation, and player-perspective helper rules
 - `Verification Notes`
-  The exact supported constant set should be kept explicit here as tests are
-  generated.
+  The current generated suite covers the explicit player-relative constants
+  `FIND_MY_CREEPS`, `FIND_HOSTILE_CREEPS`, `FIND_MY_STRUCTURES`, and
+  `FIND_HOSTILE_STRUCTURES`.
 
 ### ROOM-TERRAIN
 

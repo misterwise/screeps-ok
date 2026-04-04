@@ -782,9 +782,9 @@ Coverage Notes
   When a tombstone decays, any remaining stored resources become dropped
   resources on the same tile before the tombstone is removed.
 - [ ] `CREEP-DEATH-008` `matrix` `verified_vanilla`
-  Standard player-creep tombstone resource handling matches across death
-  sources that produce ordinary tombstones, including `ticksToLive` expiry and
-  `suicide()`.
+  Standard player-creep tombstone handling for carried resources matches across
+  death sources that produce ordinary tombstones, including `ticksToLive`
+  expiry and `suicide()`.
 
 ### 9.8 Suicide
 - [ ] `CREEP-SUICIDE-001` `behavior` `verified_vanilla`

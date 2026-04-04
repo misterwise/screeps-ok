@@ -1,7 +1,7 @@
 import {
 	describe, test, expect, code,
 	MOVE, CARRY,
-	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_SOURCES,
+	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES, FIND_SOURCES,
 	LOOK_CREEPS,
 	STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
 	RESOURCE_ENERGY,
@@ -138,7 +138,27 @@ describe('room energy tracking', () => {
 });
 
 describe('Room.find', () => {
-	test('ROOM-FIND-001 [my-vs-hostile-creeps] player-relative FIND constants evaluate from the current player perspective', async ({ shard }) => {
+	const playerRelativeCases = [
+		{
+			label: 'FIND_MY_CREEPS',
+			findConstant: FIND_MY_CREEPS,
+		},
+		{
+			label: 'FIND_HOSTILE_CREEPS',
+			findConstant: FIND_HOSTILE_CREEPS,
+		},
+		{
+			label: 'FIND_MY_STRUCTURES',
+			findConstant: FIND_MY_STRUCTURES,
+		},
+		{
+			label: 'FIND_HOSTILE_STRUCTURES',
+			findConstant: FIND_HOSTILE_STRUCTURES,
+		},
+	] as const;
+
+	for (const { label, findConstant } of playerRelativeCases) {
+		test(`ROOM-FIND-001 [${label}] player-relative FIND constants evaluate from the current player perspective`, async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -149,19 +169,31 @@ describe('Room.find', () => {
 		await shard.placeCreep('W1N1', {
 			pos: [26, 25], owner: 'p2', body: [MOVE], name: 'Hostile',
 		});
+		await shard.placeStructure('W1N1', {
+			pos: [24, 25], owner: 'p1', structureType: STRUCTURE_SPAWN,
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [27, 25], owner: 'p2', structureType: STRUCTURE_SPAWN,
+		});
 		await shard.tick();
 
-		const result = await shard.runPlayer('p1', code`
-			const room = Game.rooms['W1N1'];
-			({
-				my: room.find(FIND_MY_CREEPS).map(c => c.name).sort(),
-				hostile: room.find(FIND_HOSTILE_CREEPS).map(c => c.name).sort(),
-			})
-		`) as { my: string[]; hostile: string[] };
+		const expectedValues = {
+			FIND_MY_CREEPS: ['Mine'],
+			FIND_HOSTILE_CREEPS: ['Hostile'],
+			FIND_MY_STRUCTURES: ['controller', 'spawn'],
+			FIND_HOSTILE_STRUCTURES: ['spawn'],
+		} as const;
 
-		expect(result.my).toEqual(['Mine']);
-		expect(result.hostile).toEqual(['Hostile']);
-	});
+		const result = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1']
+				.find(${findConstant})
+				.map(obj => obj.structureType || obj.name)
+				.sort()
+		`) as string[];
+
+		expect(result).toEqual(expectedValues[label]);
+		});
+	}
 
 	test('ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
