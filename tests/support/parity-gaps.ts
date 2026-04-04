@@ -114,6 +114,27 @@ function loadExpectedFailuresForActiveAdapter(): Set<ParityGapId> {
 }
 
 /**
+ * Prefix stamped onto test names when the active adapter's parity.json
+ * lists the gap. This makes expected-failures visible in default console
+ * output and parseable from the JSON reporter for dashboard generation.
+ */
+export const KNOWN_GAP_PREFIX = '[known-gap:';
+
+/**
+ * Parse a test fullName and return the gap id if it is a known-gap tagged
+ * test, or null otherwise. Used by the dashboard generator to count
+ * expected-failures distinct from genuine passes.
+ */
+export function parseKnownGapTitle(fullName: string): ParityGapId | null {
+	const start = fullName.indexOf(KNOWN_GAP_PREFIX);
+	if (start < 0) return null;
+	const end = fullName.indexOf(']', start + KNOWN_GAP_PREFIX.length);
+	if (end < 0) return null;
+	const id = fullName.slice(start + KNOWN_GAP_PREFIX.length, end);
+	return id in PARITY_GAPS ? (id as ParityGapId) : null;
+}
+
+/**
  * Returns the test function to use for a test that exercises a known engine
  * parity gap. The mapping "which engine has which gap" is read from the
  * active adapter's `parity.json` companion file; this function is purely a
@@ -125,17 +146,27 @@ function loadExpectedFailuresForActiveAdapter(): Set<ParityGapId> {
  *   });
  *
  * Behavior:
- * - Adapter's parity.json lists the id → returns `test.fails`: a failing
- *   body is reported as passed (expected failure), a passing body is
- *   reported as failed (unexpected pass, regression trap).
- * - Adapter does not list the id, or has no parity.json → returns `test`:
- *   the test runs normally.
+ * - Adapter's parity.json lists the id → delegates to `test.fails` and
+ *   prefixes the test name with `[known-gap:<id>] `. A failing body is
+ *   reported as passed (expected failure); a passing body is reported as
+ *   failed (unexpected pass, regression trap).
+ * - Adapter does not list the id, or has no parity.json → delegates to
+ *   the regular `test` function with an unchanged name.
  */
 export function knownParityGap(id: ParityGapId): typeof test {
 	if (!(id in PARITY_GAPS)) {
 		throw new Error(`knownParityGap: unknown id '${id}'`);
 	}
-	return loadExpectedFailuresForActiveAdapter().has(id)
-		? (test.fails as typeof test)
-		: test;
+	if (!loadExpectedFailuresForActiveAdapter().has(id)) {
+		return test;
+	}
+	const failsFn = test.fails as typeof test;
+	// Prefix the title so expected-failures are visible in reporter output
+	// and can be counted by reading the JSON report. The original title
+	// remains after the prefix for traceability.
+	return ((name: string, ...rest: unknown[]) =>
+		(failsFn as unknown as (n: string, ...r: unknown[]) => void)(
+			`${KNOWN_GAP_PREFIX}${id}] ${name}`,
+			...rest,
+		)) as typeof test;
 }

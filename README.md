@@ -12,10 +12,10 @@ The suite is governed by three companion docs:
 canonical tests with generated matrix families. Vanilla is the primary oracle
 for intended behavior; xxscreeps is run continuously as a parity target.
 
-| Engine | Passing | Notes |
-|--------|---------|-------|
-| xxscreeps | moving target | known parity gaps are kept visible rather than patched around |
-| vanilla | moving target | current canonical baseline is validated here first |
+**Current suite status:** see [`docs/status.md`](docs/status.md) — a
+generated dashboard listing per-adapter pass/expected-failure/unexpected
+counts and the parity gaps that each adapter currently exhibits. Regenerate
+with `npm run status:refresh`.
 
 For the current exact/partial/matrix-slice coverage map, see
 `docs/test-catalog-alignment.md`.
