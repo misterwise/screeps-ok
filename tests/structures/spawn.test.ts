@@ -1,11 +1,13 @@
 import {
 	describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS,
-	WORK, CARRY, MOVE,
+	WORK, CARRY, MOVE, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
 } from '../../src/index.js';
 
 describe('StructureSpawn', () => {
+	const workerBodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
+
 	test('SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
@@ -13,7 +15,7 @@ describe('StructureSpawn', () => {
 		});
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 200 },
+			store: { energy: workerBodyCost },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
@@ -29,7 +31,7 @@ describe('StructureSpawn', () => {
 		});
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 199 },
+			store: { energy: workerBodyCost - 1 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`

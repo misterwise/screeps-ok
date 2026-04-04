@@ -1,13 +1,8 @@
 import { describe, test, expect, code, OK, ERR_NOT_ENOUGH_ENERGY, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD } from '../../src/index.js';
+import { towerAttackRangeCases, towerHealRangeCases, towerRepairRangeCases } from '../support/matrices/tower-range.js';
 
 describe('StructureTower', () => {
-	const attackRangeCases = [
-		{ range: 3, expectedDamage: 600 },
-		{ range: 10, expectedDamage: 450 },
-		{ range: 20, expectedDamage: 150 },
-	] as const;
-
-	for (const { range, expectedDamage } of attackRangeCases) {
+	for (const { range, expectedAmount } of towerAttackRangeCases) {
 		test(`TOWER-ATTACK-002 [range=${range}] tower.attack() deals the expected falloff damage`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -29,7 +24,7 @@ describe('StructureTower', () => {
 			await shard.tick();
 
 			const target = await shard.expectObject(targetId, 'creep');
-			expect(target.hits).toBe(1000 - expectedDamage);
+			expect(target.hits).toBe(1000 - expectedAmount);
 		});
 	}
 
@@ -57,13 +52,7 @@ describe('StructureTower', () => {
 		expect(tower.store.energy).toBe(990);
 	});
 
-	const healRangeCases = [
-		{ range: 3, expectedHeal: 400 },
-		{ range: 10, expectedHeal: 300 },
-		{ range: 20, expectedHeal: 100 },
-	] as const;
-
-	for (const { range, expectedHeal } of healRangeCases) {
+	for (const { range, expectedAmount } of towerHealRangeCases) {
 		test(`TOWER-HEAL-002 [range=${range}] tower.heal() restores the expected falloff amount`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -101,7 +90,7 @@ describe('StructureTower', () => {
 			await shard.tick();
 
 			const healed = await shard.expectObject(targetId, 'creep');
-			expect(healed.hits).toBe(500 + expectedHeal);
+			expect(healed.hits).toBe(500 + expectedAmount);
 		});
 	}
 
@@ -149,13 +138,7 @@ describe('StructureTower', () => {
 		expect(tower.store.energy).toBe(990);
 	});
 
-	const repairRangeCases = [
-		{ range: 3, expectedRepair: 800 },
-		{ range: 10, expectedRepair: 600 },
-		{ range: 20, expectedRepair: 200 },
-	] as const;
-
-	for (const { range, expectedRepair } of repairRangeCases) {
+	for (const { range, expectedAmount } of towerRepairRangeCases) {
 		test(`TOWER-REPAIR-002 [range=${range}] tower.repair() restores the expected falloff amount`, async ({ shard }) => {
 			await shard.ownedRoom('p1', 'W1N1', 3);
 			const towerId = await shard.placeStructure('W1N1', {
@@ -173,7 +156,7 @@ describe('StructureTower', () => {
 			await shard.tick();
 
 			const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-			expect(road.hits).toBe(100 + expectedRepair);
+			expect(road.hits).toBe(100 + expectedAmount);
 		});
 	}
 

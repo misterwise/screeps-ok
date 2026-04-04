@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, STRUCTURE_LINK } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_TIRED, STRUCTURE_LINK, LINK_LOSS_RATIO } from '../../src/index.js';
 
 describe('StructureLink', () => {
 	test('LINK-003 transferEnergy sends energy minus link loss to the target link', async ({ shard }) => {
@@ -24,10 +24,10 @@ describe('StructureLink', () => {
 		const src = await shard.expectStructure(link1, STRUCTURE_LINK);
 		expect(src.store.energy).toBe(300); // sent 100
 		const dst = await shard.expectStructure(link2, STRUCTURE_LINK);
-		expect(dst.store.energy).toBe(97); // received 100 - 3% = 97
+		expect(dst.store.energy).toBe(100 - Math.ceil(100 * LINK_LOSS_RATIO));
 	});
 
-	test('transferEnergy exposes the source-link cooldown on the next tick after a distance-10 transfer', async ({ shard }) => {
+	test('LINK-004 transferEnergy keeps the source link unusable for 9 subsequent ticks after a distance-10 transfer and usable on the 10th', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
@@ -46,7 +46,17 @@ describe('StructureLink', () => {
 		`);
 		await shard.tick();
 
-		const src = await shard.expectStructure(link1, STRUCTURE_LINK);
-		expect(src.cooldown).toBe(9);
+		for (let tick = 1; tick <= 9; tick += 1) {
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
+			`);
+			expect(rc).toBe(ERR_TIRED);
+			await shard.tick();
+		}
+
+		const ready = await shard.runPlayer('p1', code`
+			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
+		`);
+		expect(ready).toBe(OK);
 	});
 });
