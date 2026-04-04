@@ -1,21 +1,26 @@
 # screeps-ok
 
-Behavioral conformance test suite for Screeps server implementations. Write a test once, run it against any engine.
+> _If your engine agrees, it's Screeps._
+
+![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-183%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-11-yellow) ![status](https://img.shields.io/badge/status-alpha-blue)
+
+Behavioral conformance test suite for Screeps server implementations. Write
+a test once, run it against any engine.
+
+> [!NOTE]
+> **Current suite status** — see [`docs/status.md`](docs/status.md) for the
+> generated dashboard: per-adapter pass/expected-failure/unexpected counts,
+> the parity gaps each engine currently exhibits, and drill-downs into the
+> passing, skipped, and failing test sets. Regenerate with
+> `npm run status:refresh`. The badges above are updated manually as part of
+> the release flow.
 
 The suite is governed by three companion docs:
 
-- `behaviors.md` for the behavioral catalog
-- `docs/behavior-matrices.md` for matrix-backed case-family definitions
-- `docs/test-authoring.md` for canonical test-writing rules
-
-**Current status:** active stabilization. The suite now mixes exact handwritten
-canonical tests with generated matrix families. Vanilla is the primary oracle
-for intended behavior; xxscreeps is run continuously as a parity target.
-
-**Current suite status:** see [`docs/status.md`](docs/status.md) — a
-generated dashboard listing per-adapter pass/expected-failure/unexpected
-counts and the parity gaps that each adapter currently exhibits. Regenerate
-with `npm run status:refresh`.
+- [`behaviors.md`](behaviors.md) — the behavioral catalog
+- [`docs/behavior-matrices.md`](docs/behavior-matrices.md) — matrix-backed case-family definitions
+- [`docs/test-authoring.md`](docs/test-authoring.md) — canonical test-writing rules
+- [`docs/style.md`](docs/style.md) — documentation style and visual vocabulary
 
 ## Quick Start
 
@@ -213,10 +218,12 @@ import {
 These are the same constants available inside `code` blocks (the engine
 runtime), re-exported for test-side assertions and setup.
 
-They are owned by `screeps-ok` as a checked-in canonical snapshot. Canonical
-tests should import from `src/index.js`, not read constants or tables from the
-engine under test at runtime, so the implementation cannot "agree with itself"
-and silently validate the wrong behavior.
+> [!IMPORTANT]
+> Canonical tests must import constants and tables from `src/index.js`, not
+> from the engine under test at runtime. If the suite reads its oracle from
+> the implementation it is testing, the implementation silently "agrees with
+> itself" and the conformance guarantee is gone. This rule is the whole
+> reason `src/constants.ts` exists as a checked-in snapshot.
 
 ### Body builder
 
@@ -290,8 +297,10 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 
 ## Environment Requirements
 
-- Node 24.x or newer. `screeps-ok` does not support running the suite on older
-  Node releases.
+> [!IMPORTANT]
+> Node 24.x or newer is required. `screeps-ok` does not support older Node
+> releases — the preflight check will reject them before vitest starts.
+
 - After changing Node versions, reinstall dependencies before running setup or
   tests so the native modules rebuild for the current runtime.
 - `npm install` prepares xxscreeps's JavaScript output, but the runtime-specific
@@ -300,19 +309,26 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 
 ## Known Issues
 
-Harness and cross-cutting:
+> [!NOTE]
+> Per-adapter parity gaps live in [`docs/status.md`](docs/status.md), which
+> is generated from the latest test runs and each adapter's `parity.json`.
+> This section covers only harness-level and cross-cutting issues that
+> affect both adapters or the test framework itself.
 
-- **Body part damage order**: Vanilla applies damage to `body[0]` in DB, xxscreeps to `body[last]`. Under investigation — may be a DB storage order difference, not a behavioral difference.
-- **Multi-player vanilla**: Second player without an owned room can't execute code reliably
-- **Headless vanilla player execution**: The adapter-contract test for a second player with no owned room is skipped on vanilla. The mockup driver disables users that own no `rooms.objects`; upstream support would let this test become universal again.
-- **Documented test exceptions**: Narrow adapter-specific skips are centralized in `tests/support/limitations.ts` rather than scattered raw adapter-name checks.
-- **Capability gates**: Capability-based skips use `tests/support/policy.ts`; planned but unimplemented coverage should use `test.todo`, not `test.skip`.
-- **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store.
+🟡 **Body part damage order** — Vanilla applies damage to `body[0]` in DB,
+xxscreeps to `body[last]`. Under investigation; may be a DB storage-order
+artifact rather than a behavioral difference.
 
-Current confirmed xxscreeps parity gaps (verified against vanilla):
+🟡 **Dismantle energy return** — Neither engine returns energy to the
+dismantling creep's store.
 
-- **`Creep.owner` is undefined**: the `owner` key exists on creep objects but its value is `undefined`. Per public docs and vanilla, `Creep.owner` must be `{ username: string }`. Affects tests that read `creep.owner.username` from player code (signController, reserveController).
-- **Extension capacity ignores RCL**: `StructureExtension.store.getCapacity(energy)` always reports 200 (the RCL 8 maximum) regardless of the room's controller level, and `isActive()` returns `true` for extensions at RCL levels where `CONTROLLER_STRUCTURES.extension` forbids them. Vanilla follows the `EXTENSION_ENERGY_CAPACITY` table per RCL and deactivates extensions over the allowed count. Affects `EXTENSION-002` and the `ROOM-ENERGY-*` active/inactive-extension tests.
-- **`Game.map.describeExits` filters by shard existence**: only lists exit directions whose neighbor room exists in the current shard. Vanilla returns all four coordinate-derived neighbors regardless of which rooms are instantiated (`{1, 3, 5, 7}`). Affects `MAP-ROOM-001`.
-- **`PathFinder.search` returns suboptimal paths on plains**: for a 30-tile diagonal from (10,10) to (40,40), vanilla returns a 29-step straight diagonal; xxscreeps returns a 35-step zigzag. Path cost and ops budget are within limits — the heuristic simply does not prefer the optimal diagonal.
-- **Tombstone store reduced by `CREEP_CORPSE_RATE`**: xxscreeps preserves `floor(store[resource] * CREEP_CORPSE_RATE)` (0.2) in tombstones on both `suicide()` and `ticksToLive` death. Vanilla preserves the full store on both paths. xxscreeps also does not reclaim body energy into the tombstone on suicide at high remaining TTL (vanilla adds ~`CREEP_PART_MAX_ENERGY * ticksToLive / CREEP_LIFE_TIME` per part). Affects the `CREEP-DEATH-008` family and the `suicide at high remaining TTL` test.
+🔴 **Multi-player vanilla** — A second player without an owned room cannot
+execute code reliably. The mockup driver disables users that own no
+`rooms.objects`, so the adapter-contract test for that case is skipped on
+vanilla.
+
+> [!TIP]
+> Narrow adapter-specific skips are centralized in
+> `tests/support/limitations.ts`, and capability-based skips in
+> `tests/support/policy.ts`, rather than scattered raw adapter-name checks.
+> Planned but unimplemented coverage should use `test.todo`, not `test.skip`.

@@ -317,6 +317,12 @@ function render(summaries, canonicalSummaries) {
 	lines.push('');
 	lines.push(renderHeaderBadges(summaries));
 	lines.push('');
+	lines.push('> [!NOTE]');
+	lines.push('> This page is generated from the latest vitest run for each adapter');
+	lines.push('> plus each adapter\'s `parity.json` companion file. Regenerate locally');
+	lines.push('> with `npm run status:refresh`. See [`docs/style.md`](style.md) for');
+	lines.push('> the icon and color vocabulary used below.');
+	lines.push('');
 
 	// Adapter table with clickable count cells
 	lines.push('## Adapters');

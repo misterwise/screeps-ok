@@ -6,6 +6,12 @@
 
 ![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-183%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-11-yellow)
 
+> [!NOTE]
+> This page is generated from the latest vitest run for each adapter
+> plus each adapter's `parity.json` companion file. Regenerate locally
+> with `npm run status:refresh`. See [`docs/style.md`](style.md) for
+> the icon and color vocabulary used below.
+
 ## Adapters
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
