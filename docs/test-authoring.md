@@ -25,12 +25,30 @@ Canonical tests should:
 A canonical test must assert only player-observable behavior through the public
 game surface, adapter setup helpers, and snapshot/output APIs.
 
+Canonical gameplay tests must not rely on framework-only internals such as
+adapter discriminators, `any` casts to recover missing shape, or test-only
+metadata when the same behavior can be asserted through public Screeps
+properties or typed fixture helpers.
+
+Canonical tests must also avoid self-oracling through the implementation under
+test. In particular:
+
+- do not read gameplay constants, tables, or expected formulas from the engine
+  under test at runtime and then assert that the engine matches them
+- do not treat a dependency bundled with one implementation as the source of
+  truth for another implementation
+- do use the checked-in canonical constants exported by `src/constants.ts`
+  and the checked-in matrix definitions under `tests/support/matrices/`
+
 Do not assert:
 
 - engine phases
 - internal storage layout
 - implementation helper usage
 - hidden intermediate state that players cannot observe
+- adapter-only snapshot tagging in place of public object properties
+- implementation-provided constants or tables used as the oracle for that same
+  implementation
 
 ### 2. One behavior, one reason to fail
 
@@ -54,6 +72,10 @@ Good:
 - exact returned array/object shape when that shape is the behavior
 - exact normalized `null` outcome when the adapter contract owns
   `undefined -> null`
+- exact public fields from typed snapshots such as `structureType`,
+  `resourceType`, `creepName`, `owner`, `pos`, and `store`
+- exact values derived from checked-in canonical constants and tables rather
+  than magic numbers or runtime engine lookups
 
 Avoid:
 
@@ -61,6 +83,8 @@ Avoid:
 - “changed as expected”
 - console output inspection
 - manual spot-checking of logs or snapshots
+- filtering or branching on adapter discriminators like `kind` in canonical
+  gameplay tests
 
 ### 4. Assert return value and resulting state when both matter
 
@@ -108,7 +132,9 @@ for concrete cases.
 ### 7. Matrix tests must come from the matrix definition
 
 If a catalog entry is `matrix`-backed, the generated test family must derive its
-cases from `docs/behavior-matrices.md` and the canonical source it references.
+cases from `docs/behavior-matrices.md`, the canonical source it references, and
+the checked-in executable case definitions under `tests/support/matrices/` when
+present.
 
 Do not:
 

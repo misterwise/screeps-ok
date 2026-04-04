@@ -50,6 +50,11 @@ The adapter is not responsible for:
 If a behavior belongs to the public Screeps gameplay surface, it should be
 tested here and made to work through the adapter.
 
+Canonical expectations are owned by `screeps-ok`, not by the engine under test.
+Adapters should assume tests will use the repo's checked-in constants and
+matrix definitions as the oracle. An adapter must not rely on "the engine
+agrees with itself" as a validation strategy.
+
 ## Core Rule: Preserve the Serialization Boundary
 
 This project only works if test code and engine code never share object

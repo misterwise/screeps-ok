@@ -8,12 +8,17 @@ The suite is governed by three companion docs:
 - `docs/behavior-matrices.md` for matrix-backed case-family definitions
 - `docs/test-authoring.md` for canonical test-writing rules
 
-**Current status:** 138 tests across movement, combat, actions, structures, room mechanics, and Game API.
+**Current status:** active stabilization. The suite now mixes exact handwritten
+canonical tests with generated matrix families. Vanilla is the primary oracle
+for intended behavior; xxscreeps is run continuously as a parity target.
 
 | Engine | Passing | Notes |
 |--------|---------|-------|
-| xxscreeps | 136/138 (99%) | 1 remaining failure is a real gameplay parity gap in suicide tombstones |
-| vanilla | 136/138 (99%) | 2 skips remain; no local vanilla failures |
+| xxscreeps | moving target | known parity gaps are kept visible rather than patched around |
+| vanilla | moving target | current canonical baseline is validated here first |
+
+For the current exact/partial/matrix-slice coverage map, see
+`docs/test-catalog-alignment.md`.
 
 ## Quick Start
 
@@ -93,6 +98,22 @@ npm exec screeps-ok -- --adapter vanilla -- tests/room/controller.test.ts
 
 - [docs/adapter-guide.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-guide.md) — practical authoring guide
 - [docs/adapter-spec.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-spec.md) — current normative adapter contract
+
+## Reviewer Path
+
+If you are reviewing the project for the first time, read in this order:
+
+1. `README.md`
+2. `docs/test-authoring.md`
+3. `behaviors.md`
+4. `docs/behavior-matrices.md`
+5. `docs/adapter-spec.md`
+
+Then run one representative adapter locally:
+
+```bash
+npm test vanilla -- tests/room/game-api.test.ts
+```
 
 ## Writing Tests
 
@@ -192,7 +213,13 @@ import {
 } from '../../src/index.js';
 ```
 
-These are the same constants available inside `code` blocks (the engine runtime), re-exported for test-side assertions and setup.
+These are the same constants available inside `code` blocks (the engine
+runtime), re-exported for test-side assertions and setup.
+
+They are owned by `screeps-ok` as a checked-in canonical snapshot. Canonical
+tests should import from `src/index.js`, not read constants or tables from the
+engine under test at runtime, so the implementation cannot "agree with itself"
+and silently validate the wrong behavior.
 
 ### Body builder
 

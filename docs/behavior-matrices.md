@@ -13,6 +13,10 @@ catalog:
 
 This file should stay narrow. It is not a second planning backlog.
 
+Where a matrix family is actively exercised by the test suite, keep the
+executable case list in `tests/support/matrices/*` and keep this document as
+the human-readable scope/source definition.
+
 ## Entry Format
 
 Each definition should include:
@@ -254,7 +258,8 @@ Each definition should include:
 - `Verification Notes`
   This family covers falloff/output by range only. The current generated suite
   uses representative exact cases at range `3`, `10`, and `20` to cover close,
-  interpolated, and max-falloff behavior.
+  interpolated, and max-falloff behavior. The executable case list lives in
+  `tests/support/matrices/tower-range.ts`.
 
 ### TOWER-TARGETS
 
@@ -341,7 +346,8 @@ Each definition should include:
   death sources, even if vanilla currently shares a helper. The current
   generated suite covers `suicide()` and `ticksToLive` expiry for carried
   resource preservation only; reclaimed body energy remains source-specific.
-  death sources, even if vanilla currently shares a helper.
+  The executable case list lives in
+  `tests/support/matrices/creep-death-sources.ts`.
 
 ### CONTAINER-DECAY
 
@@ -403,7 +409,8 @@ Each definition should include:
 - `Exclusions`
   Decay timing and temporary ramparts from power effects
 - `Verification Notes`
-  Initial construction hits remain outside this family.
+  Initial construction hits remain outside this family. The executable case list
+  lives in `tests/support/matrices/rampart-hitsmax.ts`.
 
 ### ROAD-WEAR
 
@@ -483,7 +490,8 @@ Each definition should include:
 - `Verification Notes`
   The current generated suite covers the explicit player-relative constants
   `FIND_MY_CREEPS`, `FIND_HOSTILE_CREEPS`, `FIND_MY_STRUCTURES`, and
-  `FIND_HOSTILE_STRUCTURES`.
+  `FIND_HOSTILE_STRUCTURES`. The executable case list lives in
+  `tests/support/matrices/room-find.ts`.
 
 ### ROOM-TERRAIN
 
@@ -498,7 +506,8 @@ Each definition should include:
 - `Exclusions`
   Raw buffer shape and `Game.map.getRoomTerrain()` equivalence
 - `Verification Notes`
-  This family is about mask values only.
+  This family is about mask values only. The executable case list lives in
+  `tests/support/matrices/room-terrain.ts`.
 
 ### ROOM-EVENTLOG
 
@@ -723,7 +732,8 @@ Each definition should include:
   `getRangeTo()`, equality, and other spatial helper methods
 - `Verification Notes`
   This family should remain a concrete offset matrix, not an algorithm prose
-  restatement.
+  restatement. The executable case list lives in
+  `tests/support/matrices/roompos-direction.ts`.
 
 ### INTENT-CREEP-OVERWRITE
 
