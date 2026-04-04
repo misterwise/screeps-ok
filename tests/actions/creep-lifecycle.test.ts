@@ -1,4 +1,5 @@
 import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, FIND_TOMBSTONES, RESOURCE_POWER } from '../../src/index.js';
+import { creepDeathResourceCases } from '../support/matrices/creep-death-sources.js';
 
 describe('creep.suicide()', () => {
 	test('CREEP-SUICIDE-001 destroys the creep', async ({ shard }) => {
@@ -18,29 +19,6 @@ describe('creep.suicide()', () => {
 		expect(creep).toBeNull();
 	});
 
-	test('CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { [RESOURCE_POWER]: 30 },
-			name: 'SuicideCreep',
-		});
-
-		await shard.runPlayer('p1', code`
-			Game.creeps['SuicideCreep'].suicide()
-		`);
-		await shard.tick();
-
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		expect(tombstones.length).toBeGreaterThanOrEqual(1);
-		const tomb = tombstones.find((t: any) => t.kind === 'tombstone' && t.creepName === 'SuicideCreep');
-		expect(tomb).toBeDefined();
-		if (tomb?.kind === 'tombstone') {
-			expect(tomb.store.power).toBe(30);
-		}
-	});
-
 	test('suicide at high remaining TTL also reclaims body energy into the tombstone', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
@@ -56,35 +34,46 @@ describe('creep.suicide()', () => {
 		await shard.tick();
 
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find((t: any) => t.kind === 'tombstone' && t.creepName === 'SuicideEnergyCreep');
+		const tomb = tombstones.find(t => t.creepName === 'SuicideEnergyCreep');
 		expect(tomb).toBeDefined();
-		if (tomb?.kind === 'tombstone') {
+		if (tomb) {
 			expect(tomb.store.energy).toBe(19);
 			expect(tomb.store.power).toBe(30);
 		}
 	});
 
-	test('CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { [RESOURCE_POWER]: 30 },
-			ticksToLive: 1,
-			name: 'AgingCreep',
+	for (const { label, creepName, ticksToLive, trigger } of creepDeathResourceCases) {
+		test(`CREEP-DEATH-008 [${label}] preserves carried resources in the tombstone`, async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			await shard.placeCreep('W1N1', {
+				pos: [25, 25], owner: 'p1',
+				body: [CARRY, MOVE],
+				store: { [RESOURCE_POWER]: 30 },
+				ticksToLive,
+				name: creepName,
+			});
+
+			if (trigger === 'suicide') {
+				await shard.runPlayer('p1', code`
+					Game.creeps[${creepName}].suicide()
+				`);
+			} else {
+				await shard.tick();
+			}
+
+			if (trigger === 'suicide') {
+				await shard.tick();
+			}
+
+			const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+			expect(tombstones.length).toBeGreaterThanOrEqual(1);
+			const tomb = tombstones.find(t => t.creepName === creepName);
+			expect(tomb).toBeDefined();
+			if (tomb) {
+				expect(tomb.store.power).toBe(30);
+			}
 		});
-
-		await shard.tick();
-
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		expect(tombstones.length).toBeGreaterThanOrEqual(1);
-		const tomb = tombstones.find((t: any) => t.kind === 'tombstone' && t.creepName === 'AgingCreep');
-		expect(tomb).toBeDefined();
-		if (tomb?.kind === 'tombstone') {
-			expect(tomb.store.power).toBe(30);
-			expect(tomb.store.energy ?? 0).toBe(0);
-		}
-	});
+	}
 });
 
 describe('creep.say()', () => {

@@ -6,6 +6,7 @@ import {
 	STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
+import { roomFindPlayerRelativeCases } from '../support/matrices/room-find.js';
 
 describe('room visibility', () => {
 	test('ROOM-VIS-001 visible room has a Game.rooms entry on that tick', async ({ shard }) => {
@@ -138,26 +139,7 @@ describe('room energy tracking', () => {
 });
 
 describe('Room.find', () => {
-	const playerRelativeCases = [
-		{
-			label: 'FIND_MY_CREEPS',
-			findConstant: FIND_MY_CREEPS,
-		},
-		{
-			label: 'FIND_HOSTILE_CREEPS',
-			findConstant: FIND_HOSTILE_CREEPS,
-		},
-		{
-			label: 'FIND_MY_STRUCTURES',
-			findConstant: FIND_MY_STRUCTURES,
-		},
-		{
-			label: 'FIND_HOSTILE_STRUCTURES',
-			findConstant: FIND_HOSTILE_STRUCTURES,
-		},
-	] as const;
-
-	for (const { label, findConstant } of playerRelativeCases) {
+	for (const { label, findConstant, expectedValues } of roomFindPlayerRelativeCases) {
 		test(`ROOM-FIND-001 [${label}] player-relative FIND constants evaluate from the current player perspective`, async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
@@ -177,13 +159,6 @@ describe('Room.find', () => {
 		});
 		await shard.tick();
 
-		const expectedValues = {
-			FIND_MY_CREEPS: ['Mine'],
-			FIND_HOSTILE_CREEPS: ['Hostile'],
-			FIND_MY_STRUCTURES: ['controller', 'spawn'],
-			FIND_HOSTILE_STRUCTURES: ['spawn'],
-		} as const;
-
 		const result = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1']
 				.find(${findConstant})
@@ -191,7 +166,7 @@ describe('Room.find', () => {
 				.sort()
 		`) as string[];
 
-		expect(result).toEqual(expectedValues[label]);
+		expect(result).toEqual(expectedValues);
 		});
 	}
 
