@@ -17,9 +17,6 @@ generated dashboard listing per-adapter pass/expected-failure/unexpected
 counts and the parity gaps that each adapter currently exhibits. Regenerate
 with `npm run status:refresh`.
 
-For the current exact/partial/matrix-slice coverage map, see
-`docs/test-catalog-alignment.md`.
-
 ## Quick Start
 
 ```bash
