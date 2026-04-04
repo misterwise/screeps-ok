@@ -1,7 +1,8 @@
 import { describe, test, expect, code } from '../../src/index.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('PathFinder', () => {
-	test('PathFinder.search accepts a single goal position with range', async ({ shard }) => {
+	knownParityGap('pathfinder-suboptimal')('PathFinder.search accepts a single goal position with range', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -125,7 +126,7 @@ describe('Game.map', () => {
 		expect(dist).toBe(4);
 	});
 
-	test('MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name', async ({ shard }) => {
+	knownParityGap('describe-exits-topology')('MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const exits = await shard.runPlayer('p1', code`

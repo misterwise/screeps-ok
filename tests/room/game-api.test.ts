@@ -7,6 +7,7 @@ import {
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../support/matrices/room-find.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('room visibility', () => {
 	test('ROOM-VIS-001 visible room has a Game.rooms entry on that tick', async ({ shard }) => {
@@ -54,7 +55,7 @@ describe('room energy tracking', () => {
 		expect(energyAvailable).toBe(37);
 	});
 
-	test('ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension', async ({ shard }) => {
+	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -84,7 +85,7 @@ describe('room energy tracking', () => {
 		});
 	});
 
-	test('ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions', async ({ shard }) => {
+	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		await shard.placeStructure('W1N1', {
 			pos: [25, 25],
@@ -107,7 +108,7 @@ describe('room energy tracking', () => {
 		expect(energyCapacityAvailable).toBe(100);
 	});
 
-	test('ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
+	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

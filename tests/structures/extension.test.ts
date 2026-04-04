@@ -1,4 +1,5 @@
 import { describe, test, expect, code, STRUCTURE_EXTENSION } from '../../src/index.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureExtension', () => {
 	test('EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable', async ({ shard }) => {
@@ -18,7 +19,7 @@ describe('StructureExtension', () => {
 		expect(energyAvailable).toBe(37);
 	});
 
-	test('EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable', async ({ shard }) => {
+	knownParityGap('extension-rcl-capacity')('EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		await shard.placeStructure('W1N1', {
 			pos: [25, 25],

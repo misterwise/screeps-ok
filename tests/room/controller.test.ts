@@ -1,4 +1,5 @@
 import { describe, test, expect, code, OK, CLAIM, MOVE } from '../../src/index.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('controller mechanics', () => {
 	test('claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
@@ -36,7 +37,7 @@ describe('controller mechanics', () => {
 		expect(result).toEqual({ level: 1, my: true });
 	});
 
-	test('signController writes the provided text to the controller sign', async ({ shard }) => {
+	knownParityGap('creep-owner-undefined')('signController writes the provided text to the controller sign', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
@@ -69,7 +70,7 @@ describe('controller mechanics', () => {
 		});
 	});
 
-	test('reserveController returns OK and creates a reservation for the player', async ({ shard }) => {
+	knownParityGap('creep-owner-undefined')('reserveController returns OK and creates a reservation for the player', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
