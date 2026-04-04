@@ -80,7 +80,8 @@ function summarizeReport(report) {
 	if (!report) {
 		return {
 			total: 0, passed: 0, expectedFailure: 0, failed: 0, skipped: 0,
-			expectedFailureByGap: {}, failingTests: [], unexpectedPasses: [],
+			expectedFailureByGap: {}, passingTests: [], skippedTests: [],
+			failingTests: [], unexpectedPasses: [],
 			loaded: false,
 		};
 	}
@@ -103,7 +104,7 @@ function summarizeReport(report) {
 	const genuineFailures = all.filter(
 		a => a.status === 'failed' && !unexpectedPasses.includes(a),
 	);
-	const skipped = all.filter(
+	const skippedTests = all.filter(
 		a => a.status === 'skipped' || a.status === 'pending' || a.status === 'todo',
 	);
 
@@ -119,12 +120,30 @@ function summarizeReport(report) {
 		passed: genuinePasses.length,
 		expectedFailure: expectedFailure.length,
 		failed: genuineFailures.length,
-		skipped: skipped.length,
+		skipped: skippedTests.length,
 		expectedFailureByGap,
+		passingTests: genuinePasses,
+		skippedTests,
 		failingTests: genuineFailures,
 		unexpectedPasses,
 		loaded: true,
 	};
+}
+
+function relativeFile(abs) {
+	if (!abs) return '';
+	const prefix = packageRoot + path.sep;
+	return abs.startsWith(prefix) ? abs.slice(prefix.length) : abs;
+}
+
+function groupTestsByFile(tests) {
+	const byFile = new Map();
+	for (const t of tests) {
+		const file = relativeFile(t.file);
+		if (!byFile.has(file)) byFile.set(file, []);
+		byFile.get(file).push(t);
+	}
+	return [...byFile.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 function formatTimestamp(report) {
@@ -144,7 +163,8 @@ function isAdapterOk(summary) {
 
 function adapterStatusIcon(summary) {
 	if (!summary.loaded) return '⚪';
-	return isAdapterOk(summary) ? '🟢' : '🔴';
+	if (!isAdapterOk(summary)) return '🔴';
+	return summary.expectedFailure > 0 ? '🟡' : '🟢';
 }
 
 function shieldBadge(label, message, color) {
@@ -152,7 +172,19 @@ function shieldBadge(label, message, color) {
 	return `https://img.shields.io/badge/${enc(label)}-${enc(message)}-${color}`;
 }
 
+function slug(text) {
+	// GitHub's heading anchor algorithm: lowercase, drop punctuation, spaces → dashes
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9\s-]/g, '')
+		.trim()
+		.replace(/\s+/g, '-');
+}
+
 function renderHeaderBadges(summaries) {
+	// One green "N passing" badge per adapter plus a yellow "N expected-fail"
+	// badge for each adapter that has any. Two separate badges so the visual
+	// signal for "fully passing" is distinct from "passing with known gaps".
 	const badges = [];
 	for (const [adapter, data] of Object.entries(summaries)) {
 		const s = data.summary;
@@ -160,16 +192,22 @@ function renderHeaderBadges(summaries) {
 			badges.push(`![${adapter}](${shieldBadge(adapter, 'no report', 'lightgrey')})`);
 			continue;
 		}
-		const ok = isAdapterOk(s);
-		const color = !ok ? 'red' : s.expectedFailure > 0 ? 'green' : 'brightgreen';
-		const msg = !ok
-			? `${s.failed} failing`
-			: s.expectedFailure > 0
-				? `${s.passed} passing, ${s.expectedFailure} expected-fail`
-				: `${s.passed} passing`;
-		badges.push(`![${adapter}](${shieldBadge(adapter, msg, color)})`);
+		if (s.failed > 0 || s.unexpectedPasses.length > 0) {
+			badges.push(`![${adapter}](${shieldBadge(adapter, `${s.failed || s.unexpectedPasses.length} failing`, 'red')})`);
+			continue;
+		}
+		badges.push(`![${adapter}](${shieldBadge(adapter, `${s.passed} passing`, 'brightgreen')})`);
+		if (s.expectedFailure > 0) {
+			badges.push(`![${adapter} expected-fail](${shieldBadge(`${adapter} expected-fail`, `${s.expectedFailure}`, 'yellow')})`);
+		}
 	}
 	return badges.join(' ');
+}
+
+function countCell(count, anchor) {
+	if (count === 0) return '—';
+	if (!anchor) return `${count}`;
+	return `[${count}](#${anchor})`;
 }
 
 function renderAdapterRow(adapter, report, summary) {
@@ -177,80 +215,95 @@ function renderAdapterRow(adapter, report, summary) {
 		return `| ⚪ | **${adapter}** | — | — | — | — | _no report_ |`;
 	}
 	const icon = adapterStatusIcon(summary);
-	return `| ${icon} | **${adapter}** | ${summary.passed} | ${summary.expectedFailure} | ${summary.failed} | ${summary.skipped} | ${formatTimestamp(report)} |`;
+	const passCell = countCell(summary.passed, slug(`${adapter} passing tests`));
+	const expectedCell = countCell(
+		summary.expectedFailure,
+		summary.expectedFailure > 0 ? slug(`${adapter} expected failures`) : null,
+	);
+	const skippedCell = countCell(
+		summary.skipped,
+		summary.skipped > 0 ? slug(`${adapter} skipped tests`) : null,
+	);
+	const failedCell = summary.failed > 0
+		? `[${summary.failed}](#${slug(`${adapter} unexpected failures`)})`
+		: '—';
+	return `| ${icon} | **${adapter}** | ${passCell} | ${expectedCell} | ${failedCell} | ${skippedCell} | ${formatTimestamp(report)} |`;
 }
 
-function renderGapDetails(gapId, row) {
+function renderGapDetails(gapId, canonicalSummary, adapter, parityNote) {
 	const lines = [];
-	const adapterNames = row.adapters.map(a => a.name).join(', ');
-	lines.push(`<details>`);
-	lines.push(`<summary><strong><code>${gapId}</code></strong> — ${row.summary} <em>(${adapterNames})</em></summary>`);
+	lines.push('<details>');
+	lines.push(`<summary><strong><code>${gapId}</code></strong> — ${canonicalSummary}</summary>`);
 	lines.push('');
-	for (const adapter of row.adapters) {
-		const testCount = adapter.tests.length;
-		lines.push(`**${adapter.name}** — ${testCount} test${testCount === 1 ? '' : 's'}`);
-		lines.push('');
-		if (testCount > 0) {
-			for (const testName of adapter.tests) {
-				lines.push(`- \`${stripGapPrefix(testName)}\``);
-			}
-			lines.push('');
-		}
-		if (adapter.note) {
-			lines.push(`> ${adapter.note}`);
-			lines.push('');
-		}
+	const testCount = adapter.tests.length;
+	lines.push(`${testCount} test${testCount === 1 ? '' : 's'} affected:`);
+	lines.push('');
+	for (const testName of adapter.tests) {
+		lines.push(`- \`${stripGapPrefix(testName)}\``);
 	}
-	lines.push(`</details>`);
+	if (parityNote) {
+		lines.push('');
+		lines.push(`> ${parityNote}`);
+	}
+	lines.push('');
+	lines.push('</details>');
 	return lines.join('\n');
 }
 
-function renderParityGapSection(summaries, canonicalSummaries) {
-	const gapRows = {};
-	for (const gapId of Object.keys(canonicalSummaries)) {
-		gapRows[gapId] = { summary: canonicalSummaries[gapId], adapters: [] };
-	}
-
-	for (const [adapterName, { parity, summary }] of Object.entries(summaries)) {
-		for (const gapId of parity.expected_failures ?? []) {
-			if (!gapRows[gapId]) {
-				gapRows[gapId] = { summary: '(unknown gap — check parity.json)', adapters: [] };
-			}
-			const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
-			gapRows[gapId].adapters.push({
-				name: adapterName,
-				tests,
-				note: parity.notes?.[gapId] ?? '',
-			});
-		}
-	}
-
-	const unusedGaps = Object.entries(gapRows).filter(([, row]) => row.adapters.length === 0);
-	const activeGaps = Object.entries(gapRows).filter(([, row]) => row.adapters.length > 0);
-
+function renderPerAdapterExpectedFailures(adapterName, data, canonicalSummaries) {
 	const lines = [];
-	if (activeGaps.length === 0) {
-		lines.push('_No adapter currently declares any expected failures._');
+	const parity = data.parity;
+	const summary = data.summary;
+	const declaredGaps = parity.expected_failures ?? [];
+	if (declaredGaps.length === 0) return '';
+
+	const totalTests = declaredGaps.reduce(
+		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
+		0,
+	);
+
+	lines.push(`## ${adapterName} expected failures`);
+	lines.push('');
+	lines.push(`${adapterName} currently declares ${declaredGaps.length} parity gap${declaredGaps.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. Each gap is verified by a test that continues to run as a regression trap — if ${adapterName} fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.`);
+	lines.push('');
+
+	for (const gapId of declaredGaps) {
+		const canonicalSummary = canonicalSummaries[gapId] ?? '(unknown gap — check parity.json)';
+		const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
+		lines.push(renderGapDetails(
+			gapId,
+			canonicalSummary,
+			{ tests },
+			parity.notes?.[gapId] ?? '',
+		));
 		lines.push('');
-	} else {
-		for (const [gapId, row] of activeGaps) {
-			lines.push(renderGapDetails(gapId, row));
-			lines.push('');
-		}
 	}
 
-	if (unusedGaps.length > 0) {
-		lines.push('<details>');
-		lines.push(`<summary>${unusedGaps.length} registered gap${unusedGaps.length === 1 ? '' : 's'} not currently exhibited by any adapter</summary>`);
+	return lines.join('\n');
+}
+
+function renderTestListByFile(heading, tests, emptyMessage) {
+	const lines = [];
+	lines.push(`## ${heading}`);
+	lines.push('');
+	if (tests.length === 0) {
+		lines.push(emptyMessage);
 		lines.push('');
-		for (const [gapId, row] of unusedGaps) {
-			lines.push(`- \`${gapId}\` — ${row.summary}`);
+		return lines.join('\n');
+	}
+	const byFile = groupTestsByFile(tests);
+	lines.push('<details>');
+	lines.push(`<summary>${tests.length} test${tests.length === 1 ? '' : 's'} across ${byFile.length} file${byFile.length === 1 ? '' : 's'}</summary>`);
+	lines.push('');
+	for (const [file, fileTests] of byFile) {
+		lines.push(`**\`${file}\`** (${fileTests.length})`);
+		lines.push('');
+		for (const t of fileTests) {
+			lines.push(`- ${stripGapPrefix(t.fullName)}`);
 		}
 		lines.push('');
-		lines.push('</details>');
-		lines.push('');
 	}
-
+	lines.push('</details>');
 	return lines.join('\n');
 }
 
@@ -265,7 +318,7 @@ function render(summaries, canonicalSummaries) {
 	lines.push(renderHeaderBadges(summaries));
 	lines.push('');
 
-	// Adapter table
+	// Adapter table with clickable count cells
 	lines.push('## Adapters');
 	lines.push('');
 	lines.push('| | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |');
@@ -274,7 +327,9 @@ function render(summaries, canonicalSummaries) {
 		lines.push(renderAdapterRow(adapter, data.report, data.summary));
 	}
 	lines.push('');
-	lines.push('🟢 all failing tests are registered parity gaps · 🔴 unexpected failures or unexpected passes · **expected-fail** tests stay live as regression traps');
+	lines.push('🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures');
+	lines.push('');
+	lines.push('_Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._');
 	lines.push('');
 
 	// Unexpected passes section — only renders when triggered
@@ -288,6 +343,7 @@ function render(summaries, canonicalSummaries) {
 		lines.push('');
 		for (const [adapter, data] of unexpectedAdapters) {
 			lines.push(`**${adapter}**`);
+			lines.push('');
 			for (const t of data.summary.unexpectedPasses) {
 				lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
 			}
@@ -295,27 +351,45 @@ function render(summaries, canonicalSummaries) {
 		}
 	}
 
-	// Unexpected failures — only renders when present
-	const failedAdapters = Object.entries(summaries).filter(
-		([, d]) => d.summary.failed > 0,
-	);
-	if (failedAdapters.length > 0) {
-		lines.push('## 🚨 Unexpected failures');
+	// Unexpected failures — only renders when present, one subsection per adapter
+	for (const [adapter, data] of Object.entries(summaries)) {
+		if (data.summary.failed === 0) continue;
+		lines.push(`## ${adapter} unexpected failures`);
 		lines.push('');
-		for (const [adapter, data] of failedAdapters) {
-			lines.push(`**${adapter}**`);
-			for (const t of data.summary.failingTests) {
-				lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
-			}
+		for (const t of data.summary.failingTests) {
+			lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
+		}
+		lines.push('');
+	}
+
+	// Expected failures grouped per adapter (each adapter gets its own section)
+	for (const [adapter, data] of Object.entries(summaries)) {
+		const block = renderPerAdapterExpectedFailures(adapter, data, canonicalSummaries);
+		if (block) {
+			lines.push(block);
 			lines.push('');
 		}
 	}
 
-	lines.push('## Parity gaps');
-	lines.push('');
-	lines.push('Behaviors where at least one adapter disagrees with vanilla. Click a row to expand affected tests and engine-specific notes.');
-	lines.push('');
-	lines.push(renderParityGapSection(summaries, canonicalSummaries));
+	// Per-adapter drill-downs: passing tests and skipped tests
+	for (const [adapter, data] of Object.entries(summaries)) {
+		const s = data.summary;
+		if (!s.loaded) continue;
+		if (s.skipped > 0) {
+			lines.push(renderTestListByFile(
+				`${adapter} skipped tests`,
+				s.skippedTests,
+				'_none_',
+			));
+			lines.push('');
+		}
+		lines.push(renderTestListByFile(
+			`${adapter} passing tests`,
+			s.passingTests,
+			'_none_',
+		));
+		lines.push('');
+	}
 
 	return lines.join('\n') + '\n';
 }
