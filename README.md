@@ -303,10 +303,19 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 
 ## Known Issues
 
+Harness and cross-cutting:
+
 - **Body part damage order**: Vanilla applies damage to `body[0]` in DB, xxscreeps to `body[last]`. Under investigation — may be a DB storage order difference, not a behavioral difference.
 - **Multi-player vanilla**: Second player without an owned room can't execute code reliably
 - **Headless vanilla player execution**: The adapter-contract test for a second player with no owned room is skipped on vanilla. The mockup driver disables users that own no `rooms.objects`; upstream support would let this test become universal again.
 - **Documented test exceptions**: Narrow adapter-specific skips are centralized in `tests/support/limitations.ts` rather than scattered raw adapter-name checks.
 - **Capability gates**: Capability-based skips use `tests/support/policy.ts`; planned but unimplemented coverage should use `test.todo`, not `test.skip`.
-- **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store
-- **xxscreeps suicide tombstones**: `creep.suicide()` in xxscreeps preserves `floor(store * CREEP_CORPSE_RATE)` and does not match the vanilla tombstone resource result yet
+- **Dismantle energy return**: Neither engine returns energy to the dismantling creep's store.
+
+Current confirmed xxscreeps parity gaps (verified against vanilla):
+
+- **`Creep.owner` is undefined**: the `owner` key exists on creep objects but its value is `undefined`. Per public docs and vanilla, `Creep.owner` must be `{ username: string }`. Affects tests that read `creep.owner.username` from player code (signController, reserveController).
+- **Extension capacity ignores RCL**: `StructureExtension.store.getCapacity(energy)` always reports 200 (the RCL 8 maximum) regardless of the room's controller level, and `isActive()` returns `true` for extensions at RCL levels where `CONTROLLER_STRUCTURES.extension` forbids them. Vanilla follows the `EXTENSION_ENERGY_CAPACITY` table per RCL and deactivates extensions over the allowed count. Affects `EXTENSION-002` and the `ROOM-ENERGY-*` active/inactive-extension tests.
+- **`Game.map.describeExits` filters by shard existence**: only lists exit directions whose neighbor room exists in the current shard. Vanilla returns all four coordinate-derived neighbors regardless of which rooms are instantiated (`{1, 3, 5, 7}`). Affects `MAP-ROOM-001`.
+- **`PathFinder.search` returns suboptimal paths on plains**: for a 30-tile diagonal from (10,10) to (40,40), vanilla returns a 29-step straight diagonal; xxscreeps returns a 35-step zigzag. Path cost and ops budget are within limits — the heuristic simply does not prefer the optimal diagonal.
+- **Tombstone store reduced by `CREEP_CORPSE_RATE`**: xxscreeps preserves `floor(store[resource] * CREEP_CORPSE_RATE)` (0.2) in tombstones on both `suicide()` and `ticksToLive` death. Vanilla preserves the full store on both paths. xxscreeps also does not reclaim body energy into the tombstone on suicide at high remaining TTL (vanilla adds ~`CREEP_PART_MAX_ENERGY * ticksToLive / CREEP_LIFE_TIME` per part). Affects the `CREEP-DEATH-008` family and the `suicide at high remaining TTL` test.
