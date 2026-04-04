@@ -14,7 +14,7 @@ describe('room.createConstructionSite()', () => {
 		await shard.tick();
 
 		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-		const road = sites.find((s: any) => s.kind === 'site' && s.structureType === 'road');
+		const road = sites.find(s => s.structureType === STRUCTURE_ROAD && s.pos.x === 30 && s.pos.y === 30);
 		expect(road).toBeDefined();
 	});
 
@@ -65,8 +65,8 @@ describe('room.createConstructionSite()', () => {
 		await shard.tick();
 
 		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-		const road = structures.find((s: any) =>
-			s.kind === 'structure' && s.structureType === 'road' &&
+		const road = structures.find(s =>
+			s.structureType === STRUCTURE_ROAD &&
 			s.pos.x === 30 && s.pos.y === 31);
 		expect(road).toBeDefined();
 	});

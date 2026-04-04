@@ -111,9 +111,9 @@ describe('creep.drop()', () => {
 		await shard.tick();
 
 		const resources = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const dropped = resources.find((r: any) => r.kind === 'resource' && r.pos.x === 25 && r.pos.y === 25);
+		const dropped = resources.find(r => r.pos.x === 25 && r.pos.y === 25);
 		expect(dropped).toBeDefined();
-		if (dropped?.kind === 'resource') {
+		if (dropped) {
 			expect(dropped.resourceType).toBe('energy');
 			expect(dropped.amount).toBeGreaterThan(0);
 		}
