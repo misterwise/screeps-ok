@@ -186,14 +186,23 @@ Allowed return values:
 - null
 - plain JSON objects/arrays composed of those values
 
+If the last expression evaluates to top-level `undefined`, normalize it to
+`null` at the adapter boundary so tests do not depend on engine-specific
+serialization artifacts.
+
 If player code returns a live game object, `runPlayer` must reject it with
 `RunPlayerError` rather than silently serializing engine objects.
+
+If a behavior needs same-tick observation from multiple players, provide that
+through `runPlayers(...)` rather than by calling `runPlayer(...)` sequentially
+and accidentally observing different ticks.
 
 ### 5. Separate Intent Collection From Tick Processing
 
 The expected model is:
 
 - `runPlayer` submits intents and returns a value from the player runtime
+- `runPlayers` evaluates multiple players against one shared current game state
 - `tick()` processes pending intents and advances the world
 
 Tests will rely on this separation.

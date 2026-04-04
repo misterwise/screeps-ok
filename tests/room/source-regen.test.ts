@@ -1,7 +1,7 @@
 import { describe, test, expect, code } from '../../src/index.js';
 
 describe('source regeneration', () => {
-	test('depleted source regenerates after ENERGY_REGEN_TIME ticks', async ({ shard }) => {
+	test('SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],

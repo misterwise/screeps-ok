@@ -1,7 +1,39 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_ROAD } from '../../src/index.js';
 
 describe('creep.build()', () => {
-	test('reduces energy and increases site progress', async ({ shard }) => {
+	test('increases site progress by 5 per WORK part', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25],
+			owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 26],
+			owner: 'p1',
+			structureType: STRUCTURE_ROAD,
+		});
+
+		const returnCode = await shard.runPlayer('p1', code`
+			const creep = Game.getObjectById(${creepId});
+			const site = Game.getObjectById(${siteId});
+			creep.build(site)
+		`);
+		expect(returnCode).toBe(OK);
+
+		await shard.tick();
+
+		const site = await shard.expectObject(siteId, 'site');
+		expect(site.progress).toBe(5);
+	});
+
+	test('spends 1 energy per build progress point', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -31,9 +63,6 @@ describe('creep.build()', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(45);
-
-		const site = await shard.expectObject(siteId, 'site');
-		expect(site.progress).toBe(5);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {

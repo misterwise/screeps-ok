@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_SPAWN } from '../../src/index.js';
 
 describe('creep.transfer()', () => {
-	test('transfers energy to adjacent container', async ({ shard }) => {
+	test('transfers energy from the creep store to the target store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -24,6 +24,8 @@ describe('creep.transfer()', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy ?? 0).toBe(0);
+		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
+		expect(container.store.energy).toBe(50);
 	});
 
 	test('transfers partial amount', async ({ shard }) => {

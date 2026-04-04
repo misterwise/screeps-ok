@@ -505,7 +505,15 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			throw new RunPlayerError('runtime', error.message);
 		}
 
-		return result;
+		return result ?? null;
+	}
+
+	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
+		const results: Record<string, PlayerReturnValue> = {};
+		for (const [userId, playerCode] of Object.entries(codesByUser)) {
+			results[userId] = await this.runPlayer(userId, playerCode);
+		}
+		return results;
 	}
 
 	async tick(count = 1): Promise<void> {

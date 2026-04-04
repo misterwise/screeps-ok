@@ -152,9 +152,18 @@ export interface ScreepsOkAdapter {
 	 * Execute player code for a single test handle.
 	 *
 	 * The last expression becomes the return value. Only JSON-safe values are
-	 * allowed; gameplay return codes are normal results, not errors.
+	 * allowed; a top-level undefined return is normalized to null; gameplay
+	 * return codes are normal results, not errors.
 	 */
 	runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue>;
+	/**
+	 * Execute player code for multiple test handles against the same game state.
+	 *
+	 * Adapters should preserve same-tick observation semantics for all supplied
+	 * players rather than advancing gameplay between evaluations. Return-value
+	 * rules match runPlayer, including top-level undefined normalization.
+	 */
+	runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>>;
 	/** Advance gameplay processing by N ticks. */
 	tick(count?: number): Promise<void>;
 

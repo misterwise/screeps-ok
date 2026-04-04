@@ -78,7 +78,7 @@ describe('creep.withdraw()', () => {
 });
 
 describe('creep.drop()', () => {
-	test('drops energy on the ground', async ({ shard }) => {
+	test('drop() removes the dropped amount from the creep store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -94,10 +94,29 @@ describe('creep.drop()', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy ?? 0).toBe(0);
+	});
 
-		// Should create a dropped resource
+	test('drop() creates a dropped resource at the creep position', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 50 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
 		const resources = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		expect(resources.length).toBeGreaterThanOrEqual(1);
+		const dropped = resources.find((r: any) => r.kind === 'resource' && r.pos.x === 25 && r.pos.y === 25);
+		expect(dropped).toBeDefined();
+		if (dropped?.kind === 'resource') {
+			expect(dropped.resourceType).toBe('energy');
+			expect(dropped.amount).toBeGreaterThan(0);
+		}
 	});
 
 	test('drops partial amount', async ({ shard }) => {

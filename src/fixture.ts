@@ -77,6 +77,11 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	ownedRoom(player: string, roomName?: string, rcl?: number): Promise<void>;
 
 	/**
+	 * Evaluate multiple players against the same current game state.
+	 */
+	runPlayers(codesByUser: Record<string, import('./code.js').PlayerCode>): Promise<Record<string, import('./adapter.js').PlayerReturnValue>>;
+
+	/**
 	 * Get an object by ID and assert it exists with the expected kind.
 	 * Throws (fails the test) if null or wrong kind — no silent passes.
 	 *
@@ -97,6 +102,7 @@ export interface ShardFixture extends ScreepsOkAdapter {
 
 function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
 	const shard = adapter as ShardFixture;
+	const runPlayers = adapter.runPlayers.bind(adapter);
 
 	shard.ownedRoom = async (player: string, roomName = 'W1N1', rcl = 1) => {
 		await adapter.createShard({
@@ -126,6 +132,8 @@ function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
 		}
 		return struct as StructureTypeMap[S];
 	};
+
+	shard.runPlayers = async (codesByUser) => runPlayers(codesByUser);
 
 	return shard;
 }

@@ -161,7 +161,13 @@ describe('creep.rangedAttack()', () => {
 
 describe('creep.heal()', () => {
 	test('heals 12 HP per HEAL part when adjacent', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
 		const healerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [HEAL, MOVE],
@@ -170,15 +176,40 @@ describe('creep.heal()', () => {
 			pos: [25, 26], owner: 'p1',
 			body: body(3, TOUGH, MOVE),
 		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 27], owner: 'p2',
+			body: [ATTACK, MOVE],
+		});
+
+		await shard.tick();
+
+		const attackRc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+		expect(attackRc).toBe(OK);
+		await shard.tick();
+
+		const injured = await shard.expectObject(targetId, 'creep');
+		expect(injured.hits).toBe(370);
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))
 		`);
 		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(target.hits).toBe(382);
 	});
 
 	test('rangedHeal heals 4 HP per HEAL part at range', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
 		const healerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [HEAL, MOVE],
@@ -187,10 +218,29 @@ describe('creep.heal()', () => {
 			pos: [25, 28], owner: 'p1', // range 3
 			body: [TOUGH, TOUGH, MOVE],
 		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 29], owner: 'p2',
+			body: [ATTACK, MOVE],
+		});
+
+		await shard.tick();
+
+		const attackRc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+		expect(attackRc).toBe(OK);
+		await shard.tick();
+
+		const injured = await shard.expectObject(targetId, 'creep');
+		expect(injured.hits).toBe(270);
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${targetId}))
 		`);
 		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(target.hits).toBe(274);
 	});
 });

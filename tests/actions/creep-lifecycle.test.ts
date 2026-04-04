@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, FIND_TOMBSTONES } from '../../src/index.js';
 
 describe('creep.suicide()', () => {
-	test('destroys the creep', async ({ shard }) => {
+	test('CREEP-SUICIDE-001 destroys the creep', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -18,7 +18,7 @@ describe('creep.suicide()', () => {
 		expect(creep).toBeNull();
 	});
 
-	test('creates a tombstone with carried resources and reclaimed body energy', async ({ shard }) => {
+	test('CREEP-DEATH-008 [source=suicide] creates a tombstone with carried resources and reclaimed body energy', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -44,7 +44,7 @@ describe('creep.suicide()', () => {
 });
 
 describe('creep.say()', () => {
-	test('returns OK', async ({ shard }) => {
+	test('CREEP-SAY-001 say() makes the message visible to the owner for one tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -55,11 +55,92 @@ describe('creep.say()', () => {
 			Game.getObjectById(${id}).say('hello')
 		`);
 		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const visible = await shard.runPlayer('p1', code`
+			Game.getObjectById(${id}).saying
+		`);
+		expect(visible).toBe('hello');
+
+		await shard.tick();
+
+		const hidden = await shard.runPlayer('p1', code`
+			Game.getObjectById(${id}).saying
+		`);
+		expect(hidden).toBeNull();
+	});
+
+	test('CREEP-SAY-002 say(message, true) makes the message visible to all players', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const speakerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE],
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p2',
+			body: [MOVE],
+		});
+
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${speakerId}).say('public', true)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const seen = await shard.runPlayers({
+			p1: code`Game.getObjectById(${speakerId}).saying`,
+			p2: code`Game.getObjectById(${speakerId}).saying`,
+		});
+		expect(seen.p1).toBe('public');
+		expect(seen.p2).toBe('public');
+	});
+
+	test('CREEP-SAY-003 without the public flag, only the owner sees the message', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const speakerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE],
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p2',
+			body: [MOVE],
+		});
+
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${speakerId}).say('private')
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const seenByOwner = await shard.runPlayer('p1', code`
+			Game.getObjectById(${speakerId}).saying
+		`);
+		const seenByOther = await shard.runPlayer('p2', code`
+			Game.getObjectById(${speakerId}).saying
+		`);
+		expect(seenByOwner).toBe('private');
+		expect(seenByOther).toBeNull();
 	});
 });
 
 describe('creep body part damage', () => {
-	test('each body part has 100 hits and contributes to hitsMax', async ({ shard }) => {
+	test('COMBAT-BODYPART-002 each body part has 100 hits and contributes to hitsMax', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -72,7 +153,7 @@ describe('creep body part damage', () => {
 		expect(creep.body.map(part => part.hits)).toEqual([100, 100, 100]);
 	});
 
-	test('incoming damage is applied to the earliest surviving body part first', async ({ shard }) => {
+	test('COMBAT-BODYPART-001 incoming damage is applied to the earliest surviving body part first', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -96,7 +177,7 @@ describe('creep body part damage', () => {
 		expect(target.body.map(part => part.hits)).toEqual([70, 100, 100]);
 	});
 
-	test('a body part at 0 hits is destroyed before later parts continue taking damage', async ({ shard }) => {
+	test('COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -121,5 +202,10 @@ describe('creep body part damage', () => {
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(target.hits).toBe(180);
 		expect(target.body.map(part => part.hits)).toEqual([0, 80, 100]);
+
+		const activeTough = await shard.runPlayer('p1', code`
+			Game.getObjectById(${targetId}).getActiveBodyparts(TOUGH)
+		`);
+		expect(activeTough).toBe(0);
 	});
 });

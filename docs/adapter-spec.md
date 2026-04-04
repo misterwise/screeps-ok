@@ -46,6 +46,7 @@ That includes:
 - `placeObject`
 - `setTerrain`
 - `runPlayer`
+- `runPlayers`
 - `tick`
 - `getObject`
 - `findInRoom`
@@ -110,6 +111,7 @@ Required behavior:
   - `boolean`
   - `null`
   - plain objects/arrays recursively composed of those types
+- a top-level `undefined` return must be normalized to `null`
 - returning a live game object must throw `RunPlayerError` with
   `errorKind = 'serialization'`
 - syntax failures must throw `RunPlayerError` with `errorKind = 'syntax'`
@@ -119,6 +121,24 @@ Required behavior:
 Gameplay return codes such as `OK` or `ERR_NOT_IN_RANGE` are normal return
 values, not errors.
 
+### `runPlayers`
+
+`runPlayers(codesByUser)` executes player code for multiple test handles against
+the same current game state.
+
+Required behavior:
+
+- every supplied player observes the same pre-execution game state
+- adapters must not advance gameplay between those per-player evaluations
+- return values follow the same JSON-safe and top-level `undefined -> null`
+  rules as `runPlayer()`
+- if any supplied player code fails, the adapter must surface that as a
+  `RunPlayerError`
+
+This method exists for behaviors whose public contract depends on same-tick
+multi-player observation, such as one player's state being visible to another
+player in that same tick snapshot.
+
 ### `tick`
 
 `tick(count)` advances gameplay processing.
@@ -126,6 +146,7 @@ values, not errors.
 From the test side, the expected contract is:
 
 - `runPlayer()` collects intents and returns a value
+- `runPlayers()` collects intents and/or reads from one shared game state
 - `tick()` processes those intents and advances time
 
 If an engine internally consumes time during player execution, the adapter must

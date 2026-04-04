@@ -1,7 +1,26 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, MOVE, WORK } from '../../src/index.js';
 
 describe('creep.pull()', () => {
-	test('pulls adjacent creep when puller moves away', async ({ shard }) => {
+	test('pull() on an adjacent creep returns OK', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE, MOVE],
+			name: 'puller',
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, WORK, WORK],
+			name: 'heavy',
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.creeps['puller'].pull(Game.creeps['heavy'])
+		`);
+		expect(rc).toBe(OK);
+	});
+
+	test('the pulled creep must call move() toward the puller to complete the pull', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const pullerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -10,7 +29,39 @@ describe('creep.pull()', () => {
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
-			body: [WORK, WORK, WORK], // no MOVE — can't move alone
+			body: [WORK, WORK, WORK],
+			name: 'heavy',
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			const puller = Game.creeps['puller'];
+			const heavy = Game.creeps['heavy'];
+			({
+				pull: puller.pull(heavy),
+				move: puller.move(TOP),
+			})
+		`) as { pull: number; move: number };
+		expect(rc.pull).toBe(OK);
+		expect(rc.move).toBe(OK);
+
+		await shard.tick();
+
+		const puller = await shard.expectObject(pullerId, 'creep');
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(puller.pos.y).toBe(24);
+		expect(target.pos.y).toBe(26);
+	});
+
+	test("a pulled creep that moves toward the puller moves into the puller's previous tile", async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const pullerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE, MOVE],
+			name: 'puller',
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, WORK, WORK],
 			name: 'heavy',
 		});
 
@@ -22,7 +73,7 @@ describe('creep.pull()', () => {
 				move: puller.move(TOP),
 				targetMove: heavy.move(puller),
 			})
-		`) as any;
+		`) as { pull: number; move: number; targetMove: number };
 		expect(rc.pull).toBe(OK);
 		expect(rc.move).toBe(OK);
 
@@ -30,8 +81,8 @@ describe('creep.pull()', () => {
 
 		const puller = await shard.expectObject(pullerId, 'creep');
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(puller.pos.y).toBe(24); // puller moved TOP
-		expect(target.pos.y).toBe(25); // heavy moved to puller's old position
+		expect(puller.pos.y).toBe(24);
+		expect(target.pos.y).toBe(25);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {

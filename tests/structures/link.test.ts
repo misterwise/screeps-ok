@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, STRUCTURE_LINK } from '../../src/index.js';
 
 describe('StructureLink', () => {
-	test('transferEnergy sends energy minus 3% to target link', async ({ shard }) => {
+	test('LINK-003 transferEnergy sends energy minus link loss to the target link', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
@@ -27,7 +27,7 @@ describe('StructureLink', () => {
 		expect(dst.store.energy).toBe(97); // received 100 - 3% = 97
 	});
 
-	test('transferEnergy sets cooldown', async ({ shard }) => {
+	test('transferEnergy exposes the source-link cooldown on the next tick after a distance-10 transfer', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
@@ -47,6 +47,6 @@ describe('StructureLink', () => {
 		await shard.tick();
 
 		const src = await shard.expectStructure(link1, STRUCTURE_LINK);
-		expect(src.cooldown).toBeGreaterThan(0);
+		expect(src.cooldown).toBe(9);
 	});
 });

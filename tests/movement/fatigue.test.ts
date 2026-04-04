@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, WORK, CARRY } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, WORK, CARRY, ERR_TIRED } from '../../src/index.js';
 
 describe('movement: fatigue', () => {
 	test('MOVE part on plains: no fatigue', async ({ shard }) => {
@@ -44,14 +44,12 @@ describe('movement: fatigue', () => {
 		expect(creep.fatigue).toBe(2);
 	});
 
-	test('creep with fatigue cannot move', async ({ shard }) => {
+	test('a creep with fatigue > 0 cannot move and move() returns ERR_TIRED', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// 3 WORK + 1 MOVE: generates 6, removes 2 -> 4 fatigue after first move
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [WORK, WORK, WORK, MOVE],
 		});
 
-		// First move
 		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
 		await shard.tick();
 
@@ -59,13 +57,30 @@ describe('movement: fatigue', () => {
 		expect(after1.pos.y).toBe(24);
 		expect(after1.fatigue).toBe(4);
 
-		// Second move — should fail due to fatigue
 		const rc = await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
+		expect(rc).toBe(ERR_TIRED);
 		await shard.tick();
 
 		const after2 = await shard.expectObject(id, 'creep');
-		expect(after2.pos.y).toBe(24); // didn't move
-		// Fatigue decreases by 2*MOVE parts per tick = 2
+		expect(after2.pos.y).toBe(24);
+		expect(after2.fatigue).toBe(2);
+	});
+
+	test('each undamaged MOVE part reduces fatigue by 2 at the start of each tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, WORK, WORK, MOVE],
+		});
+
+		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
+		await shard.tick();
+
+		const after1 = await shard.expectObject(id, 'creep');
+		expect(after1.fatigue).toBe(4);
+
+		await shard.tick();
+
+		const after2 = await shard.expectObject(id, 'creep');
 		expect(after2.fatigue).toBe(2);
 	});
 

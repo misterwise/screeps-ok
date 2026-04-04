@@ -52,6 +52,8 @@ Good:
 - exact resource amount
 - exact same-tick vs next-tick visibility
 - exact returned array/object shape when that shape is the behavior
+- exact normalized `null` outcome when the adapter contract owns
+  `undefined -> null`
 
 Avoid:
 
@@ -84,6 +86,10 @@ Examples:
 - becomes available when cooldown reaches `0`
 
 Do not leave timing implicit in setup or helper behavior.
+
+When a behavior depends on same-tick observation from multiple players, use a
+shared-state helper such as `runPlayers(...)` rather than sequential
+single-player reads that may observe different ticks.
 
 ### 6. Determinism first
 

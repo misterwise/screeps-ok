@@ -379,6 +379,47 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return parsed.value ?? null;
 	}
 
+	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
+		const handles = Object.keys(codesByUser);
+		for (const handle of handles) {
+			if (!this.users.get(handle)) throw new Error(`Unknown player: ${handle}`);
+		}
+
+		for (const handle of handles) {
+			const botId = this.resolvePlayer(handle);
+			const codeStr = String(codesByUser[handle]).trimEnd().replace(/;$/, '');
+			const memRaw = await this.env.get(this.env.keys.MEMORY + botId) || '{}';
+			const mem = JSON.parse(memRaw);
+			mem._screepsOk = codeStr;
+			delete mem._screepsOkResult;
+			await this.env.set(this.env.keys.MEMORY + botId, JSON.stringify(mem));
+		}
+
+		await this.server.tick();
+		this.ticksConsumed++;
+
+		const results: Record<string, PlayerReturnValue> = {};
+		for (const handle of handles) {
+			const botId = this.resolvePlayer(handle);
+			const memAfter = JSON.parse(
+				await this.env.get(this.env.keys.MEMORY + botId) || '{}');
+			const resultJson = memAfter._screepsOkResult;
+			if (!resultJson) {
+				results[handle] = null;
+				continue;
+			}
+
+			const parsed = JSON.parse(resultJson);
+			if (!parsed.ok) {
+				throw new RunPlayerError('runtime', `${handle}: ${parsed.error}`);
+			}
+
+			results[handle] = parsed.value ?? null;
+		}
+
+		return results;
+	}
+
 	async tick(count = 1): Promise<void> {
 		// Subtract ticks already consumed by runPlayer calls
 		const remaining = Math.max(0, count - this.ticksConsumed);
