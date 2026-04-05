@@ -34,6 +34,7 @@ if (
 }
 
 console.log('[screeps-ok] Building xxscreeps JavaScript output...');
+let tscError = null;
 try {
 	// Run the root project's TypeScript compiler from within xxscreeps so it
 	// uses xxscreeps's tsconfig without depending on nested devDependencies.
@@ -41,23 +42,25 @@ try {
 		cwd: xxscreepsDir,
 		stdio: 'inherit',
 	});
-	runGeneratedModsBootstrap();
-	console.log('[screeps-ok] xxscreeps JavaScript build complete');
-	console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
 } catch (err) {
-	// tsc may exit with errors due to type issues but still emit JS
-	// Check if the output exists
-	if (
-		existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js')) &&
-		existsSync(resolve(xxscreepsDir, 'dist/config/mods.static/constants.js'))
-	) {
-		console.log('[screeps-ok] xxscreeps JavaScript build completed with warnings');
-		console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
-	} else {
-		console.error('[screeps-ok] xxscreeps build failed:', err.message);
-		process.exit(1);
-	}
+	// tsc exits non-zero on type errors but still emits JS. Harmless type
+	// drift (e.g. nested package duplication) should not block the build as
+	// long as tsc produced the expected output — verified below.
+	tscError = err;
 }
+
+if (!existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js'))) {
+	console.error('[screeps-ok] xxscreeps build failed:', tscError ? tscError.message : 'dist/test/simulate.js was not emitted');
+	process.exit(1);
+}
+
+runGeneratedModsBootstrap();
+if (tscError) {
+	console.log('[screeps-ok] xxscreeps JavaScript build completed with warnings');
+} else {
+	console.log('[screeps-ok] xxscreeps JavaScript build complete');
+}
+console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
 
 function runGeneratedModsBootstrap() {
 	execFileSync(process.execPath, ['dist/config/mods/index.js'], {

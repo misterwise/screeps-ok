@@ -22,6 +22,22 @@ The suite is governed by three companion docs:
 - [`docs/test-authoring.md`](docs/test-authoring.md) — canonical test-writing rules
 - [`docs/style.md`](docs/style.md) — documentation style and visual vocabulary
 
+## Prerequisites
+
+Both adapters compile native modules via `node-gyp`, so a C/C++ toolchain is
+required in addition to Node and git:
+
+- **Node 24.x or newer** — native addons are rebuilt against the active runtime
+- **git** — `xxscreeps` is installed directly from GitHub
+- **C/C++ build toolchain** for `node-gyp`:
+  - **macOS**: `xcode-select --install`
+  - **Debian/Ubuntu**: `sudo apt-get install build-essential python3`
+  - **RHEL/Fedora**: `sudo dnf groupinstall "Development Tools" && sudo dnf install python3`
+
+The first `npm install` pulls a pinned `xxscreeps` commit and builds its
+JavaScript output, so the initial install takes noticeably longer than
+subsequent runs.
+
 ## Quick Start
 
 ```bash

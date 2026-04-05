@@ -90,10 +90,19 @@ function run(command, options) {
 
 function runTypeScriptBuild(cwd) {
 	console.log(`[screeps-ok] ${process.execPath} ${tscBin} --noEmitOnError false`);
-	execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
-		cwd,
-		stdio: 'inherit',
-	});
+	try {
+		execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
+			cwd,
+			stdio: 'inherit',
+		});
+	} catch {
+		// tsc exits non-zero on type errors but still emits JS. The caller
+		// verifies the expected output below before proceeding.
+	}
+	if (!existsSync(path.join(cwd, 'dist/test/simulate.js'))) {
+		console.error(`[screeps-ok] xxscreeps tsc build did not emit dist/test/simulate.js in ${cwd}`);
+		process.exit(1);
+	}
 }
 
 function runGeneratedModsBootstrap(cwd) {

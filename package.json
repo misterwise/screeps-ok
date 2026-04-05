@@ -32,7 +32,7 @@
     "screeps-server-mockup": "^1.5.1",
     "typescript": "^5.7",
     "vitest": "^3",
-    "xxscreeps": "file:../xxscreeps-ok-upstream"
+    "xxscreeps": "github:laverdet/xxscreeps#6937d5cc4b15ae88adb45e5c1f57a1688fd69843"
   },
   "private": true,
   "license": "MIT"
