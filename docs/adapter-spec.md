@@ -36,7 +36,7 @@ The adapter must not:
 ## Required Interface
 
 Adapters must implement `ScreepsOkAdapter` from
-[`src/adapter.ts`](/Users/mrwise/Coding/Screeps/screeps-ok/src/adapter.ts).
+[`src/adapter.ts`](../src/adapter.ts).
 
 That includes:
 

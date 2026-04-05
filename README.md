@@ -97,25 +97,28 @@ npm test xxscreeps -- --watch
 npm test xxscreeps -- --reporter=verbose
 ```
 
-## Downstream Usage
+## Downstream Consumption
 
-Other engine repositories should consume `screeps-ok` as a dependency and point
-the packaged runner at a local adapter module.
+> [!NOTE]
+> During the alpha, `screeps-ok` is consumed by cloning this repository and
+> running the suite in-place against the two bundled adapters. Publishing
+> `screeps-ok` as a package that another engine repository installs with
+> `npm i -D screeps-ok` (and points at a local adapter module) is tracked
+> as a pre-publish release gate — the package is currently marked private
+> and `"exports"` still resolves to raw TypeScript.
+
+The packaged runner does work against an arbitrary adapter module when
+invoked from a repo clone, which is how downstream adopters will exercise
+it once publishing is unblocked:
 
 ```bash
-npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
-```
-
-Built-in adapters can still be selected by name:
-
-```bash
-npm exec screeps-ok -- --adapter vanilla -- tests/room/controller.test.ts
+./bin/run.js --adapter ./path/to/screeps-ok-adapter.ts --preflight none
 ```
 
 ## Adapter Docs
 
-- [docs/adapter-guide.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-guide.md) — practical authoring guide
-- [docs/adapter-spec.md](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-spec.md) — current normative adapter contract
+- [docs/adapter-guide.md](docs/adapter-guide.md) — practical authoring guide
+- [docs/adapter-spec.md](docs/adapter-spec.md) — current normative adapter contract
 
 ## Reviewer Path
 
@@ -330,13 +333,6 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 > is generated from the latest test runs and each adapter's `parity.json`.
 > This section covers only harness-level and cross-cutting issues that
 > affect both adapters or the test framework itself.
-
-🟡 **Body part damage order** — Vanilla applies damage to `body[0]` in DB,
-xxscreeps to `body[last]`. Under investigation; may be a DB storage-order
-artifact rather than a behavioral difference.
-
-🟡 **Dismantle energy return** — Neither engine returns energy to the
-dismantling creep's store.
 
 🔴 **Multi-player vanilla** — A second player without an owned room cannot
 execute code reliably. The mockup driver disables users that own no

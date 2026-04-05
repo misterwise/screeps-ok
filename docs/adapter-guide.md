@@ -7,15 +7,19 @@ to help an engine author build a working adapter without reverse-engineering
 the existing `vanilla` and `xxscreeps` adapters.
 
 For the current normative contract, see
-[`docs/adapter-spec.md`](/Users/mrwise/Coding/Screeps/screeps-ok/docs/adapter-spec.md).
+[`adapter-spec.md`](adapter-spec.md).
 
 The canonical tests live in `screeps-ok`. Your engine repository should own its
 adapter and point the `screeps-ok` runner at it.
 
-Typical downstream invocation:
+During the alpha, `screeps-ok` is consumed by cloning this repository and
+invoking the runner in-place. A published `npm i -D screeps-ok` flow is
+tracked as a release gate — see the README "Downstream Consumption" note.
+From a repo clone, the packaged runner already accepts an external adapter
+module path:
 
 ```bash
-npm exec screeps-ok -- --adapter ./test/screeps-ok-adapter.ts --preflight none
+./bin/run.js --adapter ./path/to/screeps-ok-adapter.ts --preflight none
 ```
 
 The `--preflight none` default is appropriate for new external adapters until
