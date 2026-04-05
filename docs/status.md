@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-183%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-11-yellow)
+![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-185%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-9-yellow)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [199](#vanilla-passing-tests) | — | — | [1](#vanilla-skipped-tests) | 2026-04-04 22:02 UTC |
-| 🟡 | **xxscreeps** | [183](#xxscreeps-passing-tests) | [11](#xxscreeps-expected-failures) | — | [6](#xxscreeps-skipped-tests) | 2026-04-04 22:02 UTC |
+| 🟢 | **vanilla** | [199](#vanilla-passing-tests) | — | — | [1](#vanilla-skipped-tests) | 2026-04-05 00:32 UTC |
+| 🟡 | **xxscreeps** | [185](#xxscreeps-passing-tests) | [9](#xxscreeps-expected-failures) | — | [6](#xxscreeps-skipped-tests) | 2026-04-05 00:31 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior, covering 11 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior, covering 9 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 <details>
 <summary><strong><code>creep-owner-undefined</code></strong> — Creep.owner is undefined on the engine (the key exists but the value is undefined). Vanilla populates it as { username: string } per public docs.</summary>
@@ -40,16 +40,14 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 </details>
 
 <details>
-<summary><strong><code>extension-rcl-capacity</code></strong> — StructureExtension reports the RCL 8 capacity (200) regardless of room controller level, and isActive() returns true even when CONTROLLER_STRUCTURES.extension forbids extensions at that RCL.</summary>
+<summary><strong><code>extension-rcl-capacity</code></strong> — StructureExtension.store.getCapacity(energy) ignores the EXTENSION_ENERGY_CAPACITY table and always reports the RCL 8 maximum (200), so room.energyCapacityAvailable over-counts at sub-RCL-8 levels. isActive() and room.energyAvailable now honor CONTROLLER_STRUCTURES correctly for extensions at forbidden RCLs.</summary>
 
-4 tests affected:
+2 tests affected:
 
-- `ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension`
 - `ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions`
-- `ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension`
 - `EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable`
 
-> xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL, and isActive() returns true even at RCL 1 where CONTROLLER_STRUCTURES.extension[1] is 0.
+> xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL. isActive()-based filtering now works correctly upstream (RCL 1 extensions report inactive and contribute 0 to room energy), so the gap has narrowed to just the capacity table.
 
 </details>
 
@@ -415,7 +413,7 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 ## xxscreeps passing tests
 
 <details>
-<summary>183 tests across 28 files</summary>
+<summary>185 tests across 28 files</summary>
 
 **`tests/actions/build.test.ts`** (3)
 
@@ -612,11 +610,13 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 - controller mechanics claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics attackController reduces the hostile controller downgrade timer
 
-**`tests/room/game-api.test.ts`** (15)
+**`tests/room/game-api.test.ts`** (17)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
 - room energy tracking ROOM-ENERGY-001 [active-extensions] room.energyAvailable sums stored energy in active extensions
+- room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
+- room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
 - Room.find ROOM-FIND-001 [FIND_MY_CREEPS] player-relative FIND constants evaluate from the current player perspective
 - Room.find ROOM-FIND-001 [FIND_HOSTILE_CREEPS] player-relative FIND constants evaluate from the current player perspective
 - Room.find ROOM-FIND-001 [FIND_MY_STRUCTURES] player-relative FIND constants evaluate from the current player perspective

@@ -55,7 +55,7 @@ describe('room energy tracking', () => {
 		expect(energyAvailable).toBe(37);
 	});
 
-	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension', async ({ shard }) => {
+	test('ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -108,7 +108,7 @@ describe('room energy tracking', () => {
 		expect(energyCapacityAvailable).toBe(100);
 	});
 
-	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
+	test('ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

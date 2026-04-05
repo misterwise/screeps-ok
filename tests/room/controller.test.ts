@@ -127,20 +127,23 @@ describe('controller mechanics', () => {
 
 		await shard.tick();
 
-		const before = await shard.runPlayer('p1', code`
-			Game.rooms['W2N1'].controller.ticksToDowngrade
-		`) as number;
-
-		const rc = await shard.runPlayer('p1', code`
+		// Observe the pre-attack timer and submit the attack intent in one
+		// player-code call. Two runPlayer() calls for the same player within
+		// one tick is not a guaranteed contract across adapters — observation
+		// and action share the current game state, so combine them.
+		const preAttack = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
-			creep.attackController(creep.room.controller)
-		`);
-		expect(rc).toBe(OK);
+			const ctrl = creep.room.controller;
+			const before = ctrl.ticksToDowngrade;
+			const rc = creep.attackController(ctrl);
+			({ before, rc })
+		`) as { before: number; rc: number };
+		expect(preAttack.rc).toBe(OK);
 		await shard.tick();
 
 		const after = await shard.runPlayer('p1', code`
 			Game.rooms['W2N1'].controller.ticksToDowngrade
 		`) as number;
-		expect(after).toBeLessThan(before);
+		expect(after).toBeLessThan(preAttack.before);
 	});
 });

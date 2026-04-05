@@ -28,9 +28,11 @@ export const PARITY_GAPS = {
 		'is undefined). Vanilla populates it as { username: string } per public ' +
 		'docs.',
 	'extension-rcl-capacity':
-		'StructureExtension reports the RCL 8 capacity (200) regardless of ' +
-		'room controller level, and isActive() returns true even when ' +
-		'CONTROLLER_STRUCTURES.extension forbids extensions at that RCL.',
+		'StructureExtension.store.getCapacity(energy) ignores the ' +
+		'EXTENSION_ENERGY_CAPACITY table and always reports the RCL 8 ' +
+		'maximum (200), so room.energyCapacityAvailable over-counts at ' +
+		'sub-RCL-8 levels. isActive() and room.energyAvailable now honor ' +
+		'CONTROLLER_STRUCTURES correctly for extensions at forbidden RCLs.',
 	'describe-exits-topology':
 		'Game.map.describeExits filters returned directions by which neighbor ' +
 		'rooms exist in the current shard rather than returning all four ' +

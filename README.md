@@ -2,7 +2,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-183%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-11-yellow) ![status](https://img.shields.io/badge/status-alpha-blue)
+![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-185%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-9-yellow) ![status](https://img.shields.io/badge/status-alpha-blue)
 
 Behavioral conformance test suite for Screeps server implementations. Write
 a test once, run it against any engine.
