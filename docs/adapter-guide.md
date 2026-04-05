@@ -401,13 +401,15 @@ for outside consumption.
 
 ## Current Status of This Guide
 
-This document is the first practical pass. It captures the assumptions visible
-from the initial `vanilla` and `xxscreeps` adapters.
+This document is the practical companion to [`adapter-spec.md`](adapter-spec.md),
+which owns the current normative contract. The guide captures how the
+assumptions in the spec actually play out when implementing against the
+initial `vanilla` and `xxscreeps` adapters.
 
-It is expected to evolve into a stricter versioned adapter spec once:
+Where the guide and the spec disagree, the spec wins. The guide still carries
+some provisional advice that will tighten as the project matures:
 
-- the runner / CLI contract is finalized
-- capability policy is stable
-- snapshot semantics are less fluid
-- external adopters can implement against the contract without asking for
-  design clarification
+- the runner / CLI contract is still pre-1.0
+- capability policy is still narrowing
+- snapshot semantics will continue to firm up as coverage expands
+- external adopter experience has not yet fed back into the contract

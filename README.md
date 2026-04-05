@@ -15,7 +15,7 @@ a test once, run it against any engine.
 > `npm run status:refresh`. The badges above are updated manually as part of
 > the release flow.
 
-The suite is governed by three companion docs:
+The suite is governed by four companion docs:
 
 - [`behaviors.md`](behaviors.md) — the behavioral catalog
 - [`docs/behavior-matrices.md`](docs/behavior-matrices.md) — matrix-backed case-family definitions
@@ -84,7 +84,7 @@ npm test xxscreeps -- tests/actions/build.test.ts
 
 ### A specific test by name
 ```bash
-npm test xxscreeps -- -t "harvests 2 energy"
+npm test xxscreeps -- -t "2 energy per WORK part"
 ```
 
 ### Watch mode (re-runs on file change)
