@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [199](#vanilla-passing-tests) | — | — | [1](#vanilla-skipped-tests) | 2026-04-05 00:32 UTC |
-| 🟡 | **xxscreeps** | [185](#xxscreeps-passing-tests) | [9](#xxscreeps-expected-failures) | — | [6](#xxscreeps-skipped-tests) | 2026-04-05 00:31 UTC |
+| 🟢 | **vanilla** | [199](#vanilla-passing-tests) | — | — | [1](#vanilla-skipped-tests) | 2026-04-05 02:28 UTC |
+| 🟡 | **xxscreeps** | [185](#xxscreeps-passing-tests) | [9](#xxscreeps-expected-failures) | — | [6](#xxscreeps-skipped-tests) | 2026-04-05 02:28 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -44,8 +44,8 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 
 2 tests affected:
 
-- `ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions`
 - `EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable`
+- `ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions`
 
 > xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL. isActive()-based filtering now works correctly upstream (RCL 1 extensions report inactive and contribute 0 to room energy), so the gap has narrowed to just the capacity table.
 
@@ -239,10 +239,10 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 
 **`tests/combat/rangedMassAttack.test.ts`** (4)
 
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 10 damage at range 1
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 4 damage at range 2
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 1 damage at range 3
-- creep.rangedMassAttack() hits multiple targets
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
 
 **`tests/combat/tower.test.ts`** (14)
 
@@ -259,36 +259,36 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 - StructureTower TOWER-REPAIR-002 [range=10] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-002 [range=20] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick
-- StructureTower tower.attack() returns ERR_NOT_ENOUGH_ENERGY without energy
+- StructureTower TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
 
 **`tests/movement/directions.test.ts`** (9)
 
-- movement: directions move(TOP) returns OK and moves to the expected adjacent tile
-- movement: directions move(TOP_RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM_RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM_LEFT) returns OK and moves to the expected adjacent tile
-- movement: directions move(LEFT) returns OK and moves to the expected adjacent tile
-- movement: directions move(TOP_LEFT) returns OK and moves to the expected adjacent tile
-- movement: directions move into wall returns OK but the creep does not move
+- creep.move() MOVE-BASIC-001 [TOP] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move
 
 **`tests/movement/fatigue.test.ts`** (7)
 
-- movement: fatigue MOVE part on plains: no fatigue
-- movement: fatigue non-MOVE parts generate fatigue on plains
-- movement: fatigue insufficient MOVE parts cause fatigue on plains
-- movement: fatigue a creep with fatigue > 0 cannot move and move() returns ERR_TIRED
-- movement: fatigue each undamaged MOVE part reduces fatigue by 2 at the start of each tick
-- movement: fatigue empty CARRY parts do not generate fatigue
-- movement: fatigue full CARRY parts generate fatigue like other parts
+- creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
+- creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
+- creep fatigue MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains
+- creep fatigue MOVE-BASIC-003 move() returns ERR_TIRED while the creep has fatigue > 0
+- creep fatigue MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick
+- creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
+- creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
 
 **`tests/movement/pull.test.ts`** (4)
 
-- creep.pull() pull() on an adjacent creep returns OK
-- creep.pull() the pulled creep must call move() toward the puller to complete the pull
-- creep.pull() a pulled creep that moves toward the puller moves into the puller's previous tile
-- creep.pull() returns ERR_NOT_IN_RANGE when not adjacent
+- creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
+- creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
+- creep.pull() MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile
+- creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 
 **`tests/room/construction.test.ts`** (3)
 
@@ -398,7 +398,7 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 
 **`tests/movement/directions.test.ts`** (1)
 
-- movement: directions move into wall returns OK but the creep does not move
+- creep.move() MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move
 
 **`tests/room/terrain.test.ts`** (5)
 
@@ -549,10 +549,10 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 
 **`tests/combat/rangedMassAttack.test.ts`** (4)
 
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 10 damage at range 1
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 4 damage at range 2
-- creep.rangedMassAttack() rangedMassAttack() returns OK and deals 1 damage at range 3
-- creep.rangedMassAttack() hits multiple targets
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
 
 **`tests/combat/tower.test.ts`** (14)
 
@@ -569,35 +569,35 @@ xxscreeps currently declares 5 parity gaps against vanilla's canonical behavior,
 - StructureTower TOWER-REPAIR-002 [range=10] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-002 [range=20] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick
-- StructureTower tower.attack() returns ERR_NOT_ENOUGH_ENERGY without energy
+- StructureTower TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
 
 **`tests/movement/directions.test.ts`** (8)
 
-- movement: directions move(TOP) returns OK and moves to the expected adjacent tile
-- movement: directions move(TOP_RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM_RIGHT) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM) returns OK and moves to the expected adjacent tile
-- movement: directions move(BOTTOM_LEFT) returns OK and moves to the expected adjacent tile
-- movement: directions move(LEFT) returns OK and moves to the expected adjacent tile
-- movement: directions move(TOP_LEFT) returns OK and moves to the expected adjacent tile
+- creep.move() MOVE-BASIC-001 [TOP] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_LEFT] move(direction) moves one tile toward the direction constant
 
 **`tests/movement/fatigue.test.ts`** (7)
 
-- movement: fatigue MOVE part on plains: no fatigue
-- movement: fatigue non-MOVE parts generate fatigue on plains
-- movement: fatigue insufficient MOVE parts cause fatigue on plains
-- movement: fatigue a creep with fatigue > 0 cannot move and move() returns ERR_TIRED
-- movement: fatigue each undamaged MOVE part reduces fatigue by 2 at the start of each tick
-- movement: fatigue empty CARRY parts do not generate fatigue
-- movement: fatigue full CARRY parts generate fatigue like other parts
+- creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
+- creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
+- creep fatigue MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains
+- creep fatigue MOVE-BASIC-003 move() returns ERR_TIRED while the creep has fatigue > 0
+- creep fatigue MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick
+- creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
+- creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
 
 **`tests/movement/pull.test.ts`** (4)
 
-- creep.pull() pull() on an adjacent creep returns OK
-- creep.pull() the pulled creep must call move() toward the puller to complete the pull
-- creep.pull() a pulled creep that moves toward the puller moves into the puller's previous tile
-- creep.pull() returns ERR_NOT_IN_RANGE when not adjacent
+- creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
+- creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
+- creep.pull() MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile
+- creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 
 **`tests/room/construction.test.ts`** (3)
 

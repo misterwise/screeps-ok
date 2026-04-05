@@ -292,6 +292,27 @@ Each definition should include:
 - `Verification Notes`
   Coexistence is owned by `TOWER-POWER-002`.
 
+### COMBAT-RMA
+
+- `Catalog Entries`
+  `COMBAT-RMA-002`
+- `Canonical Source`
+  `RANGED_ATTACK_POWER` and `RANGED_ATTACK_DISTANCE_RATE` constants and the
+  official `rangedMassAttack` processor in `@screeps/engine`.
+- `Dimensions`
+  target range band (1, 2, 3)
+- `Applicability`
+  `creep.rangedMassAttack()` damage against hostile creeps, power creeps, and
+  structures within range 3
+- `Exclusions`
+  Multi-target aggregation, friendly exclusion, body-part aggregation across
+  multiple `RANGED_ATTACK` parts, and boost interactions
+- `Verification Notes`
+  The executable case list lives in
+  `tests/support/matrices/ranged-mass-attack.ts`. Expected damage is computed
+  from `RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[range]` so that the
+  oracle stays independent of the engine under test.
+
 ### BOOST-AGGREGATION
 
 - `Catalog Entries`
@@ -716,6 +737,27 @@ Each definition should include:
   Exit descriptions and linear-distance rules
 - `Verification Notes`
   Timestamp presence and meaning should be defined per returned status here.
+
+### MOVE-BASIC-DIRECTIONS
+
+- `Catalog Entries`
+  `MOVE-BASIC-001`
+- `Canonical Source`
+  Screeps direction constants (`TOP` through `TOP_LEFT`) and the official
+  `creep.move()` processor.
+- `Dimensions`
+  direction constant
+- `Applicability`
+  `creep.move(direction)` on a MOVE-capable creep standing on a walkable tile
+  with a walkable destination tile
+- `Exclusions`
+  Fatigue generation, collision resolution, wall/blocked tiles, and the
+  `ERR_TIRED` / `ERR_NO_BODYPART` return codes
+- `Verification Notes`
+  The executable case list lives in `tests/support/matrices/move-directions.ts`
+  and covers every Screeps direction constant exactly once. Expected landing
+  offsets are derived from the direction constants themselves, keeping the
+  oracle independent of the engine under test.
 
 ### ROOMPOS-DIRECTION
 

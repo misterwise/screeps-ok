@@ -180,7 +180,7 @@ describe('StructureTower', () => {
 		expect(tower.store.energy).toBe(990);
 	});
 
-	test('tower.attack() returns ERR_NOT_ENOUGH_ENERGY without energy', async ({ shard }) => {
+	test('TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],

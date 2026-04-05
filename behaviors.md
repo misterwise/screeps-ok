@@ -43,12 +43,15 @@ conformance test or one generated test family.
 ## 1. Movement
 
 ### 1.1 Basic Movement
-- [ ] `move()` to an adjacent tile in a valid direction returns OK.
-- [ ] `move()` with no MOVE body parts returns ERR_NO_BODYPART.
-- [ ] `move()` while fatigue > 0 returns ERR_TIRED.
-- [ ] `move()` into a wall tile returns OK but the creep does not move.
-- [ ] `move()` into an occupied tile returns OK but the creep may not move (collision).
-- [ ] `move()` accepts all 8 direction constants (TOP through TOP_LEFT).
+- [ ] `MOVE-BASIC-001` `matrix` `verified_vanilla`
+  `move(direction)` moves the creep one tile in the direction of the
+  constant, for every Screeps direction constant.
+- [ ] `MOVE-BASIC-002` `behavior` `verified_vanilla`
+  `move()` into a wall tile returns OK but the creep does not move.
+- [ ] `MOVE-BASIC-003` `behavior` `verified_vanilla`
+  `move()` returns `ERR_TIRED` when the creep's fatigue is greater than zero.
+- [ ] `MOVE-BASIC-004` `behavior` `needs_vanilla_verification`
+  `move()` returns `ERR_NO_BODYPART` when the creep has no active MOVE parts.
 - [ ] `moveByPath()` moves the creep one step along a provided path array.
 - [ ] `moveByPath()` returns OK when the next step is a valid adjacent tile.
 - [ ] `moveByPath()` returns ERR_NOT_FOUND when the creep's position is not on the path.
@@ -58,21 +61,32 @@ conformance test or one generated test family.
 - [ ] `moveTo()` returns ERR_TIRED when the creep has fatigue > 0.
 - [ ] `moveTo()` returns ERR_NO_BODYPART when the creep has no MOVE parts.
 
+Coverage Notes
+- `move()` into an occupied tile is owned by the collision resolution facet
+  (`MOVE-COLLISION-*`), not this section.
+
 ### 1.2 Fatigue Calculation
-- [ ] Each non-MOVE body part contributes to movement weight.
-- [ ] Empty CARRY parts contribute zero fatigue.
-- [ ] Full or partially full CARRY parts contribute to fatigue like other non-MOVE parts.
-- [ ] Moving onto plains generates fatigue equal to 2 per weighted body part.
+- [ ] `MOVE-FATIGUE-001` `behavior` `verified_vanilla`
+  Moving onto a plains tile generates 2 fatigue per weighted non-MOVE body
+  part.
+- [ ] `MOVE-FATIGUE-002` `behavior` `verified_vanilla`
+  Each undamaged MOVE body part reduces the creep's fatigue by 2 at the start
+  of each tick.
+- [ ] `MOVE-FATIGUE-003` `behavior` `verified_vanilla`
+  Empty CARRY parts do not contribute weight for fatigue calculation.
+- [ ] `MOVE-FATIGUE-004` `behavior` `verified_vanilla`
+  Non-empty CARRY parts contribute weight for fatigue calculation like other
+  non-MOVE parts.
 - [ ] Moving onto swamp generates fatigue equal to 10 per weighted body part.
 - [ ] Moving onto a road generates fatigue equal to 1 per weighted body part.
-- [ ] Each undamaged MOVE part reduces fatigue by 2 at the start of each tick.
 - [ ] A MOVE part boosted with ZO reduces fatigue by 4 per tick instead of 2.
 - [ ] A MOVE part boosted with ZHO2 reduces fatigue by 6 per tick.
 - [ ] A MOVE part boosted with XZHO2 reduces fatigue by 8 per tick.
 - [ ] Damaged (0 HP) MOVE parts do not contribute to fatigue reduction.
-- [ ] A creep with fatigue > 0 cannot move and `move()` returns ERR_TIRED.
-- [ ] A creep with only MOVE parts generates 0 fatigue on any terrain.
-- [ ] Fatigue is applied after movement completes, based on destination terrain.
+
+Coverage Notes
+- The `ERR_TIRED` return code from `move()` when fatigue > 0 is owned by
+  `MOVE-BASIC-003`, not this section.
 
 ### 1.3 Roads
 - [ ] A road on plains reduces the fatigue multiplier to 1.
@@ -90,11 +104,18 @@ conformance test or one generated test family.
 - [ ] A creep being pulled can be pulled across a room border.
 
 ### 1.5 Pulling
-- [ ] `pull()` on an adjacent creep returns OK.
-- [ ] The pulled creep must call `move()` toward the puller to complete the pull.
+- [ ] `MOVE-PULL-001` `behavior` `verified_vanilla`
+  `pull()` on an adjacent friendly creep returns OK.
+- [ ] `MOVE-PULL-002` `behavior` `verified_vanilla`
+  The pulled creep must call `move()` toward the puller in the same tick for
+  the pull to complete.
+- [ ] `MOVE-PULL-003` `behavior` `verified_vanilla`
+  When a pull completes, the pulled creep moves into the puller's previous
+  tile as the puller moves.
+- [ ] `MOVE-PULL-004` `behavior` `verified_vanilla`
+  `pull()` returns `ERR_NOT_IN_RANGE` when the target is not adjacent.
 - [ ] The pulling creep accumulates fatigue for both itself and the pulled creep.
 - [ ] Pull can chain through multiple creeps in a train.
-- [ ] `pull()` on a non-adjacent creep returns ERR_NOT_IN_RANGE.
 
 ### 1.6 Collision Resolution
 - [ ] `MOVE-COLLISION-001` `behavior` `verified_vanilla`
@@ -400,11 +421,15 @@ Coverage Notes
 - [ ] Ranged attack boost (KO/KHO2/XKHO2) increases damage per boosted RANGED_ATTACK part.
 
 ### 7.3 Ranged Mass Attack
-- [ ] Damages all hostile objects within range 3.
-- [ ] Damage at range 1 is 100% of base per RANGED_ATTACK part.
-- [ ] Damage at range 2 is 40% of base per RANGED_ATTACK part.
-- [ ] Damage at range 3 is 10% of base per RANGED_ATTACK part.
-- [ ] Does not damage the player's own creeps or unowned structures.
+- [ ] `COMBAT-RMA-001` `behavior` `verified_vanilla`
+  `rangedMassAttack()` damages every hostile creep, power creep, and structure
+  within range 3 of the attacker in a single call.
+- [ ] `COMBAT-RMA-002` `matrix` `verified_vanilla`
+  Per-target damage per RANGED_ATTACK part at each range band matches the
+  canonical `RANGED_ATTACK_DISTANCE_RATE` distance-rate table.
+- [ ] `COMBAT-RMA-003` `behavior` `verified_vanilla`
+  `rangedMassAttack()` does not damage the player's own creeps or unowned
+  structures.
 
 ### 7.4 Heal
 - [ ] Each HEAL part restores 12 HP per tick at range 1.
@@ -461,6 +486,9 @@ Coverage Notes
   `tower.attack()` target acceptance and invalid-target behavior match the
   canonical target matrix across creeps, power creeps, structures, and
   non-attackable objects.
+- [ ] `TOWER-ATTACK-004` `behavior` `verified_vanilla`
+  `tower.attack()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
+  energy is below `TOWER_ENERGY_COST`.
 
 ### 7.10 Tower Heal
 - [ ] `TOWER-HEAL-001` `behavior` `verified_vanilla`

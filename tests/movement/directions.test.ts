@@ -1,24 +1,10 @@
-import {
-	describe, test, expect, code,
-	MOVE, OK,
-	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
-} from '../../src/index.js';
+import { describe, test, expect, code, MOVE, OK } from '../../src/index.js';
+import { moveDirectionCases } from '../support/matrices/move-directions.js';
 import { requireCapability } from '../support/policy.js';
 
-describe('movement: directions', () => {
-	const cases = [
-		{ label: 'TOP', direction: TOP, expected: { x: 25, y: 24 } },
-		{ label: 'TOP_RIGHT', direction: TOP_RIGHT, expected: { x: 26, y: 24 } },
-		{ label: 'RIGHT', direction: RIGHT, expected: { x: 26, y: 25 } },
-		{ label: 'BOTTOM_RIGHT', direction: BOTTOM_RIGHT, expected: { x: 26, y: 26 } },
-		{ label: 'BOTTOM', direction: BOTTOM, expected: { x: 25, y: 26 } },
-		{ label: 'BOTTOM_LEFT', direction: BOTTOM_LEFT, expected: { x: 24, y: 26 } },
-		{ label: 'LEFT', direction: LEFT, expected: { x: 24, y: 25 } },
-		{ label: 'TOP_LEFT', direction: TOP_LEFT, expected: { x: 24, y: 24 } },
-	] as const;
-
-	for (const { label, direction, expected } of cases) {
-		test(`move(${label}) returns OK and moves to the expected adjacent tile`, async ({ shard }) => {
+describe('creep.move()', () => {
+	for (const { label, direction, dx, dy } of moveDirectionCases) {
+		test(`MOVE-BASIC-001 [${label}] move(direction) moves one tile toward the direction constant`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25], owner: 'p1', body: [MOVE],
@@ -31,12 +17,12 @@ describe('movement: directions', () => {
 
 			await shard.tick();
 			const c = await shard.expectObject(id, 'creep');
-			expect(c.pos.x).toBe(expected.x);
-			expect(c.pos.y).toBe(expected.y);
+			expect(c.pos.x).toBe(25 + dx);
+			expect(c.pos.y).toBe(25 + dy);
 		});
 	}
 
-	test('move into wall returns OK but the creep does not move', async ({ shard, skip }) => {
+	test('MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move', async ({ shard, skip }) => {
 		requireCapability(shard, skip, 'terrain', 'custom terrain setup is required for wall-movement assertions');
 		const terrain = new Array(2500).fill(0);
 		terrain[24 * 50 + 25] = 1;

@@ -121,6 +121,12 @@ export const DISMANTLE_POWER = 50 as const;
 export const BUILD_POWER = 5 as const;
 export const ATTACK_POWER = 30 as const;
 export const RANGED_ATTACK_POWER = 10 as const;
+export const RANGED_ATTACK_DISTANCE_RATE = {
+	1: 1,
+	2: 0.4,
+	3: 0.1,
+	4: 0,
+} as const;
 export const HEAL_POWER = 12 as const;
 export const RANGED_HEAL_POWER = 4 as const;
 export const CARRY_CAPACITY = 50 as const;

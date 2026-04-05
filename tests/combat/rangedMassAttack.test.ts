@@ -1,14 +1,9 @@
 import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, body } from '../../src/index.js';
+import { rangedMassAttackRangeCases } from '../support/matrices/ranged-mass-attack.js';
 
 describe('creep.rangedMassAttack()', () => {
-	const rangeCases = [
-		{ label: 'range 1', pos: [25, 26] as [number, number], expectedDamage: 10 },
-		{ label: 'range 2', pos: [25, 27] as [number, number], expectedDamage: 4 },
-		{ label: 'range 3', pos: [25, 28] as [number, number], expectedDamage: 1 },
-	] as const;
-
-	for (const { label, pos, expectedDamage } of rangeCases) {
-		test(`rangedMassAttack() returns OK and deals ${expectedDamage} damage at ${label}`, async ({ shard }) => {
+	for (const { range, expectedDamage } of rangedMassAttackRangeCases) {
+		test(`COMBAT-RMA-002 [range=${range}] rangedMassAttack() deals the expected per-range damage`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -18,7 +13,7 @@ describe('creep.rangedMassAttack()', () => {
 				body: [RANGED_ATTACK, MOVE],
 			});
 			const targetId = await shard.placeCreep('W1N1', {
-				pos, owner: 'p2',
+				pos: [25, 25 + range], owner: 'p2',
 				body: body(5, TOUGH, MOVE),
 			});
 
@@ -34,7 +29,7 @@ describe('creep.rangedMassAttack()', () => {
 		});
 	}
 
-	test('hits multiple targets', async ({ shard }) => {
+	test('COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

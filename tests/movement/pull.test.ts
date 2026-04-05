@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, MOVE, WORK } from '../../src/index.js';
 
 describe('creep.pull()', () => {
-	test('pull() on an adjacent creep returns OK', async ({ shard }) => {
+	test('MOVE-PULL-001 pull() on an adjacent friendly creep returns OK', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -20,7 +20,7 @@ describe('creep.pull()', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('the pulled creep must call move() toward the puller to complete the pull', async ({ shard }) => {
+	test('MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const pullerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -52,7 +52,7 @@ describe('creep.pull()', () => {
 		expect(target.pos.y).toBe(26);
 	});
 
-	test("a pulled creep that moves toward the puller moves into the puller's previous tile", async ({ shard }) => {
+	test("MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile", async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const pullerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -85,7 +85,7 @@ describe('creep.pull()', () => {
 		expect(target.pos.y).toBe(25);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
+	test('MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const pullerId = await shard.placeCreep('W1N1', {
 			pos: [10, 10], owner: 'p1',
