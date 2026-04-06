@@ -46,7 +46,8 @@ Each definition should include:
 - `Exclusions`
   Structures with per-resource capacity maps or one-resource stores
 - `Verification Notes`
-  Scope is intended to be complete for the current open-store family.
+  Scope is intended to be complete for the current open-store family. The
+  executable case list lives in `tests/support/matrices/store-open.ts`.
 
 ### STORE-SINGLE
 
@@ -64,7 +65,8 @@ Each definition should include:
 - `Exclusions`
   Restricted stores and shared-capacity stores
 - `Verification Notes`
-  Extension capacity varies by controller level and is part of this family.
+  Extension capacity varies by controller level and is part of this family. The
+  executable case list lives in `tests/support/matrices/store-single.ts`.
 
 ### STORE-RESTRICTED
 
@@ -84,7 +86,8 @@ Each definition should include:
   Open stores and single-resource stores
 - `Verification Notes`
   Lab remains part of this family even though its allowed mineral type can
-  change at runtime.
+  change at runtime. The executable case list lives in
+  `tests/support/matrices/store-restricted.ts`.
 
 ### LAB-RUN
 
@@ -136,7 +139,8 @@ Each definition should include:
 - `Exclusions`
   Initial road hit totals and movement wear timing
 - `Verification Notes`
-  This matrix only covers periodic decay amount by terrain.
+  This matrix only covers periodic decay amount by terrain. The executable case
+  list lives in `tests/support/matrices/road-decay.ts`.
 
 ### TIMER-COOLDOWN
 
@@ -174,7 +178,8 @@ Each definition should include:
   keeper lair -> `my === false`, `owner.username === "Source Keeper"`;
   power bank -> `my === false`, `owner.username === "Power Bank"`;
   invader core -> inherited `OwnedStructure` `my` / `owner` behavior from its
-  `user`.
+  `user`. The executable case list lives in
+  `tests/support/matrices/npc-ownership.ts`.
 
 ### INTENT-CREEP-PRIORITY
 
@@ -208,6 +213,8 @@ Each definition should include:
   `attackController`, `rangedHeal`, `heal`;
   `rangedMassAttack` blocks `build`, `repair`, `rangedHeal`;
   `rangedAttack` blocks `rangedMassAttack`, `build`, `repair`, `rangedHeal`.
+  The executable case list lives in
+  `tests/support/matrices/intent-creep-priority.ts`.
 
 ### CTRL-SAFEMODE-BLOCKED
 
@@ -224,7 +231,8 @@ Each definition should include:
   actions
 - `Verification Notes`
   This family remains `needs_vanilla_verification` until each blocked action is
-  exercised as a concrete scenario.
+  exercised as a concrete scenario. The executable case list lives in
+  `tests/support/matrices/ctrl-safemode-blocked.ts`.
 
 ### CTRL-STRUCTLIMIT
 
@@ -241,7 +249,8 @@ Each definition should include:
   Distance-to-controller tie-breaking between same-type structures
 - `Verification Notes`
   This matrix covers the allowed active count only. Inactive-above-limit
-  behavior is owned by `CTRL-STRUCTLIMIT-002`.
+  behavior is owned by `CTRL-STRUCTLIMIT-002`. The executable case list lives
+  in `tests/support/matrices/ctrl-structlimit.ts`.
 
 ### TOWER-RANGE
 
@@ -383,7 +392,8 @@ Each definition should include:
 - `Exclusions`
   Store semantics and destruction spill
 - `Verification Notes`
-  This matrix covers both decay amount and decay interval by room state.
+  This matrix covers both decay amount and decay interval by room state. The
+  executable case list lives in `tests/support/matrices/container-decay.ts`.
 
 ### LAB-REVERSE
 
@@ -447,7 +457,8 @@ Each definition should include:
   Road decay by terrain and wear timing
 - `Verification Notes`
   This family covers wear amount only; same-tick application is owned by
-  `ROAD-WEAR-002`.
+  `ROAD-WEAR-002`. The executable case list lives in
+  `tests/support/matrices/road-wear.ts`.
 
 ### POWER-BANK-POWER
 
@@ -479,7 +490,8 @@ Each definition should include:
 - `Exclusions`
   RCL-scaled `hitsMax`, roads by terrain, and structures with dynamic limits
 - `Verification Notes`
-  Variable-hit families stay with their local mechanics.
+  Variable-hit families stay with their local mechanics. The executable case
+  list lives in `tests/support/matrices/structure-hits.ts`.
 
 ### CONSTRUCTION-COST
 
@@ -494,7 +506,8 @@ Each definition should include:
 - `Exclusions`
   Terrain multipliers for roads and construction-site progress side behavior
 - `Verification Notes`
-  This family covers base construction cost only.
+  This family covers base construction cost only. The executable case list lives
+  in `tests/support/matrices/construction-cost.ts`.
 
 ### ROOM-FIND
 
@@ -559,7 +572,8 @@ Each definition should include:
 - `Exclusions`
   Timer exposure and same-tick restore timing
 - `Verification Notes`
-  This family covers full-capacity mapping only.
+  This family covers full-capacity mapping only. The executable case list lives
+  in `tests/support/matrices/source-regen.ts`.
 
 ### SOURCE-POWER
 
@@ -589,7 +603,8 @@ Each definition should include:
 - `Exclusions`
   Timer exposure and mineral type stability
 - `Verification Notes`
-  This family covers density-to-full-amount mapping only.
+  This family covers density-to-full-amount mapping only. The executable case
+  list lives in `tests/support/matrices/mineral-regen.ts`.
 
 ### MINERAL-POWER
 
@@ -619,7 +634,8 @@ Each definition should include:
 - `Exclusions`
   Cooldown, exhaustion, and decay timing
 - `Verification Notes`
-  This family is only about the exposed type enum.
+  This family is only about the exposed type enum. The executable case list
+  lives in `tests/support/matrices/deposit-type.ts`.
 
 ### RUIN-DECAY
 
@@ -634,7 +650,8 @@ Each definition should include:
 - `Exclusions`
   Ruin contents and withdraw semantics
 - `Verification Notes`
-  This family covers decay-time mapping only.
+  This family covers decay-time mapping only. The executable case list lives in
+  `tests/support/matrices/ruin-decay.ts`.
 
 ### POWERCREEP-VALIDATION
 
@@ -839,4 +856,5 @@ Each definition should include:
   Foreign segments and main `Memory` parse/serialize behavior
 - `Verification Notes`
   This family covers limit values only; next-tick activation is owned by
-  `RAWMEMORY-004`.
+  `RAWMEMORY-004`. The executable case list lives in
+  `tests/support/matrices/rawmemory-segments.ts`.

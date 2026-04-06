@@ -98,10 +98,17 @@ export const STRUCTURE_CONTAINER = 'container' as const;
 export const STRUCTURE_NUKER = 'nuker' as const;
 export const STRUCTURE_FACTORY = 'factory' as const;
 export const STRUCTURE_KEEPER_LAIR = 'keeperLair' as const;
+export const STRUCTURE_POWER_BANK = 'powerBank' as const;
+export const STRUCTURE_INVADER_CORE = 'invaderCore' as const;
 
 // Resources
 export const RESOURCE_ENERGY = 'energy' as const;
 export const RESOURCE_POWER = 'power' as const;
+export const RESOURCE_GHODIUM = 'G' as const;
+export const RESOURCE_SILICON = 'silicon' as const;
+export const RESOURCE_METAL = 'metal' as const;
+export const RESOURCE_BIOMASS = 'biomass' as const;
+export const RESOURCE_MIST = 'mist' as const;
 
 // Gameplay constants
 export const BODYPART_COST = {
@@ -150,6 +157,122 @@ export const RAMPART_HITS_MAX = {
 	7: 100000000,
 	8: 300000000,
 } as const;
+
+// Construction cost
+export const CONSTRUCTION_COST = {
+	[STRUCTURE_SPAWN]: 15000,
+	[STRUCTURE_EXTENSION]: 3000,
+	[STRUCTURE_ROAD]: 300,
+	[STRUCTURE_WALL]: 1,
+	[STRUCTURE_RAMPART]: 1,
+	[STRUCTURE_LINK]: 5000,
+	[STRUCTURE_STORAGE]: 30000,
+	[STRUCTURE_TOWER]: 5000,
+	[STRUCTURE_OBSERVER]: 8000,
+	[STRUCTURE_POWER_SPAWN]: 100000,
+	[STRUCTURE_EXTRACTOR]: 5000,
+	[STRUCTURE_LAB]: 50000,
+	[STRUCTURE_TERMINAL]: 100000,
+	[STRUCTURE_CONTAINER]: 5000,
+	[STRUCTURE_NUKER]: 100000,
+	[STRUCTURE_FACTORY]: 100000,
+} as const;
+
+// Structure hits
+export const SPAWN_HITS = 5000 as const;
+export const EXTENSION_HITS = 1000 as const;
+export const ROAD_HITS = 5000 as const;
+export const WALL_HITS = 1 as const;
+export const WALL_HITS_MAX = 300000000 as const;
+export const RAMPART_HITS = 1 as const;
+export const LINK_HITS = 1000 as const;
+export const STORAGE_HITS = 10000 as const;
+export const TOWER_HITS = 3000 as const;
+export const OBSERVER_HITS = 500 as const;
+export const POWER_SPAWN_HITS = 5000 as const;
+export const EXTRACTOR_HITS = 500 as const;
+export const LAB_HITS = 500 as const;
+export const TERMINAL_HITS = 3000 as const;
+export const CONTAINER_HITS = 250000 as const;
+export const NUKER_HITS = 1000 as const;
+export const FACTORY_HITS = 1000 as const;
+
+// Container decay
+export const CONTAINER_DECAY = 5000 as const;
+export const CONTAINER_DECAY_TIME = 100 as const;
+export const CONTAINER_DECAY_TIME_OWNED = 500 as const;
+
+// Road decay and wear
+export const ROAD_DECAY_AMOUNT = 100 as const;
+export const ROAD_DECAY_TIME = 1000 as const;
+export const ROAD_WEAROUT = 1 as const;
+export const ROAD_WEAROUT_POWER_CREEP = 100 as const;
+
+// Source energy
+export const SOURCE_ENERGY_CAPACITY = 3000 as const;
+export const SOURCE_ENERGY_NEUTRAL_CAPACITY = 1500 as const;
+export const SOURCE_ENERGY_KEEPER_CAPACITY = 4000 as const;
+
+// Ruin decay
+export const RUIN_DECAY = 500 as const;
+export const RUIN_DECAY_STRUCTURES = {
+	powerBank: 10,
+} as const;
+
+// Controller structure limits
+export const CONTROLLER_STRUCTURES = {
+	[STRUCTURE_SPAWN]:       { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 3 },
+	[STRUCTURE_EXTENSION]:   { 0: 0, 1: 0, 2: 5, 3: 10, 4: 20, 5: 30, 6: 40, 7: 50, 8: 60 },
+	[STRUCTURE_LINK]:        { 1: 0, 2: 0, 3: 0, 4: 0, 5: 2, 6: 3, 7: 4, 8: 6 },
+	[STRUCTURE_ROAD]:        { 0: 2500, 1: 2500, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
+	[STRUCTURE_WALL]:        { 1: 0, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
+	[STRUCTURE_RAMPART]:     { 1: 0, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
+	[STRUCTURE_STORAGE]:     { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1 },
+	[STRUCTURE_TOWER]:       { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 6 },
+	[STRUCTURE_OBSERVER]:    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
+	[STRUCTURE_POWER_SPAWN]: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
+	[STRUCTURE_EXTRACTOR]:   { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 1 },
+	[STRUCTURE_TERMINAL]:    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 1 },
+	[STRUCTURE_LAB]:         { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 3, 7: 6, 8: 10 },
+	[STRUCTURE_CONTAINER]:   { 0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5 },
+	[STRUCTURE_NUKER]:       { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
+	[STRUCTURE_FACTORY]:     { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1 },
+} as const;
+
+// Store capacities
+export const STORAGE_CAPACITY = 1000000 as const;
+export const TERMINAL_CAPACITY = 300000 as const;
+export const CONTAINER_CAPACITY = 2000 as const;
+export const TOWER_CAPACITY = 1000 as const;
+export const SPAWN_ENERGY_CAPACITY = 300 as const;
+export const EXTENSION_ENERGY_CAPACITY = {
+	0: 50, 1: 50, 2: 50, 3: 50, 4: 50, 5: 50, 6: 50, 7: 100, 8: 200,
+} as const;
+export const LINK_CAPACITY = 800 as const;
+export const LAB_MINERAL_CAPACITY = 3000 as const;
+export const LAB_ENERGY_CAPACITY = 2000 as const;
+export const NUKER_ENERGY_CAPACITY = 300000 as const;
+export const NUKER_GHODIUM_CAPACITY = 5000 as const;
+export const POWER_SPAWN_ENERGY_CAPACITY = 5000 as const;
+export const POWER_SPAWN_POWER_CAPACITY = 100 as const;
+export const FACTORY_CAPACITY = 50000 as const;
+
+// Mineral density
+export const DENSITY_LOW = 1 as const;
+export const DENSITY_MODERATE = 2 as const;
+export const DENSITY_HIGH = 3 as const;
+export const DENSITY_ULTRA = 4 as const;
+export const MINERAL_DENSITY = {
+	[DENSITY_LOW]: 15000,
+	[DENSITY_MODERATE]: 35000,
+	[DENSITY_HIGH]: 70000,
+	[DENSITY_ULTRA]: 100000,
+} as const;
+
+// RawMemory segment limits
+export const MAX_ACTIVE_SEGMENTS = 10 as const;
+export const MAX_SEGMENT_COUNT = 100 as const;
+export const MAX_SEGMENT_SIZE = 102400 as const;
 
 // Terrain
 export const TERRAIN_PLAIN = 0 as const;
