@@ -507,6 +507,24 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
 				// Add all constants (TOP, WORK, FIND_MY_CREEPS, etc.)
 				Object.assign(globals, C);
+				// Add registered globals (Memory, RawMemory, structure classes, etc.)
+				// that were placed on globalThis by xxscreeps registerGlobal
+				for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
+					'Creep', 'Tombstone', 'Ruin', 'Source', 'Resource', 'Store',
+					'Room', 'RoomObject', 'ConstructionSite',
+					'Structure', 'OwnedStructure',
+					'StructureSpawn', 'StructureExtension', 'StructureTower',
+					'StructureLink', 'StructureStorage', 'StructureTerminal',
+					'StructureContainer', 'StructureExtractor', 'StructureRampart',
+					'StructureWall', 'StructureRoad', 'StructureController',
+					'StructureLab', 'StructureObserver', 'StructureFactory',
+					'StructureKeeperLair',
+					'RoomVisual', 'MapVisual', '_',
+				] as const) {
+					if ((globalThis as any)[name] !== undefined) {
+						globals[name] = (globalThis as any)[name];
+					}
+				}
 
 				const names = Object.keys(globals);
 				const values = Object.values(globals);

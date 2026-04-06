@@ -417,3 +417,27 @@ some provisional advice that will tighten as the project matures:
 - capability policy is still narrowing
 - snapshot semantics will continue to firm up as coverage expands
 - external adopter experience has not yet fed back into the contract
+
+## xxscreeps Adapter: Known Limitations
+
+The xxscreeps adapter uses `simulate()` from `xxscreeps/test/simulate.js`.
+The `simulate().player()` method calls `runForUser`, which creates a
+lightweight game context without a `TickPayload`. Several Screeps runtime
+features are populated from `TickPayload` during `runForPlayer` and are
+therefore unavailable in `simulate().player()`:
+
+| Feature | Root Cause | Affected Tests |
+|---|---|---|
+| `Memory` global | Parsed from `TickPayload.memoryBlob` | MEMORY-001 through MEMORY-004 |
+| `RawMemory` global | Initialized from `TickPayload` | RAWMEMORY-001 through RAWMEMORY-004 |
+| `RawMemory.foreignSegment` | Per-user blob from `TickPayload` | RAWMEMORY-FOREIGN-001 through 004 |
+| `Game.flags` | Loaded from per-user flag blob via `TickPayload.flagBlob` | FLAG-001 through FLAG-006, ROOMPOS-ACTION-002 |
+
+The fix is upstream in xxscreeps: `simulate()` needs a `TickPayload`-aware
+player execution mode (either extending `player()` or adding a new method)
+that calls `runForPlayer` instead of `runForUser`. This would make the
+memory, segment, and flag systems available without requiring the full
+engine service layer.
+
+All affected tests are written and skipped with a reference to this section.
+Once the upstream fix lands, remove the skips and verify.

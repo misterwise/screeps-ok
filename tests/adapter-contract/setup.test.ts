@@ -253,9 +253,9 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('placeFlag', () => {
-		// xxscreeps simulate() does not wire up per-user flag blob persistence,
-		// so flags created via Room.createFlag() are not visible in subsequent
-		// player() calls. This is an xxscreeps test-harness limitation.
+		// xxscreeps simulate().player() uses runForUser (no TickPayload), so
+		// Game.flags is never populated. Same root cause as Memory/RawMemory.
+		// Tracked for upstream fix: simulate() needs TickPayload-aware player mode.
 		test.skip('places a flag retrievable by name in player code', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.placeFlag('W1N1', {
