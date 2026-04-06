@@ -1,4 +1,4 @@
-import { describe, test, expect, code, STRUCTURE_EXTENSION } from '../../src/index.js';
+import { describe, test, expect, code, STRUCTURE_EXTENSION, EXTENSION_ENERGY_CAPACITY } from '../../src/index.js';
 import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureExtension', () => {
@@ -33,6 +33,6 @@ describe('StructureExtension', () => {
 			Game.rooms['W1N1'].energyCapacityAvailable
 		`);
 
-		expect(energyCapacityAvailable).toBe(50);
+		expect(energyCapacityAvailable).toBe(EXTENSION_ENERGY_CAPACITY[2]);
 	});
 });

@@ -1,4 +1,4 @@
-import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE } from '../../src/index.js';
+import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, HARVEST_POWER, CARRY_CAPACITY } from '../../src/index.js';
 
 describe('creep.harvest()', () => {
 	test('harvest deposits 2 energy per WORK part into the creep store', async ({ shard }) => {
@@ -19,7 +19,7 @@ describe('creep.harvest()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(2); // 1 WORK = 2 energy/tick
+		expect(creep.store.energy).toBe(HARVEST_POWER);
 	});
 
 	test('harvest reduces source energy by the harvested amount', async ({ shard }) => {
@@ -39,7 +39,7 @@ describe('creep.harvest()', () => {
 		await shard.tick();
 
 		const source = await shard.expectObject(srcId, 'source');
-		expect(source.energy).toBe(2998);
+		expect(source.energy).toBe(3000 - HARVEST_POWER);
 	});
 
 	test('multiple WORK parts harvest proportionally', async ({ shard }) => {
@@ -58,7 +58,7 @@ describe('creep.harvest()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(6); // 3 WORK = 6 energy/tick
+		expect(creep.store.energy).toBe(3 * HARVEST_POWER);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
@@ -151,6 +151,6 @@ describe('creep.harvest()', () => {
 		const creep = await shard.expectObject(creepId, 'creep');
 		// Harvest produces 10 but only 5 capacity remaining → gets 5? Or gets 10 and overflows?
 		// In Screeps, harvest fills up to capacity — capped at free capacity
-		expect(creep.store.energy).toBe(50);
+		expect(creep.store.energy).toBe(CARRY_CAPACITY);
 	});
 });

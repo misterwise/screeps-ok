@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_CREEPS, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER, CARRY_CAPACITY } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
 	test('withdraws energy from container', async ({ shard }) => {
@@ -19,7 +19,7 @@ describe('creep.withdraw()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(50); // 1 CARRY = 50 capacity
+		expect(creep.store.energy).toBe(CARRY_CAPACITY);
 	});
 
 	test('withdraws partial amount', async ({ shard }) => {
@@ -115,7 +115,7 @@ describe('creep.drop()', () => {
 		expect(dropped).toBeDefined();
 		if (dropped) {
 			expect(dropped.resourceType).toBe('energy');
-			expect(dropped.amount).toBeGreaterThan(0);
+			expect(dropped.amount).toBe(49); // 50 dropped, minus 1 tick of decay
 		}
 	});
 
@@ -167,5 +167,16 @@ describe('creep.pickup()', () => {
 			resources.length > 0 ? picker.pickup(resources[0]) : -99
 		`);
 		expect(rc).toBe(OK);
+		await shard.tick();
+
+		// Verify the picker received the energy
+		const picker = (await shard.findInRoom('W1N1', FIND_CREEPS))
+			.find(c => c.name === 'picker');
+		expect(picker).toBeDefined();
+		expect(picker!.store.energy).toBe(29); // 30 dropped, minus 1 tick of decay before pickup
+
+		// Verify the dropped resource is gone
+		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(remaining.length).toBe(0);
 	});
 });

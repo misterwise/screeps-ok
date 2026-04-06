@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_WALL } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_WALL, DISMANTLE_POWER, DISMANTLE_COST } from '../../src/index.js';
 
 describe('creep.dismantle()', () => {
 	test('removes 50 HP per WORK part from structure', async ({ shard }) => {
@@ -22,7 +22,7 @@ describe('creep.dismantle()', () => {
 		await shard.tick();
 
 		const wall = await shard.expectObject(wallId, 'structure');
-		expect(wall.hits).toBe(950); // 1 WORK = 50 HP dismantled
+		expect(wall.hits).toBe(1000 - DISMANTLE_POWER);
 	});
 
 	test('rounds energy gain down for a single 100-damage dismantle tick', async ({ shard }) => {
@@ -45,8 +45,8 @@ describe('creep.dismantle()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// Vanilla uses DISMANTLE_COST = 0.005, so floor(100 * 0.005) = 0.
-		expect(creep.store?.energy ?? 0).toBe(0);
+		// floor(2 * DISMANTLE_POWER * DISMANTLE_COST) = floor(100 * 0.005) = 0
+		expect(creep.store?.energy ?? 0).toBe(Math.floor(2 * DISMANTLE_POWER * DISMANTLE_COST));
 	});
 
 	test('returns ERR_NOT_IN_RANGE', async ({ shard }) => {

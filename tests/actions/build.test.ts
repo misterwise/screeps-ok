@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_ROAD, BUILD_POWER } from '../../src/index.js';
 
 describe('creep.build()', () => {
 	test('increases site progress by 5 per WORK part', async ({ shard }) => {
@@ -30,7 +30,7 @@ describe('creep.build()', () => {
 		await shard.tick();
 
 		const site = await shard.expectObject(siteId, 'site');
-		expect(site.progress).toBe(5);
+		expect(site.progress).toBe(BUILD_POWER);
 	});
 
 	test('spends 1 energy per build progress point', async ({ shard }) => {
@@ -62,7 +62,7 @@ describe('creep.build()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(45);
+		expect(creep.store.energy).toBe(50 - BUILD_POWER);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {

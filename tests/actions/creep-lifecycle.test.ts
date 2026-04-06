@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, FIND_TOMBSTONES, RESOURCE_POWER } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, FIND_TOMBSTONES, RESOURCE_POWER, BODYPART_HITS, ATTACK_POWER } from '../../src/index.js';
 import { creepDeathResourceCases } from '../support/matrices/creep-death-sources.js';
 import { knownParityGap } from '../support/parity-gaps.js';
 
@@ -182,9 +182,9 @@ describe('creep body part damage', () => {
 		});
 
 		const creep = await shard.expectObject(id, 'creep');
-		expect(creep.hits).toBe(300);
-		expect(creep.hitsMax).toBe(300);
-		expect(creep.body.map(part => part.hits)).toEqual([100, 100, 100]);
+		expect(creep.hits).toBe(3 * BODYPART_HITS);
+		expect(creep.hitsMax).toBe(3 * BODYPART_HITS);
+		expect(creep.body.map(part => part.hits)).toEqual([BODYPART_HITS, BODYPART_HITS, BODYPART_HITS]);
 	});
 
 	test('COMBAT-BODYPART-001 incoming damage is applied to the earliest surviving body part first', async ({ shard }) => {
@@ -207,8 +207,8 @@ describe('creep body part damage', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(270);
-		expect(target.body.map(part => part.hits)).toEqual([70, 100, 100]);
+		expect(target.hits).toBe(3 * BODYPART_HITS - ATTACK_POWER);
+		expect(target.body.map(part => part.hits)).toEqual([BODYPART_HITS - ATTACK_POWER, BODYPART_HITS, BODYPART_HITS]);
 	});
 
 	test('COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)', async ({ shard }) => {
@@ -234,8 +234,8 @@ describe('creep body part damage', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(180);
-		expect(target.body.map(part => part.hits)).toEqual([0, 80, 100]);
+		expect(target.hits).toBe(3 * BODYPART_HITS - 4 * ATTACK_POWER);
+		expect(target.body.map(part => part.hits)).toEqual([0, 2 * BODYPART_HITS - 4 * ATTACK_POWER, BODYPART_HITS]);
 
 		const activeTough = await shard.runPlayer('p1', code`
 			Game.getObjectById(${targetId}).getActiveBodyparts(TOUGH)

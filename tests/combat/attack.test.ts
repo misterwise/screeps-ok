@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS } from '../../src/index.js';
 
 describe('creep.attack()', () => {
 	test('deals 30 damage per ATTACK part', async ({ shard }) => {
@@ -23,8 +23,7 @@ describe('creep.attack()', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		// 1 ATTACK = 30 damage. Target has 6 parts * 100 = 600 HP
-		expect(target.hits).toBe(600 - 30);
+		expect(target.hits).toBe(6 * BODYPART_HITS - ATTACK_POWER);
 	});
 
 	test('multiple ATTACK parts stack damage', async ({ shard }) => {
@@ -47,7 +46,7 @@ describe('creep.attack()', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(1000 - 90); // 3 * 30 = 90 damage
+		expect(target.hits).toBe(10 * BODYPART_HITS - 3 * ATTACK_POWER);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
@@ -135,7 +134,7 @@ describe('creep.rangedAttack()', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(600 - 10); // 1 RANGED_ATTACK = 10 damage
+		expect(target.hits).toBe(6 * BODYPART_HITS - RANGED_ATTACK_POWER);
 	});
 
 	test('returns ERR_NOT_IN_RANGE beyond range 3', async ({ shard }) => {
@@ -190,7 +189,7 @@ describe('creep.heal()', () => {
 		await shard.tick();
 
 		const injured = await shard.expectObject(targetId, 'creep');
-		expect(injured.hits).toBe(370);
+		expect(injured.hits).toBe(4 * BODYPART_HITS - ATTACK_POWER);
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))
@@ -199,7 +198,7 @@ describe('creep.heal()', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(382);
+		expect(target.hits).toBe(4 * BODYPART_HITS - ATTACK_POWER + HEAL_POWER);
 	});
 
 	test('rangedHeal heals 4 HP per HEAL part at range', async ({ shard }) => {
@@ -232,7 +231,7 @@ describe('creep.heal()', () => {
 		await shard.tick();
 
 		const injured = await shard.expectObject(targetId, 'creep');
-		expect(injured.hits).toBe(270);
+		expect(injured.hits).toBe(3 * BODYPART_HITS - ATTACK_POWER);
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${targetId}))
@@ -241,6 +240,6 @@ describe('creep.heal()', () => {
 		await shard.tick();
 
 		const target = await shard.expectObject(targetId, 'creep');
-		expect(target.hits).toBe(274);
+		expect(target.hits).toBe(3 * BODYPART_HITS - ATTACK_POWER + RANGED_HEAL_POWER);
 	});
 });

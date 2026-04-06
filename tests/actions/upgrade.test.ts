@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, UPGRADE_CONTROLLER_POWER } from '../../src/index.js';
 
 describe('creep.upgradeController()', () => {
 	test('returns OK when adjacent to own controller with energy', async ({ shard }) => {
@@ -38,7 +38,7 @@ describe('creep.upgradeController()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(48); // 2 WORK = 2 energy/tick
+		expect(creep.store.energy).toBe(50 - 2 * UPGRADE_CONTROLLER_POWER);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when not within range 3', async ({ shard }) => {

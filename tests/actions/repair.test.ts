@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, STRUCTURE_ROAD, REPAIR_POWER } from '../../src/index.js';
 
 describe('creep.repair()', () => {
 	test('repairs 100 HP per WORK part per tick', async ({ shard }) => {
@@ -23,7 +23,7 @@ describe('creep.repair()', () => {
 		await shard.tick();
 
 		const road = await shard.expectObject(roadId, 'structure');
-		expect(road.hits).toBe(200); // 1 WORK = 100 HP repaired
+		expect(road.hits).toBe(100 + REPAIR_POWER);
 	});
 
 	test('repairing spends 1 energy per 100 hits repaired', async ({ shard }) => {
@@ -48,7 +48,8 @@ describe('creep.repair()', () => {
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(49); // repair costs 1 energy per tick
+		// Repair costs 1 energy per REPAIR_POWER hits repaired (1 WORK = 1 energy/tick)
+		expect(creep.store.energy).toBe(49);
 	});
 
 	test('returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {

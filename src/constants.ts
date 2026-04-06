@@ -145,6 +145,11 @@ export const RANGED_ATTACK_DISTANCE_RATE = {
 } as const;
 export const HEAL_POWER = 12 as const;
 export const RANGED_HEAL_POWER = 4 as const;
+export const BODYPART_HITS = 100 as const;
+export const TOWER_ENERGY_COST = 10 as const;
+export const UPGRADE_CONTROLLER_POWER = 1 as const;
+export const CREEP_CORPSE_RATE = 0.2 as const;
+export const DISMANTLE_COST = 0.005 as const;
 export const CARRY_CAPACITY = 50 as const;
 export const ENERGY_REGEN_TIME = 300 as const;
 export const CREEP_LIFE_TIME = 1500 as const;
