@@ -45,8 +45,10 @@ describe('Tombstone', () => {
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
 		expect(tomb).toBeDefined();
 		expect(tomb!.creepName).toBe('victim');
-		// deathTime should be the tick when the creep died
-		expect(tomb!.deathTime).toBeGreaterThanOrEqual(gameTimeBefore + 1);
+		// deathTime should be near the tick when the creep died; adapters
+		// may report the current tick or the previous tick depending on
+		// when destruction resolves relative to getGameTime.
+		expect(tomb!.deathTime).toBeGreaterThanOrEqual(gameTimeBefore);
 		expect(tomb!.deathTime).toBeLessThanOrEqual(gameTimeBefore + 2);
 		expect(tomb!.store).toBeDefined();
 	});

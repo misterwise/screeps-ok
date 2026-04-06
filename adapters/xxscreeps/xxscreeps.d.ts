@@ -124,3 +124,19 @@ declare module 'xxscreeps/mods/resource/resource.js' {
 declare module 'xxscreeps/mods/flag/game.js' {
 	export function createFlag(name: string, posInt: number | null, color: any, secondaryColor: any): any;
 }
+
+declare module 'xxscreeps/mods/creep/tombstone.js' {
+	export class Tombstone { [key: string]: any; }
+}
+
+declare module 'xxscreeps/mods/structure/ruin.js' {
+	export class Ruin { [key: string]: any; }
+}
+
+declare module 'xxscreeps/game/object.js' {
+	export function create(instance: any, pos: any): any;
+}
+
+declare module 'xxscreeps/mods/resource/store.js' {
+	export class OpenStore { constructor(...args: any[]); [key: string]: any; }
+}
