@@ -2,7 +2,7 @@ import { describe, test, expect, code, OK, CLAIM, MOVE } from '../../src/index.j
 import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('controller mechanics', () => {
-	test('claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
+	test('CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -37,7 +37,7 @@ describe('controller mechanics', () => {
 		expect(result).toEqual({ level: 1, my: true });
 	});
 
-	knownParityGap('creep-owner-undefined')('signController writes the provided text to the controller sign', async ({ shard }) => {
+	knownParityGap('creep-owner-undefined')('CTRL-SIGN-001 signController writes the provided text to the controller sign', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
@@ -70,7 +70,7 @@ describe('controller mechanics', () => {
 		});
 	});
 
-	knownParityGap('creep-owner-undefined')('reserveController returns OK and creates a reservation for the player', async ({ shard }) => {
+	knownParityGap('creep-owner-undefined')('CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -109,7 +109,7 @@ describe('controller mechanics', () => {
 		expect((reservation?.ticksToEnd ?? 0)).toBeGreaterThan(0);
 	});
 
-	test('attackController reduces the hostile controller downgrade timer', async ({ shard }) => {
+	test('CTRL-ATTACK-001 attackController reduces the hostile controller downgrade timer', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

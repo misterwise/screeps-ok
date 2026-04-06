@@ -2,7 +2,7 @@ import { describe, test, expect, code } from '../../src/index.js';
 import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('PathFinder', () => {
-	knownParityGap('pathfinder-suboptimal')('PathFinder.search accepts a single goal position with range', async ({ shard }) => {
+	knownParityGap('pathfinder-suboptimal')('PATHFINDER-001 PathFinder.search accepts a single goal position with range', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -28,7 +28,7 @@ describe('PathFinder', () => {
 		expect(result.incomplete).toBe(false);
 	});
 
-	test('PathFinder.search returns { path, ops, cost, incomplete }', async ({ shard }) => {
+	test('PATHFINDER-002 PathFinder.search returns { path, ops, cost, incomplete }', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -56,7 +56,7 @@ describe('PathFinder', () => {
 		expect(result.incompleteType).toBe('boolean');
 	});
 
-	test('PathFinder.search respects CostMatrix when routing', async ({ shard }) => {
+	test('PATHFINDER-003 PathFinder.search respects CostMatrix when routing', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -80,7 +80,7 @@ describe('PathFinder', () => {
 		expect(result.path[result.path.length - 1]).toEqual({ x: 12, y: 10 });
 	});
 
-	test('new CostMatrix() creates a matrix with all values 0', async ({ shard }) => {
+	test('COSTMATRIX-001 new CostMatrix() creates a matrix with all values 0', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const value = await shard.runPlayer('p1', code`
@@ -90,7 +90,7 @@ describe('PathFinder', () => {
 		expect(value).toBe(0);
 	});
 
-	test('CostMatrix.set(x, y, cost) and get(x, y) round-trip the assigned value', async ({ shard }) => {
+	test('COSTMATRIX-002 CostMatrix.set(x, y, cost) and get(x, y) round-trip the assigned value', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const value = await shard.runPlayer('p1', code`
@@ -102,7 +102,7 @@ describe('PathFinder', () => {
 		expect(value).toBe(255);
 	});
 
-	test('CostMatrix.serialize() and CostMatrix.deserialize() round-trip correctly', async ({ shard }) => {
+	test('COSTMATRIX-003 CostMatrix.serialize() and CostMatrix.deserialize() round-trip correctly', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const value = await shard.runPlayer('p1', code`

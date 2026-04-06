@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, WORK, CARRY, MOVE, FIND_CONSTRUCTION_SITES, FIND_STRUCTURES, STRUCTURE_ROAD, body } from '../../src/index.js';
 
 describe('room.createConstructionSite()', () => {
-	test('creates a construction site via player code', async ({ shard }) => {
+	test('CONSTRUCTION-SITE-001 creates a construction site via player code', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -18,7 +18,7 @@ describe('room.createConstructionSite()', () => {
 		expect(road).toBeDefined();
 	});
 
-	test('construction site is removed when build progress reaches progressTotal', async ({ shard }) => {
+	test('BUILD-004 construction site is removed when build progress reaches progressTotal', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -43,7 +43,7 @@ describe('room.createConstructionSite()', () => {
 		expect(site).toBeNull();
 	});
 
-	test('completed construction site is replaced by the built structure on the same tile', async ({ shard }) => {
+	test('BUILD-004 completed construction site is replaced by the built structure on the same tile', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],

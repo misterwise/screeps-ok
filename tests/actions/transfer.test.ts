@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_SPAWN } from '../../src/index.js';
 
 describe('creep.transfer()', () => {
-	test('transfers energy from the creep store to the target store', async ({ shard }) => {
+	test('TRANSFER-001 transfers energy from the creep store to the target store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -28,7 +28,7 @@ describe('creep.transfer()', () => {
 		expect(container.store.energy).toBe(50);
 	});
 
-	test('transfers partial amount', async ({ shard }) => {
+	test('TRANSFER-002 transfers partial amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -53,7 +53,7 @@ describe('creep.transfer()', () => {
 		expect(creep.store.energy).toBe(30);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when far', async ({ shard }) => {
+	test('TRANSFER-003 returns ERR_NOT_IN_RANGE when far', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [10, 10], owner: 'p1',
@@ -70,7 +70,7 @@ describe('creep.transfer()', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('returns ERR_NOT_ENOUGH_RESOURCES with empty store', async ({ shard }) => {
+	test('TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',

@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_WALL, DISMANTLE_POWER, DISMANTLE_COST } from '../../src/index.js';
 
 describe('creep.dismantle()', () => {
-	test('removes 50 HP per WORK part from structure', async ({ shard }) => {
+	test('DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -25,7 +25,7 @@ describe('creep.dismantle()', () => {
 		expect(wall.hits).toBe(1000 - DISMANTLE_POWER);
 	});
 
-	test('rounds energy gain down for a single 100-damage dismantle tick', async ({ shard }) => {
+	test('DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -49,7 +49,7 @@ describe('creep.dismantle()', () => {
 		expect(creep.store?.energy ?? 0).toBe(Math.floor(2 * DISMANTLE_POWER * DISMANTLE_COST));
 	});
 
-	test('returns ERR_NOT_IN_RANGE', async ({ shard }) => {
+	test('DISMANTLE-003 returns ERR_NOT_IN_RANGE', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],

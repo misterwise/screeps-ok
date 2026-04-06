@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, STRUCTURE_ROAD, REPAIR_POWER } from '../../src/index.js';
 
 describe('creep.repair()', () => {
-	test('repairs 100 HP per WORK part per tick', async ({ shard }) => {
+	test('REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -26,7 +26,7 @@ describe('creep.repair()', () => {
 		expect(road.hits).toBe(100 + REPAIR_POWER);
 	});
 
-	test('repairing spends 1 energy per 100 hits repaired', async ({ shard }) => {
+	test('REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -52,7 +52,7 @@ describe('creep.repair()', () => {
 		expect(creep.store.energy).toBe(49);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {
+	test('REPAIR-003 returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -72,7 +72,7 @@ describe('creep.repair()', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
+	test('REPAIR-004 returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],

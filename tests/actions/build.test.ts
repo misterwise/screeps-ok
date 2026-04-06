@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, WORK, CARRY, MOVE, STRUCTURE_ROAD, BUILD_POWER } from '../../src/index.js';
 
 describe('creep.build()', () => {
-	test('increases site progress by 5 per WORK part', async ({ shard }) => {
+	test('BUILD-001 increases site progress by BUILD_POWER per WORK part', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -33,7 +33,7 @@ describe('creep.build()', () => {
 		expect(site.progress).toBe(BUILD_POWER);
 	});
 
-	test('spends 1 energy per build progress point', async ({ shard }) => {
+	test('BUILD-002 spends 1 energy per build progress point', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -65,7 +65,7 @@ describe('creep.build()', () => {
 		expect(creep.store.energy).toBe(50 - BUILD_POWER);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {
+	test('BUILD-003 returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],

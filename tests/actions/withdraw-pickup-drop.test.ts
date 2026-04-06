@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_CREEPS, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER, CARRY_CAPACITY } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
-	test('withdraws energy from container', async ({ shard }) => {
+	test('WITHDRAW-001 withdraws energy from container', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -22,7 +22,7 @@ describe('creep.withdraw()', () => {
 		expect(creep.store.energy).toBe(CARRY_CAPACITY);
 	});
 
-	test('withdraws partial amount', async ({ shard }) => {
+	test('WITHDRAW-002 withdraws partial amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -43,7 +43,7 @@ describe('creep.withdraw()', () => {
 		expect(creep.store.energy).toBe(10);
 	});
 
-	test('returns ERR_NOT_IN_RANGE', async ({ shard }) => {
+	test('WITHDRAW-003 returns ERR_NOT_IN_RANGE', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [10, 10], owner: 'p1',
@@ -60,7 +60,7 @@ describe('creep.withdraw()', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('returns ERR_NOT_ENOUGH_RESOURCES from empty container', async ({ shard }) => {
+	test('WITHDRAW-004 returns ERR_NOT_ENOUGH_RESOURCES from empty container', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -78,7 +78,7 @@ describe('creep.withdraw()', () => {
 });
 
 describe('creep.drop()', () => {
-	test('drop() removes the dropped amount from the creep store', async ({ shard }) => {
+	test('DROP-001 drop() removes the dropped amount from the creep store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -96,7 +96,7 @@ describe('creep.drop()', () => {
 		expect(creep.store.energy ?? 0).toBe(0);
 	});
 
-	test('drop() creates a dropped resource at the creep position', async ({ shard }) => {
+	test('DROP-001 drop() creates a dropped resource at the creep position', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -119,7 +119,7 @@ describe('creep.drop()', () => {
 		}
 	});
 
-	test('drops partial amount', async ({ shard }) => {
+	test('DROP-002 drops partial amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -139,7 +139,7 @@ describe('creep.drop()', () => {
 });
 
 describe('creep.pickup()', () => {
-	test('picks up dropped resource', async ({ shard }) => {
+	test('PICKUP-001 picks up dropped resource', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Place dropper and picker at the same position
 		await shard.placeCreep('W1N1', {

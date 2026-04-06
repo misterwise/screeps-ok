@@ -145,24 +145,23 @@ Coverage Notes
 ## 2. Pathfinding
 
 ### 2.1 PathFinder.search
-- [ ] Accepts a single goal position with range.
+- [ ] `PATHFINDER-001` Accepts a single goal position with range.
 - [ ] Accepts multiple goal positions, finding the closest.
 - [ ] `plainCost` option overrides the default cost of plains tiles.
 - [ ] `swampCost` option overrides the default cost of swamp tiles.
 - [ ] `maxOps` option limits the number of pathfinding operations.
 - [ ] `maxRooms` option limits the number of rooms searched.
 - [ ] `flee` mode finds a path away from the goal positions.
-- [ ] Returns `{ path, ops, cost, incomplete }`.
+- [ ] `PATHFINDER-002` Returns `{ path, ops, cost, incomplete }`.
 - [ ] Returns `incomplete: true` with a partial path when no full path exists.
-- [ ] `roomCallback` option provides a CostMatrix per room during search.
+- [ ] `PATHFINDER-003` `roomCallback` option provides a CostMatrix per room during search.
 
 ### 2.2 CostMatrix
-- [ ] `new CostMatrix()` creates a matrix with all values 0.
-- [ ] `set(x, y, cost)` assigns a cost to a tile.
-- [ ] `get(x, y)` returns the assigned cost.
+- [ ] `COSTMATRIX-001` `new CostMatrix()` creates a matrix with all values 0.
+- [ ] `COSTMATRIX-002` `set(x, y, cost)` and `get(x, y)` round-trip the assigned value.
 - [ ] Cost 0 means use the default terrain cost.
 - [ ] Cost 255 means the tile is unwalkable.
-- [ ] `clone()`, `serialize()`, and `CostMatrix.deserialize()` round-trip correctly.
+- [ ] `COSTMATRIX-003` `serialize()` and `CostMatrix.deserialize()` round-trip correctly.
 
 ### 2.3 RoomPosition Pathfinding
 - [ ] `findClosestByPath()` returns the closest reachable target using pathfinding.
@@ -182,14 +181,14 @@ Coverage Notes
 ## 3. Harvesting
 
 ### 3.1 Source Harvest
-- [ ] Each WORK part harvests 2 energy per tick from a source.
+- [ ] `HARVEST-001` Each WORK part harvests 2 energy per tick from a source.
 - [ ] `harvest()` requires the creep to be adjacent to the source (range 1).
 - [ ] `harvest()` returns OK on success.
-- [ ] `harvest()` returns ERR_NOT_IN_RANGE when too far.
-- [ ] `harvest()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- [ ] `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the source has 0 energy.
-- [ ] Harvested energy is deposited into the creep's store.
-- [ ] Harvesting requires free CARRY capacity to store the energy.
+- [ ] `HARVEST-002` `harvest()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `HARVEST-003` `harvest()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+- [ ] `HARVEST-004` `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the source has 0 energy.
+- [ ] `HARVEST-005` Harvested energy is deposited into the creep's store.
+- [ ] `HARVEST-006` Harvesting requires free CARRY capacity to store the energy.
 - [ ] Harvest boost (UO) increases yield by +200% per boosted WORK part.
 - [ ] Source energy capacity is 3000 in owned/reserved rooms, 1500 in neutral, 4000 in keeper rooms.
 
@@ -214,34 +213,34 @@ Coverage Notes
 ## 4. Resource Transfer
 
 ### 4.1 Transfer
-- [ ] `transfer()` moves resources from creep to adjacent structure or creep.
+- [ ] `TRANSFER-001` `transfer()` moves resources from creep to adjacent structure or creep.
 - [ ] A specific resource type must be specified.
-- [ ] An optional amount allows partial transfers.
-- [ ] `transfer()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `transfer()` returns ERR_NOT_ENOUGH_RESOURCES when creep lacks the resource.
+- [ ] `TRANSFER-002` An optional amount allows partial transfers.
+- [ ] `TRANSFER-003` `transfer()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `TRANSFER-004` `transfer()` returns ERR_NOT_ENOUGH_RESOURCES when creep lacks the resource.
 - [ ] `transfer()` returns ERR_FULL when target store has no free capacity.
 - [ ] `transfer()` returns ERR_INVALID_TARGET for invalid targets.
 - [ ] Lab transfer validates that the resource matches the lab's allowed types.
 
 ### 4.2 Withdraw
-- [ ] `withdraw()` moves resources from adjacent structure to creep.
-- [ ] A specific resource type and optional amount can be specified.
+- [ ] `WITHDRAW-001` `withdraw()` moves resources from adjacent structure to creep.
+- [ ] `WITHDRAW-002` A specific resource type and optional amount can be specified.
 - [ ] `withdraw()` returns ERR_NOT_OWNER for hostile structures without a public rampart.
 - [ ] `withdraw()` works on tombstones and ruins.
-- [ ] `withdraw()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `withdraw()` returns ERR_NOT_ENOUGH_RESOURCES when the structure lacks the resource.
+- [ ] `WITHDRAW-003` `withdraw()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `WITHDRAW-004` `withdraw()` returns ERR_NOT_ENOUGH_RESOURCES when the structure lacks the resource.
 - [ ] `withdraw()` returns ERR_FULL when the creep has no free capacity.
 - [ ] Terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect.
 
 ### 4.3 Pickup
-- [ ] `pickup()` picks up a dropped resource at range 1.
+- [ ] `PICKUP-001` `pickup()` picks up a dropped resource at range 1.
 - [ ] The full amount is picked up, limited by the creep's free capacity.
 - [ ] `pickup()` returns ERR_NOT_IN_RANGE when the resource is not adjacent.
 - [ ] `pickup()` returns ERR_FULL when the creep has no free capacity.
 
 ### 4.4 Drop
-- [ ] `drop()` creates a dropped resource at the creep's position.
-- [ ] A specific resource type and optional amount can be specified.
+- [ ] `DROP-001` `drop()` creates a dropped resource at the creep's position.
+- [ ] `DROP-002` A specific resource type and optional amount can be specified.
 - [ ] Dropping onto a tile with an existing dropped resource of the same type adds to it.
 - [ ] `drop()` returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource.
 
@@ -257,38 +256,38 @@ Coverage Notes
 ## 5. Construction & Repair
 
 ### 5.1 Build
-- [ ] Each WORK part contributes 5 progress per tick to a construction site.
-- [ ] Building costs 1 energy per progress point.
+- [ ] `BUILD-001` Each WORK part contributes 5 progress per tick to a construction site.
+- [ ] `BUILD-002` Building costs 1 energy per progress point.
 - [ ] `build()` has a range of 3.
 - [ ] `build()` returns OK on success.
-- [ ] `build()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `BUILD-003` `build()` returns ERR_NOT_IN_RANGE when too far.
 - [ ] `build()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - [ ] `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
-- [ ] When a site reaches progressTotal, the structure is created.
+- [ ] `BUILD-004` When a site reaches progressTotal, the structure is created.
 - [ ] Build boost (LH/LH2O/XLH2O) increases effectiveness without extra energy cost.
 - [ ] A creep can build an allied player's construction site.
 
 ### 5.2 Repair
-- [ ] Each WORK part repairs 100 hits per tick.
-- [ ] Repairing costs 1 energy per 100 hits repaired.
+- [ ] `REPAIR-001` Each WORK part repairs 100 hits per tick.
+- [ ] `REPAIR-002` Repairing costs 1 energy per 100 hits repaired.
 - [ ] `repair()` has a range of 3.
 - [ ] `repair()` cannot repair above the structure's hitsMax.
-- [ ] `repair()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `REPAIR-003` `repair()` returns ERR_NOT_IN_RANGE when too far.
 - [ ] `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - [ ] Repair boost (LH/LH2O/XLH2O) increases effectiveness without extra energy cost.
 - [ ] A creep can repair any player's structure.
 
 ### 5.3 Dismantle
-- [ ] Each WORK part dismantles 50 hits per tick from a structure.
-- [ ] Dismantling returns 0.25 energy per hit to the creep's store.
-- [ ] `dismantle()` has a range of 1 (adjacent only).
+- [ ] `DISMANTLE-001` Each WORK part dismantles 50 hits per tick from a structure.
+- [ ] `DISMANTLE-002` Dismantling returns 0.25 energy per hit to the creep's store.
+- [ ] `DISMANTLE-003` `dismantle()` returns ERR_NOT_IN_RANGE when too far.
 - [ ] `dismantle()` bypasses rampart protection — it damages the target structure directly.
 - [ ] Dismantle boost (ZH/ZH2O/XZH2O) increases effectiveness.
 - [ ] `dismantle()` is blocked in safe mode rooms against hostile structures.
 - [ ] `dismantle()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 
 ### 5.4 Construction Sites
-- [ ] `createConstructionSite()` places a new site at a position.
+- [ ] `CONSTRUCTION-SITE-001` `createConstructionSite()` places a new site at a position.
 - [ ] MAX_CONSTRUCTION_SITES (100) is enforced as a global limit per player.
 - [ ] Construction site type must be valid for the room's RCL.
 - [ ] A hostile creep moving onto a construction site destroys it instantly.
@@ -306,26 +305,26 @@ Coverage Notes
 - [ ] The controller must be unowned (level 0) and not reserved by a hostile player.
 - [ ] Range is 1 (adjacent).
 - [ ] GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
-- [ ] On success, the controller is set to level 1 with the claiming player as owner.
+- [ ] `CTRL-CLAIM-001` On success, the controller is set to level 1 with the claiming player as owner.
 - [ ] Returns ERR_INVALID_TARGET if the controller is already owned.
 
 ### 6.2 Reserve Controller
 - [ ] `reserveController()` requires at least one CLAIM body part.
 - [ ] The controller must be unowned (level 0).
 - [ ] Range is 1 (adjacent).
-- [ ] Adds 1 tick per CLAIM part per tick to the reservation timer.
+- [ ] `CTRL-RESERVE-001` Adds 1 tick per CLAIM part per tick to the reservation timer.
 - [ ] Reservation is capped at CONTROLLER_RESERVE_MAX (5000 ticks).
 
 ### 6.3 Attack Controller
 - [ ] `attackController()` requires at least one CLAIM body part.
-- [ ] Reduces the downgrade timer by CONTROLLER_CLAIM_DOWNGRADE (300) per CLAIM part.
+- [ ] `CTRL-ATTACK-001` Reduces the downgrade timer by CONTROLLER_CLAIM_DOWNGRADE (300) per CLAIM part.
 - [ ] Sets upgradeBlocked for CONTROLLER_ATTACK_BLOCKED_UPGRADE (1000) ticks.
 - [ ] Range is 1 (adjacent).
 - [ ] Cannot attack the player's own controller.
 
 ### 6.4 Upgrade Controller
-- [ ] Each WORK part contributes 1 progress per tick.
-- [ ] Upgrading costs 1 energy per progress point.
+- [ ] `CTRL-UPGRADE-001` Each WORK part contributes 1 progress per tick.
+- [ ] `CTRL-UPGRADE-002` Upgrading costs 1 energy per progress point.
 - [ ] `upgradeController()` has a range of 3.
 - [ ] At RCL 8, upgrade is capped at CONTROLLER_MAX_UPGRADE_PER_TICK (15).
 - [ ] Upgrade boost (GH/GH2O/XGH2O) increases effectiveness without extra energy cost.
@@ -333,10 +332,11 @@ Coverage Notes
 - [ ] GCL progress is incremented alongside controller progress.
 - [ ] `upgradeController()` returns ERR_BUSY when upgradeBlocked is active.
 - [ ] `upgradeController()` is blocked for CONTROLLER_NUKE_BLOCKED_UPGRADE (200) ticks after a nuke lands.
-- [ ] Returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
+- [ ] `CTRL-UPGRADE-003` `upgradeController()` returns ERR_NOT_IN_RANGE when not within range 3.
+- [ ] `CTRL-UPGRADE-004` Returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
 
 ### 6.5 Sign Controller
-- [ ] `signController()` stores text on the controller.
+- [ ] `CTRL-SIGN-001` `signController()` stores text on the controller.
 - [ ] Range is 1 (adjacent).
 - [ ] Any player can sign any controller (including hostile).
 
@@ -403,19 +403,19 @@ Coverage Notes
 ## 7. Combat
 
 ### 7.1 Melee Attack
-- [ ] Each ATTACK part deals 30 damage per tick.
+- [ ] `COMBAT-MELEE-001` Each ATTACK part deals 30 damage per tick.
 - [ ] `attack()` has a range of 1 (adjacent).
 - [ ] Attacking a structure under a rampart hits the rampart instead.
 - [ ] ATTACK parts automatically deal counter-damage back to melee attackers.
-- [ ] `attack()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `attack()` returns ERR_NO_BODYPART when the creep has no ATTACK parts.
+- [ ] `COMBAT-MELEE-002` `attack()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `COMBAT-MELEE-003` `attack()` returns ERR_NO_BODYPART when the creep has no ATTACK parts.
 - [ ] Can target creeps, power creeps, and structures.
 - [ ] Attack boost (UH/UH2O/XUH2O) increases damage per boosted ATTACK part.
 
 ### 7.2 Ranged Attack
-- [ ] Each RANGED_ATTACK part deals 10 damage per tick.
+- [ ] `COMBAT-RANGED-001` Each RANGED_ATTACK part deals 10 damage per tick.
 - [ ] `rangedAttack()` has a range of 1–3.
-- [ ] `rangedAttack()` returns ERR_NOT_IN_RANGE when target is beyond range 3.
+- [ ] `COMBAT-RANGED-002` `rangedAttack()` returns ERR_NOT_IN_RANGE when target is beyond range 3.
 - [ ] `rangedAttack()` returns ERR_NO_BODYPART when the creep has no RANGED_ATTACK parts.
 - [ ] Can target creeps, power creeps, and structures.
 - [ ] Ranged attack boost (KO/KHO2/XKHO2) increases damage per boosted RANGED_ATTACK part.
@@ -432,14 +432,14 @@ Coverage Notes
   structures.
 
 ### 7.4 Heal
-- [ ] Each HEAL part restores 12 HP per tick at range 1.
+- [ ] `COMBAT-HEAL-001` Each HEAL part restores 12 HP per tick at range 1.
 - [ ] `heal()` has a range of 1 (adjacent).
 - [ ] Can target own and allied creeps and power creeps.
 - [ ] Heal boost (LO/LHO2/XLHO2) increases healing per boosted HEAL part.
 - [ ] Healing a creep already at full HP returns OK but has no effect.
 
 ### 7.5 Ranged Heal
-- [ ] Each HEAL part restores 4 HP per tick at range 1–3.
+- [ ] `COMBAT-RANGEDHEAL-001` Each HEAL part restores 4 HP per tick at range 1–3.
 - [ ] `rangedHeal()` has a range of 1–3.
 - [ ] Same boost multipliers apply as melee heal.
 - [ ] A creep can `rangedHeal()` and `rangedAttack()` in the same tick.

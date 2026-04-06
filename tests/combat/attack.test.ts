@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS } from '../../src/index.js';
 
 describe('creep.attack()', () => {
-	test('deals 30 damage per ATTACK part', async ({ shard }) => {
+	test('COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -26,7 +26,7 @@ describe('creep.attack()', () => {
 		expect(target.hits).toBe(6 * BODYPART_HITS - ATTACK_POWER);
 	});
 
-	test('multiple ATTACK parts stack damage', async ({ shard }) => {
+	test('COMBAT-MELEE-001 multiple ATTACK parts stack damage', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -49,7 +49,7 @@ describe('creep.attack()', () => {
 		expect(target.hits).toBe(10 * BODYPART_HITS - 3 * ATTACK_POWER);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
+	test('COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -69,7 +69,7 @@ describe('creep.attack()', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('returns ERR_NO_BODYPART without ATTACK parts', async ({ shard }) => {
+	test('COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -112,7 +112,7 @@ describe('creep.attack()', () => {
 });
 
 describe('creep.rangedAttack()', () => {
-	test('deals 10 damage per RANGED_ATTACK part', async ({ shard }) => {
+	test('COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -137,7 +137,7 @@ describe('creep.rangedAttack()', () => {
 		expect(target.hits).toBe(6 * BODYPART_HITS - RANGED_ATTACK_POWER);
 	});
 
-	test('returns ERR_NOT_IN_RANGE beyond range 3', async ({ shard }) => {
+	test('COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -159,7 +159,7 @@ describe('creep.rangedAttack()', () => {
 });
 
 describe('creep.heal()', () => {
-	test('heals 12 HP per HEAL part when adjacent', async ({ shard }) => {
+	test('COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -201,7 +201,7 @@ describe('creep.heal()', () => {
 		expect(target.hits).toBe(4 * BODYPART_HITS - ATTACK_POWER + HEAL_POWER);
 	});
 
-	test('rangedHeal heals 4 HP per HEAL part at range', async ({ shard }) => {
+	test('COMBAT-RANGEDHEAL-001 rangedHeal heals RANGED_HEAL_POWER HP per HEAL part at range', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

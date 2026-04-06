@@ -1,7 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, UPGRADE_CONTROLLER_POWER } from '../../src/index.js';
 
 describe('creep.upgradeController()', () => {
-	test('returns OK when adjacent to own controller with energy', async ({ shard }) => {
+	test('CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
@@ -20,7 +20,7 @@ describe('creep.upgradeController()', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('consumes 1 energy per WORK part per tick', async ({ shard }) => {
+	test('CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
@@ -41,7 +41,7 @@ describe('creep.upgradeController()', () => {
 		expect(creep.store.energy).toBe(50 - 2 * UPGRADE_CONTROLLER_POWER);
 	});
 
-	test('returns ERR_NOT_IN_RANGE when not within range 3', async ({ shard }) => {
+	test('CTRL-UPGRADE-003 returns ERR_NOT_IN_RANGE when not within range 3', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -56,7 +56,7 @@ describe('creep.upgradeController()', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
+	test('CTRL-UPGRADE-004 returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
