@@ -44,6 +44,12 @@ export const PARITY_GAPS = {
 		'Tombstone stores are reduced by CREEP_CORPSE_RATE on both suicide and ' +
 		'ticksToLive death, and no body energy is reclaimed on suicide at high ' +
 		'remaining TTL.',
+	'link-self-transfer':
+		'StructureLink.transferEnergy allows self-transfer (returns OK) where ' +
+		'vanilla returns ERR_INVALID_TARGET.',
+	'link-cross-owner':
+		'StructureLink.transferEnergy allows transfer to another player\'s link ' +
+		'(returns OK) where vanilla returns ERR_NOT_OWNER.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

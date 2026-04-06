@@ -4,13 +4,17 @@
 		"extension-rcl-capacity",
 		"describe-exits-topology",
 		"pathfinder-suboptimal",
-		"tombstone-corpse-rate"
+		"tombstone-corpse-rate",
+		"link-self-transfer",
+		"link-cross-owner"
 	],
 	"notes": {
 		"creep-owner-undefined": "xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.",
 		"extension-rcl-capacity": "xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL. isActive()-based filtering now works correctly upstream (RCL 1 extensions report inactive and contribute 0 to room energy), so the gap has narrowed to just the capacity table.",
 		"describe-exits-topology": "xxscreeps Game.map.describeExits only returns exits whose neighbor room was instantiated in the current shard. Vanilla returns all four coordinate-derived neighbors regardless.",
 		"pathfinder-suboptimal": "xxscreeps PathFinder picks a 35-step zigzag where vanilla finds a 29-step straight diagonal on open plains from (10,10) to (39,39).",
-		"tombstone-corpse-rate": "xxscreeps tombstones preserve floor(store * CREEP_CORPSE_RATE) on both suicide and ticksToLive death paths. Vanilla preserves the full store on both paths and also reclaims body energy on suicide at high remaining TTL."
+		"tombstone-corpse-rate": "xxscreeps tombstones preserve floor(store * CREEP_CORPSE_RATE) on both suicide and ticksToLive death paths. Vanilla preserves the full store on both paths and also reclaims body energy on suicide at high remaining TTL.",
+		"link-self-transfer": "xxscreeps StructureLink.transferEnergy returns OK when source === target. Vanilla returns ERR_INVALID_TARGET.",
+		"link-cross-owner": "xxscreeps StructureLink.transferEnergy returns OK when the target link belongs to a different player. Vanilla returns ERR_NOT_OWNER."
 	}
 }

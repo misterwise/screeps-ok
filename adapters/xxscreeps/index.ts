@@ -378,13 +378,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					const x = obj.pos?.x;
 					const y = obj.pos?.y;
 					if (x !== undefined && y !== undefined) {
-						const keys = [
-							`${roomName}:${x}:${y}:${obj.structureType}`,
-							`${roomName}:${x}:${y}:${obj.constructor?.name}`,
-							`${roomName}:${x}:${y}:constructionSite`,
-							`${roomName}:${x}:${y}:source`,
-							`${roomName}:${x}:${y}:mineral`,
-						];
+						// Build keys specific to the object's actual type to avoid
+						// co-located objects (e.g. mineral + extractor) cross-matching.
+						const keys: string[] = [];
+						if (obj.structureType) {
+							keys.push(`${roomName}:${x}:${y}:${obj.structureType}`);
+						} else if (obj.mineralType !== undefined) {
+							keys.push(`${roomName}:${x}:${y}:mineral`);
+						} else if (obj.energyCapacity !== undefined) {
+							keys.push(`${roomName}:${x}:${y}:source`);
+						} else {
+							keys.push(`${roomName}:${x}:${y}:${obj.constructor?.name}`);
+							keys.push(`${roomName}:${x}:${y}:constructionSite`);
+						}
 						for (const key of keys) {
 							if (this.posToSyntheticId.has(key)) {
 								idMap.set(this.posToSyntheticId.get(key)!, obj.id);

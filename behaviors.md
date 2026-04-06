@@ -883,45 +883,38 @@ Coverage Notes
 
 ### 10.4 Link
 - [ ] `LINK-001` `behavior` `verified_vanilla`
-  `transferEnergy()` requires a target that is a different `StructureLink`.
-- [ ] `LINK-002` `behavior` `verified_vanilla`
-  `transferEnergy()` requires the target link to be in the same room as the
-  source link.
-- [ ] `LINK-003` `behavior` `verified_vanilla`
-  A successful `transferEnergy()` returns `OK` and increases the target link's
-  energy by
+  A successful `transferEnergy()` returns `OK`, decreases the source link's
+  energy by `amount`, and increases the target link's energy by
   `amount - ceil(amount * LINK_LOSS_RATIO)`.
+- [ ] `LINK-002` `behavior` `verified_vanilla`
+  A successful `transferEnergy()` sets the source link's cooldown to
+  `LINK_COOLDOWN * max(abs(dx), abs(dy))` between source and target.
+- [ ] `LINK-003` `behavior` `verified_vanilla`
+  Transfer loss rounds up: sending 1 energy delivers 0.
 - [ ] `LINK-004` `behavior` `verified_vanilla`
-  A successful `transferEnergy()` returns `OK` and increases the source link's
-  cooldown by
-  `LINK_COOLDOWN * max(abs(dx), abs(dy))` between the source link and target
-  link.
+  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is the source
+  link itself.
 - [ ] `LINK-005` `behavior` `verified_vanilla`
-  `transferEnergy()` requires the target link to be owned by the same player as
-  the source link.
+  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is not a
+  StructureLink.
 - [ ] `LINK-006` `behavior` `verified_vanilla`
-  Sending 1 energy through a link delivers 0 energy to the target because the
-  transfer loss is rounded up.
+  `transferEnergy()` returns `ERR_NOT_OWNER` when the target link belongs to a
+  different player.
 - [ ] `LINK-007` `behavior` `verified_vanilla`
   `transferEnergy()` returns `ERR_INVALID_ARGS` for a negative amount.
 - [ ] `LINK-008` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is missing,
-  not a link, or the source link itself.
+  `transferEnergy()` returns `ERR_TIRED` while the source link has cooldown > 0.
 - [ ] `LINK-009` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_OWNER` when the target link is not yours.
-- [ ] `LINK-010` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_TIRED` while the source link has cooldown.
-- [ ] `LINK-011` `behavior` `verified_vanilla`
   `transferEnergy()` returns `ERR_RCL_NOT_ENOUGH` when the source link is
-  inactive.
-- [ ] `LINK-012` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_ENOUGH_ENERGY` when the source link lacks
-  enough energy for the requested transfer.
-- [ ] `LINK-013` `behavior` `verified_vanilla`
+  inactive due to insufficient room controller level.
+- [ ] `LINK-010` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_NOT_ENOUGH_ENERGY` when the source link has
+  less energy than the requested amount.
+- [ ] `LINK-011` `behavior` `verified_vanilla`
   `transferEnergy()` returns `ERR_FULL` when the target link lacks enough free
-  capacity for the requested transfer.
-- [ ] `LINK-014` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_IN_RANGE` when the target is in a
+  capacity for the requested amount.
+- [ ] `LINK-012` `behavior` `verified_vanilla`
+  `transferEnergy()` returns `ERR_NOT_IN_RANGE` when the target link is in a
   different room.
 
 Coverage Notes
@@ -1253,21 +1246,23 @@ Coverage Notes
 
 ### 13.5 Extractor
 - [ ] `EXTRACTOR-001` `behavior` `verified_vanilla`
-  Harvesting a mineral deposit requires an extractor on that tile.
+  A successful `harvest(mineral)` returns `OK`, reduces the mineral's
+  `mineralAmount`, and sets the extractor's cooldown to `EXTRACTOR_COOLDOWN`.
 - [ ] `EXTRACTOR-002` `behavior` `verified_vanilla`
-  A successful `harvest(mineral)` returns `OK` and sets extractor cooldown to
-  `EXTRACTOR_COOLDOWN`.
-- [ ] `EXTRACTOR-003` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `ERR_NOT_FOUND` when no extractor is present on the
   mineral tile.
-- [ ] `EXTRACTOR-004` `behavior` `verified_vanilla`
+- [ ] `EXTRACTOR-003` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `ERR_NOT_OWNER` when the extractor on the mineral
   tile is not owned by the player.
-- [ ] `EXTRACTOR-005` `behavior` `verified_vanilla`
+- [ ] `EXTRACTOR-004` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `ERR_RCL_NOT_ENOUGH` when the extractor is
   inactive.
-- [ ] `EXTRACTOR-006` `behavior` `verified_vanilla`
+- [ ] `EXTRACTOR-005` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `ERR_TIRED` while the extractor is on cooldown.
+
+Coverage Notes
+- Old EXTRACTOR-001 ("requires an extractor") dropped: proven by EXTRACTOR-002
+  (`ERR_NOT_FOUND` when no extractor).
 
 ### 13.6 Portal
 - [ ] `PORTAL-001` `behavior` `verified_vanilla`
@@ -1484,8 +1479,9 @@ Coverage Notes
 
 ### 16.7 Flags
 - [ ] `FLAG-001` `behavior` `verified_vanilla`
-  `Room.createFlag()` and `RoomPosition.createFlag()` create a player flag at
-  the requested position and return the created flag name on success.
+  `Room.createFlag()` creates a player flag at the requested position and
+  returns the flag name. The flag is visible only in the creating player's
+  `Game.flags`.
 - [ ] `FLAG-002` `behavior` `verified_vanilla`
   A created flag stores its `name`, `color`, and `secondaryColor`.
 - [ ] `FLAG-003` `behavior` `verified_vanilla`
@@ -1496,8 +1492,11 @@ Coverage Notes
   `Flag.setColor()` updates the flag's `color` and `secondaryColor`.
 - [ ] `FLAG-006` `behavior` `verified_vanilla`
   `Flag.setPosition()` moves the flag to the requested room position.
-- [ ] `FLAG-007` `behavior` `verified_vanilla`
-  Flags are player-scoped and referenced by name rather than object id.
+
+Coverage Notes
+- Old FLAG-007 ("player-scoped and referenced by name") dropped: player-scoping
+  merged into FLAG-001; "referenced by name" is API shape, not a behavior.
+- `RoomPosition.createFlag()` is owned by ROOMPOS-ACTION-002 in section 22.
 
 ---
 
@@ -1567,12 +1566,16 @@ Coverage Notes
 
 ### 18.1 Tombstone
 - [ ] `TOMBSTONE-001` `behavior` `verified_vanilla`
-  A tombstone exposes snapshot fields for the dead creep or power creep,
-  along with its remaining `store`, `deathTime`, and `decayTime`.
+  When a creep is killed, a tombstone appears at its death position exposing
+  the dead creep's name, the game time of death, and the creep's remaining
+  store.
 - [ ] `TOMBSTONE-002` `behavior` `verified_vanilla`
-  A creep tombstone's decay time is `body.length * TOMBSTONE_DECAY_PER_PART`.
-- [ ] `TOMBSTONE-003` `behavior` `verified_vanilla`
-  A power creep tombstone's decay time is `TOMBSTONE_DECAY_POWER_CREEP`.
+  A creep tombstone's initial `ticksToDecay` equals
+  `body.length * TOMBSTONE_DECAY_PER_PART`.
+
+Coverage Notes
+- TOMBSTONE-003 (power creep tombstone decay) dropped: requires
+  `capability: powerCreeps`, not feasible for either adapter currently.
 
 ### 18.2 Ruin
 - [ ] `RUIN-001` `behavior` `verified_vanilla`
@@ -1856,10 +1859,12 @@ Notes
 
 ### 22.1 Construction & Properties
 - [ ] `ROOMPOS-001` `behavior` `verified_vanilla`
-  A `RoomPosition` exposes `x`, `y`, and `roomName`.
-- [ ] `ROOMPOS-002` `behavior` `verified_vanilla`
-  `RoomPosition` coordinates are limited to the inclusive `0..49` range within
-  a room.
+  `new RoomPosition(x, y, roomName)` exposes `x`, `y`, and `roomName`, and
+  coordinates are bounded to the inclusive `0..49` range.
+
+Coverage Notes
+- Old ROOMPOS-002 ("coordinates limited to 0..49") merged into ROOMPOS-001:
+  both describe the constructor's public contract.
 
 ### 22.2 Spatial Queries
 - [ ] `ROOMPOS-SPATIAL-001` `behavior` `verified_vanilla`
@@ -2063,17 +2068,15 @@ Coverage Notes
 
 ### 25.2 RawMemory
 - [ ] `RAWMEMORY-001` `behavior` `verified_vanilla`
-  `RawMemory.get()` returns the current raw memory string.
-- [ ] `RAWMEMORY-002` `behavior` `verified_vanilla`
-  `RawMemory.set(value)` replaces the raw memory string when `value` is a
-  string within the size limit.
-- [ ] `RAWMEMORY-003` `matrix` `verified_vanilla`
+  `RawMemory.set(value)` replaces the raw memory string such that
+  `RawMemory.get()` returns the new value on the same tick.
+- [ ] `RAWMEMORY-002` `matrix` `verified_vanilla`
   Raw memory segment ids, per-segment size limit, and active-segment count
   limits match the canonical memory-segment limits.
-- [ ] `RAWMEMORY-004` `behavior` `verified_vanilla`
+- [ ] `RAWMEMORY-003` `behavior` `verified_vanilla`
   After `RawMemory.setActiveSegments(ids)`, those segment ids become the active
   `RawMemory.segments` set on the next tick.
-- [ ] `RAWMEMORY-005` `behavior` `verified_vanilla`
+- [ ] `RAWMEMORY-004` `behavior` `verified_vanilla`
   `RawMemory.segments[id]` exposes the content of currently active segments.
 
 ### 25.3 Foreign Segments
