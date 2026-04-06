@@ -105,7 +105,8 @@ Each definition should include:
   Reverse reactions, cooldown behavior, and error-code precedence
 - `Verification Notes`
   This matrix is about the product mapping only. Amount, cooldown, and failure
-  behavior are owned by the `LAB-RUN-002` through `LAB-RUN-012` entries.
+  behavior are owned by the `LAB-RUN-002` through `LAB-RUN-012` entries. The
+  executable case list lives in `tests/support/matrices/lab-run.ts`.
 
 ### FACTORY-COMMODITY
 
@@ -123,7 +124,8 @@ Each definition should include:
   behavior
 - `Verification Notes`
   Factory level mismatch errors are not part of this matrix; they belong to the
-  `FACTORY-PRODUCE-*` entries.
+  `FACTORY-PRODUCE-*` entries. The executable case list lives in
+  `tests/support/matrices/factory-commodity.ts`.
 
 ### ROAD-DECAY
 
@@ -299,7 +301,8 @@ Each definition should include:
 - `Exclusions`
   Whether both effects can coexist on the same tower
 - `Verification Notes`
-  Coexistence is owned by `TOWER-POWER-002`.
+  Coexistence is owned by `TOWER-POWER-002`. The executable case list lives in
+  `tests/support/matrices/tower-power.ts`.
 
 ### COMBAT-RMA
 
@@ -337,7 +340,8 @@ Each definition should include:
   `TOUGH`, boost application/removal, and per-compound magnitudes
 - `Verification Notes`
   This family is about per-part summation, not the numeric multipliers
-  themselves.
+  themselves. The executable case list lives in
+  `tests/support/matrices/boost-aggregation.ts`.
 
 ### BOOST-TABLES
 
@@ -356,7 +360,8 @@ Each definition should include:
   Mixed-part aggregation and boost application/removal costs
 - `Verification Notes`
   Numeric boost magnitudes are owned here; mechanic-specific non-table rules
-  remain in the local boost facets.
+  remain in the local boost facets. The executable case list lives in
+  `tests/support/matrices/boost-tables.ts`.
 
 ### CREEP-DEATH-SOURCES
 
@@ -409,7 +414,8 @@ Each definition should include:
 - `Exclusions`
   Cooldown, throughput amount, and error-code behavior
 - `Verification Notes`
-  This family covers the reverse mapping only.
+  This family covers the reverse mapping only. The executable case list lives
+  in `tests/support/matrices/lab-reverse.ts`.
 
 ### FACTORY-PRODUCE
 
@@ -425,7 +431,8 @@ Each definition should include:
 - `Exclusions`
   Cooldown, level gating, and error-code behavior
 - `Verification Notes`
-  This family covers recipe consumption and output amount only.
+  This family covers recipe consumption and output amount only. The executable
+  case list lives in `tests/support/matrices/factory-produce.ts`.
 
 ### RAMPART-HITSMAX
 
@@ -588,7 +595,8 @@ Each definition should include:
 - `Exclusions`
   `PWR_DISRUPT_SOURCE`
 - `Verification Notes`
-  Period, duration, and amount are all table-driven here.
+  Period, duration, and amount are all table-driven here. The executable case
+  list lives in `tests/support/matrices/source-power.ts`.
 
 ### MINERAL-REGEN
 
@@ -619,7 +627,8 @@ Each definition should include:
 - `Exclusions`
   Base mineral regeneration timing
 - `Verification Notes`
-  Period, duration, and amount are all table-driven here.
+  Period, duration, and amount are all table-driven here. The executable case
+  list lives in `tests/support/matrices/mineral-power.ts`.
 
 ### DEPOSIT-TYPE
 
@@ -690,6 +699,7 @@ Each definition should include:
   Target-validity matrices and non-table side effects
 - `Verification Notes`
   This family is intentionally table-driven; target acceptance stays separate.
+  The executable case list lives in `tests/support/matrices/power-info.ts`.
 
 ### POWER-TARGETS
 

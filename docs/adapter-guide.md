@@ -86,15 +86,19 @@ The adapter must implement `ScreepsOkAdapter` from `src/adapter.ts`.
 
 In practice that means you need:
 
+- `capabilities`
 - `createShard`
 - typed setup helpers like `placeCreep`, `placeStructure`, `placeSource`, etc.
+- `placeObject`
+- `setTerrain`
 - `runPlayer`
+- `runPlayers`
 - `tick`
 - `getObject`
 - `findInRoom`
 - `getGameTime`
+- `getControllerPos`
 - `teardown`
-- `capabilities`
 
 Build the simplest correct version first. Keep the adapter thin.
 

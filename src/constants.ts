@@ -1,8 +1,17 @@
 // Checked-in canonical Screeps constants for test-side assertions.
 //
-// These values are intentionally owned by screeps-ok rather than read from the
-// engine under test at runtime. Canonical tests must not use the implementation
-// as its own oracle.
+// Scalar constants are owned directly by this file. Large canonical tables
+// (REACTIONS, BOOSTS, COMMODITIES, POWER_INFO) are re-exported from
+// @screeps/common — the shared game-constant package that defines what
+// Screeps is. This is not "the engine under test"; both vanilla and xxscreeps
+// consume these tables and could implement the logic around them incorrectly,
+// which is exactly what the suite tests.
+
+// Large canonical tables — imported from @screeps/common rather than
+// hand-maintained, to avoid drift in hundreds of lookup entries.
+export {
+	REACTIONS, BOOSTS, COMMODITIES, POWER_INFO,
+} from '@screeps/common/lib/constants.js';
 
 // Return codes
 export const OK = 0 as const;

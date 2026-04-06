@@ -28,6 +28,8 @@ export type {
 
 // Screeps constants — for readable assertions in tests
 export {
+	// Large canonical tables (from @screeps/common)
+	REACTIONS, BOOSTS, COMMODITIES, POWER_INFO,
 	// Return codes
 	OK, ERR_NOT_OWNER, ERR_NO_PATH, ERR_NAME_EXISTS, ERR_BUSY,
 	ERR_NOT_FOUND, ERR_NOT_ENOUGH_ENERGY, ERR_NOT_ENOUGH_RESOURCES,
