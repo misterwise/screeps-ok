@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 // Vanilla's mockup runtime disables users that own no room objects, so a
@@ -213,6 +213,92 @@ describe('adapter contract: setup', () => {
 			const obj = await shard.expectObject(id, 'mineral');
 			expect(obj.mineralType).toBe('H');
 			expect(obj.mineralAmount).toBe(100000);
+		});
+	});
+
+	describe('placeTombstone', () => {
+		test('places a tombstone with creepName, store, and decay', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeTombstone('W1N1', {
+				pos: [25, 25],
+				creepName: 'fallen-hero',
+				store: { energy: 50 },
+				ticksToDecay: 100,
+			});
+			await shard.tick();
+
+			const obj = await shard.expectObject(id, 'tombstone');
+			expect(obj.creepName).toBe('fallen-hero');
+			expect(obj.store.energy).toBe(50);
+			expect(obj.ticksToDecay).toBeGreaterThan(0);
+		});
+	});
+
+	describe('placeRuin', () => {
+		test('places a ruin with structureType, store, and decay', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeRuin('W1N1', {
+				pos: [25, 25],
+				structureType: 'container',
+				store: { energy: 75 },
+				ticksToDecay: 200,
+			});
+			await shard.tick();
+
+			const obj = await shard.expectObject(id, 'ruin');
+			expect(obj.structureType).toBe('container');
+			expect(obj.store.energy).toBe(75);
+			expect(obj.ticksToDecay).toBeGreaterThan(0);
+		});
+	});
+
+	describe('placeFlag', () => {
+		// xxscreeps simulate() does not wire up per-user flag blob persistence,
+		// so flags created via Room.createFlag() are not visible in subsequent
+		// player() calls. This is an xxscreeps test-harness limitation.
+		test.skip('places a flag retrievable by name in player code', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			await shard.placeFlag('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				name: 'TestFlag',
+				color: 1,
+				secondaryColor: 2,
+			});
+
+			const result = await shard.runPlayer('p1', code`
+				const flag = Game.flags['TestFlag'];
+				flag ? ({
+					name: flag.name,
+					color: flag.color,
+					secondaryColor: flag.secondaryColor,
+					x: flag.pos.x,
+					y: flag.pos.y,
+				}) : null
+			`);
+			expect(result).not.toBeNull();
+			expect((result as any).name).toBe('TestFlag');
+			expect((result as any).color).toBe(1);
+			expect((result as any).secondaryColor).toBe(2);
+			expect((result as any).x).toBe(25);
+			expect((result as any).y).toBe(25);
+		});
+	});
+
+	describe('placeDroppedResource', () => {
+		test('places a dropped resource', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeDroppedResource('W1N1', {
+				pos: [25, 25],
+				resourceType: 'energy',
+				amount: 100,
+			});
+			await shard.tick();
+
+			const obj = await shard.expectObject(id, 'resource');
+			expect(obj.resourceType).toBe('energy');
+			// Dropped resources decay by 1 per tick
+			expect(obj.amount).toBe(99);
 		});
 	});
 });

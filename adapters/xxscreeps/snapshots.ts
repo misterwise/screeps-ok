@@ -331,15 +331,26 @@ function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
 }
 
 function snapshotRuin(obj: any, resolver: PlayerResolver): RuinSnapshot {
+	// xxscreeps Ruin stores structureType in #structure.type, not directly
+	const structureType = obj.structureType
+		?? obj['#structure']?.type
+		?? obj.structure?.structureType
+		?? '';
 	return {
 		kind: 'ruin',
 		id: obj.id,
 		pos: snapPos(obj),
-		structureType: obj.structureType ?? '',
+		structureType,
 		destroyTime: obj.destroyTime ?? 0,
 		store: snapStore(obj),
 		ticksToDecay: obj.ticksToDecay ?? 0,
 	};
+}
+
+function isRuin(obj: any): boolean {
+	return obj.destroyTime !== undefined
+		&& (obj.structureType !== undefined || obj['#structure'] !== undefined)
+		&& obj.hits === undefined;
 }
 
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
@@ -348,7 +359,7 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 	if (obj.body && obj.fatigue !== undefined) return snapshotCreep(obj, resolver);
 	if (obj.progressTotal !== undefined) return snapshotSite(obj, resolver);
 	if (obj.deathTime !== undefined && !obj.body) return snapshotTombstone(obj, resolver);
-	if (obj.destroyTime !== undefined && obj.structureType !== undefined && !obj.hits) return snapshotRuin(obj, resolver);
+	if (isRuin(obj)) return snapshotRuin(obj, resolver);
 	if (obj.resourceType !== undefined && obj.amount !== undefined) return snapshotDroppedResource(obj);
 	const sType = getStructureType(obj);
 	if (sType) return snapshotStructure(obj, resolver);
@@ -384,7 +395,7 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				match = obj.resourceType !== undefined && obj.amount !== undefined;
 				break;
 			case 'ruins':
-				match = obj.destroyTime !== undefined && obj.structureType !== undefined && !obj.hits;
+				match = isRuin(obj);
 				break;
 			default:
 				match = true;

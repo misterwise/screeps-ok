@@ -38,6 +38,10 @@ import { create as createTerminal } from 'xxscreeps/mods/market/terminal.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { createFlag } from 'xxscreeps/mods/flag/game.js';
+import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
+import { create as createObject } from 'xxscreeps/game/object.js';
+import { OpenStore } from 'xxscreeps/mods/resource/store.js';
 
 // Optional mods — not all xxscreeps builds include these
 let createFactory: ((pos: any, owner: string) => any) | undefined;
@@ -244,40 +248,51 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const name = spec.name;
 		this.nameToSyntheticId.set(name, name); // flags use name as ID
 
-		this.queueOp(roomName, room => {
-			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			const flag = createFlag(
-				name,
-				pos['#id'],
-				(spec.color ?? 1) as any,
-				(spec.secondaryColor ?? spec.color ?? 1) as any,
-			);
-			room['#insertObject'](flag);
+		// Flags are stored in a per-user blob, not in room objects.
+		// Create them via player code so the runtime flag system handles
+		// persistence correctly.
+		const owner = spec.owner;
+		const color = spec.color ?? 1;
+		const secondaryColor = spec.secondaryColor ?? color;
+		const x = spec.pos[0];
+		const y = spec.pos[1];
+
+		this.deferredFlagOps.push(async () => {
+			const { code } = await import('../../src/code.js');
+			await this.runPlayer(owner, code`
+				new RoomPosition(${x}, ${y}, ${roomName}).createFlag(${name}, ${color}, ${secondaryColor})
+			`);
 		});
 
 		return name;
 	}
+
+	private deferredFlagOps: Array<() => Promise<void>> = [];
 
 	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
 		const id = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:tombstone`, id);
 
 		this.queueOp(roomName, room => {
-			// Create a minimal tombstone-like object directly
-			const tombstone: any = Object.create(null);
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const tombstone = createObject(new Tombstone(), pos);
 			tombstone.id = id;
-			tombstone.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			tombstone['#posId'] = tombstone.pos['#id'];
 			tombstone.deathTime = spec.deathTime ?? 0;
-			tombstone.ticksToDecay = spec.ticksToDecay ?? 500;
-			tombstone.creepName = spec.creepName;
-			// Store as plain object — tombstone stores are read-only
-			tombstone.store = {};
+			tombstone.store = new OpenStore();
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					tombstone.store[resource] = amount;
+					if (amount > 0) tombstone.store['#add'](resource as any, amount);
 				}
 			}
+			tombstone['#creep'] = {
+				body: [],
+				id: id,
+				name: spec.creepName,
+				saying: undefined as any,
+				ticksToLive: 0,
+				user: '',
+			};
+			tombstone['#decayTime'] = (spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500);
 			room['#insertObject'](tombstone);
 		});
 
@@ -289,19 +304,23 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:ruin`, id);
 
 		this.queueOp(roomName, room => {
-			const ruin: any = Object.create(null);
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const ruin = createObject(new Ruin(), pos);
 			ruin.id = id;
-			ruin.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			ruin['#posId'] = ruin.pos['#id'];
-			ruin.structureType = spec.structureType;
 			ruin.destroyTime = spec.destroyTime ?? 0;
-			ruin.ticksToDecay = spec.ticksToDecay ?? 500;
-			ruin.store = {};
+			ruin.store = new OpenStore();
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					ruin.store[resource] = amount;
+					if (amount > 0) ruin.store['#add'](resource as any, amount);
 				}
 			}
+			ruin['#decayTime'] = (spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500);
+			ruin['#structure'] = {
+				id: id,
+				hitsMax: 0,
+				type: spec.structureType,
+				user: null as any,
+			};
 			room['#insertObject'](ruin);
 		});
 
@@ -400,6 +419,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			});
 		}
+
 	}
 
 	// Tracking maps for ID resolution
@@ -524,8 +544,21 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async tick(count = 1): Promise<void> {
 		await this.ensureSimulation();
+		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
 		await this.simulation!.tick(count);
+	}
+
+	private async flushDeferredFlags(): Promise<void> {
+		if (this.deferredFlagOps.length === 0) return;
+		// Flags live in per-user blobs, not room objects. Create them via
+		// player code after the simulation is running and game state is
+		// initialized. Must tick after creation so the flag blob is persisted.
+		for (const op of this.deferredFlagOps) {
+			await op();
+		}
+		this.deferredFlagOps.length = 0;
+		await this.simulation!.tick(1);
 	}
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
@@ -580,6 +613,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		this.pendingSetup.clear();
 		this.pokeQueue.length = 0;
+		this.deferredFlagOps.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.idMap.clear();
