@@ -62,6 +62,14 @@ export const PARITY_GAPS = {
 		'The intent returns OK but the logistics processor never executes the ' +
 		'transfer. Other structure intents (tower.attack, creep.move) are ' +
 		'unaffected. xxscreeps has no upstream link processor tests.',
+	'lab-unrestricted-mineral-capacity':
+		'StructureLab.store.getCapacity(resource) returns LAB_MINERAL_CAPACITY ' +
+		'for any mineral-type resource, even resources the lab cannot hold. ' +
+		'Vanilla returns null for resources the lab is not currently assigned to.',
+	'rampart-no-protection':
+		'Ramparts do not absorb damage for objects on their tile. In vanilla, ' +
+		'attacks targeting a creep or structure on a rampart tile deal damage to ' +
+		'the rampart instead. xxscreeps applies damage directly to the target.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

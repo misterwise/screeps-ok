@@ -67,7 +67,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
 		powerCreeps: false,
-		factory: true,
+		factory: !!createFactory,
 		market: false,
 		observer: true,
 		nuke: false,

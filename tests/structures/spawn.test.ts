@@ -1,8 +1,9 @@
 import {
 	describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS,
-	WORK, CARRY, MOVE, BODYPART_COST,
+	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS, ERR_INVALID_ARGS, ERR_BUSY,
+	WORK, CARRY, MOVE, TOUGH, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
+	CREEP_SPAWN_TIME, MAX_CREEP_SIZE,
 } from '../../src/index.js';
 
 describe('StructureSpawn', () => {
@@ -190,5 +191,116 @@ describe('StructureSpawn', () => {
 			energy: 200,
 			hasCreep: false,
 		});
+	});
+
+	// ── New tests: body validation ──────────────────────────────
+
+	test('SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([], 'EmptyBody')
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('SPAWN-CREATE-002 spawnCreep returns ERR_INVALID_ARGS for a body exceeding MAX_CREEP_SIZE', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 999999 },
+		});
+
+		// MAX_CREEP_SIZE is 50; create a body of 51 parts.
+		const bigBody = Array(MAX_CREEP_SIZE + 1).fill('move').map(() => 'MOVE').join(',');
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([${bigBody}], 'TooBig')
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('SPAWN-CREATE-003 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep(['notapart'], 'BadPart')
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 600 },
+		});
+
+		// Start spawning a creep.
+		const first = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'First')
+		`);
+		expect(first).toBe(OK);
+		// Don't tick enough for spawn to finish — CREEP_SPAWN_TIME * 1 part = 3 ticks.
+		await shard.tick();
+
+		// Try to spawn a second creep while the first is still in progress.
+		const second = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'Second')
+		`);
+		expect(second).toBe(ERR_BUSY);
+	});
+
+	// ── Spawning timing ─────────────────────────────────────────
+
+	test('SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([WORK, CARRY, MOVE], 'TimingTest')
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		expect(spawn.spawning).not.toBeNull();
+		expect(spawn.spawning!.needTime).toBe(CREEP_SPAWN_TIME * 3);
+	});
+
+	test('SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SpawnComplete')
+		`);
+		expect(rc).toBe(OK);
+
+		// CREEP_SPAWN_TIME * 1 part = 3 ticks to complete.
+		// After the runPlayer tick + 2 more ticks, spawning should be done.
+		await shard.tick(CREEP_SPAWN_TIME - 1);
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		expect(spawn.spawning).toBeNull();
+
+		// The creep should now exist in the game.
+		const exists = await shard.runPlayer('p1', code`
+			!!Game.creeps['SpawnComplete']
+		`);
+		expect(exists).toBe(true);
 	});
 });

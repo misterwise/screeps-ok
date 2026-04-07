@@ -214,12 +214,27 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
 		const userId = spec.owner ? this.resolvePlayer(spec.owner) : undefined;
-		const defaults = this.getStructureDefaults(spec.structureType);
+		const rcl = await this.getRoomRcl(roomName);
+		const defaults = this.getStructureDefaults(spec.structureType, rcl);
 		const attrs: Record<string, any> = { ...defaults };
 
 		if (userId) attrs.user = userId;
 		if (spec.hits !== undefined) attrs.hits = spec.hits;
-		if (spec.store) attrs.store = spec.store;
+		if (spec.store) {
+			attrs.store = spec.store;
+			// Lab: if the spec store contains a mineral, register it in
+			// storeCapacityResource so the engine's getCapacity() reports
+			// the correct per-resource cap.
+			if (spec.structureType === 'lab' && attrs.storeCapacityResource) {
+				const C = this.server.constants;
+				for (const res of Object.keys(spec.store)) {
+					if (res !== 'energy' && !attrs.storeCapacityResource[res]) {
+						attrs.storeCapacityResource[res] = C.LAB_MINERAL_CAPACITY ?? 3000;
+						attrs.mineralType = res;
+					}
+				}
+			}
+		}
 
 		const result = await this.server.world.addRoomObject(
 			roomName, spec.structureType, spec.pos[0], spec.pos[1], attrs);
@@ -511,7 +526,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return C?.CONSTRUCTION_COST?.[structureType.toUpperCase()] ?? 300;
 	}
 
-	private getStructureDefaults(structureType: string): Record<string, any> {
+	private async getRoomRcl(roomName: string): Promise<number> {
+		const ctrl = await this.db['rooms.objects'].findOne({
+			$and: [{ room: roomName }, { type: 'controller' }],
+		});
+		return ctrl?.level ?? 0;
+	}
+
+	private getStructureDefaults(structureType: string, rcl = 8): Record<string, any> {
 		const C = this.server.constants;
 		switch (structureType) {
 			case 'spawn': return {
@@ -525,7 +547,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			case 'extension': return {
 				hits: C.EXTENSION_HITS, hitsMax: C.EXTENSION_HITS,
 				store: { energy: 0 },
-				storeCapacityResource: { energy: C.EXTENSION_ENERGY_CAPACITY?.[8] ?? 200 },
+				storeCapacityResource: { energy: C.EXTENSION_ENERGY_CAPACITY?.[rcl] ?? 50 },
 			};
 			case 'tower': return {
 				hits: C.TOWER_HITS, hitsMax: C.TOWER_HITS,
