@@ -564,13 +564,107 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			);
 		}
 
+		// Contract: runPlayer advances exactly 1 tick.
+		// simulation.player() only collects intents — tick() processes them.
+		await this.simulation!.tick(1);
+
 		return result ?? null;
 	}
 
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
+		await this.ensureSimulation();
+		await this.flushPokeQueue();
+
 		const results: Record<string, PlayerReturnValue> = {};
+		const executedPlayers = new Set<string>();
+		const errors: Array<{ handle: string; error: RunPlayerError }> = [];
+
+		// Phase 1: collect intents from all players without ticking.
+		// simulation.player() queues intents; simulation.tick() processes them.
 		for (const [userId, playerCode] of Object.entries(codesByUser)) {
-			results[userId] = await this.runPlayer(userId, playerCode);
+			const engineUserId = this.resolvePlayer(userId);
+			const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
+
+			let codeStr = String(playerCode);
+			for (const [syntheticId, engineId] of this.idMap) {
+				codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
+			}
+
+			try {
+				await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
+					executedPlayers.add(userId);
+					const trimmed = codeStr.trimEnd().replace(/;$/, '');
+
+					if (!(Game as any).gcl) {
+						(Game as any).gcl = {
+							level: Math.max(ownedRoomCount + 1, 2),
+							progress: 0, progressTotal: 1,
+							'#roomCount': ownedRoomCount,
+						};
+					}
+					const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
+					Object.assign(globals, C);
+					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
+						'Creep', 'Tombstone', 'Ruin', 'Source', 'Resource', 'Store',
+						'Room', 'RoomObject', 'ConstructionSite',
+						'Structure', 'OwnedStructure',
+						'StructureSpawn', 'StructureExtension', 'StructureTower',
+						'StructureLink', 'StructureStorage', 'StructureTerminal',
+						'StructureContainer', 'StructureExtractor', 'StructureRampart',
+						'StructureWall', 'StructureRoad', 'StructureController',
+						'StructureLab', 'StructureObserver', 'StructureFactory',
+						'StructureKeeperLair',
+						'RoomVisual', 'MapVisual', '_',
+					] as const) {
+						if ((globalThis as any)[name] !== undefined) {
+							globals[name] = (globalThis as any)[name];
+						}
+					}
+					const names = Object.keys(globals);
+					const values = Object.values(globals);
+					const fn = new Function(...names, `return eval(${JSON.stringify(trimmed)})`);
+					results[userId] = fn(...values) as PlayerReturnValue;
+
+					const val = results[userId];
+					if (val !== null && typeof val === 'object'
+						&& !Array.isArray(val) && val.constructor !== Object) {
+						throw new RunPlayerError('serialization',
+							`Return value is a ${val.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
+					}
+					if (val !== null && typeof val === 'object') {
+						try { JSON.stringify(val); }
+						catch { throw new RunPlayerError('serialization', 'Return value is not JSON-serializable'); }
+					}
+				});
+			} catch (err) {
+				if (err instanceof RunPlayerError) {
+					errors.push({ handle: userId, error: err });
+				} else {
+					const error = err as Error;
+					const kind = error instanceof SyntaxError ? 'syntax' as const : 'runtime' as const;
+					errors.push({ handle: userId, error: new RunPlayerError(kind, error.message) });
+				}
+			}
+		}
+
+		// Surface first error
+		if (errors.length > 0) throw errors[0].error;
+
+		// Execution confirmation
+		for (const handle of Object.keys(codesByUser)) {
+			if (!executedPlayers.has(handle)) {
+				throw new Error(
+					`runPlayers: task for '${handle}' was not invoked by the simulation.`,
+				);
+			}
+		}
+
+		// Phase 2: process all collected intents in a single tick.
+		await this.simulation!.tick(1);
+
+		// Normalize undefined → null
+		for (const key of Object.keys(results)) {
+			results[key] = results[key] ?? null;
 		}
 		return results;
 	}
