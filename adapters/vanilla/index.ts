@@ -82,11 +82,25 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// Create players manually (no addBot — avoids phantom spawns and controller overwrites)
 		const loopCode = `module.exports.loop = function() {
 			if (Memory._screepsOk) {
+				Memory._screepsOkExecuted = true;
 				try {
-					var result = eval(Memory._screepsOk);
-					Memory._screepsOkResult = JSON.stringify({ ok: true, value: result });
+					var _sokResult = eval(Memory._screepsOk);
+					if (_sokResult === undefined) {
+						_sokResult = null;
+					} else if (_sokResult !== null && typeof _sokResult === 'object'
+						&& !Array.isArray(_sokResult) && _sokResult.constructor !== Object) {
+						Memory._screepsOkResult = JSON.stringify({
+							ok: false, errorType: 'SerializationError',
+							error: 'Return value is a ' + (_sokResult.constructor ? _sokResult.constructor.name : 'non-plain') + ' object, not a plain JSON value',
+						});
+						delete Memory._screepsOk;
+						return;
+					}
+					Memory._screepsOkResult = JSON.stringify({ ok: true, value: _sokResult });
 				} catch (e) {
-					Memory._screepsOkResult = JSON.stringify({ ok: false, error: e.message });
+					Memory._screepsOkResult = JSON.stringify({
+						ok: false, error: e.message, errorType: e.constructor ? e.constructor.name : 'Error',
+					});
 				}
 				delete Memory._screepsOk;
 			}
@@ -356,6 +370,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const mem = JSON.parse(memRaw);
 		mem._screepsOk = codeStr;
 		delete mem._screepsOkResult;
+		delete mem._screepsOkExecuted;
 		await this.env.set(this.env.keys.MEMORY + botId, JSON.stringify(mem));
 
 		// Tick to execute — the main loop evals Memory._screepsOk and stores result
@@ -365,15 +380,28 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// Read result from Memory
 		const memAfter = JSON.parse(
 			await this.env.get(this.env.keys.MEMORY + botId) || '{}');
-		const resultJson = memAfter._screepsOkResult;
 
+		// Execution confirmation: the main loop sets this before eval
+		if (!memAfter._screepsOkExecuted) {
+			throw new Error(
+				`runPlayer: player '${handle}' code was not executed. ` +
+				`The engine may have skipped this player's main loop.`,
+			);
+		}
+
+		const resultJson = memAfter._screepsOkResult;
 		if (!resultJson) {
-			return null;
+			throw new Error(
+				`runPlayer: execution confirmed but no result captured for '${handle}'.`,
+			);
 		}
 
 		const parsed = JSON.parse(resultJson);
 		if (!parsed.ok) {
-			throw new RunPlayerError('runtime', parsed.error);
+			const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
+				: parsed.errorType === 'SerializationError' ? 'serialization' as const
+				: 'runtime' as const;
+			throw new RunPlayerError(kind, parsed.error);
 		}
 
 		return parsed.value ?? null;
@@ -392,6 +420,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const mem = JSON.parse(memRaw);
 			mem._screepsOk = codeStr;
 			delete mem._screepsOkResult;
+			delete mem._screepsOkExecuted;
 			await this.env.set(this.env.keys.MEMORY + botId, JSON.stringify(mem));
 		}
 
@@ -403,15 +432,27 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const botId = this.resolvePlayer(handle);
 			const memAfter = JSON.parse(
 				await this.env.get(this.env.keys.MEMORY + botId) || '{}');
+
+			if (!memAfter._screepsOkExecuted) {
+				throw new Error(
+					`runPlayers: player '${handle}' code was not executed. ` +
+					`The engine may have skipped this player's main loop.`,
+				);
+			}
+
 			const resultJson = memAfter._screepsOkResult;
 			if (!resultJson) {
-				results[handle] = null;
-				continue;
+				throw new Error(
+					`runPlayers: execution confirmed but no result captured for '${handle}'.`,
+				);
 			}
 
 			const parsed = JSON.parse(resultJson);
 			if (!parsed.ok) {
-				throw new RunPlayerError('runtime', `${handle}: ${parsed.error}`);
+				const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
+					: parsed.errorType === 'SerializationError' ? 'serialization' as const
+					: 'runtime' as const;
+				throw new RunPlayerError(kind, `${handle}: ${parsed.error}`);
 			}
 
 			results[handle] = parsed.value ?? null;

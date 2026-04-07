@@ -1,6 +1,8 @@
 import { resolve } from 'node:path';
 import { test as base, describe, expect } from 'vitest';
-import type { ScreepsOkAdapter } from './adapter.js';
+import type { ScreepsOkAdapter, PlayerReturnValue } from './adapter.js';
+import type { PlayerCode } from './code.js';
+import { RunPlayerError } from './errors.js';
 import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
@@ -98,6 +100,19 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	 *   expect(link.store.energy).toBe(300);  // LinkSnapshot
 	 */
 	expectStructure<S extends keyof StructureTypeMap>(id: string, structureType: S): Promise<StructureTypeMap[S]>;
+
+	/**
+	 * Run player code and assert it throws RunPlayerError with the expected kind.
+	 * Returns the error for further assertions (e.g., checking engineMessage).
+	 *
+	 *   const err = await shard.expectRunPlayerError('p1', code`if (`, 'syntax');
+	 *   expect(err.engineMessage).toBeTruthy();
+	 */
+	expectRunPlayerError(
+		userId: string,
+		playerCode: PlayerCode,
+		expectedKind: 'syntax' | 'runtime' | 'serialization',
+	): Promise<RunPlayerError>;
 }
 
 function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
@@ -134,6 +149,32 @@ function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
 	};
 
 	shard.runPlayers = async (codesByUser) => runPlayers(codesByUser);
+
+	shard.expectRunPlayerError = async (
+		userId: string,
+		playerCode: PlayerCode,
+		expectedKind: 'syntax' | 'runtime' | 'serialization',
+	): Promise<RunPlayerError> => {
+		let result: PlayerReturnValue;
+		try {
+			result = await adapter.runPlayer(userId, playerCode);
+		} catch (err) {
+			if (err instanceof RunPlayerError) {
+				if (err.errorKind !== expectedKind) {
+					throw new Error(
+						`expectRunPlayerError: got RunPlayerError('${err.errorKind}'), ` +
+						`expected RunPlayerError('${expectedKind}'). Message: ${err.engineMessage}`,
+					);
+				}
+				return err;
+			}
+			throw err;
+		}
+		throw new Error(
+			`expectRunPlayerError: runPlayer succeeded with ${JSON.stringify(result)}, ` +
+			`expected RunPlayerError('${expectedKind}')`,
+		);
+	};
 
 	return shard;
 }

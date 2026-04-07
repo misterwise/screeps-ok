@@ -480,6 +480,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const engineUserId = this.resolvePlayer(userId);
 		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
 		let result: PlayerReturnValue = null;
+		let executed = false;
 
 		// Replace synthetic IDs with engine IDs in the code string
 		let codeStr = String(playerCode);
@@ -531,7 +532,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const fn = new Function(...names,
 					`return eval(${JSON.stringify(trimmed)})`);
 				result = fn(...values) as PlayerReturnValue;
+				executed = true;
 
+				// Detect game objects: non-plain objects that serialize lossily
+				if (result !== null && typeof result === 'object'
+					&& !Array.isArray(result) && result.constructor !== Object) {
+					throw new RunPlayerError('serialization',
+						`Return value is a ${result.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
+				}
 				if (result !== null && typeof result === 'object') {
 					try {
 						JSON.stringify(result);
@@ -547,6 +555,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				throw new RunPlayerError('syntax', error.message);
 			}
 			throw new RunPlayerError('runtime', error.message);
+		}
+
+		if (!executed) {
+			throw new Error(
+				`runPlayer: task for '${userId}' was not invoked by the simulation. ` +
+				`Check that engine user ID '${engineUserId}' is active.`,
+			);
 		}
 
 		return result ?? null;

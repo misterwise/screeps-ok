@@ -113,13 +113,71 @@ Required behavior:
   - plain objects/arrays recursively composed of those types
 - a top-level `undefined` return must be normalized to `null`
 - returning a live game object must throw `RunPlayerError` with
-  `errorKind = 'serialization'`
+  `errorKind = 'serialization'` (see [Game Object Detection](#game-object-detection))
 - syntax failures must throw `RunPlayerError` with `errorKind = 'syntax'`
 - runtime failures in the player code must throw `RunPlayerError` with
   `errorKind = 'runtime'`
 
 Gameplay return codes such as `OK` or `ERR_NOT_IN_RANGE` are normal return
 values, not errors.
+
+#### Error Kind Classification
+
+Adapters must classify errors by the phase in which the failure occurred.
+Mapping all caught errors to `'runtime'` is a spec violation.
+
+- **`syntax`**: errors thrown during code parsing or compilation, before any
+  statements execute. Most engines surface these as a distinct `SyntaxError`
+  type.
+- **`runtime`**: errors thrown during code execution — `ReferenceError`,
+  `TypeError`, explicit `throw`, and any other error that occurs after parsing
+  succeeds.
+- **`serialization`**: the code executed successfully but its return value is
+  not JSON-safe, or is a live game object (see below).
+
+#### Game Object Detection
+
+A "live game object" is any return value whose `constructor` is not `Object`
+or `Array` in the engine runtime, or whose `JSON.stringify()` produces lossy
+output — for example, `{}` for an object that has visible properties when
+accessed through the engine's API. Typical examples: a `Creep`, `Room`,
+`Structure`, `RoomPosition`, or any other value returned by
+`Game.getObjectById()`, `Game.rooms`, `Game.creeps`, etc.
+
+Adapters must detect game objects at the return boundary and throw
+`RunPlayerError('serialization', ...)` rather than silently returning the
+degraded serialization. Plain `JSON.stringify()` is not sufficient detection
+on its own — it may produce `{}` without throwing, which is a lossy success.
+
+Recommended detection strategies:
+
+- Check `result.constructor !== Object && !Array.isArray(result)` before
+  serialization. This catches all engine class instances.
+- As a fallback, verify the `JSON.stringify` round-trip:
+  `Object.keys(result).length > 0 && Object.keys(JSON.parse(JSON.stringify(result))).length === 0`
+  indicates lossy serialization.
+
+This is a top-level check. The spec does not require deep inspection of
+nested values inside arrays or plain objects. A return value of
+`[creepInstance]` may serialize as `[{}]` without detection. Tests should
+avoid returning collections that mix game objects and plain values.
+
+#### Execution Confirmation
+
+`runPlayer` must confirm that the supplied player code actually executed.
+
+If the adapter's execution mechanism cannot confirm execution — for example,
+the code injection path was not consumed, the engine silently skipped the
+player, or the runner did not invoke the player's code — `runPlayer` must
+throw a plain `Error` rather than returning `null`.
+
+This is an adapter infrastructure failure, not a player-code failure, so
+it must not use `RunPlayerError`.
+
+The contract distinguishes:
+
+- code explicitly evaluates to `undefined` → normalized to `null` (success)
+- code was never executed → infrastructure error (throw)
 
 ### `runPlayers`
 
@@ -141,16 +199,20 @@ player in that same tick snapshot.
 
 ### `tick`
 
-`tick(count)` advances gameplay processing.
+`tick(count)` advances gameplay processing by exactly `count` ticks.
 
 From the test side, the expected contract is:
 
-- `runPlayer()` collects intents and returns a value
-- `runPlayers()` collects intents and/or reads from one shared game state
-- `tick()` processes those intents and advances time
+- `runPlayer()` executes player code and advances time by exactly 1 tick.
+  Intents submitted during that code are processed during that tick.
+- `runPlayers()` executes multiple players against one shared state and
+  advances time by exactly 1 tick.
+- `tick(count)` advances time by exactly `count` additional ticks.
+  `tick()` must never be a no-op.
 
-If an engine internally consumes time during player execution, the adapter must
-normalize the observable behavior so tests still see the expected progression.
+This means `runPlayer() + tick()` always advances time by exactly 2 ticks,
+and `runPlayer()` alone advances by exactly 1. Tests should account for this
+when asserting tick-sensitive state.
 
 ## Inspection Semantics
 
@@ -237,11 +299,16 @@ Suite coverage that is not implemented yet should use `test.todo`, not
 
 `RunPlayerError` means the player-code execution contract failed, not gameplay.
 
-Current kinds are:
+Required kinds and their classification rules:
 
-- `syntax`
-- `runtime`
-- `serialization`
+- `syntax` — code failed to parse. Must not be mapped to `runtime`.
+- `runtime` — code parsed but threw during execution.
+- `serialization` — code executed but returned a non-serializable or lossy
+  value, typically a live game object.
+
+See [Error Kind Classification](#error-kind-classification) for the full
+requirements. The contract tests in `tests/adapter-contract/error-model.test.ts`
+verify that adapters classify all three kinds correctly.
 
 Adapters should preserve the engine's user-facing message in
 `RunPlayerError.engineMessage` where possible.

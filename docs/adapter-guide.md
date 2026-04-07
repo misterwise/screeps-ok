@@ -210,22 +210,26 @@ If a behavior needs same-tick observation from multiple players, provide that
 through `runPlayers(...)` rather than by calling `runPlayer(...)` sequentially
 and accidentally observing different ticks.
 
-### 5. Separate Intent Collection From Tick Processing
+### 5. runPlayer Consumes Exactly One Tick
 
 The expected model is:
 
-- `runPlayer` submits intents and returns a value from the player runtime
-- `runPlayers` evaluates multiple players against one shared current game state
-- `tick()` processes pending intents and advances the world
+- `runPlayer` executes player code, processes submitted intents, and advances
+  time by exactly 1 tick. After `runPlayer` returns, the intent has already
+  been resolved and the world has advanced.
+- `runPlayers` does the same for multiple players against one shared state,
+  advancing by exactly 1 tick total.
+- `tick(count)` advances the world by exactly `count` additional ticks.
+  `tick()` must never be a no-op.
 
-Tests will rely on this separation.
+This means `runPlayer() + tick()` always advances by exactly 2 ticks.
+Tests that need to observe the immediate result of an intent should use
+`getObject` or `findInRoom` after `runPlayer` (without calling `tick()`),
+since those adapter-level reads do not consume additional ticks.
 
-Do not collapse both phases together unless your engine forces it, and if it
-does, keep the observable contract consistent from the test side.
-
-If your engine consumes a tick while running player code, document that inside
-the adapter and normalize `tick(count)` so tests still observe the expected
-time advancement semantics.
+If your engine does not naturally tick during player code execution, your
+adapter must call the engine's tick after running the code to match this
+contract.
 
 ### 6. Return Plain JSON Snapshots
 
@@ -272,16 +276,41 @@ If a test represents planned coverage that the suite cannot exercise yet, use
 
 Map player execution failures to `RunPlayerError`.
 
-At minimum distinguish:
+Required error kinds (classification is mandatory, not advisory):
 
-- `syntax`: code does not parse
-- `runtime`: code threw while running
-- `serialization`: return value crossed the allowed JSON boundary
+- `syntax`: code does not parse. Most engines throw a distinct `SyntaxError`
+  type — check `instanceof` or `error.constructor.name`.
+- `runtime`: code parsed but threw during execution (`ReferenceError`,
+  `TypeError`, explicit `throw`, etc.).
+- `serialization`: code executed but returned a value that is not JSON-safe,
+  typically a live game object.
+
+Mapping all errors to `'runtime'` is a spec violation. The contract tests in
+`tests/adapter-contract/error-model.test.ts` verify that adapters classify
+each kind correctly.
 
 Use the engine's original error message where possible.
 
 If your engine throws wrapper errors, preserve the most useful user-facing
 message rather than a generic adapter-level exception.
+
+### Execution Confirmation
+
+`runPlayer` must confirm that the supplied code actually executed. If the
+adapter's execution mechanism cannot confirm this — the injection path was
+not consumed, the engine skipped the player, or the runner was not invoked —
+throw a plain `Error` (not `RunPlayerError`). Do not silently return `null`,
+as this is indistinguishable from code that evaluated to `undefined`.
+
+### Game Object Detection
+
+Plain `JSON.stringify()` is not sufficient to detect game objects. It may
+produce `{}` for a Creep or Room without throwing, silently degrading the
+return value. Before serialization, check that the value is a plain object
+or array — `result.constructor !== Object && !Array.isArray(result)` catches
+all engine class instances. See the spec's
+[Game Object Detection](adapter-spec.md#game-object-detection) section for
+the full requirement.
 
 ## Snapshot Design Advice
 
@@ -333,6 +362,13 @@ wrong things.
 If market, power creeps, terrain editing, or some structure class is not ready,
 report that cleanly via capabilities.
 
+### Wrapping all errors as runtime
+
+If your adapter catches all exceptions from player code and maps them
+uniformly to `RunPlayerError('runtime', ...)`, syntax errors will be
+misclassified. Most JavaScript engines throw a distinct `SyntaxError` type
+that can be checked with `instanceof` or `error.constructor.name`.
+
 ## Validation Workflow
 
 Before claiming adapter support, run through this sequence:
@@ -341,7 +377,14 @@ Before claiming adapter support, run through this sequence:
 2. The adapter contract tests pass.
 3. A small representative set of action/movement tests pass.
 4. Snapshot owner mapping is correct.
-5. `runPlayer` rejects non-serializable returns correctly.
+5. The `runPlayer` error model is correct:
+   - syntax errors produce `RunPlayerError('syntax')`
+   - runtime errors produce `RunPlayerError('runtime')`
+   - non-serializable returns produce `RunPlayerError('serialization')`
+   - `undefined` returns are normalized to `null`
+   - code that was never executed throws (not silently returns `null`)
+   The contract tests in `tests/adapter-contract/error-model.test.ts` verify
+   all of these.
 6. Capability-gated tests skip where appropriate rather than failing obscurely.
 
 Recommended starting point:
@@ -441,3 +484,45 @@ engine service layer.
 
 All affected tests are written and skipped with a reference to this section.
 Once the upstream fix lands, remove the skips and verify.
+
+### Vanilla Cooldown Inconsistency
+
+The vanilla engine handles cooldown storage inconsistently across structure
+types within its own processor pipeline:
+
+- **Link**: `transfer.js` sets `cooldown += distance` directly. Then `tick.js`
+  decrements `cooldown--` in the same tick. The DB stores the post-decrement
+  value. A player observes `LINK_COOLDOWN * distance - 1` after a transfer.
+
+- **Extractor**: `harvest.js` sets `_cooldown = EXTRACTOR_COOLDOWN` (a deferred
+  field). Then `tick.js` first decrements any existing cooldown, then overwrites
+  with `_cooldown`. The DB stores the overwritten value. A player observes
+  `EXTRACTOR_COOLDOWN` after a harvest.
+
+Both DB values correctly represent what a player would see on the next tick,
+because player code reads the DB state before the tick processor runs. The
+inconsistency is in the engine's processor pipeline, not in the adapter.
+
+### placeFlag Consumes Ticks
+
+Because flags are per-user blobs (not room objects), the xxscreeps adapter
+creates flags via `runPlayer` with `RoomPosition.createFlag()`. Under the
+current contract (`runPlayer` = 1 tick), this means `placeFlag` silently
+consumes a tick. `flushDeferredFlags` then calls `simulation.tick(1)` for
+persistence, adding another tick.
+
+This is blocked on the same TickPayload limitation above. Once `simulate()`
+supports flag creation natively, `placeFlag` can be made tick-neutral.
+
+### Snapshot Fragility
+
+`getObject` and `findInRoom` use `peekRoom` to access live xxscreeps objects,
+then read private `#` fields to build snapshots. This means:
+
+- Snapshot code is tightly coupled to xxscreeps's internal object layout
+- If xxscreeps renames or restructures private fields, snapshots break silently
+- There is no public render/snapshot API in `simulate()` to decouple from
+
+Vanilla's adapter reads from a stable DB schema, which is more resilient to
+engine internals changes. The xxscreeps adapter's snapshot code should be
+reviewed whenever xxscreeps is upgraded.
