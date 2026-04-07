@@ -181,6 +181,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	async placeCreep(roomName: string, spec: CreepSpec): Promise<string> {
 		const userId = this.resolvePlayer(spec.owner);
 		const name = spec.name ?? `creep-${this.nextId()}`;
+		const gameTime = await this.server.world.gameTime;
 
 		const body = spec.body.map(type => ({ type, hits: 100 }));
 		const storeCapacity = body.reduce((sum: number, p: any) =>
@@ -201,8 +202,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			store: spec.store ?? {},
 			storeCapacityResource: { energy: storeCapacity },
 			storeCapacity,
-			ticksToLive: spec.ticksToLive ?? 1500,
-			ageTime: (spec.ticksToLive ?? 1500) + 1,
+			ageTime: gameTime + (spec.ticksToLive ?? 1500),
 			actionLog: {},
 			notifyWhenAttacked: true,
 		});
@@ -473,12 +473,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
 		const obj = await this.db['rooms.objects'].findOne({ _id: id });
 		if (!obj) return null;
-		return snapshotObject(obj, this);
+		const gameTime = await this.server.world.gameTime;
+		return snapshotObject(obj, this, gameTime);
 	}
 
 	async findInRoom(roomName: string, type: number): Promise<any[]> {
 		const objects = await this.server.world.roomObjects(roomName);
-		return snapshotRoomObjects(objects, selectorFromFindConstant(type), this);
+		const gameTime = await this.server.world.gameTime;
+		return snapshotRoomObjects(objects, selectorFromFindConstant(type), this, gameTime);
 	}
 
 	async getGameTime(): Promise<number> {

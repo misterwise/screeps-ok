@@ -9,12 +9,12 @@ describe('creep.suicide()', () => {
 			pos: [25, 25], owner: 'p1',
 			body: [MOVE],
 		});
+		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).suicide()
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.getObject(id);
 		expect(creep).toBeNull();
@@ -28,12 +28,12 @@ describe('creep.suicide()', () => {
 			store: { [RESOURCE_POWER]: 30 },
 			name: 'SuicideEnergyCreep',
 		});
+		await shard.tick();
 
 		await shard.runPlayer('p1', code`
 			Game.creeps['SuicideEnergyCreep'].suicide()
 		`);
-		await shard.tick();
-
+		// runPlayer processed the suicide (1 tick). Observe via findInRoom.
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		const tomb = tombstones.find(t => t.creepName === 'SuicideEnergyCreep');
 		expect(tomb).toBeDefined();
@@ -53,16 +53,15 @@ describe('creep.suicide()', () => {
 				ticksToLive,
 				name: creepName,
 			});
+			await shard.tick();
 
 			if (trigger === 'suicide') {
 				await shard.runPlayer('p1', code`
 					Game.creeps[${creepName}].suicide()
 				`);
+				// runPlayer processed the suicide (1 tick)
 			} else {
-				await shard.tick();
-			}
-
-			if (trigger === 'suicide') {
+				// TTL death — tick until creep dies
 				await shard.tick();
 			}
 
@@ -84,20 +83,21 @@ describe('creep.say()', () => {
 			pos: [25, 25], owner: 'p1',
 			body: [MOVE],
 		});
+		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).say('hello')
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
+		// runPlayer consumed 1 tick — saying is now visible. Observe via
+		// the next runPlayer (1 more tick) which is still within the 1-tick
+		// visibility window on the immediately following tick.
 		const visible = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).saying
 		`);
 		expect(visible).toBe('hello');
 
-		await shard.tick();
-
+		// One more tick — saying should have expired
 		const hidden = await shard.runPlayer('p1', code`
 			Game.getObjectById(${id}).saying
 		`);
@@ -120,15 +120,14 @@ describe('creep.say()', () => {
 			pos: [26, 25], owner: 'p2',
 			body: [MOVE],
 		});
-
 		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${speakerId}).say('public', true)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
+		// runPlayer consumed 1 tick — saying is visible. runPlayers
+		// consumes 1 more tick (still within visibility window).
 		const seen = await shard.runPlayers({
 			p1: code`Game.getObjectById(${speakerId}).saying`,
 			p2: code`Game.getObjectById(${speakerId}).saying`,
@@ -153,23 +152,19 @@ describe('creep.say()', () => {
 			pos: [26, 25], owner: 'p2',
 			body: [MOVE],
 		});
-
 		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${speakerId}).say('private')
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
-		const seenByOwner = await shard.runPlayer('p1', code`
-			Game.getObjectById(${speakerId}).saying
-		`);
-		const seenByOther = await shard.runPlayer('p2', code`
-			Game.getObjectById(${speakerId}).saying
-		`);
-		expect(seenByOwner).toBe('private');
-		expect(seenByOther).toBeNull();
+		// Observe via runPlayers (1 more tick, within visibility window)
+		const seen = await shard.runPlayers({
+			p1: code`Game.getObjectById(${speakerId}).saying`,
+			p2: code`Game.getObjectById(${speakerId}).saying`,
+		});
+		expect(seen.p1).toBe('private');
+		expect(seen.p2).toBeNull();
 	});
 });
 

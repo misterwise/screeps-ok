@@ -50,6 +50,13 @@ export const PARITY_GAPS = {
 	'link-cross-owner':
 		'StructureLink.transferEnergy allows transfer to another player\'s link ' +
 		'(returns OK) where vanilla returns ERR_NOT_OWNER.',
+	'death-container-diversion':
+		'Creep death does not divert carried resources into a same-tile container. ' +
+		'Resources go directly to the tombstone after CREEP_CORPSE_RATE reduction.',
+	'extractor-cooldown-off-by-one':
+		'Extractor cooldown after harvest reports EXTRACTOR_COOLDOWN - 1 instead of ' +
+		'EXTRACTOR_COOLDOWN. The xxscreeps formula uses #cooldownTime = Game.time + ' +
+		'EXTRACTOR_COOLDOWN - 1, producing a getter value one less than vanilla.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

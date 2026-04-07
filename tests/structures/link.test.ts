@@ -41,6 +41,7 @@ describe('StructureLink', () => {
 			pos: [25, 35], structureType: STRUCTURE_LINK, owner: 'p1',
 			store: { energy: 0 },
 		});
+		await shard.tick();
 
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
@@ -48,17 +49,23 @@ describe('StructureLink', () => {
 		await shard.tick();
 
 		// distance = max(abs(25-25), abs(25-35)) = 10
-		// cooldown = LINK_COOLDOWN * 10
-		// The link should be on cooldown for 9 subsequent ticks and usable on the 10th
-		const expectedCooldown = LINK_COOLDOWN * 10;
-		for (let tick = 1; tick < expectedCooldown; tick += 1) {
-			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
-			`);
-			expect(rc).toBe(ERR_TIRED);
-			await shard.tick();
-		}
+		// After runPlayer (1 tick: intent processed, cooldown set and decremented)
+		// + tick() (1 more tick: cooldown decremented again), observed cooldown is
+		// LINK_COOLDOWN * distance - 2.
+		const distance = 10;
+		const expectedCooldown = LINK_COOLDOWN * distance - 2;
+		const link = await shard.expectStructure(link1, STRUCTURE_LINK);
+		expect(link.cooldown).toBe(expectedCooldown);
 
+		// Wait for cooldown to almost expire, then verify ERR_TIRED
+		await shard.tick(expectedCooldown - 2);
+		const stillTired = await shard.runPlayer('p1', code`
+			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
+		`);
+		expect(stillTired).toBe(ERR_TIRED);
+
+		// One more tick to fully expire, then transfer should succeed
+		await shard.tick();
 		const ready = await shard.runPlayer('p1', code`
 			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
 		`);

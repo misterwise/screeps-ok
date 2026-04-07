@@ -26,11 +26,14 @@ describe('Tombstone', () => {
 		});
 		await shard.tick();
 
-		const gameTimeBefore = await shard.getGameTime();
+		// Capture Game.time in the same timing model the engine uses for deathTime
+		const attackResult = await shard.runPlayer('p1', code`
+			const rc = Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}));
+			({ rc, time: Game.time })
+		`) as { rc: number; time: number };
+		expect(attackResult.rc).toBe(OK);
+		const attackTime = attackResult.time;
 
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
 		await shard.tick();
 		// Allow an extra tick for destruction cleanup if needed
 		await shard.tick();
@@ -39,17 +42,18 @@ describe('Tombstone', () => {
 		const target = await shard.getObject(targetId);
 		expect(target).toBeNull();
 
+		// Bracket the expected deathTime with bot-visible Game.time
+		const timeAfterDeath = await shard.runPlayer('p1', code`Game.time`) as number;
+
 		// Find the tombstone — target was at [25, 26]
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		expect(tombstones.length).toBeGreaterThanOrEqual(1);
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
 		expect(tomb).toBeDefined();
 		expect(tomb!.creepName).toBe('victim');
-		// deathTime should be near the tick when the creep died; adapters
-		// may report the current tick or the previous tick depending on
-		// when destruction resolves relative to getGameTime.
-		expect(tomb!.deathTime).toBeGreaterThanOrEqual(gameTimeBefore);
-		expect(tomb!.deathTime).toBeLessThanOrEqual(gameTimeBefore + 2);
+		// deathTime must fall between the attack tick and current observation
+		expect(tomb!.deathTime).toBeGreaterThanOrEqual(attackTime);
+		expect(tomb!.deathTime).toBeLessThanOrEqual(timeAfterDeath);
 		expect(tomb!.store).toBeDefined();
 	});
 

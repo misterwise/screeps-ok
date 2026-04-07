@@ -37,7 +37,17 @@ function snapStore(obj: any): Record<string, number> {
 	return store;
 }
 
-export function snapshotCreep(obj: any, resolver: PlayerResolver): CreepSnapshot {
+export function snapshotCreep(obj: any, resolver: PlayerResolver, gameTime?: number): CreepSnapshot {
+	// The runtime computes ticksToLive as ageTime - Game.time. The DB
+	// stores ageTime (absolute) but the raw ticksToLive field is never
+	// updated after placement. Compute the player-visible value.
+	let ttl: number;
+	if (obj.ageTime && gameTime !== undefined) {
+		ttl = obj.ageTime - gameTime;
+	} else {
+		ttl = obj.ticksToLive ?? obj.ageTime ?? 1500;
+	}
+
 	return {
 		kind: 'creep',
 		id: obj._id,
@@ -52,7 +62,7 @@ export function snapshotCreep(obj: any, resolver: PlayerResolver): CreepSnapshot
 			...(part.boost ? { boost: part.boost } : {}),
 		})),
 		owner: snapOwner(obj, resolver)!,
-		ticksToLive: obj.ticksToLive ?? obj.ageTime ?? 1500,
+		ticksToLive: ttl,
 		spawning: obj.spawning ?? false,
 		store: snapStore(obj),
 		storeCapacity: obj.storeCapacity ?? 0,
@@ -307,9 +317,9 @@ function snapshotRuin(obj: any): RuinSnapshot {
 	};
 }
 
-export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
+export function snapshotObject(obj: any, resolver: PlayerResolver, gameTime?: number): ObjectSnapshot | null {
 	switch (obj.type) {
-		case 'creep': return snapshotCreep(obj, resolver);
+		case 'creep': return snapshotCreep(obj, resolver, gameTime);
 		case 'constructionSite': return snapshotSite(obj, resolver);
 		case 'source': return snapshotSource(obj);
 		case 'mineral': return snapshotMineral(obj);
@@ -390,12 +400,13 @@ export function snapshotRoomObjects(
 	objects: any[],
 	findType: string,
 	resolver: PlayerResolver,
+	gameTime?: number,
 ): ObjectSnapshot[] {
 	const allowedTypes = findTypeMap[findType];
 	const results: ObjectSnapshot[] = [];
 	for (const obj of objects) {
 		if (allowedTypes && !allowedTypes.includes(obj.type)) continue;
-		const snapshot = snapshotObject(obj, resolver);
+		const snapshot = snapshotObject(obj, resolver, gameTime);
 		if (snapshot) results.push(snapshot);
 	}
 	return results;

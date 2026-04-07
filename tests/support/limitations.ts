@@ -1,5 +1,6 @@
 export type DocumentedAdapterLimitation =
-	| 'headlessMultiPlayer';
+	| 'headlessMultiPlayer'
+	| 'structureCustomHits';
 
 function activeAdapterPath(): string {
 	return process.env.SCREEPS_OK_ADAPTER ?? '';
@@ -15,6 +16,10 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 		case 'headlessMultiPlayer':
 			// Vanilla's mockup runtime disables users that own no room objects, so a
 			// declared second player without an owned room cannot execute code there.
+			return isBuiltInAdapter('vanilla');
+		case 'structureCustomHits':
+			// Vanilla's addRoomObject produces objects that getObject cannot find
+			// when a custom hits value is provided on unowned structures like containers.
 			return isBuiltInAdapter('vanilla');
 	}
 }

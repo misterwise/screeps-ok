@@ -8,6 +8,13 @@ import type {
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 } from '../../src/snapshots/common.js';
+import { Creep } from 'xxscreeps/mods/creep/creep.js';
+import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.js';
+import { Resource } from 'xxscreeps/mods/resource/resource.js';
+import { Source } from 'xxscreeps/mods/source/source.js';
+import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
+import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
@@ -347,24 +354,15 @@ function snapshotRuin(obj: any, resolver: PlayerResolver): RuinSnapshot {
 	};
 }
 
-function isRuin(obj: any): boolean {
-	return obj.destroyTime !== undefined
-		&& (obj.structureType !== undefined || obj['#structure'] !== undefined)
-		&& obj.hits === undefined;
-}
-
 export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapshot | null {
-	// Determine type from xxscreeps object shape
-	// Order matters: check more specific types before general ones
-	if (obj.body && obj.fatigue !== undefined) return snapshotCreep(obj, resolver);
-	if (obj.progressTotal !== undefined) return snapshotSite(obj, resolver);
-	if (obj.deathTime !== undefined && !obj.body) return snapshotTombstone(obj, resolver);
-	if (isRuin(obj)) return snapshotRuin(obj, resolver);
-	if (obj.resourceType !== undefined && obj.amount !== undefined) return snapshotDroppedResource(obj);
-	const sType = getStructureType(obj);
-	if (sType) return snapshotStructure(obj, resolver);
-	if (obj.energyCapacity !== undefined) return snapshotSource(obj);
-	if (obj.mineralType !== undefined) return snapshotMineral(obj);
+	if (obj instanceof Creep) return snapshotCreep(obj, resolver);
+	if (obj instanceof ConstructionSite) return snapshotSite(obj, resolver);
+	if (obj instanceof Tombstone) return snapshotTombstone(obj, resolver);
+	if (obj instanceof Ruin) return snapshotRuin(obj, resolver);
+	if (obj instanceof Resource) return snapshotDroppedResource(obj);
+	if (obj instanceof Source) return snapshotSource(obj);
+	if (obj instanceof Mineral) return snapshotMineral(obj);
+	if (obj.structureType) return snapshotStructure(obj, resolver);
 	return null;
 }
 
@@ -374,28 +372,28 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 		let match = false;
 		switch (findType) {
 			case 'creeps':
-				match = obj.body !== undefined && obj.fatigue !== undefined;
+				match = obj instanceof Creep;
 				break;
 			case 'constructionSites':
-				match = obj.progressTotal !== undefined;
+				match = obj instanceof ConstructionSite;
 				break;
 			case 'structures':
-				match = !!getStructureType(obj) && obj.progressTotal === undefined;
+				match = !(obj instanceof ConstructionSite) && !!obj.structureType;
 				break;
 			case 'sources':
-				match = obj.energyCapacity !== undefined && !getStructureType(obj);
+				match = obj instanceof Source;
 				break;
 			case 'minerals':
-				match = obj.mineralType !== undefined;
+				match = obj instanceof Mineral;
 				break;
 			case 'tombstones':
-				match = obj.deathTime !== undefined && !obj.body;
+				match = obj instanceof Tombstone;
 				break;
 			case 'droppedResources':
-				match = obj.resourceType !== undefined && obj.amount !== undefined;
+				match = obj instanceof Resource;
 				break;
 			case 'ruins':
-				match = isRuin(obj);
+				match = obj instanceof Ruin;
 				break;
 			default:
 				match = true;

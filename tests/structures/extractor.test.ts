@@ -1,7 +1,34 @@
 import { describe, test, expect, code, OK, ERR_NOT_FOUND, ERR_NOT_OWNER, ERR_RCL_NOT_ENOUGH, ERR_TIRED, WORK, CARRY, MOVE, STRUCTURE_EXTRACTOR, EXTRACTOR_COOLDOWN, HARVEST_MINERAL_POWER } from '../../src/index.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureExtractor', () => {
-	test('EXTRACTOR-001 harvest(mineral) returns OK, reduces mineralAmount, and sets extractor cooldown', async ({ shard }) => {
+	test('EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
+		});
+		const mineralId = await shard.placeMineral('W1N1', {
+			pos: [25, 25], mineralType: 'H', mineralAmount: 50000,
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
+		`);
+		expect(rc).toBe(OK);
+
+		const mineral = await shard.expectObject(mineralId, 'mineral');
+		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
+	});
+
+	knownParityGap('extractor-cooldown-off-by-one')('EXTRACTOR-001 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -18,20 +45,12 @@ describe('StructureExtractor', () => {
 		});
 		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
+		await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
 		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
 
-		const mineral = await shard.expectObject(mineralId, 'mineral');
-		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
-
-		// Cooldown was set to EXTRACTOR_COOLDOWN during the tick; depending on
-		// engine timing, it may or may not have decremented by the time we observe.
 		const extractor = await shard.expectStructure(extractorId, STRUCTURE_EXTRACTOR);
-		expect(extractor.cooldown).toBeGreaterThanOrEqual(EXTRACTOR_COOLDOWN - 1);
-		expect(extractor.cooldown).toBeLessThanOrEqual(EXTRACTOR_COOLDOWN);
+		expect(extractor.cooldown).toBe(EXTRACTOR_COOLDOWN);
 	});
 
 	test('EXTRACTOR-002 harvest(mineral) returns ERR_NOT_FOUND when no extractor is present', async ({ shard }) => {

@@ -60,12 +60,12 @@ describe('RoomPosition spatial queries', () => {
 			],
 		});
 
-		// getRangeTo across rooms returns Infinity, but JSON serialization
-		// at the adapter boundary converts Infinity → null. Accept either.
-		const dist = await shard.runPlayer('p1', code`
-			new RoomPosition(10, 10, 'W1N1').getRangeTo(new RoomPosition(10, 10, 'W2N1'))
+		// Canonical behavior: getRangeTo returns Infinity for different rooms.
+		// Infinity is not JSON-safe, so test the condition inside player code.
+		const isInfinite = await shard.runPlayer('p1', code`
+			new RoomPosition(10, 10, 'W1N1').getRangeTo(new RoomPosition(10, 10, 'W2N1')) === Infinity
 		`);
-		expect(dist === Infinity || dist === null).toBe(true);
+		expect(isInfinite).toBe(true);
 	});
 });
 

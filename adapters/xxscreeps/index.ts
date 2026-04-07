@@ -1,4 +1,5 @@
 import type { GameConstructor } from 'xxscreeps/game/index.js';
+import { Game } from 'xxscreeps/game/index.js';
 import type { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
@@ -149,7 +150,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				userId,
 			);
 			if (spec.ticksToLive !== undefined) {
-				creep['#ageTime'] = spec.ticksToLive + 1;
+				creep['#ageTime'] = Game.time + spec.ticksToLive;
 			}
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
@@ -217,9 +218,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			source.energy = spec.energy ?? source.energyCapacity;
 			// Set regen timer if source is depleted
 			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
-				source['#nextRegenerationTime'] = 1 + spec.ticksToRegeneration; // game starts at tick 1
+				source['#nextRegenerationTime'] = Game.time + spec.ticksToRegeneration;
 			} else if (source.energy < source.energyCapacity) {
-				source['#nextRegenerationTime'] = 1 + 300; // ENERGY_REGEN_TIME
+				source['#nextRegenerationTime'] = Game.time + 300; // ENERGY_REGEN_TIME
 			}
 			room['#insertObject'](source);
 		});
@@ -362,11 +363,28 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		if (!this.shardSpec) throw new Error('createShard not called');
 
 		const idMap = this.idMap;
-		const roomInits: Record<string, (room: any) => void> = {};
+
+		// First, create simulation with bare rooms (no test objects) and
+		// run a warm-up tick, matching vanilla's initialization pattern.
+		const bareInits: Record<string, (room: any) => void> = {};
+		for (const roomName of this.rooms) {
+			bareInits[roomName] = () => {};
+		}
+		this.simulation = await createSimulation(bareInits);
+		await this.simulation.tick(1);
+
+		// Re-activate rooms that the warm-up tick may have deactivated.
+		for (const roomName of this.rooms) {
+			await this.simulation.shard.scratch.zadd(
+				'processor/activeRooms', [[1, roomName]],
+			);
+		}
+
+		// Now apply all pending setup ops via poke: strip default
+		// sources/minerals, set controller ownership, place objects.
 		for (const roomName of this.rooms) {
 			const ops = this.pendingSetup.get(roomName);
-			roomInits[roomName] = (room: any) => {
-				// Strip shard.json sources and minerals — tests place their own
+			const stripAndSetup = (room: any) => {
 				for (const obj of [...room['#objects']]) {
 					try {
 						const st = getStructureType(obj);
@@ -378,10 +396,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					for (const op of ops) op(room);
 				}
 			};
+			this.pokeQueue.push({ room: roomName, fn: stripAndSetup });
 		}
-
-		this.simulation = await createSimulation(roomInits);
 		this.pendingSetup.clear();
+		await this.flushPokeQueue();
 
 		// After simulation init, objects have been saved and reloaded.
 		// Build the ID map by scanning rooms for objects placed by name/position.
