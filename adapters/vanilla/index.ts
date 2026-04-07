@@ -44,8 +44,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	private idCounter = 0;
 	private db: any = null;
 	private env: any = null;
-	private ticksConsumed = 0;
-
 	private nextId(): string {
 		return `sok${++this.idCounter}`;
 	}
@@ -375,7 +373,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		// Tick to execute — the main loop evals Memory._screepsOk and stores result
 		await this.server.tick();
-		this.ticksConsumed++;
 
 		// Read result from Memory
 		const memAfter = JSON.parse(
@@ -425,7 +422,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		await this.server.tick();
-		this.ticksConsumed++;
 
 		const results: Record<string, PlayerReturnValue> = {};
 		for (const handle of handles) {
@@ -462,10 +458,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async tick(count = 1): Promise<void> {
-		// Subtract ticks already consumed by runPlayer calls
-		const remaining = Math.max(0, count - this.ticksConsumed);
-		this.ticksConsumed = 0;
-		for (let i = 0; i < remaining; i++) {
+		for (let i = 0; i < count; i++) {
 			await this.server.tick();
 		}
 	}
@@ -500,7 +493,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		this.db = null;
 		this.env = null;
 		this.idCounter = 0;
-		this.ticksConsumed = 0;
 	}
 
 	private buildTerrain(terrain: TerrainSpec): any {

@@ -98,6 +98,24 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
 
+	// xxscreeps deactivates rooms and clears user-room associations after
+	// idle ticks (ticks where no player code ran). In a test harness every
+	// room must stay processable and every player must keep intent/vision
+	// access regardless of idle gaps. Re-add both before every tick.
+	private async keepRoomsActive(): Promise<void> {
+		if (!this.simulation) return;
+		const { scratch } = this.simulation.shard;
+		for (const roomName of this.rooms) {
+			await scratch.zadd('processor/activeRooms', [[1, roomName]]);
+		}
+		for (const [, engineId] of this.playerMap) {
+			for (const roomName of this.rooms) {
+				await scratch.sadd(`user/${engineId}/intentRooms`, [roomName]);
+				await scratch.sadd(`user/${engineId}/visibleRooms`, [roomName]);
+			}
+		}
+	}
+
 	private queueOp(room: string, fn: (room: Room) => void): void {
 		if (this.simulation) {
 			// Simulation already running — queue for poke
@@ -373,12 +391,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.simulation = await createSimulation(bareInits);
 		await this.simulation.tick(1);
 
-		// Re-activate rooms that the warm-up tick may have deactivated.
-		for (const roomName of this.rooms) {
-			await this.simulation.shard.scratch.zadd(
-				'processor/activeRooms', [[1, roomName]],
-			);
-		}
+		await this.keepRoomsActive();
 
 		// Now apply all pending setup ops via poke: strip default
 		// sources/minerals, set controller ownership, place objects.
@@ -495,6 +508,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
+		await this.keepRoomsActive();
 		const engineUserId = this.resolvePlayer(userId);
 		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
 		let result: PlayerReturnValue = null;
@@ -584,6 +598,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		// Contract: runPlayer advances exactly 1 tick.
 		// simulation.player() only collects intents — tick() processes them.
+		await this.keepRoomsActive();
 		await this.simulation!.tick(1);
 
 		return result ?? null;
@@ -592,6 +607,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
+		await this.keepRoomsActive();
 
 		const results: Record<string, PlayerReturnValue> = {};
 		const executedPlayers = new Set<string>();
@@ -678,6 +694,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 
 		// Phase 2: process all collected intents in a single tick.
+		await this.keepRoomsActive();
 		await this.simulation!.tick(1);
 
 		// Normalize undefined → null
@@ -691,7 +708,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		await this.simulation!.tick(count);
+		for (let i = 0; i < count; i++) {
+			await this.keepRoomsActive();
+			await this.simulation!.tick(1);
+		}
 	}
 
 	private async flushDeferredFlags(): Promise<void> {

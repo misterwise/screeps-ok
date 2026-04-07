@@ -57,6 +57,11 @@ export const PARITY_GAPS = {
 		'Extractor cooldown after harvest reports EXTRACTOR_COOLDOWN - 1 instead of ' +
 		'EXTRACTOR_COOLDOWN. The xxscreeps formula uses #cooldownTime = Game.time + ' +
 		'EXTRACTOR_COOLDOWN - 1, producing a getter value one less than vanilla.',
+	'link-intent-after-idle-tick':
+		'link.transferEnergy intents are silently dropped after an idle tick. ' +
+		'The intent returns OK but the logistics processor never executes the ' +
+		'transfer. Other structure intents (tower.attack, creep.move) are ' +
+		'unaffected. xxscreeps has no upstream link processor tests.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

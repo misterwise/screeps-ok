@@ -8,7 +8,8 @@
 		"link-self-transfer",
 		"link-cross-owner",
 		"death-container-diversion",
-		"extractor-cooldown-off-by-one"
+		"extractor-cooldown-off-by-one",
+		"link-intent-after-idle-tick"
 	],
 	"notes": {
 		"creep-owner-undefined": "xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.",
@@ -19,6 +20,7 @@
 		"link-self-transfer": "xxscreeps StructureLink.transferEnergy returns OK when source === target. Vanilla returns ERR_INVALID_TARGET.",
 		"link-cross-owner": "xxscreeps StructureLink.transferEnergy returns OK when the target link belongs to a different player. Vanilla returns ERR_NOT_OWNER.",
 		"death-container-diversion": "xxscreeps buryCreep() applies CREEP_CORPSE_RATE directly to tombstone without checking for a same-tile container. Vanilla diverts full carried resources to the container first.",
-		"extractor-cooldown-off-by-one": "xxscreeps extractor cooldown getter uses #cooldownTime = Game.time + EXTRACTOR_COOLDOWN - 1, reporting 4 instead of vanilla's 5 after harvest."
+		"extractor-cooldown-off-by-one": "xxscreeps extractor cooldown getter uses #cooldownTime = Game.time + EXTRACTOR_COOLDOWN - 1, reporting 4 instead of vanilla's 5 after harvest.",
+		"link-intent-after-idle-tick": "xxscreeps logistics processor silently drops link.transferEnergy intents after an idle tick (a tick with no player code). The intent returns OK but the transfer never executes. Tower, creep, and other structure intents are unaffected. Root cause is in the room processor's intent dispatch for the logistics mod."
 	}
 }

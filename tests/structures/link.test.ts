@@ -28,7 +28,7 @@ describe('StructureLink', () => {
 		expect(dst.store.energy).toBe(100 - Math.ceil(100 * LINK_LOSS_RATIO));
 	});
 
-	test('LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance', async ({ shard }) => {
+	knownParityGap('link-intent-after-idle-tick')('LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],

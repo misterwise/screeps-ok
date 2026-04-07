@@ -25,6 +25,9 @@ function snapPos(obj: any) {
 }
 
 function snapOwner(obj: any, resolver: PlayerResolver): string | undefined {
+	// #user gives the raw user ID needed by resolvePlayerReverse.
+	// The public obj.owner getter depends on the userInfo map, which
+	// is only populated during player simulation — not during peekRoom.
 	const user = obj['#user'] ?? obj.owner?.username;
 	return user ? resolver.resolvePlayerReverse(user) : undefined;
 }
@@ -32,13 +35,9 @@ function snapOwner(obj: any, resolver: PlayerResolver): string | undefined {
 function snapStore(obj: any): Record<string, number> {
 	const store: Record<string, number> = {};
 	if (obj.store) {
-		// xxscreeps stores have a #entries() method; plain objects use Object.entries
-		const entries = typeof obj.store['#entries'] === 'function'
-			? obj.store['#entries']()
-			: Object.entries(obj.store);
-		for (const [resource, amount] of entries) {
+		for (const [resource, amount] of Object.entries(obj.store)) {
 			if (typeof amount === 'number' && amount > 0) {
-				store[resource] = amount;
+				store[resource] = amount as number;
 			}
 		}
 	}
@@ -320,7 +319,7 @@ function snapshotTombstone(obj: any, resolver: PlayerResolver): TombstoneSnapsho
 		kind: 'tombstone',
 		id: obj.id,
 		pos: snapPos(obj),
-		creepName: obj.creep?.name ?? obj['#creep']?.name ?? obj.name ?? obj.creepName ?? '',
+		creepName: obj.creep?.name ?? '',
 		deathTime: obj.deathTime ?? 0,
 		store: snapStore(obj),
 		ticksToDecay: obj.ticksToDecay ?? 0,
@@ -338,9 +337,7 @@ function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
 }
 
 function snapshotRuin(obj: any, resolver: PlayerResolver): RuinSnapshot {
-	// xxscreeps Ruin stores structureType in #structure.type, not directly
 	const structureType = obj.structureType
-		?? obj['#structure']?.type
 		?? obj.structure?.structureType
 		?? '';
 	return {
@@ -368,6 +365,8 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 
 export function snapshotRoom(room: any, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {
 	const results: ObjectSnapshot[] = [];
+	// #objects is the only way to iterate all room objects; Room.find()
+	// requires FIND constants and there is no public "all objects" API.
 	for (const obj of room['#objects']) {
 		let match = false;
 		switch (findType) {
