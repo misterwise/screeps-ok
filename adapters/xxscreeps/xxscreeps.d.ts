@@ -36,6 +36,7 @@ declare module 'xxscreeps/test/simulate.js' {
 }
 
 declare module 'xxscreeps/mods/creep/creep.js' {
+	export class Creep { [key: string]: any; }
 	export function create(pos: any, parts: any[], name: string, owner: string): any;
 }
 
@@ -48,6 +49,7 @@ declare module 'xxscreeps/mods/spawn/extension.js' {
 }
 
 declare module 'xxscreeps/mods/construction/construction-site.js' {
+	export class ConstructionSite { [key: string]: any; }
 	export function create(pos: any, structureType: any, owner: string, name?: string | null): any;
 }
 
@@ -118,6 +120,7 @@ declare module 'xxscreeps/mods/mineral/extractor.js' {
 }
 
 declare module 'xxscreeps/mods/resource/resource.js' {
+	export class Resource { [key: string]: any; }
 	export function create(pos: any, resourceType: any, amount: number): any;
 }
 
