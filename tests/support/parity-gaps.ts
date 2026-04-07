@@ -70,6 +70,9 @@ export const PARITY_GAPS = {
 		'Ramparts do not absorb damage for objects on their tile. In vanilla, ' +
 		'attacks targeting a creep or structure on a rampart tile deal damage to ' +
 		'the rampart instead. xxscreeps applies damage directly to the target.',
+	'renew-while-spawning':
+		'Spawn.renewCreep returns OK while the spawn is actively spawning a creep. ' +
+		'Vanilla returns ERR_BUSY.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

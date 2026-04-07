@@ -11,7 +11,8 @@
 		"extractor-cooldown-off-by-one",
 		"link-intent-after-idle-tick",
 		"lab-unrestricted-mineral-capacity",
-		"rampart-no-protection"
+		"rampart-no-protection",
+		"renew-while-spawning"
 	],
 	"notes": {
 		"creep-owner-undefined": "xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.",
@@ -25,6 +26,7 @@
 		"extractor-cooldown-off-by-one": "xxscreeps extractor cooldown getter uses #cooldownTime = Game.time + EXTRACTOR_COOLDOWN - 1, reporting 4 instead of vanilla's 5 after harvest.",
 		"link-intent-after-idle-tick": "xxscreeps logistics processor silently drops link.transferEnergy intents after an idle tick (a tick with no player code). The intent returns OK but the transfer never executes. Tower, creep, and other structure intents are unaffected. Root cause is in the room processor's intent dispatch for the logistics mod.",
 		"lab-unrestricted-mineral-capacity": "xxscreeps lab store.getCapacity() returns LAB_MINERAL_CAPACITY (3000) for any mineral resource type, not just the mineral the lab currently holds. Vanilla returns null for resources the lab cannot accept.",
-		"rampart-no-protection": "xxscreeps ramparts do not absorb damage for objects on their tile. Attacks hit the target directly instead of the rampart. Both tower.attack on creeps and creep.attack on structures bypass the rampart."
+		"rampart-no-protection": "xxscreeps ramparts do not absorb damage for objects on their tile. Attacks hit the target directly instead of the rampart. Both tower.attack on creeps and creep.attack on structures bypass the rampart.",
+		"renew-while-spawning": "xxscreeps spawn.renewCreep returns OK while the spawn is actively spawning a creep. Vanilla returns ERR_BUSY."
 	}
 }
