@@ -262,8 +262,8 @@ If a mechanic is missing or not wired through the adapter yet:
 Do not report support just to get more tests running. False positives are worse
 than honest skips because they turn missing features into misleading failures.
 
-In this repository, capability-gated tests should use the shared helper in
-`tests/support/policy.ts` rather than silently returning from the test body.
+In this repository, capability-gated tests use `shard.requires('capability')`
+rather than silently returning from the test body.
 
 Adapter-specific skips should be rare. In this repository, narrow built-in
 exceptions are centralized in `tests/support/limitations.ts` rather than
@@ -445,6 +445,35 @@ At minimum, add a short README or comment block explaining:
 
 If someone cannot understand those points quickly, the adapter is not yet ready
 for outside consumption.
+
+## Declaring Expected Failures (parity.json)
+
+When your engine intentionally diverges from vanilla behavior, declare expected
+failures in a `parity.json` file next to your adapter entry module. Tests always
+assert canonical (vanilla) behavior — the parity reporter reclassifies failures
+for declared tests so they don't break your CI.
+
+```json
+{
+  "expected_failures": {
+    "gap-id": {
+      "summary": "Short description of the divergence",
+      "tests": ["CATALOG-ID-001", "CATALOG-ID-002"]
+    }
+  }
+}
+```
+
+- **gap-id** — a stable, adapter-neutral identifier for the divergence
+- **summary** — one-line description shown in the status dashboard
+- **tests** — catalog IDs of tests expected to fail due to this gap
+
+The parity reporter (loaded automatically via `vitest.config.ts`) matches
+test names against catalog IDs. A failing test whose ID is declared →
+expected failure (suite still passes). A passing test whose ID is declared →
+unexpected pass (regression trap — the engine may have fixed the behavior).
+
+Run `npm run status:refresh` to regenerate the dashboard with parity details.
 
 ## Current Status of This Guide
 

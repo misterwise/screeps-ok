@@ -345,6 +345,6 @@ vanilla.
 
 > [!TIP]
 > Narrow adapter-specific skips are centralized in
-> `tests/support/limitations.ts`, and capability-based skips in
-> `tests/support/policy.ts`, rather than scattered raw adapter-name checks.
+> `tests/support/limitations.ts`, and capability-based skips use
+> `shard.requires('capability')`, rather than scattered raw checks.
 > Planned but unimplemented coverage should use `test.todo`, not `test.skip`.
