@@ -299,7 +299,7 @@ describe('BOOST-HARVEST-001 harvest boost magnitudes', () => {
 // ── BOOST-HARVEST-003: harvest boosts only apply during harvest() ──
 
 describe('BOOST-HARVEST-003 harvest boosts only apply during harvest()', () => {
-	test('boosted WORK part repairs at normal REPAIR_POWER, not boosted', async ({ shard, skip }) => {
+	test('BOOST-HARVEST-003 boosted WORK part repairs at normal REPAIR_POWER, not boosted', async ({ shard, skip }) => {
 		requireCapability(shard, skip, 'chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -770,7 +770,7 @@ describe('BOOST-CARRY-001 carry capacity boost magnitudes', () => {
 // ── BOOST-CARRY-003: boosted CARRY parts still zero fatigue when empty ──
 
 describe('BOOST-CARRY-003 boosted CARRY parts still contribute zero fatigue when empty', () => {
-	test('empty boosted CARRY does not add weight for fatigue', async ({ shard, skip }) => {
+	test('BOOST-CARRY-003 empty boosted CARRY does not add weight for fatigue', async ({ shard, skip }) => {
 		requireCapability(shard, skip, 'chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 

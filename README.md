@@ -326,6 +326,10 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
   native addons are built explicitly through `npm run setup:xxscreeps` and
   `npm run setup:vanilla`.
 
+## Acknowledgments
+
+The xxscreeps adapter depends on [xxscreeps](https://github.com/laverdet/xxscreeps) by [@laverdet](https://github.com/laverdet). The vanilla adapter uses [screeps-server-mockup](https://github.com/screepers/screeps-server-mockup). Both are MIT-licensed.
+
 ## Known Issues
 
 > [!NOTE]

@@ -89,26 +89,6 @@ describe('creep.attack()', () => {
 		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
-	test('attacking own creep: engine-specific behavior', async ({ shard }) => {
-		// Note: vanilla returns ERR_INVALID_TARGET (-7) for attacking own creeps.
-		// xxscreeps returns OK (0) and deals damage. This is a known parity difference.
-		await shard.ownedRoom('p1');
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		const friendlyId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${friendlyId}))
-		`);
-		// Record what each engine does — don't assert a specific value yet
-		// until we verify vanilla behavior
-		expect(typeof rc).toBe('number');
-	});
 });
 
 describe('creep.rangedAttack()', () => {

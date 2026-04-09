@@ -15,7 +15,7 @@ import { requireCapability } from '../support/policy.js';
 // some parts are boosted and others are not.
 
 describe('BOOST-AGGREGATION-001 per-part boost aggregation', () => {
-	test('attack: 1 boosted + 1 unboosted ATTACK sums correctly', async ({ shard, skip }) => {
+	test('BOOST-AGGREGATION-001 attack: 1 boosted + 1 unboosted ATTACK sums correctly', async ({ shard, skip }) => {
 		requireCapability(shard, skip, 'chemistry');
 		await shard.createShard({
 			players: ['p1', 'p2'],
@@ -63,7 +63,7 @@ describe('BOOST-AGGREGATION-001 per-part boost aggregation', () => {
 		expect(before.hits - after.hits).toBe(ATTACK_POWER * 2 + ATTACK_POWER);
 	});
 
-	test('repair: 2 boosted + 1 unboosted WORK sums correctly', async ({ shard, skip }) => {
+	test('BOOST-AGGREGATION-001 repair: 2 boosted + 1 unboosted WORK sums correctly', async ({ shard, skip }) => {
 		requireCapability(shard, skip, 'chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
