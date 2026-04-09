@@ -4,12 +4,11 @@ import { describe, test, expect, code,
 	STRUCTURE_POWER_BANK,
 	POWER_BANK_HIT_BACK, POWER_BANK_CAPACITY_MAX, POWER_BANK_CAPACITY_MIN, POWER_BANK_HITS,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Power bank', () => {
 	// ---- POWER-BANK-001: hit-back deals POWER_BANK_HIT_BACK * damage to the attacker ----
-	test('POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -49,8 +48,8 @@ describe('Power bank', () => {
 	});
 
 	// ---- POWER-BANK-002: ticksToDecay counts down to removal ----
-	test('POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -91,8 +90,8 @@ describe('Power bank', () => {
 	});
 
 	// ---- POWER-BANK-003: power value is within canonical capacity range ----
-	test('POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

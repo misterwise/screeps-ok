@@ -2,7 +2,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-199%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-185%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-9-yellow) ![status](https://img.shields.io/badge/status-alpha-blue)
+![vanilla](https://img.shields.io/badge/vanilla-865%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-630%20passing-brightgreen) ![xxscreeps skipped](https://img.shields.io/badge/xxscreeps%20skipped-245-yellow) ![status](https://img.shields.io/badge/status-alpha-blue)
 
 Behavioral conformance test suite for Screeps server implementations. Write
 a test once, run it against any engine.
@@ -304,14 +304,14 @@ adapter is loaded once and provides a fresh shard per test via `createShard` +
 - Requires Node 24.x or newer
 - Requires `npm run setup:xxscreeps` to build the path-finder native addon for
   the active runtime
-- ~6s for the full suite
+- ~11s for the full suite
 
 ### vanilla adapter
 - Wraps `screeps-server-mockup` (spawns engine child processes)
 - Requires Node 24.x or newer
 - Requires `npm run setup:vanilla` for `isolated-vm`, `@screeps/driver`, and
   the driver native addon
-- Tests run serially (~37s for the full suite)
+- Tests run serially (~40s for the full suite)
 - Code is injected via Memory and executed by the bot's main loop
 
 ## Environment Requirements

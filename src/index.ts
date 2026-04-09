@@ -6,7 +6,7 @@ export { test, describe, expect } from './fixture.js';
 
 // Adapter contract
 export type {
-	ScreepsOkAdapter, AdapterCapabilities, PlayerReturnValue,
+	ScreepsOkAdapter, AdapterCapabilities, CapabilityName, PlayerReturnValue,
 	ShardSpec, RoomSpec, TerrainSpec,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
@@ -124,7 +124,7 @@ export {
 	FLAGS_LIMIT, COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
 	// Safe mode
 	SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
-	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, CONTROLLER_DOWNGRADE,
+	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, CONTROLLER_DOWNGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	// Event log
 	EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_ATTACK_CONTROLLER,
 	EVENT_BUILD, EVENT_HARVEST, EVENT_HEAL, EVENT_REPAIR,

@@ -3,11 +3,10 @@ import { describe, test, expect, code,
 	ERR_INVALID_ARGS, ERR_RCL_NOT_ENOUGH,
 	STRUCTURE_TERMINAL, PWR_OPERATE_TERMINAL, POWER_INFO,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Terminal send', () => {
-	test('TERMINAL-SEND-001 successful send returns OK and sets cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-001 successful send returns OK and sets cooldown', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -38,9 +37,9 @@ describe('Terminal send', () => {
 		expect(cooldown).toBeGreaterThan(0);
 	});
 
-	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
-		requireCapability(shard, skip, 'powerCreeps');
+	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard }) => {
+		shard.requires('market');
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -88,8 +87,8 @@ describe('Terminal send', () => {
 		expect(cooldown).toBe(expectedCooldown);
 	});
 
-	test('TERMINAL-SEND-003 send deducts energy cost from the sender', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-003 send deducts energy cost from the sender', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -136,9 +135,9 @@ describe('Terminal send', () => {
 		expect(afterDst).toBe(1000);
 	});
 
-	test('TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
-		requireCapability(shard, skip, 'powerCreeps');
+	test('TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost', async ({ shard }) => {
+		shard.requires('market');
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -189,8 +188,8 @@ describe('Terminal send', () => {
 		expect(spent).toBeGreaterThanOrEqual(1000);
 	});
 
-	test('TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -215,8 +214,8 @@ describe('Terminal send', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	test('TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -241,8 +240,8 @@ describe('Terminal send', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
-	test('TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -273,8 +272,8 @@ describe('Terminal send', () => {
 		expect(rc2).toBe(ERR_TIRED);
 	});
 
-	test('TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -299,8 +298,8 @@ describe('Terminal send', () => {
 		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
 	});
 
-	test('TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

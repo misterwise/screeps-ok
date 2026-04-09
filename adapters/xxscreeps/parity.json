@@ -1,62 +1,116 @@
 {
-	"expected_failures": [
-		"creep-owner-undefined",
-		"extension-rcl-capacity",
-		"describe-exits-topology",
-		"pathfinder-suboptimal",
-		"tombstone-corpse-rate",
-		"link-self-transfer",
-		"link-cross-owner",
-		"death-container-diversion",
-		"extractor-cooldown-off-by-one",
-		"link-intent-after-idle-tick",
-		"lab-unrestricted-mineral-capacity",
-		"rampart-no-protection",
-		"renew-while-spawning",
-		"lab-cooldown-no-decrement",
-		"lab-not-owner-precedence",
-		"observer-room-always-visible",
-		"observer-not-owner-precedence",
-		"mineral-regen-not-implemented",
-		"road-decay-not-implemented",
-		"container-decay-not-implemented",
-		"safemode-concurrent-allowed",
-		"destroy-ownership-bypass",
-		"notifyWhenAttacked-not-implemented",
-		"eventlog-attack-missing",
-		"tough-boost-no-reduction",
-		"boost-energy-cost-scales",
-		"route-callback-ignored",
-		"rampart-decay-not-implemented"
-	],
-	"notes": {
-		"creep-owner-undefined": "xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.",
-		"extension-rcl-capacity": "xxscreeps StructureExtension.store.getCapacity('energy') returns 200 at every RCL. isActive()-based filtering now works correctly upstream (RCL 1 extensions report inactive and contribute 0 to room energy), so the gap has narrowed to just the capacity table.",
-		"describe-exits-topology": "xxscreeps Game.map.describeExits only returns exits whose neighbor room was instantiated in the current shard. Vanilla returns all four coordinate-derived neighbors regardless.",
-		"pathfinder-suboptimal": "xxscreeps PathFinder picks a 35-step zigzag where vanilla finds a 29-step straight diagonal on open plains from (10,10) to (39,39).",
-		"tombstone-corpse-rate": "xxscreeps tombstones preserve floor(store * CREEP_CORPSE_RATE) on both suicide and ticksToLive death paths. Vanilla preserves the full store on both paths and also reclaims body energy on suicide at high remaining TTL.",
-		"link-self-transfer": "xxscreeps StructureLink.transferEnergy returns OK when source === target. Vanilla returns ERR_INVALID_TARGET.",
-		"link-cross-owner": "xxscreeps StructureLink.transferEnergy returns OK when the target link belongs to a different player. Vanilla returns ERR_NOT_OWNER.",
-		"death-container-diversion": "xxscreeps buryCreep() applies CREEP_CORPSE_RATE directly to tombstone without checking for a same-tile container. Vanilla diverts full carried resources to the container first.",
-		"extractor-cooldown-off-by-one": "xxscreeps extractor cooldown getter uses #cooldownTime = Game.time + EXTRACTOR_COOLDOWN - 1, reporting 4 instead of vanilla's 5 after harvest.",
-		"link-intent-after-idle-tick": "xxscreeps logistics processor silently drops link.transferEnergy intents after an idle tick (a tick with no player code). The intent returns OK but the transfer never executes. Tower, creep, and other structure intents are unaffected. Root cause is in the room processor's intent dispatch for the logistics mod.",
-		"lab-unrestricted-mineral-capacity": "xxscreeps lab store.getCapacity() returns LAB_MINERAL_CAPACITY (3000) for any mineral resource type, not just the mineral the lab currently holds. Vanilla returns null for resources the lab cannot accept.",
-		"rampart-no-protection": "xxscreeps ramparts do not absorb damage for objects on their tile. Attacks hit the target directly instead of the rampart. Both tower.attack on creeps and creep.attack on structures bypass the rampart.",
-		"renew-while-spawning": "xxscreeps spawn.renewCreep returns OK while the spawn is actively spawning a creep. Vanilla returns ERR_BUSY.",
-		"lab-cooldown-no-decrement": "xxscreeps lab cooldown after runReaction/reverseReaction reports the full REACTION_TIME value (e.g. 20 for OH) instead of REACTION_TIME - 1 (19). The cooldown getter does not account for the processing tick.",
-		"lab-not-owner-precedence": "xxscreeps lab.runReaction/reverseReaction on an unowned lab returns ERR_RCL_NOT_ENOUGH (-14) instead of ERR_NOT_OWNER (-1). xxscreeps checks RCL/isActive before checking ownership.",
-		"observer-room-always-visible": "xxscreeps makes all rooms in the shard visible to all players. Vanilla only reveals rooms containing owned objects or an active observeRoom call.",
-		"observer-not-owner-precedence": "xxscreeps observer.observeRoom on an unowned observer returns ERR_RCL_NOT_ENOUGH (-14) instead of ERR_NOT_OWNER (-1). Same RCL-before-ownership check order as labs.",
-		"mineral-regen-not-implemented": "xxscreeps does not process mineral regeneration. Depleted minerals remain at mineralAmount 0 and ticksToRegeneration is always 0.",
-		"road-decay-not-implemented": "xxscreeps does not process road decay. Roads remain at initial hits indefinitely.",
-		"container-decay-not-implemented": "xxscreeps does not process container decay. Containers remain at initial hits indefinitely.",
-		"safemode-concurrent-allowed": "xxscreeps allows activateSafeMode on multiple owned controllers simultaneously. Vanilla limits safe mode to one controller at a time (ERR_BUSY).",
-		"destroy-ownership-bypass": "xxscreeps allows structure.destroy() even when the room controller is not owned by the calling player. Vanilla returns ERR_NOT_OWNER.",
-		"notifyWhenAttacked-not-implemented": "xxscreeps does not implement structure.notifyWhenAttacked(). The method does not exist on the prototype.",
-		"eventlog-attack-missing": "xxscreeps getEventLog() does not include EVENT_ATTACK entries for melee combat. Event log may be empty or missing attack-specific fields.",
-		"tough-boost-no-reduction": "xxscreeps does not apply damage reduction to boosted TOUGH body parts. Incoming damage hits at full rate (30 instead of e.g. 21 for GO at 0.7x).",
-		"boost-energy-cost-scales": "xxscreeps charges energy proportional to boosted output for repair and upgrade. Vanilla charges 1 energy per WORK part per tick regardless of boost multiplier.",
-		"route-callback-ignored": "xxscreeps Game.map.findRoute ignores the routeCallback option. Routes blocked by Infinity return are still found.",
-		"rampart-decay-not-implemented": "xxscreeps does not process rampart decay. Ramparts remain at initial hits indefinitely."
+	"expected_failures": {
+		"creep-owner-undefined": {
+			"summary": "Creep.owner is undefined (key exists but value is undefined)",
+			"tests": ["CTRL-SIGN-001", "CTRL-RESERVE-001"]
+		},
+		"extension-rcl-capacity": {
+			"summary": "Extension store.getCapacity('energy') always reports RCL 8 maximum (200)",
+			"tests": ["EXTENSION-002", "ROOM-ENERGY-002", "STORE-SINGLE-001"]
+		},
+		"describe-exits-topology": {
+			"summary": "Game.map.describeExits filters by instantiated neighbor rooms",
+			"tests": ["ROOM-FIND-003", "MAP-ROOM-001"]
+		},
+		"pathfinder-suboptimal": {
+			"summary": "PathFinder.search returns suboptimal path on open plains",
+			"tests": ["PATHFINDER-001"]
+		},
+		"tombstone-corpse-rate": {
+			"summary": "Tombstone stores always reduced by CREEP_CORPSE_RATE, no body energy reclaim on suicide",
+			"tests": ["CREEP-DEATH-008", "CREEP-DEATH-009"]
+		},
+		"link-self-transfer": {
+			"summary": "StructureLink.transferEnergy allows self-transfer (returns OK)",
+			"tests": ["LINK-004"]
+		},
+		"link-cross-owner": {
+			"summary": "StructureLink.transferEnergy allows transfer to another player's link",
+			"tests": ["LINK-006"]
+		},
+		"death-container-diversion": {
+			"summary": "Creep death does not divert resources into same-tile container",
+			"tests": ["CREEP-DEATH-003"]
+		},
+		"extractor-cooldown-off-by-one": {
+			"summary": "Extractor cooldown reports EXTRACTOR_COOLDOWN - 1 after harvest",
+			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-001"]
+		},
+		"link-intent-after-idle-tick": {
+			"summary": "link.transferEnergy intents silently dropped after idle tick",
+			"tests": ["LINK-002"]
+		},
+		"lab-unrestricted-mineral-capacity": {
+			"summary": "Lab store.getCapacity returns LAB_MINERAL_CAPACITY for any mineral type",
+			"tests": ["STORE-RESTRICTED-004"]
+		},
+		"rampart-no-protection": {
+			"summary": "Ramparts do not absorb damage for objects on their tile",
+			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002"]
+		},
+		"renew-while-spawning": {
+			"summary": "Spawn.renewCreep returns OK while spawn is actively spawning",
+			"tests": ["RENEW-CREEP-006"]
+		},
+		"lab-cooldown-no-decrement": {
+			"summary": "Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1",
+			"tests": ["LAB-RUN-004", "LAB-REVERSE-004"]
+		},
+		"lab-not-owner-precedence": {
+			"summary": "Lab on unowned lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
+			"tests": ["LAB-RUN-012", "LAB-REVERSE-012"]
+		},
+		"observer-room-always-visible": {
+			"summary": "All rooms visible to all players regardless of observer usage",
+			"tests": ["OBSERVER-001"]
+		},
+		"observer-not-owner-precedence": {
+			"summary": "Observer on unowned observer returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
+			"tests": ["OBSERVER-006"]
+		},
+		"mineral-regen-not-implemented": {
+			"summary": "Mineral regeneration not processed; depleted minerals stay at 0",
+			"tests": ["MINERAL-REGEN-002", "MINERAL-REGEN-005"]
+		},
+		"road-decay-not-implemented": {
+			"summary": "Road decay not processed; roads keep initial hits indefinitely",
+			"tests": ["ROAD-DECAY-001", "ROAD-DECAY-002", "ROAD-DECAY-003"]
+		},
+		"container-decay-not-implemented": {
+			"summary": "Container decay not processed; containers keep initial hits indefinitely",
+			"tests": ["CONTAINER-001", "CONTAINER-002"]
+		},
+		"safemode-concurrent-allowed": {
+			"summary": "Allows activateSafeMode on multiple owned controllers simultaneously",
+			"tests": ["CTRL-SAFEMODE-007"]
+		},
+		"destroy-ownership-bypass": {
+			"summary": "structure.destroy() allowed when room controller not owned by player",
+			"tests": ["STRUCTURE-API-001"]
+		},
+		"notifyWhenAttacked-not-implemented": {
+			"summary": "structure.notifyWhenAttacked() not implemented",
+			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006"]
+		},
+		"eventlog-attack-missing": {
+			"summary": "getEventLog() missing EVENT_ATTACK entries for combat",
+			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002"]
+		},
+		"tough-boost-no-reduction": {
+			"summary": "Boosted TOUGH parts do not reduce incoming damage",
+			"tests": ["BOOST-TOUGH-001", "BOOST-TOUGH-002"]
+		},
+		"boost-energy-cost-scales": {
+			"summary": "Energy cost scales with boost multiplier for repair/upgrade",
+			"tests": ["BOOST-BUILD-003", "BOOST-UPGRADE-003"]
+		},
+		"route-callback-ignored": {
+			"summary": "findRoute ignores routeCallback option",
+			"tests": ["MAP-ROUTE-003"]
+		},
+		"rampart-decay-not-implemented": {
+			"summary": "Rampart decay not processed; ramparts keep initial hits indefinitely",
+			"tests": ["RAMPART-DECAY-001", "RAMPART-DECAY-002"]
+		}
 	}
 }

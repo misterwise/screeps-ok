@@ -199,7 +199,7 @@ player in that same tick snapshot.
 
 ### `tick`
 
-`tick(count)` advances gameplay processing by exactly `count` ticks.
+`tick(count?)` advances gameplay processing by exactly `count` ticks (default 1).
 
 From the test side, the expected contract is:
 
@@ -207,7 +207,7 @@ From the test side, the expected contract is:
   Intents submitted during that code are processed during that tick.
 - `runPlayers()` executes multiple players against one shared state and
   advances time by exactly 1 tick.
-- `tick(count)` advances time by exactly `count` additional ticks.
+- `tick(count?)` advances time by exactly `count` additional ticks (default 1).
   `tick()` must never be a no-op.
 
 This means `runPlayer() + tick()` always advances time by exactly 2 ticks,

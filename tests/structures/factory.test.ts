@@ -3,7 +3,6 @@ import { describe, test, expect, code,
 	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_RCL_NOT_ENOUGH,
 	COMMODITIES, STRUCTURE_FACTORY, FACTORY_CAPACITY, PWR_OPERATE_FACTORY,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 import { factoryProduceCases } from '../support/matrices/factory-produce.js';
 import { factoryCommodityCases } from '../support/matrices/factory-commodity.js';
 
@@ -11,8 +10,8 @@ describe('Factory production', () => {
 	// ---- FACTORY-PRODUCE-001 (matrix): produce() consumes components and produces output ----
 	const level0Cases = factoryProduceCases.filter(c => c.requiredLevel === undefined);
 	for (const { resource, expectedAmount, expectedComponents, expectedCooldown } of level0Cases) {
-		test(`FACTORY-PRODUCE-001:${resource} produce(${resource}) consumes components and yields ${expectedAmount}`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'factory');
+		test(`FACTORY-PRODUCE-001:${resource} produce(${resource}) consumes components and yields ${expectedAmount}`, async ({ shard }) => {
+			shard.requires('factory');
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -56,8 +55,8 @@ describe('Factory production', () => {
 	}
 
 	// ---- FACTORY-PRODUCE-002: successful produce returns OK and sets cooldown ----
-	test('FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -83,8 +82,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-003: ERR_NOT_ENOUGH_RESOURCES ----
-	test('FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -104,8 +103,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-004: ERR_FULL ----
-	test('FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -129,8 +128,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-005: ERR_BUSY when leveled commodity without PWR_OPERATE_FACTORY ----
-	test('FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -152,8 +151,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-006: ERR_TIRED while on cooldown ----
-	test('FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -180,8 +179,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-007: ERR_RCL_NOT_ENOUGH when inactive ----
-	test('FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL', async ({ shard }) => {
+		shard.requires('factory');
 		// Factory requires RCL 7 — place at RCL 6 where isActive() is false.
 		await shard.createShard({
 			players: ['p1'],
@@ -201,8 +200,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-008: ERR_INVALID_ARGS for non-commodity ----
-	test('FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -222,8 +221,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-009: ERR_INVALID_TARGET for wrong factory level ----
-	test('FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -254,8 +253,8 @@ describe('Factory production', () => {
 	});
 
 	// ---- FACTORY-PRODUCE-010: ERR_NOT_OWNER for unowned factory ----
-	test('FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -282,8 +281,8 @@ describe('Factory production', () => {
 describe('Factory commodity chains', () => {
 	// ---- FACTORY-COMMODITY-001 (matrix): level requirements match COMMODITIES table ----
 	for (const { resource, requiredLevel } of factoryCommodityCases) {
-		test(`FACTORY-COMMODITY-001:${resource} COMMODITIES[${resource}].level is ${requiredLevel ?? 'undefined'}`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'factory');
+		test(`FACTORY-COMMODITY-001:${resource} COMMODITIES[${resource}].level is ${requiredLevel ?? 'undefined'}`, async ({ shard }) => {
+			shard.requires('factory');
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -302,8 +301,8 @@ describe('Factory commodity chains', () => {
 	}
 
 	// ---- FACTORY-COMMODITY-002: level 0 factory can only produce level 0 commodities ----
-	test('FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
+	test('FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities', async ({ shard }) => {
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
@@ -323,9 +322,9 @@ describe('Factory commodity chains', () => {
 	});
 
 	// ---- FACTORY-COMMODITY-003: PWR_OPERATE_FACTORY at level N allows level N commodities ----
-	test('FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'factory');
-		requireCapability(shard, skip, 'powerCreeps');
+	test('FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production', async ({ shard }) => {
+		shard.requires('factory');
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],

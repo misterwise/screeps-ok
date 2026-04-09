@@ -3,7 +3,6 @@ import { describe, test, expect, code,
 	WORK, CARRY, MOVE, body,
 	STRUCTURE_EXTRACTOR, HARVEST_MINERAL_POWER, EXTRACTOR_COOLDOWN,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('creep.harvest(mineral)', () => {
 	test('HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part', async ({ shard }) => {
@@ -54,7 +53,7 @@ describe('creep.harvest(mineral)', () => {
 		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
 	});
 
-	knownParityGap('extractor-cooldown-off-by-one')('HARVEST-MINERAL-003 extractor enters cooldown after harvest', async ({ shard }) => {
+	test('HARVEST-MINERAL-003 extractor enters cooldown after harvest', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 6);
 		const extractorId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',

@@ -1,9 +1,8 @@
 import { describe, test, expect, code } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Deposit lifecycle', () => {
-	test('DEPOSIT-001 deposit exposes the canonical depositType', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'deposit');
+	test('DEPOSIT-001 deposit exposes the canonical depositType', async ({ shard }) => {
+		shard.requires('deposit');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -22,8 +21,8 @@ describe('Deposit lifecycle', () => {
 		expect(result).toBe('silicon');
 	});
 
-	test('DEPOSIT-002 deposit lastCooldown matches the exhaust formula', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'deposit');
+	test('DEPOSIT-002 deposit lastCooldown matches the exhaust formula', async ({ shard }) => {
+		shard.requires('deposit');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -43,8 +42,8 @@ describe('Deposit lifecycle', () => {
 		expect(cd).toBe(0);
 	});
 
-	test('DEPOSIT-003 deposit cooldown returns remaining wait ticks', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'deposit');
+	test('DEPOSIT-003 deposit cooldown returns remaining wait ticks', async ({ shard }) => {
+		shard.requires('deposit');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -64,8 +63,8 @@ describe('Deposit lifecycle', () => {
 		expect(cd).toBe(0);
 	});
 
-	test('DEPOSIT-004 deposit ticksToDecay is defined after first harvest', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'deposit');
+	test('DEPOSIT-004 deposit ticksToDecay is defined after first harvest', async ({ shard }) => {
+		shard.requires('deposit');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -84,8 +83,8 @@ describe('Deposit lifecycle', () => {
 		expect(ttd === null || ttd === undefined || ttd === 'missing' || typeof ttd === 'number').toBe(true);
 	});
 
-	test('DEPOSIT-005 repeated harvests increase lastCooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'deposit');
+	test('DEPOSIT-005 repeated harvests increase lastCooldown', async ({ shard }) => {
+		shard.requires('deposit');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

@@ -2,13 +2,12 @@ import { describe, test, expect,
 	STRUCTURE_CONTAINER, CONTAINER_DECAY, CONTAINER_HITS,
 	FIND_DROPPED_RESOURCES, RESOURCE_ENERGY, MOVE,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 import { containerDecayCases } from '../support/matrices/container-decay.js';
 
 describe('Container decay', () => {
 	// ---- CONTAINER-001: decay amount and interval by room ownership ----
 	for (const { label, owned, expectedDecayAmount, expectedDecayInterval } of containerDecayCases) {
-		knownParityGap('container-decay-not-implemented')(`CONTAINER-001:${label} container in ${label} decays by ${expectedDecayAmount} every ${expectedDecayInterval} ticks`, async ({ shard }) => {
+		test(`CONTAINER-001:${label} container in ${label} decays by ${expectedDecayAmount} every ${expectedDecayInterval} ticks`, async ({ shard }) => {
 			if (owned) {
 				await shard.ownedRoom('p1');
 			} else {
@@ -45,7 +44,7 @@ describe('Container decay', () => {
 	}
 
 	// ---- CONTAINER-002: destroyed container spills contents ----
-	knownParityGap('container-decay-not-implemented')('CONTAINER-002 when a container is destroyed its contents become dropped resources', async ({ shard }) => {
+	test('CONTAINER-002 when a container is destroyed its contents become dropped resources', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Place container with minimal hits and some energy, decay imminent.

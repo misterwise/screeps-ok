@@ -5,16 +5,14 @@ import { describe, test, expect, code,
 	LAB_REACTION_AMOUNT, LAB_MINERAL_CAPACITY, REACTION_TIME, REACTIONS,
 	POWER_INFO, PWR_OPERATE_LAB,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 import { labRunCases } from '../support/matrices/lab-run.js';
 import { labReverseCases } from '../support/matrices/lab-reverse.js';
 
 describe('Lab runReaction', () => {
 	// ---- Matrix: product mapping (LAB-RUN-001) ----
 	for (const { reagent1, reagent2, expectedProduct } of labRunCases) {
-		test(`LAB-RUN-001:${reagent1}+${reagent2} runReaction produces ${expectedProduct}`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`LAB-RUN-001:${reagent1}+${reagent2} runReaction produces ${expectedProduct}`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			// Calling lab — receives product. Must be empty or hold the product type.
@@ -47,8 +45,8 @@ describe('Lab runReaction', () => {
 	}
 
 	// ---- LAB-RUN-002: consumes LAB_REACTION_AMOUNT from both reagent labs ----
-	test('LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -79,8 +77,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-004: returns OK and sets cooldown ----
-	knownParityGap('lab-cooldown-no-decrement')('LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -109,8 +107,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-005: ERR_NOT_IN_RANGE ----
-	test('LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -136,8 +134,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-006: ERR_NOT_ENOUGH_RESOURCES ----
-	test('LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -162,8 +160,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-007: ERR_FULL ----
-	test('LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Calling lab already full of OH.
@@ -188,8 +186,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-008: ERR_INVALID_ARGS ----
-	test('LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -214,8 +212,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-009: ERR_INVALID_TARGET ----
-	test('LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -240,8 +238,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-010: ERR_TIRED ----
-	test('LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -274,8 +272,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-011: ERR_RCL_NOT_ENOUGH ----
-	test('LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard }) => {
+		shard.requires('chemistry');
 		// Lab requires RCL 6. Place at RCL 5 — lab is inactive.
 		await shard.ownedRoom('p1', 'W1N1', 5);
 
@@ -300,9 +298,9 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-003: PWR_OPERATE_LAB boosts reaction amount ----
-	test('LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];
@@ -349,8 +347,8 @@ describe('Lab runReaction', () => {
 	});
 
 	// ---- LAB-RUN-012: ERR_NOT_OWNER ----
-	knownParityGap('lab-not-owner-precedence')('LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -384,8 +382,8 @@ describe('Lab runReaction', () => {
 describe('Lab reverseReaction', () => {
 	// ---- Matrix: reverse mapping (LAB-REVERSE-001) ----
 	for (const { compound, expectedReagent1, expectedReagent2 } of labReverseCases) {
-		test(`LAB-REVERSE-001:${compound} reverseReaction splits into ${expectedReagent1}+${expectedReagent2}`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`LAB-REVERSE-001:${compound} reverseReaction splits into ${expectedReagent1}+${expectedReagent2}`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			// Calling lab holds the compound to decompose.
@@ -420,8 +418,8 @@ describe('Lab reverseReaction', () => {
 	}
 
 	// ---- LAB-REVERSE-002: consumes compound, adds to output labs ----
-	test('LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const startAmount = 100;
@@ -461,8 +459,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-004: sets cooldown ----
-	knownParityGap('lab-cooldown-no-decrement')('LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -491,8 +489,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-005: ERR_NOT_IN_RANGE ----
-	test('LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -517,8 +515,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-006: ERR_NOT_ENOUGH_RESOURCES ----
-	test('LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Lab has less than LAB_REACTION_AMOUNT of OH.
@@ -543,8 +541,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-007: ERR_FULL ----
-	test('LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -569,8 +567,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-008: ERR_INVALID_ARGS ----
-	test('LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Base mineral H is not a compound — has no reverse reaction.
@@ -595,8 +593,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-009: ERR_INVALID_TARGET ----
-	test('LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -620,8 +618,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-010: ERR_TIRED ----
-	test('LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -654,8 +652,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-011: ERR_RCL_NOT_ENOUGH ----
-	test('LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard }) => {
+		shard.requires('chemistry');
 		// Lab requires RCL 6. Place at RCL 5 — lab is inactive.
 		await shard.ownedRoom('p1', 'W1N1', 5);
 
@@ -680,9 +678,9 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-003: PWR_OPERATE_LAB boosts reverse reaction amount ----
-	test('LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];
@@ -733,8 +731,8 @@ describe('Lab reverseReaction', () => {
 	});
 
 	// ---- LAB-REVERSE-012: ERR_NOT_OWNER ----
-	knownParityGap('lab-not-owner-precedence')('LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

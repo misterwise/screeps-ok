@@ -4,12 +4,11 @@ import { describe, test, expect, code,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
 	NUKE_LAND_TIME,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Nuke flight', () => {
 	// ---- NUKE-FLIGHT-001: launching creates a Nuke object in the target room ----
-	test('NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand', async ({ shard }) => {
+		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -50,8 +49,8 @@ describe('Nuke flight', () => {
 	});
 
 	// ---- NUKE-FLIGHT-002: timeToLand decreases by 1 each tick ----
-	test('NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick', async ({ shard }) => {
+		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -90,8 +89,8 @@ describe('Nuke flight', () => {
 	});
 
 	// ---- NUKE-FLIGHT-003: in-flight nuke is visible in target room ----
-	test('NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room', async ({ shard }) => {
+		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

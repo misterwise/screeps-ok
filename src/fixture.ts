@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { test as base, describe, expect } from 'vitest';
-import type { ScreepsOkAdapter, PlayerReturnValue } from './adapter.js';
+import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName } from './adapter.js';
 import type { PlayerCode } from './code.js';
 import { RunPlayerError } from './errors.js';
 import type {
@@ -113,9 +113,17 @@ export interface ShardFixture extends ScreepsOkAdapter {
 		playerCode: PlayerCode,
 		expectedKind: 'syntax' | 'runtime' | 'serialization',
 	): Promise<RunPlayerError>;
+
+	/**
+	 * Skip the current test if the adapter does not support the given capability.
+	 * Replaces the manual `requireCapability(shard, skip, 'name')` pattern.
+	 *
+	 *   shard.requires('chemistry');
+	 */
+	requires(capability: CapabilityName, reason?: string): void;
 }
 
-function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
+function wrapAdapter(adapter: ScreepsOkAdapter, skip: (note?: string) => never): ShardFixture {
 	const shard = adapter as ShardFixture;
 	const runPlayers = adapter.runPlayers.bind(adapter);
 
@@ -150,6 +158,11 @@ function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
 
 	shard.runPlayers = async (codesByUser) => runPlayers(codesByUser);
 
+	shard.requires = (capability: CapabilityName, reason?: string): void => {
+		if (adapter.capabilities[capability]) return;
+		skip(reason ?? `adapter capability '${capability}' is disabled`);
+	};
+
 	shard.expectRunPlayerError = async (
 		userId: string,
 		playerCode: PlayerCode,
@@ -180,11 +193,10 @@ function wrapAdapter(adapter: ScreepsOkAdapter): ShardFixture {
 }
 
 export const test = base.extend<{ shard: ShardFixture }>({
-	// eslint-disable-next-line no-empty-pattern
-	shard: async ({}, use) => {
+	shard: async ({ skip }, use) => {
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
-		await use(wrapAdapter(adapter));
+		await use(wrapAdapter(adapter, skip));
 		await adapter.teardown();
 	},
 });

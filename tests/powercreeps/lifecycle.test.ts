@@ -3,11 +3,10 @@ import { describe, test, expect, code,
 	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
 	MOVE, CARRY,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Power creep lifecycle', () => {
-	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -20,8 +19,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -35,8 +34,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -64,8 +63,8 @@ describe('Power creep lifecycle', () => {
 		expect(ttl2).toBe(ttl1! - 1);
 	});
 
-	test('POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -85,8 +84,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(ERR_BUSY);
 	});
 
-	test('POWERCREEP-MOVE-001 power creep move generates no fatigue', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-MOVE-001 power creep move generates no fatigue', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -119,8 +118,8 @@ describe('Power creep lifecycle', () => {
 		expect(after.y).toBe(before.y - 1);
 	});
 
-	test('POWERCREEP-ACTION-003 power creeps do not expose body-part action methods', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-ACTION-003 power creeps do not expose body-part action methods', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -152,8 +151,8 @@ describe('Power creep lifecycle', () => {
 		expect(result.hasDismantle).toBe(false);
 	});
 
-	test('POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -181,8 +180,8 @@ describe('Power creep lifecycle', () => {
 		expect(enabled).toBe(true);
 	});
 
-	test('POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -204,8 +203,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -242,8 +241,8 @@ describe('Power creep lifecycle', () => {
 		expect(result!.ttl).toBeGreaterThan(0);
 	});
 
-	test('POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -263,8 +262,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -289,8 +288,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe('not-visible');
 	});
 
-	test('POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -317,8 +316,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -339,8 +338,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('POWERCREEP-UPGRADE-001 upgrade increases power level and stats', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-UPGRADE-001 upgrade increases power level and stats', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -360,8 +359,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -380,8 +379,8 @@ describe('Power creep lifecycle', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('POWERCREEP-MOVE-002 power creep move onto a road triggers road wear', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-MOVE-002 power creep move onto a road triggers road wear', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -423,8 +422,8 @@ describe('Power creep lifecycle', () => {
 });
 
 describe('Rampart power effects', () => {
-	test('RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -451,8 +450,8 @@ describe('Rampart power effects', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

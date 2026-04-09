@@ -3,13 +3,11 @@ import { describe, test, expect,
 	TERRAIN_PLAIN, TERRAIN_SWAMP, TERRAIN_WALL,
 	CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 import { roadDecayCases } from '../support/matrices/road-decay.js';
 
 describe('Road decay', () => {
 	// ---- ROAD-DECAY-002: scheduled decay interval ----
-	knownParityGap('road-decay-not-implemented')('ROAD-DECAY-002 road ticksToDecay decreases each tick and decay fires on schedule', async ({ shard }) => {
+	test('ROAD-DECAY-002 road ticksToDecay decreases each tick and decay fires on schedule', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Place road with decay due in 5 ticks.
 		const id = await shard.placeStructure('W1N1', {
@@ -45,9 +43,9 @@ describe('Road decay', () => {
 	};
 
 	for (const { label, terrain, expectedDecayAmount } of roadDecayCases) {
-		knownParityGap('road-decay-not-implemented')(`ROAD-DECAY-001:${label} road on ${label} terrain decays by ${expectedDecayAmount} per interval`, async ({ shard, skip }) => {
+		test(`ROAD-DECAY-001:${label} road on ${label} terrain decays by ${expectedDecayAmount} per interval`, async ({ shard }) => {
 			if (terrain !== TERRAIN_PLAIN) {
-				requireCapability(shard, skip, 'terrain', 'custom terrain required for swamp/wall road decay');
+				shard.requires('terrain', 'custom terrain required for swamp/wall road decay');
 			}
 
 			if (terrain === TERRAIN_PLAIN) {
@@ -86,7 +84,7 @@ describe('Road decay', () => {
 	}
 
 	// ---- ROAD-DECAY-003: road removed when hits reach 0 ----
-	knownParityGap('road-decay-not-implemented')('ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below', async ({ shard }) => {
+	test('ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Place road with only ROAD_DECAY_AMOUNT hits left and decay imminent.
 		const id = await shard.placeStructure('W1N1', {

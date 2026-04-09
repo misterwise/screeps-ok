@@ -6,7 +6,6 @@ import { describe, test, expect, code,
 	CREEP_SPAWN_TIME, CREEP_LIFE_TIME,
 } from '../../src/index.js';
 import { creepDeathResourceCases } from '../support/matrices/creep-death-sources.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('creep.suicide()', () => {
 	test('CREEP-SUICIDE-001 destroys the creep', async ({ shard }) => {
@@ -107,7 +106,7 @@ describe('creep.suicide()', () => {
 		expect(suicideRc).toBe(ERR_BUSY);
 	});
 
-	knownParityGap('tombstone-corpse-rate')('suicide at high remaining TTL also reclaims body energy into the tombstone', async ({ shard }) => {
+	test('CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -131,7 +130,7 @@ describe('creep.suicide()', () => {
 	});
 
 	for (const { label, creepName, ticksToLive, trigger } of creepDeathResourceCases) {
-		knownParityGap('tombstone-corpse-rate')(`CREEP-DEATH-008 [${label}] preserves carried resources in the tombstone`, async ({ shard }) => {
+		test(`CREEP-DEATH-008 [${label}] preserves carried resources in the tombstone`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.placeCreep('W1N1', {
 				pos: [25, 25], owner: 'p1',

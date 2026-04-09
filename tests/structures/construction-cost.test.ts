@@ -1,7 +1,6 @@
 import { describe, test, expect,
 	CONSTRUCTION_COST,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 import { constructionCostCases } from '../support/matrices/construction-cost.js';
 
 // Capability required to place each structure type as a construction site.
@@ -18,9 +17,9 @@ const siteCap: Record<string, string | undefined> = {
 
 describe('Construction costs', () => {
 	for (const { structureType, expectedCost } of constructionCostCases) {
-		test(`CONSTRUCTION-COST-001:${structureType} costs ${expectedCost}`, async ({ shard, skip }) => {
+		test(`CONSTRUCTION-COST-001:${structureType} costs ${expectedCost}`, async ({ shard }) => {
 			const cap = siteCap[structureType];
-			if (cap) requireCapability(shard, skip, cap as any);
+			if (cap) shard.requires(cap as any);
 
 			await shard.ownedRoom('p1', 'W1N1', 8);
 			const siteId = await shard.placeSite('W1N1', {

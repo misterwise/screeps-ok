@@ -6,10 +6,9 @@ import { describe, test, expect, code,
 	STRUCTURE_TOWER, TOWER_ENERGY_COST,
 	TOWER_POWER_HEAL, TOWER_OPTIMAL_RANGE,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('room.getEventLog()', () => {
-	knownParityGap('eventlog-attack-missing')('ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array', async ({ shard }) => {
+	test('ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -74,7 +73,7 @@ describe('room.getEventLog()', () => {
 		expect(parsed.length).toBeGreaterThan(0);
 	});
 
-	knownParityGap('eventlog-attack-missing')('ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping', async ({ shard }) => {
+	test('ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

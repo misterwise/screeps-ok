@@ -134,6 +134,8 @@ export interface AdapterCapabilities {
 	terrain: boolean;
 }
 
+export type CapabilityName = keyof AdapterCapabilities;
+
 // ── Return value constraints ─────────────────────────────────
 
 export type PlayerReturnValue =

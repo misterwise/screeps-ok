@@ -5,11 +5,10 @@ import { describe, test, expect, code,
 	LAB_BOOST_MINERAL, LAB_BOOST_ENERGY, LAB_MINERAL_CAPACITY, LAB_ENERGY_CAPACITY,
 	ATTACK_POWER, HEAL_POWER,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Lab boostCreep', () => {
-	test('BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// UH boosts ATTACK parts (attack mechanic).
@@ -36,8 +35,8 @@ describe('Lab boostCreep', () => {
 		expect(attackPart!.boost).toBe('UH');
 	});
 
-	test('BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const startMineral = LAB_BOOST_MINERAL * 2;
@@ -65,8 +64,8 @@ describe('Lab boostCreep', () => {
 		expect(lab.store.energy ?? 0).toBe(0);
 	});
 
-	test('BOOST-CREEP-003 boostCreep with bodyPartsCount limits the number of parts boosted', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-003 boostCreep with bodyPartsCount limits the number of parts boosted', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -96,8 +95,8 @@ describe('Lab boostCreep', () => {
 		expect(lab.store.UH).toBe(LAB_BOOST_MINERAL * 2);
 	});
 
-	test('BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -118,8 +117,8 @@ describe('Lab boostCreep', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Lab has energy but not enough mineral.
@@ -141,8 +140,8 @@ describe('Lab boostCreep', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
-	test('BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// UH boosts ATTACK, but creep has only MOVE and CARRY — no matching parts.
@@ -164,8 +163,8 @@ describe('Lab boostCreep', () => {
 		expect(rc).toBe(ERR_NOT_FOUND);
 	});
 
-	test('BOOST-CREEP-007 boosted ATTACK part deals increased damage', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-007 boosted ATTACK part deals increased damage', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// UH provides 2x attack multiplier.
@@ -208,8 +207,8 @@ describe('Lab boostCreep', () => {
 		expect(hpBefore - targetAfter.hits).toBe(ATTACK_POWER * 2);
 	});
 
-	test('BOOST-CREEP-008 boosted HEAL part heals increased HP', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CREEP-008 boosted HEAL part heals increased HP', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// LO provides 2x heal multiplier.

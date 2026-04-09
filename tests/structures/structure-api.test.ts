@@ -4,10 +4,9 @@ import { describe, test, expect, code,
 	FIND_STRUCTURES, FIND_RUINS,
 	STRUCTURE_RAMPART, STRUCTURE_TOWER,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('structure.destroy()', () => {
-	knownParityGap('destroy-ownership-bypass')('STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player', async ({ shard }) => {
+	test('STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -84,7 +83,7 @@ describe('structure.destroy()', () => {
 });
 
 describe('structure.notifyWhenAttacked()', () => {
-	knownParityGap('notifyWhenAttacked-not-implemented')('STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure', async ({ shard }) => {
+	test('STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -109,7 +108,7 @@ describe('structure.notifyWhenAttacked()', () => {
 		expect(rc).toBe(ERR_NOT_OWNER);
 	});
 
-	knownParityGap('notifyWhenAttacked-not-implemented')('STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean', async ({ shard }) => {
+	test('STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -123,7 +122,7 @@ describe('structure.notifyWhenAttacked()', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	knownParityGap('notifyWhenAttacked-not-implemented')('STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument', async ({ shard }) => {
+	test('STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',

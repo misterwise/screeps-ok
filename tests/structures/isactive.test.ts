@@ -5,7 +5,6 @@ import { describe, test, expect, code,
 	STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_CONTAINER,
 	CONTROLLER_STRUCTURES,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 // Minimum RCL required for each structure type (from CONTROLLER_STRUCTURES).
 // Tests place the structure at rcl - 1 to verify isActive() === false,
@@ -23,8 +22,8 @@ const isActiveCases: readonly { structureType: string; minRcl: number; label: st
 
 describe('Structure isActive()', () => {
 	for (const { structureType, minRcl, label, cap } of isActiveCases) {
-		test(`CTRL-STRUCTLIMIT-002:${label} ${label} reports isActive() === false below required RCL`, async ({ shard, skip }) => {
-			if (cap) requireCapability(shard, skip, cap as any);
+		test(`CTRL-STRUCTLIMIT-002:${label} ${label} reports isActive() === false below required RCL`, async ({ shard }) => {
+			if (cap) shard.requires(cap as any);
 			// Place the structure at one RCL below the minimum.
 			const belowRcl = minRcl - 1;
 			await shard.ownedRoom('p1', 'W1N1', belowRcl);
@@ -39,8 +38,8 @@ describe('Structure isActive()', () => {
 			expect(active).toBe(false);
 		});
 
-		test(`CTRL-STRUCTLIMIT-002:${label} ${label} reports isActive() === true at required RCL`, async ({ shard, skip }) => {
-			if (cap) requireCapability(shard, skip, cap as any);
+		test(`CTRL-STRUCTLIMIT-002:${label} ${label} reports isActive() === true at required RCL`, async ({ shard }) => {
+			if (cap) shard.requires(cap as any);
 			await shard.ownedRoom('p1', 'W1N1', minRcl);
 			const id = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType, owner: 'p1',

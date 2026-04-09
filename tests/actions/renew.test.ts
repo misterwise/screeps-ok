@@ -4,7 +4,6 @@ import { describe, test, expect, code,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
 	STRUCTURE_SPAWN, CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, SPAWN_RENEW_RATIO,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('Spawn.renewCreep', () => {
 	test('RENEW-CREEP-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
@@ -145,7 +144,7 @@ describe('Spawn.renewCreep', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	knownParityGap('renew-while-spawning')('RENEW-CREEP-006 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {
+	test('RENEW-CREEP-006 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

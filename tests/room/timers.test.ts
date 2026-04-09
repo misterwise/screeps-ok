@@ -4,11 +4,10 @@ import { describe, test, expect, code,
 	LAB_REACTION_AMOUNT, REACTION_TIME,
 	SAFE_MODE_DURATION,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Timer gating', () => {
-	test('TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Set up three labs for H + O -> OH reaction.

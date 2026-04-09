@@ -6,11 +6,10 @@ import { describe, test, expect, code,
 	LAB_UNBOOST_ENERGY, LAB_UNBOOST_MINERAL,
 	FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('lab.unboostCreep()', () => {
-	test('UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// Set up a lab with UH and boost a creep first.
@@ -45,8 +44,8 @@ describe('lab.unboostCreep()', () => {
 		expect(unboosted.body.every(p => !p.boost)).toBe(true);
 	});
 
-	test('UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {
@@ -65,8 +64,8 @@ describe('lab.unboostCreep()', () => {
 		expect(rc).toBe(ERR_NOT_FOUND);
 	});
 
-	test('UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {

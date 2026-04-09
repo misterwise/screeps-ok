@@ -3,10 +3,9 @@ import { describe, test, expect, code,
 	FIND_EXIT_TOP, FIND_EXIT_RIGHT, FIND_EXIT_BOTTOM, FIND_EXIT_LEFT, FIND_EXIT,
 	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('Room.find exit constants', () => {
-	knownParityGap('describe-exits-topology')('ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side', async ({ shard }) => {
+	test('ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 

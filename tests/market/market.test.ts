@@ -2,11 +2,10 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_INVALID_ARGS,
 	STRUCTURE_TERMINAL,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Market orders', () => {
-	test('MARKET-ORDER-001 createOrder creates an order with the requested parameters', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-001 createOrder creates an order with the requested parameters', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -48,8 +47,8 @@ describe('Market orders', () => {
 		expect(order!.roomName).toBe('W1N1');
 	});
 
-	test('MARKET-ORDER-002 createOrder fails with appropriate error codes', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-002 createOrder fails with appropriate error codes', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -70,8 +69,8 @@ describe('Market orders', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('MARKET-ORDER-003 cancelOrder returns OK and removes the order', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-003 cancelOrder returns OK and removes the order', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -111,8 +110,8 @@ describe('Market orders', () => {
 		expect(remaining).toBe(0);
 	});
 
-	test('MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for non-existent order', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for non-existent order', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -125,8 +124,8 @@ describe('Market orders', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	test('MARKET-ORDER-005 changeOrderPrice updates the order price', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-005 changeOrderPrice updates the order price', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -162,8 +161,8 @@ describe('Market orders', () => {
 		expect(price).toBe(2.5);
 	});
 
-	test('MARKET-ORDER-006 changeOrderPrice fails with appropriate error codes', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-006 changeOrderPrice fails with appropriate error codes', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -177,8 +176,8 @@ describe('Market orders', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('MARKET-ORDER-007 extendOrder increases the remaining amount', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-007 extendOrder increases the remaining amount', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -212,8 +211,8 @@ describe('Market orders', () => {
 		expect(amount).toBe(800);
 	});
 
-	test('MARKET-ORDER-008 extendOrder fails with appropriate error codes', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-ORDER-008 extendOrder fails with appropriate error codes', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -228,8 +227,8 @@ describe('Market orders', () => {
 });
 
 describe('Market deal', () => {
-	test('MARKET-DEAL-001 successful deal returns OK and executes a trade', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-DEAL-001 successful deal returns OK and executes a trade', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -273,8 +272,8 @@ describe('Market deal', () => {
 		expect(result.rc).toBe(OK);
 	});
 
-	test('MARKET-DEAL-002 deal energy cost is paid by the caller terminal', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-DEAL-002 deal energy cost is paid by the caller terminal', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -327,8 +326,8 @@ describe('Market deal', () => {
 		expect(after).not.toBe(before);
 	});
 
-	test('MARKET-DEAL-003 deal fails with appropriate error codes', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-DEAL-003 deal fails with appropriate error codes', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -344,8 +343,8 @@ describe('Market deal', () => {
 });
 
 describe('Market queries', () => {
-	test('MARKET-QUERY-001 calcTransactionCost returns the formula-based cost', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-QUERY-001 calcTransactionCost returns the formula-based cost', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -377,8 +376,8 @@ describe('Market queries', () => {
 		expect(result.crossRoomNonNeg).toBe(true);
 	});
 
-	test('MARKET-QUERY-002 getAllOrders returns matching orders', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-QUERY-002 getAllOrders returns matching orders', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -409,8 +408,8 @@ describe('Market queries', () => {
 		expect(result).toBeGreaterThan(0);
 	});
 
-	test('MARKET-QUERY-003 getOrderById returns the order or null', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-QUERY-003 getOrderById returns the order or null', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -442,8 +441,8 @@ describe('Market queries', () => {
 		expect(result.missing).toBeNull();
 	});
 
-	test('MARKET-QUERY-004 getHistory returns market history', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-QUERY-004 getHistory returns market history', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
@@ -461,8 +460,8 @@ describe('Market queries', () => {
 		expect(['array', 'object']).toContain(result);
 	});
 
-	test('MARKET-QUERY-005 order prices use public credit units not internal milli-credits', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('MARKET-QUERY-005 order prices use public credit units not internal milli-credits', async ({ shard }) => {
+		shard.requires('market');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],

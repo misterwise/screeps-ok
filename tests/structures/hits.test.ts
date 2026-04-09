@@ -6,7 +6,6 @@ import { describe, test, expect, code,
 	FIND_RUINS,
 	ATTACK_POWER,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 import { structureHitsCases } from '../support/matrices/structure-hits.js';
 
 // Minimum RCL to place each structure type.
@@ -27,9 +26,9 @@ const requiredCap: Record<string, string | undefined> = {
 
 describe('Structure hits', () => {
 	for (const { structureType, expectedHits } of structureHitsCases) {
-		test(`STRUCTURE-HITS-001:${structureType} initializes with ${expectedHits} hits`, async ({ shard, skip }) => {
+		test(`STRUCTURE-HITS-001:${structureType} initializes with ${expectedHits} hits`, async ({ shard }) => {
 			const cap = requiredCap[structureType];
-			if (cap) requireCapability(shard, skip, cap as any);
+			if (cap) shard.requires(cap as any);
 
 			const rcl = minRcl[structureType] ?? 1;
 			await shard.ownedRoom('p1', 'W1N1', rcl);

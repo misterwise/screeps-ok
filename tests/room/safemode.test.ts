@@ -4,7 +4,6 @@ import { describe, test, expect, code,
 	STRUCTURE_RAMPART,
 	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 import { safeModeBlockedActionCases } from '../support/matrices/ctrl-safemode-blocked.js';
 
@@ -85,8 +84,7 @@ describe('Safe mode mechanics', () => {
 		expect(rc2).toBe(ERR_TIRED);
 	});
 
-	// ---- CTRL-SAFEMODE-005b: ERR_BUSY when another owned controller has active safe mode ----
-	knownParityGap('safemode-concurrent-allowed')('CTRL-SAFEMODE-005b activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode', async ({ shard }) => {
+	test('CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

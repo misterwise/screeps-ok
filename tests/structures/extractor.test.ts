@@ -1,5 +1,4 @@
 import { describe, test, expect, code, OK, ERR_NOT_FOUND, ERR_NOT_OWNER, ERR_RCL_NOT_ENOUGH, ERR_TIRED, WORK, CARRY, MOVE, STRUCTURE_EXTRACTOR, EXTRACTOR_COOLDOWN, HARVEST_MINERAL_POWER } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureExtractor', () => {
 	test('EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount', async ({ shard }) => {
@@ -28,7 +27,7 @@ describe('StructureExtractor', () => {
 		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
 	});
 
-	knownParityGap('extractor-cooldown-off-by-one')('EXTRACTOR-001 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN', async ({ shard }) => {
+	test('EXTRACTOR-001 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],

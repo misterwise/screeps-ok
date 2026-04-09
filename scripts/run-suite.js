@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { readFileSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -132,6 +133,7 @@ export function runSuite(options = {}) {
 
 	const vitestBin = require.resolve('vitest/vitest.mjs');
 	const commandArgs = isWatch ? vitestArgs : ['run', ...vitestArgs];
+	const verdictPath = path.join(packageRoot, '.parity-verdict.json');
 	const result = spawnSync(process.execPath, [vitestBin, ...commandArgs], {
 		cwd: packageRoot,
 		env: {
@@ -139,11 +141,28 @@ export function runSuite(options = {}) {
 			SCREEPS_OK_ADAPTER: resolved.adapterPath,
 			SCREEPS_OK_REPORT_NAME: sanitizeReportName(resolved.label),
 			SCREEPS_OK_PROJECT_ROOT: invokerCwd,
+			SCREEPS_OK_PARITY_VERDICT: verdictPath,
 		},
 		stdio,
 	});
 
-	return result.status ?? 1;
+	const exitCode = result.status ?? 1;
+
+	// If vitest failed, check whether all failures are expected parity gaps.
+	if (exitCode !== 0) {
+		try {
+			const verdict = JSON.parse(readFileSync(verdictPath, 'utf8'));
+			if (verdict.genuineFailures === 0 && verdict.unexpectedPasses === 0) {
+				try { unlinkSync(verdictPath); } catch {}
+				return 0;
+			}
+		} catch {
+			// No verdict file → reporter didn't run or no parity.json
+		}
+		try { unlinkSync(verdictPath); } catch {}
+	}
+
+	return exitCode;
 }
 
 function isBuiltInAdapter(value) {

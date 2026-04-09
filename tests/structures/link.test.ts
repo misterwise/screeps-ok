@@ -1,5 +1,4 @@
 import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureLink', () => {
 	test('LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss', async ({ shard }) => {
@@ -28,7 +27,7 @@ describe('StructureLink', () => {
 		expect(dst.store.energy).toBe(100 - Math.ceil(100 * LINK_LOSS_RATIO));
 	});
 
-	knownParityGap('link-intent-after-idle-tick')('LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance', async ({ shard }) => {
+	test('LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
@@ -97,7 +96,7 @@ describe('StructureLink', () => {
 		expect(dst.store.energy ?? 0).toBe(0);
 	});
 
-	knownParityGap('link-self-transfer')('LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself', async ({ shard }) => {
+	test('LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
@@ -133,7 +132,7 @@ describe('StructureLink', () => {
 		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
-	knownParityGap('link-cross-owner')('LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player', async ({ shard }) => {
+	test('LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

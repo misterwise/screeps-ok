@@ -6,8 +6,6 @@ import { describe, test, expect, code,
 	RAMPART_DECAY_AMOUNT, RAMPART_DECAY_TIME,
 	NUKE_DAMAGE, NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 import { rampartHitsMaxCases } from '../support/matrices/rampart-hitsmax.js';
 
 describe('StructureRampart', () => {
@@ -27,7 +25,7 @@ describe('StructureRampart', () => {
 		});
 	}
 
-	knownParityGap('rampart-no-protection')('RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep', async ({ shard }) => {
+	test('RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -63,7 +61,7 @@ describe('StructureRampart', () => {
 		expect(rampart.hits).toBe(10000000 - TOWER_POWER_ATTACK);
 	});
 
-	knownParityGap('rampart-no-protection')('RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart', async ({ shard }) => {
+	test('RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -239,7 +237,7 @@ describe('StructureRampart', () => {
 
 	// ── Rampart Decay ───────────────────────────────────────────
 
-	knownParityGap('rampart-decay-not-implemented')('RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval', async ({ shard }) => {
+	test('RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const rampartId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
@@ -257,7 +255,7 @@ describe('StructureRampart', () => {
 		expect(before.hits - after.hits).toBe(RAMPART_DECAY_AMOUNT);
 	});
 
-	knownParityGap('rampart-decay-not-implemented')('RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0', async ({ shard }) => {
+	test('RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const rampartId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
@@ -273,8 +271,8 @@ describe('StructureRampart', () => {
 
 	// ── Nuke Damage ────────────────────────────────────────────
 
-	test('RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile', async ({ shard }) => {
+		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

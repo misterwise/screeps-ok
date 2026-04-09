@@ -1,11 +1,10 @@
 import { describe, test, expect, code,
 	OK,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('Per-tick intent limits', () => {
-	test('INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table', async ({ shard }) => {
+		shard.requires('market');
 		await shard.ownedRoom('p1');
 
 		// The canonical per-tick intent limits for market actions:
@@ -32,8 +31,8 @@ describe('Per-tick intent limits', () => {
 		}
 	});
 
-	test('INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'market');
+	test('INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect', async ({ shard }) => {
+		shard.requires('market');
 		await shard.ownedRoom('p1');
 
 		// This test exercises the overflow behavior: after the per-tick cap

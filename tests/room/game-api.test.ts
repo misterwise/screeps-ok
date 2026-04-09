@@ -7,7 +7,6 @@ import {
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../support/matrices/room-find.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('room visibility', () => {
 	test('ROOM-VIS-001 visible room has a Game.rooms entry on that tick', async ({ shard }) => {
@@ -85,7 +84,7 @@ describe('room energy tracking', () => {
 		});
 	});
 
-	knownParityGap('extension-rcl-capacity')('ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions', async ({ shard }) => {
+	test('ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		await shard.placeStructure('W1N1', {
 			pos: [25, 25],

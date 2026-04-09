@@ -10,7 +10,6 @@ import { describe, test, expect, code,
 	ATTACK, MOVE, TOUGH,
 	STRUCTURE_RAMPART,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 const PI = POWER_INFO as Record<number, {
 	className: string;
@@ -25,8 +24,8 @@ const PI = POWER_INFO as Record<number, {
 describe('Operate powers', () => {
 	// POWER-OPERATE-001: effect magnitudes match POWER_INFO
 	// Verify a representative operate power's effect in-game matches POWER_INFO.
-	test('POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -62,8 +61,8 @@ describe('Operate powers', () => {
 	});
 
 	// POWER-OPERATE-002: cooldown, range, ops cost match POWER_INFO
-	test('POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -101,9 +100,9 @@ describe('Operate powers', () => {
 	});
 
 	// POWER-OPERATE-004: PWR_OPERATE_FACTORY changes production level (already tested in FACTORY-COMMODITY-003)
-	test('POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
-		requireCapability(shard, skip, 'factory');
+	test('POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -136,8 +135,8 @@ describe('Operate powers', () => {
 
 describe('Disrupt powers', () => {
 	// POWER-DISRUPT-001: effect values match POWER_INFO
-	test('POWER-DISRUPT-001 disrupt power effect values match POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-DISRUPT-001 disrupt power effect values match POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -169,8 +168,8 @@ describe('Disrupt powers', () => {
 	});
 
 	// POWER-DISRUPT-002: cooldown, range, ops match POWER_INFO
-	test('POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -209,8 +208,8 @@ describe('Disrupt powers', () => {
 });
 
 describe('Regen powers', () => {
-	test('POWER-REGEN-001 regen source effect amount matches POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-REGEN-001 regen source effect amount matches POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -242,8 +241,8 @@ describe('Regen powers', () => {
 		expect(regenEffect).toBeDefined();
 	});
 
-	test('POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -282,8 +281,8 @@ describe('Regen powers', () => {
 });
 
 describe('Tower power effects', () => {
-	test('TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -316,8 +315,8 @@ describe('Tower power effects', () => {
 		expect(opEffect!.level).toBe(1);
 	});
 
-	test('TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -365,8 +364,8 @@ describe('Tower power effects', () => {
 });
 
 describe('Source power effects', () => {
-	test('SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -401,8 +400,8 @@ describe('Source power effects', () => {
 });
 
 describe('Mineral power effects', () => {
-	test('MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -428,8 +427,8 @@ describe('Mineral power effects', () => {
 });
 
 describe('Combat powers', () => {
-	test('POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -459,8 +458,8 @@ describe('Combat powers', () => {
 		expect(result!.type).toBe('rampart');
 	});
 
-	test('POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -484,8 +483,8 @@ describe('Combat powers', () => {
 		expect(result.fortifyHasCooldown).toBe(true);
 	});
 
-	test('POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -523,8 +522,8 @@ describe('Combat powers', () => {
 });
 
 describe('Operate powers — additional', () => {
-	test('POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -555,8 +554,8 @@ describe('Operate powers — additional', () => {
 		expect(effects).toContain(PWR_OPERATE_OBSERVER);
 	});
 
-	test('POWER-OPERATE-005 usePower fails in rooms without power enabled', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-OPERATE-005 usePower fails in rooms without power enabled', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -586,8 +585,8 @@ describe('Operate powers — additional', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWER-DISRUPT-003 usePower on valid tower target succeeds', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWER-DISRUPT-003 usePower on valid tower target succeeds', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -613,8 +612,8 @@ describe('Operate powers — additional', () => {
 });
 
 describe('Source power effects — additional', () => {
-	test('SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -640,8 +639,8 @@ describe('Source power effects — additional', () => {
 });
 
 describe('Spawn power effects', () => {
-	test('SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -673,8 +672,8 @@ describe('Spawn power effects', () => {
 		expect(effects).toContain(PWR_OPERATE_SPAWN);
 	});
 
-	test('POWERCREEP-RENEW-001 renew resets ticksToLive', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-RENEW-001 renew resets ticksToLive', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -712,8 +711,8 @@ describe('Spawn power effects', () => {
 		expect(ttl).toBe(POWER_CREEP_LIFE_TIME - 1);
 	});
 
-	test('POWERCREEP-RENEW-002 renew fails for invalid target or out of range', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-RENEW-002 renew fails for invalid target or out of range', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -740,8 +739,8 @@ describe('Spawn power effects', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -761,8 +760,8 @@ describe('Spawn power effects', () => {
 		expect(rc).not.toBe(OK);
 	});
 
-	test('POWERCREEP-DEATH-001 power creep death creates a tombstone', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('POWERCREEP-DEATH-001 power creep death creates a tombstone', async ({ shard }) => {
+		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

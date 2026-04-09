@@ -7,7 +7,6 @@ import {
 	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
 	FIND_CREEPS, TERRAIN_WALL,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('StructureSpawn', () => {
 	const workerBodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
@@ -331,8 +330,8 @@ describe('StructureSpawn', () => {
 		expect(exists).toBe(true);
 	});
 
-	test('SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.ownedRoom('p1', 'W1N1', 2);
 
 		// Wall TOP [25,24] so the spawn must pick the next default: TOP_RIGHT [26,24].
@@ -360,8 +359,8 @@ describe('StructureSpawn', () => {
 		expect(c!.pos.y).toBe(24);
 	});
 
-	test('SPAWN-TIMING-004 opts.directions selects exit tile from the provided order', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-TIMING-004 opts.directions selects exit tile from the provided order', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.ownedRoom('p1', 'W1N1', 2);
 
 		const spawnId = await shard.placeStructure('W1N1', {

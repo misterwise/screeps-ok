@@ -2,7 +2,6 @@ import { describe, test, expect,
 	MINERAL_DENSITY, DENSITY_HIGH,
 } from '../../src/index.js';
 import { mineralRegenCases } from '../support/matrices/mineral-regen.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('mineral regeneration', () => {
 	test('MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0', async ({ shard }) => {
@@ -33,7 +32,7 @@ describe('mineral regeneration', () => {
 		expect(after.ticksToRegeneration).toBe(t0 - 3);
 	});
 
-	knownParityGap('mineral-regen-not-implemented')('MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount', async ({ shard }) => {
+	test('MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Place a depleted mineral that regenerates in 3 ticks.
 		const id = await shard.placeMineral('W1N1', {
@@ -55,7 +54,7 @@ describe('mineral regeneration', () => {
 		expect(after.ticksToRegeneration).toBe(0);
 	});
 
-	knownParityGap('mineral-regen-not-implemented')('MINERAL-REGEN-005 mineral type remains the same after regeneration', async ({ shard }) => {
+	test('MINERAL-REGEN-005 mineral type remains the same after regeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
 			pos: [25, 25], mineralType: 'L', mineralAmount: 0,

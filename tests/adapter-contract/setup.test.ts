@@ -1,5 +1,4 @@
 import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 // Vanilla's mockup runtime disables users that own no room objects, so a
@@ -389,8 +388,8 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('placePowerCreep', () => {
-		test('places a power creep with specified powers accessible via Game.powerCreeps', async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'powerCreeps');
+		test('places a power creep with specified powers accessible via Game.powerCreeps', async ({ shard }) => {
+			shard.requires('powerCreeps');
 			await shard.ownedRoom('p1', 'W1N1', 8);
 			const id = await shard.placePowerCreep('W1N1', {
 				pos: [25, 25],
@@ -420,8 +419,8 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('placeNuke', () => {
-		test('places an in-flight nuke visible via FIND_NUKES with specified timeToLand', async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'nuke');
+		test('places an in-flight nuke visible via FIND_NUKES with specified timeToLand', async ({ shard }) => {
+			shard.requires('nuke');
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [

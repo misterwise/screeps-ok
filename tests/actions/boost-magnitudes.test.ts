@@ -10,8 +10,6 @@ import { describe, test, expect, code,
 	BODYPART_HITS,
 	body,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 // ── BOOST-RANGED-001: ranged attack boost magnitudes ────────
 
@@ -23,8 +21,8 @@ describe('BOOST-RANGED-001 rangedAttack boost magnitudes', () => {
 	for (const [compound, effects] of rangedCompounds) {
 		const multiplier = effects.rangedAttack;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -79,8 +77,8 @@ describe('BOOST-HEAL-001 heal boost magnitudes', () => {
 	for (const [compound, effects] of healCompounds) {
 		const multiplier = effects.heal;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -151,8 +149,8 @@ describe('BOOST-ATTACK-001 attack boost magnitudes', () => {
 	for (const [compound, effects] of attackCompounds) {
 		const multiplier = effects.attack;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -206,8 +204,8 @@ describe('BOOST-DISMANTLE-001 dismantle boost magnitudes', () => {
 	for (const [compound, effects] of dismantleCompounds) {
 		const multiplier = effects.dismantle;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const labId = await shard.placeStructure('W1N1', {
@@ -257,8 +255,8 @@ describe('BOOST-HARVEST-001 harvest boost magnitudes', () => {
 	for (const [compound, effects] of harvestCompounds) {
 		const multiplier = effects.harvest;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const sourceId = await shard.placeSource('W1N1', {
@@ -299,8 +297,8 @@ describe('BOOST-HARVEST-001 harvest boost magnitudes', () => {
 // ── BOOST-HARVEST-003: harvest boosts only apply during harvest() ──
 
 describe('BOOST-HARVEST-003 harvest boosts only apply during harvest()', () => {
-	test('BOOST-HARVEST-003 boosted WORK part repairs at normal REPAIR_POWER, not boosted', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-HARVEST-003 boosted WORK part repairs at normal REPAIR_POWER, not boosted', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// UO is the harvest boost (3x harvest) but should not affect repair.
@@ -348,8 +346,8 @@ describe('BOOST-BUILD-001 build/repair boost magnitudes', () => {
 	for (const [compound, effects] of buildCompounds) {
 		const multiplier = effects.repair;
 
-		test(`${compound} repair (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} repair (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const labId = await shard.placeStructure('W1N1', {
@@ -388,11 +386,9 @@ describe('BOOST-BUILD-001 build/repair boost magnitudes', () => {
 
 // ── BOOST-BUILD-003: build/repair boosts don't increase energy cost ──
 
-const energyCostTest = knownParityGap('boost-energy-cost-scales');
-
 describe('BOOST-BUILD-003 build/repair boosts do not increase energy cost', () => {
-	energyCostTest('boosted repair costs 1 energy per REPAIR_POWER hits repaired', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('boosted repair costs 1 energy per REPAIR_POWER hits repaired', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		// XLH2O = 2x build/repair. 1 WORK repairs 200 HP but costs same
@@ -456,8 +452,8 @@ describe('BOOST-UPGRADE-001 upgrade boost magnitudes', () => {
 		const workParts = 10;
 		const expectedProgress = workParts * UPGRADE_CONTROLLER_POWER * multiplier;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const ctrlPos = await shard.getControllerPos('W1N1');
@@ -500,8 +496,8 @@ describe('BOOST-UPGRADE-001 upgrade boost magnitudes', () => {
 // ── BOOST-UPGRADE-003: upgrade boosts don't increase energy cost ──
 
 describe('BOOST-UPGRADE-003 upgrade boosts do not increase energy cost', () => {
-	energyCostTest('boosted upgrade costs 1 energy per progress point', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('boosted upgrade costs 1 energy per progress point', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const ctrlPos = await shard.getControllerPos('W1N1');
@@ -553,14 +549,12 @@ const toughCompounds = Object.entries(
 	BOOSTS.tough as Record<string, Record<string, number>>,
 );
 
-const toughTest = knownParityGap('tough-boost-no-reduction');
-
 describe('BOOST-TOUGH-001 tough damage reduction magnitudes', () => {
 	for (const [compound, effects] of toughCompounds) {
 		const damageMultiplier = effects.damage;
 
-		toughTest(`${compound} (${damageMultiplier}x damage taken)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${damageMultiplier}x damage taken)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -612,8 +606,8 @@ describe('BOOST-TOUGH-001 tough damage reduction magnitudes', () => {
 // ── BOOST-TOUGH-002: tough reduction applies only to the boosted part ──
 
 describe('BOOST-TOUGH-002 tough damage reduction applies only to the boosted part', () => {
-	toughTest('damage beyond the boosted TOUGH part hits unboosted parts at full damage', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('damage beyond the boosted TOUGH part hits unboosted parts at full damage', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -671,8 +665,8 @@ describe('BOOST-MOVE-001 move boost fatigue reduction magnitudes', () => {
 	for (const [compound, effects] of moveCompounds) {
 		const multiplier = effects.fatigue;
 
-		test(`${compound} (${multiplier}x fatigue reduction)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x fatigue reduction)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const labId = await shard.placeStructure('W1N1', {
@@ -722,8 +716,8 @@ describe('BOOST-CARRY-001 carry capacity boost magnitudes', () => {
 	for (const [compound, effects] of carryCompounds) {
 		const multiplier = effects.capacity;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard, skip }) => {
-			requireCapability(shard, skip, 'chemistry');
+		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
 			const labId = await shard.placeStructure('W1N1', {
@@ -770,8 +764,8 @@ describe('BOOST-CARRY-001 carry capacity boost magnitudes', () => {
 // ── BOOST-CARRY-003: boosted CARRY parts still zero fatigue when empty ──
 
 describe('BOOST-CARRY-003 boosted CARRY parts still contribute zero fatigue when empty', () => {
-	test('BOOST-CARRY-003 empty boosted CARRY does not add weight for fatigue', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'chemistry');
+	test('BOOST-CARRY-003 empty boosted CARRY does not add weight for fatigue', async ({ shard }) => {
+		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 
 		const labId = await shard.placeStructure('W1N1', {

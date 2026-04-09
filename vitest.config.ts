@@ -30,7 +30,11 @@ export default defineConfig({
 				external: [/xxscreeps/],
 			},
 		},
-		reporters: process.env.CI ? ['json', 'default'] : ['default'],
+		reporters: [
+			...(process.env.CI ? ['json'] : []),
+			'default',
+			'./src/reporters/parity-reporter.ts',
+		],
 		outputFile: process.env.CI
 			? `reports/${reportName}.json`
 			: undefined,

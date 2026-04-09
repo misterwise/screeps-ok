@@ -4,12 +4,10 @@ import { describe, test, expect, code,
 	OBSERVER_RANGE,
 	PWR_OPERATE_OBSERVER,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('StructureObserver', () => {
-	knownParityGap('observer-room-always-visible')('OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick', async ({ shard }) => {
+		shard.requires('observer');
 		// W1N1 owned by p1 (RCL 8 for observer), W2N1 is a neighbor room.
 		await shard.createShard({
 			players: ['p1'],
@@ -42,8 +40,8 @@ describe('StructureObserver', () => {
 		expect(afterVisible).toBe(true);
 	});
 
-	test('OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE', async ({ shard }) => {
+		shard.requires('observer');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const obsId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
@@ -57,8 +55,8 @@ describe('StructureObserver', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name', async ({ shard }) => {
+		shard.requires('observer');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const obsId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
@@ -71,8 +69,8 @@ describe('StructureObserver', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	test('OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive', async ({ shard }) => {
+		shard.requires('observer');
 		// Observer requires RCL 8. Place one at RCL 7 — it should be inactive.
 		await shard.ownedRoom('p1', 'W1N1', 7);
 		const obsId = await shard.placeStructure('W1N1', {
@@ -86,8 +84,8 @@ describe('StructureObserver', () => {
 		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
 	});
 
-	knownParityGap('observer-not-owner-precedence')('OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player', async ({ shard }) => {
+		shard.requires('observer');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -107,9 +105,9 @@ describe('StructureObserver', () => {
 		expect(rc).toBe(ERR_NOT_OWNER);
 	});
 
-	test('OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
-		requireCapability(shard, skip, 'observer');
+	test('OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		shard.requires('observer');
 		// W1N1 to W12N1 is 11 rooms apart — beyond OBSERVER_RANGE (10).
 		await shard.createShard({
 			players: ['p1'],

@@ -2,10 +2,9 @@ import { describe, test, expect, code,
 	ERR_NO_PATH, ERR_INVALID_ARGS,
 	FIND_EXIT_TOP,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('PathFinder', () => {
-	knownParityGap('pathfinder-suboptimal')('PATHFINDER-001 PathFinder.search accepts a single goal position with range', async ({ shard }) => {
+	test('PATHFINDER-001 PathFinder.search accepts a single goal position with range', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -129,7 +128,7 @@ describe('Game.map', () => {
 		expect(dist).toBe(4);
 	});
 
-	knownParityGap('describe-exits-topology')('MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name', async ({ shard }) => {
+	test('MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const exits = await shard.runPlayer('p1', code`
@@ -221,7 +220,7 @@ describe('Game.map', () => {
 		expect(result).toBe(ERR_NO_PATH);
 	});
 
-	knownParityGap('route-callback-ignored')('MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity', async ({ shard }) => {
+	test('MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

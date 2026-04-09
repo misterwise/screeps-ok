@@ -402,6 +402,9 @@ Coverage Notes
   Hostile creep damage actions blocked by safe mode match the canonical blocked
   action set across `attack()`, `rangedAttack()`, `rangedMassAttack()`, and
   `dismantle()`.
+- [ ] `CTRL-SAFEMODE-007` `behavior` `verified_vanilla`
+  `activateSafeMode()` returns `ERR_BUSY` when another owned controller already
+  has an active safe mode.
 
 Notes
 - Any hostile movement restrictions during safe mode should be added only as
@@ -858,6 +861,9 @@ Coverage Notes
   Standard player-creep tombstone handling for carried resources matches across
   death sources that produce ordinary tombstones, including `ticksToLive`
   expiry and `suicide()`.
+- [ ] `CREEP-DEATH-009` `behavior` `verified_vanilla`
+  On `suicide()`, the tombstone store includes reclaimed body energy in addition
+  to carried resources.
 
 ### 9.8 Suicide
 - [ ] `CREEP-SUICIDE-001` `behavior` `verified_vanilla`

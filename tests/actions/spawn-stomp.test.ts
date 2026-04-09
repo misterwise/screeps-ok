@@ -7,7 +7,6 @@ import { describe, test, expect, code,
 	TERRAIN_WALL,
 	BOTTOM,
 } from '../../src/index.js';
-import { requireCapability } from '../support/policy.js';
 
 // Spawn stomp occurs when:
 // 1. All preferred spawn directions are blocked
@@ -19,8 +18,8 @@ import { requireCapability } from '../support/policy.js';
 // We use terrain walls to block 7 of 8 adjacent tiles.
 
 describe('Spawn stomping', () => {
-	test('SPAWN-STOMP-001 hostile creep is destroyed when all tiles are blocked', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-001 hostile creep is destroyed when all tiles are blocked', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -67,8 +66,8 @@ describe('Spawn stomping', () => {
 		expect(hostile).toBeNull();
 	});
 
-	test('SPAWN-STOMP-002 new creep appears on the vacated tile', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-002 new creep appears on the vacated tile', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -111,8 +110,8 @@ describe('Spawn stomping', () => {
 		expect(newCreep!.spawning).toBe(false);
 	});
 
-	test('SPAWN-STOMP-004 no stomp if an open tile exists in preferred directions', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-004 no stomp if an open tile exists in preferred directions', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -159,8 +158,8 @@ describe('Spawn stomping', () => {
 		expect(newCreep!.pos.y).toBe(25);
 	});
 
-	test('SPAWN-STOMP-003 stomp destroys the hostile outside normal combat damage resolution', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-003 stomp destroys the hostile outside normal combat damage resolution', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -207,8 +206,8 @@ describe('Spawn stomping', () => {
 		expect(tomb).toBeDefined();
 	});
 
-	test('SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -253,8 +252,8 @@ describe('Spawn stomping', () => {
 		expect(hostile.hits).toBe(2 * BODYPART_HITS);
 	});
 
-	test('SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain');
+	test('SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.ownedRoom('p1', 'W1N1', 1);
 
 		// Wall all 8 adjacent tiles — no hostiles, no open tiles.

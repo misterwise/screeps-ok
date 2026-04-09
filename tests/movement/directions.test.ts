@@ -1,6 +1,5 @@
 import { describe, test, expect, code, MOVE, WORK, OK, ERR_NO_BODYPART } from '../../src/index.js';
 import { moveDirectionCases } from '../support/matrices/move-directions.js';
-import { requireCapability } from '../support/policy.js';
 
 describe('creep.move()', () => {
 	for (const { label, direction, dx, dy } of moveDirectionCases) {
@@ -22,8 +21,8 @@ describe('creep.move()', () => {
 		});
 	}
 
-	test('MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'terrain', 'custom terrain setup is required for wall-movement assertions');
+	test('MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move', async ({ shard }) => {
+		shard.requires('terrain', 'custom terrain setup is required for wall-movement assertions');
 		const terrain = new Array(2500).fill(0);
 		terrain[24 * 50 + 25] = 1;
 		await shard.createShard({

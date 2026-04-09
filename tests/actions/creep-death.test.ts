@@ -1,5 +1,4 @@
 import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, FIND_TOMBSTONES, FIND_DROPPED_RESOURCES, RESOURCE_ENERGY, STRUCTURE_CONTAINER, TOMBSTONE_DECAY_PER_PART, BODYPART_COST } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('creep death', () => {
 	test('CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick', async ({ shard }) => {
@@ -36,7 +35,7 @@ describe('creep death', () => {
 		expect(tomb!.pos.y).toBe(30);
 	});
 
-	knownParityGap('death-container-diversion')('CREEP-DEATH-003 death resources go into a same-tile container first', async ({ shard }) => {
+	test('CREEP-DEATH-003 death resources go into a same-tile container first', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_CONTAINER,

@@ -9,8 +9,6 @@ import { describe, test, expect, code,
 	POWER_SPAWN_ENERGY_CAPACITY, POWER_SPAWN_POWER_CAPACITY,
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
-import { knownParityGap } from '../support/parity-gaps.js';
-import { requireCapability } from '../support/policy.js';
 import { storeOpenCases } from '../support/matrices/store-open.js';
 import { storeSingleFixedCases } from '../support/matrices/store-single.js';
 
@@ -41,9 +39,9 @@ describe('Store', () => {
 	// ── STORE-OPEN: general stores (any resource, shared total capacity) ──
 
 	for (const { structureType, expectedCapacity } of storeOpenCases) {
-		test(`STORE-OPEN-001:${structureType} getCapacity() returns total capacity for ${structureType}`, async ({ shard, skip }) => {
+		test(`STORE-OPEN-001:${structureType} getCapacity() returns total capacity for ${structureType}`, async ({ shard }) => {
 			const cap = requiredCapability[structureType];
-			if (cap) requireCapability(shard, skip, cap as any);
+			if (cap) shard.requires(cap as any);
 
 			const rcl = minRcl[structureType] ?? 1;
 			await shard.ownedRoom('p1', 'W1N1', rcl);
@@ -59,9 +57,9 @@ describe('Store', () => {
 	}
 
 	for (const { structureType, expectedCapacity } of storeOpenCases) {
-		test(`STORE-OPEN-002:${structureType} getCapacity(RESOURCE_ENERGY) returns total capacity for ${structureType}`, async ({ shard, skip }) => {
+		test(`STORE-OPEN-002:${structureType} getCapacity(RESOURCE_ENERGY) returns total capacity for ${structureType}`, async ({ shard }) => {
 			const cap = requiredCapability[structureType];
-			if (cap) requireCapability(shard, skip, cap as any);
+			if (cap) shard.requires(cap as any);
 
 			const rcl = minRcl[structureType] ?? 1;
 			await shard.ownedRoom('p1', 'W1N1', rcl);
@@ -111,7 +109,7 @@ describe('Store', () => {
 		});
 	}
 
-	knownParityGap('extension-rcl-capacity')('STORE-SINGLE-001:extension getCapacity(RESOURCE_ENERGY) returns RCL-based capacity for extension', async ({ shard }) => {
+	test('STORE-SINGLE-001:extension getCapacity(RESOURCE_ENERGY) returns RCL-based capacity for extension', async ({ shard }) => {
 		// Extension capacity is RCL-dependent: 50 at RCL 2-6, 100 at RCL 7, 200 at RCL 8.
 		await shard.ownedRoom('p1', 'W1N1', 7);
 		const id = await shard.placeStructure('W1N1', {
@@ -193,8 +191,8 @@ describe('Store', () => {
 		});
 	});
 
-	test('STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps', async ({ shard }) => {
+		shard.requires('nuke');
 
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const id = await shard.placeStructure('W1N1', {
@@ -216,8 +214,8 @@ describe('Store', () => {
 		});
 	});
 
-	test('STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'powerCreeps');
+	test('STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps', async ({ shard }) => {
+		shard.requires('powerCreeps');
 
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const id = await shard.placeStructure('W1N1', {
@@ -239,7 +237,7 @@ describe('Store', () => {
 		});
 	});
 
-	knownParityGap('lab-unrestricted-mineral-capacity')('STORE-RESTRICTED-004 restricted store getCapacity returns null for disallowed resource', async ({ shard }) => {
+	test('STORE-RESTRICTED-004 restricted store getCapacity returns null for disallowed resource', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 6);
 		const id = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
@@ -252,8 +250,8 @@ describe('Store', () => {
 		expect(result).toBeNull();
 	});
 
-	test('STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts', async ({ shard, skip }) => {
-		requireCapability(shard, skip, 'nuke');
+	test('STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts', async ({ shard }) => {
+		shard.requires('nuke');
 
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const id = await shard.placeStructure('W1N1', {
