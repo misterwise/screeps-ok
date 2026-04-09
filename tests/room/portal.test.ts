@@ -89,4 +89,31 @@ describe('Portal mechanics', () => {
 		// Permanent portal (decayTime: null) should have undefined ticksToDecay.
 		expect(decay).toBeNull();
 	});
+
+	portalTest('PORTAL-003 cross-shard portal exposes destination as { shard, room }', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+			],
+		});
+		const portalId = await shard.placeObject('W1N1', 'portal', {
+			pos: [25, 25],
+			destination: { shard: 'shard1', room: 'W5N5' },
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const p = Game.getObjectById(${portalId});
+			p ? ({
+				hasDest: !!p.destination,
+				shard: p.destination?.shard,
+				room: p.destination?.room,
+			}) : null
+		`) as { hasDest: boolean; shard: string; room: string } | null;
+		expect(result).not.toBeNull();
+		expect(result!.hasDest).toBe(true);
+		expect(result!.shard).toBe('shard1');
+		expect(result!.room).toBe('W5N5');
+	});
 });

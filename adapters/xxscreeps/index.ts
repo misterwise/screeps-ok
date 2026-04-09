@@ -72,6 +72,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		market: false,
 		observer: true,
 		nuke: false,
+		deposit: false,
 		terrain: false,
 	};
 

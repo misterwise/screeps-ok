@@ -128,6 +128,8 @@ export interface AdapterCapabilities {
 	observer: boolean;
 	/** Nuker structure and nuke APIs. */
 	nuke: boolean;
+	/** Deposit objects and harvest cooldown lifecycle. */
+	deposit: boolean;
 	/** Custom terrain setup through RoomSpec.terrain / setTerrain. */
 	terrain: boolean;
 }

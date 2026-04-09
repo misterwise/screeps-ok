@@ -34,6 +34,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		market: true,
 		observer: true,
 		nuke: true,
+		deposit: false, // Private server runtimeData doesn't expose deposits to player code
 		terrain: true,
 	};
 
@@ -93,6 +94,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 							error: 'Return value is a ' + (_sokResult.constructor ? _sokResult.constructor.name : 'non-plain') + ' object, not a plain JSON value',
 						});
 						delete Memory._screepsOk;
+						RawMemory.set(JSON.stringify(Memory));
 						return;
 					}
 					Memory._screepsOkResult = JSON.stringify({ ok: true, value: _sokResult });
@@ -102,6 +104,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					});
 				}
 				delete Memory._screepsOk;
+				// Force-serialize Memory back to RawMemory so the result channel
+				// survives even if user code called RawMemory.set() (which nulls
+				// the engine's internal _parsed reference and prevents auto-serialization).
+				RawMemory.set(JSON.stringify(Memory));
 			}
 		}`;
 
@@ -117,7 +123,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				cpu: 100,
 				cpuAvailable: 10000,
 				gcl: 10000000, // High GCL to allow claiming multiple rooms
+				power: 10000000, // High GPL to allow creating power creeps
 				active: 10000,
+				money: 10000000000, // 10M credits (stored as milli-credits internally)
 				badge: { type: 1, color1: '#000', color2: '#000', color3: '#000', flip: false, param: 0 },
 			});
 
@@ -462,17 +470,96 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		if (!pos) throw new Error('placeObject: spec.pos is required');
 
 		if (type === 'portal') {
-			const dest = spec.destination as { room: string; x: number; y: number } | undefined;
+			const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
 			if (!dest) throw new Error('placeObject portal: spec.destination is required');
+			// Cross-shard portal: { shard, room }. Same-shard: { room, x, y }.
+			const destination = dest.shard
+				? { shard: dest.shard, room: dest.room }
+				: { room: dest.room, x: dest.x, y: dest.y };
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'portal',
 				x: pos[0],
 				y: pos[1],
-				destination: { room: dest.room, x: dest.x, y: dest.y },
+				destination,
 				unstableDate: spec.unstableDate ?? null,
 				decayTime: spec.decayTime ?? null,
 			});
+			return result._id;
+		}
+
+		if (type === 'deposit') {
+			const result = await this.db['rooms.objects'].insert({
+				room: roomName,
+				type: 'deposit',
+				x: pos[0],
+				y: pos[1],
+				depositType: (spec.depositType as string) ?? 'silicon',
+				harvested: 0,
+				lastCooldown: 0,
+				cooldownTime: null,
+				decayTime: null,
+			});
+			return result._id;
+		}
+
+		if (type === 'keeperLair') {
+			const gameTime = await this.server.world.gameTime;
+			const nextSpawn = (spec.nextSpawnTime as number)
+				? gameTime + (spec.nextSpawnTime as number)
+				: null;
+			const result = await this.db['rooms.objects'].insert({
+				room: roomName,
+				type: 'keeperLair',
+				x: pos[0],
+				y: pos[1],
+				nextSpawnTime: nextSpawn,
+			});
+			return result._id;
+		}
+
+		if (type === 'invaderCore') {
+			const gameTime = await this.server.world.gameTime;
+			const level = (spec.level as number) ?? 0;
+			const deployTime = (spec.deployTime as number)
+				? gameTime + (spec.deployTime as number)
+				: null;
+			const result = await this.db['rooms.objects'].insert({
+				room: roomName,
+				type: 'invaderCore',
+				x: pos[0],
+				y: pos[1],
+				level,
+				hits: 100000,
+				hitsMax: 100000,
+				deployTime,
+				effects: spec.effects ?? [],
+			});
+			return result._id;
+		}
+
+		if (type === 'powerBank') {
+			const C = this.server.constants;
+			const gameTime = await this.server.world.gameTime;
+			const store = (spec.store as Record<string, number>) ?? {};
+			const power = (spec.power as number) ?? store.power ?? 1000;
+			const hits = (spec.hits as number) ?? (C.POWER_BANK_HITS ?? 2000000);
+			const hitsMax = (spec.hitsMax as number) ?? hits;
+			const decay = (spec.decayTime as number)
+				? gameTime + (spec.decayTime as number)
+				: gameTime + (C.POWER_BANK_DECAY ?? 5000);
+			const result = await this.db['rooms.objects'].insert({
+				room: roomName,
+				type: 'powerBank',
+				x: pos[0],
+				y: pos[1],
+				store: { power },
+				hits,
+				hitsMax,
+				decayTime: decay,
+			});
+			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
 			return result._id;
 		}
 

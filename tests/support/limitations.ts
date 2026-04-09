@@ -4,7 +4,10 @@ export type DocumentedAdapterLimitation =
 	| 'controllerDowngrade'
 	| 'portalPlacement'
 	| 'interRoomTransition'
-	| 'flagSupport';
+	| 'flagSupport'
+	| 'memorySupport'
+	| 'rawMemoryBeforeMemoryAccess'
+	| 'npcStructures';
 
 function activeAdapterPath(): string {
 	return process.env.SCREEPS_OK_ADAPTER ?? '';
@@ -36,6 +39,16 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			return isBuiltInAdapter('xxscreeps');
 		case 'flagSupport':
 			// xxscreeps simulate() does not populate Game.flags (no TickPayload-aware player mode).
+			return isBuiltInAdapter('xxscreeps');
+		case 'memorySupport':
+			// xxscreeps simulate() does not populate Memory/RawMemory (no TickPayload-aware player mode).
+			return isBuiltInAdapter('xxscreeps');
+		case 'rawMemoryBeforeMemoryAccess':
+			// Vanilla adapter's main loop accesses Memory._screepsOk before user code runs,
+			// so RawMemory.set() before first Memory access can't be tested (Memory is already parsed).
+			return isBuiltInAdapter('vanilla');
+		case 'npcStructures':
+			// xxscreeps doesn't support placeObject for keeperLair/invaderCore.
 			return isBuiltInAdapter('xxscreeps');
 	}
 }

@@ -260,14 +260,38 @@ export const PWR_OPERATE_TOWER: number = C.PWR_OPERATE_TOWER;
 export const PWR_DISRUPT_TOWER: number = C.PWR_DISRUPT_TOWER;
 export const PWR_OPERATE_LAB: number = C.PWR_OPERATE_LAB;
 export const PWR_OPERATE_OBSERVER: number = C.PWR_OPERATE_OBSERVER;
+export const PWR_OPERATE_FACTORY: number = C.PWR_OPERATE_FACTORY;
+export const PWR_OPERATE_TERMINAL: number = C.PWR_OPERATE_TERMINAL;
 export const PWR_REGEN_SOURCE: number = C.PWR_REGEN_SOURCE;
 export const PWR_REGEN_MINERAL: number = C.PWR_REGEN_MINERAL;
+export const PWR_OPERATE_SPAWN: number = C.PWR_OPERATE_SPAWN;
+export const PWR_OPERATE_POWER: number = C.PWR_OPERATE_POWER;
+export const PWR_SHIELD: number = C.PWR_SHIELD;
+export const PWR_FORTIFY: number = C.PWR_FORTIFY;
+export const PWR_DISRUPT_SOURCE: number = C.PWR_DISRUPT_SOURCE;
+
+// Power creep / power bank
+export const POWER_CREEP_LIFE_TIME: number = C.POWER_CREEP_LIFE_TIME;
+export const POWER_SPAWN_ENERGY_RATIO: number = C.POWER_SPAWN_ENERGY_RATIO;
+export const POWER_BANK_HIT_BACK: number = C.POWER_BANK_HIT_BACK;
+export const POWER_BANK_CAPACITY_MAX: number = C.POWER_BANK_CAPACITY_MAX;
+export const POWER_BANK_CAPACITY_MIN: number = C.POWER_BANK_CAPACITY_MIN;
+export const POWER_BANK_DECAY: number = C.POWER_BANK_DECAY;
+export const POWER_BANK_HITS: number = C.POWER_BANK_HITS;
+export const TOMBSTONE_DECAY_POWER_CREEP: number = C.TOMBSTONE_DECAY_POWER_CREEP;
 
 // Safe mode
 export const SAFE_MODE_DURATION: number = C.SAFE_MODE_DURATION;
 export const SAFE_MODE_COOLDOWN: number = C.SAFE_MODE_COOLDOWN;
 export const CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD: number = C.CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD;
 export const CONTROLLER_DOWNGRADE: Record<number, number> = C.CONTROLLER_DOWNGRADE;
+
+// Flags
+export const FLAGS_LIMIT: number = C.FLAGS_LIMIT;
+export const COLOR_RED: number = C.COLOR_RED;
+export const COLOR_BLUE: number = C.COLOR_BLUE;
+export const COLOR_GREEN: number = C.COLOR_GREEN;
+export const COLOR_WHITE: number = C.COLOR_WHITE;
 
 // Event log
 export const EVENT_ATTACK: number = C.EVENT_ATTACK;
