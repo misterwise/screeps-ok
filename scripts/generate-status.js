@@ -29,32 +29,7 @@ const outputPath = path.join(packageRoot, 'docs/status.md');
 // adapters can reuse this script by passing their own adapter name on the
 // command line (see CLI block at the bottom).
 const DEFAULT_ADAPTERS = ['vanilla', 'xxscreeps'];
-const KNOWN_GAP_PREFIX = '[known-gap:';
-
-function loadCanonicalGapSummaries() {
-	// Parse the canonical gap list out of tests/support/parity-gaps.ts without
-	// importing it — the script is plain JS and the TS file holds the table
-	// as a well-formed `as const` literal.
-	const source = readFileSync(
-		path.join(packageRoot, 'tests/support/parity-gaps.ts'),
-		'utf8',
-	);
-	const match = source.match(/export const PARITY_GAPS = \{([\s\S]*?)\} as const;/);
-	if (!match) {
-		throw new Error('generate-status: could not locate PARITY_GAPS in parity-gaps.ts');
-	}
-	const body = match[1];
-	const entries = {};
-	const entryRegex = /'([^']+)':\s*((?:'[^']*'(?:\s*\+\s*'[^']*')*))/g;
-	let entry;
-	while ((entry = entryRegex.exec(body)) !== null) {
-		const id = entry[1];
-		// Rebuild concatenated string literal.
-		const pieces = [...entry[2].matchAll(/'([^']*)'/g)].map(p => p[1]);
-		entries[id] = pieces.join('');
-	}
-	return entries;
-}
+const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/;
 
 function loadReport(adapter) {
 	const reportPath = path.join(reportsDir, `${adapter}.json`);
@@ -64,19 +39,27 @@ function loadReport(adapter) {
 
 function loadParityFile(adapter) {
 	const parityPath = path.join(adaptersDir, adapter, 'parity.json');
-	if (!existsSync(parityPath)) return { expected_failures: [], notes: {} };
+	if (!existsSync(parityPath)) return { expected_failures: {} };
 	return JSON.parse(readFileSync(parityPath, 'utf8'));
 }
 
-function parseGapFromTitle(fullName) {
-	const start = fullName.indexOf(KNOWN_GAP_PREFIX);
-	if (start < 0) return null;
-	const end = fullName.indexOf(']', start + KNOWN_GAP_PREFIX.length);
-	if (end < 0) return null;
-	return fullName.slice(start + KNOWN_GAP_PREFIX.length, end);
+function extractCatalogId(fullName) {
+	const match = fullName.match(CATALOG_ID_RE);
+	return match ? match[1] : null;
 }
 
-function summarizeReport(report) {
+function buildExpectedFailSet(parity) {
+	const idToGap = new Map();
+	const gaps = parity.expected_failures ?? {};
+	for (const [gapId, gap] of Object.entries(gaps)) {
+		for (const testId of gap.tests ?? []) {
+			idToGap.set(testId, gapId);
+		}
+	}
+	return idToGap;
+}
+
+function summarizeReport(report, parity) {
 	if (!report) {
 		return {
 			total: 0, passed: 0, expectedFailure: 0, failed: 0, skipped: 0,
@@ -86,33 +69,42 @@ function summarizeReport(report) {
 		};
 	}
 
+	const idToGap = buildExpectedFailSet(parity);
+
 	const all = report.testResults.flatMap(f =>
 		f.assertionResults.map(a => ({ file: f.name, ...a })),
 	);
 
-	const expectedFailure = all.filter(
-		a => a.status === 'passed' && a.fullName.includes(KNOWN_GAP_PREFIX),
-	);
-	const unexpectedPasses = all.filter(
-		a => a.status === 'failed' &&
-			a.fullName.includes(KNOWN_GAP_PREFIX) &&
-			a.failureMessages?.some(m => m.includes('Expect test to fail')),
-	);
-	const genuinePasses = all.filter(
-		a => a.status === 'passed' && !a.fullName.includes(KNOWN_GAP_PREFIX),
-	);
-	const genuineFailures = all.filter(
-		a => a.status === 'failed' && !unexpectedPasses.includes(a),
-	);
-	const skippedTests = all.filter(
-		a => a.status === 'skipped' || a.status === 'pending' || a.status === 'todo',
-	);
+	const expectedFailure = [];
+	const unexpectedPasses = [];
+	const genuinePasses = [];
+	const genuineFailures = [];
+	const skippedTests = [];
+
+	for (const a of all) {
+		if (a.status === 'skipped' || a.status === 'pending' || a.status === 'todo') {
+			skippedTests.push(a);
+			continue;
+		}
+		const catalogId = extractCatalogId(a.fullName);
+		const gapId = catalogId ? idToGap.get(catalogId) : null;
+		if (a.status === 'failed' && gapId) {
+			expectedFailure.push(a);
+		} else if (a.status === 'passed' && gapId) {
+			unexpectedPasses.push(a);
+		} else if (a.status === 'passed') {
+			genuinePasses.push(a);
+		} else if (a.status === 'failed') {
+			genuineFailures.push(a);
+		}
+	}
 
 	const expectedFailureByGap = {};
 	for (const a of expectedFailure) {
-		const gap = parseGapFromTitle(a.fullName);
-		if (!gap) continue;
-		(expectedFailureByGap[gap] ??= []).push(a);
+		const catalogId = extractCatalogId(a.fullName);
+		const gapId = catalogId ? idToGap.get(catalogId) : null;
+		if (!gapId) continue;
+		(expectedFailureByGap[gapId] ??= []).push(a);
 	}
 
 	return {
@@ -153,9 +145,6 @@ function formatTimestamp(report) {
 	return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
 }
 
-function stripGapPrefix(fullName) {
-	return fullName.replace(/.*?\[known-gap:[^\]]+\]\s*/, '');
-}
 
 function isAdapterOk(summary) {
 	return summary.failed === 0 && summary.unexpectedPasses.length === 0;
@@ -239,7 +228,7 @@ function renderGapDetails(gapId, canonicalSummary, adapter, parityNote) {
 	lines.push(`${testCount} test${testCount === 1 ? '' : 's'} affected:`);
 	lines.push('');
 	for (const testName of adapter.tests) {
-		lines.push(`- \`${stripGapPrefix(testName)}\``);
+		lines.push(`- \`${testName}\``);
 	}
 	if (parityNote) {
 		lines.push('');
@@ -250,31 +239,32 @@ function renderGapDetails(gapId, canonicalSummary, adapter, parityNote) {
 	return lines.join('\n');
 }
 
-function renderPerAdapterExpectedFailures(adapterName, data, canonicalSummaries) {
+function renderPerAdapterExpectedFailures(adapterName, data) {
 	const lines = [];
 	const parity = data.parity;
 	const summary = data.summary;
-	const declaredGaps = parity.expected_failures ?? [];
-	if (declaredGaps.length === 0) return '';
+	const gaps = parity.expected_failures ?? {};
+	const gapIds = Object.keys(gaps);
+	if (gapIds.length === 0) return '';
 
-	const totalTests = declaredGaps.reduce(
+	const totalTests = gapIds.reduce(
 		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
 		0,
 	);
 
 	lines.push(`## ${adapterName} expected failures`);
 	lines.push('');
-	lines.push(`${adapterName} currently declares ${declaredGaps.length} parity gap${declaredGaps.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. Each gap is verified by a test that continues to run as a regression trap — if ${adapterName} fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.`);
+	lines.push(`${adapterName} currently declares ${gapIds.length} parity gap${gapIds.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. Each gap is verified by a test that continues to run as a regression trap — if ${adapterName} fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.`);
 	lines.push('');
 
-	for (const gapId of declaredGaps) {
-		const canonicalSummary = canonicalSummaries[gapId] ?? '(unknown gap — check parity.json)';
+	for (const gapId of gapIds) {
+		const gapSummary = gaps[gapId].summary ?? '(no summary)';
 		const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
 		lines.push(renderGapDetails(
 			gapId,
-			canonicalSummary,
+			gapSummary,
 			{ tests },
-			parity.notes?.[gapId] ?? '',
+			'',
 		));
 		lines.push('');
 	}
@@ -299,7 +289,7 @@ function renderTestListByFile(heading, tests, emptyMessage) {
 		lines.push(`**\`${file}\`** (${fileTests.length})`);
 		lines.push('');
 		for (const t of fileTests) {
-			lines.push(`- ${stripGapPrefix(t.fullName)}`);
+			lines.push(`- ${t.fullName}`);
 		}
 		lines.push('');
 	}
@@ -307,7 +297,7 @@ function renderTestListByFile(heading, tests, emptyMessage) {
 	return lines.join('\n');
 }
 
-function render(summaries, canonicalSummaries) {
+function render(summaries) {
 	const lines = [];
 	lines.push('<!-- Auto-generated by scripts/generate-status.js. Do not edit by hand. -->');
 	lines.push('');
@@ -351,7 +341,7 @@ function render(summaries, canonicalSummaries) {
 			lines.push(`**${adapter}**`);
 			lines.push('');
 			for (const t of data.summary.unexpectedPasses) {
-				lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
+				lines.push(`- \`${t.fullName}\``);
 			}
 			lines.push('');
 		}
@@ -363,14 +353,14 @@ function render(summaries, canonicalSummaries) {
 		lines.push(`## ${adapter} unexpected failures`);
 		lines.push('');
 		for (const t of data.summary.failingTests) {
-			lines.push(`- \`${stripGapPrefix(t.fullName)}\``);
+			lines.push(`- \`${t.fullName}\``);
 		}
 		lines.push('');
 	}
 
 	// Expected failures grouped per adapter (each adapter gets its own section)
 	for (const [adapter, data] of Object.entries(summaries)) {
-		const block = renderPerAdapterExpectedFailures(adapter, data, canonicalSummaries);
+		const block = renderPerAdapterExpectedFailures(adapter, data);
 		if (block) {
 			lines.push(block);
 			lines.push('');
@@ -402,17 +392,16 @@ function render(summaries, canonicalSummaries) {
 
 function main(argv) {
 	const requestedAdapters = argv.length > 0 ? argv : DEFAULT_ADAPTERS;
-	const canonicalSummaries = loadCanonicalGapSummaries();
 
 	const summaries = {};
 	for (const adapter of requestedAdapters) {
 		const report = loadReport(adapter);
 		const parity = loadParityFile(adapter);
-		const summary = summarizeReport(report);
+		const summary = summarizeReport(report, parity);
 		summaries[adapter] = { report, parity, summary };
 	}
 
-	const output = render(summaries, canonicalSummaries);
+	const output = render(summaries);
 	writeFileSync(outputPath, output);
 	console.log(`Wrote ${path.relative(packageRoot, outputPath)}`);
 

@@ -19,7 +19,8 @@
     "status": "node scripts/generate-status.js",
     "status:refresh": "node scripts/parity-report.js && node scripts/generate-status.js",
     "build": "tsc",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "validate:capabilities": "node scripts/validate-capabilities.js"
   },
   "bin": {
     "screeps-ok": "./bin/run.js"
