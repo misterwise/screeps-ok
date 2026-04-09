@@ -89,15 +89,21 @@ Coverage Notes
   `MOVE-BASIC-003`, not this section.
 
 ### 1.3 Roads
-- [ ] A road on plains reduces the fatigue multiplier to 1.
+- [ ] `ROAD-FATIGUE-001` `behavior` `verified_vanilla`
+  A road on a tile reduces the fatigue multiplier for creeps moving onto it
+  to 1 (half of the plain-terrain multiplier).
 - [ ] A road on swamp reduces the fatigue multiplier to 1.
 - [ ] Creep movement on a road wears the road by ROAD_WEAROUT (1) per body part.
 - [ ] Power creep movement on a road wears it by ROAD_WEAROUT_POWER_CREEP (100).
 - [ ] Swamp roads have 5x the construction cost of plains roads.
 
 ### 1.4 Room Transitions
-- [ ] Moving onto an exit tile teleports the creep to the adjacent room in the same tick.
-- [ ] The creep appears at the opposite edge of the destination room.
+- [ ] `ROOM-TRANSITION-001` `behavior` `verified_vanilla`
+  A creep moving onto an exit tile appears in the adjacent room at the
+  opposite edge on the next tick.
+- [ ] `ROOM-TRANSITION-002` `behavior` `verified_vanilla`
+  A creep retains its identity (same ID and name) after crossing a room
+  border.
 - [ ] Fatigue resets to 0 when a creep moves onto an exit tile.
 - [ ] `creep.room` returns the previous room object for one tick after crossing.
 - [ ] Room adjacency follows the standard Screeps coordinate system.
@@ -127,6 +133,11 @@ Coverage Notes
 - [ ] `MOVE-COLLISION-003` `behavior` `verified_vanilla`
   Two creeps moving into each other's starting tiles in the same tick can swap
   positions.
+- [ ] `MOVE-COLLISION-004` `behavior` `verified_vanilla`
+  A creep can move onto a tile vacated by another creep moving away in the
+  same tick.
+- [ ] `MOVE-COLLISION-005` `behavior` `verified_vanilla`
+  A hostile creep blocks movement onto its tile.
 
 Coverage Notes
 - Same-input determinism should be proven through concrete repeated scenarios,
@@ -193,13 +204,20 @@ Coverage Notes
 - [ ] Source energy capacity is 3000 in owned/reserved rooms, 1500 in neutral, 4000 in keeper rooms.
 
 ### 3.2 Mineral Harvest
-- [ ] Mineral harvesting requires an extractor structure in the room.
-- [ ] Each WORK part harvests 1 unit of the mineral type per tick.
-- [ ] `harvest()` returns ERR_NOT_FOUND when no extractor is present.
-- [ ] Extractor goes on cooldown (EXTRACTOR_COOLDOWN) after each harvest.
+- [ ] `HARVEST-MINERAL-001` `behavior` `verified_vanilla`
+  Each WORK part harvests `HARVEST_MINERAL_POWER` (1) unit of the mineral
+  type per tick from a mineral with an extractor.
+- [ ] `HARVEST-MINERAL-002` `behavior` `verified_vanilla`
+  `harvest(mineral)` reduces the mineral's `mineralAmount` by the harvested
+  quantity.
+- [ ] `HARVEST-MINERAL-003` `behavior` `verified_vanilla`
+  After a successful mineral harvest, the extractor enters cooldown for
+  `EXTRACTOR_COOLDOWN` ticks.
+- [ ] `HARVEST-MINERAL-004` `behavior` `verified_vanilla`
+  `harvest(mineral)` returns `ERR_NOT_ENOUGH_RESOURCES` when the mineral is
+  depleted.
 - [ ] The mineral type of the deposit determines the resource harvested.
 - [ ] Mineral depletion (mineralAmount reaches 0) triggers a regeneration timer.
-- [ ] `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the mineral is depleted.
 
 ### 3.3 Deposit Harvest `capability: deposit`
 - [ ] Harvesting a deposit increases its cooldown exponentially (DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW).
@@ -245,11 +263,13 @@ Coverage Notes
 - [ ] `drop()` returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource.
 
 ### 4.5 Dropped Resources
-- [ ] Dropped energy decays at a rate of 1 unit per 1000 ticks.
+- [ ] `DROP-DECAY-001` `behavior` `verified_vanilla`
+  Dropped energy decays by `ceil(amount / ENERGY_DECAY)` per tick.
+- [ ] `DROP-DECAY-002` `behavior` `verified_vanilla`
+  A dropped resource disappears when its amount reaches 0.
 - [ ] Dropped resources are created when a creep dies with store contents.
 - [ ] Dropped resources are created when a creep overflows its carry capacity.
 - [ ] Any player's creep can pick up any dropped resource.
-- [ ] A dropped resource disappears when its amount reaches 0.
 
 ---
 
@@ -273,6 +293,8 @@ Coverage Notes
 - [ ] `repair()` has a range of 3.
 - [ ] `repair()` cannot repair above the structure's hitsMax.
 - [ ] `REPAIR-003` `repair()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `REPAIR-004` `behavior` `verified_vanilla`
+  `repair()` returns `ERR_NOT_ENOUGH_RESOURCES` when the creep has no energy.
 - [ ] `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - [ ] Repair boost (LH/LH2O/XLH2O) increases effectiveness without extra energy cost.
 - [ ] A creep can repair any player's structure.
@@ -349,12 +371,16 @@ Coverage Notes
 ### 6.7 Downgrade & Level Loss
 - [ ] Each RCL has a downgrade timer: 1→20K, 2→10K, 3→20K, 4→40K, 5→80K, 6→120K, 7→150K, 8→200K.
 - [ ] The timer decrements by 1 each tick the controller is not upgraded.
-- [ ] The controller loses a level when the timer reaches 0.
-- [ ] Each upgrade tick restores CONTROLLER_DOWNGRADE_RESTORE (100) ticks to the timer.
+- [ ] `CTRL-DOWNGRADE-001` `behavior` `verified_vanilla`
+  The controller loses a level when `ticksToDowngrade` reaches 0.
+- [ ] `CTRL-DOWNGRADE-003` `behavior` `verified_vanilla`
+  `upgradeController()` resets the controller's downgrade timer.
 - [ ] Level loss resets progress to 0.
 - [ ] Structures above the new RCL limit become inactive (isActive() returns false).
 - [ ] The controller can downgrade through multiple levels if neglected.
-- [ ] An owned controller at level 1 that loses its level becomes unowned.
+- [ ] `CTRL-DOWNGRADE-002` `behavior` `verified_vanilla`
+  An owned controller at level 1 that loses its level becomes unowned
+  (level 0, `my === false`).
 
 ### 6.8 Safe Mode Mechanics
 - [ ] `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
@@ -562,19 +588,38 @@ Coverage Notes
 ## 8. Boosts `capability: chemistry`
 
 ### 8.1 Boost Application
-- [ ] `Lab.boostCreep()` boosts an adjacent creep.
-- [ ] Costs LAB_BOOST_MINERAL (30) compound + LAB_BOOST_ENERGY (20) energy per part boosted.
-- [ ] `bodyPartsCount` parameter allows partial boosting.
-- [ ] The lab must contain the correct compound for the target body part type.
-- [ ] Only unboosted parts of the matching type are boosted.
-- [ ] Returns ERR_NOT_IN_RANGE when creep is not adjacent.
-- [ ] Returns ERR_NOT_ENOUGH_RESOURCES when lab lacks compound or energy.
+- [ ] `BOOST-CREEP-001` `behavior` `verified_vanilla`
+  `Lab.boostCreep()` returns `OK` and marks the target body parts as boosted.
+- [ ] `BOOST-CREEP-002` `behavior` `verified_vanilla`
+  `boostCreep()` consumes `LAB_BOOST_MINERAL` compound and `LAB_BOOST_ENERGY`
+  energy per part boosted.
+- [ ] `BOOST-CREEP-003` `behavior` `verified_vanilla`
+  `boostCreep(creep, bodyPartsCount)` limits the number of parts boosted.
+- [ ] `BOOST-CREEP-004` `behavior` `verified_vanilla`
+  `boostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
+- [ ] `BOOST-CREEP-005` `behavior` `verified_vanilla`
+  `boostCreep()` returns `ERR_NOT_ENOUGH_RESOURCES` when the lab lacks
+  compound or energy.
+- [ ] `BOOST-CREEP-006` `behavior` `verified_vanilla`
+  `boostCreep()` returns `ERR_NOT_FOUND` when the creep has no matching
+  unboosted parts.
+- [ ] `BOOST-CREEP-007` `behavior` `verified_vanilla`
+  A boosted `ATTACK` part deals increased damage matching the compound's
+  multiplier.
+- [ ] `BOOST-CREEP-008` `behavior` `verified_vanilla`
+  A boosted `HEAL` part heals increased HP matching the compound's
+  multiplier.
 
 ### 8.2 Unboost
-- [ ] `Lab.unboostCreep()` removes boosts from an adjacent creep.
+- [ ] `UNBOOST-001` `behavior` `verified_vanilla`
+  `Lab.unboostCreep()` returns `OK`, removes all boosts from the creep, and
+  drops returned compounds near the lab.
+- [ ] `UNBOOST-002` `behavior` `verified_vanilla`
+  `unboostCreep()` returns `ERR_NOT_FOUND` when the creep has no boosts.
+- [ ] `UNBOOST-003` `behavior` `verified_vanilla`
+  `unboostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
 - [ ] Returns compounds to the lab (LAB_UNBOOST_MINERAL = 15 per part).
 - [ ] Lab cooldown after unboost equals the sum of REACTION_TIME for all compounds removed.
-- [ ] Returns ERR_NOT_IN_RANGE when creep is not adjacent.
 - [ ] Returns ERR_FULL when lab cannot hold the returned compounds.
 
 ### 8.3 Per-Part Boost Aggregation
@@ -1162,6 +1207,8 @@ Coverage Notes
 ## 13. Structures — Infrastructure
 
 ### 13.1 Road — Decay
+- [ ] `ROAD-HITS-001` `behavior` `verified_vanilla`
+  A road initializes with `ROAD_HITS` (5000) hits.
 - [ ] `ROAD-DECAY-001` `matrix` `verified_vanilla`
   Road decay amount by underlying terrain matches the canonical Screeps
   constants for plain, swamp, and wall terrain.
@@ -1454,6 +1501,8 @@ Coverage Notes
 - [ ] `ROOM-LOOK-004` `behavior` `verified_vanilla`
   `lookForAtArea(type, top, left, bottom, right)` mirrors `lookAtArea()`
   output shapes while restricting results to the requested `LOOK_*` type.
+- [ ] `ROOM-LOOK-005` `behavior` `verified_vanilla`
+  `lookForAtArea()` returns only objects within the specified bounding box.
 
 ### 16.5 Terrain
 - [ ] `ROOM-TERRAIN-001` `matrix` `verified_vanilla`

@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_CREEPS, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER, CARRY_CAPACITY } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, CARRY, MOVE, FIND_CREEPS, FIND_DROPPED_RESOURCES, STRUCTURE_CONTAINER, CARRY_CAPACITY, ENERGY_DECAY } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
 	test('WITHDRAW-001 withdraws energy from container', async ({ shard }) => {
@@ -177,5 +177,59 @@ describe('creep.pickup()', () => {
 
 		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		expect(remaining.length).toBe(0);
+	});
+});
+
+describe('Dropped resource decay', () => {
+	test('DROP-DECAY-001 dropped energy decays by ceil(amount / ENERGY_DECAY) per tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Drop from a creep — the engine tracks decay for dropped resources.
+		// Use 50 energy (1 CARRY part). ceil(50/1000) = 1 per tick.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: CARRY_CAPACITY },
+		});
+		await shard.tick();
+
+		// Drop all energy. runPlayer is 1 tick — first decay fires: 50 → 49.
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+		const resources1 = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const pile1 = resources1.find(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(pile1).toBeDefined();
+		expect(pile1!.amount).toBe(CARRY_CAPACITY - Math.ceil(CARRY_CAPACITY / ENERGY_DECAY));
+
+		// Second decay tick: ceil(49/1000) = 1 → 48.
+		await shard.tick();
+		const resources2 = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const pile2 = resources2.find(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(pile2).toBeDefined();
+		expect(pile2!.amount).toBe(CARRY_CAPACITY - 1 - Math.ceil((CARRY_CAPACITY - 1) / ENERGY_DECAY));
+	});
+
+	test('DROP-DECAY-002 dropped resource disappears when amount reaches 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Use a creep to drop a small amount — the drop action creates the
+		// resource in a known tick context. ceil(2/1000)=1 per tick → 2 ticks to vanish.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 2 },
+		});
+		await shard.tick();
+
+		// Drop 2 energy. runPlayer is 1 tick — decay fires: ceil(2/1000)=1 → amount=1.
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+		const mid = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(mid.find(r => r.pos.x === 25)!.amount).toBe(1);
+
+		// One more tick: ceil(1/1000)=1 → amount=0 → removed.
+		await shard.tick();
+		const after = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(after.find(r => r.pos.x === 25 && r.pos.y === 25)).toBeUndefined();
 	});
 });

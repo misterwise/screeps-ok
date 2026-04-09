@@ -2,7 +2,10 @@ import {
 	describe, test, expect, code, WORK, CARRY, MOVE,
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
 	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
+	STRUCTURE_LAB, OK, REACTION_TIME,
 } from '../../src/index.js';
+import { requireCapability } from '../support/policy.js';
+import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('adapter contract: inspection', () => {
 	describe('getObject', () => {
@@ -196,6 +199,76 @@ describe('adapter contract: inspection', () => {
 			const time = await shard.getGameTime();
 			expect(typeof time).toBe('number');
 			expect(time).toBeGreaterThan(0);
+		});
+	});
+
+	describe('lab snapshot', () => {
+		test('lab mineralType reflects stored mineral after runReaction', async ({ shard, skip }) => {
+			requireCapability(shard, skip, 'chemistry');
+			await shard.ownedRoom('p1', 'W1N1', 6);
+
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000 },
+			});
+			const lab1 = await shard.placeStructure('W1N1', {
+				pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000, H: 100 },
+			});
+			const lab2 = await shard.placeStructure('W1N1', {
+				pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000, O: 100 },
+			});
+
+			// H + O → OH
+			const rc = await shard.runPlayer('p1', code`
+				const lab = Game.getObjectById(${labId});
+				lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
+			`);
+			expect(rc).toBe(OK);
+			await shard.tick();
+
+			const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
+			// The adapter must derive mineralType from the lab's store,
+			// since the engine does not store a mineralType field in the DB.
+			expect(lab.mineralType).toBe('OH');
+		});
+
+		knownParityGap('lab-cooldown-no-decrement')('lab cooldown equals REACTION_TIME minus 1 after runPlayer (one tick cycle)', async ({ shard, skip }) => {
+			requireCapability(shard, skip, 'chemistry');
+			await shard.ownedRoom('p1', 'W1N1', 6);
+
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000 },
+			});
+			const lab1 = await shard.placeStructure('W1N1', {
+				pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000, H: 100 },
+			});
+			const lab2 = await shard.placeStructure('W1N1', {
+				pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { energy: 2000, O: 100 },
+			});
+
+			const t0 = await shard.getGameTime();
+
+			await shard.runPlayer('p1', code`
+				const lab = Game.getObjectById(${labId});
+				lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
+			`);
+			// No tick() — runPlayer IS a tick cycle. The intent is already processed.
+
+			const t1 = await shard.getGameTime();
+			const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
+
+			// runPlayer advances exactly 1 tick.
+			expect(t1 - t0).toBe(1);
+			// Engine sets cooldownTime = processingGameTime + REACTION_TIME.
+			// processingGameTime = t0, observation gameTime = t1 = t0+1.
+			// cooldown = cooldownTime - t1 = REACTION_TIME - 1.
+			const reactionTime = REACTION_TIME['OH'];
+			expect(lab.cooldown).toBe(reactionTime - 1);
 		});
 	});
 

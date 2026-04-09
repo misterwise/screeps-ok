@@ -1,6 +1,4 @@
-import { POWER_INFO } from '../../../src/index.js';
-
-const PWR_REGEN_SOURCE = 13;
+import { POWER_INFO, PWR_REGEN_SOURCE } from '../../../src/index.js';
 const info = POWER_INFO[PWR_REGEN_SOURCE];
 
 interface SourcePowerCase {

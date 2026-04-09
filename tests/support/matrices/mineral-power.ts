@@ -1,6 +1,4 @@
-import { POWER_INFO } from '../../../src/index.js';
-
-const PWR_REGEN_MINERAL = 14;
+import { POWER_INFO, PWR_REGEN_MINERAL } from '../../../src/index.js';
 const info = POWER_INFO[PWR_REGEN_MINERAL];
 
 interface MineralPowerCase {

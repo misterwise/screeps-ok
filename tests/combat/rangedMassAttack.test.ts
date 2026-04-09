@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, body } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, body, STRUCTURE_ROAD } from '../../src/index.js';
 import { rangedMassAttackRangeCases } from '../support/matrices/ranged-mass-attack.js';
 
 describe('creep.rangedMassAttack()', () => {
@@ -58,5 +58,46 @@ describe('creep.rangedMassAttack()', () => {
 		const target2 = await shard.expectObject(t2, 'creep');
 		expect(target1.hits).toBe(400 - 10);
 		expect(target2.hits).toBe(400 - 10);
+	});
+
+	test('COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [RANGED_ATTACK, MOVE],
+		});
+		// Friendly creep at range 1
+		const friendlyId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: body(3, TOUGH, MOVE),
+		});
+		// Unowned road at range 1
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_ROAD, hits: 5000,
+		});
+		// Hostile creep at range 2 to confirm the attack actually fires
+		const hostileId = await shard.placeCreep('W1N1', {
+			pos: [25, 27], owner: 'p2',
+			body: body(3, TOUGH, MOVE),
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const friendly = await shard.expectObject(friendlyId, 'creep');
+		expect(friendly.hits).toBe(400);
+
+		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
+		expect(road.hits).toBe(5000);
+
+		// Hostile took damage, proving the attack resolved
+		const hostile = await shard.expectObject(hostileId, 'creep');
+		expect(hostile.hits).toBe(400 - 4);
 	});
 });

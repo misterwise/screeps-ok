@@ -69,7 +69,27 @@ export function snapshotCreep(obj: any, resolver: PlayerResolver, gameTime?: num
 	};
 }
 
-export function snapshotStructure(obj: any, resolver: PlayerResolver): StructureSnapshot {
+/** Derive the cooldown remaining from an absolute cooldownTime field. */
+function snapCooldown(obj: any, gameTime?: number): number {
+	if (obj.cooldownTime && gameTime !== undefined) {
+		return Math.max(0, obj.cooldownTime - gameTime);
+	}
+	return obj.cooldown ?? 0;
+}
+
+/** Derive mineralType from the lab store (first non-energy key with amount > 0). */
+function snapLabMineralType(obj: any): string | null {
+	if (obj.store && typeof obj.store === 'object') {
+		for (const key of Object.keys(obj.store)) {
+			if (key !== 'energy' && typeof obj.store[key] === 'number' && obj.store[key] > 0) {
+				return key;
+			}
+		}
+	}
+	return null;
+}
+
+export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?: number): StructureSnapshot {
 	const base: StructureSnapshotBase = {
 		kind: 'structure',
 		id: obj._id,
@@ -119,7 +139,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				spawning: obj.spawning ?? null,
 			} satisfies SpawnSnapshot;
 
-		case 'lab':
+		case 'lab': {
+			const labMineral = snapLabMineralType(obj);
 			return {
 				...base,
 				structureType: 'lab',
@@ -128,11 +149,12 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				store: snapStore(obj),
 				storeCapacityByResource: {
 					energy: 2000,
-					...(obj.mineralType ? { [obj.mineralType]: 3000 } : {}),
+					...(labMineral ? { [labMineral]: 3000 } : {}),
 				},
-				cooldown: obj.cooldown ?? 0,
-				mineralType: obj.mineralType ?? null,
+				cooldown: snapCooldown(obj, gameTime),
+				mineralType: labMineral,
 			} satisfies LabSnapshot;
+		}
 
 		case 'tower':
 			return {
@@ -162,7 +184,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax ?? 1000,
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 800,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: snapCooldown(obj, gameTime),
 			} satisfies LinkSnapshot;
 
 		case 'rampart':
@@ -172,7 +194,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits ?? 1,
 				hitsMax: obj.hitsMax ?? 300000000,
 				isPublic: obj.isPublic ?? false,
-				ticksToDecay: obj.nextDecayTime ?? 0,
+				ticksToDecay: obj.nextDecayTime && gameTime !== undefined
+					? Math.max(0, obj.nextDecayTime - gameTime) : 0,
 			} satisfies RampartSnapshot;
 
 		case 'terminal':
@@ -183,7 +206,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax ?? 3000,
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 300000,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: snapCooldown(obj, gameTime),
 			} satisfies TerminalSnapshot;
 
 		case 'factory':
@@ -194,7 +217,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax ?? 1000,
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 50000,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: snapCooldown(obj, gameTime),
 				level: obj.level ?? 0,
 			} satisfies FactorySnapshot;
 
@@ -216,7 +239,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax ?? 250000,
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 2000,
-				ticksToDecay: obj.nextDecayTime ?? 0,
+				ticksToDecay: obj.nextDecayTime && gameTime !== undefined
+					? Math.max(0, obj.nextDecayTime - gameTime) : 0,
 			} satisfies ContainerSnapshot;
 
 		case 'extractor':
@@ -225,7 +249,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'extractor',
 				hits: obj.hits ?? 500,
 				hitsMax: obj.hitsMax ?? 500,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: snapCooldown(obj, gameTime),
 			} satisfies ExtractorSnapshot;
 
 		case 'road':
@@ -234,7 +258,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'road',
 				hits: obj.hits ?? 5000,
 				hitsMax: obj.hitsMax ?? 5000,
-				ticksToDecay: obj.nextDecayTime ?? 0,
+				ticksToDecay: obj.nextDecayTime && gameTime !== undefined
+					? Math.max(0, obj.nextDecayTime - gameTime) : 0,
 			} satisfies RoadSnapshot;
 
 		case 'nuker':
@@ -245,7 +270,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax ?? 1000,
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 305000,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: snapCooldown(obj, gameTime),
 			} satisfies NukerSnapshot;
 
 		case 'powerSpawn':
@@ -283,34 +308,50 @@ export function snapshotSite(obj: any, resolver: PlayerResolver): SiteSnapshot {
 	};
 }
 
-export function snapshotSource(obj: any): SourceSnapshot {
+export function snapshotSource(obj: any, gameTime?: number): SourceSnapshot {
+	let ticksToRegen = 0;
+	if (obj.nextRegenerationTime && gameTime !== undefined) {
+		ticksToRegen = Math.max(0, obj.nextRegenerationTime - gameTime);
+	} else if (obj.ticksToRegeneration) {
+		ticksToRegen = obj.ticksToRegeneration;
+	}
 	return {
 		kind: 'source',
 		id: obj._id,
 		pos: snapPos(obj),
 		energy: obj.energy ?? 0,
 		energyCapacity: obj.energyCapacity ?? 3000,
-		ticksToRegeneration: obj.ticksToRegeneration ?? 0,
+		ticksToRegeneration: ticksToRegen,
 	};
 }
 
-export function snapshotMineral(obj: any): MineralSnapshot {
+export function snapshotMineral(obj: any, gameTime?: number): MineralSnapshot {
+	let ticksToRegen = 0;
+	if (obj.nextRegenerationTime && gameTime !== undefined) {
+		ticksToRegen = Math.max(0, obj.nextRegenerationTime - gameTime);
+	} else if (obj.ticksToRegeneration) {
+		ticksToRegen = obj.ticksToRegeneration;
+	}
 	return {
 		kind: 'mineral',
 		id: obj._id,
 		pos: snapPos(obj),
 		mineralType: obj.mineralType,
 		mineralAmount: obj.mineralAmount ?? 0,
-		ticksToRegeneration: obj.ticksToRegeneration ?? 0,
+		ticksToRegeneration: ticksToRegen,
 	};
 }
 
 function snapshotRuin(obj: any): RuinSnapshot {
+	// Engine-created ruins (from _destroy processor) store the structure type
+	// inside obj.structure.type. Adapter-placed ruins (placeRuin) store it
+	// as obj.structureType. Handle both.
+	const structureType: string = obj.structureType ?? obj.structure?.type ?? '';
 	return {
 		kind: 'ruin',
 		id: obj._id,
 		pos: snapPos(obj),
-		structureType: obj.structureType ?? '',
+		structureType,
 		destroyTime: obj.destroyTime ?? 0,
 		store: snapStore(obj),
 		ticksToDecay: obj.decayTime ? obj.decayTime - (obj.destroyTime ?? 0) : 0,
@@ -321,8 +362,8 @@ export function snapshotObject(obj: any, resolver: PlayerResolver, gameTime?: nu
 	switch (obj.type) {
 		case 'creep': return snapshotCreep(obj, resolver, gameTime);
 		case 'constructionSite': return snapshotSite(obj, resolver);
-		case 'source': return snapshotSource(obj);
-		case 'mineral': return snapshotMineral(obj);
+		case 'source': return snapshotSource(obj, gameTime);
+		case 'mineral': return snapshotMineral(obj, gameTime);
 		case 'controller':
 		case 'spawn':
 		case 'extension':
@@ -343,7 +384,7 @@ export function snapshotObject(obj: any, resolver: PlayerResolver, gameTime?: nu
 		case 'keeperLair':
 		case 'invaderCore':
 		case 'portal':
-			return snapshotStructure(obj, resolver);
+			return snapshotStructure(obj, resolver, gameTime);
 		case 'energy':
 		case 'power':
 		case 'resource':

@@ -5,7 +5,7 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 
 describe('Spawn.recycleCreep', () => {
-	test('RECYCLE-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
+	test('RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -25,7 +25,7 @@ describe('Spawn.recycleCreep', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('RECYCLE-002 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep', async ({ shard }) => {
+	test('RECYCLE-CREEP-002 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -45,7 +45,7 @@ describe('Spawn.recycleCreep', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('RECYCLE-003 recycleCreep destroys the creep and drops energy', async ({ shard }) => {
+	test('RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

@@ -22,6 +22,9 @@ export interface RoomSpec {
 	terrain?: TerrainSpec;
 	rcl?: number;
 	owner?: string;
+	safeModeAvailable?: number;
+	/** Set the controller's initial downgrade timer (ticks until level loss). */
+	ticksToDowngrade?: number;
 }
 
 export type TerrainSpec = (0 | 1 | 2)[];
@@ -41,6 +44,7 @@ export interface StructureSpec {
 	owner?: string;
 	hits?: number;
 	store?: Record<string, number>;
+	ticksToDecay?: number;
 }
 
 export interface SiteSpec {
@@ -61,6 +65,7 @@ export interface MineralSpec {
 	pos: [number, number];
 	mineralType: string;
 	mineralAmount?: number;
+	ticksToRegeneration?: number;
 }
 
 export interface FlagSpec {
@@ -91,6 +96,21 @@ export interface DroppedResourceSpec {
 	pos: [number, number];
 	resourceType: string;
 	amount: number;
+}
+
+export interface PowerCreepSpec {
+	pos: [number, number];
+	owner: string;
+	name?: string;
+	/** Map of PWR_* constant to level (1-5). */
+	powers: Record<number, number>;
+	store?: Record<string, number>;
+}
+
+export interface NukeSpec {
+	pos: [number, number];
+	launchRoomName: string;
+	timeToLand: number;
 }
 
 // ── Capabilities ─────────────────────────────────────────────
@@ -142,6 +162,8 @@ export interface ScreepsOkAdapter {
 	placeTombstone(room: string, spec: TombstoneSpec): Promise<string>;
 	placeRuin(room: string, spec: RuinSpec): Promise<string>;
 	placeDroppedResource(room: string, spec: DroppedResourceSpec): Promise<string>;
+	placePowerCreep(room: string, spec: PowerCreepSpec): Promise<string>;
+	placeNuke(room: string, spec: NukeSpec): Promise<string>;
 	/** Escape hatch for uncommon or newly-added public object types. */
 	placeObject(room: string, type: string, spec: Record<string, unknown>): Promise<string>;
 

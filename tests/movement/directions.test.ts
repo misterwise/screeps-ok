@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, OK } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, WORK, OK, ERR_NO_BODYPART } from '../../src/index.js';
 import { moveDirectionCases } from '../support/matrices/move-directions.js';
 import { requireCapability } from '../support/policy.js';
 
@@ -38,6 +38,23 @@ describe('creep.move()', () => {
 			Game.getObjectById(${id}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
+
+		await shard.tick();
+		const c = await shard.expectObject(id, 'creep');
+		expect(c.pos.x).toBe(25);
+		expect(c.pos.y).toBe(25);
+	});
+
+	test('MOVE-BASIC-004 move() returns ERR_NO_BODYPART when the creep has no active MOVE parts', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK],
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${id}).move(TOP)
+		`);
+		expect(rc).toBe(ERR_NO_BODYPART);
 
 		await shard.tick();
 		const c = await shard.expectObject(id, 'creep');

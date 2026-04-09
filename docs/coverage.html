@@ -1,0 +1,4759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>screeps-ok coverage</title>
+<style>
+:root {
+  --bg: #0d1117; --fg: #c9d1d9; --border: #30363d;
+  --green: #3fb950; --yellow: #d29922; --red: #f85149;
+  --blue: #58a6ff; --muted: #8b949e; --card: #161b22;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg); color: var(--fg); line-height: 1.5; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.3rem; margin: 2rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--blue); }
+.subtitle { color: var(--muted); margin-bottom: 1.5rem; }
+.stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 1rem 0; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1rem 1.5rem; min-width: 140px; }
+.stat-card .num { font-size: 2rem; font-weight: 700; }
+.stat-card .label { color: var(--muted); font-size: 0.85rem; }
+.green { color: var(--green); }
+.yellow { color: var(--yellow); }
+.red { color: var(--red); }
+.bar-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0; font-size: 0.85rem; }
+.bar-label { width: 280px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 18px; background: var(--border); border-radius: 3px; position: relative; min-width: 100px; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.bar-text { position: absolute; right: 6px; top: 0; line-height: 18px; font-size: 0.75rem; color: var(--fg); }
+table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.85rem; }
+th, td { padding: 0.4rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
+tr:hover td { background: var(--card); }
+code { background: var(--card); padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+.badge { display: inline-block; padding: 0.15em 0.5em; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+.badge-green { background: #23863633; color: var(--green); }
+.badge-yellow { background: #d2992233; color: var(--yellow); }
+.badge-red { background: #f8514933; color: var(--red); }
+.badge-muted { background: #8b949e22; color: var(--muted); }
+details { margin: 0.5rem 0; }
+summary { cursor: pointer; font-weight: 600; }
+summary:hover { color: var(--blue); }
+.filter-bar { margin: 1rem 0; }
+.filter-bar input { background: var(--card); border: 1px solid var(--border); color: var(--fg);
+  padding: 0.4rem 0.75rem; border-radius: 6px; width: 100%; max-width: 400px; font-size: 0.9rem; }
+.filter-bar input::placeholder { color: var(--muted); }
+.hidden { display: none !important; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+  color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<h1>screeps-ok coverage</h1>
+<p class="subtitle">Generated 2026-04-09T00:40 UTC &mdash; behavioral conformance catalog vs. test suite</p>
+
+<div class="stats">
+  <div class="stat-card"><div class="num">497</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">381</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num yellow">1</div><div class="label">feasible untested</div></div>
+  <div class="stat-card"><div class="num">115</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">77%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
+</div>
+
+<h2>Coverage by section</h2>
+<div class="bar-row">
+  <span class="bar-label" title="1. Movement">1. Movement</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">21/21</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="2. Pathfinding">2. Pathfinding</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">6/6</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="3. Harvesting">3. Harvesting</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">10/10</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="4. Resource Transfer">4. Resource Transfer</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">13/13</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="5. Construction &amp; Repair">5. Construction &amp; Repair</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">12/12</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="6. Controller">6. Controller</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">19/19</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="7. Combat">7. Combat</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:93%;background:var(--yellow)"></div>
+    <span class="bar-text">26/28</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="8. Boosts">8. Boosts</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">27/27</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="9. Spawning &amp; Creep Lifecycle">9. Spawning &amp; Creep Lifecycle</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:98%;background:var(--yellow)"></div>
+    <span class="bar-text">55/56</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="10. Structures — Energy &amp; Storage">10. Structures — Energy &amp; Storage</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">17/17</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="11. Structures — Production">11. Structures — Production</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:57%;background:var(--yellow)"></div>
+    <span class="bar-text">25/44</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="12. Structures — Military">12. Structures — Military</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:87%;background:var(--yellow)"></div>
+    <span class="bar-text">13/15</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="13. Structures — Infrastructure">13. Structures — Infrastructure</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:67%;background:var(--yellow)"></div>
+    <span class="bar-text">20/30</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="14. Structures — NPC">14. Structures — NPC</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:0%;background:var(--red)"></div>
+    <span class="bar-text">0/11</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="15. Structure Common">15. Structure Common</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">17/17</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="16. Room Mechanics">16. Room Mechanics</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:79%;background:var(--yellow)"></div>
+    <span class="bar-text">22/28</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="17. Source, Mineral &amp; Deposit Lifecycle">17. Source, Mineral &amp; Deposit Lifecycle</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:53%;background:var(--yellow)"></div>
+    <span class="bar-text">9/17</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="18. Game Objects">18. Game Objects</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">8/8</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="19. Power Creeps">19. Power Creeps</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:0%;background:var(--red)"></div>
+    <span class="bar-text">0/33</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="20. Market">20. Market</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:0%;background:var(--red)"></div>
+    <span class="bar-text">0/16</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="21. Map">21. Map</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">11/11</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="22. RoomPosition">22. RoomPosition</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">18/18</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="23. Store API">23. Store API</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">16/16</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="24. Intent Resolution">24. Intent Resolution</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">12/12</span>
+  </div>
+</div>
+<div class="bar-row">
+  <span class="bar-label" title="25. Memory">25. Memory</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:33%;background:var(--red)"></div>
+    <span class="bar-text">4/12</span>
+  </div>
+</div>
+
+<h2>Untested by blocker</h2>
+<table>
+<thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-yellow">feasible</span></td><td>1</td><td><code>PORTAL-003</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: deposit</span></td><td>5</td><td><code>DEPOSIT-001</code> <code>DEPOSIT-002</code> <code>DEPOSIT-003</code> <code>DEPOSIT-004</code> <code>DEPOSIT-005</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: factory</span></td><td>14</td><td><code>FACTORY-PRODUCE-001</code> <code>FACTORY-PRODUCE-002</code> <code>FACTORY-PRODUCE-003</code> <code>FACTORY-PRODUCE-004</code> <code>FACTORY-PRODUCE-005</code> <code>FACTORY-PRODUCE-006</code> <code>FACTORY-PRODUCE-007</code> <code>FACTORY-PRODUCE-008</code> <code>FACTORY-PRODUCE-009</code> <code>FACTORY-PRODUCE-010</code> <code>FACTORY-COMMODITY-001</code> <code>FACTORY-COMMODITY-002</code> <code>FACTORY-COMMODITY-003</code> <code>FACTORY-PRODUCE-009</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: market</span></td><td>25</td><td><code>TERMINAL-SEND-001</code> <code>TERMINAL-SEND-002</code> <code>TERMINAL-SEND-003</code> <code>TERMINAL-SEND-004</code> <code>TERMINAL-SEND-005</code> <code>TERMINAL-SEND-006</code> <code>TERMINAL-SEND-007</code> <code>TERMINAL-SEND-008</code> <code>TERMINAL-SEND-009</code> <code>MARKET-ORDER-001</code> <code>MARKET-ORDER-002</code> <code>MARKET-ORDER-003</code> <code>MARKET-ORDER-004</code> <code>MARKET-ORDER-005</code> <code>MARKET-ORDER-006</code> <code>MARKET-ORDER-007</code> <code>MARKET-ORDER-008</code> <code>MARKET-DEAL-001</code> <code>MARKET-DEAL-002</code> <code>MARKET-DEAL-003</code> <code>MARKET-QUERY-001</code> <code>MARKET-QUERY-002</code> <code>MARKET-QUERY-003</code> <code>MARKET-QUERY-004</code> <code>MARKET-QUERY-005</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>49</td><td><code>TOWER-POWER-001</code> <code>TOWER-POWER-002</code> <code>SPAWN-TIMING-005</code> <code>POWER-SPAWN-001</code> <code>POWER-SPAWN-002</code> <code>POWER-SPAWN-003</code> <code>POWER-SPAWN-004</code> <code>POWER-SPAWN-005</code> <code>RAMPART-DECAY-004</code> <code>RAMPART-DECAY-005</code> <code>POWER-BANK-001</code> <code>POWER-BANK-002</code> <code>POWER-BANK-003</code> <code>SOURCE-POWER-001</code> <code>SOURCE-POWER-002</code> <code>MINERAL-POWER-001</code> <code>POWERCREEP-CREATE-001</code> <code>POWERCREEP-CREATE-002</code> <code>POWERCREEP-SPAWN-001</code> <code>POWERCREEP-SPAWN-002</code> <code>POWERCREEP-LIFETIME-001</code> <code>POWERCREEP-DEATH-001</code> <code>POWERCREEP-RENEW-001</code> <code>POWERCREEP-RENEW-002</code> <code>POWERCREEP-DELETE-001</code> <code>POWERCREEP-DELETE-002</code> <code>POWERCREEP-DELETE-003</code> <code>POWERCREEP-UPGRADE-001</code> <code>POWERCREEP-UPGRADE-002</code> <code>POWERCREEP-MOVE-001</code> <code>POWERCREEP-MOVE-002</code> <code>POWERCREEP-ACTION-001</code> <code>POWERCREEP-ACTION-002</code> <code>POWERCREEP-ACTION-003</code> <code>POWERCREEP-ENABLE-001</code> <code>POWERCREEP-ENABLE-002</code> <code>POWER-OPERATE-001</code> <code>POWER-OPERATE-002</code> <code>POWER-OPERATE-003</code> <code>POWER-OPERATE-004</code> <code>POWER-OPERATE-005</code> <code>POWER-DISRUPT-001</code> <code>POWER-DISRUPT-002</code> <code>POWER-DISRUPT-003</code> <code>POWER-REGEN-001</code> <code>POWER-REGEN-002</code> <code>POWER-COMBAT-001</code> <code>POWER-COMBAT-002</code> <code>POWER-COMBAT-003</code></td></tr>
+<tr><td><span class="badge badge-muted">NPC spawning</span></td><td>8</td><td><code>KEEPER-LAIR-001</code> <code>KEEPER-LAIR-002</code> <code>KEEPER-LAIR-003</code> <code>INVADER-CORE-001</code> <code>INVADER-CORE-002</code> <code>INVADER-CORE-003</code> <code>INVADER-CORE-004</code> <code>NPC-OWNERSHIP-001</code></td></tr>
+<tr><td><span class="badge badge-muted">simulate()-blocked</span></td><td>14</td><td><code>FLAG-001</code> <code>FLAG-002</code> <code>FLAG-003</code> <code>FLAG-004</code> <code>FLAG-005</code> <code>FLAG-006</code> <code>MEMORY-004</code> <code>RAWMEMORY-002</code> <code>RAWMEMORY-003</code> <code>RAWMEMORY-004</code> <code>RAWMEMORY-FOREIGN-001</code> <code>RAWMEMORY-FOREIGN-002</code> <code>RAWMEMORY-FOREIGN-003</code> <code>RAWMEMORY-FOREIGN-004</code></td></tr>
+</tbody>
+</table>
+
+<h2>Full catalog</h2>
+<div class="filter-bar"><input id="filter" type="text" placeholder="Filter by ID, section, or status..."></div>
+<table id="catalog-table">
+<thead><tr><th>ID</th><th>Status</th><th>Section</th><th>Class</th><th>Oracle</th><th>Capability</th><th>Test file</th></tr></thead>
+<tbody>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-BASIC-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/directions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-BASIC-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/directions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-BASIC-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-BASIC-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/movement/directions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-FATIGUE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-FATIGUE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-FATIGUE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-FATIGUE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-BASIC-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/movement/fatigue.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-FATIGUE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-TRANSITION-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/transitions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-TRANSITION-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/transitions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-PULL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/pull.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-PULL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/pull.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-PULL-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/pull.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-PULL-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/pull.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-COLLISION-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/collision.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-COLLISION-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/collision.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-COLLISION-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/collision.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-COLLISION-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/collision.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MOVE-COLLISION-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>1. Movement</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/movement/collision.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PATHFINDER-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PATHFINDER-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PATHFINDER-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COSTMATRIX-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COSTMATRIX-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COSTMATRIX-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>2. Pathfinding</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/harvest.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-MINERAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/harvest-mineral.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-MINERAL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/harvest-mineral.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-MINERAL-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/harvest-mineral.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>HARVEST-MINERAL-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>3. Harvesting</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/harvest-mineral.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TRANSFER-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/transfer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TRANSFER-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/transfer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TRANSFER-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/transfer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TRANSFER-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/transfer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WITHDRAW-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WITHDRAW-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WITHDRAW-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WITHDRAW-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PICKUP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DROP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DROP-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DROP-DECAY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DROP-DECAY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>4. Resource Transfer</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/withdraw-pickup-drop.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BUILD-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/build.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BUILD-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/build.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BUILD-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/build.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BUILD-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/construction.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>REPAIR-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/repair.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>REPAIR-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/repair.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>REPAIR-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/repair.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>REPAIR-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/repair.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DISMANTLE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/dismantle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DISMANTLE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/dismantle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>DISMANTLE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/dismantle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONSTRUCTION-SITE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/construction.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-CLAIM-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/controller.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-RESERVE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/controller.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-ATTACK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/controller.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SIGN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/room/controller.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-SAFEMODE-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/room/safemode.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-STRUCTLIMIT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-STRUCTLIMIT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-MELEE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-MELEE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-MELEE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RANGED-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RANGED-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RMA-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/rangedMassAttack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RMA-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/rangedMassAttack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RMA-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/rangedMassAttack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-HEAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-RANGEDHEAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/combat/attack.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-BODYPART-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-BODYPART-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>COMBAT-BODYPART-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-ATTACK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-ATTACK-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-ATTACK-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/combat/tower-intent.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-ATTACK-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-HEAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-HEAL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-HEAL-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-REPAIR-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-REPAIR-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-REPAIR-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/combat/tower-intent.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-INTENT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower-intent.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-INTENT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower-intent.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOWER-INTENT-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/combat/tower-intent.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>TOWER-POWER-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>TOWER-POWER-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CREEP-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNBOOST-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/unboost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNBOOST-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/unboost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNBOOST-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/unboost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-AGGREGATION-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-aggregation.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-ATTACK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-RANGED-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-HEAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-TOUGH-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-TOUGH-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-HARVEST-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-HARVEST-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-BUILD-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-BUILD-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-DISMANTLE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-UPGRADE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-UPGRADE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-MOVE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CARRY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>BOOST-CARRY-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>8. Boosts</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/actions/boost-magnitudes.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-009</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-010</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-CREATE-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>SPAWN-TIMING-005</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/spawn.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-STOMP-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/spawn-stomp.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RENEW-CREEP-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/renew.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RECYCLE-CREEP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/recycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RECYCLE-CREEP-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/recycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RECYCLE-CREEP-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/recycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SPAWNING-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SPAWNING-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SPAWNING-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SPAWNING-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-LIFETIME-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifetime.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-LIFETIME-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifetime.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-LIFETIME-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifetime.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-death.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-DEATH-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SUICIDE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SUICIDE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SUICIDE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SUICIDE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SUICIDE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SAY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SAY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CREEP-SAY-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/creep-lifecycle.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTENSION-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extension.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTENSION-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extension.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONTAINER-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/container-decay.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONTAINER-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/container-decay.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONTAINER-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/container.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-009</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-010</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LINK-012</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>10. Structures — Energy &amp; Storage</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/link.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-009</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-010</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-012</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-009</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-010</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-REVERSE-012</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>LAB-RUN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>11. Structures — Production</td>
+  <td></td>
+  <td></td>
+  <td>chemistry</td>
+  <td><small>tests/structures/lab.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-001</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-002</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-003</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-004</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-005</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-006</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-007</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-008</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-009</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-010</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-COMMODITY-001</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-COMMODITY-002</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-COMMODITY-003</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: factory">
+  <td><code>FACTORY-PRODUCE-009</code></td>
+  <td><span class="badge badge-muted">capability: factory</span></td>
+  <td>11. Structures — Production</td>
+  <td></td>
+  <td></td>
+  <td>factory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-SPAWN-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-SPAWN-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-SPAWN-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-SPAWN-004</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-SPAWN-005</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>11. Structures — Production</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-PROTECT-008</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-DECAY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-DECAY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAMPART-DECAY-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/rampart.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>RAMPART-DECAY-004</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>RAMPART-DECAY-005</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WALL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/wall.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>WALL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/wall.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-HITS-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-DECAY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road-decay.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-DECAY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road-decay.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-DECAY-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road-decay.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-WEAR-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROAD-WEAR-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/road.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-001</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-002</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-003</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-004</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-005</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-006</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-007</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-008</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>TERMINAL-SEND-009</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>OBSERVER-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/observer.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTRACTOR-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extractor.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTRACTOR-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extractor.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTRACTOR-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extractor.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTRACTOR-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extractor.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>EXTRACTOR-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/extractor.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PORTAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/portal.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PORTAL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/portal.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>PORTAL-003</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>PORTAL-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>13. Structures — Infrastructure</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/portal.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>KEEPER-LAIR-001</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>KEEPER-LAIR-002</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>KEEPER-LAIR-003</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>INVADER-CORE-001</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>INVADER-CORE-002</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>INVADER-CORE-003</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>INVADER-CORE-004</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-BANK-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-BANK-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>14. Structures — NPC</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-BANK-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>14. Structures — NPC</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="NPC spawning">
+  <td><code>NPC-OWNERSHIP-001</code></td>
+  <td><span class="badge badge-muted">NPC spawning</span></td>
+  <td>14. Structures — NPC</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-HITS-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/hits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-HITS-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/hits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-HITS-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/hits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-HITS-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/hits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-ACTIVE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-ACTIVE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-ACTIVE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-ACTIVE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-ACTIVE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/isactive.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONSTRUCTION-COST-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/construction-cost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONSTRUCTION-COST-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/construction-cost.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STRUCTURE-API-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>15. Structure Common</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/structure-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-VIS-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-VIS-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-ENERGY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-ENERGY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/room-find.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/room-find.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-FIND-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/room-find.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-LOOK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/look.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-LOOK-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/look.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-LOOK-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/look.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-LOOK-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/look.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-LOOK-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/look.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-TERRAIN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/terrain.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-TERRAIN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/terrain.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-TERRAIN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/terrain.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-EVENTLOG-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/eventlog.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-EVENTLOG-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/eventlog.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-EVENTLOG-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/eventlog.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOM-EVENTLOG-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/eventlog.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-001</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-002</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-003</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-004</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-005</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>FLAG-006</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SOURCE-REGEN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/source-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SOURCE-REGEN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/source-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SOURCE-REGEN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/source-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SOURCE-REGEN-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/source-regen.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>SOURCE-POWER-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>SOURCE-POWER-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MINERAL-REGEN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/mineral-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MINERAL-REGEN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/mineral-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MINERAL-REGEN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/mineral-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MINERAL-REGEN-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/mineral-regen.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MINERAL-REGEN-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/mineral-regen.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>MINERAL-POWER-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: deposit">
+  <td><code>DEPOSIT-001</code></td>
+  <td><span class="badge badge-muted">capability: deposit</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>deposit</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: deposit">
+  <td><code>DEPOSIT-002</code></td>
+  <td><span class="badge badge-muted">capability: deposit</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>deposit</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: deposit">
+  <td><code>DEPOSIT-003</code></td>
+  <td><span class="badge badge-muted">capability: deposit</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>deposit</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: deposit">
+  <td><code>DEPOSIT-004</code></td>
+  <td><span class="badge badge-muted">capability: deposit</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>deposit</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: deposit">
+  <td><code>DEPOSIT-005</code></td>
+  <td><span class="badge badge-muted">capability: deposit</span></td>
+  <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>deposit</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOMBSTONE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/tombstone.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TOMBSTONE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/tombstone.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RUIN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/ruin.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RUIN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/ruin.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RUIN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/ruin.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>NUKE-FLIGHT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/nuke.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>NUKE-FLIGHT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/nuke.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>NUKE-FLIGHT-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/nuke.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-CREATE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-CREATE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-SPAWN-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-SPAWN-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-LIFETIME-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-DEATH-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-RENEW-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-RENEW-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-DELETE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-DELETE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-DELETE-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-UPGRADE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-UPGRADE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-MOVE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-MOVE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-ACTION-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-ACTION-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-ACTION-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-ENABLE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWERCREEP-ENABLE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-OPERATE-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-OPERATE-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-OPERATE-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-OPERATE-004</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-OPERATE-005</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-DISRUPT-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-DISRUPT-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-DISRUPT-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-REGEN-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-REGEN-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-COMBAT-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-COMBAT-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-COMBAT-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-001</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-002</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-003</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-004</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-005</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-006</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-007</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-ORDER-008</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-DEAL-001</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-DEAL-002</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-DEAL-003</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-QUERY-001</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-QUERY-002</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-QUERY-003</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-QUERY-004</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: market">
+  <td><code>MARKET-QUERY-005</code></td>
+  <td><span class="badge badge-muted">capability: market</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>market</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROOM-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROOM-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROOM-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROOM-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROOM-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROUTE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROUTE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROUTE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROUTE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-ROUTE-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MAP-TERRAIN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>21. Map</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/pathfinder.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/room-position-direction.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-SPATIAL-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-FIND-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-LOOK-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-LOOK-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-LOOK-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-ACTION-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ROOMPOS-ACTION-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>22. RoomPosition</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/roomposition.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-ACCESS-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-ACCESS-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-OPEN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-OPEN-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-OPEN-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-SINGLE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-SINGLE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-SINGLE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-SINGLE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-RESTRICTED-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-RESTRICTED-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-RESTRICTED-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-RESTRICTED-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-RESTRICTED-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/structures/store.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TIMER-COOLDOWN-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/room/timers.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>TIMER-SAFEMODE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/room/timers.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/intent-priority.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td><small>tests/actions/intent-priority.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-overwrite.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-overwrite.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-RESOURCE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-resource.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-RESOURCE-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-resource.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-RESOURCE-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-resource.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-RESOURCE-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-resource.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-LIMIT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/actions/intent-limits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-LIMIT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-limits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-SIMULT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-simultaneous.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-SIMULT-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/actions/intent-simultaneous.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MEMORY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/memory.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MEMORY-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/memory.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MEMORY-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/memory.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>MEMORY-004</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>RAWMEMORY-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/room/memory.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-002</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-003</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-004</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-FOREIGN-001</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-FOREIGN-002</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-FOREIGN-003</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="simulate()-blocked">
+  <td><code>RAWMEMORY-FOREIGN-004</code></td>
+  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td>25. Memory</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+</tbody>
+</table>
+
+
+
+<footer>
+  Generated by <code>scripts/generate-coverage.js</code>.
+  Regenerate with <code>npm run coverage</code>.
+</footer>
+
+<script>
+const input = document.getElementById('filter');
+const rows = document.querySelectorAll('#catalog-table tbody tr');
+input.addEventListener('input', () => {
+  const q = input.value.toLowerCase();
+  rows.forEach(row => {
+    row.classList.toggle('hidden', !row.textContent.toLowerCase().includes(q));
+  });
+});
+</script>
+</body>
+</html>

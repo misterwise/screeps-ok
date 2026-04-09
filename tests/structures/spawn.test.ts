@@ -4,7 +4,10 @@ import {
 	WORK, CARRY, MOVE, TOUGH, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
 	CREEP_SPAWN_TIME, MAX_CREEP_SIZE,
+	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
+	FIND_CREEPS, TERRAIN_WALL,
 } from '../../src/index.js';
+import { requireCapability } from '../support/policy.js';
 
 describe('StructureSpawn', () => {
 	const workerBodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
@@ -258,6 +261,30 @@ describe('StructureSpawn', () => {
 		expect(second).toBe(ERR_BUSY);
 	});
 
+	test('SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'MemTest', {
+				memory: { role: 'scout', priority: 5 }
+			})
+		`);
+		expect(rc).toBe(OK);
+
+		// Advance past spawn time so creep fully exists.
+		await shard.tick(CREEP_SPAWN_TIME);
+
+		const mem = await shard.runPlayer('p1', code`
+			Game.creeps['MemTest'].memory
+		`);
+		expect(mem).toEqual({ role: 'scout', priority: 5 });
+	});
+
 	// ── Spawning timing ─────────────────────────────────────────
 
 	test('SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length', async ({ shard }) => {
@@ -302,5 +329,97 @@ describe('StructureSpawn', () => {
 			!!Game.creeps['SpawnComplete']
 		`);
 		expect(exists).toBe(true);
+	});
+
+	test('SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise', async ({ shard, skip }) => {
+		requireCapability(shard, skip, 'terrain');
+		await shard.ownedRoom('p1', 'W1N1', 2);
+
+		// Wall TOP [25,24] so the spawn must pick the next default: TOP_RIGHT [26,24].
+		const terrain = new Array<0 | 1 | 2>(2500).fill(0);
+		terrain[24 * 50 + 25] = TERRAIN_WALL; // [25,24] = TOP
+		await shard.setTerrain('W1N1', terrain);
+
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'DirDefault')
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick(CREEP_SPAWN_TIME);
+
+		const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
+		const c = creeps.find(c => c.name === 'DirDefault');
+		expect(c).toBeDefined();
+		// TOP_RIGHT of [25,25] is [26,24].
+		expect(c!.pos.x).toBe(26);
+		expect(c!.pos.y).toBe(24);
+	});
+
+	test('SPAWN-TIMING-004 opts.directions selects exit tile from the provided order', async ({ shard, skip }) => {
+		requireCapability(shard, skip, 'terrain');
+		await shard.ownedRoom('p1', 'W1N1', 2);
+
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		// Request BOTTOM as first direction — creep should exit to [25,26].
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'DirCustom', {
+				directions: [BOTTOM, LEFT, RIGHT]
+			})
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick(CREEP_SPAWN_TIME);
+
+		const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
+		const c = creeps.find(c => c.name === 'DirCustom');
+		expect(c).toBeDefined();
+		// BOTTOM of [25,25] is [25,26].
+		expect(c!.pos.x).toBe(25);
+		expect(c!.pos.y).toBe(26);
+	});
+
+	test('SPAWN-TIMING-006 creep exits the spawn tile in the chosen direction on completion', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'ExitCreep')
+		`);
+		expect(rc).toBe(OK);
+
+		// While spawning, creep is on spawn tile.
+		await shard.tick();
+		const spawning = await shard.runPlayer('p1', code`
+			const c = Game.creeps['ExitCreep'];
+			c ? ({ x: c.pos.x, y: c.pos.y, spawning: c.spawning }) : null
+		`) as { x: number; y: number; spawning: boolean } | null;
+		expect(spawning).not.toBeNull();
+		expect(spawning!.x).toBe(25);
+		expect(spawning!.y).toBe(25);
+		expect(spawning!.spawning).toBe(true);
+
+		// Complete spawning.
+		await shard.tick(CREEP_SPAWN_TIME - 1);
+
+		const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
+		const c = creeps.find(c => c.name === 'ExitCreep');
+		expect(c).toBeDefined();
+		expect(c!.spawning).toBe(false);
+		// Creep should no longer be on the spawn tile [25,25].
+		const onSpawn = c!.pos.x === 25 && c!.pos.y === 25;
+		expect(onSpawn).toBe(false);
 	});
 });

@@ -1,6 +1,10 @@
 export type DocumentedAdapterLimitation =
 	| 'headlessMultiPlayer'
-	| 'structureCustomHits';
+	| 'structureCustomHits'
+	| 'controllerDowngrade'
+	| 'portalPlacement'
+	| 'interRoomTransition'
+	| 'flagSupport';
 
 function activeAdapterPath(): string {
 	return process.env.SCREEPS_OK_ADAPTER ?? '';
@@ -21,5 +25,17 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// Vanilla's addRoomObject produces objects that getObject cannot find
 			// when a custom hits value is provided on unowned structures like containers.
 			return isBuiltInAdapter('vanilla');
+		case 'controllerDowngrade':
+			// xxscreeps adapter does not support RoomSpec.ticksToDowngrade.
+			return isBuiltInAdapter('xxscreeps');
+		case 'portalPlacement':
+			// xxscreeps adapter does not support placeObject for portals.
+			return isBuiltInAdapter('xxscreeps');
+		case 'interRoomTransition':
+			// xxscreeps adapter does not support inter-room creep transitions.
+			return isBuiltInAdapter('xxscreeps');
+		case 'flagSupport':
+			// xxscreeps simulate() does not populate Game.flags (no TickPayload-aware player mode).
+			return isBuiltInAdapter('xxscreeps');
 	}
 }

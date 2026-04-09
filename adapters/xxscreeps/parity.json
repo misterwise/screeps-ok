@@ -12,7 +12,22 @@
 		"link-intent-after-idle-tick",
 		"lab-unrestricted-mineral-capacity",
 		"rampart-no-protection",
-		"renew-while-spawning"
+		"renew-while-spawning",
+		"lab-cooldown-no-decrement",
+		"lab-not-owner-precedence",
+		"observer-room-always-visible",
+		"observer-not-owner-precedence",
+		"mineral-regen-not-implemented",
+		"road-decay-not-implemented",
+		"container-decay-not-implemented",
+		"safemode-concurrent-allowed",
+		"destroy-ownership-bypass",
+		"notifyWhenAttacked-not-implemented",
+		"eventlog-attack-missing",
+		"tough-boost-no-reduction",
+		"boost-energy-cost-scales",
+		"route-callback-ignored",
+		"rampart-decay-not-implemented"
 	],
 	"notes": {
 		"creep-owner-undefined": "xxscreeps Creep has 'owner' as a key but the value is undefined. creep.my works but creep.owner.username throws.",
@@ -27,6 +42,21 @@
 		"link-intent-after-idle-tick": "xxscreeps logistics processor silently drops link.transferEnergy intents after an idle tick (a tick with no player code). The intent returns OK but the transfer never executes. Tower, creep, and other structure intents are unaffected. Root cause is in the room processor's intent dispatch for the logistics mod.",
 		"lab-unrestricted-mineral-capacity": "xxscreeps lab store.getCapacity() returns LAB_MINERAL_CAPACITY (3000) for any mineral resource type, not just the mineral the lab currently holds. Vanilla returns null for resources the lab cannot accept.",
 		"rampart-no-protection": "xxscreeps ramparts do not absorb damage for objects on their tile. Attacks hit the target directly instead of the rampart. Both tower.attack on creeps and creep.attack on structures bypass the rampart.",
-		"renew-while-spawning": "xxscreeps spawn.renewCreep returns OK while the spawn is actively spawning a creep. Vanilla returns ERR_BUSY."
+		"renew-while-spawning": "xxscreeps spawn.renewCreep returns OK while the spawn is actively spawning a creep. Vanilla returns ERR_BUSY.",
+		"lab-cooldown-no-decrement": "xxscreeps lab cooldown after runReaction/reverseReaction reports the full REACTION_TIME value (e.g. 20 for OH) instead of REACTION_TIME - 1 (19). The cooldown getter does not account for the processing tick.",
+		"lab-not-owner-precedence": "xxscreeps lab.runReaction/reverseReaction on an unowned lab returns ERR_RCL_NOT_ENOUGH (-14) instead of ERR_NOT_OWNER (-1). xxscreeps checks RCL/isActive before checking ownership.",
+		"observer-room-always-visible": "xxscreeps makes all rooms in the shard visible to all players. Vanilla only reveals rooms containing owned objects or an active observeRoom call.",
+		"observer-not-owner-precedence": "xxscreeps observer.observeRoom on an unowned observer returns ERR_RCL_NOT_ENOUGH (-14) instead of ERR_NOT_OWNER (-1). Same RCL-before-ownership check order as labs.",
+		"mineral-regen-not-implemented": "xxscreeps does not process mineral regeneration. Depleted minerals remain at mineralAmount 0 and ticksToRegeneration is always 0.",
+		"road-decay-not-implemented": "xxscreeps does not process road decay. Roads remain at initial hits indefinitely.",
+		"container-decay-not-implemented": "xxscreeps does not process container decay. Containers remain at initial hits indefinitely.",
+		"safemode-concurrent-allowed": "xxscreeps allows activateSafeMode on multiple owned controllers simultaneously. Vanilla limits safe mode to one controller at a time (ERR_BUSY).",
+		"destroy-ownership-bypass": "xxscreeps allows structure.destroy() even when the room controller is not owned by the calling player. Vanilla returns ERR_NOT_OWNER.",
+		"notifyWhenAttacked-not-implemented": "xxscreeps does not implement structure.notifyWhenAttacked(). The method does not exist on the prototype.",
+		"eventlog-attack-missing": "xxscreeps getEventLog() does not include EVENT_ATTACK entries for melee combat. Event log may be empty or missing attack-specific fields.",
+		"tough-boost-no-reduction": "xxscreeps does not apply damage reduction to boosted TOUGH body parts. Incoming damage hits at full rate (30 instead of e.g. 21 for GO at 0.7x).",
+		"boost-energy-cost-scales": "xxscreeps charges energy proportional to boosted output for repair and upgrade. Vanilla charges 1 energy per WORK part per tick regardless of boost multiplier.",
+		"route-callback-ignored": "xxscreeps Game.map.findRoute ignores the routeCallback option. Routes blocked by Infinity return are still found.",
+		"rampart-decay-not-implemented": "xxscreeps does not process rampart decay. Ramparts remain at initial hits indefinitely."
 	}
 }

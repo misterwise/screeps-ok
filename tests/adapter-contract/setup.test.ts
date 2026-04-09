@@ -1,4 +1,5 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB } from '../../src/index.js';
+import { requireCapability } from '../support/policy.js';
 import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 // Vanilla's mockup runtime disables users that own no room objects, so a
@@ -384,6 +385,72 @@ describe('adapter contract: setup', () => {
 			// Amount may have decayed by ceil(100/1000)=1 during the tick.
 			expect(obj.amount).toBeGreaterThan(0);
 			expect(obj.amount).toBeLessThanOrEqual(100);
+		});
+	});
+
+	describe('placePowerCreep', () => {
+		test('places a power creep with specified powers accessible via Game.powerCreeps', async ({ shard, skip }) => {
+			requireCapability(shard, skip, 'powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const id = await shard.placePowerCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				name: 'TestPC',
+				powers: { [PWR_OPERATE_LAB]: 1 },
+			});
+			await shard.tick();
+
+			const result = await shard.runPlayer('p1', code`
+				const pc = Game.powerCreeps['TestPC'];
+				pc ? ({
+					name: pc.name,
+					x: pc.pos.x,
+					y: pc.pos.y,
+					hasPower: !!pc.powers[PWR_OPERATE_LAB],
+					powerLevel: pc.powers[PWR_OPERATE_LAB] ? pc.powers[PWR_OPERATE_LAB].level : 0,
+				}) : null
+			`) as { name: string; x: number; y: number; hasPower: boolean; powerLevel: number } | null;
+			expect(result).not.toBeNull();
+			expect(result!.name).toBe('TestPC');
+			expect(result!.x).toBe(25);
+			expect(result!.y).toBe(25);
+			expect(result!.hasPower).toBe(true);
+			expect(result!.powerLevel).toBe(1);
+		});
+	});
+
+	describe('placeNuke', () => {
+		test('places an in-flight nuke visible via FIND_NUKES with specified timeToLand', async ({ shard, skip }) => {
+			requireCapability(shard, skip, 'nuke');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p1' },
+				],
+			});
+			await shard.placeNuke('W2N1', {
+				pos: [25, 25],
+				launchRoomName: 'W1N1',
+				timeToLand: 10,
+			});
+			await shard.tick();
+
+			const nukeInfo = await shard.runPlayer('p1', code`
+				const nukes = Game.rooms['W2N1'].find(FIND_NUKES);
+				nukes.length > 0 ? ({
+					launchRoomName: nukes[0].launchRoomName,
+					timeToLand: nukes[0].timeToLand,
+					x: nukes[0].pos.x,
+					y: nukes[0].pos.y,
+				}) : null
+			`) as { launchRoomName: string; timeToLand: number; x: number; y: number } | null;
+			expect(nukeInfo).not.toBeNull();
+			expect(nukeInfo!.launchRoomName).toBe('W1N1');
+			expect(nukeInfo!.x).toBe(25);
+			expect(nukeInfo!.y).toBe(25);
+			// timeToLand should have decreased by 1 from the tick.
+			expect(nukeInfo!.timeToLand).toBe(9);
 		});
 	});
 });

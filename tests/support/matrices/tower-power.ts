@@ -1,7 +1,4 @@
-import { POWER_INFO } from '../../../src/index.js';
-
-const PWR_OPERATE_TOWER = 3;
-const PWR_DISRUPT_TOWER = 10;
+import { POWER_INFO, PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER } from '../../../src/index.js';
 const operateInfo = POWER_INFO[PWR_OPERATE_TOWER];
 const disruptInfo = POWER_INFO[PWR_DISRUPT_TOWER];
 

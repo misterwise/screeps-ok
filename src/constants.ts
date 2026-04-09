@@ -1,301 +1,296 @@
-// Checked-in canonical Screeps constants for test-side assertions.
+// Canonical Screeps constants sourced from @screeps/common — the shared
+// game-constant package consumed by both vanilla and xxscreeps.
 //
-// Scalar constants are owned directly by this file. Large canonical tables
-// (REACTIONS, BOOSTS, COMMODITIES, POWER_INFO) are re-exported from
-// @screeps/common — the shared game-constant package that defines what
-// Screeps is. This is not "the engine under test"; both vanilla and xxscreeps
-// consume these tables and could implement the logic around them incorrectly,
-// which is exactly what the suite tests.
+// We re-export from the package rather than hand-maintaining values to
+// prevent drift. TypeScript's ESM named-export inference works for most
+// constants; a small number need the require() fallback because they are
+// assigned to `exports` dynamically.
 
-// Large canonical tables — imported from @screeps/common rather than
-// hand-maintained, to avoid drift in hundreds of lookup entries.
+// ── Tables (ESM-exportable) ────────────────────────────────────────
 export {
 	REACTIONS, BOOSTS, COMMODITIES, POWER_INFO,
 } from '@screeps/common/lib/constants.js';
 
+// ── Everything else ────────────────────────────────────────────────
+// @screeps/common uses Object.assign(exports, {...}) which TypeScript
+// can resolve for simple scalars but not for all names. Import the
+// whole module once and re-export with explicit types.
+//
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const C = require('@screeps/common/lib/constants.js');
+
+// Tables that need explicit typing (not picked up by ESM inference)
+export const REACTION_TIME: Record<string, number> = C.REACTION_TIME;
+export const BODYPART_COST: Record<string, number> = C.BODYPART_COST;
+export const CONSTRUCTION_COST: Record<string, number> = C.CONSTRUCTION_COST;
+export const CONTROLLER_STRUCTURES: Record<string, Record<number, number>> = C.CONTROLLER_STRUCTURES;
+export const EXTENSION_ENERGY_CAPACITY: Record<number, number> = C.EXTENSION_ENERGY_CAPACITY;
+export const RAMPART_HITS_MAX: Record<number, number> = C.RAMPART_HITS_MAX;
+export const MINERAL_DENSITY: Record<number, number> = C.MINERAL_DENSITY;
+export const RUIN_DECAY_STRUCTURES: Record<string, number> = C.RUIN_DECAY_STRUCTURES;
+// RANGED_ATTACK_DISTANCE_RATE is not exported by @screeps/common; the values
+// are hardcoded in the rangedMassAttack processor: {0: 1, 1: 1, 2: 0.4, 3: 0.1}.
+export const RANGED_ATTACK_DISTANCE_RATE: Record<number, number> = { 0: 1, 1: 1, 2: 0.4, 3: 0.1 };
+
 // Return codes
-export const OK = 0 as const;
-export const ERR_NOT_OWNER = -1 as const;
-export const ERR_NO_PATH = -2 as const;
-export const ERR_NAME_EXISTS = -3 as const;
-export const ERR_BUSY = -4 as const;
-export const ERR_NOT_FOUND = -5 as const;
-export const ERR_NOT_ENOUGH_ENERGY = -6 as const;
-export const ERR_NOT_ENOUGH_RESOURCES = -6 as const;
-export const ERR_INVALID_TARGET = -7 as const;
-export const ERR_FULL = -8 as const;
-export const ERR_NOT_IN_RANGE = -9 as const;
-export const ERR_INVALID_ARGS = -10 as const;
-export const ERR_TIRED = -11 as const;
-export const ERR_NO_BODYPART = -12 as const;
-export const ERR_RCL_NOT_ENOUGH = -14 as const;
-export const ERR_GCL_NOT_ENOUGH = -15 as const;
+export const OK: 0 = C.OK;
+export const ERR_NOT_OWNER: -1 = C.ERR_NOT_OWNER;
+export const ERR_NO_PATH: -2 = C.ERR_NO_PATH;
+export const ERR_NAME_EXISTS: -3 = C.ERR_NAME_EXISTS;
+export const ERR_BUSY: -4 = C.ERR_BUSY;
+export const ERR_NOT_FOUND: -5 = C.ERR_NOT_FOUND;
+export const ERR_NOT_ENOUGH_ENERGY: -6 = C.ERR_NOT_ENOUGH_ENERGY;
+export const ERR_NOT_ENOUGH_RESOURCES: -6 = C.ERR_NOT_ENOUGH_RESOURCES;
+export const ERR_INVALID_TARGET: -7 = C.ERR_INVALID_TARGET;
+export const ERR_FULL: -8 = C.ERR_FULL;
+export const ERR_NOT_IN_RANGE: -9 = C.ERR_NOT_IN_RANGE;
+export const ERR_INVALID_ARGS: -10 = C.ERR_INVALID_ARGS;
+export const ERR_TIRED: -11 = C.ERR_TIRED;
+export const ERR_NO_BODYPART: -12 = C.ERR_NO_BODYPART;
+export const ERR_RCL_NOT_ENOUGH: -14 = C.ERR_RCL_NOT_ENOUGH;
+export const ERR_GCL_NOT_ENOUGH: -15 = C.ERR_GCL_NOT_ENOUGH;
 
 // FIND constants
-export const FIND_EXIT_TOP = 1 as const;
-export const FIND_EXIT_RIGHT = 3 as const;
-export const FIND_EXIT_BOTTOM = 5 as const;
-export const FIND_EXIT_LEFT = 7 as const;
-export const FIND_EXIT = 10 as const;
-export const FIND_CREEPS = 101 as const;
-export const FIND_MY_CREEPS = 102 as const;
-export const FIND_HOSTILE_CREEPS = 103 as const;
-export const FIND_SOURCES_ACTIVE = 104 as const;
-export const FIND_SOURCES = 105 as const;
-export const FIND_DROPPED_RESOURCES = 106 as const;
-export const FIND_STRUCTURES = 107 as const;
-export const FIND_MY_STRUCTURES = 108 as const;
-export const FIND_HOSTILE_STRUCTURES = 109 as const;
-export const FIND_FLAGS = 110 as const;
-export const FIND_CONSTRUCTION_SITES = 111 as const;
-export const FIND_MY_SPAWNS = 112 as const;
-export const FIND_HOSTILE_SPAWNS = 113 as const;
-export const FIND_MINERALS = 116 as const;
-export const FIND_NUKES = 117 as const;
-export const FIND_TOMBSTONES = 118 as const;
-export const FIND_RUINS = 123 as const;
+export const FIND_EXIT_TOP: 1 = C.FIND_EXIT_TOP;
+export const FIND_EXIT_RIGHT: 3 = C.FIND_EXIT_RIGHT;
+export const FIND_EXIT_BOTTOM: 5 = C.FIND_EXIT_BOTTOM;
+export const FIND_EXIT_LEFT: 7 = C.FIND_EXIT_LEFT;
+export const FIND_EXIT: 10 = C.FIND_EXIT;
+export const FIND_CREEPS: 101 = C.FIND_CREEPS;
+export const FIND_MY_CREEPS: 102 = C.FIND_MY_CREEPS;
+export const FIND_HOSTILE_CREEPS: 103 = C.FIND_HOSTILE_CREEPS;
+export const FIND_SOURCES_ACTIVE: 104 = C.FIND_SOURCES_ACTIVE;
+export const FIND_SOURCES: 105 = C.FIND_SOURCES;
+export const FIND_DROPPED_RESOURCES: 106 = C.FIND_DROPPED_RESOURCES;
+export const FIND_STRUCTURES: 107 = C.FIND_STRUCTURES;
+export const FIND_MY_STRUCTURES: 108 = C.FIND_MY_STRUCTURES;
+export const FIND_HOSTILE_STRUCTURES: 109 = C.FIND_HOSTILE_STRUCTURES;
+export const FIND_FLAGS: 110 = C.FIND_FLAGS;
+export const FIND_CONSTRUCTION_SITES: 111 = C.FIND_CONSTRUCTION_SITES;
+export const FIND_MY_SPAWNS: 112 = C.FIND_MY_SPAWNS;
+export const FIND_HOSTILE_SPAWNS: 113 = C.FIND_HOSTILE_SPAWNS;
+export const FIND_MINERALS: 116 = C.FIND_MINERALS;
+export const FIND_NUKES: 117 = C.FIND_NUKES;
+export const FIND_TOMBSTONES: 118 = C.FIND_TOMBSTONES;
+export const FIND_RUINS: 123 = C.FIND_RUINS;
 
 // Directions
-export const TOP = 1 as const;
-export const TOP_RIGHT = 2 as const;
-export const RIGHT = 3 as const;
-export const BOTTOM_RIGHT = 4 as const;
-export const BOTTOM = 5 as const;
-export const BOTTOM_LEFT = 6 as const;
-export const LEFT = 7 as const;
-export const TOP_LEFT = 8 as const;
+export const TOP: 1 = C.TOP;
+export const TOP_RIGHT: 2 = C.TOP_RIGHT;
+export const RIGHT: 3 = C.RIGHT;
+export const BOTTOM_RIGHT: 4 = C.BOTTOM_RIGHT;
+export const BOTTOM: 5 = C.BOTTOM;
+export const BOTTOM_LEFT: 6 = C.BOTTOM_LEFT;
+export const LEFT: 7 = C.LEFT;
+export const TOP_LEFT: 8 = C.TOP_LEFT;
 
 // Body parts
-export const MOVE = 'move' as const;
-export const WORK = 'work' as const;
-export const CARRY = 'carry' as const;
-export const ATTACK = 'attack' as const;
-export const RANGED_ATTACK = 'ranged_attack' as const;
-export const TOUGH = 'tough' as const;
-export const HEAL = 'heal' as const;
-export const CLAIM = 'claim' as const;
+export const MOVE: 'move' = C.MOVE;
+export const WORK: 'work' = C.WORK;
+export const CARRY: 'carry' = C.CARRY;
+export const ATTACK: 'attack' = C.ATTACK;
+export const RANGED_ATTACK: 'ranged_attack' = C.RANGED_ATTACK;
+export const TOUGH: 'tough' = C.TOUGH;
+export const HEAL: 'heal' = C.HEAL;
+export const CLAIM: 'claim' = C.CLAIM;
 
 // LOOK constants
-export const LOOK_CREEPS = 'creep' as const;
-export const LOOK_ENERGY = 'energy' as const;
-export const LOOK_RESOURCES = 'resource' as const;
-export const LOOK_SOURCES = 'source' as const;
-export const LOOK_MINERALS = 'mineral' as const;
-export const LOOK_STRUCTURES = 'structure' as const;
-export const LOOK_FLAGS = 'flag' as const;
-export const LOOK_CONSTRUCTION_SITES = 'constructionSite' as const;
-export const LOOK_TERRAIN = 'terrain' as const;
-export const LOOK_TOMBSTONES = 'tombstone' as const;
-export const LOOK_RUINS = 'ruin' as const;
+export const LOOK_CREEPS: 'creep' = C.LOOK_CREEPS;
+export const LOOK_ENERGY: 'energy' = C.LOOK_ENERGY;
+export const LOOK_RESOURCES: 'resource' = C.LOOK_RESOURCES;
+export const LOOK_SOURCES: 'source' = C.LOOK_SOURCES;
+export const LOOK_MINERALS: 'mineral' = C.LOOK_MINERALS;
+export const LOOK_STRUCTURES: 'structure' = C.LOOK_STRUCTURES;
+export const LOOK_FLAGS: 'flag' = C.LOOK_FLAGS;
+export const LOOK_CONSTRUCTION_SITES: 'constructionSite' = C.LOOK_CONSTRUCTION_SITES;
+export const LOOK_TERRAIN: 'terrain' = C.LOOK_TERRAIN;
+export const LOOK_TOMBSTONES: 'tombstone' = C.LOOK_TOMBSTONES;
+export const LOOK_RUINS: 'ruin' = C.LOOK_RUINS;
 
 // Structure types
-export const STRUCTURE_SPAWN = 'spawn' as const;
-export const STRUCTURE_EXTENSION = 'extension' as const;
-export const STRUCTURE_ROAD = 'road' as const;
-export const STRUCTURE_WALL = 'constructedWall' as const;
-export const STRUCTURE_RAMPART = 'rampart' as const;
-export const STRUCTURE_CONTROLLER = 'controller' as const;
-export const STRUCTURE_LINK = 'link' as const;
-export const STRUCTURE_STORAGE = 'storage' as const;
-export const STRUCTURE_TOWER = 'tower' as const;
-export const STRUCTURE_OBSERVER = 'observer' as const;
-export const STRUCTURE_POWER_SPAWN = 'powerSpawn' as const;
-export const STRUCTURE_EXTRACTOR = 'extractor' as const;
-export const STRUCTURE_LAB = 'lab' as const;
-export const STRUCTURE_TERMINAL = 'terminal' as const;
-export const STRUCTURE_CONTAINER = 'container' as const;
-export const STRUCTURE_NUKER = 'nuker' as const;
-export const STRUCTURE_FACTORY = 'factory' as const;
-export const STRUCTURE_KEEPER_LAIR = 'keeperLair' as const;
-export const STRUCTURE_POWER_BANK = 'powerBank' as const;
-export const STRUCTURE_INVADER_CORE = 'invaderCore' as const;
+export const STRUCTURE_SPAWN: 'spawn' = C.STRUCTURE_SPAWN;
+export const STRUCTURE_EXTENSION: 'extension' = C.STRUCTURE_EXTENSION;
+export const STRUCTURE_ROAD: 'road' = C.STRUCTURE_ROAD;
+export const STRUCTURE_WALL: 'constructedWall' = C.STRUCTURE_WALL;
+export const STRUCTURE_RAMPART: 'rampart' = C.STRUCTURE_RAMPART;
+export const STRUCTURE_CONTROLLER: 'controller' = C.STRUCTURE_CONTROLLER;
+export const STRUCTURE_LINK: 'link' = C.STRUCTURE_LINK;
+export const STRUCTURE_STORAGE: 'storage' = C.STRUCTURE_STORAGE;
+export const STRUCTURE_TOWER: 'tower' = C.STRUCTURE_TOWER;
+export const STRUCTURE_OBSERVER: 'observer' = C.STRUCTURE_OBSERVER;
+export const STRUCTURE_POWER_SPAWN: 'powerSpawn' = C.STRUCTURE_POWER_SPAWN;
+export const STRUCTURE_EXTRACTOR: 'extractor' = C.STRUCTURE_EXTRACTOR;
+export const STRUCTURE_LAB: 'lab' = C.STRUCTURE_LAB;
+export const STRUCTURE_TERMINAL: 'terminal' = C.STRUCTURE_TERMINAL;
+export const STRUCTURE_CONTAINER: 'container' = C.STRUCTURE_CONTAINER;
+export const STRUCTURE_NUKER: 'nuker' = C.STRUCTURE_NUKER;
+export const STRUCTURE_FACTORY: 'factory' = C.STRUCTURE_FACTORY;
+export const STRUCTURE_KEEPER_LAIR: 'keeperLair' = C.STRUCTURE_KEEPER_LAIR;
+export const STRUCTURE_POWER_BANK: 'powerBank' = C.STRUCTURE_POWER_BANK;
+export const STRUCTURE_INVADER_CORE: 'invaderCore' = C.STRUCTURE_INVADER_CORE;
 
 // Resources
-export const RESOURCE_ENERGY = 'energy' as const;
-export const RESOURCE_POWER = 'power' as const;
-export const RESOURCE_GHODIUM = 'G' as const;
-export const RESOURCE_SILICON = 'silicon' as const;
-export const RESOURCE_METAL = 'metal' as const;
-export const RESOURCE_BIOMASS = 'biomass' as const;
-export const RESOURCE_MIST = 'mist' as const;
+export const RESOURCE_ENERGY: 'energy' = C.RESOURCE_ENERGY;
+export const RESOURCE_POWER: 'power' = C.RESOURCE_POWER;
+export const RESOURCE_GHODIUM: 'G' = C.RESOURCE_GHODIUM;
+export const RESOURCE_SILICON: 'silicon' = C.RESOURCE_SILICON;
+export const RESOURCE_METAL: 'metal' = C.RESOURCE_METAL;
+export const RESOURCE_BIOMASS: 'biomass' = C.RESOURCE_BIOMASS;
+export const RESOURCE_MIST: 'mist' = C.RESOURCE_MIST;
 
-// Gameplay constants
-export const BODYPART_COST = {
-	[WORK]: 100,
-	[CARRY]: 50,
-	[MOVE]: 50,
-	[ATTACK]: 80,
-	[RANGED_ATTACK]: 150,
-	[HEAL]: 250,
-	[CLAIM]: 600,
-	[TOUGH]: 10,
-} as const;
-
-export const HARVEST_POWER = 2 as const;
-export const REPAIR_POWER = 100 as const;
-export const DISMANTLE_POWER = 50 as const;
-export const BUILD_POWER = 5 as const;
-export const ATTACK_POWER = 30 as const;
-export const RANGED_ATTACK_POWER = 10 as const;
-export const RANGED_ATTACK_DISTANCE_RATE = {
-	1: 1,
-	2: 0.4,
-	3: 0.1,
-	4: 0,
-} as const;
-export const HEAL_POWER = 12 as const;
-export const RANGED_HEAL_POWER = 4 as const;
+// Gameplay
+export const HARVEST_POWER: number = C.HARVEST_POWER;
+export const REPAIR_POWER: number = C.REPAIR_POWER;
+export const DISMANTLE_POWER: number = C.DISMANTLE_POWER;
+export const BUILD_POWER: number = C.BUILD_POWER;
+export const ATTACK_POWER: number = C.ATTACK_POWER;
+export const RANGED_ATTACK_POWER: number = C.RANGED_ATTACK_POWER;
+export const HEAL_POWER: number = C.HEAL_POWER;
+export const RANGED_HEAL_POWER: number = C.RANGED_HEAL_POWER;
+// BODYPART_HITS is not exported by @screeps/common; 100 HP per part is a
+// universal engine convention documented in the Screeps API.
 export const BODYPART_HITS = 100 as const;
-export const TOWER_ENERGY_COST = 10 as const;
-export const UPGRADE_CONTROLLER_POWER = 1 as const;
-export const CREEP_CORPSE_RATE = 0.2 as const;
-export const TOMBSTONE_DECAY_PER_PART = 5 as const;
-export const DISMANTLE_COST = 0.005 as const;
-export const CARRY_CAPACITY = 50 as const;
-export const ENERGY_REGEN_TIME = 300 as const;
-export const CREEP_LIFE_TIME = 1500 as const;
-export const CREEP_CLAIM_LIFE_TIME = 600 as const;
-export const CREEP_SPAWN_TIME = 3 as const;
-export const MAX_CREEP_SIZE = 50 as const;
-export const SPAWN_RENEW_RATIO = 1.2 as const;
-export const LINK_COOLDOWN = 1 as const;
-export const LINK_LOSS_RATIO = 0.03 as const;
-export const EXTRACTOR_COOLDOWN = 5 as const;
-export const HARVEST_MINERAL_POWER = 1 as const;
-export const TOWER_POWER_ATTACK = 600 as const;
-export const TOWER_POWER_HEAL = 400 as const;
-export const TOWER_POWER_REPAIR = 800 as const;
-export const TOWER_OPTIMAL_RANGE = 5 as const;
-export const TOWER_FALLOFF_RANGE = 20 as const;
-export const TOWER_FALLOFF = 0.75 as const;
-
-export const RAMPART_HITS_MAX = {
-	2: 300000,
-	3: 1000000,
-	4: 3000000,
-	5: 10000000,
-	6: 30000000,
-	7: 100000000,
-	8: 300000000,
-} as const;
-
-// Construction cost
-export const CONSTRUCTION_COST = {
-	[STRUCTURE_SPAWN]: 15000,
-	[STRUCTURE_EXTENSION]: 3000,
-	[STRUCTURE_ROAD]: 300,
-	[STRUCTURE_WALL]: 1,
-	[STRUCTURE_RAMPART]: 1,
-	[STRUCTURE_LINK]: 5000,
-	[STRUCTURE_STORAGE]: 30000,
-	[STRUCTURE_TOWER]: 5000,
-	[STRUCTURE_OBSERVER]: 8000,
-	[STRUCTURE_POWER_SPAWN]: 100000,
-	[STRUCTURE_EXTRACTOR]: 5000,
-	[STRUCTURE_LAB]: 50000,
-	[STRUCTURE_TERMINAL]: 100000,
-	[STRUCTURE_CONTAINER]: 5000,
-	[STRUCTURE_NUKER]: 100000,
-	[STRUCTURE_FACTORY]: 100000,
-} as const;
+export const TOWER_ENERGY_COST: number = C.TOWER_ENERGY_COST;
+export const UPGRADE_CONTROLLER_POWER: number = C.UPGRADE_CONTROLLER_POWER;
+export const CREEP_CORPSE_RATE: number = C.CREEP_CORPSE_RATE;
+export const TOMBSTONE_DECAY_PER_PART: number = C.TOMBSTONE_DECAY_PER_PART;
+export const DISMANTLE_COST: number = C.DISMANTLE_COST;
+export const CARRY_CAPACITY: number = C.CARRY_CAPACITY;
+export const ENERGY_REGEN_TIME: number = C.ENERGY_REGEN_TIME;
+export const CREEP_LIFE_TIME: number = C.CREEP_LIFE_TIME;
+export const CREEP_CLAIM_LIFE_TIME: number = C.CREEP_CLAIM_LIFE_TIME;
+export const CREEP_SPAWN_TIME: number = C.CREEP_SPAWN_TIME;
+export const MAX_CREEP_SIZE: number = C.MAX_CREEP_SIZE;
+export const SPAWN_RENEW_RATIO: number = C.SPAWN_RENEW_RATIO;
+export const LINK_COOLDOWN: number = C.LINK_COOLDOWN;
+export const LINK_LOSS_RATIO: number = C.LINK_LOSS_RATIO;
+export const EXTRACTOR_COOLDOWN: number = C.EXTRACTOR_COOLDOWN;
+export const OBSERVER_RANGE: number = C.OBSERVER_RANGE;
+export const HARVEST_MINERAL_POWER: number = C.HARVEST_MINERAL_POWER;
+export const TOWER_POWER_ATTACK: number = C.TOWER_POWER_ATTACK;
+export const TOWER_POWER_HEAL: number = C.TOWER_POWER_HEAL;
+export const TOWER_POWER_REPAIR: number = C.TOWER_POWER_REPAIR;
+export const TOWER_OPTIMAL_RANGE: number = C.TOWER_OPTIMAL_RANGE;
+export const TOWER_FALLOFF_RANGE: number = C.TOWER_FALLOFF_RANGE;
+export const TOWER_FALLOFF: number = C.TOWER_FALLOFF;
 
 // Structure hits
-export const SPAWN_HITS = 5000 as const;
-export const EXTENSION_HITS = 1000 as const;
-export const ROAD_HITS = 5000 as const;
-export const WALL_HITS = 1 as const;
-export const WALL_HITS_MAX = 300000000 as const;
-export const RAMPART_HITS = 1 as const;
-export const LINK_HITS = 1000 as const;
-export const STORAGE_HITS = 10000 as const;
-export const TOWER_HITS = 3000 as const;
-export const OBSERVER_HITS = 500 as const;
-export const POWER_SPAWN_HITS = 5000 as const;
-export const EXTRACTOR_HITS = 500 as const;
-export const LAB_HITS = 500 as const;
-export const TERMINAL_HITS = 3000 as const;
-export const CONTAINER_HITS = 250000 as const;
-export const NUKER_HITS = 1000 as const;
-export const FACTORY_HITS = 1000 as const;
+export const SPAWN_HITS: number = C.SPAWN_HITS;
+export const EXTENSION_HITS: number = C.EXTENSION_HITS;
+export const ROAD_HITS: number = C.ROAD_HITS;
+export const WALL_HITS: number = C.WALL_HITS;
+export const WALL_HITS_MAX: number = C.WALL_HITS_MAX;
+export const RAMPART_HITS: number = C.RAMPART_HITS;
+export const LINK_HITS: number = C.LINK_HITS;
+export const STORAGE_HITS: number = C.STORAGE_HITS;
+export const TOWER_HITS: number = C.TOWER_HITS;
+export const OBSERVER_HITS: number = C.OBSERVER_HITS;
+export const POWER_SPAWN_HITS: number = C.POWER_SPAWN_HITS;
+export const EXTRACTOR_HITS: number = C.EXTRACTOR_HITS;
+export const LAB_HITS: number = C.LAB_HITS;
+export const TERMINAL_HITS: number = C.TERMINAL_HITS;
+export const CONTAINER_HITS: number = C.CONTAINER_HITS;
+export const NUKER_HITS: number = C.NUKER_HITS;
+export const FACTORY_HITS: number = C.FACTORY_HITS;
+
+// Dropped resource decay
+export const ENERGY_DECAY: number = C.ENERGY_DECAY;
 
 // Container decay
-export const CONTAINER_DECAY = 5000 as const;
-export const CONTAINER_DECAY_TIME = 100 as const;
-export const CONTAINER_DECAY_TIME_OWNED = 500 as const;
+export const CONTAINER_DECAY: number = C.CONTAINER_DECAY;
+export const CONTAINER_DECAY_TIME: number = C.CONTAINER_DECAY_TIME;
+export const CONTAINER_DECAY_TIME_OWNED: number = C.CONTAINER_DECAY_TIME_OWNED;
+
+// Rampart decay
+export const RAMPART_DECAY_AMOUNT: number = C.RAMPART_DECAY_AMOUNT;
+export const RAMPART_DECAY_TIME: number = C.RAMPART_DECAY_TIME;
 
 // Road decay and wear
-export const ROAD_DECAY_AMOUNT = 100 as const;
-export const ROAD_DECAY_TIME = 1000 as const;
-export const ROAD_WEAROUT = 1 as const;
-export const ROAD_WEAROUT_POWER_CREEP = 100 as const;
+export const ROAD_DECAY_AMOUNT: number = C.ROAD_DECAY_AMOUNT;
+export const ROAD_DECAY_TIME: number = C.ROAD_DECAY_TIME;
+export const ROAD_WEAROUT: number = C.ROAD_WEAROUT;
+export const ROAD_WEAROUT_POWER_CREEP: number = C.ROAD_WEAROUT_POWER_CREEP;
+export const CONSTRUCTION_COST_ROAD_SWAMP_RATIO: number = C.CONSTRUCTION_COST_ROAD_SWAMP_RATIO;
+export const CONSTRUCTION_COST_ROAD_WALL_RATIO: number = C.CONSTRUCTION_COST_ROAD_WALL_RATIO;
 
 // Source energy
-export const SOURCE_ENERGY_CAPACITY = 3000 as const;
-export const SOURCE_ENERGY_NEUTRAL_CAPACITY = 1500 as const;
-export const SOURCE_ENERGY_KEEPER_CAPACITY = 4000 as const;
+export const SOURCE_ENERGY_CAPACITY: number = C.SOURCE_ENERGY_CAPACITY;
+export const SOURCE_ENERGY_NEUTRAL_CAPACITY: number = C.SOURCE_ENERGY_NEUTRAL_CAPACITY;
+export const SOURCE_ENERGY_KEEPER_CAPACITY: number = C.SOURCE_ENERGY_KEEPER_CAPACITY;
 
 // Ruin decay
-export const RUIN_DECAY = 500 as const;
-export const RUIN_DECAY_STRUCTURES = {
-	powerBank: 10,
-} as const;
-
-// Controller structure limits
-export const CONTROLLER_STRUCTURES = {
-	[STRUCTURE_SPAWN]:       { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 3 },
-	[STRUCTURE_EXTENSION]:   { 0: 0, 1: 0, 2: 5, 3: 10, 4: 20, 5: 30, 6: 40, 7: 50, 8: 60 },
-	[STRUCTURE_LINK]:        { 1: 0, 2: 0, 3: 0, 4: 0, 5: 2, 6: 3, 7: 4, 8: 6 },
-	[STRUCTURE_ROAD]:        { 0: 2500, 1: 2500, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
-	[STRUCTURE_WALL]:        { 1: 0, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
-	[STRUCTURE_RAMPART]:     { 1: 0, 2: 2500, 3: 2500, 4: 2500, 5: 2500, 6: 2500, 7: 2500, 8: 2500 },
-	[STRUCTURE_STORAGE]:     { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1 },
-	[STRUCTURE_TOWER]:       { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 6 },
-	[STRUCTURE_OBSERVER]:    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
-	[STRUCTURE_POWER_SPAWN]: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
-	[STRUCTURE_EXTRACTOR]:   { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 1 },
-	[STRUCTURE_TERMINAL]:    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1, 8: 1 },
-	[STRUCTURE_LAB]:         { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 3, 7: 6, 8: 10 },
-	[STRUCTURE_CONTAINER]:   { 0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5 },
-	[STRUCTURE_NUKER]:       { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1 },
-	[STRUCTURE_FACTORY]:     { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1 },
-} as const;
+export const RUIN_DECAY: number = C.RUIN_DECAY;
 
 // Store capacities
-export const STORAGE_CAPACITY = 1000000 as const;
-export const TERMINAL_CAPACITY = 300000 as const;
-export const CONTAINER_CAPACITY = 2000 as const;
-export const TOWER_CAPACITY = 1000 as const;
-export const SPAWN_ENERGY_CAPACITY = 300 as const;
-export const EXTENSION_ENERGY_CAPACITY = {
-	0: 50, 1: 50, 2: 50, 3: 50, 4: 50, 5: 50, 6: 50, 7: 100, 8: 200,
-} as const;
-export const LINK_CAPACITY = 800 as const;
-export const LAB_MINERAL_CAPACITY = 3000 as const;
-export const LAB_ENERGY_CAPACITY = 2000 as const;
-export const NUKER_ENERGY_CAPACITY = 300000 as const;
-export const NUKER_GHODIUM_CAPACITY = 5000 as const;
-export const POWER_SPAWN_ENERGY_CAPACITY = 5000 as const;
-export const POWER_SPAWN_POWER_CAPACITY = 100 as const;
-export const FACTORY_CAPACITY = 50000 as const;
+export const STORAGE_CAPACITY: number = C.STORAGE_CAPACITY;
+export const TERMINAL_CAPACITY: number = C.TERMINAL_CAPACITY;
+export const CONTAINER_CAPACITY: number = C.CONTAINER_CAPACITY;
+export const TOWER_CAPACITY: number = C.TOWER_CAPACITY;
+export const SPAWN_ENERGY_CAPACITY: number = C.SPAWN_ENERGY_CAPACITY;
+export const LINK_CAPACITY: number = C.LINK_CAPACITY;
+export const LAB_MINERAL_CAPACITY: number = C.LAB_MINERAL_CAPACITY;
+export const LAB_ENERGY_CAPACITY: number = C.LAB_ENERGY_CAPACITY;
+export const LAB_REACTION_AMOUNT: number = C.LAB_REACTION_AMOUNT;
+export const LAB_BOOST_MINERAL: number = C.LAB_BOOST_MINERAL;
+export const LAB_BOOST_ENERGY: number = C.LAB_BOOST_ENERGY;
+export const NUKER_ENERGY_CAPACITY: number = C.NUKER_ENERGY_CAPACITY;
+export const NUKER_GHODIUM_CAPACITY: number = C.NUKER_GHODIUM_CAPACITY;
+export const POWER_SPAWN_ENERGY_CAPACITY: number = C.POWER_SPAWN_ENERGY_CAPACITY;
+export const POWER_SPAWN_POWER_CAPACITY: number = C.POWER_SPAWN_POWER_CAPACITY;
+export const FACTORY_CAPACITY: number = C.FACTORY_CAPACITY;
 
 // Mineral density
-export const DENSITY_LOW = 1 as const;
-export const DENSITY_MODERATE = 2 as const;
-export const DENSITY_HIGH = 3 as const;
-export const DENSITY_ULTRA = 4 as const;
-export const MINERAL_DENSITY = {
-	[DENSITY_LOW]: 15000,
-	[DENSITY_MODERATE]: 35000,
-	[DENSITY_HIGH]: 70000,
-	[DENSITY_ULTRA]: 100000,
-} as const;
+export const DENSITY_LOW: 1 = C.DENSITY_LOW;
+export const DENSITY_MODERATE: 2 = C.DENSITY_MODERATE;
+export const DENSITY_HIGH: 3 = C.DENSITY_HIGH;
+export const DENSITY_ULTRA: 4 = C.DENSITY_ULTRA;
 
 // RawMemory segment limits
-export const MAX_ACTIVE_SEGMENTS = 10 as const;
-export const MAX_SEGMENT_COUNT = 100 as const;
-export const MAX_SEGMENT_SIZE = 102400 as const;
+export const MAX_ACTIVE_SEGMENTS: number = C.MAX_ACTIVE_SEGMENTS;
+export const MAX_SEGMENT_COUNT: number = C.MAX_SEGMENT_COUNT;
+export const MAX_SEGMENT_SIZE: number = C.MAX_SEGMENT_SIZE;
 
-// Terrain
+// Nuke
+export const NUKE_RANGE: number = C.NUKE_RANGE;
+export const NUKE_LAND_TIME: number = C.NUKE_LAND_TIME;
+export const NUKE_DAMAGE: Record<number, number> = C.NUKE_DAMAGE;
+
+// Power constants
+export const PWR_OPERATE_TOWER: number = C.PWR_OPERATE_TOWER;
+export const PWR_DISRUPT_TOWER: number = C.PWR_DISRUPT_TOWER;
+export const PWR_OPERATE_LAB: number = C.PWR_OPERATE_LAB;
+export const PWR_OPERATE_OBSERVER: number = C.PWR_OPERATE_OBSERVER;
+export const PWR_REGEN_SOURCE: number = C.PWR_REGEN_SOURCE;
+export const PWR_REGEN_MINERAL: number = C.PWR_REGEN_MINERAL;
+
+// Safe mode
+export const SAFE_MODE_DURATION: number = C.SAFE_MODE_DURATION;
+export const SAFE_MODE_COOLDOWN: number = C.SAFE_MODE_COOLDOWN;
+export const CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD: number = C.CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD;
+export const CONTROLLER_DOWNGRADE: Record<number, number> = C.CONTROLLER_DOWNGRADE;
+
+// Event log
+export const EVENT_ATTACK: number = C.EVENT_ATTACK;
+export const EVENT_OBJECT_DESTROYED: number = C.EVENT_OBJECT_DESTROYED;
+export const EVENT_ATTACK_CONTROLLER: number = C.EVENT_ATTACK_CONTROLLER;
+export const EVENT_BUILD: number = C.EVENT_BUILD;
+export const EVENT_HARVEST: number = C.EVENT_HARVEST;
+export const EVENT_HEAL: number = C.EVENT_HEAL;
+export const EVENT_REPAIR: number = C.EVENT_REPAIR;
+export const EVENT_RESERVE_CONTROLLER: number = C.EVENT_RESERVE_CONTROLLER;
+export const EVENT_UPGRADE_CONTROLLER: number = C.EVENT_UPGRADE_CONTROLLER;
+export const EVENT_EXIT: number = C.EVENT_EXIT;
+export const EVENT_TRANSFER: number = C.EVENT_TRANSFER;
+export const EVENT_ATTACK_TYPE_MELEE: number = C.EVENT_ATTACK_TYPE_MELEE;
+export const EVENT_ATTACK_TYPE_RANGED: number = C.EVENT_ATTACK_TYPE_RANGED;
+export const EVENT_HEAL_TYPE_MELEE: number = C.EVENT_HEAL_TYPE_MELEE;
+export const EVENT_HEAL_TYPE_RANGED: number = C.EVENT_HEAL_TYPE_RANGED;
+
+// Lab unboost
+export const LAB_UNBOOST_ENERGY: number = C.LAB_UNBOOST_ENERGY;
+export const LAB_UNBOOST_MINERAL: number = C.LAB_UNBOOST_MINERAL;
+
+// Terrain (TERRAIN_PLAIN is 0 by convention; @screeps/common only exports the masks)
 export const TERRAIN_PLAIN = 0 as const;
-export const TERRAIN_WALL = 1 as const;
-export const TERRAIN_SWAMP = 2 as const;
+export const TERRAIN_WALL: 1 = C.TERRAIN_MASK_WALL;
+export const TERRAIN_SWAMP: 2 = C.TERRAIN_MASK_SWAMP;

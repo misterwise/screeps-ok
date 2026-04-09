@@ -73,6 +73,56 @@ export const PARITY_GAPS = {
 	'renew-while-spawning':
 		'Spawn.renewCreep returns OK while the spawn is actively spawning a creep. ' +
 		'Vanilla returns ERR_BUSY.',
+	'lab-cooldown-no-decrement':
+		'Lab cooldown after runReaction/reverseReaction reports the full REACTION_TIME ' +
+		'value instead of REACTION_TIME - 1. Vanilla decrements by one for the ' +
+		'processing tick; xxscreeps does not.',
+	'lab-not-owner-precedence':
+		'Lab runReaction/reverseReaction on an unowned lab returns ERR_RCL_NOT_ENOUGH ' +
+		'instead of ERR_NOT_OWNER. xxscreeps checks RCL/isActive before ownership.',
+	'observer-room-always-visible':
+		'All rooms in the xxscreeps shard are visible to all players regardless ' +
+		'of observer usage. Vanilla only reveals rooms with owned objects or active observe.',
+	'observer-not-owner-precedence':
+		'Observer.observeRoom on an unowned observer returns ERR_RCL_NOT_ENOUGH ' +
+		'instead of ERR_NOT_OWNER. xxscreeps checks RCL/isActive before ownership.',
+	'mineral-regen-not-implemented':
+		'xxscreeps does not process mineral regeneration. Depleted minerals remain ' +
+		'at mineralAmount 0 indefinitely and ticksToRegeneration is always 0.',
+	'road-decay-not-implemented':
+		'xxscreeps does not process road decay. Roads remain at their initial hits ' +
+		'indefinitely regardless of nextDecayTime.',
+	'container-decay-not-implemented':
+		'xxscreeps does not process container decay. Containers remain at their ' +
+		'initial hits indefinitely regardless of nextDecayTime.',
+	'safemode-concurrent-allowed':
+		'xxscreeps allows activateSafeMode on a second controller while another ' +
+		'owned controller already has safe mode active. Vanilla returns ERR_BUSY.',
+	'destroy-ownership-bypass':
+		'xxscreeps allows structure.destroy() even when the room controller is ' +
+		'not owned by the calling player. Vanilla returns ERR_NOT_OWNER.',
+	'notifyWhenAttacked-not-implemented':
+		'xxscreeps does not implement structure.notifyWhenAttacked(). Calling it ' +
+		'throws "not a function". Vanilla returns OK/ERR codes.',
+	'eventlog-attack-missing':
+		'xxscreeps getEventLog() does not include EVENT_ATTACK entries for ' +
+		'combat actions. Vanilla records attack events with objectId, targetId, ' +
+		'damage, and attackType.',
+	'tough-boost-no-reduction':
+		'xxscreeps does not apply damage reduction to boosted TOUGH body parts. ' +
+		'Incoming damage is applied at full rate regardless of the TOUGH boost ' +
+		'compound.',
+	'boost-energy-cost-scales':
+		'xxscreeps scales energy cost proportionally with boosted output for ' +
+		'repair and upgrade. Vanilla charges 1 energy per WORK part per tick ' +
+		'regardless of the boost multiplier.',
+	'route-callback-ignored':
+		'xxscreeps findRoute ignores the routeCallback option. Routes that ' +
+		'should be blocked by returning Infinity from the callback are still ' +
+		'found.',
+	'rampart-decay-not-implemented':
+		'xxscreeps does not process rampart decay. Ramparts remain at their ' +
+		'initial hits indefinitely regardless of nextDecayTime.',
 } as const;
 
 export type ParityGapId = keyof typeof PARITY_GAPS;

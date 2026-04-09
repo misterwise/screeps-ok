@@ -1,7 +1,8 @@
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
-	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec, TerrainSpec,
+	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
+	PowerCreepSpec, NukeSpec, TerrainSpec,
 } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
@@ -107,8 +108,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		for (let i = 0; i < spec.players.length; i++) {
 			const handle = spec.players[i];
 			const username = playerSlots[i] ?? `player_${i}`;
-			const ownedRoom = spec.rooms.find(r => r.owner === handle);
-			const roomName = ownedRoom?.name ?? spec.rooms[0].name;
+			const ownedRooms = spec.rooms.filter(r => r.owner === handle);
+			const roomName = ownedRooms[0]?.name ?? spec.rooms[0].name;
 
 			// Insert user directly
 			const user = await this.db.users.insert({
@@ -130,26 +131,30 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				}),
 			]);
 
-			// Set controller ownership only for rooms this player owns
-			if (ownedRoom) {
+			// Set controller ownership for all rooms this player owns
+			for (const ownedRoom of ownedRooms) {
+				const gameTime = await this.server.world.gameTime;
+				const downgradeTime = ownedRoom.ticksToDowngrade != null
+					? gameTime + ownedRoom.ticksToDowngrade
+					: null;
 				await this.db['rooms.objects'].update(
-					{ $and: [{ room: roomName }, { type: 'controller' }] },
+					{ $and: [{ room: ownedRoom.name }, { type: 'controller' }] },
 					{ $set: {
 						user: user._id,
 						level: ownedRoom.rcl ?? 1,
 						progress: 0,
-						downgradeTime: null,
+						downgradeTime,
 						safeMode: null,
-						safeModeAvailable: 0,
+						safeModeAvailable: ownedRoom.safeModeAvailable ?? 0,
 						safeModeCooldown: 0,
 					} },
 				);
 				// Mark room as active
 				await this.db.rooms.update(
-					{ _id: roomName },
+					{ _id: ownedRoom.name },
 					{ $set: { active: true } },
 				);
-				await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+				await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [ownedRoom.name]);
 			}
 
 			// Create User object for pubsub (needed for console event listening)
@@ -236,6 +241,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 		}
 
+		if (spec.ticksToDecay !== undefined) {
+			const gameTime = await this.server.world.gameTime;
+			attrs.nextDecayTime = gameTime + spec.ticksToDecay;
+		}
+
 		const result = await this.server.world.addRoomObject(
 			roomName, spec.structureType, spec.pos[0], spec.pos[1], attrs);
 		return result._id;
@@ -280,12 +290,17 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeMineral(roomName: string, spec: MineralSpec): Promise<string> {
+		const gameTime = await this.server.world.gameTime;
+		const attrs: Record<string, unknown> = {
+			mineralType: spec.mineralType,
+			mineralAmount: spec.mineralAmount ?? 100000,
+			density: 3,
+		};
+		if (spec.ticksToRegeneration !== undefined) {
+			attrs.nextRegenerationTime = gameTime + spec.ticksToRegeneration;
+		}
 		const result = await this.server.world.addRoomObject(
-			roomName, 'mineral', spec.pos[0], spec.pos[1], {
-				mineralType: spec.mineralType,
-				mineralAmount: spec.mineralAmount ?? 100000,
-				density: 3,
-			});
+			roomName, 'mineral', spec.pos[0], spec.pos[1], attrs);
 		return result._id;
 	}
 
@@ -362,8 +377,106 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return result._id;
 	}
 
-	async placeObject(_r: string, _t: string, _s: Record<string, unknown>): Promise<string> {
-		throw new Error('generic placeObject not yet implemented — use typed helpers');
+	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
+		const userId = this.resolvePlayer(spec.owner);
+		const gameTime = await this.server.world.gameTime;
+		const name = spec.name ?? `PowerCreep_${Date.now()}`;
+
+		// Build the powers map in the engine's format: { [PWR]: { level, cooldown } }
+		const powers: Record<string, { level: number; cooldown: number }> = {};
+		for (const [pwr, level] of Object.entries(spec.powers)) {
+			powers[pwr] = { level: level as number, cooldown: 0 };
+		}
+
+		const pcLevel = Object.values(spec.powers).reduce((s, l) => s + l, 0);
+
+		// Insert into rooms.objects so the engine sees it in the room.
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: 'powerCreep',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			user: userId,
+			name,
+			className: 'operator',
+			level: pcLevel,
+			hitsMax: 1000,
+			hits: 1000,
+			store: spec.store ?? {},
+			storeCapacity: 100,
+			powers,
+			ageTime: gameTime + 5000,
+			actionLog: {},
+			spawning: false,
+		});
+
+		// The engine reads power creeps from db['users.power_creeps'], not
+		// from users.powerCreeps. Insert a matching record there.
+		await this.db['users.power_creeps'].insert({
+			_id: result._id,
+			user: userId,
+			name,
+			className: 'operator',
+			level: pcLevel,
+			hitsMax: 1000,
+			hits: 1000,
+			store: spec.store ?? {},
+			storeCapacity: 100,
+			powers,
+			shard: 'shard0',
+			spawnCooldownTime: null,
+			deleteTime: null,
+			room: roomName,
+			x: spec.pos[0],
+			y: spec.pos[1],
+		});
+
+		// Power creeps need isPowerEnabled on the room controller.
+		await this.db['rooms.objects'].update(
+			{ $and: [{ room: roomName }, { type: 'controller' }] },
+			{ $set: { isPowerEnabled: true } },
+		);
+
+		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+		return result._id;
+	}
+
+	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
+		const gameTime = await this.server.world.gameTime;
+		const result = await this.db['rooms.objects'].insert({
+			room: roomName,
+			type: 'nuke',
+			x: spec.pos[0],
+			y: spec.pos[1],
+			launchRoomName: spec.launchRoomName,
+			landTime: gameTime + spec.timeToLand,
+		});
+		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
+		return result._id;
+	}
+
+	async placeObject(roomName: string, type: string, spec: Record<string, unknown>): Promise<string> {
+		const pos = spec.pos as [number, number] | undefined;
+		if (!pos) throw new Error('placeObject: spec.pos is required');
+
+		if (type === 'portal') {
+			const dest = spec.destination as { room: string; x: number; y: number } | undefined;
+			if (!dest) throw new Error('placeObject portal: spec.destination is required');
+			const result = await this.db['rooms.objects'].insert({
+				room: roomName,
+				type: 'portal',
+				x: pos[0],
+				y: pos[1],
+				destination: { room: dest.room, x: dest.x, y: dest.y },
+				unstableDate: spec.unstableDate ?? null,
+				decayTime: spec.decayTime ?? null,
+			});
+			return result._id;
+		}
+
+		throw new Error(`placeObject: unsupported type '${type}'`);
 	}
 
 	async setTerrain(room: string, terrain: TerrainSpec): Promise<void> {
@@ -523,7 +636,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 	private getProgressTotal(structureType: string): number {
 		const C = this.server.constants;
-		return C?.CONSTRUCTION_COST?.[structureType.toUpperCase()] ?? 300;
+		return C?.CONSTRUCTION_COST?.[structureType] ?? 300;
 	}
 
 	private async getRoomRcl(roomName: string): Promise<number> {

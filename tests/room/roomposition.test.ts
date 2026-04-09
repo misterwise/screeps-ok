@@ -1,4 +1,5 @@
-import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, STRUCTURE_ROAD, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { hasDocumentedAdapterLimitation } from '../support/limitations.js';
 
 describe('RoomPosition spatial queries', () => {
 	test('ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room', async ({ shard }) => {
@@ -178,6 +179,31 @@ describe('RoomPosition look', () => {
 });
 
 describe('RoomPosition actions', () => {
+	const flagTest = hasDocumentedAdapterLimitation('flagSupport') ? test.skip : test;
+
+	flagTest('ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// createFlag at a specific position. Returns the flag name on success.
+		const result = await shard.runPlayer('p1', code`
+			const rc = new RoomPosition(30, 30, 'W1N1').createFlag('testFlag');
+			rc
+		`);
+		// createFlag returns the flag name string on success.
+		expect(result).toBe('testFlag');
+
+		// Verify the flag exists at the correct position in the same tick.
+		const flagCheck = await shard.runPlayer('p1', code`
+			const flag = Game.flags['testFlag'];
+			flag ? ({ name: flag.name, x: flag.pos.x, y: flag.pos.y, roomName: flag.pos.roomName }) : null
+		`) as { name: string; x: number; y: number; roomName: string } | null;
+		expect(flagCheck).not.toBeNull();
+		expect(flagCheck!.name).toBe('testFlag');
+		expect(flagCheck!.x).toBe(30);
+		expect(flagCheck!.y).toBe(30);
+		expect(flagCheck!.roomName).toBe('W1N1');
+	});
+
 	test('ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],

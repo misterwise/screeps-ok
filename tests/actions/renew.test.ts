@@ -1,12 +1,13 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, ERR_BUSY,
-	MOVE, WORK, CARRY, BODYPART_COST,
-	STRUCTURE_SPAWN, CREEP_LIFE_TIME, SPAWN_RENEW_RATIO,
+	ERR_RCL_NOT_ENOUGH,
+	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
+	STRUCTURE_SPAWN, CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, SPAWN_RENEW_RATIO,
 } from '../../src/index.js';
 import { knownParityGap } from '../support/parity-gaps.js';
 
 describe('Spawn.renewCreep', () => {
-	test('RENEW-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
+	test('RENEW-CREEP-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -34,7 +35,7 @@ describe('Spawn.renewCreep', () => {
 		expect(creep.ticksToLive).toBeGreaterThan(100);
 	});
 
-	test('RENEW-002 renewCreep deducts energy from the spawn', async ({ shard }) => {
+	test('RENEW-CREEP-002 renewCreep deducts energy from the spawn', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -59,7 +60,7 @@ describe('Spawn.renewCreep', () => {
 		expect(spawn.store.energy).toBeLessThan(300);
 	});
 
-	test('RENEW-003 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy', async ({ shard }) => {
+	test('RENEW-CREEP-003 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -80,7 +81,7 @@ describe('Spawn.renewCreep', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
 
-	test('RENEW-004 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard }) => {
+	test('RENEW-CREEP-004 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -101,7 +102,7 @@ describe('Spawn.renewCreep', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('RENEW-005 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME', async ({ shard }) => {
+	test('RENEW-CREEP-005 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -122,7 +123,29 @@ describe('Spawn.renewCreep', () => {
 		expect(rc).toBe(ERR_FULL);
 	});
 
-	knownParityGap('renew-while-spawning')('RENEW-006 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {
+	test('RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [CLAIM, MOVE],
+			ticksToLive: 100,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.renewCreep(creep)
+		`);
+		// Vanilla rejects CLAIM creeps from renewal.
+		expect(rc).not.toBe(OK);
+	});
+
+	knownParityGap('renew-while-spawning')('RENEW-CREEP-006 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

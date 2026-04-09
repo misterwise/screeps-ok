@@ -4,7 +4,8 @@ import type { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
-	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec, TerrainSpec,
+	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
+	PowerCreepSpec, NukeSpec, TerrainSpec,
 } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
@@ -144,10 +145,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (roomSpec.owner || roomSpec.rcl) {
 				const owner = roomSpec.owner ? this.resolvePlayer(roomSpec.owner) : undefined;
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
+				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
 				this.queueOp(roomSpec.name, room => {
 					if (rcl > 0 && owner) {
 						room['#level'] = rcl;
 						room['#user'] = room.controller!['#user'] = owner;
+					}
+					if (safeModeAvail > 0 && room.controller) {
+						room.controller.safeModeAvailable = safeModeAvail;
 					}
 				});
 			}
@@ -249,6 +254,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async placeMineral(roomName: string, spec: MineralSpec): Promise<string> {
 		const id = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:mineral`, id);
+		const ticksToRegen = spec.ticksToRegeneration;
 
 		this.queueOp(roomName, room => {
 			const mineral = new Mineral();
@@ -257,6 +263,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			mineral['#posId'] = mineral.pos['#id'];
 			mineral.mineralType = spec.mineralType as any;
 			mineral.mineralAmount = spec.mineralAmount ?? 100000;
+			if (ticksToRegen !== undefined) {
+				(mineral as any)['#nextRegenerationTime'] = this.simulation!.shard.time + ticksToRegen;
+			}
 			room['#insertObject'](mineral);
 		});
 
@@ -361,6 +370,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		});
 
 		return id;
+	}
+
+	async placePowerCreep(_room: string, _spec: PowerCreepSpec): Promise<string> {
+		throw new Error('placePowerCreep not yet implemented for xxscreeps');
+	}
+
+	async placeNuke(_room: string, _spec: NukeSpec): Promise<string> {
+		throw new Error('placeNuke not yet implemented for xxscreeps');
 	}
 
 	async placeObject(_room: string, _type: string, _spec: Record<string, unknown>): Promise<string> {
