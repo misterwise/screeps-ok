@@ -417,7 +417,11 @@ function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
 		id: obj._id,
 		pos: snapPos(obj),
 		resourceType,
-		amount: obj.amount ?? obj[resourceType] ?? obj.energy ?? 0,
+		// Engine stores the live value at `obj[resourceType]` (see engine
+		// game/resources.js:37 — the game object's `.amount` is a getter
+		// that reads this field). `obj.amount` would be a stale duplicate
+		// if anything wrote it, so prefer the canonical field.
+		amount: obj[resourceType] ?? obj.energy ?? obj.amount ?? 0,
 	};
 }
 

@@ -2,7 +2,7 @@
 	"expected_failures": {
 		"creep-owner-undefined": {
 			"summary": "Creep.owner is undefined (key exists but value is undefined)",
-			"tests": ["CTRL-SIGN-001", "CTRL-RESERVE-001"]
+			"tests": ["CTRL-SIGN-001", "CTRL-SIGN-003", "CTRL-RESERVE-001", "CTRL-RESERVE-005"]
 		},
 		"extension-rcl-capacity": {
 			"summary": "Extension store.getCapacity('energy') always reports RCL 8 maximum (200)",
@@ -13,8 +13,8 @@
 			"tests": ["ROOM-FIND-003", "MAP-ROOM-001"]
 		},
 		"pathfinder-suboptimal": {
-			"summary": "PathFinder.search returns suboptimal path on open plains",
-			"tests": ["PATHFINDER-001"]
+			"summary": "PathFinder.search returns suboptimal path on open plains (also picks wrong goal in multi-goal mode)",
+			"tests": ["PATHFINDER-001", "PATHFINDER-004"]
 		},
 		"tombstone-corpse-rate": {
 			"summary": "Tombstone stores always reduced by CREEP_CORPSE_RATE, no body energy reclaim on suicide",
@@ -45,8 +45,8 @@
 			"tests": ["STORE-RESTRICTED-004"]
 		},
 		"rampart-no-protection": {
-			"summary": "Ramparts do not absorb damage for objects on their tile",
-			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002"]
+			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle processors)",
+			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005"]
 		},
 		"renew-while-spawning": {
 			"summary": "Spawn.renewCreep returns OK while spawn is actively spawning",
@@ -54,7 +54,7 @@
 		},
 		"lab-cooldown-no-decrement": {
 			"summary": "Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1",
-			"tests": ["LAB-RUN-004", "LAB-REVERSE-004"]
+			"tests": ["LAB-RUN-004", "LAB-REVERSE-004", "UNBOOST-005"]
 		},
 		"lab-not-owner-precedence": {
 			"summary": "Lab on unowned lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
@@ -111,6 +111,26 @@
 		"rampart-decay-not-implemented": {
 			"summary": "Rampart decay not processed; ramparts keep initial hits indefinitely",
 			"tests": ["RAMPART-DECAY-001", "RAMPART-DECAY-002"]
+		},
+		"transfer-wrong-resource-err-full": {
+			"summary": "transfer() of a wrong resource to a structure returns ERR_FULL instead of ERR_INVALID_TARGET (checkHasCapacity ordered before capacity-for-resource dispatch in mods/creep/creep.js:checkTransfer)",
+			"tests": ["TRANSFER-007", "TRANSFER-008"]
+		},
+		"withdraw-enemy-rampart-no-protection": {
+			"summary": "withdraw() does not enforce ERR_NOT_OWNER for hostile structures under a non-public enemy rampart (checkWithdraw in mods/creep/creep.js has no rampart check)",
+			"tests": ["WITHDRAW-005"]
+		},
+		"generate-safe-mode-requires-work": {
+			"summary": "generateSafeMode() checkCommon requires a WORK body part (mods/controller/creep.js:58-59), vanilla engine has no body-part requirement (only ghodium + range)",
+			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
+		},
+		"upgrade-controller-no-gcl-progress": {
+			"summary": "upgradeController() does not increment Game.gcl.progress in xxscreeps",
+			"tests": ["CTRL-UPGRADE-008"]
+		},
+		"controller-my-undefined-on-unowned": {
+			"summary": "StructureController.my returns undefined (not false) on an unowned/neutral controller; inherited OwnedStructure.my uses strict owner match against an absent #user field",
+			"tests": ["CTRL-UNCLAIM-001"]
 		}
 	}
 }

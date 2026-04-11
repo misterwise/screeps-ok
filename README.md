@@ -79,7 +79,7 @@ npx screeps-ok --adapter xxscreeps
 
 ### A specific test file
 ```bash
-npm test xxscreeps -- tests/actions/build.test.ts
+npm test xxscreeps -- tests/05-construction-repair/build.test.ts
 ```
 
 ### A specific test by name
@@ -133,7 +133,7 @@ If you are reviewing the project for the first time, read in this order:
 Then run one representative adapter locally:
 
 ```bash
-npm test vanilla -- tests/room/game-api.test.ts
+npm test vanilla -- tests/16-room-mechanics/game-api.test.ts
 ```
 
 ## Writing Tests
@@ -283,12 +283,32 @@ screeps-ok/
 │   ├── xxscreeps/              # xxscreeps adapter (wraps simulate())
 │   └── vanilla/                # Official server adapter (screeps-server-mockup)
 ├── tests/
-│   ├── adapter-contract/       # Tests the adapter interface itself
-│   ├── movement/               # Fatigue, directions, pulling
-│   ├── actions/                # harvest, build, repair, transfer, etc.
-│   ├── combat/                 # attack, rangedAttack, rangedMassAttack, tower
-│   ├── structures/             # spawn, link, extension
-│   └── room/                   # controller, source regen, pathfinder, Game API
+│   ├── 00-adapter-contract/    # Tests the adapter interface itself
+│   ├── 01-movement/            # Fatigue, directions, pulling
+│   ├── 02-pathfinding/         # PathFinder
+│   ├── 03-harvesting/          # harvest (energy + mineral)
+│   ├── 04-resource-transfer/   # transfer, withdraw, pickup, drop
+│   ├── 05-construction-repair/ # build, repair, dismantle, construction
+│   ├── 06-controller/          # controller, upgrade, downgrade, safemode
+│   ├── 07-combat/              # attack, rangedMassAttack, tower
+│   ├── 08-boosts/              # boost, unboost, boost aggregation
+│   ├── 09-spawning-lifecycle/  # spawn, renew, recycle, creep death
+│   ├── 10-structures-energy/   # container, extension, link
+│   ├── 11-structures-production/ # lab, factory, power spawn
+│   ├── 12-structures-military/ # rampart, wall
+│   ├── 13-structures-infrastructure/ # extractor
+│   ├── 14-structures-npc/      # power bank
+│   ├── 15-structure-common/    # hits, isActive, construction cost
+│   ├── 16-room-mechanics/      # Game API, terrain, find, look, flags
+│   ├── 17-source-mineral-deposit/ # source/mineral regen, deposit
+│   ├── 18-game-objects/        # tombstone, ruin
+│   ├── 19-power/               # power creep lifecycle, powers
+│   ├── 20-market/              # market
+│   ├── 21-map/                 # map
+│   ├── 22-roomposition/        # RoomPosition
+│   ├── 23-store-api/           # store, timers
+│   ├── 24-intent-resolution/   # intent limits, priority, simultaneous
+│   └── 25-memory/              # Memory
 ├── vitest.config.ts
 └── package.json
 ```

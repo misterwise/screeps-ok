@@ -13,6 +13,7 @@
     "setup:xxscreeps": "node scripts/setup.js xxscreeps",
     "setup:vanilla": "node scripts/setup.js vanilla",
     "test": "node scripts/test.js",
+    "posttest": "node scripts/generate-status.js && node scripts/generate-coverage.js",
     "test:watch": "vitest",
     "parity": "node scripts/parity-report.js",
     "coverage": "node scripts/generate-coverage.js",

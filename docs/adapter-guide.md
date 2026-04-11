@@ -286,7 +286,7 @@ Required error kinds (classification is mandatory, not advisory):
   typically a live game object.
 
 Mapping all errors to `'runtime'` is a spec violation. The contract tests in
-`tests/adapter-contract/error-model.test.ts` verify that adapters classify
+`tests/00-adapter-contract/error-model.test.ts` verify that adapters classify
 each kind correctly.
 
 Use the engine's original error message where possible.
@@ -383,16 +383,16 @@ Before claiming adapter support, run through this sequence:
    - non-serializable returns produce `RunPlayerError('serialization')`
    - `undefined` returns are normalized to `null`
    - code that was never executed throws (not silently returns `null`)
-   The contract tests in `tests/adapter-contract/error-model.test.ts` verify
+   The contract tests in `tests/00-adapter-contract/error-model.test.ts` verify
    all of these.
 6. Capability-gated tests skip where appropriate rather than failing obscurely.
 
 Recommended starting point:
 
-- `tests/adapter-contract/*.test.ts`
-- `tests/movement/directions.test.ts`
-- `tests/actions/harvest.test.ts`
-- `tests/room/game-api.test.ts`
+- `tests/00-adapter-contract/*.test.ts`
+- `tests/01-movement/directions.test.ts`
+- `tests/03-harvesting/harvest.test.ts`
+- `tests/16-room-mechanics/game-api.test.ts`
 
 Only expand to the larger suite once those are stable.
 

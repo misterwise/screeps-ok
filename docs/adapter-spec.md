@@ -307,7 +307,7 @@ Required kinds and their classification rules:
   value, typically a live game object.
 
 See [Error Kind Classification](#error-kind-classification) for the full
-requirements. The contract tests in `tests/adapter-contract/error-model.test.ts`
+requirements. The contract tests in `tests/00-adapter-contract/error-model.test.ts`
 verify that adapters classify all three kinds correctly.
 
 Adapters should preserve the engine's user-facing message in

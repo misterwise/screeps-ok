@@ -9,9 +9,38 @@ import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
 import { snapshotObject, snapshotRoomObjects } from './snapshots.js';
+import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR } from '../../src/terrain-fixture.js';
 
 // @ts-expect-error -- screeps-server-mockup has no type declarations
 import { ScreepsServer, TerrainMatrix } from 'screeps-server-mockup';
+
+// Room auto-added to every vanilla createShard that doesn't already reference
+// it. @screeps/driver/lib/runtime/make.js only reads env.TERRAIN_DATA on the
+// first makeRuntime call and never refreshes it, so tests that need to
+// observe non-plains terrain through player APIs (Room.getTerrain,
+// PathFinder, moveTo pathfinding) must reference this pre-crafted fixture
+// room instead of trying to mutate a per-test room's terrain. See
+// src/terrain-fixture.ts for the landmark coordinates tests should use.
+const PRELOAD_ROOMS: { name: string; terrain: TerrainSpec | null }[] = [
+	{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
+	// Blank-terrain neighbor of the fixture room so cross-room PathFinder
+	// tests (e.g. maxRooms) have an adjacent room the runner's static cache
+	// already knows about. Kept far from W1N1 to leave ROOM-TRANSITION
+	// corner-exit resolution undisturbed.
+	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: null },
+];
+
+function buildTerrainMatrix(terrain: TerrainSpec | null): any {
+	const matrix = new TerrainMatrix();
+	if (!terrain) return matrix;
+	for (let i = 0; i < terrain.length && i < 2500; i++) {
+		const x = i % 50;
+		const y = Math.floor(i / 50);
+		if (terrain[i] === 1) matrix.set(x, y, 'wall');
+		else if (terrain[i] === 2) matrix.set(x, y, 'swamp');
+	}
+	return matrix;
+}
 
 let sharedServer: any = null;
 
@@ -34,7 +63,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		market: true,
 		observer: true,
 		nuke: true,
-		deposit: false, // Private server runtimeData doesn't expose deposits to player code
+		deposit: true,
 		terrain: true,
 	};
 
@@ -77,6 +106,20 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
 				level: roomSpec.rcl ?? 0,
 			});
+		}
+
+		// Auto-add the preload rooms that aren't already in the test's spec.
+		// The runner's engine_runner subprocess snapshots terrain once on its
+		// first makeRuntime call and never re-reads env.TERRAIN_DATA afterward
+		// (see @screeps/driver/lib/runtime/make.js). By ensuring every test
+		// writes the full preload set to env.TERRAIN_DATA before the warmup
+		// tick below, whichever test runs first locks the runner's cache with
+		// a superset that subsequent tests can freely reference.
+		const specRoomNames = new Set(spec.rooms.map(r => r.name));
+		for (const preload of PRELOAD_ROOMS) {
+			if (specRoomNames.has(preload.name)) continue;
+			await this.server.world.addRoom(preload.name);
+			await this.server.world.setTerrain(preload.name, buildTerrainMatrix(preload.terrain));
 		}
 
 		// Create players manually (no addBot — avoids phantom spawns and controller overwrites)
@@ -370,13 +413,17 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeDroppedResource(roomName: string, spec: DroppedResourceSpec): Promise<string> {
+		// Engine data model stores the resource value in a field named after
+		// the resource type (e.g. `.energy = 200`). The player-side `.amount`
+		// getter derives from that field (engine game/resources.js:37). Do
+		// not store a duplicate `amount` field — it would go stale as the
+		// engine mutates `[resourceType]` during pickup/decay.
 		const result = await this.db['rooms.objects'].insert({
 			room: roomName,
 			type: spec.resourceType === 'energy' ? 'energy' : 'resource',
 			x: spec.pos[0],
 			y: spec.pos[1],
 			resourceType: spec.resourceType,
-			amount: spec.amount,
 			[spec.resourceType]: spec.amount,
 		});
 		// Activate room
@@ -489,6 +536,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		if (type === 'deposit') {
+			const C = this.server.constants;
+			const gameTime = await this.server.world.gameTime;
+			// Processor (@screeps/engine/src/processor.js:421-426) decays any
+			// deposit where `gameTime >= decayTime - 1`, and `null - 1` coerces
+			// to -1 — so a null decayTime would delete the deposit on its first
+			// processed tick. Seed a valid future decayTime so the deposit
+			// survives until the spec asks it to expire.
+			const decayTicks = (spec.decayTime as number) ?? (C.DEPOSIT_DECAY_TIME ?? 50000);
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'deposit',
@@ -498,8 +553,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				harvested: 0,
 				lastCooldown: 0,
 				cooldownTime: null,
-				decayTime: null,
+				decayTime: gameTime + decayTicks,
 			});
+			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
 			return result._id;
 		}
 

@@ -86,6 +86,6 @@ the local reports/ directory. You may limit the run to one adapter by naming it.
 Examples:
   npm run parity
   npm run parity xxscreeps
-  npm run parity -- tests/room/controller.test.ts
+  npm run parity -- tests/06-controller/controller.test.ts
 `);
 }

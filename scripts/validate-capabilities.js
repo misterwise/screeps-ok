@@ -54,7 +54,7 @@ for (const file of testFiles) {
 	const relFile = path.relative(root, file);
 
 	// Skip adapter-contract tests — they don't have catalog IDs
-	if (relFile.startsWith('tests/adapter-contract/')) continue;
+	if (relFile.startsWith('tests/00-adapter-contract/')) continue;
 
 	// Extract all catalog IDs in this file
 	const testIds = new Set([...content.matchAll(TEST_ID_RE)].map(m => m[1]));

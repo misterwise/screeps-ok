@@ -52,14 +52,22 @@ conformance test or one generated test family.
   `move()` returns `ERR_TIRED` when the creep's fatigue is greater than zero.
 - [ ] `MOVE-BASIC-004` `behavior` `needs_vanilla_verification`
   `move()` returns `ERR_NO_BODYPART` when the creep has no active MOVE parts.
-- [ ] `moveByPath()` moves the creep one step along a provided path array.
-- [ ] `moveByPath()` returns OK when the next step is a valid adjacent tile.
-- [ ] `moveByPath()` returns ERR_NOT_FOUND when the creep's position is not on the path.
-- [ ] `moveTo()` computes a path to the target and moves one step toward it.
-- [ ] `moveTo()` returns OK when the creep successfully moves.
-- [ ] `moveTo()` returns ERR_NO_PATH when no path to the target exists.
-- [ ] `moveTo()` returns ERR_TIRED when the creep has fatigue > 0.
-- [ ] `moveTo()` returns ERR_NO_BODYPART when the creep has no MOVE parts.
+- [ ] `MOVE-BASIC-005` `behavior` `needs_vanilla_verification`
+  `moveByPath()` moves the creep one step along a provided path array.
+- [ ] `MOVE-BASIC-006` `behavior` `needs_vanilla_verification`
+  `moveByPath()` returns OK when the next step is a valid adjacent tile.
+- [ ] `MOVE-BASIC-007` `behavior` `needs_vanilla_verification`
+  `moveByPath()` returns ERR_NOT_FOUND when the creep's position is not on the path.
+- [ ] `MOVE-BASIC-008` `behavior` `needs_vanilla_verification`
+  `moveTo()` computes a path to the target and moves one step toward it.
+- [ ] `MOVE-BASIC-009` `behavior` `needs_vanilla_verification`
+  `moveTo()` returns OK when the creep successfully moves.
+- [ ] `MOVE-BASIC-010` `behavior` `needs_vanilla_verification`
+  `moveTo()` returns ERR_NO_PATH when no path to the target exists.
+- [ ] `MOVE-BASIC-011` `behavior` `needs_vanilla_verification`
+  `moveTo()` returns ERR_TIRED when the creep has fatigue > 0.
+- [ ] `MOVE-BASIC-012` `behavior` `needs_vanilla_verification`
+  `moveTo()` returns ERR_NO_BODYPART when the creep has no MOVE parts.
 
 Coverage Notes
 - `move()` into an occupied tile is owned by the collision resolution facet
@@ -77,12 +85,13 @@ Coverage Notes
 - [ ] `MOVE-FATIGUE-004` `behavior` `verified_vanilla`
   Non-empty CARRY parts contribute weight for fatigue calculation like other
   non-MOVE parts.
-- [ ] Moving onto swamp generates fatigue equal to 10 per weighted body part.
-- [ ] Moving onto a road generates fatigue equal to 1 per weighted body part.
-- [ ] A MOVE part boosted with ZO reduces fatigue by 4 per tick instead of 2.
-- [ ] A MOVE part boosted with ZHO2 reduces fatigue by 6 per tick.
-- [ ] A MOVE part boosted with XZHO2 reduces fatigue by 8 per tick.
-- [ ] Damaged (0 HP) MOVE parts do not contribute to fatigue reduction.
+- [ ] `MOVE-FATIGUE-005` `behavior` `needs_vanilla_verification`
+  Moving onto swamp generates fatigue equal to 10 per weighted body part.
+- [ ] `MOVE-FATIGUE-006` `matrix` `needs_vanilla_verification`
+  Boosted MOVE parts reduce fatigue per tick by the boosted amount for `ZO`,
+  `ZHO2`, and `XZHO2`.
+- [ ] `MOVE-FATIGUE-007` `behavior` `needs_vanilla_verification`
+  Damaged (0 HP) MOVE parts do not contribute to fatigue reduction.
 
 Coverage Notes
 - The `ERR_TIRED` return code from `move()` when fatigue > 0 is owned by
@@ -92,10 +101,13 @@ Coverage Notes
 - [ ] `ROAD-FATIGUE-001` `behavior` `verified_vanilla`
   A road on a tile reduces the fatigue multiplier for creeps moving onto it
   to 1 (half of the plain-terrain multiplier).
-- [ ] A road on swamp reduces the fatigue multiplier to 1.
-- [ ] Creep movement on a road wears the road by ROAD_WEAROUT (1) per body part.
-- [ ] Power creep movement on a road wears it by ROAD_WEAROUT_POWER_CREEP (100).
-- [ ] Swamp roads have 5x the construction cost of plains roads.
+- [ ] `ROAD-FATIGUE-002` `behavior` `needs_vanilla_verification`
+  A road on swamp reduces the fatigue multiplier to 1.
+
+Coverage Notes
+- Road wear mechanics are owned by `13.2 Road — Wear` (`ROAD-WEAR-*`).
+- Swamp road construction cost is owned by `15.3 Construction Costs`
+  (`CONSTRUCTION-COST-001`).
 
 ### 1.4 Room Transitions
 - [ ] `ROOM-TRANSITION-001` `behavior` `verified_vanilla`
@@ -104,10 +116,28 @@ Coverage Notes
 - [ ] `ROOM-TRANSITION-002` `behavior` `verified_vanilla`
   A creep retains its identity (same ID and name) after crossing a room
   border.
-- [ ] Fatigue resets to 0 when a creep moves onto an exit tile.
-- [ ] `creep.room` returns the previous room object for one tick after crossing.
-- [ ] Room adjacency follows the standard Screeps coordinate system.
-- [ ] A creep being pulled can be pulled across a room border.
+- [ ] `ROOM-TRANSITION-003` `behavior` `verified_vanilla`
+  Fatigue resets to 0 when a creep moves onto an exit tile.
+- [ ] `ROOM-TRANSITION-004` `behavior` `needs_vanilla_verification`
+  A creep being pulled can be pulled across a room border.
+
+Coverage Notes
+- Room adjacency and coordinate topology are owned by `21. Map`
+  (`MAP-ROOM-*`).
+- The previously listed `ROOM-TRANSITION-004` ("`creep.room` returns the
+  previous room for one tick after crossing") was dropped on
+  2026-04-09: vanilla source `@screeps/engine/src/game/rooms.js`
+  `RoomObject` constructor sets `this.room` and `this.pos` from the same
+  data field, so the two are always in sync and there is no observable
+  one-tick lag. Empirically verified with `creep.room.name` immediately
+  after crossing.
+- `ROOM-TRANSITION-004` (the new "pulled across border" entry) is left
+  untested pending a successful test setup. A naive setup with the puller
+  on an exit tile and both creeps issuing intents in the same tick fails
+  on vanilla because pull state lives in per-room `roomObjects` and is
+  lost when the puller crosses ahead of the pulled creep. Catalog entry
+  retained because the rule may still be reachable via a different
+  same-tick choreography that we have not tried.
 
 ### 1.5 Pulling
 - [ ] `MOVE-PULL-001` `behavior` `verified_vanilla`
@@ -120,8 +150,10 @@ Coverage Notes
   tile as the puller moves.
 - [ ] `MOVE-PULL-004` `behavior` `verified_vanilla`
   `pull()` returns `ERR_NOT_IN_RANGE` when the target is not adjacent.
-- [ ] The pulling creep accumulates fatigue for both itself and the pulled creep.
-- [ ] Pull can chain through multiple creeps in a train.
+- [ ] `MOVE-PULL-005` `behavior` `needs_vanilla_verification`
+  The pulling creep accumulates fatigue for both itself and the pulled creep.
+- [ ] `MOVE-PULL-006` `behavior` `needs_vanilla_verification`
+  Pull can chain through multiple creeps in a train.
 
 ### 1.6 Collision Resolution
 - [ ] `MOVE-COLLISION-001` `behavior` `verified_vanilla`
@@ -147,61 +179,93 @@ Coverage Notes
   observable tie-break scenarios.
 
 ### 1.7 Power Creep Movement
-- [ ] Power creeps generate no fatigue on any terrain.
-- [ ] Power creep movement wears roads at ROAD_WEAROUT_POWER_CREEP rate.
-- [ ] Power creeps lose all movement collision priority ties.
+- [ ] `MOVE-POWER-001` `behavior` `needs_vanilla_verification`
+  Power creeps lose all movement collision priority ties.
+
+Coverage Notes
+- Power creep fatigue and road wear are owned by `19.2 Movement & Actions`
+  (`POWERCREEP-MOVE-*`).
 
 ---
 
 ## 2. Pathfinding
 
 ### 2.1 PathFinder.search
-- [ ] `PATHFINDER-001` Accepts a single goal position with range.
-- [ ] Accepts multiple goal positions, finding the closest.
-- [ ] `plainCost` option overrides the default cost of plains tiles.
-- [ ] `swampCost` option overrides the default cost of swamp tiles.
-- [ ] `maxOps` option limits the number of pathfinding operations.
-- [ ] `maxRooms` option limits the number of rooms searched.
-- [ ] `flee` mode finds a path away from the goal positions.
-- [ ] `PATHFINDER-002` Returns `{ path, ops, cost, incomplete }`.
-- [ ] Returns `incomplete: true` with a partial path when no full path exists.
-- [ ] `PATHFINDER-003` `roomCallback` option provides a CostMatrix per room during search.
+- [ ] `PATHFINDER-001` `behavior` `verified_vanilla`
+  Accepts a single goal position with range.
+- [ ] `PATHFINDER-002` `behavior` `verified_vanilla`
+  Returns `{ path, ops, cost, incomplete }`.
+- [ ] `PATHFINDER-003` `behavior` `verified_vanilla`
+  `roomCallback` option provides a CostMatrix per room during search.
+- [ ] `PATHFINDER-004` `behavior` `needs_vanilla_verification`
+  Accepts multiple goal positions, finding the closest.
+- [ ] `PATHFINDER-005` `behavior` `needs_vanilla_verification`
+  `plainCost` option overrides the default cost of plains tiles.
+- [ ] `PATHFINDER-006` `behavior` `needs_vanilla_verification`
+  `swampCost` option overrides the default cost of swamp tiles.
+- [ ] `PATHFINDER-007` `behavior` `needs_vanilla_verification`
+  `maxOps` option limits the number of pathfinding operations.
+- [ ] `PATHFINDER-008` `behavior` `needs_vanilla_verification`
+  `maxRooms` option limits the number of rooms searched.
+- [ ] `PATHFINDER-009` `behavior` `needs_vanilla_verification`
+  `flee` mode finds a path away from the goal positions.
+- [ ] `PATHFINDER-010` `behavior` `needs_vanilla_verification`
+  Returns `incomplete: true` with a partial path when no full path exists.
 
 ### 2.2 CostMatrix
-- [ ] `COSTMATRIX-001` `new CostMatrix()` creates a matrix with all values 0.
-- [ ] `COSTMATRIX-002` `set(x, y, cost)` and `get(x, y)` round-trip the assigned value.
-- [ ] Cost 0 means use the default terrain cost.
-- [ ] Cost 255 means the tile is unwalkable.
-- [ ] `COSTMATRIX-003` `serialize()` and `CostMatrix.deserialize()` round-trip correctly.
+- [ ] `COSTMATRIX-001` `behavior` `verified_vanilla`
+  `new CostMatrix()` creates a matrix with all values 0.
+- [ ] `COSTMATRIX-002` `behavior` `verified_vanilla`
+  `set(x, y, cost)` and `get(x, y)` round-trip the assigned value.
+- [ ] `COSTMATRIX-003` `behavior` `verified_vanilla`
+  `serialize()` and `CostMatrix.deserialize()` round-trip correctly.
+- [ ] `COSTMATRIX-004` `behavior` `needs_vanilla_verification`
+  Cost 0 means use the default terrain cost.
+- [ ] `COSTMATRIX-005` `behavior` `needs_vanilla_verification`
+  Cost 255 means the tile is unwalkable.
 
-### 2.3 RoomPosition Pathfinding
-- [ ] `findClosestByPath()` returns the closest reachable target using pathfinding.
-- [ ] `findClosestByRange()` returns the closest target by linear distance.
-- [ ] `findInRange()` returns all targets within the specified range.
-- [ ] `findPathTo()` returns a path to the target.
-- [ ] `getDirectionTo()` returns the direction constant (1–8) toward a target.
-- [ ] Filter option narrows results for all find methods.
+Coverage Notes
+- RoomPosition find/path helpers (`findClosestByPath`, `findClosestByRange`,
+  `findInRange`, `findPathTo`, `getDirectionTo`, filter option) are owned by
+  section 22.3 (`ROOMPOS-FIND-*`) and 22.2 (`ROOMPOS-SPATIAL-005`). Six
+  duplicate entries formerly in section 2.3 dropped; they also had an ID
+  collision with section 22.1's `ROOMPOS-001`.
 
-### 2.4 Legacy Pathfinding
-- [ ] `Room.findPath()` finds a path between two positions within a room.
-- [ ] `Room.serializePath()` and `Room.deserializePath()` round-trip a path.
-- [ ] `PathFinder.use()` toggles between new PathFinder and legacy mode.
+### 2.3 Legacy Pathfinding
+- [ ] `LEGACY-PATH-001` `behavior` `needs_vanilla_verification`
+  `Room.findPath()` finds a path between two positions within a room.
+- [ ] `LEGACY-PATH-002` `behavior` `needs_vanilla_verification`
+  `Room.serializePath()` and `Room.deserializePath()` round-trip a path.
+- [ ] `LEGACY-PATH-003` `behavior` `needs_vanilla_verification`
+  `PathFinder.use()` toggles between new PathFinder and legacy mode.
 
 ---
 
 ## 3. Harvesting
 
 ### 3.1 Source Harvest
-- [ ] `HARVEST-001` Each WORK part harvests 2 energy per tick from a source.
-- [ ] `harvest()` requires the creep to be adjacent to the source (range 1).
-- [ ] `harvest()` returns OK on success.
-- [ ] `HARVEST-002` `harvest()` returns ERR_NOT_IN_RANGE when too far.
-- [ ] `HARVEST-003` `harvest()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- [ ] `HARVEST-004` `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the source has 0 energy.
-- [ ] `HARVEST-005` Harvested energy is deposited into the creep's store.
-- [ ] `HARVEST-006` Harvesting requires free CARRY capacity to store the energy.
-- [ ] Harvest boost (UO) increases yield by +200% per boosted WORK part.
-- [ ] Source energy capacity is 3000 in owned/reserved rooms, 1500 in neutral, 4000 in keeper rooms.
+- [ ] `HARVEST-001` `behavior` `verified_vanilla`
+  Each WORK part harvests 2 energy per tick from a source.
+- [ ] `HARVEST-002` `behavior` `verified_vanilla`
+  `harvest()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `HARVEST-003` `behavior` `verified_vanilla`
+  `harvest()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+- [ ] `HARVEST-004` `behavior` `verified_vanilla`
+  `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the source has 0 energy.
+- [ ] `HARVEST-005` `behavior` `verified_vanilla`
+  Harvested energy is deposited into the creep's store.
+- [ ] `HARVEST-006` `behavior` `verified_vanilla`
+  Harvesting requires free CARRY capacity to store the energy.
+- [ ] `HARVEST-007` `behavior` `needs_vanilla_verification`
+  `harvest()` requires the creep to be adjacent to the source (range 1).
+- [ ] `HARVEST-008` `behavior` `needs_vanilla_verification`
+  `harvest()` returns OK on success.
+
+Coverage Notes
+- Harvest boost magnitudes (UO/UHO2/XUHO2) are owned by `BOOST-HARVEST-001`
+  (section 8.8). Former HARVEST-009 dropped.
+- Source energy capacity per room state is owned by `SOURCE-REGEN-001`
+  (section 17.1). Former HARVEST-010 dropped.
 
 ### 3.2 Mineral Harvest
 - [ ] `HARVEST-MINERAL-001` `behavior` `verified_vanilla`
@@ -216,171 +280,317 @@ Coverage Notes
 - [ ] `HARVEST-MINERAL-004` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `ERR_NOT_ENOUGH_RESOURCES` when the mineral is
   depleted.
-- [ ] The mineral type of the deposit determines the resource harvested.
-- [ ] Mineral depletion (mineralAmount reaches 0) triggers a regeneration timer.
+- [ ] `HARVEST-MINERAL-005` `behavior` `needs_vanilla_verification`
+  The mineral type of the deposit determines the resource harvested.
+
+Coverage Notes
+- Mineral depletion triggering regeneration is owned by `MINERAL-REGEN-004`
+  (section 17.3). Former HARVEST-MINERAL-006 dropped.
 
 ### 3.3 Deposit Harvest `capability: deposit`
-- [ ] Harvesting a deposit increases its cooldown exponentially (DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW).
-- [ ] Deposit types are silicon, metal, biomass, and mist.
-- [ ] The decay timer is set on first harvest (DEPOSIT_DECAY_TIME).
-- [ ] `lastCooldown` tracks the most recent cooldown value.
-- [ ] The deposit disappears when the decay timer expires.
+- [ ] `DEPOSIT-HARVEST-001` `behavior` `needs_vanilla_verification` Harvesting a deposit increases its cooldown exponentially (DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW).
+- [ ] `DEPOSIT-HARVEST-002` `behavior` `needs_vanilla_verification` Deposit types are silicon, metal, biomass, and mist.
+- [ ] `DEPOSIT-HARVEST-003` `behavior` `needs_vanilla_verification` The decay timer is set on first harvest (DEPOSIT_DECAY_TIME).
+- [ ] `DEPOSIT-HARVEST-004` `behavior` `needs_vanilla_verification` `lastCooldown` tracks the most recent cooldown value.
+- [ ] `DEPOSIT-HARVEST-005` `behavior` `needs_vanilla_verification` The deposit disappears when the decay timer expires.
 
 ---
 
 ## 4. Resource Transfer
 
 ### 4.1 Transfer
-- [ ] `TRANSFER-001` `transfer()` moves resources from creep to adjacent structure or creep.
-- [ ] A specific resource type must be specified.
-- [ ] `TRANSFER-002` An optional amount allows partial transfers.
-- [ ] `TRANSFER-003` `transfer()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `TRANSFER-004` `transfer()` returns ERR_NOT_ENOUGH_RESOURCES when creep lacks the resource.
-- [ ] `transfer()` returns ERR_FULL when target store has no free capacity.
-- [ ] `transfer()` returns ERR_INVALID_TARGET for invalid targets.
-- [ ] Lab transfer validates that the resource matches the lab's allowed types.
+- [ ] `TRANSFER-001` `behavior` `verified_vanilla`
+  `transfer()` moves resources from creep to adjacent structure or creep.
+- [ ] `TRANSFER-002` `behavior` `verified_vanilla`
+  An optional amount allows partial transfers.
+- [ ] `TRANSFER-003` `behavior` `verified_vanilla`
+  `transfer()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `TRANSFER-004` `behavior` `verified_vanilla`
+  `transfer()` returns ERR_NOT_ENOUGH_RESOURCES when creep lacks the resource.
+- [ ] `TRANSFER-005` `behavior` `verified_vanilla`
+  A specific resource type must be specified.
+- [ ] `TRANSFER-006` `behavior` `verified_vanilla`
+  `transfer()` returns ERR_FULL when target store has no free capacity.
+- [ ] `TRANSFER-007` `behavior` `verified_vanilla`
+  `transfer()` returns ERR_INVALID_TARGET for invalid targets.
+- [ ] `TRANSFER-008` `behavior` `verified_vanilla`
+  Lab transfer validates that the resource matches the lab's allowed types.
 
 ### 4.2 Withdraw
-- [ ] `WITHDRAW-001` `withdraw()` moves resources from adjacent structure to creep.
-- [ ] `WITHDRAW-002` A specific resource type and optional amount can be specified.
-- [ ] `withdraw()` returns ERR_NOT_OWNER for hostile structures without a public rampart.
-- [ ] `withdraw()` works on tombstones and ruins.
-- [ ] `WITHDRAW-003` `withdraw()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `WITHDRAW-004` `withdraw()` returns ERR_NOT_ENOUGH_RESOURCES when the structure lacks the resource.
-- [ ] `withdraw()` returns ERR_FULL when the creep has no free capacity.
-- [ ] Terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect.
+- [ ] `WITHDRAW-001` `behavior` `verified_vanilla`
+  `withdraw()` moves resources from adjacent structure to creep.
+- [ ] `WITHDRAW-002` `behavior` `verified_vanilla`
+  A specific resource type and optional amount can be specified.
+- [ ] `WITHDRAW-003` `behavior` `verified_vanilla`
+  `withdraw()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `WITHDRAW-004` `behavior` `verified_vanilla`
+  `withdraw()` returns ERR_NOT_ENOUGH_RESOURCES when the structure lacks the resource.
+- [ ] `WITHDRAW-005` `behavior` `verified_vanilla`
+  `withdraw()` returns ERR_NOT_OWNER for hostile structures without a public rampart.
+- [ ] `WITHDRAW-006` `behavior` `verified_vanilla`
+  `withdraw()` works on tombstones and ruins.
+- [ ] `WITHDRAW-007` `behavior` `verified_vanilla`
+  `withdraw()` returns ERR_FULL when the creep has no free capacity.
+- [ ] `WITHDRAW-008` `behavior` `verified_vanilla`
+  Terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect.
 
 ### 4.3 Pickup
-- [ ] `PICKUP-001` `pickup()` picks up a dropped resource at range 1.
-- [ ] The full amount is picked up, limited by the creep's free capacity.
-- [ ] `pickup()` returns ERR_NOT_IN_RANGE when the resource is not adjacent.
-- [ ] `pickup()` returns ERR_FULL when the creep has no free capacity.
+- [ ] `PICKUP-001` `behavior` `verified_vanilla`
+  `pickup()` picks up a dropped resource at range 1.
+- [ ] `PICKUP-002` `behavior` `verified_vanilla`
+  The full amount is picked up, limited by the creep's free capacity.
+- [ ] `PICKUP-003` `behavior` `verified_vanilla`
+  `pickup()` returns ERR_NOT_IN_RANGE when the resource is not adjacent.
+- [ ] `PICKUP-004` `behavior` `verified_vanilla`
+  `pickup()` returns ERR_FULL when the creep has no free capacity.
 
 ### 4.4 Drop
-- [ ] `DROP-001` `drop()` creates a dropped resource at the creep's position.
-- [ ] `DROP-002` A specific resource type and optional amount can be specified.
-- [ ] Dropping onto a tile with an existing dropped resource of the same type adds to it.
-- [ ] `drop()` returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource.
+- [ ] `DROP-001` `behavior` `verified_vanilla`
+  `drop()` creates a dropped resource at the creep's position.
+- [ ] `DROP-002` `behavior` `verified_vanilla`
+  A specific resource type and optional amount can be specified.
+- [ ] `DROP-003` `behavior` `verified_vanilla`
+  Dropping onto a tile with an existing dropped resource of the same type adds to it.
+- [ ] `DROP-004` `behavior` `verified_vanilla`
+  `drop()` returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource.
 
 ### 4.5 Dropped Resources
 - [ ] `DROP-DECAY-001` `behavior` `verified_vanilla`
   Dropped energy decays by `ceil(amount / ENERGY_DECAY)` per tick.
 - [ ] `DROP-DECAY-002` `behavior` `verified_vanilla`
   A dropped resource disappears when its amount reaches 0.
-- [ ] Dropped resources are created when a creep dies with store contents.
-- [ ] Dropped resources are created when a creep overflows its carry capacity.
-- [ ] Any player's creep can pick up any dropped resource.
+- [ ] `DROP-DECAY-004` `behavior` `verified_vanilla` Dropped resources are created when a creep overflows its carry capacity.
+- [ ] `DROP-DECAY-005` `behavior` `verified_vanilla` Any player's creep can pick up any dropped resource.
+
+Coverage Notes
+- Creep-death → dropped-resources flow is owned by `CREEP-DEATH-007`
+  (section 9.7: tombstone decay emits dropped resources). Former
+  DROP-DECAY-003 dropped as a duplicate.
 
 ---
 
 ## 5. Construction & Repair
 
 ### 5.1 Build
-- [ ] `BUILD-001` Each WORK part contributes 5 progress per tick to a construction site.
-- [ ] `BUILD-002` Building costs 1 energy per progress point.
-- [ ] `build()` has a range of 3.
-- [ ] `build()` returns OK on success.
-- [ ] `BUILD-003` `build()` returns ERR_NOT_IN_RANGE when too far.
-- [ ] `build()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- [ ] `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
-- [ ] `BUILD-004` When a site reaches progressTotal, the structure is created.
-- [ ] Build boost (LH/LH2O/XLH2O) increases effectiveness without extra energy cost.
-- [ ] A creep can build an allied player's construction site.
+- [ ] `BUILD-001` `behavior` `verified_vanilla`
+  Each WORK part contributes 5 progress per tick to a construction site.
+- [ ] `BUILD-002` `behavior` `verified_vanilla`
+  Building costs 1 energy per progress point.
+- [ ] `BUILD-003` `behavior` `verified_vanilla`
+  `build()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `BUILD-004` `behavior` `verified_vanilla`
+  When a site reaches progressTotal, the structure is created.
+- [ ] `BUILD-005` `behavior` `verified_vanilla`
+  `build()` has a Chebyshev range of 3 — a site at distance 3 succeeds and
+  distance 4 returns ERR_NOT_IN_RANGE.
+- [ ] `BUILD-006` `behavior` `verified_vanilla`
+  `build()` returns OK on success.
+- [ ] `BUILD-007` `behavior` `verified_vanilla`
+  `build()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+- [ ] `BUILD-008` `behavior` `verified_vanilla`
+  `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
+- [ ] `BUILD-009` `behavior` `verified_vanilla`
+  A creep can build any visible construction site, regardless of which
+  player owns it (vanilla has no alliance system; the literal rule is
+  "no ownership check on the site").
+
+Coverage Notes
+- Build boost magnitudes are owned by `BOOST-BUILD-001` and zero-extra-cost is
+  owned by `BOOST-BUILD-002` (section 8.9). Former BUILD-009 dropped;
+  BUILD-010 renumbered to BUILD-009.
 
 ### 5.2 Repair
-- [ ] `REPAIR-001` Each WORK part repairs 100 hits per tick.
-- [ ] `REPAIR-002` Repairing costs 1 energy per 100 hits repaired.
-- [ ] `repair()` has a range of 3.
-- [ ] `repair()` cannot repair above the structure's hitsMax.
-- [ ] `REPAIR-003` `repair()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `REPAIR-001` `behavior` `verified_vanilla`
+  Each WORK part repairs 100 hits per tick.
+- [ ] `REPAIR-002` `behavior` `verified_vanilla`
+  Repairing costs 1 energy per 100 hits repaired.
+- [ ] `REPAIR-003` `behavior` `verified_vanilla`
+  `repair()` returns ERR_NOT_IN_RANGE when too far.
 - [ ] `REPAIR-004` `behavior` `verified_vanilla`
   `repair()` returns `ERR_NOT_ENOUGH_RESOURCES` when the creep has no energy.
-- [ ] `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- [ ] Repair boost (LH/LH2O/XLH2O) increases effectiveness without extra energy cost.
-- [ ] A creep can repair any player's structure.
+- [ ] `REPAIR-005` `behavior` `verified_vanilla`
+  `repair()` has a Chebyshev range of 3 — a target at distance 3 succeeds
+  and distance 4 returns ERR_NOT_IN_RANGE.
+- [ ] `REPAIR-006` `behavior` `verified_vanilla`
+  `repair()` cannot repair above the structure's hitsMax.
+- [ ] `REPAIR-007` `behavior` `verified_vanilla`
+  `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+- [ ] `REPAIR-008` `behavior` `verified_vanilla`
+  A creep can repair any visible structure, regardless of which player
+  owns the surrounding room (engine repair.js never checks ownership).
+
+Coverage Notes
+- Repair boost magnitudes are owned by `BOOST-BUILD-001` and zero-extra-cost is
+  owned by `BOOST-BUILD-002` (section 8.9). Former REPAIR-008 dropped;
+  REPAIR-009 renumbered to REPAIR-008.
 
 ### 5.3 Dismantle
-- [ ] `DISMANTLE-001` Each WORK part dismantles 50 hits per tick from a structure.
-- [ ] `DISMANTLE-002` Dismantling returns 0.25 energy per hit to the creep's store.
-- [ ] `DISMANTLE-003` `dismantle()` returns ERR_NOT_IN_RANGE when too far.
-- [ ] `dismantle()` bypasses rampart protection — it damages the target structure directly.
-- [ ] Dismantle boost (ZH/ZH2O/XZH2O) increases effectiveness.
-- [ ] `dismantle()` is blocked in safe mode rooms against hostile structures.
-- [ ] `dismantle()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+- [ ] `DISMANTLE-001` `behavior` `verified_vanilla`
+  Each WORK part dismantles 50 hits per tick from a structure.
+- [ ] `DISMANTLE-002` `behavior` `verified_vanilla`
+  Dismantling returns 0.25 energy per hit to the creep's store.
+- [ ] `DISMANTLE-003` `behavior` `verified_vanilla`
+  `dismantle()` returns ERR_NOT_IN_RANGE when too far.
+- [ ] `DISMANTLE-004` `behavior` `verified_vanilla`
+  When a rampart covers the target tile, `dismantle()` damage is redirected
+  to the rampart instead of the underlying structure (same redirect as
+  `attack()`).
+- [ ] `DISMANTLE-005` `behavior` `verified_vanilla`
+  `dismantle()` returns ERR_NO_BODYPART when the creep has no WORK parts.
+
+Coverage Notes
+- Dismantle boost magnitudes are owned by `BOOST-DISMANTLE-001`
+  (section 8.10). Former DISMANTLE-005 dropped.
+- Safe mode blocking dismantle is owned by `CTRL-SAFEMODE-006` (section 6.8);
+  former DISMANTLE-006 dropped.
+- DISMANTLE-007 renumbered to DISMANTLE-005.
 
 ### 5.4 Construction Sites
-- [ ] `CONSTRUCTION-SITE-001` `createConstructionSite()` places a new site at a position.
-- [ ] MAX_CONSTRUCTION_SITES (100) is enforced as a global limit per player.
-- [ ] Construction site type must be valid for the room's RCL.
-- [ ] A hostile creep moving onto a construction site destroys it instantly.
-- [ ] Exception: a site placed under an already-standing hostile creep survives.
-- [ ] `ConstructionSite.remove()` removes the site by the owner.
-- [ ] Only one construction site can exist at a given position.
-- [ ] Cannot place a construction site on a wall terrain tile (except roads).
+- [ ] `CONSTRUCTION-SITE-001` `behavior` `verified_vanilla`
+  `createConstructionSite()` places a new site at a position.
+- [ ] `CONSTRUCTION-SITE-002` `behavior` `verified_vanilla`
+  MAX_CONSTRUCTION_SITES (100) is enforced as a global limit per player.
+- [ ] `CONSTRUCTION-SITE-003` `behavior` `verified_vanilla`
+  Construction site type must be valid for the room's RCL — placing a
+  structure unavailable at the current RCL returns ERR_RCL_NOT_ENOUGH.
+- [ ] `CONSTRUCTION-SITE-004` `behavior` `verified_vanilla`
+  A hostile creep moving onto a construction site destroys it instantly
+  (movement.js processor removes the site mid-move).
+- [ ] `CONSTRUCTION-SITE-005` `behavior` `verified_vanilla`
+  Exception: a site placed under an already-standing hostile creep
+  survives — only the move intent triggers the site-destruction path.
+- [ ] `CONSTRUCTION-SITE-006` `behavior` `verified_vanilla`
+  `ConstructionSite.remove()` removes the site by the owner.
+- [ ] `CONSTRUCTION-SITE-007` `behavior` `verified_vanilla`
+  Only one construction site can exist at a given position.
+- [ ] `CONSTRUCTION-SITE-008` `behavior` `needs_vanilla_verification`
+  Cannot place a construction site on a wall terrain tile (except roads).
+  Coverage Notes: test exists but is gated on both adapters — vanilla
+  caches `staticTerrainData` at runner startup so player-side wall checks
+  ignore custom DB terrain (driver/runtime/make.js:18-51), and xxscreeps
+  has terrain capability false.
 
 ---
 
 ## 6. Controller
 
 ### 6.1 Claim Controller
-- [ ] `claimController()` requires at least one CLAIM body part.
-- [ ] The controller must be unowned (level 0) and not reserved by a hostile player.
-- [ ] Range is 1 (adjacent).
-- [ ] GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
-- [ ] `CTRL-CLAIM-001` On success, the controller is set to level 1 with the claiming player as owner.
-- [ ] Returns ERR_INVALID_TARGET if the controller is already owned.
+- [ ] `CTRL-CLAIM-001` `behavior` `verified_vanilla`
+  On success, the controller is set to level 1 with the claiming player as
+  owner.
+- [ ] `CTRL-CLAIM-002` `behavior` `verified_vanilla`
+  `claimController()` requires at least one CLAIM body part.
+- [ ] `CTRL-CLAIM-003` `behavior` `verified_vanilla`
+  The controller must be unowned (level 0) and not reserved by a hostile player.
+- [ ] `CTRL-CLAIM-004` `behavior` `verified_vanilla`
+  Range is 1 (adjacent).
+- [ ] `CTRL-CLAIM-005` `behavior` `needs_vanilla_verification`
+  GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
+  (Gated on `playerGclControl` limitation: both built-in adapters hardcode a
+  high GCL at user creation, so exceeding the cap cannot be produced honestly
+  without an adapter-level GCL override.)
+- [ ] `CTRL-CLAIM-006` `behavior` `verified_vanilla`
+  Returns ERR_INVALID_TARGET if the controller is already owned.
 
 ### 6.2 Reserve Controller
-- [ ] `reserveController()` requires at least one CLAIM body part.
-- [ ] The controller must be unowned (level 0).
-- [ ] Range is 1 (adjacent).
-- [ ] `CTRL-RESERVE-001` Adds 1 tick per CLAIM part per tick to the reservation timer.
-- [ ] Reservation is capped at CONTROLLER_RESERVE_MAX (5000 ticks).
+- [ ] `CTRL-RESERVE-001` `behavior` `verified_vanilla`
+  Adds 1 tick per CLAIM part per tick to the reservation timer.
+- [ ] `CTRL-RESERVE-002` `behavior` `verified_vanilla`
+  `reserveController()` requires at least one CLAIM body part.
+- [ ] `CTRL-RESERVE-003` `behavior` `verified_vanilla`
+  The controller must be unowned (level 0).
+- [ ] `CTRL-RESERVE-004` `behavior` `verified_vanilla`
+  Range is 1 (adjacent).
+- [ ] `CTRL-RESERVE-005` `behavior` `verified_vanilla`
+  Reservation is capped at CONTROLLER_RESERVE_MAX (5000 ticks).
 
 ### 6.3 Attack Controller
-- [ ] `attackController()` requires at least one CLAIM body part.
-- [ ] `CTRL-ATTACK-001` Reduces the downgrade timer by CONTROLLER_CLAIM_DOWNGRADE (300) per CLAIM part.
-- [ ] Sets upgradeBlocked for CONTROLLER_ATTACK_BLOCKED_UPGRADE (1000) ticks.
-- [ ] Range is 1 (adjacent).
-- [ ] Cannot attack the player's own controller.
+- [ ] `CTRL-ATTACK-001` `behavior` `verified_vanilla`
+  Reduces the downgrade timer by CONTROLLER_CLAIM_DOWNGRADE (300) per CLAIM
+  part.
+- [ ] `CTRL-ATTACK-002` `behavior` `verified_vanilla`
+  `attackController()` requires at least one CLAIM body part.
+- [ ] `CTRL-ATTACK-003` `behavior` `verified_vanilla`
+  Sets upgradeBlocked for CONTROLLER_ATTACK_BLOCKED_UPGRADE (1000) ticks.
+- [ ] `CTRL-ATTACK-004` `behavior` `verified_vanilla`
+  Range is 1 (adjacent).
+- [ ] `CTRL-ATTACK-005` `behavior` `verified_vanilla`
+  `attackController()` is not blocked against the player's own controller: the
+  intent returns `OK`, decrements the controller's own `ticksToDowngrade` by
+  `CONTROLLER_CLAIM_DOWNGRADE` per CLAIM part, and sets `upgradeBlocked` as on
+  a hostile attack.
 
 ### 6.4 Upgrade Controller
-- [ ] `CTRL-UPGRADE-001` Each WORK part contributes 1 progress per tick.
-- [ ] `CTRL-UPGRADE-002` Upgrading costs 1 energy per progress point.
-- [ ] `upgradeController()` has a range of 3.
-- [ ] At RCL 8, upgrade is capped at CONTROLLER_MAX_UPGRADE_PER_TICK (15).
-- [ ] Upgrade boost (GH/GH2O/XGH2O) increases effectiveness without extra energy cost.
-- [ ] Progress thresholds per level: 200, 45K, 135K, 405K, 1.215M, 3.645M, 10.935M.
-- [ ] GCL progress is incremented alongside controller progress.
-- [ ] `upgradeController()` returns ERR_BUSY when upgradeBlocked is active.
-- [ ] `upgradeController()` is blocked for CONTROLLER_NUKE_BLOCKED_UPGRADE (200) ticks after a nuke lands.
-- [ ] `CTRL-UPGRADE-003` `upgradeController()` returns ERR_NOT_IN_RANGE when not within range 3.
-- [ ] `CTRL-UPGRADE-004` Returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
+- [ ] `CTRL-UPGRADE-001` `behavior` `verified_vanilla`
+  Each WORK part contributes 1 progress per tick.
+- [ ] `CTRL-UPGRADE-002` `behavior` `verified_vanilla`
+  Upgrading costs 1 energy per progress point.
+- [ ] `CTRL-UPGRADE-003` `behavior` `verified_vanilla`
+  `upgradeController()` returns ERR_NOT_IN_RANGE when not within range 3.
+- [ ] `CTRL-UPGRADE-004` `behavior` `verified_vanilla`
+  Returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
+- [ ] `CTRL-UPGRADE-005` `behavior` `verified_vanilla`
+  `upgradeController()` has a range of 3.
+- [ ] `CTRL-UPGRADE-006` `behavior` `verified_vanilla`
+  At RCL 8, upgrade is capped at CONTROLLER_MAX_UPGRADE_PER_TICK (15).
+- [ ] `CTRL-UPGRADE-007` `matrix` `verified_vanilla`
+  Progress thresholds per level: 200, 45K, 135K, 405K, 1.215M, 3.645M,
+  10.935M.
+- [ ] `CTRL-UPGRADE-008` `behavior` `verified_vanilla`
+  GCL progress is incremented alongside controller progress.
+- [ ] `CTRL-UPGRADE-009` `behavior` `verified_vanilla`
+  `upgradeController()` returns `ERR_INVALID_TARGET` while the controller's
+  `upgradeBlocked` window is active (client-side check in
+  `@screeps/engine/src/game/creeps.js:937`).
+- [ ] `CTRL-UPGRADE-010` `behavior` `verified_vanilla`
+  `upgradeController()` is blocked for CONTROLLER_NUKE_BLOCKED_UPGRADE (200)
+  ticks after a nuke lands.
+
+Coverage Notes
+- Upgrade boost magnitudes and zero-extra-cost are owned by
+  `BOOST-UPGRADE-001` and `BOOST-UPGRADE-003` (section 8.11). Former
+  CTRL-UPGRADE-007 dropped; remaining entries renumbered (008→007, 009→008,
+  010→009, 011→010). CTRL-UPGRADE-007 reclassified `behavior`→`matrix`.
 
 ### 6.5 Sign Controller
-- [ ] `CTRL-SIGN-001` `signController()` stores text on the controller.
-- [ ] Range is 1 (adjacent).
-- [ ] Any player can sign any controller (including hostile).
+- [ ] `CTRL-SIGN-001` `behavior` `verified_vanilla`
+  `signController()` stores text on the controller.
+- [ ] `CTRL-SIGN-002` `behavior` `verified_vanilla`
+  Range is 1 (adjacent).
+- [ ] `CTRL-SIGN-003` `behavior` `verified_vanilla`
+  Any player can sign any controller (including hostile).
 
 ### 6.6 Generate Safe Mode
-- [ ] `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's store.
-- [ ] Range is 1 (adjacent).
-- [ ] On success, increments the controller's safeModeAvailable count.
-- [ ] Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
+- [ ] `CTRL-GENSAFE-001` `behavior` `verified_vanilla` `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's store.
+- [ ] `CTRL-GENSAFE-002` `behavior` `verified_vanilla` Range is 1 (adjacent).
+- [ ] `CTRL-GENSAFE-003` `behavior` `verified_vanilla` On success, increments the controller's safeModeAvailable count.
+- [ ] `CTRL-GENSAFE-004` `behavior` `verified_vanilla` Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
 
 ### 6.7 Downgrade & Level Loss
-- [ ] Each RCL has a downgrade timer: 1→20K, 2→10K, 3→20K, 4→40K, 5→80K, 6→120K, 7→150K, 8→200K.
-- [ ] The timer decrements by 1 each tick the controller is not upgraded.
 - [ ] `CTRL-DOWNGRADE-001` `behavior` `verified_vanilla`
   The controller loses a level when `ticksToDowngrade` reaches 0.
-- [ ] `CTRL-DOWNGRADE-003` `behavior` `verified_vanilla`
-  `upgradeController()` resets the controller's downgrade timer.
-- [ ] Level loss resets progress to 0.
-- [ ] Structures above the new RCL limit become inactive (isActive() returns false).
-- [ ] The controller can downgrade through multiple levels if neglected.
 - [ ] `CTRL-DOWNGRADE-002` `behavior` `verified_vanilla`
   An owned controller at level 1 that loses its level becomes unowned
   (level 0, `my === false`).
+- [ ] `CTRL-DOWNGRADE-003` `behavior` `verified_vanilla`
+  `upgradeController()` resets the controller's downgrade timer.
+- [ ] `CTRL-DOWNGRADE-004` `behavior` `verified_vanilla`
+  Each RCL has a downgrade timer: 1→20K, 2→10K, 3→20K, 4→40K, 5→80K,
+  6→120K, 7→150K, 8→200K.
+- [ ] `CTRL-DOWNGRADE-005` `behavior` `verified_vanilla`
+  The timer decrements by 1 each tick the controller is not upgraded.
+- [ ] `CTRL-DOWNGRADE-006` `behavior` `verified_vanilla`
+  On downgrade from level N > 1 to N-1, the controller's `progress` is
+  incremented by `Math.round(CONTROLLER_LEVELS[N-1] * 0.9)` (a head start
+  toward re-upgrading); progress is only cleared to 0 when the controller
+  drops to level 0 (unowned).
+- [ ] `CTRL-DOWNGRADE-007` `behavior` `verified_vanilla`
+  The controller can downgrade through multiple levels if neglected.
+
+Coverage Notes
+- Structures becoming inactive above the RCL limit is owned by
+  `CTRL-STRUCTLIMIT-002` (section 6.10). Former CTRL-DOWNGRADE-007 dropped;
+  CTRL-DOWNGRADE-008 renumbered to 007.
 
 ### 6.8 Safe Mode Mechanics
 - [ ] `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
@@ -411,9 +621,21 @@ Notes
   concrete observable outcomes, not as a broad summary rule.
 
 ### 6.9 Unclaim
-- [ ] `unclaim()` resets the controller to level 0 (unowned).
-- [ ] All owned structures in the room are destroyed.
-- [ ] Destroyed structures become ruins.
+- [ ] `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
+  `StructureController.unclaim()` resets the controller to level 0 (unowned),
+  clearing `user`, `progress`, `downgradeTime`, `safeMode`, and
+  `safeModeAvailable` in a single processor step. Owned structures in the
+  room are **not** destroyed by unclaim itself; they remain present and
+  simply become inactive because every `CONTROLLER_STRUCTURES[type][0]` is 0
+  (already covered by `CTRL-STRUCTLIMIT-002`).
+
+Coverage Notes
+- Original CTRL-UNCLAIM-002 ("All owned structures in the room are
+  destroyed") and CTRL-UNCLAIM-003 ("Destroyed structures become ruins")
+  dropped: both contradicted the engine's `unclaim` processor
+  (`@screeps/engine/src/processor/intents/controllers/unclaim.js`), which
+  only updates the controller object and leaves room structures intact.
+  The inactive-above-RCL-limit outcome is owned by `CTRL-STRUCTLIMIT-002`.
 
 ### 6.10 Structure Limits per RCL
 - [ ] `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
@@ -432,22 +654,44 @@ Coverage Notes
 ## 7. Combat
 
 ### 7.1 Melee Attack
-- [ ] `COMBAT-MELEE-001` Each ATTACK part deals 30 damage per tick.
-- [ ] `attack()` has a range of 1 (adjacent).
-- [ ] Attacking a structure under a rampart hits the rampart instead.
-- [ ] ATTACK parts automatically deal counter-damage back to melee attackers.
-- [ ] `COMBAT-MELEE-002` `attack()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- [ ] `COMBAT-MELEE-003` `attack()` returns ERR_NO_BODYPART when the creep has no ATTACK parts.
-- [ ] Can target creeps, power creeps, and structures.
-- [ ] Attack boost (UH/UH2O/XUH2O) increases damage per boosted ATTACK part.
+- [ ] `COMBAT-MELEE-001` `behavior` `verified_vanilla`
+  Each ATTACK part deals 30 damage per tick.
+- [ ] `COMBAT-MELEE-002` `behavior` `verified_vanilla`
+  `attack()` returns ERR_NOT_IN_RANGE when target is not adjacent.
+- [ ] `COMBAT-MELEE-003` `behavior` `verified_vanilla`
+  `attack()` returns ERR_NO_BODYPART when the creep has no ATTACK parts.
+- [ ] `COMBAT-MELEE-004` `behavior` `verified_vanilla`
+  `attack()` has a range of 1 (adjacent).
+- [ ] `COMBAT-MELEE-005` `behavior` `verified_vanilla`
+  Attacking a creep or structure on a rampart-occupied tile hits the rampart instead.
+- [ ] `COMBAT-MELEE-006` `behavior` `verified_vanilla`
+  After a melee attack the target's ATTACK parts deal counter-damage back to the
+  attacker, unless the attacker stands on its own rampart.
+- [ ] `COMBAT-MELEE-007` `behavior` `verified_vanilla`
+  Can target creeps, power creeps, and structures; non-attackable objects
+  (e.g. sources) return ERR_INVALID_TARGET.
+
+Coverage Notes
+- Attack boost magnitudes are owned by `BOOST-ATTACK-001` (section 8.4).
+  Former COMBAT-MELEE-008 dropped.
 
 ### 7.2 Ranged Attack
-- [ ] `COMBAT-RANGED-001` Each RANGED_ATTACK part deals 10 damage per tick.
-- [ ] `rangedAttack()` has a range of 1–3.
-- [ ] `COMBAT-RANGED-002` `rangedAttack()` returns ERR_NOT_IN_RANGE when target is beyond range 3.
-- [ ] `rangedAttack()` returns ERR_NO_BODYPART when the creep has no RANGED_ATTACK parts.
-- [ ] Can target creeps, power creeps, and structures.
-- [ ] Ranged attack boost (KO/KHO2/XKHO2) increases damage per boosted RANGED_ATTACK part.
+- [ ] `COMBAT-RANGED-001` `behavior` `verified_vanilla`
+  Each RANGED_ATTACK part deals 10 damage per tick.
+- [ ] `COMBAT-RANGED-002` `behavior` `verified_vanilla`
+  `rangedAttack()` returns ERR_NOT_IN_RANGE when target is beyond range 3.
+- [ ] `COMBAT-RANGED-003` `behavior` `verified_vanilla`
+  `rangedAttack()` has a range of 1–3.
+- [ ] `COMBAT-RANGED-004` `behavior` `verified_vanilla`
+  `rangedAttack()` returns ERR_NO_BODYPART when the creep has no
+  RANGED_ATTACK parts.
+- [ ] `COMBAT-RANGED-005` `behavior` `verified_vanilla`
+  Can target creeps, power creeps, and structures; non-attackable objects
+  (e.g. sources) return ERR_INVALID_TARGET.
+
+Coverage Notes
+- Ranged attack boost magnitudes are owned by `BOOST-RANGED-001`
+  (section 8.5). Former COMBAT-RANGED-006 dropped.
 
 ### 7.3 Ranged Mass Attack
 - [ ] `COMBAT-RMA-001` `behavior` `verified_vanilla`
@@ -461,17 +705,34 @@ Coverage Notes
   structures.
 
 ### 7.4 Heal
-- [ ] `COMBAT-HEAL-001` Each HEAL part restores 12 HP per tick at range 1.
-- [ ] `heal()` has a range of 1 (adjacent).
-- [ ] Can target own and allied creeps and power creeps.
-- [ ] Heal boost (LO/LHO2/XLHO2) increases healing per boosted HEAL part.
-- [ ] Healing a creep already at full HP returns OK but has no effect.
+- [ ] `COMBAT-HEAL-001` `behavior` `verified_vanilla`
+  Each HEAL part restores 12 HP per tick at range 1.
+- [ ] `COMBAT-HEAL-002` `behavior` `verified_vanilla`
+  `heal()` has a range of 1 (adjacent).
+- [ ] `COMBAT-HEAL-003` `behavior` `verified_vanilla`
+  Accepts any creep or power creep target regardless of ownership; the engine
+  imposes a type-only check, with no friend/foe restriction.
+- [ ] `COMBAT-HEAL-004` `behavior` `verified_vanilla`
+  Healing a creep already at full HP returns OK but has no effect.
+
+Coverage Notes
+- Heal boost magnitudes are owned by `BOOST-HEAL-001` (section 8.6). Former
+  COMBAT-HEAL-004 dropped; COMBAT-HEAL-005 renumbered to 004.
 
 ### 7.5 Ranged Heal
-- [ ] `COMBAT-RANGEDHEAL-001` Each HEAL part restores 4 HP per tick at range 1–3.
-- [ ] `rangedHeal()` has a range of 1–3.
-- [ ] Same boost multipliers apply as melee heal.
-- [ ] A creep can `rangedHeal()` and `rangedAttack()` in the same tick.
+- [ ] `COMBAT-RANGEDHEAL-001` `behavior` `verified_vanilla`
+  Each HEAL part restores 4 HP per tick at range 1–3.
+- [ ] `COMBAT-RANGEDHEAL-002` `behavior` `verified_vanilla`
+  `rangedHeal()` has a range of 1–3.
+- [ ] `COMBAT-RANGEDHEAL-003` `behavior` `verified_vanilla`
+  When both `rangedHeal()` and `rangedAttack()` intents are queued on the same
+  creep in one tick, `rangedHeal` takes priority and `rangedAttack` is suppressed
+  (engine intent priority table).
+
+Coverage Notes
+- Heal boost multipliers (including for rangedHeal) are owned by
+  `BOOST-HEAL-001` (section 8.6). Former COMBAT-RANGEDHEAL-003 dropped;
+  COMBAT-RANGEDHEAL-004 renumbered to 003.
 
 ### 7.6 Body Part Damage Model
 - [ ] `COMBAT-BODYPART-001` `behavior` `verified_vanilla`
@@ -490,28 +751,28 @@ Coverage Notes
   harvesting, transfer, and controller-action sections rather than as one
   umbrella statement here.
 
-### 7.7 Boost Damage Reduction
-- [ ] Boosted TOUGH parts reduce incoming damage to themselves only.
-- [ ] GO (T1) reduces damage by 30%.
-- [ ] GHO2 (T2) reduces damage by 50%.
-- [ ] XGHO2 (T3) reduces damage by 70%.
-- [ ] Effective HP per T3 boosted TOUGH part is approximately 333.
+Coverage Notes
+- Entire section 7.7 (Boost Damage Reduction, COMBAT-TOUGH-001 through 005)
+  dropped. Tough damage-reduction magnitudes are owned by `BOOST-TOUGH-001`
+  (section 8.7); self-only scope is owned by `BOOST-TOUGH-002` (section 8.7).
+  COMBAT-TOUGH-005 (effective HP calculation) is a derived value, not an
+  independent observable. Subsequent facets renumbered.
 
-### 7.8 Simultaneous Damage & Healing
-- [ ] Damage and healing are resolved simultaneously: `newHits = oldHits + healing - damage`.
-- [ ] A creep survives if healing equals or exceeds damage in the same tick.
-- [ ] Overkill damage does not carry over to the next tick.
-- [ ] A creep dies only if hits reach 0 after simultaneous resolution.
-- [ ] Multiple sources of damage and healing are summed independently.
+### 7.7 Simultaneous Damage & Healing
+- [ ] `COMBAT-SIMULT-001` `behavior` `verified_vanilla` Damage and healing are resolved simultaneously: `newHits = oldHits + healing - damage`.
+- [ ] `COMBAT-SIMULT-002` `behavior` `verified_vanilla` A creep survives if healing equals or exceeds damage in the same tick.
+- [ ] `COMBAT-SIMULT-003` `behavior` `verified_vanilla` Overkill damage does not carry over to the next tick.
+- [ ] `COMBAT-SIMULT-004` `behavior` `verified_vanilla` A creep dies only if hits reach 0 after simultaneous resolution.
+- [ ] `COMBAT-SIMULT-005` `behavior` `verified_vanilla` Multiple sources of damage and healing are summed independently.
 
-### 7.9 Tower Attack
+### 7.8 Tower Attack
 - [ ] `TOWER-ATTACK-001` `behavior` `verified_vanilla`
   When `tower.attack()` executes, the tower's energy decreases by
   `TOWER_ENERGY_COST` in the same tick.
 - [ ] `TOWER-ATTACK-002` `matrix` `verified_vanilla`
   Tower attack damage by range matches the canonical Screeps tower falloff
   curve derived from the tower attack constants.
-- [ ] `TOWER-ATTACK-003` `matrix` `needs_vanilla_verification`
+- [ ] `TOWER-ATTACK-003` `matrix` `verified_vanilla`
   `tower.attack()` target acceptance and invalid-target behavior match the
   canonical target matrix across creeps, power creeps, structures, and
   non-attackable objects.
@@ -519,31 +780,31 @@ Coverage Notes
   `tower.attack()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
 
-### 7.10 Tower Heal
+### 7.9 Tower Heal
 - [ ] `TOWER-HEAL-001` `behavior` `verified_vanilla`
   When `tower.heal()` executes, the tower's energy decreases by
   `TOWER_ENERGY_COST` in the same tick.
 - [ ] `TOWER-HEAL-002` `matrix` `verified_vanilla`
   Tower heal amount by range matches the canonical Screeps tower falloff curve
   derived from the tower heal constants.
-- [ ] `TOWER-HEAL-003` `matrix` `needs_vanilla_verification`
+- [ ] `TOWER-HEAL-003` `matrix` `verified_vanilla`
   `tower.heal()` target acceptance and invalid-target behavior match the
   canonical target matrix across creeps, power creeps, structures, and
   non-healable objects.
 
-### 7.11 Tower Repair
+### 7.10 Tower Repair
 - [ ] `TOWER-REPAIR-001` `behavior` `verified_vanilla`
   When `tower.repair()` executes, the tower's energy decreases by
   `TOWER_ENERGY_COST` in the same tick.
 - [ ] `TOWER-REPAIR-002` `matrix` `verified_vanilla`
   Tower repair amount by range matches the canonical Screeps tower falloff
   curve derived from the tower repair constants.
-- [ ] `TOWER-REPAIR-003` `matrix` `needs_vanilla_verification`
+- [ ] `TOWER-REPAIR-003` `matrix` `verified_vanilla`
   `tower.repair()` target acceptance and invalid-target behavior match the
   canonical target matrix across repairable structures, non-repairable
   structures, creeps, and other invalid targets.
 
-### 7.12 Tower Action Priority
+### 7.11 Tower Action Priority
 - [ ] `TOWER-INTENT-001` `behavior` `verified_vanilla`
   A tower performs at most one of attack, heal, or repair in a tick.
 - [ ] `TOWER-INTENT-002` `behavior` `verified_vanilla`
@@ -553,38 +814,48 @@ Coverage Notes
   Lower-priority tower intents submitted in the same tick do not execute after
   the chosen tower action resolves.
 
-### 7.13 Tower Power Effects
+### 7.12 Tower Power Effects
 - [ ] `TOWER-POWER-001` `matrix` `verified_vanilla`
   `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` modify tower attack, heal, and
   repair power according to `POWER_INFO` for each supported power level.
-- [ ] `TOWER-POWER-002` `behavior` `needs_vanilla_verification`
+- [ ] `TOWER-POWER-002` `behavior` `verified_vanilla`
   `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` can affect the same tower at the
   same time.
 
-### 7.14 Nukes — Launch `capability: nuke`
-- [ ] Launching requires NUKER_ENERGY_CAPACITY (300000) energy and NUKER_GHODIUM_CAPACITY (5000) ghodium.
-- [ ] Nuker cooldown is NUKER_COOLDOWN (100000 ticks).
-- [ ] Maximum range is NUKE_RANGE (10 rooms).
-- [ ] Creates an in-flight Nuke object visible in the target room.
-- [ ] `launchNuke()` returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient.
-- [ ] `launchNuke()` returns ERR_TIRED when the nuker is on cooldown.
-- [ ] `launchNuke()` returns ERR_INVALID_TARGET when the target room is beyond NUKE_RANGE.
+### 7.13 Nukes — Launch `capability: nuke`
+- [ ] `NUKE-LAUNCH-001` `behavior` `verified_vanilla` Launching requires `NUKER_ENERGY_CAPACITY` (300000) energy and `NUKER_GHODIUM_CAPACITY` (5000) ghodium.
+- [ ] `NUKE-LAUNCH-002` `behavior` `verified_vanilla` Nuker enters a long cooldown after launch (`NUKER_COOLDOWN`, 100000 ticks).
+- [ ] `NUKE-LAUNCH-003` `behavior` `verified_vanilla` Maximum range is `NUKE_RANGE` (10 rooms).
+- [ ] `NUKE-LAUNCH-004` `behavior` `verified_vanilla` Creates an in-flight Nuke object visible in the target room via `FIND_NUKES`.
+- [ ] `NUKE-LAUNCH-005` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is insufficient.
+- [ ] `NUKE-LAUNCH-006` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
+- [ ] `NUKE-LAUNCH-007` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond `NUKE_RANGE`.
 
-### 7.15 Nukes — Impact `capability: nuke`
-- [ ] Nuke lands after NUKE_LAND_TIME (50000 ticks).
-- [ ] Damage at ground zero is 10,000,000.
-- [ ] Damage in radius 0–2 is 5,000,000.
-- [ ] Ramparts absorb nuke damage for structures underneath.
-- [ ] Ramparts do not protect creeps from nuke damage.
-- [ ] All creeps, dropped resources, construction sites, tombstones, and ruins in the blast area are destroyed.
-- [ ] Nukes do not create tombstones or ruins from what they destroy.
+### 7.14 Nukes — Impact `capability: nuke`
+- [ ] `NUKE-IMPACT-001` `behavior` `verified_vanilla` Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on launch.
+- [ ] `NUKE-IMPACT-002` `behavior` `verified_vanilla` Damage at ground zero (range 0) is `NUKE_DAMAGE[0]` (10,000,000).
+- [ ] `NUKE-IMPACT-003` `behavior` `verified_vanilla` Damage in radius 1–2 is `NUKE_DAMAGE[2]` (5,000,000).
+- [ ] `NUKE-IMPACT-005` `behavior` `verified_vanilla` Ramparts do not protect creeps from nuke damage; every creep in the room dies.
+- [ ] `NUKE-IMPACT-006` `behavior` `verified_vanilla` All dropped resources, construction sites, tombstones, and ruins in the entire room are removed when the nuke lands (room-wide cleanup, not just the blast area).
+- [ ] `NUKE-IMPACT-007` `behavior` `verified_vanilla` Nukes do not create tombstones or ruins from what they destroy.
 
-### 7.16 Safe Mode — Combat Effects
-- [ ] Hostile creeps cannot `attack()` in a safe mode room.
-- [ ] Hostile creeps cannot `rangedAttack()` or `rangedMassAttack()` in a safe mode room.
-- [ ] Hostile creeps cannot `dismantle()` in a safe mode room.
-- [ ] Towers can still operate during safe mode.
-- [ ] Construction sites are protected from hostile stomping during safe mode.
+Coverage Notes
+- `NUKE-IMPACT-004` (rampart absorbs nuke damage for structures underneath)
+  was a duplicate of `RAMPART-PROTECT-008` (section 12.1) and is dropped here;
+  the nuke + rampart structure-absorption observable is owned by section 12.1.
+
+### 7.15 Safe Mode — Combat Effects
+- [ ] `SAFEMODE-COMBAT-001` `behavior` `verified_vanilla`
+  Towers can still operate during safe mode.
+- [ ] `SAFEMODE-COMBAT-002` `behavior` `verified_vanilla`
+  Construction sites owned by the safe-moded room's owner are protected from
+  hostile creep stomping while safe mode is active.
+
+Coverage Notes
+- Hostile creep action blocking (attack, rangedAttack, rangedMassAttack,
+  dismantle) is owned by `CTRL-SAFEMODE-006` (section 6.8). Former
+  SAFEMODE-COMBAT-001/002/003 dropped; SAFEMODE-COMBAT-004/005 renumbered
+  to 001/002.
 
 ---
 
@@ -621,9 +892,24 @@ Coverage Notes
   `unboostCreep()` returns `ERR_NOT_FOUND` when the creep has no boosts.
 - [ ] `UNBOOST-003` `behavior` `verified_vanilla`
   `unboostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
-- [ ] Returns compounds to the lab (LAB_UNBOOST_MINERAL = 15 per part).
-- [ ] Lab cooldown after unboost equals the sum of REACTION_TIME for all compounds removed.
-- [ ] Returns ERR_FULL when lab cannot hold the returned compounds.
+- [ ] `UNBOOST-004` `behavior` `verified_vanilla`
+  Each unboosted body part drops `LAB_UNBOOST_MINERAL` (15) of its compound as
+  a resource pile on the creep's own tile (not the lab's store): the engine
+  unboost processor calls `_create-energy(target.x, target.y, ...)`.
+- [ ] `UNBOOST-005` `behavior` `verified_vanilla`
+  Lab cooldown after a successful unboost equals
+  `sum_over_compounds(parts * calcTotalReactionsTime(compound)
+  * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT)` ticks. For a tier-1 boost like
+  `UH` this reduces to `parts * REACTION_TIME[UH] * 3`.
+
+Coverage Notes
+- A previously listed UNBOOST entry asserting `ERR_FULL when lab cannot hold
+  the returned compounds` was dropped on 2026-04-11. Vanilla
+  `@screeps/engine/src/game/structures.js` `StructureLab.unboostCreep` has no
+  ERR_FULL branch and the unboost processor never returns capacity errors —
+  returned compounds spill onto the creep tile via `_create-energy` (which
+  prefers a same-tile container then falls back to a dropped resource), so
+  there is nothing for the lab to "fail to hold".
 
 ### 8.3 Per-Part Boost Aggregation
 - [ ] `BOOST-AGGREGATION-001` `matrix` `verified_vanilla`
@@ -662,14 +948,14 @@ Coverage Notes
 - [ ] `BOOST-HARVEST-001` `matrix` `verified_vanilla`
   Harvest boost effect magnitudes match the canonical Screeps `BOOSTS` table
   for `UO`, `UHO2`, and `XUHO2`.
-- [ ] `BOOST-HARVEST-003` `behavior` `verified_vanilla`
+- [ ] `BOOST-HARVEST-002` `behavior` `verified_vanilla`
   Harvest boosts apply only during `harvest()`, not other `WORK` actions.
 
 ### 8.9 Build/Repair Boosts
 - [ ] `BOOST-BUILD-001` `matrix` `verified_vanilla`
   Build and repair boost effect magnitudes match the canonical Screeps
   `BOOSTS` table for `LH`, `LH2O`, and `XLH2O`.
-- [ ] `BOOST-BUILD-003` `behavior` `verified_vanilla`
+- [ ] `BOOST-BUILD-002` `behavior` `verified_vanilla`
   Build and repair boosts do not increase energy cost.
 
 ### 8.10 Dismantle Boosts
@@ -681,7 +967,7 @@ Coverage Notes
 - [ ] `BOOST-UPGRADE-001` `matrix` `verified_vanilla`
   Upgrade boost effect magnitudes match the canonical Screeps `BOOSTS` table
   for `GH`, `GH2O`, and `XGH2O`.
-- [ ] `BOOST-UPGRADE-003` `behavior` `verified_vanilla`
+- [ ] `BOOST-UPGRADE-002` `behavior` `verified_vanilla`
   Upgrade boosts do not increase energy cost.
 
 ### 8.12 Move Boosts
@@ -697,7 +983,7 @@ Coverage Notes
 - [ ] `BOOST-CARRY-001` `matrix` `verified_vanilla`
   Carry boost capacity increases match the canonical Screeps `BOOSTS` table for
   `KH`, `KH2O`, and `XKH2O`.
-- [ ] `BOOST-CARRY-003` `behavior` `verified_vanilla`
+- [ ] `BOOST-CARRY-002` `behavior` `verified_vanilla`
   Boosted `CARRY` parts still contribute zero fatigue when empty.
 
 ---
@@ -874,10 +1160,8 @@ Coverage Notes
   tick's resolution, and the tombstone appears on the next tick at the
   creep's position.
 - [ ] `CREEP-SUICIDE-003` `behavior` `verified_vanilla`
-  `suicide()` returns `OK` on success.
-- [ ] `CREEP-SUICIDE-004` `behavior` `verified_vanilla`
   `suicide()` returns `ERR_NOT_OWNER` when called on a creep that is not yours.
-- [ ] `CREEP-SUICIDE-005` `behavior` `verified_vanilla`
+- [ ] `CREEP-SUICIDE-004` `behavior` `verified_vanilla`
   `suicide()` returns `ERR_BUSY` when called on a spawning creep.
 
 ### 9.9 Say
@@ -2055,10 +2339,10 @@ Coverage Notes
   For each method pair listed under `INTENT-CREEP-001` in
   `docs/behavior-matrices.md`, the higher-priority blocking creep intent
   prevents the lower-priority intent from resolving in the same tick.
-- [ ] `INTENT-CREEP-005` `matrix` `needs_vanilla_verification`
+- [ ] `INTENT-CREEP-002` `matrix` `needs_vanilla_verification`
   For creep methods with single-intent overwrite semantics, repeated same-tick
   calls keep only the last intent for that method.
-- [ ] `INTENT-CREEP-006` `matrix` `needs_vanilla_verification`
+- [ ] `INTENT-CREEP-003` `matrix` `needs_vanilla_verification`
   For creep methods that support `cancelOrder(methodName)`, canceling a queued
   same-tick intent prevents that method's intent from resolving.
 
@@ -2095,7 +2379,7 @@ Coverage Notes
 - [ ] `INTENT-SIMULT-001` `behavior` `needs_vanilla_verification`
   `move()`, `rangedMassAttack()`, and `heal()` can all execute in the same
   tick on the same creep.
-- [ ] `INTENT-SIMULT-004` `behavior` `needs_vanilla_verification`
+- [ ] `INTENT-SIMULT-002` `behavior` `needs_vanilla_verification`
   `heal()` on a healthy creep returns `OK` and still blocks lower-priority
   actions in the blocking creep action chain.
 
