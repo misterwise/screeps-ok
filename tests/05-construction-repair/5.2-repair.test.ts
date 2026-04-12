@@ -1,6 +1,6 @@
 import { describe, test, expect, code, body,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, ERR_NO_BODYPART,
-	WORK, CARRY, MOVE, STRUCTURE_ROAD, REPAIR_POWER, ROAD_HITS } from '../../src/index.js';
+	WORK, CARRY, MOVE, STRUCTURE_ROAD, REPAIR_POWER, REPAIR_COST, ROAD_HITS } from '../../src/index.js';
 
 describe('creep.repair()', () => {
 	test('REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick', async ({ shard }) => {
@@ -159,6 +159,34 @@ describe('creep.repair()', () => {
 			Game.getObjectById(${creepId}).repair(Game.getObjectById(${roadId}))
 		`);
 		expect(rc).toBe(ERR_NO_BODYPART);
+	});
+
+	test('REPAIR-009 partial repair when energy is below full repair cost', async ({ shard }) => {
+		// Engine repair.js:23-27 — repairEffect = min(repairPower, energy/REPAIR_COST, damage).
+		// 3 WORK = 300 repairPower needs 3 energy; stored 2 energy → energy/REPAIR_COST = 200.
+		// Effect = 200 hits restored, 2 energy spent.
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: body(3, WORK, CARRY, MOVE),
+			store: { energy: 2 },
+		});
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_ROAD, hits: 500,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).repair(Game.getObjectById(${roadId}))
+		`);
+		expect(rc).toBe(OK);
+
+		const road = await shard.expectObject(roadId, 'structure');
+		const creep = await shard.expectObject(creepId, 'creep');
+		const partialHits = Math.floor(2 / REPAIR_COST);
+		expect(road.hits).toBe(500 + partialHits);
+		expect(creep.store.energy ?? 0).toBe(0);
+		// Sanity: full repair would restore 3 × REPAIR_POWER.
+		expect(road.hits).toBeLessThan(500 + 3 * REPAIR_POWER);
 	});
 
 	test('REPAIR-008 a creep can repair another player\'s structure', async ({ shard }) => {

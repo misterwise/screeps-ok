@@ -6,7 +6,8 @@ export type DocumentedAdapterLimitation =
 	| 'memorySupport'
 	| 'npcStructures'
 	| 'xxscreepsPathFinderUseMissing'
-	| 'playerGclControl';
+	| 'playerGclControl'
+	| 'pullSelfHang';
 
 function activeAdapterPath(): string {
 	return process.env.SCREEPS_OK_ADAPTER ?? '';
@@ -52,6 +53,10 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// honestly there. Vanilla supports `PlayerSpec.gcl` (see
 			// adapters/vanilla/index.ts createShard); tests that need
 			// ERR_GCL_NOT_ENOUGH should set a low gcl on the player spec.
+			return isBuiltInAdapter('xxscreeps');
+		case 'pullSelfHang':
+			// xxscreeps pull(self) enters an infinite loop in the recursive
+			// circular-pull check, hanging the test runner. Must skip, not fail.
 			return isBuiltInAdapter('xxscreeps');
 	}
 }

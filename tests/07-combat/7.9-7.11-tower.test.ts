@@ -180,6 +180,45 @@ describe('StructureTower', () => {
 		expect(tower.store.energy).toBe(990);
 	});
 
+	test('TOWER-HEAL-004 tower.heal() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			// no energy
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p1',
+			body: [TOUGH, MOVE],
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${towerId}).heal(Game.getObjectById(${targetId}))
+		`);
+		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
+	});
+
+	test('TOWER-REPAIR-004 tower.repair() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			// no energy
+		});
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 28], structureType: STRUCTURE_ROAD, hits: 100,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${towerId}).repair(Game.getObjectById(${roadId}))
+		`);
+		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
+	});
+
 	test('TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],

@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NO_BODYPART, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET, ERR_GCL_NOT_ENOUGH,
 	CLAIM, MOVE, WORK,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
-	CONTROLLER_RESERVE_MAX,
+	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
 } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
@@ -386,6 +386,118 @@ describe('controller mechanics', () => {
 		expect(ticksToEnd).toBeGreaterThan(CONTROLLER_RESERVE_MAX - 2 * 49);
 	});
 
+	test('CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver', async ({ shard }) => {
+		// Engine controllers/tick.js:10 — reservation is cleared when
+		// gameTime >= endTime - 1. The stored endTime is absolute and does not
+		// change; the player-visible `ticksToEnd` getter returns endTime - gameTime,
+		// so from a player's perspective the value decreases by 1 each tick.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		// 49 CLAIM parts → single reserve intent adds 49 ticks (CONTROLLER_RESERVE
+		// per part). A 1-CLAIM creep's reservation expires within a tick of
+		// reserving, which would hide the decay.
+		const body: string[] = [];
+		for (let i = 0; i < 49; i++) body.push(CLAIM);
+		body.push(MOVE);
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body,
+		});
+		await shard.tick();
+
+		// Reserve once, then let the controller sit idle while we tick.
+		const reserveRc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).reserveController(
+				Game.rooms['W2N1'].controller
+			)
+		`);
+		expect(reserveRc).toBe(OK);
+
+		const initial = await shard.runPlayer('p1', code`
+			Game.rooms['W2N1'].controller.reservation.ticksToEnd
+		`) as number;
+		expect(initial).toBeGreaterThan(10);
+
+		// Advance 5 ticks with no further reserving.
+		await shard.tick(5);
+
+		const after = await shard.runPlayer('p1', code`
+			Game.rooms['W2N1'].controller.reservation.ticksToEnd
+		`) as number;
+		// runPlayer advances 1 more tick to read, so the visible drop is 5 + 1.
+		expect(initial - after).toBe(6);
+	});
+
+	test('CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part', async ({ shard }) => {
+		// Engine processor/intents/creeps/attackController.js:33-40 — when
+		// target.reservation is present, endTime -= CLAIM × CONTROLLER_RESERVE.
+		// (API-level reserveController rejects a hostile reservation with
+		// ERR_INVALID_TARGET at game/creeps.js:976-978, so the reduce path is
+		// reached via attackController — see CTRL-RESERVE-007 note in catalog.)
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				{ name: 'W3N1' }, // unowned, target for reservation
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W3N1');
+		// Long-lived hostile reservation so the attack's reduction is observable
+		// before the reservation naturally expires.
+		const reserverBody: string[] = [];
+		for (let i = 0; i < 49; i++) reserverBody.push(CLAIM);
+		reserverBody.push(MOVE);
+		const reserverId = await shard.placeCreep('W3N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p2',
+			body: reserverBody,
+		});
+		const attackerId = await shard.placeCreep('W3N1', {
+			pos: [ctrlPos!.x - 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [CLAIM, CLAIM, MOVE],
+		});
+		await shard.tick();
+
+		// p2 reserves first.
+		await shard.runPlayer('p2', code`
+			Game.getObjectById(${reserverId}).reserveController(
+				Game.rooms['W3N1'].controller
+			)
+		`);
+
+		const before = await shard.runPlayer('p1', code`
+			Game.rooms['W3N1'].controller.reservation.ticksToEnd
+		`) as number;
+		expect(before).toBeGreaterThan(0);
+
+		// p1's 2-CLAIM creep attacks the hostile-reserved controller.
+		const attackRc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attackController(
+				Game.rooms['W3N1'].controller
+			)
+		`);
+		expect(attackRc).toBe(OK);
+		await shard.tick();
+
+		const after = await shard.runPlayer('p1', code`
+			Game.rooms['W3N1'].controller.reservation.ticksToEnd
+		`) as number;
+		// 2 CLAIM × CONTROLLER_RESERVE + 1 tick of natural decay between observations.
+		const drop = before - after;
+		const expected = 2 * CONTROLLER_RESERVE;
+		expect(drop).toBeGreaterThanOrEqual(expected);
+		expect(drop).toBeLessThan(expected + 5);
+	});
+
 	// ── 6.3 Attack Controller ─────────────────────────────────
 
 	test('CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part', async ({ shard }) => {
@@ -570,6 +682,33 @@ describe('controller mechanics', () => {
 		`) as { text: string } | null;
 		expect(sign).not.toBeNull();
 		expect(sign!.text).toBe('hostile hi');
+	});
+
+	test('CTRL-ATTACK-006 attackController returns ERR_INVALID_TARGET on an unowned, unreserved controller', async ({ shard }) => {
+		// Engine game/creeps.js:902-904 — attackController requires the target
+		// to have `owner` or `reservation`. A fresh unowned, unreserved
+		// controller returns ERR_INVALID_TARGET at the API layer.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' }, // unowned, unreserved
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [CLAIM, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).attackController(
+				Game.rooms['W2N1'].controller
+			)
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
 	test('CTRL-ATTACK-005 attackController is allowed on the player\'s own controller and applies the downgrade + upgradeBlocked effects', async ({ shard }) => {

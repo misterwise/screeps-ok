@@ -1,5 +1,9 @@
 import { describe, test, expect, code } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import {
+	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC,
+	TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC,
+} from '../../src/terrain-fixture.js';
 
 const pathFinderUseTest = hasDocumentedAdapterLimitation('xxscreepsPathFinderUseMissing')
 	? test.skip
@@ -86,6 +90,145 @@ describe('Legacy Pathfinding', () => {
 		expect(result.restoredLength).toBe(result.originalLength);
 		expect(result.firstMatches).toBe(true);
 		expect(result.lastMatches).toBe(true);
+	});
+
+	test('LEGACY-PATH-004 findPath() returns empty array when source is not in the room', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			try {
+				const path = room.findPath(
+					new RoomPosition(25, 25, 'W2N1'),
+					new RoomPosition(30, 30, 'W1N1'),
+					{}
+				);
+				({ length: path.length, isArray: Array.isArray(path), threw: false })
+			} catch(e) {
+				({ threw: true, error: String(e) })
+			}
+		`) as { length?: number; isArray?: boolean; threw: boolean; error?: string };
+
+		expect(result.threw).toBe(false);
+		expect(result.isArray).toBe(true);
+		expect(result.length).toBe(0);
+	});
+
+	test('LEGACY-PATH-005 findPath() with cross-room destination returns only intra-room steps', async ({ shard }) => {
+		shard.requires('terrain', 'cross-room findPath needs terrain fixture pair');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1', terrain: TERRAIN_FIXTURE_SPEC },
+				{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms[${TERRAIN_FIXTURE_ROOM}];
+			const path = room.findPath(
+				new RoomPosition(25, 25, ${TERRAIN_FIXTURE_ROOM}),
+				new RoomPosition(25, 25, ${TERRAIN_FIXTURE_NEIGHBOR}),
+				{}
+			);
+			({
+				isArray: Array.isArray(path),
+				length: path.length,
+				allInRoom: Array.isArray(path) && path.every(
+					s => s.x >= 0 && s.x <= 49 && s.y >= 0 && s.y <= 49
+				),
+			})
+		`) as { isArray: boolean; length: number; allInRoom: boolean };
+
+		expect(result.isArray).toBe(true);
+		expect(result.length).toBeGreaterThan(0);
+		expect(result.allInRoom).toBe(true);
+	});
+
+	test('LEGACY-PATH-006 findPath() returns empty array when source equals destination', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const path = room.findPath(
+				new RoomPosition(25, 25, 'W1N1'),
+				new RoomPosition(25, 25, 'W1N1')
+			);
+			({ length: path.length, isArray: Array.isArray(path) })
+		`) as { length: number; isArray: boolean };
+
+		expect(result.isArray).toBe(true);
+		expect(result.length).toBe(0);
+	});
+
+	test('LEGACY-PATH-007 findPath() returns a single step for adjacent positions', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const path = room.findPath(
+				new RoomPosition(25, 25, 'W1N1'),
+				new RoomPosition(26, 25, 'W1N1')
+			);
+			({
+				length: path.length,
+				step: path[0] && { x: path[0].x, y: path[0].y },
+			})
+		`) as { length: number; step: { x: number; y: number } | null };
+
+		expect(result.length).toBe(1);
+		expect(result.step).toEqual({ x: 26, y: 25 });
+	});
+
+	test('LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const serialized = room.findPath(
+				new RoomPosition(10, 10, 'W1N1'),
+				new RoomPosition(20, 10, 'W1N1'),
+				{ serialize: true }
+			);
+			({
+				type: typeof serialized,
+				length: typeof serialized === 'string' ? serialized.length : -1,
+			})
+		`) as { type: string; length: number };
+
+		expect(result.type).toBe('string');
+		expect(result.length).toBeGreaterThan(0);
+	});
+
+	test('LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const path = room.findPath(
+				new RoomPosition(10, 10, 'W1N1'),
+				new RoomPosition(20, 10, 'W1N1')
+			);
+			let prevX = 10, prevY = 10;
+			const checks = path.map(step => {
+				const expectedDx = step.x - prevX;
+				const expectedDy = step.y - prevY;
+				const ok = step.dx === expectedDx && step.dy === expectedDy
+					&& typeof step.direction === 'number'
+					&& step.direction >= 1 && step.direction <= 8;
+				prevX = step.x;
+				prevY = step.y;
+				return ok;
+			});
+			({
+				length: path.length,
+				allCorrect: checks.every(Boolean),
+				sample: path[0] && ({ x: path[0].x, y: path[0].y, dx: path[0].dx, dy: path[0].dy, direction: path[0].direction }),
+			})
+		`) as { length: number; allCorrect: boolean; sample: { x: number; y: number; dx: number; dy: number; direction: number } | null };
+
+		expect(result.length).toBeGreaterThan(0);
+		expect(result.allCorrect).toBe(true);
 	});
 
 	pathFinderUseTest('LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing', async ({ shard }) => {

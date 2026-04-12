@@ -282,4 +282,31 @@ describe('StructureLink', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
+
+	test('LINK-013 transferEnergy with no amount transfers all stored energy', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
+		});
+		const link1 = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 400 },
+		});
+		const link2 = await shard.placeStructure('W1N1', {
+			pos: [25, 35], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 0 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}))
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const src = await shard.expectStructure(link1, STRUCTURE_LINK);
+		const dst = await shard.expectStructure(link2, STRUCTURE_LINK);
+		// Full 400 transferred; target receives 400 minus LINK_LOSS_RATIO loss (rounded up).
+		expect(src.store.energy ?? 0).toBe(0);
+		expect(dst.store.energy).toBe(400 - Math.ceil(400 * LINK_LOSS_RATIO));
+	});
 });

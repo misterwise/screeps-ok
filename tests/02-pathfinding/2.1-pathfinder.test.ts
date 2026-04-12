@@ -3,12 +3,36 @@ import { describe, test, expect, code,
 	FIND_EXIT_TOP,
 } from '../../src/index.js';
 import {
-	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR,
+	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC,
+	TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC,
 	TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
 
 describe('PathFinder', () => {
-	test('PATHFINDER-001 PathFinder.search accepts a single goal position with range', async ({ shard }) => {
+	test('PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const result = PathFinder.search(
+				new RoomPosition(10, 10, 'W1N1'),
+				new RoomPosition(15, 15, 'W1N1')
+			);
+			({
+				incomplete: result.incomplete,
+				pathLength: result.path.length,
+				last: result.path[result.path.length - 1] && {
+					x: result.path[result.path.length - 1].x,
+					y: result.path[result.path.length - 1].y,
+				},
+			})
+		`) as { incomplete: boolean; pathLength: number; last: { x: number; y: number } | null };
+
+		expect(result.incomplete).toBe(false);
+		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.last).toEqual({ x: 15, y: 15 });
+	});
+
+	test('PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -34,7 +58,7 @@ describe('PathFinder', () => {
 		expect(result.incomplete).toBe(false);
 	});
 
-	test('PATHFINDER-002 PathFinder.search returns { path, ops, cost, incomplete }', async ({ shard }) => {
+	test('PATHFINDER-003 PathFinder.search returns { path, ops, cost, incomplete }', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -62,7 +86,7 @@ describe('PathFinder', () => {
 		expect(result.incompleteType).toBe('boolean');
 	});
 
-	test('PATHFINDER-003 PathFinder.search respects CostMatrix when routing', async ({ shard }) => {
+	test('PATHFINDER-004 roomCallback returning a CostMatrix influences routing', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -86,7 +110,37 @@ describe('PathFinder', () => {
 		expect(result.path[result.path.length - 1]).toEqual({ x: 12, y: 10 });
 	});
 
-	test('PATHFINDER-004 PathFinder.search accepts multiple goal positions and finds the closest', async ({ shard }) => {
+	test('PATHFINDER-005 roomCallback returning false excludes a room from search', async ({ shard }) => {
+		shard.requires('terrain', 'cross-room exclusion needs terrain fixture pair');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
+				{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(25, 5, ${TERRAIN_FIXTURE_ROOM});
+			const goal = { pos: new RoomPosition(25, 45, ${TERRAIN_FIXTURE_NEIGHBOR}), range: 0 };
+			const blocked = PathFinder.search(origin, goal, {
+				roomCallback: (roomName) => roomName === ${TERRAIN_FIXTURE_NEIGHBOR} ? false : undefined,
+			});
+			const allowed = PathFinder.search(origin, goal);
+			({
+				blockedIncomplete: blocked.incomplete,
+				allowedIncomplete: allowed.incomplete,
+				allowedLastRoom: allowed.path[allowed.path.length - 1]?.roomName,
+			})
+		`) as { blockedIncomplete: boolean; allowedIncomplete: boolean; allowedLastRoom: string };
+
+		expect(result.blockedIncomplete).toBe(true);
+		expect(result.allowedIncomplete).toBe(false);
+		expect(result.allowedLastRoom).toBe(TERRAIN_FIXTURE_NEIGHBOR);
+	});
+
+	test('PATHFINDER-006 PathFinder.search accepts multiple goal positions and finds the closest', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -110,13 +164,13 @@ describe('PathFinder', () => {
 		expect(result.last).toEqual({ x: 15, y: 15 });
 	});
 
-	test('PATHFINDER-005 PathFinder.search plainCost option overrides the default cost of plains tiles', async ({ shard }) => {
+	test('PATHFINDER-007 PathFinder.search plainCost option overrides the default cost of plains tiles', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Probe the default room terrain for a horizontal run of plains tiles,
 		// then force the path through that run via a CostMatrix that walls
 		// off every other tile. Corridor cells stay at 0 (terrain default per
-		// COSTMATRIX-004), so plainCost cleanly multiplies the per-tile cost.
+		// COSTMATRIX-006), so plainCost cleanly multiplies the per-tile cost.
 		const result = await shard.runPlayer('p1', code`
 			(() => {
 				const TERRAIN_PLAIN = 0;
@@ -181,7 +235,7 @@ describe('PathFinder', () => {
 		expect(result.overriddenCost).toBe(21);
 	});
 
-	test('PATHFINDER-006 PathFinder.search swampCost option overrides the default cost of swamp tiles', async ({ shard }) => {
+	test('PATHFINDER-008 PathFinder.search swampCost option overrides the default cost of swamp tiles', async ({ shard }) => {
 		shard.requires('terrain', 'swamp cost probe needs the fixture swamp landmark');
 		// Use the pre-crafted swamp landmark in TERRAIN_FIXTURE_ROOM: a swamp
 		// tile with a plain neighbor one step away. Force a single-step path
@@ -238,7 +292,7 @@ describe('PathFinder', () => {
 		expect(result.overriddenCost).toBe(1);
 	});
 
-	test('PATHFINDER-007 PathFinder.search maxOps option limits the number of pathfinding operations', async ({ shard }) => {
+	test('PATHFINDER-009 PathFinder.search maxOps option limits the number of pathfinding operations', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -258,7 +312,7 @@ describe('PathFinder', () => {
 		expect(result.ops).toBeLessThanOrEqual(2);
 	});
 
-	test('PATHFINDER-008 PathFinder.search maxRooms option limits the number of rooms searched', async ({ shard }) => {
+	test('PATHFINDER-010 PathFinder.search maxRooms option limits the number of rooms searched', async ({ shard }) => {
 		shard.requires('terrain', 'cross-room pathfinding uses the fixture room pair');
 		// TERRAIN_FIXTURE_ROOM + TERRAIN_FIXTURE_NEIGHBOR are pre-loaded into
 		// the vanilla runner's static terrain cache by the adapter, so both
@@ -271,7 +325,7 @@ describe('PathFinder', () => {
 			rooms: [
 				{ name: 'W1N1', rcl: 1, owner: 'p1' },
 				{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
-				{ name: TERRAIN_FIXTURE_NEIGHBOR },
+				{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
 			],
 		});
 
@@ -301,7 +355,7 @@ describe('PathFinder', () => {
 		expect(result.allowedLastRoom).toBe(TERRAIN_FIXTURE_NEIGHBOR);
 	});
 
-	test('PATHFINDER-009 PathFinder.search flee mode finds a path away from the goal positions', async ({ shard }) => {
+	test('PATHFINDER-011 PathFinder.search flee mode finds a path away from the goal positions', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -324,7 +378,7 @@ describe('PathFinder', () => {
 		expect(result.lastDistance).toBeGreaterThanOrEqual(5);
 	});
 
-	test('PATHFINDER-010 PathFinder.search returns incomplete: true with a partial path when no full path exists', async ({ shard }) => {
+	test('PATHFINDER-012 PathFinder.search returns incomplete: true with a partial path when no full path exists', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -353,6 +407,215 @@ describe('PathFinder', () => {
 		expect(result.incomplete).toBe(true);
 		expect(result.pathLength).toBeGreaterThan(0);
 	});
+
+	test('PATHFINDER-013 Empty goal array returns path: [] and ops: 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const result = PathFinder.search(new RoomPosition(25, 25, 'W1N1'), []);
+			({ pathLength: result.path.length, ops: result.ops })
+		`) as { pathLength: number; ops: number };
+
+		expect(result.pathLength).toBe(0);
+		expect(result.ops).toBe(0);
+	});
+
+	test('PATHFINDER-014 Nullish goal returns path: [] and ops: 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			try {
+				const result = PathFinder.search(new RoomPosition(25, 25, 'W1N1'), null);
+				({ pathLength: result.path.length, ops: result.ops, threw: false })
+			} catch (e) {
+				({ threw: true, message: String(e.message || e) })
+			}
+		`) as { pathLength?: number; ops?: number; threw: boolean; message?: string };
+
+		if (!result.threw) {
+			expect(result.pathLength).toBe(0);
+			expect(result.ops).toBe(0);
+		} else {
+			expect(result.threw).toBe(true);
+		}
+	});
+
+	test('PATHFINDER-015 maxCost limits search by cumulative path cost', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(10, 25, 'W1N1');
+			const goal = { pos: new RoomPosition(40, 25, 'W1N1'), range: 0 };
+			const capped = PathFinder.search(origin, goal, { maxCost: 5, maxRooms: 1 });
+			const full = PathFinder.search(origin, goal, { maxRooms: 1 });
+			({
+				cappedIncomplete: capped.incomplete,
+				cappedCost: capped.cost,
+				cappedPathLength: capped.path.length,
+				fullIncomplete: full.incomplete,
+				fullPathLength: full.path.length,
+			})
+		`) as {
+			cappedIncomplete: boolean;
+			cappedCost: number;
+			cappedPathLength: number;
+			fullIncomplete: boolean;
+			fullPathLength: number;
+		};
+
+		expect(result.fullIncomplete).toBe(false);
+		expect(result.cappedIncomplete).toBe(true);
+		expect(result.cappedCost).toBeLessThanOrEqual(5);
+		expect(result.cappedPathLength).toBeLessThan(result.fullPathLength);
+	});
+
+	test('PATHFINDER-016 heuristicWeight option accepted without changing result shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(10, 10, 'W1N1');
+			const goal = { pos: new RoomPosition(20, 20, 'W1N1'), range: 1 };
+			const result = PathFinder.search(origin, goal, { heuristicWeight: 2 });
+			({
+				pathIsArray: Array.isArray(result.path),
+				pathLength: result.path.length,
+				hasOps: typeof result.ops === 'number',
+				hasCost: typeof result.cost === 'number',
+				hasIncomplete: typeof result.incomplete === 'boolean',
+				incomplete: result.incomplete,
+			})
+		`) as {
+			pathIsArray: boolean;
+			pathLength: number;
+			hasOps: boolean;
+			hasCost: boolean;
+			hasIncomplete: boolean;
+			incomplete: boolean;
+		};
+
+		expect(result.pathIsArray).toBe(true);
+		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.hasOps).toBe(true);
+		expect(result.hasCost).toBe(true);
+		expect(result.hasIncomplete).toBe(true);
+		expect(result.incomplete).toBe(false);
+	});
+
+	test('PATHFINDER-017 origin within goal range produces empty path', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(25, 25, 'W1N1');
+			const goal = { pos: new RoomPosition(25, 26, 'W1N1'), range: 5 };
+			const result = PathFinder.search(origin, goal);
+			({ pathLength: result.path.length, incomplete: result.incomplete })
+		`) as { pathLength: number; incomplete: boolean };
+
+		expect(result.pathLength).toBe(0);
+		expect(result.incomplete).toBe(false);
+	});
+
+	test('PATHFINDER-018 consecutive path positions are at Chebyshev distance 1', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const result = PathFinder.search(
+				new RoomPosition(5, 5, 'W1N1'),
+				{ pos: new RoomPosition(40, 40, 'W1N1'), range: 0 },
+				{ maxRooms: 1 }
+			);
+			const positions = result.path.map(p => ({ x: p.x, y: p.y }));
+			let allValid = true;
+			for (let i = 1; i < positions.length; i++) {
+				const dx = Math.abs(positions[i].x - positions[i - 1].x);
+				const dy = Math.abs(positions[i].y - positions[i - 1].y);
+				if (Math.max(dx, dy) !== 1) { allValid = false; break; }
+			}
+			({ allValid, pathLength: positions.length, incomplete: result.incomplete })
+		`) as { allValid: boolean; pathLength: number; incomplete: boolean };
+
+		expect(result.incomplete).toBe(false);
+		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.allValid).toBe(true);
+	});
+
+	test('PATHFINDER-019 range > 0 terminates within range, not necessarily on goal', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const goalPos = new RoomPosition(40, 40, 'W1N1');
+			const result = PathFinder.search(
+				new RoomPosition(10, 10, 'W1N1'),
+				{ pos: goalPos, range: 3 },
+				{ maxRooms: 1 }
+			);
+			const last = result.path[result.path.length - 1];
+			const dist = last
+				? Math.max(Math.abs(last.x - 40), Math.abs(last.y - 40))
+				: -1;
+			({
+				incomplete: result.incomplete,
+				dist,
+				onGoal: last && last.x === 40 && last.y === 40,
+			})
+		`) as { incomplete: boolean; dist: number; onGoal: boolean };
+
+		expect(result.incomplete).toBe(false);
+		expect(result.dist).toBeLessThanOrEqual(3);
+		expect(result.dist).toBeGreaterThan(0);
+	});
+
+	test('PATHFINDER-020 multi-room path crosses room boundary with continuous positions', async ({ shard }) => {
+		shard.requires('terrain', 'cross-room pathfinding needs terrain fixture pair');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
+				{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(25, 5, ${TERRAIN_FIXTURE_ROOM});
+			const goal = { pos: new RoomPosition(25, 45, ${TERRAIN_FIXTURE_NEIGHBOR}), range: 0 };
+			const result = PathFinder.search(origin, goal);
+			const rooms = new Set(result.path.map(p => p.roomName));
+			let continuous = true;
+			for (let i = 1; i < result.path.length; i++) {
+				const a = result.path[i - 1], b = result.path[i];
+				if (a.roomName === b.roomName) {
+					const dx = Math.abs(a.x - b.x);
+					const dy = Math.abs(a.y - b.y);
+					if (Math.max(dx, dy) !== 1) { continuous = false; break; }
+				}
+			}
+			({
+				incomplete: result.incomplete,
+				pathLength: result.path.length,
+				roomCount: rooms.size,
+				hasOriginRoom: rooms.has(${TERRAIN_FIXTURE_ROOM}),
+				hasGoalRoom: rooms.has(${TERRAIN_FIXTURE_NEIGHBOR}),
+				continuous,
+				lastRoom: result.path[result.path.length - 1]?.roomName,
+			})
+		`) as {
+			incomplete: boolean;
+			pathLength: number;
+			roomCount: number;
+			hasOriginRoom: boolean;
+			hasGoalRoom: boolean;
+			continuous: boolean;
+			lastRoom: string;
+		};
+
+		expect(result.incomplete).toBe(false);
+		expect(result.roomCount).toBe(2);
+		expect(result.hasOriginRoom).toBe(true);
+		expect(result.hasGoalRoom).toBe(true);
+		expect(result.continuous).toBe(true);
+		expect(result.lastRoom).toBe(TERRAIN_FIXTURE_NEIGHBOR);
+	});
 });
 
 describe('Game.map', () => {
@@ -366,29 +629,23 @@ describe('Game.map', () => {
 		expect(dist).toBe(4);
 	});
 
-	test('MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name', async ({ shard }) => {
+	test('MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const exits = await shard.runPlayer('p1', code`
-			Game.map.describeExits('W1N1')
-		`) as Record<string, string>;
+		const result = await shard.runPlayer('p1', code`
+			({
+				valid: Game.map.describeExits('W1N1'),
+				invalid: Game.map.describeExits('not_a_room'),
+			})
+		`) as { valid: Record<string, string>; invalid: null };
 
-		expect(exits).toEqual({
+		expect(result.valid).toEqual({
 			1: 'W1N2',
 			3: 'W0N1',
 			5: 'W1N0',
 			7: 'W2N1',
 		});
-	});
-
-	test('MAP-ROOM-001 describeExits returns null for an invalid room name', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-
-		const exits = await shard.runPlayer('p1', code`
-			Game.map.describeExits('not_a_room')
-		`);
-
-		expect(exits).toBeNull();
+		expect(result.invalid).toBeNull();
 	});
 
 	test('MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges', async ({ shard }) => {

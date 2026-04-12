@@ -263,4 +263,41 @@ describe('Lab boostCreep', () => {
 		// 1 HEAL part with LO (2x multiplier) → 1 * HEAL_POWER * 2 = 24 HP healed.
 		expect(targetHealed.hits - hpAfterAttack).toBe(HEAL_POWER * 2);
 	});
+
+	test('BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound', async ({ shard }) => {
+		shard.requires('chemistry');
+		await shard.ownedRoom('p1', 'W1N1', 6);
+
+		// LH boosts WORK parts (build/repair 1.5x). Creep has WORK + ATTACK + MOVE;
+		// only the WORK part should be boosted, ATTACK/MOVE untouched.
+		const labId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+			store: { energy: LAB_ENERGY_CAPACITY, LH: LAB_MINERAL_CAPACITY },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const lab = Game.getObjectById(${labId});
+			const creep = Game.getObjectById(${creepId});
+			lab.boostCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		const workPart = creep.body.find((p: any) => p.type === WORK);
+		const attackPart = creep.body.find((p: any) => p.type === ATTACK);
+		const movePart = creep.body.find((p: any) => p.type === MOVE);
+		expect(workPart!.boost).toBe('LH');
+		expect(attackPart!.boost ?? null).toBe(null);
+		expect(movePart!.boost ?? null).toBe(null);
+
+		// Only 1 part consumed one mineral-unit + one energy-unit.
+		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
+		expect(lab.store.LH).toBe(LAB_MINERAL_CAPACITY - LAB_BOOST_MINERAL);
+		expect(lab.store.energy).toBe(LAB_ENERGY_CAPACITY - LAB_BOOST_ENERGY);
+	});
 });

@@ -1,5 +1,10 @@
 # Catalog Review Tracking
 
+> [!NOTE]
+> Maintainer/internal workflow document. This file records section-by-section
+> review history and implementation findings. Most contributors do not need it
+> to understand or modify the suite.
+
 Section-by-section review of `behaviors.md` for catalog quality (redundancy,
 testability, classification, scoping) and test coverage.
 

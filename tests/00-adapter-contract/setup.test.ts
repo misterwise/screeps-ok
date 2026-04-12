@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
@@ -146,6 +146,38 @@ describe('adapter contract: setup', () => {
 			expect(result.terrainMask).toBe(1);
 			// Wall must block the pathfinder — the path must detour around it.
 			expect(result.goesThroughWall).toBe(false);
+		});
+	});
+
+	describe('default room terrain', () => {
+		// Rooms without explicit RoomSpec.terrain must behave identically
+		// across adapters: all-plain interior, all four exits open.
+		test('default rooms have all-plain interior terrain', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			await shard.tick();
+
+			const allPlain = await shard.runPlayer('p1', code`
+				const t = Game.map.getRoomTerrain('W1N1');
+				// Sample a grid of interior tiles (not edge tiles)
+				let plain = true;
+				for (const x of [5, 15, 25, 35, 45]) {
+					for (const y of [5, 15, 25, 35, 45]) {
+						if (t.get(x, y) !== 0) plain = false;
+					}
+				}
+				plain
+			`);
+			expect(allPlain).toBe(true);
+		});
+
+		test('default rooms have all four exits open', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			await shard.tick();
+
+			const exits = await shard.runPlayer('p1', code`
+				Game.map.describeExits('W1N1')
+			`) as Record<string, string>;
+			expect(Object.keys(exits)).toHaveLength(4);
 		});
 	});
 
@@ -312,6 +344,62 @@ describe('adapter contract: setup', () => {
 
 			const obj = await shard.expectStructure(id, STRUCTURE_CONTAINER);
 			expect(obj.hits).toBe(1000);
+		});
+
+		// StructureSpec.ticksToDecay is part of the placement contract for any
+		// decayable structure. Without it, decay-related tests cannot bound the
+		// engine's default decay window (100..5000 ticks) into a runnable interval.
+		// The contract is: the adapter must wire the spec value into whatever
+		// engine field drives the structure's `ticksToDecay` getter so the
+		// snapshot reflects the override on the very next tick.
+		const decayableStructures = [
+			{ type: STRUCTURE_CONTAINER, pos: [25, 25] as [number, number], owned: false },
+			{ type: STRUCTURE_ROAD, pos: [26, 25] as [number, number], owned: false },
+			{ type: STRUCTURE_RAMPART, pos: [27, 25] as [number, number], owned: true },
+		];
+		for (const { type, pos, owned } of decayableStructures) {
+			test(`ticksToDecay override is honored for ${type}`, async ({ shard }) => {
+				await shard.ownedRoom('p1');
+				const id = await shard.placeStructure('W1N1', {
+					pos,
+					structureType: type,
+					...(owned ? { owner: 'p1' } : {}),
+					ticksToDecay: 5,
+				});
+				await shard.tick();
+
+				const obj = await shard.expectStructure(id, type);
+				// The placement tick may consume one tick from the timer, so allow
+				// 4..5. If the adapter ignores the field, ticksToDecay will read
+				// the engine default (>=99 for any decayable), failing this bound.
+				expect((obj as { ticksToDecay: number }).ticksToDecay).toBeLessThanOrEqual(5);
+				expect((obj as { ticksToDecay: number }).ticksToDecay).toBeGreaterThanOrEqual(3);
+			});
+		}
+	});
+
+	describe('room visibility', () => {
+		// The adapter must not expose rooms to players who have no vision of them.
+		// Rooms with no player structures, creeps, or observer should not appear
+		// in Game.rooms for that player. This is a core Game API contract — if the
+		// adapter makes all rooms visible to all players (e.g., for processing
+		// reasons), tests that verify observer, scouting, or visibility mechanics
+		// are invalidated.
+		test('unowned room without player creeps is not in Game.rooms', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1' }, // unowned, no p1 creeps
+				],
+			});
+			await shard.tick();
+
+			const visible = await shard.runPlayer('p1', code`
+				!!Game.rooms['W2N1']
+			`);
+			// W2N1 has no p1 structures or creeps — it must not be visible.
+			expect(visible).toBe(false);
 		});
 	});
 

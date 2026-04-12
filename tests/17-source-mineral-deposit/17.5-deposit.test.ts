@@ -101,4 +101,28 @@ describe('Deposit lifecycle', () => {
 		`);
 		expect(count).toBe(1);
 	});
+
+	test('DEPOSIT-006 deposit is removed when ticksToDecay reaches 0', async ({ shard }) => {
+		shard.requires('deposit');
+		await shard.ownedRoom('p1');
+
+		await shard.placeObject('W1N1', 'deposit', {
+			pos: [25, 25],
+			depositType: 'silicon',
+			decayTime: 3,
+		});
+		await shard.tick();
+
+		const before = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].find(FIND_DEPOSITS).length
+		`) as number;
+		expect(before).toBe(1);
+
+		await shard.tick(5);
+
+		const after = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].find(FIND_DEPOSITS).length
+		`) as number;
+		expect(after).toBe(0);
+	});
 });

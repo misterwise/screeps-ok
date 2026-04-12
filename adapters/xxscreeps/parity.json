@@ -2,21 +2,9 @@
 	"expected_failures": {
 		"creep-owner-undefined": {
 			"summary": "Creep.owner is undefined (key exists but value is undefined)",
-			"tests": ["CTRL-SIGN-001", "CTRL-SIGN-003", "CTRL-RESERVE-001", "CTRL-RESERVE-005"]
+			"tests": ["CTRL-SIGN-001", "CTRL-SIGN-003", "CTRL-RESERVE-001", "CTRL-RESERVE-005", "CTRL-RESERVE-006", "CTRL-RESERVE-007"]
 		},
-		"extension-rcl-capacity": {
-			"summary": "Extension store.getCapacity('energy') always reports RCL 8 maximum (200)",
-			"tests": ["EXTENSION-002", "ROOM-ENERGY-002", "STORE-SINGLE-001"]
-		},
-		"describe-exits-topology": {
-			"summary": "Game.map.describeExits filters by instantiated neighbor rooms",
-			"tests": ["ROOM-FIND-003", "MAP-ROOM-001"]
-		},
-		"pathfinder-suboptimal": {
-			"summary": "PathFinder.search returns suboptimal path on open plains (also picks wrong goal in multi-goal mode)",
-			"tests": ["PATHFINDER-001", "PATHFINDER-004"]
-		},
-		"tombstone-corpse-rate": {
+"tombstone-corpse-rate": {
 			"summary": "Tombstone stores always reduced by CREEP_CORPSE_RATE, no body energy reclaim on suicide",
 			"tests": ["CREEP-DEATH-008", "CREEP-DEATH-009"]
 		},
@@ -34,10 +22,10 @@
 		},
 		"extractor-cooldown-off-by-one": {
 			"summary": "Extractor cooldown reports EXTRACTOR_COOLDOWN - 1 after harvest",
-			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-001"]
+			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-006"]
 		},
-		"link-intent-after-idle-tick": {
-			"summary": "link.transferEnergy intents silently dropped after idle tick",
+		"link-cooldown-not-persisted": {
+			"summary": "link.transferEnergy cooldown not persisted (processor missing context.didUpdate, only manifests in structure-only rooms without creeps)",
 			"tests": ["LINK-002"]
 		},
 		"lab-unrestricted-mineral-capacity": {
@@ -45,12 +33,12 @@
 			"tests": ["STORE-RESTRICTED-004"]
 		},
 		"rampart-no-protection": {
-			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle processors)",
-			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005"]
+			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle/rangedAttack/rangedMassAttack processors)",
+			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005", "COMBAT-RANGED-006", "COMBAT-RMA-004"]
 		},
 		"renew-while-spawning": {
 			"summary": "Spawn.renewCreep returns OK while spawn is actively spawning",
-			"tests": ["RENEW-CREEP-006"]
+			"tests": ["RENEW-CREEP-009"]
 		},
 		"lab-cooldown-no-decrement": {
 			"summary": "Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1",
@@ -68,21 +56,13 @@
 			"summary": "Observer on unowned observer returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
 			"tests": ["OBSERVER-006"]
 		},
-		"mineral-regen-not-implemented": {
-			"summary": "Mineral regeneration not processed; depleted minerals stay at 0",
-			"tests": ["MINERAL-REGEN-002", "MINERAL-REGEN-005"]
-		},
-		"road-decay-not-implemented": {
-			"summary": "Road decay not processed; roads keep initial hits indefinitely",
-			"tests": ["ROAD-DECAY-001", "ROAD-DECAY-002", "ROAD-DECAY-003"]
-		},
-		"container-decay-not-implemented": {
-			"summary": "Container decay not processed; containers keep initial hits indefinitely",
-			"tests": ["CONTAINER-001", "CONTAINER-002"]
-		},
 		"safemode-concurrent-allowed": {
 			"summary": "Allows activateSafeMode on multiple owned controllers simultaneously",
 			"tests": ["CTRL-SAFEMODE-007"]
+		},
+		"container-destroy-no-spill": {
+			"summary": "Container destroyed by decay does not drop its contents as ground resources",
+			"tests": ["CONTAINER-002"]
 		},
 		"destroy-ownership-bypass": {
 			"summary": "structure.destroy() allowed when room controller not owned by player",
@@ -102,15 +82,11 @@
 		},
 		"boost-energy-cost-scales": {
 			"summary": "Energy cost scales with boost multiplier for repair/upgrade",
-			"tests": ["BOOST-BUILD-003", "BOOST-UPGRADE-003"]
+			"tests": ["BOOST-BUILD-002", "BOOST-UPGRADE-002"]
 		},
 		"route-callback-ignored": {
 			"summary": "findRoute ignores routeCallback option",
 			"tests": ["MAP-ROUTE-003"]
-		},
-		"rampart-decay-not-implemented": {
-			"summary": "Rampart decay not processed; ramparts keep initial hits indefinitely",
-			"tests": ["RAMPART-DECAY-001", "RAMPART-DECAY-002"]
 		},
 		"transfer-wrong-resource-err-full": {
 			"summary": "transfer() of a wrong resource to a structure returns ERR_FULL instead of ERR_INVALID_TARGET (checkHasCapacity ordered before capacity-for-resource dispatch in mods/creep/creep.js:checkTransfer)",
@@ -124,13 +100,53 @@
 			"summary": "generateSafeMode() checkCommon requires a WORK body part (mods/controller/creep.js:58-59), vanilla engine has no body-part requirement (only ghodium + range)",
 			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
 		},
-		"upgrade-controller-no-gcl-progress": {
-			"summary": "upgradeController() does not increment Game.gcl.progress in xxscreeps",
-			"tests": ["CTRL-UPGRADE-008"]
-		},
 		"controller-my-undefined-on-unowned": {
 			"summary": "StructureController.my returns undefined (not false) on an unowned/neutral controller; inherited OwnedStructure.my uses strict owner match against an absent #user field",
 			"tests": ["CTRL-UNCLAIM-001"]
+		},
+		"tombstone-store-missing": {
+			"summary": "Tombstone snapshot does not include store energy from combat kills",
+			"tests": ["TOMBSTONE-003"]
+		},
+		"tombstone-place-low-decay": {
+			"summary": "placeTombstone with low ticksToDecay does not persist for getObject",
+			"tests": ["TOMBSTONE-004"]
+		},
+		"ruin-place-low-decay": {
+			"summary": "placeRuin with low ticksToDecay does not persist for getObject",
+			"tests": ["RUIN-005"]
+		},
+		"moveto-nopathfinding-returns-ok": {
+			"summary": "moveTo({noPathFinding: true}) returns OK instead of ERR_NOT_FOUND when no cached path exists",
+			"tests": ["MOVE-BASIC-019"]
+		},
+		"pull-spawning-no-guard": {
+			"summary": "pull() on a spawning creep returns OK instead of ERR_INVALID_TARGET (no spawning check in pull intent)",
+			"tests": ["MOVE-PULL-007"]
+		},
+		"findpath-same-pos-not-empty": {
+			"summary": "room.findPath() returns a 1-step path when source equals destination instead of empty array",
+			"tests": ["LEGACY-PATH-006"]
+		},
+		"mineral-harvest-no-overflow-drop": {
+			"summary": "harvest(mineral) overflow does not create a dropped resource pile on xxscreeps",
+			"tests": ["HARVEST-MINERAL-012"]
+		},
+		"transfer-controller-no-upgrade-redirect": {
+			"summary": "transfer(controller, RESOURCE_ENERGY) does not redirect to upgradeController — returns ERR_NOT_IN_RANGE",
+			"tests": ["TRANSFER-011"]
+		},
+		"withdraw-wrong-resource-not-enough-energy": {
+			"summary": "withdraw() with a resource the target cannot hold returns ERR_NOT_ENOUGH_ENERGY instead of ERR_INVALID_TARGET",
+			"tests": ["WITHDRAW-014"]
+		},
+		"dismantle-no-destroy-at-zero-hits": {
+			"summary": "dismantle() reducing a structure's hits to 0 does not destroy it — the structure persists with hits=0",
+			"tests": ["DISMANTLE-007"]
+		},
+		"ruin-spill-decay-on-spill-tick": {
+			"summary": "Ruin decay spill pile is subject to energy/tick decay in the same tick (vanilla inserts the pile after iteration so it skips decay until the following tick)",
+			"tests": ["STRUCTURE-HITS-005"]
 		}
 	}
 }

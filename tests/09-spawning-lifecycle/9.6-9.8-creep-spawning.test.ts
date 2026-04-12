@@ -1,8 +1,8 @@
-import { describe, test, expect, code,
+import { describe, test, expect, code, body,
 	OK, ERR_NOT_OWNER, ERR_BUSY,
 	MOVE, WORK, CARRY, ATTACK, TOUGH,
 	STRUCTURE_SPAWN,
-	FIND_TOMBSTONES, RESOURCE_POWER, BODYPART_HITS, ATTACK_POWER,
+	FIND_TOMBSTONES, RESOURCE_POWER, BODYPART_HITS, ATTACK_POWER, HARVEST_POWER,
 	CREEP_SPAWN_TIME, CREEP_LIFE_TIME,
 } from '../../src/index.js';
 import { creepDeathResourceCases } from '../../src/matrices/creep-death-sources.js';
@@ -308,6 +308,51 @@ describe('creep body part damage', () => {
 			Game.getObjectById(${targetId}).getActiveBodyparts(TOUGH)
 		`);
 		expect(activeTough).toBe(0);
+	});
+
+	test('COMBAT-BODYPART-004 a damaged body part with HP > 0 functions at full effectiveness', async ({ shard }) => {
+		// Engine harvest.js:35 (and the `_.filter` pattern in every action
+		// processor) counts any WORK part with `hits > 0 || _oldHits > 0` at full
+		// HARVEST_POWER. Damage a [WORK, MOVE] harvester so the WORK part sits at
+		// ~10 HP and confirm the subsequent harvest yields HARVEST_POWER energy.
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		// Attacker: 3 ATTACK deals 90 damage. Harvester: WORK + CARRY + MOVE (300 HP).
+		// After 1 attack: hits 210. Body (recalculated back-to-front):
+		//   MOVE=100, CARRY=100, WORK=10 (all still active, WORK partially damaged).
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: body(3, ATTACK, MOVE),
+		});
+		const harvesterId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 27], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${harvesterId}))
+		`);
+
+		// Confirm the WORK part survived but is damaged.
+		const damaged = await shard.expectObject(harvesterId, 'creep');
+		expect(damaged.hits).toBe(300 - 90);
+		expect(damaged.body.map(p => p.hits)).toEqual([10, 100, 100]);
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${harvesterId}).harvest(Game.getObjectById(${srcId}))
+		`);
+
+		const harvester = await shard.expectObject(harvesterId, 'creep');
+		expect(harvester.store.energy).toBe(HARVEST_POWER);
 	});
 });
 

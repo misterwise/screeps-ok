@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, RIGHT, BOTTOM, TOP_LEFT } from '../../src/index.js';
 
 describe('creep movement collision', () => {
 	test('MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep', async ({ shard }) => {
@@ -150,5 +150,44 @@ describe('creep movement collision', () => {
 		const mover = await shard.expectObject(moverId, 'creep');
 		expect(mover.pos.x).toBe(25);
 		expect(mover.pos.y).toBe(25);
+	});
+
+	test('MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Triangle: A→B→C→A
+		//   A at [24,24] moves RIGHT  → wants [25,24] (B's tile)
+		//   B at [25,24] moves BOTTOM → wants [25,25] (C's tile)
+		//   C at [25,25] moves TOP_LEFT → wants [24,24] (A's tile)
+		const aId = await shard.placeCreep('W1N1', {
+			pos: [24, 24], owner: 'p1', body: [MOVE], name: 'a',
+		});
+		const bId = await shard.placeCreep('W1N1', {
+			pos: [25, 24], owner: 'p1', body: [MOVE], name: 'b',
+		});
+		const cId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'c',
+		});
+
+		await shard.runPlayer('p1', code`
+			Game.creeps['a'].move(${RIGHT});
+			Game.creeps['b'].move(${BOTTOM});
+			Game.creeps['c'].move(${TOP_LEFT});
+		`);
+
+		const a = await shard.expectObject(aId, 'creep');
+		const b = await shard.expectObject(bId, 'creep');
+		const c = await shard.expectObject(cId, 'creep');
+
+		const rotated = (
+			a.pos.x === 25 && a.pos.y === 24 &&
+			b.pos.x === 25 && b.pos.y === 25 &&
+			c.pos.x === 24 && c.pos.y === 24
+		);
+		const allStayed = (
+			a.pos.x === 24 && a.pos.y === 24 &&
+			b.pos.x === 25 && b.pos.y === 24 &&
+			c.pos.x === 25 && c.pos.y === 25
+		);
+		expect(rotated || allStayed).toBe(true);
 	});
 });

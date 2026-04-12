@@ -1,5 +1,9 @@
 # Section Implementation Prompt
 
+> [!NOTE]
+> Maintainer/internal workflow document. This prompt is for maintainers doing
+> section-by-section implementation work after catalog review.
+
 Use this prompt to implement tests for one section of `behaviors.md` after
 its catalog review is complete. Replace `{N}` with the section number.
 

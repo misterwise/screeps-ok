@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	MOVE, ATTACK,
 	STRUCTURE_TERMINAL, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN,
 	STRUCTURE_OBSERVER, STRUCTURE_RAMPART, STRUCTURE_EXTENSION,
-	FIND_RUINS,
+	FIND_RUINS, FIND_DROPPED_RESOURCES, RESOURCE_ENERGY,
 	ATTACK_POWER,
 } from '../../src/index.js';
 import { structureHitsCases } from '../../src/matrices/structure-hits.js';
@@ -100,5 +100,37 @@ describe('Structure hits', () => {
 		const ruin = ruins.find(r => r.pos.x === 25 && r.pos.y === 25);
 		expect(ruin).toBeDefined();
 		expect(ruin!.store.energy).toBe(50);
+	});
+
+	test('STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const ruinId = await shard.placeRuin('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_EXTENSION,
+			ticksToDecay: 5,
+			store: { energy: 50 },
+		});
+
+		// Before: ruin present with its 50-energy store; tile has no drop.
+		const before = await shard.expectObject(ruinId, 'ruin');
+		expect(before.store.energy).toBe(50);
+		const beforeDrops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(beforeDrops.find(d => d.pos.x === 25 && d.pos.y === 25)).toBeUndefined();
+
+		// Advance past the decay timer.
+		await shard.tick(5);
+
+		// After: ruin gone; tile has an energy pile equal to the original store.
+		// (Spill happens via ruins/tick.js → _create-energy on the decay tick;
+		// energy/tick.js does not process the freshly-inserted pile that tick.)
+		const after = await shard.getObject(ruinId);
+		expect(after).toBeNull();
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const pile = drops.find(d =>
+			d.resourceType === RESOURCE_ENERGY && d.pos.x === 25 && d.pos.y === 25,
+		);
+		expect(pile).toBeDefined();
+		expect(pile!.amount).toBe(50);
 	});
 });

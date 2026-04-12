@@ -2,6 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED,
 	ERR_INVALID_ARGS, ERR_RCL_NOT_ENOUGH,
 	STRUCTURE_TERMINAL, PWR_OPERATE_TERMINAL, POWER_INFO,
+	TERMINAL_COOLDOWN,
 } from '../../src/index.js';
 
 describe('Terminal send', () => {
@@ -323,5 +324,91 @@ describe('Terminal send', () => {
 			t ? t.send(RESOURCE_ENERGY, 100, 'W5N1') : -99
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+			],
+		});
+		const srcId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		await shard.placeStructure('W5N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 100, 'W5N1')
+		`);
+		expect(rc).toBe(OK);
+
+		const src = await shard.expectStructure(srcId, STRUCTURE_TERMINAL);
+		// Engine sets cooldownTime = gameTime + TERMINAL_COOLDOWN; player-facing
+		// cooldown reports (TERMINAL_COOLDOWN - 1) on the tick immediately after
+		// the send resolves. Assert exactly that.
+		expect(src.cooldown).toBe(TERMINAL_COOLDOWN - 1);
+	});
+
+	test('TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				// W5N1 exists but has no terminal
+				{ name: 'W5N1', rcl: 0 },
+			],
+		});
+		const srcId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 100, 'W5N1')
+		`);
+		expect(rc).toBe(OK);
+
+		const src = await shard.expectStructure(srcId, STRUCTURE_TERMINAL);
+		// Intent cleared but no transfer recorded → no cooldown, no resource loss.
+		expect(src.cooldown ?? 0).toBe(0);
+		expect(src.store.energy).toBe(100000);
+	});
+
+	test('TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+			],
+		});
+		const srcId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		const dstId = await shard.placeStructure('W5N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 100, 'W5N1')
+		`);
+		expect(rc).toBe(OK);
+
+		const dst = await shard.expectStructure(dstId, STRUCTURE_TERMINAL);
+		expect(dst.store.energy ?? 0).toBe(100);
 	});
 });

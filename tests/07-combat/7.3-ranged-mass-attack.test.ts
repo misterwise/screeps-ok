@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, body, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, STRUCTURE_RAMPART, STRUCTURE_ROAD, BODYPART_HITS, body } from '../../src/index.js';
 import { rangedMassAttackRangeCases } from '../../src/matrices/ranged-mass-attack.js';
 
 describe('creep.rangedMassAttack()', () => {
@@ -99,5 +99,44 @@ describe('creep.rangedMassAttack()', () => {
 		// Hostile took damage, proving the attack resolved
 		const hostile = await shard.expectObject(hostileId, 'creep');
 		expect(hostile.hits).toBe(400 - 4);
+	});
+
+	test('COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart', async ({ shard }) => {
+		// Engine rangedMassAttack.js:38-40 — a non-rampart target on a rampart
+		// tile is filtered out; the rampart itself (owned by a different user)
+		// remains in the targets list and takes the range-banded damage.
+		// xxscreeps lacks this redirect (known `rampart-no-protection` gap).
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 3, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const rampartHits = 1_000_000;
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: rampartHits,
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: body(5, TOUGH, MOVE),
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: [RANGED_ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
+		expect(rampart.hits).toBe(rampartHits - RANGED_ATTACK_POWER); // range 1 → 10
+		const target = await shard.expectObject(targetId, 'creep');
+		expect(target.hits).toBe(6 * BODYPART_HITS);
 	});
 });

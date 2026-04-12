@@ -1,6 +1,7 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_INVALID_ARGS,
 	STRUCTURE_TERMINAL,
+	MARKET_ORDER_LIFE_TIME,
 } from '../../src/index.js';
 
 describe('Market orders', () => {
@@ -326,6 +327,90 @@ describe('Market deal', () => {
 		expect(after).not.toBe(before);
 	});
 
+	test('MARKET-DEAL-004 partial deal reduces the order remaining amount', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W5N1', rcl: 6, owner: 'p2' },
+			],
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		await shard.placeStructure('W5N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p2',
+			store: { energy: 100000 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p2', code`
+			Game.market.createOrder({
+				type: ORDER_SELL,
+				resourceType: RESOURCE_ENERGY,
+				price: 0.01,
+				totalAmount: 1000,
+				roomName: 'W5N1',
+			})
+		`);
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			const orders = Game.market.getAllOrders({ type: ORDER_SELL, resourceType: RESOURCE_ENERGY });
+			Game.market.deal(orders[0].id, 300, 'W1N1')
+		`);
+
+		const remaining = await shard.runPlayer('p2', code`
+			const ids = Object.keys(Game.market.orders);
+			Game.market.orders[ids[0]].remainingAmount
+		`) as number;
+		expect(remaining).toBe(700);
+	});
+
+	test('MARKET-DEAL-005 deal that fills the order completely removes it', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W5N1', rcl: 6, owner: 'p2' },
+			],
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		await shard.placeStructure('W5N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p2',
+			store: { energy: 100000 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p2', code`
+			Game.market.createOrder({
+				type: ORDER_SELL,
+				resourceType: RESOURCE_ENERGY,
+				price: 0.01,
+				totalAmount: 500,
+				roomName: 'W5N1',
+			})
+		`);
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			const orders = Game.market.getAllOrders({ type: ORDER_SELL, resourceType: RESOURCE_ENERGY });
+			Game.market.deal(orders[0].id, 500, 'W1N1')
+		`);
+
+		const remaining = await shard.runPlayer('p2', code`
+			const ids = Object.keys(Game.market.orders);
+			Game.market.orders[ids[0]].remainingAmount
+		`) as number;
+		expect(remaining).toBe(0);
+	});
+
 	test('MARKET-DEAL-003 deal fails with appropriate error codes', async ({ shard }) => {
 		shard.requires('market');
 		await shard.createShard({
@@ -489,4 +574,83 @@ describe('Market queries', () => {
 		`);
 		expect(price).toBe(0.5);
 	});
+
+	test('MARKET-ORDER-009 order expires after MARKET_ORDER_LIFE_TIME ms of wall-clock time', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { energy: 100000 },
+		});
+
+		// ── Part 1: fresh order has a createdTimestamp near Date.now() ──
+		const beforeCreate = Date.now();
+		await shard.runPlayer('p1', code`
+			Game.market.createOrder({
+				type: ORDER_SELL,
+				resourceType: RESOURCE_ENERGY,
+				price: 0.5,
+				totalAmount: 100,
+				roomName: 'W1N1',
+			})
+		`);
+		const afterCreate = Date.now();
+
+		const fresh = await shard.runPlayer('p1', code`
+			const ids = Object.keys(Game.market.orders);
+			const o = Game.market.orders[ids[0]];
+			({ id: ids[0], createdTimestamp: o.createdTimestamp })
+		`) as { id: string; createdTimestamp: number };
+		expect(fresh.createdTimestamp).toBeGreaterThanOrEqual(beforeCreate);
+		expect(fresh.createdTimestamp).toBeLessThanOrEqual(afterCreate);
+
+		// ── Part 2: tick, order still present (not decremented away) ──
+		await shard.tick();
+		const stillThere = await shard.runPlayer('p1', code`
+			!!Game.market.orders[${fresh.id}]
+		`);
+		expect(stillThere).toBe(true);
+
+		// ── Part 3: seed an order whose expiry lies within the test window ──
+		// Give it 2 000 ms of remaining life at seed time, then sleep 2 500 ms
+		// past the expiry threshold before ticking.
+		const aliveMsAtSeed = 2_000;
+		const sleepMs = 2_500;
+		const seedTimestamp = Date.now() - MARKET_ORDER_LIFE_TIME + aliveMsAtSeed;
+		const expiringId = await shard.placeMarketOrder({
+			owner: 'p1',
+			type: 'sell',
+			resourceType: 'H',
+			price: 1,
+			totalAmount: 50,
+			roomName: 'W1N1',
+			createdTimestamp: seedTimestamp,
+		});
+
+		// Tick once to surface the seeded order in the player's market view.
+		await shard.tick();
+		const initial = await shard.runPlayer('p1', code`
+			const o = Game.market.orders[${expiringId}];
+			o ? ({ present: true, createdTimestamp: o.createdTimestamp, remainingAmount: o.remainingAmount }) : { present: false }
+		`) as { present: boolean; createdTimestamp: number; remainingAmount: number };
+		expect(initial.present).toBe(true);
+		expect(initial.createdTimestamp).toBe(seedTimestamp);
+		expect(initial.remainingAmount).toBe(50);
+		// Sanity: Date.now() - createdTimestamp is still below MARKET_ORDER_LIFE_TIME here.
+		expect(Date.now() - initial.createdTimestamp).toBeLessThan(MARKET_ORDER_LIFE_TIME);
+
+		// ── Part 4: sleep past the wall-clock threshold, tick, order is gone ──
+		await new Promise(resolve => setTimeout(resolve, sleepMs));
+		// Sanity: now past the expiry threshold.
+		expect(Date.now() - seedTimestamp).toBeGreaterThan(MARKET_ORDER_LIFE_TIME);
+		await shard.tick();
+
+		const afterExpiry = await shard.runPlayer('p1', code`
+			!!Game.market.orders[${expiringId}]
+		`);
+		expect(afterExpiry).toBe(false);
+	}, 15_000);
 });

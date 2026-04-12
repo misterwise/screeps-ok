@@ -81,6 +81,33 @@ function buildFixtureSpec(): TerrainSpec {
 	// Isolated wall tile at (20, 20) for construction-site-on-wall tests.
 	t[idx(20, 20)] = 1;
 
+	// Wall off borders that don't connect to TERRAIN_FIXTURE_NEIGHBOR (W5N6,
+	// which is north). This prevents PathFinder from expanding into rooms
+	// that don't exist in the terrain cache.
+	// South border (y=49), west border (x=0), east border (x=49) — all walls.
+	// North border (y=0) stays open as the exit to the neighbor room.
+	for (let i = 0; i < 50; i++) {
+		t[idx(i, 49)] = 1; // south
+		t[idx(0, i)] = 1;  // west
+		t[idx(49, i)] = 1; // east
+	}
+
+	return t;
+}
+
+function buildNeighborSpec(): TerrainSpec {
+	const t: (0 | 1 | 2)[] = new Array(2500).fill(0);
+	const idx = (x: number, y: number) => y * 50 + x;
+
+	// Wall off borders that don't connect to TERRAIN_FIXTURE_ROOM (W5N5,
+	// which is south). North (y=0), west (x=0), east (x=49) — all walls.
+	// South border (y=49) stays open as the exit to the fixture room.
+	for (let i = 0; i < 50; i++) {
+		t[idx(i, 0)] = 1;  // north
+		t[idx(0, i)] = 1;  // west
+		t[idx(49, i)] = 1; // east
+	}
+
 	return t;
 }
 
@@ -90,3 +117,9 @@ function buildFixtureSpec(): TerrainSpec {
  * `terrain` field on the `RoomSpec` so the DB and the runner cache agree.
  */
 export const TERRAIN_FIXTURE_SPEC: TerrainSpec = buildFixtureSpec();
+
+/**
+ * Terrain for TERRAIN_FIXTURE_NEIGHBOR. Blank interior with walled borders
+ * on all edges except south (which connects to TERRAIN_FIXTURE_ROOM).
+ */
+export const TERRAIN_FIXTURE_NEIGHBOR_SPEC: TerrainSpec = buildNeighborSpec();

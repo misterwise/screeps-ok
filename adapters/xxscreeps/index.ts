@@ -1,11 +1,11 @@
 import type { GameConstructor } from 'xxscreeps/game/index.js';
-import { Game } from 'xxscreeps/game/index.js';
-import type { Room } from 'xxscreeps/game/room/index.js';
+import { Game, GameState, runForUser, runOneShot, runWithState } from 'xxscreeps/game/index.js';
+import { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
-	PowerCreepSpec, NukeSpec, TerrainSpec,
+	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
@@ -17,7 +17,18 @@ import * as C from 'xxscreeps/game/constants/index.js';
 
 // Build synthetic PathFinder object matching the Screeps global API
 const PathFinder = { search: pfSearch, CostMatrix };
-import { simulate } from 'xxscreeps/test/simulate.js';
+import assert from 'node:assert';
+import { instantiateTestShard } from 'xxscreeps/test/import.js';
+import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';
+import { begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
+import { RoomProcessor } from 'xxscreeps/engine/processor/room.js';
+import { Fn } from 'xxscreeps/functional/fn.js';
+import { flushUsers } from 'xxscreeps/game/room/room.js';
+import { getOrSet } from 'xxscreeps/utility/utility.js';
+import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
+import { loadTerrain } from 'xxscreeps/driver/path-finder.js';
+import * as MapSchema from 'xxscreeps/game/map.js';
+import { makeWriter } from 'xxscreeps/schema/write.js';
 import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
 
 // Object creation imports
@@ -44,6 +55,7 @@ import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 import { create as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/resource/store.js';
+import { StructureController } from 'xxscreeps/mods/controller/controller.js';
 
 // Optional mods — not all xxscreeps builds include these
 let createFactory: ((pos: any, owner: string) => any) | undefined;
@@ -73,7 +85,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		observer: true,
 		nuke: false,
 		deposit: false,
-		terrain: false,
+		terrain: true,
 	};
 
 	private playerMap = new Map<string, string>();
@@ -153,8 +165,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
 				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
 				const safeModeRemaining = roomSpec.safeMode ?? 0;
-				this.queueOp(roomSpec.name, room => {
+				const rName = roomSpec.name;
+				this.queueOp(rName, room => {
 					if (rcl > 0 && owner) {
+						// shard.json rooms may lack a controller — create one
+						if (!room.controller) {
+							const ctrl = new StructureController();
+							ctrl.id = this.nextId();
+							ctrl.pos = new RoomPosition(1, 1, rName);
+							ctrl['#posId'] = ctrl.pos['#id'];
+							room['#user'] = null;
+							room['#insertObject'](ctrl, true);
+						}
 						room['#level'] = rcl;
 						room['#user'] = room.controller!['#user'] = owner;
 					}
@@ -207,13 +229,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		this.queueOp(roomName, room => {
 			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			const structure = buildStructure(spec.structureType, pos, userId);
+			const structure = buildStructure(spec.structureType, pos, userId, room['#level'] ?? 0);
 			structure.id = id;
 			if (spec.hits !== undefined) {
 				structure.hits = spec.hits;
 			}
 			if (spec.store) {
 				setStoreContentsExact(structure.store, spec.store);
+			}
+			if (spec.ticksToDecay !== undefined) {
+				(structure as any)['#nextDecayTime'] = this.simulation!.shard.time + spec.ticksToDecay;
 			}
 			room['#insertObject'](structure);
 		});
@@ -277,6 +302,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			mineral['#posId'] = mineral.pos['#id'];
 			mineral.mineralType = spec.mineralType as any;
 			mineral.mineralAmount = spec.mineralAmount ?? 100000;
+			mineral.density = 3; // DENSITY_HIGH — matches vanilla default
 			if (ticksToRegen !== undefined) {
 				(mineral as any)['#nextRegenerationTime'] = this.simulation!.shard.time + ticksToRegen;
 			}
@@ -394,14 +420,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('placeNuke not yet implemented for xxscreeps');
 	}
 
+	async placeMarketOrder(_spec: MarketOrderSpec): Promise<string> {
+		throw new Error('placeMarketOrder not yet implemented for xxscreeps');
+	}
+
 	async placeObject(_room: string, _type: string, _spec: Record<string, unknown>): Promise<string> {
 		throw new Error('generic placeObject not yet implemented — use typed helpers');
 	}
 
-	async setTerrain(_room: string, _terrain: TerrainSpec): Promise<void> {
-		// xxscreeps terrain is baked into the shard.json world data at simulation creation.
-		// Modifying it post-creation requires TerrainWriter which isn't exposed via simulate().
-		throw new Error('setTerrain not supported on xxscreeps adapter — use RoomSpec.terrain in createShard');
+	async setTerrain(roomName: string, terrain: TerrainSpec): Promise<void> {
+		await this.ensureSimulation();
+		await this.simulation!.updateTerrain(roomName, terrain);
 	}
 
 	// Map our synthetic IDs → engine-generated IDs (populated during setup flush)
@@ -413,13 +442,21 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		const idMap = this.idMap;
 
-		// First, create simulation with bare rooms (no test objects) and
-		// run a warm-up tick, matching vanilla's initialization pattern.
+		// Compute terrain for each room: explicit from spec, or all-plain
+		// (matching vanilla's TerrainMatrix() default).
+		const terrainOverrides: Record<string, TerrainSpec> = {};
+		const allPlain = new Array(2500).fill(0) as TerrainSpec;
+		for (const roomSpec of this.shardSpec.rooms) {
+			terrainOverrides[roomSpec.name] = roomSpec.terrain ?? allPlain;
+		}
+
+		// Create simulation with bare rooms (no test objects) and terrain
+		// overrides, then run a warm-up tick matching vanilla's init pattern.
 		const bareInits: Record<string, (room: any) => void> = {};
 		for (const roomName of this.rooms) {
 			bareInits[roomName] = () => {};
 		}
-		this.simulation = await createSimulation(bareInits);
+		this.simulation = await createSimulation(bareInits, terrainOverrides);
 		await this.simulation.tick(1);
 
 		await this.keepRoomsActive();
@@ -551,24 +588,31 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
 		}
 
+		// Read GCL from DB before invoking player code — the engine
+		// increments gcl in the DB (controller/processor.ts:239) but
+		// simulate().player() never populates Game.gcl from it.
+		const gclRaw = await this.simulation!.shard.db.data.hget(
+			`user/${engineUserId}`, 'gcl');
+		const gclProgress = Number(gclRaw) || 0;
+
 		try {
 			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
 				// Build a context with Game + all Screeps constants + globals
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
 				// xxscreeps simulate() doesn't currently populate Game.gcl, but controller
-				// APIs assume it exists during claim checks.
+				// APIs assume it exists during claim checks. Read progress from DB.
 				if (!(Game as any).gcl) {
 					(Game as any).gcl = {
 						level: Math.max(ownedRoomCount + 1, 2),
-						progress: 0,
+						progress: gclProgress,
 						progressTotal: 1,
 						'#roomCount': ownedRoomCount,
 					};
 				}
 
 				// Collect all available globals from the game environment
-				const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
+				const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
 				// Add all constants (TOP, WORK, FIND_MY_CREEPS, etc.)
 				Object.assign(globals, C);
 				// Add registered globals (Memory, RawMemory, structure classes, etc.)
@@ -597,9 +641,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				result = fn(...values) as PlayerReturnValue;
 				executed = true;
 
-				// Detect game objects: non-plain objects that serialize lossily
+				// Detect game objects: non-plain objects that serialize lossily.
+				// Allow null-prototype objects (Object.create(null)) which
+				// xxscreeps APIs like Fn.fromEntries return — they're plain data.
 				if (result !== null && typeof result === 'object'
-					&& !Array.isArray(result) && result.constructor !== Object) {
+					&& !Array.isArray(result)
+					&& result.constructor !== Object
+					&& result.constructor !== undefined) {
 					throw new RunPlayerError('serialization',
 						`Return value is a ${result.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
 				}
@@ -655,6 +703,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
 			}
 
+			const gclRaw = await this.simulation!.shard.db.data.hget(
+				`user/${engineUserId}`, 'gcl');
+			const gclProgress = Number(gclRaw) || 0;
+
 			try {
 				await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
 					executedPlayers.add(userId);
@@ -663,11 +715,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					if (!(Game as any).gcl) {
 						(Game as any).gcl = {
 							level: Math.max(ownedRoomCount + 1, 2),
-							progress: 0, progressTotal: 1,
+							progress: gclProgress, progressTotal: 1,
 							'#roomCount': ownedRoomCount,
 						};
 					}
-					const globals: Record<string, any> = { Game, RoomPosition, PathFinder };
+					const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
 					Object.assign(globals, C);
 					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
 						'Creep', 'Tombstone', 'Ruin', 'Source', 'Resource', 'Store',
@@ -692,7 +744,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 					const val = results[userId];
 					if (val !== null && typeof val === 'object'
-						&& !Array.isArray(val) && val.constructor !== Object) {
+						&& !Array.isArray(val)
+						&& val.constructor !== Object
+						&& val.constructor !== undefined) {
 						throw new RunPlayerError('serialization',
 							`Return value is a ${val.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
 					}
@@ -819,10 +873,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 }
 
-function buildStructure(structureType: string, pos: any, owner?: string): any {
+function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8): any {
 	switch (structureType) {
 		case 'spawn': return createSpawn(pos, owner!, `Spawn-${pos.x}-${pos.y}`);
-		case 'extension': return createExtension(pos, 8, owner!);
+		case 'extension': return createExtension(pos, rcl, owner!);
 		case 'tower': return createTower(pos, owner!);
 		case 'lab': return createLab(pos, owner!);
 		case 'observer': return createObserver(pos, owner!);
@@ -857,30 +911,192 @@ function setStoreContentsExact(store: any, desired: Record<string, number>): voi
 	}
 }
 
-async function createSimulation(roomInits: Record<string, (room: Room) => void>) {
-	let refs: any = null;
-	let resolveBody!: () => void;
-	const bodyPromise = new Promise<void>(resolve => { resolveBody = resolve; });
+function buildTerrainEntry(spec: TerrainSpec): { exits: number; terrain: TerrainWriter } {
+	const writer = new TerrainWriter();
+	for (let i = 0; i < 2500; i++) {
+		const mask = spec[i];
+		if (mask === 1) writer.set(i % 50, Math.floor(i / 50), C.TERRAIN_MASK_WALL);
+		else if (mask === 2) writer.set(i % 50, Math.floor(i / 50), C.TERRAIN_MASK_SWAMP);
+	}
+	return { exits: packExits(writer), terrain: writer };
+}
 
-	const factory = simulate(roomInits);
-	const simPromise = factory(async simulation => {
-		refs = simulation;
-		await bodyPromise;
-	});
+// Inlined from xxscreeps/src/test/simulate.ts with terrain override support.
+// The original simulate() captures `world` by closure, preventing terrain
+// replacement. This version injects overrides between shard creation and
+// room initialization, and exposes updateTerrain for post-creation changes.
+async function createSimulation(
+	roomInits: Record<string, (room: any) => void>,
+	terrainOverrides?: Record<string, TerrainSpec>,
+) {
+	const { db, shard } = await instantiateTestShard();
 
-	// Wait for refs to be assigned (simulate runs init synchronously)
-	await new Promise<void>(resolve => {
-		const check = () => refs ? resolve() : setTimeout(check, 1);
-		check();
-	});
+	// Mutable terrain map — always maintained so updateTerrain can modify
+	// individual rooms and rebuild the world.
+	const terrainMap = new Map<string, { exits: number; terrain: TerrainWriter }>();
 
-	return {
-		...refs! as { db: any; shard: any; world: any; player: any; poke: any; tick: any; peekRoom: any },
-		async dispose() {
-			resolveBody();
-			await simPromise;
-		},
-	};
+	// Base: all shard.json rooms start with blank (all-plain) terrain
+	const existingRooms = await shard.data.smembers('rooms');
+	for (const roomName of existingRooms) {
+		const writer = new TerrainWriter();
+		terrainMap.set(roomName, { exits: packExits(writer), terrain: writer });
+	}
+
+	// Apply overrides (explicit terrain or all-plain from the test spec)
+	if (terrainOverrides) {
+		for (const [roomName, spec] of Object.entries(terrainOverrides)) {
+			terrainMap.set(roomName, buildTerrainEntry(spec));
+		}
+		await shard.data.sadd('rooms', Object.keys(terrainOverrides));
+	}
+
+	// Build world from terrain map
+	let blob = makeWriter(MapSchema.schema)(terrainMap);
+	let world = new MapSchema.World('test', blob);
+	loadTerrain(world);
+	await shard.data.set('terrain', blob);
+
+	// Rebuild world after terrain map mutation
+	async function rebuildWorld() {
+		blob = makeWriter(MapSchema.schema)(terrainMap);
+		world = new MapSchema.World('test', blob);
+		loadTerrain(world);
+		await shard.data.set('terrain', blob);
+	}
+
+	try {
+		// Initialize rooms (inlined from xxscreeps/src/test/simulate.ts:76-86)
+		await Promise.all(Fn.map(Object.entries(roomInits), async ([roomName, callback]) => {
+			let room;
+			try {
+				room = await shard.loadRoom(roomName, shard.time);
+			} catch {
+				// Room not in shard.json — create a blank room
+				room = new Room();
+				room.name = roomName;
+				await shard.data.sadd('rooms', [roomName]);
+			}
+			runOneShot(world, room, shard.time, '', () => callback(room));
+			room['#flushObjects'](null);
+			const previousUsers = flushUsers(room);
+			await Promise.all([
+				shard.saveRoom(room.name, shard.time + 1, room),
+				shard.saveRoom(room.name, shard.time, room),
+				updateUserRoomRelationships(shard, room, previousUsers),
+			]);
+		}));
+
+		// Simulation state (inlined from xxscreeps/src/test/simulate.ts:89-183)
+		const intentsByRoom = new Map<string, { userId: string; intents: any }[]>();
+		const playersThisTick = new Set<string>();
+		let roomInstances = new Map<string, any>();
+
+		const sim = {
+			db,
+			shard,
+			world,
+
+			async peekRoom<T>(roomName: string, task: (room: any, game: any) => T): Promise<T> {
+				const room = await shard.loadRoom(roomName);
+				return runOneShot(world, room, shard.time, '', () => task(room, Game));
+			},
+
+			async poke<T>(roomName: string, userId: string | undefined, task: (game: any, room: any) => T): Promise<T> {
+				const room = await shard.loadRoom(roomName);
+				const state = new GameState(world, shard.time, [room]);
+				const [, result] = runWithState(state, () =>
+					runForUser(userId ?? '', state, (G: any) => task(G, room)));
+				room['#flushObjects'](state);
+				const previousUsers = flushUsers(room);
+				await Promise.all([
+					shard.saveRoom(room.name, shard.time, room),
+					updateUserRoomRelationships(shard, room, previousUsers),
+				]);
+				roomInstances.delete(roomName);
+				return result;
+			},
+
+			async player(userId: string, task: (game: GameConstructor) => void): Promise<void> {
+				assert(!playersThisTick.has(userId), `player '${userId}' already invoked this tick`);
+				playersThisTick.add(userId);
+
+				const [intentRooms, visibleRooms] = await Promise.all([
+					shard.scratch.smembers(userToIntentRoomsSetKey(userId)),
+					shard.scratch.smembers(userToVisibleRoomsSetKey(userId)),
+				]);
+				const rooms = await Promise.all(Fn.map(visibleRooms, (rn: string) => shard.loadRoom(rn)));
+				const state = new GameState(world, shard.time, rooms);
+				const [intents] = runForUser(userId, state, task);
+
+				for (const roomName of intentRooms) {
+					const roomIntents = intents.getIntentsForRoom(roomName);
+					if (roomIntents) {
+						getOrSet(intentsByRoom, roomName, () => []).push({ userId, intents: roomIntents });
+					}
+				}
+			},
+
+			async tick(count = 1, players: Record<string, (game: GameConstructor) => void> = {}): Promise<void> {
+				for (let ii = 0; ii < count; ++ii) {
+					for (const [userId, task] of Object.entries(players)) {
+						await sim.player(userId, task);
+					}
+					playersThisTick.clear();
+
+					const time = shard.time + 1;
+					const processorTime = await begetRoomProcessQueue(shard, time, time - 1);
+					assert.equal(time, processorTime);
+					const nextRoomInstances = new Map<string, any>();
+					const contexts = new Map<string, any>();
+
+					// First phase
+					for await (const roomName of consumeSortedSet(shard.scratch, processRoomsSetKey(time), 0, Infinity)) {
+						const room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
+						nextRoomInstances.set(roomName, room);
+						const context = new RoomProcessor(shard, world, room, time);
+						contexts.set(roomName, context);
+						for (const { userId, intents } of intentsByRoom.get(roomName) ?? []) {
+							context.saveIntents(userId, intents);
+						}
+						await context.process();
+					}
+					roomInstances = nextRoomInstances;
+					intentsByRoom.clear();
+
+					// Second phase
+					await Promise.all(Fn.map(contexts.values(), (ctx: any) => ctx.finalize(false)));
+					for await (const roomName of consumeSet(shard.scratch, finalizeExtraRoomsSetKey(time))) {
+						const room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
+						const context = new RoomProcessor(shard, world, room, time);
+						await context.process(true);
+						await context.finalize(true);
+						nextRoomInstances.set(roomName, room);
+					}
+
+					await shard.data.set('time', time);
+					await shard.channel.publish({ type: 'tick', time });
+					shard.time = time;
+				}
+			},
+		};
+
+		return {
+			...sim,
+			async updateTerrain(roomName: string, spec: TerrainSpec): Promise<void> {
+				terrainMap.set(roomName, buildTerrainEntry(spec));
+				await shard.data.sadd('rooms', [roomName]);
+				await rebuildWorld();
+			},
+			async dispose() {
+				shard.disconnect();
+				db.disconnect();
+			},
+		};
+	} catch (err) {
+		shard.disconnect();
+		db.disconnect();
+		throw err;
+	}
 }
 
 export async function createAdapter(): Promise<ScreepsOkAdapter> {

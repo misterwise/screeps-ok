@@ -225,7 +225,33 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	test('SPAWN-CREATE-003 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name', async ({ shard }) => {
+	test('SPAWN-CREATE-013 spawnCreep deducts the body cost from the spawn and contributing extensions', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		// Spawn alone cannot fund a WORK part (100 energy) — extension must contribute.
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 49 },
+		});
+		const extId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 51 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([WORK], 'CostDrain')
+		`);
+		expect(rc).toBe(OK);
+
+		// Body cost 100 drawn at intent resolution: extension → 0, spawn → 0.
+		// End-of-tick spawn-tick handler then regens +1 into the spawn
+		// (see @screeps/engine/src/processor/intents/spawns/tick.js:47).
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		const ext = await shard.expectStructure(extId, STRUCTURE_EXTENSION);
+		expect(ext.store.energy ?? 0).toBe(0);
+		expect(spawn.store.energy ?? 0).toBe(1);
+	});
+
+	test('SPAWN-CREATE-012 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

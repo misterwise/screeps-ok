@@ -1,6 +1,7 @@
 import {
 	FIND_CREEPS,
 	FIND_CONSTRUCTION_SITES,
+	FIND_DEPOSITS,
 	FIND_DROPPED_RESOURCES,
 	FIND_MINERALS,
 	FIND_RUINS,
@@ -16,6 +17,7 @@ export const SUPPORTED_FIND_CONSTANTS = [
 	FIND_SOURCES,
 	FIND_MINERALS,
 	FIND_TOMBSTONES,
+	FIND_DEPOSITS,
 	FIND_RUINS,
 	FIND_DROPPED_RESOURCES,
 ] as const;
@@ -29,6 +31,7 @@ export type NeutralFindSelector =
 	| 'sources'
 	| 'minerals'
 	| 'tombstones'
+	| 'deposits'
 	| 'ruins'
 	| 'droppedResources';
 
@@ -46,6 +49,8 @@ export function selectorFromFindConstant(findType: number): NeutralFindSelector 
 			return 'minerals';
 		case FIND_TOMBSTONES:
 			return 'tombstones';
+		case FIND_DEPOSITS:
+			return 'deposits';
 		case FIND_RUINS:
 			return 'ruins';
 		case FIND_DROPPED_RESOURCES:

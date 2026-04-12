@@ -133,6 +133,21 @@ export interface NukeSpec {
 	timeToLand: number;
 }
 
+export interface MarketOrderSpec {
+	owner: string;
+	type: 'buy' | 'sell';
+	resourceType: string;
+	price: number;
+	totalAmount: number;
+	roomName?: string;
+	/** Wall-clock ms. Defaults to Date.now() at placement. */
+	createdTimestamp?: number;
+	/** Defaults to true so `getAllOrders` returns it. */
+	active?: boolean;
+	/** Defaults to current gameTime at placement. */
+	created?: number;
+}
+
 // ── Capabilities ─────────────────────────────────────────────
 
 export interface AdapterCapabilities {
@@ -188,6 +203,7 @@ export interface ScreepsOkAdapter {
 	placeDroppedResource(room: string, spec: DroppedResourceSpec): Promise<string>;
 	placePowerCreep(room: string, spec: PowerCreepSpec): Promise<string>;
 	placeNuke(room: string, spec: NukeSpec): Promise<string>;
+	placeMarketOrder(spec: MarketOrderSpec): Promise<string>;
 	/** Escape hatch for uncommon or newly-added public object types. */
 	placeObject(room: string, type: string, spec: Record<string, unknown>): Promise<string>;
 

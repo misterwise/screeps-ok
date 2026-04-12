@@ -179,8 +179,45 @@ describe('MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amou
 	}
 });
 
+describe('MOVE-FATIGUE-008 fatigue reduction cannot go below zero', () => {
+	test('MOVE-FATIGUE-008 excess MOVE capacity does not produce negative fatigue', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// 1 WORK (2 fatigue on plains) + 3 MOVE (6 reduction capacity).
+		// MOVE capacity exceeds generated fatigue by 4, but fatigue must
+		// floor at 0 rather than going negative.
+		const id = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, MOVE, MOVE, MOVE],
+		});
+		await shard.tick();
+		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
+
+		const creep = await shard.expectObject(id, 'creep');
+		expect(creep.pos.y).toBe(24);
+		expect(creep.fatigue).toBe(0);
+	});
+
+	test('MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// 2 WORK + 1 MOVE: move generates 4 fatigue, reduced by 2 → 2 residual.
+		// Next tick: 1 MOVE reduces by 2 → 0 (not -0 or negative).
+		const id = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, WORK, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
+		const after1 = await shard.expectObject(id, 'creep');
+		expect(after1.fatigue).toBe(2);
+
+		// One more tick: fatigue 2 - 2 = 0.
+		await shard.tick();
+		const after2 = await shard.expectObject(id, 'creep');
+		expect(after2.fatigue).toBe(0);
+	});
+});
+
 describe('MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction', () => {
-	test('a 0-HP MOVE part stops reducing fatigue', async ({ shard }) => {
+	test('MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

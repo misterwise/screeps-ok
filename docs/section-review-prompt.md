@@ -1,5 +1,9 @@
 # Section Review Prompt
 
+> [!NOTE]
+> Maintainer/internal workflow document. This prompt is for section-by-section
+> catalog review work and is not required reading for normal contributors.
+
 Use this prompt to review one section of `behaviors.md` at a time. Replace
 `{N}` with the section number.
 

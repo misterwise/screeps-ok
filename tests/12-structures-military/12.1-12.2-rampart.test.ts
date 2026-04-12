@@ -312,4 +312,29 @@ describe('StructureRampart', () => {
 		const spawnAfter = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
 		expect(spawnAfter.hits).toBe(spawnHitsBefore);
 	});
+
+	test('RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: 10000,
+			// isPublic defaults to false — hostile would be blocked here,
+			// but the owner's creep must pass regardless.
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).move(TOP)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.pos.x).toBe(25);
+		expect(creep.pos.y).toBe(25);
+	});
 });

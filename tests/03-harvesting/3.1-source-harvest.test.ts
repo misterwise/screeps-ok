@@ -1,4 +1,10 @@
-import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES, WORK, CARRY, MOVE, HARVEST_POWER, CARRY_CAPACITY } from '../../src/index.js';
+import { describe, test, expect, code, body,
+	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
+	ERR_BUSY, ERR_INVALID_TARGET,
+	WORK, CARRY, MOVE,
+	HARVEST_POWER, CARRY_CAPACITY, ENERGY_DECAY, FIND_DROPPED_RESOURCES,
+	RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
+} from '../../src/index.js';
 
 describe('creep.harvest()', () => {
 	test('HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store', async ({ shard }) => {
@@ -22,7 +28,7 @@ describe('creep.harvest()', () => {
 		expect(creep.store.energy).toBe(HARVEST_POWER);
 	});
 
-	test('HARVEST-005 harvest reduces source energy by the harvested amount', async ({ shard }) => {
+	test('HARVEST-009 harvest reduces source energy by the harvested amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -162,7 +168,7 @@ describe('creep.harvest()', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
-	test('HARVEST-001 harvest is capped by remaining source energy', async ({ shard }) => {
+	test('HARVEST-014 harvest is capped by remaining source energy', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -184,13 +190,15 @@ describe('creep.harvest()', () => {
 		expect(source.energy).toBe(0);
 	});
 
-	test('HARVEST-006 harvest is capped by remaining carry capacity', async ({ shard }) => {
+	test('HARVEST-006 harvest can exceed free carry capacity and drops overflow as a resource', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// 5 WORK = 10 energy/tick, but only 1 CARRY (50 capacity) with 45 already stored
+		// 25 WORK = 50 energy/tick, 1 CARRY (50 capacity) with 5 already stored → 45 free.
+		// Harvest produces 50, overflow = 5 dropped on the tile.
+		// In-tick decay reduces the pile by ceil(5/ENERGY_DECAY) = 1.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: body(5, WORK, CARRY, MOVE),
-			store: { energy: 45 },
+			body: body(25, WORK, CARRY, MOVE),
+			store: { energy: 5 },
 		});
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 26], energy: 3000, energyCapacity: 3000,
@@ -199,11 +207,105 @@ describe('creep.harvest()', () => {
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
 		`);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// Harvest produces 10 but only 5 capacity remaining → gets 5? Or gets 10 and overflows?
-		// In Screeps, harvest fills up to capacity — capped at free capacity
 		expect(creep.store.energy).toBe(CARRY_CAPACITY);
+
+		const source = await shard.expectObject(srcId, 'source');
+		expect(source.energy).toBe(3000 - 25 * HARVEST_POWER);
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(pile).toBeDefined();
+		expect(pile!.resourceType).toBe(RESOURCE_ENERGY);
+		const overflow = 25 * HARVEST_POWER - (CARRY_CAPACITY - 5);
+		expect(pile!.amount).toBe(overflow - Math.ceil(overflow / ENERGY_DECAY));
+	});
+
+	test('HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		const srcId = await shard.placeSource('W2N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: [WORK, CARRY, MOVE],
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('HARVEST-012 harvest returns ERR_BUSY while the creep is spawning', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const spawnRc = await shard.runPlayer('p1', code`
+			const spawns = Object.values(Game.spawns);
+			spawns[0].spawnCreep([WORK, CARRY, MOVE], 'Harvester')
+		`);
+		expect(spawnRc).toBe(OK);
+
+		const rc = await shard.runPlayer('p1', code`
+			const c = Game.creeps['Harvester'];
+			c ? c.harvest(Game.getObjectById(${srcId})) : -99
+		`);
+		expect(rc).toBe(ERR_BUSY);
+	});
+
+	test('HARVEST-013 harvest returns ERR_INVALID_TARGET for a non-source target', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${containerId}))
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 });

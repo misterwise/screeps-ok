@@ -150,6 +150,29 @@ describe('RawMemory', () => {
 		`);
 		expect(content).toBe('test-data');
 	});
+	memTest('RAWMEMORY-005 writing to segments[id] persists the new content to the next tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// Activate segment 2 and write content.
+		await shard.runPlayer('p1', code`
+			RawMemory.setActiveSegments([2]);
+			'ok'
+		`);
+		await shard.runPlayer('p1', code`
+			RawMemory.segments[2] = 'persisted-value';
+			'ok'
+		`);
+
+		// Re-activate segment 2 on a fresh tick and read back.
+		await shard.runPlayer('p1', code`
+			RawMemory.setActiveSegments([2]);
+			'ok'
+		`);
+		const content = await shard.runPlayer('p1', code`
+			RawMemory.segments[2]
+		`);
+		expect(content).toBe('persisted-value');
+	});
 });
 
 describe('Foreign segments', () => {

@@ -25,7 +25,7 @@ describe('Spawn.recycleCreep', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('RECYCLE-CREEP-002 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep', async ({ shard }) => {
+	test('RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

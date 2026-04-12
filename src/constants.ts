@@ -72,6 +72,7 @@ export const FIND_HOSTILE_SPAWNS: 113 = C.FIND_HOSTILE_SPAWNS;
 export const FIND_MINERALS: 116 = C.FIND_MINERALS;
 export const FIND_NUKES: 117 = C.FIND_NUKES;
 export const FIND_TOMBSTONES: 118 = C.FIND_TOMBSTONES;
+export const FIND_DEPOSITS: 122 = C.FIND_DEPOSITS;
 export const FIND_RUINS: 123 = C.FIND_RUINS;
 
 // Directions
@@ -155,6 +156,7 @@ export const UPGRADE_CONTROLLER_POWER: number = C.UPGRADE_CONTROLLER_POWER;
 export const CREEP_CORPSE_RATE: number = C.CREEP_CORPSE_RATE;
 export const TOMBSTONE_DECAY_PER_PART: number = C.TOMBSTONE_DECAY_PER_PART;
 export const DISMANTLE_COST: number = C.DISMANTLE_COST;
+export const REPAIR_COST: number = C.REPAIR_COST;
 export const CARRY_CAPACITY: number = C.CARRY_CAPACITY;
 export const ENERGY_REGEN_TIME: number = C.ENERGY_REGEN_TIME;
 export const CREEP_LIFE_TIME: number = C.CREEP_LIFE_TIME;
@@ -224,6 +226,7 @@ export const RUIN_DECAY: number = C.RUIN_DECAY;
 // Store capacities
 export const STORAGE_CAPACITY: number = C.STORAGE_CAPACITY;
 export const TERMINAL_CAPACITY: number = C.TERMINAL_CAPACITY;
+export const TERMINAL_COOLDOWN: number = C.TERMINAL_COOLDOWN;
 export const CONTAINER_CAPACITY: number = C.CONTAINER_CAPACITY;
 export const TOWER_CAPACITY: number = C.TOWER_CAPACITY;
 export const SPAWN_ENERGY_CAPACITY: number = C.SPAWN_ENERGY_CAPACITY;
@@ -300,6 +303,7 @@ export const MAX_CONSTRUCTION_SITES: number = C.MAX_CONSTRUCTION_SITES;
 
 // Flags
 export const FLAGS_LIMIT: number = C.FLAGS_LIMIT;
+export const MARKET_ORDER_LIFE_TIME: number = C.MARKET_ORDER_LIFE_TIME;
 export const COLOR_RED: number = C.COLOR_RED;
 export const COLOR_BLUE: number = C.COLOR_BLUE;
 export const COLOR_GREEN: number = C.COLOR_GREEN;

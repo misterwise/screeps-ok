@@ -267,4 +267,76 @@ describe('creep.upgradeController()', () => {
 		expect(upgradeBlocked).toBeGreaterThan(0);
 		expect(upgradeBlocked).toBeLessThanOrEqual(CONTROLLER_NUKE_BLOCKED_UPGRADE);
 	});
+
+	test('CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount', async ({ shard }) => {
+		// Engine upgradeController.js:30 — buildEffect = min(buildPower, energy).
+		// 5 WORK = 5 full upgrade, but only 2 energy stored → progress advances 2,
+		// energy spent 2.
+		await shard.ownedRoom('p1');
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: body(5, WORK, CARRY, MOVE),
+			store: { energy: 2 },
+		});
+
+		const before = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.progress
+		`) as number;
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).upgradeController(
+				Game.rooms['W1N1'].controller
+			)
+		`);
+
+		const after = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.progress
+		`) as number;
+		expect(after - before).toBe(2);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy ?? 0).toBe(0);
+		// Sanity: full upgrade would have contributed 5 × UPGRADE_CONTROLLER_POWER.
+		expect(after - before).toBeLessThan(5 * UPGRADE_CONTROLLER_POWER);
+	});
+
+	test('CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold', async ({ shard }) => {
+		// Engine upgradeController.js:63-74 — when progress + boostedEffect crosses
+		// CONTROLLER_LEVELS[level], the controller advances to level+1 and progress
+		// resets to (progress + boostedEffect - nextLevelProgress). RCL 1 threshold
+		// is 200; a 25-WORK creep upgrading 8 ticks crosses it.
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: body(25, WORK, CARRY, MOVE),
+			store: { energy: 500 },
+		});
+
+		const levelBefore = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.level
+		`) as number;
+		expect(levelBefore).toBe(1);
+
+		// 25 WORK × 8 upgrades = 200 progress, exactly the RCL 1 threshold.
+		for (let i = 0; i < 8; i++) {
+			await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgradeController(
+					Game.rooms['W1N1'].controller
+				)
+			`);
+		}
+
+		const result = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			progress: Game.rooms['W1N1'].controller.progress,
+		})`) as { level: number; progress: number };
+		expect(result.level).toBe(2);
+		// progress after advance is the overflow past the L1 threshold (0 or small).
+		expect(result.progress).toBeGreaterThanOrEqual(0);
+		expect(result.progress).toBeLessThan(CONTROLLER_LEVELS[1]);
+	});
 });

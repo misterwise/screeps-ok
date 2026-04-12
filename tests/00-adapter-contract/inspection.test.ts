@@ -90,6 +90,23 @@ describe('adapter contract: inspection', () => {
 			expect(typeof obj.ticksToRegeneration).toBe('number');
 		});
 
+		test('runPlayer preserves undefined as null in return values', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const srcId = await shard.placeSource('W1N1', {
+				pos: [10, 10],
+				energy: 3000,
+				energyCapacity: 3000,
+			});
+			await shard.tick();
+
+			// Engine returns undefined for ticksToRegeneration on a full source.
+			// runPlayer must preserve this (as null via JSON), not normalize to 0.
+			const result = await shard.runPlayer('p1', code`
+				Game.getObjectById(${srcId}).ticksToRegeneration
+			`);
+			expect(result).toBeNull();
+		});
+
 		test('mineral snapshot has mineral fields', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],

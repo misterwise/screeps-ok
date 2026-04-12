@@ -38,7 +38,7 @@ test. In particular:
 - do not treat a dependency bundled with one implementation as the source of
   truth for another implementation
 - do use the checked-in canonical constants exported by `src/constants.ts`
-  and the checked-in matrix definitions under `tests/support/matrices/`
+  and the checked-in matrix definitions under `src/matrices/`
 
 Do not assert:
 
@@ -133,7 +133,7 @@ for concrete cases.
 
 If a catalog entry is `matrix`-backed, the generated test family must derive its
 cases from `docs/behavior-matrices.md`, the canonical source it references, and
-the checked-in executable case definitions under `tests/support/matrices/` when
+the checked-in executable case definitions under `src/matrices/` when
 present.
 
 Do not:

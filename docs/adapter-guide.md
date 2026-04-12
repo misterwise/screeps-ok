@@ -266,7 +266,7 @@ In this repository, capability-gated tests use `shard.requires('capability')`
 rather than silently returning from the test body.
 
 Adapter-specific skips should be rare. In this repository, narrow built-in
-exceptions are centralized in `tests/support/limitations.ts` rather than
+exceptions are centralized in `src/limitations.ts` rather than
 scattered as raw adapter-name checks throughout the suite.
 
 If a test represents planned coverage that the suite cannot exercise yet, use
@@ -390,9 +390,9 @@ Before claiming adapter support, run through this sequence:
 Recommended starting point:
 
 - `tests/00-adapter-contract/*.test.ts`
-- `tests/01-movement/directions.test.ts`
-- `tests/03-harvesting/harvest.test.ts`
-- `tests/16-room-mechanics/game-api.test.ts`
+- `tests/01-movement/1.1-basic-movement.test.ts`
+- `tests/03-harvesting/3.1-source-harvest.test.ts`
+- `tests/16-room-mechanics/16.3b-game-api.test.ts`
 
 Only expand to the larger suite once those are stable.
 

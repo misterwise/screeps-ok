@@ -127,6 +127,26 @@ describe('RoomPosition find helpers', () => {
 		expect(result.firstHasXY).toBe(true);
 	});
 
+	test('ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const pos = new RoomPosition(25, 25, 'W1N1');
+			pos.findClosestByPath(FIND_CREEPS)
+		`);
+		expect(result).toBeNull();
+	});
+
+	test('ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const pos = new RoomPosition(25, 25, 'W1N1');
+			pos.findClosestByRange(FIND_CREEPS)
+		`);
+		expect(result).toBeNull();
+	});
+
 	test('ROOMPOS-FIND-006 opts.filter applies to the candidate set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {

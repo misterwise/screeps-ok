@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
+import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
 	WORK, CARRY, MOVE, STRUCTURE_ROAD, BUILD_POWER } from '../../src/index.js';
 
 describe('creep.build()', () => {
@@ -158,6 +158,33 @@ describe('creep.build()', () => {
 			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
 		`);
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
+	});
+
+	test('BUILD-010 partial build uses only available energy when below full build amount', async ({ shard }) => {
+		// Engine build.js:69 — buildEffect = min(buildPower, buildRemaining, energy).
+		// 5 WORK = 25 full build, but only 3 energy stored → progress advances 3,
+		// energy spent 3.
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: body(5, WORK, CARRY, MOVE),
+			store: { energy: 3 },
+		});
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
+		`);
+		expect(rc).toBe(OK);
+
+		const site = await shard.expectObject(siteId, 'site');
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(site.progress).toBe(3);
+		expect(creep.store.energy ?? 0).toBe(0);
+		// Sanity: full build amount is 5 × BUILD_POWER, but progress is capped at energy.
+		expect(site.progress).toBeLessThan(5 * BUILD_POWER);
 	});
 
 	test('BUILD-009 a creep can build another player\'s construction site', async ({ shard }) => {

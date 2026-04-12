@@ -14,7 +14,7 @@ catalog:
 This file should stay narrow. It is not a second planning backlog.
 
 Where a matrix family is actively exercised by the test suite, keep the
-executable case list in `tests/support/matrices/*` and keep this document as
+executable case list in `src/matrices/*` and keep this document as
 the human-readable scope/source definition.
 
 ## Entry Format
@@ -47,7 +47,7 @@ Each definition should include:
   Structures with per-resource capacity maps or one-resource stores
 - `Verification Notes`
   Scope is intended to be complete for the current open-store family. The
-  executable case list lives in `tests/support/matrices/store-open.ts`.
+  executable case list lives in `src/matrices/store-open.ts`.
 
 ### STORE-SINGLE
 
@@ -66,7 +66,7 @@ Each definition should include:
   Restricted stores and shared-capacity stores
 - `Verification Notes`
   Extension capacity varies by controller level and is part of this family. The
-  executable case list lives in `tests/support/matrices/store-single.ts`.
+  executable case list lives in `src/matrices/store-single.ts`.
 
 ### STORE-RESTRICTED
 
@@ -87,7 +87,7 @@ Each definition should include:
 - `Verification Notes`
   Lab remains part of this family even though its allowed mineral type can
   change at runtime. The executable case list lives in
-  `tests/support/matrices/store-restricted.ts`.
+  `src/matrices/store-restricted.ts`.
 
 ### LAB-RUN
 
@@ -106,7 +106,7 @@ Each definition should include:
 - `Verification Notes`
   This matrix is about the product mapping only. Amount, cooldown, and failure
   behavior are owned by the `LAB-RUN-002` through `LAB-RUN-012` entries. The
-  executable case list lives in `tests/support/matrices/lab-run.ts`.
+  executable case list lives in `src/matrices/lab-run.ts`.
 
 ### FACTORY-COMMODITY
 
@@ -125,7 +125,7 @@ Each definition should include:
 - `Verification Notes`
   Factory level mismatch errors are not part of this matrix; they belong to the
   `FACTORY-PRODUCE-*` entries. The executable case list lives in
-  `tests/support/matrices/factory-commodity.ts`.
+  `src/matrices/factory-commodity.ts`.
 
 ### ROAD-DECAY
 
@@ -142,7 +142,7 @@ Each definition should include:
   Initial road hit totals and movement wear timing
 - `Verification Notes`
   This matrix only covers periodic decay amount by terrain. The executable case
-  list lives in `tests/support/matrices/road-decay.ts`.
+  list lives in `src/matrices/road-decay.ts`.
 
 ### TIMER-COOLDOWN
 
@@ -181,7 +181,7 @@ Each definition should include:
   power bank -> `my === false`, `owner.username === "Power Bank"`;
   invader core -> inherited `OwnedStructure` `my` / `owner` behavior from its
   `user`. The executable case list lives in
-  `tests/support/matrices/npc-ownership.ts`.
+  `src/matrices/npc-ownership.ts`.
 
 ### INTENT-CREEP-PRIORITY
 
@@ -216,7 +216,7 @@ Each definition should include:
   `rangedMassAttack` blocks `build`, `repair`, `rangedHeal`;
   `rangedAttack` blocks `rangedMassAttack`, `build`, `repair`, `rangedHeal`.
   The executable case list lives in
-  `tests/support/matrices/intent-creep-priority.ts`.
+  `src/matrices/intent-creep-priority.ts`.
 
 ### CTRL-SAFEMODE-BLOCKED
 
@@ -234,7 +234,7 @@ Each definition should include:
 - `Verification Notes`
   This family remains `needs_vanilla_verification` until each blocked action is
   exercised as a concrete scenario. The executable case list lives in
-  `tests/support/matrices/ctrl-safemode-blocked.ts`.
+  `src/matrices/ctrl-safemode-blocked.ts`.
 
 ### CTRL-STRUCTLIMIT
 
@@ -252,7 +252,7 @@ Each definition should include:
 - `Verification Notes`
   This matrix covers the allowed active count only. Inactive-above-limit
   behavior is owned by `CTRL-STRUCTLIMIT-002`. The executable case list lives
-  in `tests/support/matrices/ctrl-structlimit.ts`.
+  in `src/matrices/ctrl-structlimit.ts`.
 
 ### TOWER-RANGE
 
@@ -270,7 +270,7 @@ Each definition should include:
   This family covers falloff/output by range only. The current generated suite
   uses representative exact cases at range `3`, `10`, and `20` to cover close,
   interpolated, and max-falloff behavior. The executable case list lives in
-  `tests/support/matrices/tower-range.ts`.
+  `src/matrices/tower-range.ts`.
 
 ### TOWER-TARGETS
 
@@ -302,7 +302,7 @@ Each definition should include:
   Whether both effects can coexist on the same tower
 - `Verification Notes`
   Coexistence is owned by `TOWER-POWER-002`. The executable case list lives in
-  `tests/support/matrices/tower-power.ts`.
+  `src/matrices/tower-power.ts`.
 
 ### COMBAT-RMA
 
@@ -321,7 +321,7 @@ Each definition should include:
   multiple `RANGED_ATTACK` parts, and boost interactions
 - `Verification Notes`
   The executable case list lives in
-  `tests/support/matrices/ranged-mass-attack.ts`. Expected damage is computed
+  `src/matrices/ranged-mass-attack.ts`. Expected damage is computed
   from `RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[range]` so that the
   oracle stays independent of the engine under test.
 
@@ -341,7 +341,7 @@ Each definition should include:
 - `Verification Notes`
   This family is about per-part summation, not the numeric multipliers
   themselves. The executable case list lives in
-  `tests/support/matrices/boost-aggregation.ts`.
+  `src/matrices/boost-aggregation.ts`.
 
 ### BOOST-TABLES
 
@@ -361,7 +361,7 @@ Each definition should include:
 - `Verification Notes`
   Numeric boost magnitudes are owned here; mechanic-specific non-table rules
   remain in the local boost facets. The executable case list lives in
-  `tests/support/matrices/boost-tables.ts`.
+  `src/matrices/boost-tables.ts`.
 
 ### CREEP-DEATH-SOURCES
 
@@ -382,7 +382,7 @@ Each definition should include:
   generated suite covers `suicide()` and `ticksToLive` expiry for carried
   resource preservation only; reclaimed body energy remains source-specific.
   The executable case list lives in
-  `tests/support/matrices/creep-death-sources.ts`.
+  `src/matrices/creep-death-sources.ts`.
 
 ### CONTAINER-DECAY
 
@@ -398,7 +398,7 @@ Each definition should include:
   Store semantics and destruction spill
 - `Verification Notes`
   This matrix covers both decay amount and decay interval by room state. The
-  executable case list lives in `tests/support/matrices/container-decay.ts`.
+  executable case list lives in `src/matrices/container-decay.ts`.
 
 ### LAB-REVERSE
 
@@ -415,7 +415,7 @@ Each definition should include:
   Cooldown, throughput amount, and error-code behavior
 - `Verification Notes`
   This family covers the reverse mapping only. The executable case list lives
-  in `tests/support/matrices/lab-reverse.ts`.
+  in `src/matrices/lab-reverse.ts`.
 
 ### FACTORY-PRODUCE
 
@@ -432,7 +432,7 @@ Each definition should include:
   Cooldown, level gating, and error-code behavior
 - `Verification Notes`
   This family covers recipe consumption and output amount only. The executable
-  case list lives in `tests/support/matrices/factory-produce.ts`.
+  case list lives in `src/matrices/factory-produce.ts`.
 
 ### RAMPART-HITSMAX
 
@@ -448,7 +448,7 @@ Each definition should include:
   Decay timing and temporary ramparts from power effects
 - `Verification Notes`
   Initial construction hits remain outside this family. The executable case list
-  lives in `tests/support/matrices/rampart-hitsmax.ts`.
+  lives in `src/matrices/rampart-hitsmax.ts`.
 
 ### ROAD-WEAR
 
@@ -465,7 +465,7 @@ Each definition should include:
 - `Verification Notes`
   This family covers wear amount only; same-tick application is owned by
   `ROAD-WEAR-002`. The executable case list lives in
-  `tests/support/matrices/road-wear.ts`.
+  `src/matrices/road-wear.ts`.
 
 ### POWER-BANK-POWER
 
@@ -498,7 +498,7 @@ Each definition should include:
   RCL-scaled `hitsMax`, roads by terrain, and structures with dynamic limits
 - `Verification Notes`
   Variable-hit families stay with their local mechanics. The executable case
-  list lives in `tests/support/matrices/structure-hits.ts`.
+  list lives in `src/matrices/structure-hits.ts`.
 
 ### CONSTRUCTION-COST
 
@@ -514,7 +514,7 @@ Each definition should include:
   Terrain multipliers for roads and construction-site progress side behavior
 - `Verification Notes`
   This family covers base construction cost only. The executable case list lives
-  in `tests/support/matrices/construction-cost.ts`.
+  in `src/matrices/construction-cost.ts`.
 
 ### ROOM-FIND
 
@@ -532,7 +532,7 @@ Each definition should include:
   The current generated suite covers the explicit player-relative constants
   `FIND_MY_CREEPS`, `FIND_HOSTILE_CREEPS`, `FIND_MY_STRUCTURES`, and
   `FIND_HOSTILE_STRUCTURES`. The executable case list lives in
-  `tests/support/matrices/room-find.ts`.
+  `src/matrices/room-find.ts`.
 
 ### ROOM-TERRAIN
 
@@ -548,7 +548,7 @@ Each definition should include:
   Raw buffer shape and `Game.map.getRoomTerrain()` equivalence
 - `Verification Notes`
   This family is about mask values only. The executable case list lives in
-  `tests/support/matrices/room-terrain.ts`.
+  `src/matrices/room-terrain.ts`.
 
 ### ROOM-EVENTLOG
 
@@ -580,7 +580,7 @@ Each definition should include:
   Timer exposure and same-tick restore timing
 - `Verification Notes`
   This family covers full-capacity mapping only. The executable case list lives
-  in `tests/support/matrices/source-regen.ts`.
+  in `src/matrices/source-regen.ts`.
 
 ### SOURCE-POWER
 
@@ -596,7 +596,7 @@ Each definition should include:
   `PWR_DISRUPT_SOURCE`
 - `Verification Notes`
   Period, duration, and amount are all table-driven here. The executable case
-  list lives in `tests/support/matrices/source-power.ts`.
+  list lives in `src/matrices/source-power.ts`.
 
 ### MINERAL-REGEN
 
@@ -612,7 +612,7 @@ Each definition should include:
   Timer exposure and mineral type stability
 - `Verification Notes`
   This family covers density-to-full-amount mapping only. The executable case
-  list lives in `tests/support/matrices/mineral-regen.ts`.
+  list lives in `src/matrices/mineral-regen.ts`.
 
 ### MINERAL-POWER
 
@@ -628,7 +628,7 @@ Each definition should include:
   Base mineral regeneration timing
 - `Verification Notes`
   Period, duration, and amount are all table-driven here. The executable case
-  list lives in `tests/support/matrices/mineral-power.ts`.
+  list lives in `src/matrices/mineral-power.ts`.
 
 ### DEPOSIT-TYPE
 
@@ -644,7 +644,7 @@ Each definition should include:
   Cooldown, exhaustion, and decay timing
 - `Verification Notes`
   This family is only about the exposed type enum. The executable case list
-  lives in `tests/support/matrices/deposit-type.ts`.
+  lives in `src/matrices/deposit-type.ts`.
 
 ### RUIN-DECAY
 
@@ -660,7 +660,7 @@ Each definition should include:
   Ruin contents and withdraw semantics
 - `Verification Notes`
   This family covers decay-time mapping only. The executable case list lives in
-  `tests/support/matrices/ruin-decay.ts`.
+  `src/matrices/ruin-decay.ts`.
 
 ### POWERCREEP-VALIDATION
 
@@ -699,7 +699,7 @@ Each definition should include:
   Target-validity matrices and non-table side effects
 - `Verification Notes`
   This family is intentionally table-driven; target acceptance stays separate.
-  The executable case list lives in `tests/support/matrices/power-info.ts`.
+  The executable case list lives in `src/matrices/power-info.ts`.
 
 ### POWER-TARGETS
 
@@ -770,21 +770,24 @@ Each definition should include:
 - `Catalog Entries`
   `MOVE-BASIC-001`
 - `Canonical Source`
-  Screeps direction constants (`TOP` through `TOP_LEFT`) and the official
-  `creep.move()` processor.
+  Screeps direction constants (`TOP` through `TOP_LEFT`), the official
+  `creep.move()` processor, and the spawned `PowerCreep.move()` wrapper
+  behavior that delegates to standard movement semantics.
 - `Dimensions`
-  direction constant
+  creep kind, direction constant
 - `Applicability`
-  `creep.move(direction)` on a MOVE-capable creep standing on a walkable tile
-  with a walkable destination tile
+  `move(direction)` for creep kinds that use standard movement semantics:
+  `Creep` with an active MOVE part, and spawned `PowerCreep`, each standing on
+  a walkable tile with a walkable destination tile
 - `Exclusions`
-  Fatigue generation, collision resolution, wall/blocked tiles, and the
-  `ERR_TIRED` / `ERR_NO_BODYPART` return codes
+  Fatigue generation, collision resolution, wall/blocked tiles, power-creep
+  unspawned `ERR_BUSY`, and the creep-only `ERR_TIRED` / `ERR_NO_BODYPART`
+  return codes
 - `Verification Notes`
-  The executable case list lives in `tests/support/matrices/move-directions.ts`
-  and covers every Screeps direction constant exactly once. Expected landing
-  offsets are derived from the direction constants themselves, keeping the
-  oracle independent of the engine under test.
+  The executable case list lives in `src/matrices/move-directions.ts`
+  and should cover every Screeps direction constant for every applicable creep
+  kind. Expected landing offsets are derived from the direction constants
+  themselves, keeping the oracle independent of the engine under test.
 
 ### ROOMPOS-DIRECTION
 
@@ -802,7 +805,7 @@ Each definition should include:
 - `Verification Notes`
   This family should remain a concrete offset matrix, not an algorithm prose
   restatement. The executable case list lives in
-  `tests/support/matrices/roompos-direction.ts`.
+  `src/matrices/roompos-direction.ts`.
 
 ### INTENT-CREEP-OVERWRITE
 
@@ -867,4 +870,4 @@ Each definition should include:
 - `Verification Notes`
   This family covers limit values only; next-tick activation is owned by
   `RAWMEMORY-004`. The executable case list lives in
-  `tests/support/matrices/rawmemory-segments.ts`.
+  `src/matrices/rawmemory-segments.ts`.

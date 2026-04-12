@@ -2,14 +2,14 @@ import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerSpec, PlayerReturnValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
-	PowerCreepSpec, NukeSpec, TerrainSpec,
+	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
 import { snapshotObject, snapshotRoomObjects } from './snapshots.js';
-import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR } from '../../src/terrain-fixture.js';
+import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC } from '../../src/terrain-fixture.js';
 
 // @ts-expect-error -- screeps-server-mockup has no type declarations
 import { ScreepsServer, TerrainMatrix } from 'screeps-server-mockup';
@@ -27,7 +27,7 @@ const PRELOAD_ROOMS: { name: string; terrain: TerrainSpec | null }[] = [
 	// tests (e.g. maxRooms) have an adjacent room the runner's static cache
 	// already knows about. Kept far from W1N1 to leave ROOM-TRANSITION
 	// corner-exit resolution undisturbed.
-	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: null },
+	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
 ];
 
 function buildTerrainMatrix(terrain: TerrainSpec | null): any {
@@ -613,6 +613,26 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return result._id;
 	}
 
+	async placeMarketOrder(spec: MarketOrderSpec): Promise<string> {
+		const gameTime = await this.server.world.gameTime;
+		const userId = this.resolvePlayer(spec.owner);
+		// Engine stores price in milli-units (see global-intents/market.js:152).
+		const result = await this.db['market.orders'].insert({
+			createdTimestamp: spec.createdTimestamp ?? Date.now(),
+			created: spec.created ?? gameTime,
+			user: userId,
+			active: spec.active ?? true,
+			type: spec.type,
+			resourceType: spec.resourceType,
+			price: Math.round(spec.price * 1000),
+			amount: 0,
+			remainingAmount: spec.totalAmount,
+			totalAmount: spec.totalAmount,
+			roomName: spec.roomName,
+		});
+		return result._id;
+	}
+
 	async placeObject(roomName: string, type: string, spec: Record<string, unknown>): Promise<string> {
 		const pos = spec.pos as [number, number] | undefined;
 		if (!pos) throw new Error('placeObject: spec.pos is required');
@@ -651,9 +671,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				x: pos[0],
 				y: pos[1],
 				depositType: (spec.depositType as string) ?? 'silicon',
-				harvested: 0,
-				lastCooldown: 0,
-				cooldownTime: null,
+				harvested: (spec.harvested as number) ?? 0,
+				lastCooldown: (spec.lastCooldown as number) ?? 0,
+				cooldownTime: spec.cooldownTime != null ? gameTime + (spec.cooldownTime as number) : null,
 				decayTime: gameTime + decayTicks,
 			});
 			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
@@ -958,6 +978,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				hits: C.LAB_HITS ?? 500, hitsMax: C.LAB_HITS ?? 500,
 				store: { energy: 0 },
 				storeCapacityResource: { energy: C.LAB_ENERGY_CAPACITY ?? 2000 },
+				storeCapacity: (C.LAB_ENERGY_CAPACITY ?? 2000) + (C.LAB_MINERAL_CAPACITY ?? 3000),
 				cooldown: 0, mineralType: null,
 				actionLog: { runReaction: null },
 			};

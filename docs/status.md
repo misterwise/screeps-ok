@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-23%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)
+![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red) ![xxscreeps](https://img.shields.io/badge/xxscreeps-0%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-2-yellow)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,24 +16,20 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [23](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-11 23:17 UTC |
-| 🔴 | **xxscreeps** | [15](#xxscreeps-passing-tests) | [4](#xxscreeps-expected-failures) | — | [2](#xxscreeps-skipped-tests) | 2026-04-11 22:16 UTC |
+| 🔴 | **vanilla** | — | — | [1](#vanilla-unexpected-failures) | [31](#vanilla-skipped-tests) | 2026-04-12 02:51 UTC |
+| 🟡 | **xxscreeps** | — | [2](#xxscreeps-expected-failures) | — | [1011](#xxscreeps-skipped-tests) | 2026-04-12 02:53 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## 🚨 Regression traps triggered
+## vanilla unexpected failures
 
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `Game.map MAP-ROOM-001 describeExits returns null for an invalid room name`
+- `adapter contract: setup runPlayer serialization null-prototype objects returned by player code are serialized`
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior, covering 4 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 28 parity gaps against vanilla's canonical behavior, covering 2 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 <details>
 <summary><strong><code>creep-owner-undefined</code></strong> — Creep.owner is undefined (key exists but value is undefined)</summary>
@@ -44,19 +40,10 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 </details>
 
 <details>
-<summary><strong><code>extension-rcl-capacity</code></strong> — Extension store.getCapacity('energy') always reports RCL 8 maximum (200)</summary>
+<summary><strong><code>describe-exits-topology</code></strong> — Game.map.describeExits filters by instantiated neighbor rooms</summary>
 
 0 tests affected:
 
-
-</details>
-
-<details>
-<summary><strong><code>describe-exits-topology</code></strong> — Game.map.describeExits filters by instantiated neighbor rooms</summary>
-
-1 test affected:
-
-- `Game.map MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name`
 
 </details>
 
@@ -111,7 +98,7 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 </details>
 
 <details>
-<summary><strong><code>link-intent-after-idle-tick</code></strong> — link.transferEnergy intents silently dropped after idle tick</summary>
+<summary><strong><code>link-cooldown-not-persisted</code></strong> — link.transferEnergy cooldown not persisted (processor missing context.didUpdate, only manifests in structure-only rooms without creeps)</summary>
 
 0 tests affected:
 
@@ -175,31 +162,15 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 </details>
 
 <details>
-<summary><strong><code>mineral-regen-not-implemented</code></strong> — Mineral regeneration not processed; depleted minerals stay at 0</summary>
-
-0 tests affected:
-
-
-</details>
-
-<details>
-<summary><strong><code>road-decay-not-implemented</code></strong> — Road decay not processed; roads keep initial hits indefinitely</summary>
-
-0 tests affected:
-
-
-</details>
-
-<details>
-<summary><strong><code>container-decay-not-implemented</code></strong> — Container decay not processed; containers keep initial hits indefinitely</summary>
-
-0 tests affected:
-
-
-</details>
-
-<details>
 <summary><strong><code>safemode-concurrent-allowed</code></strong> — Allows activateSafeMode on multiple owned controllers simultaneously</summary>
+
+0 tests affected:
+
+
+</details>
+
+<details>
+<summary><strong><code>container-destroy-no-spill</code></strong> — Container destroyed by decay does not drop its contents as ground resources</summary>
 
 0 tests affected:
 
@@ -249,15 +220,6 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 <details>
 <summary><strong><code>route-callback-ignored</code></strong> — findRoute ignores routeCallback option</summary>
 
-1 test affected:
-
-- `Game.map MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity`
-
-</details>
-
-<details>
-<summary><strong><code>rampart-decay-not-implemented</code></strong> — Rampart decay not processed; ramparts keep initial hits indefinitely</summary>
-
 0 tests affected:
 
 
@@ -288,14 +250,6 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 </details>
 
 <details>
-<summary><strong><code>upgrade-controller-no-gcl-progress</code></strong> — upgradeController() does not increment Game.gcl.progress in xxscreeps</summary>
-
-0 tests affected:
-
-
-</details>
-
-<details>
 <summary><strong><code>controller-my-undefined-on-unowned</code></strong> — StructureController.my returns undefined (not false) on an unowned/neutral controller; inherited OwnedStructure.my uses strict owner match against an absent #user field</summary>
 
 0 tests affected:
@@ -307,26 +261,15 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 ## vanilla skipped tests
 
 <details>
-<summary>3 tests across 1 file</summary>
+<summary>31 tests across 1 file</summary>
 
-**`tests/00-adapter-contract/setup.test.ts`** (3)
-
-- adapter contract: setup createShard creates multiple players
-- adapter contract: setup placeStructure structure hits is initialized
-- adapter contract: setup placeFlag places a flag retrievable by name in player code
-
-</details>
-
-## vanilla passing tests
-
-<details>
-<summary>23 tests across 1 file</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (23)
+**`tests/00-adapter-contract/setup.test.ts`** (31)
 
 - adapter contract: setup createShard creates a shard with one player and one room
+- adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
 - adapter contract: setup createShard sets room ownership and RCL
+- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup placeCreep places a creep and returns a valid ID
 - adapter contract: setup placeCreep creep is retrievable by ID after tick
@@ -338,52 +281,1334 @@ xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior
 - adapter contract: setup placeStructure places a spawn
 - adapter contract: setup placeStructure places a container (unowned)
 - adapter contract: setup placeStructure structure store is initialized
+- adapter contract: setup placeStructure structure hits is initialized
+- adapter contract: setup placeStructure ticksToDecay override is honored for container
+- adapter contract: setup placeStructure ticksToDecay override is honored for road
+- adapter contract: setup placeStructure ticksToDecay override is honored for rampart
+- adapter contract: setup room visibility unowned room without player creeps is not in Game.rooms
 - adapter contract: setup placeSite places a construction site
 - adapter contract: setup placeSource places a source with default energy
 - adapter contract: setup placeSource places a depleted source
 - adapter contract: setup placeMineral places a mineral
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
+- adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 
 </details>
 
+## vanilla passing tests
+
+_none_
+
+
 ## xxscreeps skipped tests
 
 <details>
-<summary>2 tests across 1 file</summary>
+<summary>1011 tests across 95 files</summary>
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (2)
+**`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
-- PathFinder PATHFINDER-006 PathFinder.search swampCost option overrides the default cost of swamp tiles
-- PathFinder PATHFINDER-008 PathFinder.search maxRooms option limits the number of rooms searched
+- adapter contract: code tag interpolates string values safely
+- adapter contract: code tag interpolates number values
+- adapter contract: code tag interpolates object IDs for getObjectById
+- adapter contract: code tag branded PlayerCode type prevents raw strings at compile time
 
-</details>
+**`tests/00-adapter-contract/coexistence.test.ts`** (8)
 
-## xxscreeps passing tests
+- adapter contract: tile coexistence mineral + extractor on the same tile have distinct IDs
+- adapter contract: tile coexistence mineral + extractor resolve to correct types in player code
+- adapter contract: tile coexistence road + rampart on the same tile have distinct IDs
+- adapter contract: tile coexistence container + creep on the same tile have distinct IDs
+- adapter contract: tile coexistence container + dropped resource on the same tile have distinct IDs
+- adapter contract: tile coexistence road + creep on the same tile have distinct IDs
+- adapter contract: tile coexistence road + rampart + creep on the same tile all resolve independently
+- adapter contract: tile coexistence findInRoom returns both structures when two share a tile
 
-<details>
-<summary>15 tests across 1 file</summary>
+**`tests/00-adapter-contract/error-model.test.ts`** (13)
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (15)
+- adapter contract: error model syntax errors syntax error throws RunPlayerError with errorKind "syntax"
+- adapter contract: error model syntax errors syntax error engineMessage is non-empty
+- adapter contract: error model runtime errors ReferenceError throws RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors TypeError throws RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors explicit throw produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors runtime error engineMessage is non-empty
+- adapter contract: error model serialization errors returning a creep object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model serialization errors returning a room object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model undefined normalization explicit undefined return is normalized to null
+- adapter contract: error model undefined normalization void expression return is normalized to null
+- adapter contract: error model undefined normalization implicit undefined from statement is normalized to null
+- adapter contract: error model error kind discrimination syntax error is not misclassified as runtime
+- adapter contract: error model error kind discrimination game object return does not silently produce empty object
+
+**`tests/00-adapter-contract/execution.test.ts`** (18)
+
+- adapter contract: execution runPlayer returns a number (action return code)
+- adapter contract: execution runPlayer returns a string
+- adapter contract: execution runPlayer returns a boolean
+- adapter contract: execution runPlayer returns null
+- adapter contract: execution runPlayer returns an object literal
+- adapter contract: execution runPlayer has access to Game object
+- adapter contract: execution runPlayer has access to Game.time
+- adapter contract: execution runPlayer can find objects by ID via code tag interpolation
+- adapter contract: execution runPlayer collects intents that are processed on tick
+- adapter contract: execution runPlayer + tick timing runPlayer advances game time by exactly 1
+- adapter contract: execution runPlayer + tick timing runPlayer processes submitted intents within its tick
+- adapter contract: execution runPlayer + tick timing tick() after runPlayer advances game time
+- adapter contract: execution runPlayer + tick timing tick(N) after runPlayer advances game time by N
+- adapter contract: execution runPlayer side effects uninvolved objects are not modified by runPlayer
+- adapter contract: execution runPlayers all players observe the same game time
+- adapter contract: execution runPlayers runPlayers advances game time by exactly 1
+- adapter contract: execution tick advances game time by 1
+- adapter contract: execution tick tick(N) advances game time by N
+
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (4)
+
+- adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
+- adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
+- adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
+- adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
+
+**`tests/00-adapter-contract/inspection.test.ts`** (15)
+
+- adapter contract: inspection getObject returns null for nonexistent ID
+- adapter contract: inspection getObject creep snapshot has correct kind and required fields
+- adapter contract: inspection getObject structure snapshot has correct kind
+- adapter contract: inspection getObject site snapshot has progress fields
+- adapter contract: inspection getObject source snapshot has energy fields
+- adapter contract: inspection getObject mineral snapshot has mineral fields
+- adapter contract: inspection findInRoom finds creeps
+- adapter contract: inspection findInRoom finds structures
+- adapter contract: inspection findInRoom finds construction sites
+- adapter contract: inspection findInRoom finds sources
+- adapter contract: inspection findInRoom finds minerals
+- adapter contract: inspection findInRoom returns empty array for empty room type
+- adapter contract: inspection getGameTime returns a positive number
+- adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
+
+**`tests/00-adapter-contract/setup.test.ts`** (31)
+
+- adapter contract: setup createShard creates a shard with one player and one room
+- adapter contract: setup createShard creates multiple players
+- adapter contract: setup createShard creates multiple rooms
+- adapter contract: setup createShard sets room ownership and RCL
+- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
+- adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
+- adapter contract: setup placeCreep places a creep and returns a valid ID
+- adapter contract: setup placeCreep creep is retrievable by ID after tick
+- adapter contract: setup placeCreep creep store is initialized
+- adapter contract: setup placeCreep creep name is honored
+- adapter contract: setup placeCreep creep ticksToLive is honored
+- adapter contract: setup placeCreep creep is visible to bot code via Game.getObjectById
+- adapter contract: setup placeCreep creep appears in findInRoom
+- adapter contract: setup placeStructure places a spawn
+- adapter contract: setup placeStructure places a container (unowned)
+- adapter contract: setup placeStructure structure store is initialized
+- adapter contract: setup placeStructure structure hits is initialized
+- adapter contract: setup placeStructure ticksToDecay override is honored for container
+- adapter contract: setup placeStructure ticksToDecay override is honored for road
+- adapter contract: setup placeStructure ticksToDecay override is honored for rampart
+- adapter contract: setup room visibility unowned room without player creeps is not in Game.rooms
+- adapter contract: setup placeSite places a construction site
+- adapter contract: setup placeSource places a source with default energy
+- adapter contract: setup placeSource places a depleted source
+- adapter contract: setup placeMineral places a mineral
+- adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
+- adapter contract: setup placeRuin places a ruin with structureType, store, and decay
+- adapter contract: setup placeFlag places a flag retrievable by name in player code
+- adapter contract: setup placeDroppedResource places a dropped resource
+- adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
+
+**`tests/01-movement/1.1-basic-movement.test.ts`** (18)
+
+- creep.move() MOVE-BASIC-001 [TOP] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_RIGHT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [BOTTOM_LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-001 [TOP_LEFT] move(direction) moves one tile toward the direction constant
+- creep.move() MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move
+- creep.move() MOVE-BASIC-004 move() returns ERR_NO_BODYPART when the creep has no active MOVE parts
+- creep.moveByPath() MOVE-BASIC-005 moveByPath() moves the creep one step along a provided path
+- creep.moveByPath() MOVE-BASIC-006 moveByPath() returns OK when the next step is valid
+- creep.moveByPath() MOVE-BASIC-007 moveByPath() returns ERR_NOT_FOUND when the creep is not on the path
+- creep.moveTo() MOVE-BASIC-008 moveTo() computes a path and moves one step toward the target
+- creep.moveTo() MOVE-BASIC-009 moveTo() returns OK when the creep successfully moves
+- creep.moveTo() MOVE-BASIC-010 moveTo() returns ERR_NO_PATH when no path exists
+- creep.moveTo() MOVE-BASIC-011 moveTo() returns ERR_TIRED when the creep has fatigue > 0
+- creep.moveTo() MOVE-BASIC-012 moveTo() returns ERR_NO_BODYPART when the creep has no MOVE parts
+
+**`tests/01-movement/1.2-fatigue.test.ts`** (12)
+
+- creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
+- creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
+- creep fatigue MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains
+- creep fatigue MOVE-BASIC-003 move() returns ERR_TIRED while the creep has fatigue > 0
+- creep fatigue MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick
+- creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
+- creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
+- creep fatigue MOVE-FATIGUE-005 moving onto swamp generates 10 fatigue per weighted body part
+- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZO (2x reduction)
+- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZHO2 (3x reduction)
+- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount XZHO2 (4x reduction)
+- MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction a 0-HP MOVE part stops reducing fatigue
+
+**`tests/01-movement/1.4-room-transitions.test.ts`** (3)
+
+- Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
+- Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
+- Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
+
+**`tests/01-movement/1.5-pulling.test.ts`** (6)
+
+- creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
+- creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
+- creep.pull() MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile
+- creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
+- creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
+- creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
+
+**`tests/01-movement/1.6-collision.test.ts`** (6)
+
+- creep movement collision MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep
+- creep movement collision MOVE-COLLISION-002 two creeps moving to the same empty tile — only one succeeds
+- creep movement collision MOVE-COLLISION-003 two same-owner creeps can swap tiles by moving toward each other
+- creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other
+- creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
+- creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
+
+**`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
+
+- Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
+
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
 
 - PathFinder PATHFINDER-002 PathFinder.search returns { path, ops, cost, incomplete }
 - PathFinder PATHFINDER-003 PathFinder.search respects CostMatrix when routing
 - PathFinder PATHFINDER-005 PathFinder.search plainCost option overrides the default cost of plains tiles
+- PathFinder PATHFINDER-006 PathFinder.search swampCost option overrides the default cost of swamp tiles
 - PathFinder PATHFINDER-007 PathFinder.search maxOps option limits the number of pathfinding operations
+- PathFinder PATHFINDER-008 PathFinder.search maxRooms option limits the number of rooms searched
 - PathFinder PATHFINDER-009 PathFinder.search flee mode finds a path away from the goal positions
 - PathFinder PATHFINDER-010 PathFinder.search returns incomplete: true with a partial path when no full path exists
 - Game.map MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
+- Game.map MAP-ROOM-001 describeExits returns only exit direction keys with adjacent room names as values for a valid room name
+- Game.map MAP-ROOM-006 describeExits returns null for an invalid room name
 - Game.map MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
 - Game.map MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge
 - Game.map MAP-ROUTE-001 findRoute returns an array of {exit, room} steps
 - Game.map MAP-ROUTE-002 findRoute returns ERR_NO_PATH for an invalid room name
+- Game.map MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity
 - Game.map MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 - Game.map MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms
 
+**`tests/02-pathfinding/2.2-costmatrix.test.ts`** (5)
+
+- CostMatrix COSTMATRIX-001 new CostMatrix() creates a matrix with all values 0
+- CostMatrix COSTMATRIX-002 CostMatrix.set(x, y, cost) and get(x, y) round-trip the assigned value
+- CostMatrix COSTMATRIX-003 CostMatrix.serialize() and CostMatrix.deserialize() round-trip correctly
+- CostMatrix COSTMATRIX-004 CostMatrix value 0 means use the default terrain cost
+- CostMatrix COSTMATRIX-005 CostMatrix value 255 means the tile is unwalkable
+
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (3)
+
+- Legacy Pathfinding LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room
+- Legacy Pathfinding LEGACY-PATH-002 Room.serializePath() and Room.deserializePath() round-trip a path
+- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
+
+**`tests/03-harvesting/3.1-source-harvest.test.ts`** (10)
+
+- creep.harvest() HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store
+- creep.harvest() HARVEST-005 harvest reduces source energy by the harvested amount
+- creep.harvest() HARVEST-001 multiple WORK parts harvest proportionally
+- creep.harvest() HARVEST-002 returns ERR_NOT_IN_RANGE when not adjacent
+- creep.harvest() HARVEST-007 harvest() requires range 1: diagonal-adjacent OK, distance 2 returns ERR_NOT_IN_RANGE
+- creep.harvest() HARVEST-008 harvest() returns OK on success
+- creep.harvest() HARVEST-003 returns ERR_NO_BODYPART without WORK parts
+- creep.harvest() HARVEST-004 cannot harvest from depleted source
+- creep.harvest() HARVEST-001 harvest is capped by remaining source energy
+- creep.harvest() HARVEST-006 harvest is capped by remaining carry capacity
+
+**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (5)
+
+- creep.harvest(mineral) HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part
+- creep.harvest(mineral) HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity
+- creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest
+- creep.harvest(mineral) HARVEST-MINERAL-004 harvest returns ERR_NOT_ENOUGH_RESOURCES on depleted mineral
+- creep.harvest(mineral) HARVEST-MINERAL-005 harvested resource key matches mineral.mineralType
+
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (5)
+
+- creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest increases lastCooldown along DEPOSIT_EXHAUST_MULTIPLY * harvested^DEPOSIT_EXHAUST_POW
+- creep.harvest(deposit) DEPOSIT-HARVEST-002 deposit types are silicon, metal, biomass, and mist
+- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
+- creep.harvest(deposit) DEPOSIT-HARVEST-004 lastCooldown reflects the most recent cooldown value
+- creep.harvest(deposit) DEPOSIT-HARVEST-005 deposit disappears when the decay timer expires
+
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (8)
+
+- creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
+- creep.transfer() TRANSFER-002 transfers partial amount
+- creep.transfer() TRANSFER-003 returns ERR_NOT_IN_RANGE when far
+- creep.transfer() TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store
+- creep.transfer() TRANSFER-005 requires a resource type — omitted or unknown returns ERR_INVALID_ARGS
+- creep.transfer() TRANSFER-006 returns ERR_FULL when target store has no free capacity
+- creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type
+- creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET
+
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (21)
+
+- creep.withdraw() WITHDRAW-001 withdraws energy from container
+- creep.withdraw() WITHDRAW-002 withdraws partial amount
+- creep.withdraw() WITHDRAW-003 returns ERR_NOT_IN_RANGE
+- creep.withdraw() WITHDRAW-004 returns ERR_NOT_ENOUGH_RESOURCES from empty container
+- creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target
+- creep.withdraw() WITHDRAW-006 withdraw() works on tombstones and ruins
+- creep.withdraw() WITHDRAW-007 returns ERR_FULL when the creep has no free capacity
+- creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
+- creep.drop() DROP-001 drop() removes the dropped amount from the creep store
+- creep.drop() DROP-001 drop() creates a dropped resource at the creep position
+- creep.drop() DROP-002 drops partial amount
+- creep.drop() DROP-003 dropping onto an existing pile of the same type merges into it
+- creep.drop() DROP-004 returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource
+- creep.pickup() PICKUP-001 picks up dropped resource
+- creep.pickup() PICKUP-002 pickup is capped by the creep free capacity, remainder stays on the tile
+- creep.pickup() PICKUP-003 returns ERR_NOT_IN_RANGE when the resource is not adjacent
+- creep.pickup() PICKUP-004 returns ERR_FULL when the creep has no free capacity
+- Dropped resource decay DROP-DECAY-001 dropped energy decays by ceil(amount / ENERGY_DECAY) per tick
+- Dropped resource decay DROP-DECAY-002 dropped resource disappears when amount reaches 0
+- Dropped resource decay DROP-DECAY-004 harvesting above carry capacity drops the overflow on the creep tile
+- Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
+
+**`tests/05-construction-repair/5.1-build.test.ts`** (7)
+
+- creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
+- creep.build() BUILD-002 spends 1 energy per build progress point
+- creep.build() BUILD-003 returns ERR_NOT_IN_RANGE when too far
+- creep.build() BUILD-005 BUILD-006 build() returns OK at Chebyshev range 3 and ERR_NOT_IN_RANGE at range 4
+- creep.build() BUILD-007 returns ERR_NO_BODYPART when the creep has no WORK parts
+- creep.build() BUILD-008 returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy
+- creep.build() BUILD-009 a creep can build another player's construction site
+
+**`tests/05-construction-repair/5.2-repair.test.ts`** (8)
+
+- creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
+- creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
+- creep.repair() REPAIR-003 returns ERR_NOT_IN_RANGE when too far
+- creep.repair() REPAIR-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
+- creep.repair() REPAIR-005 repair() succeeds at Chebyshev range 3 and fails at range 4
+- creep.repair() REPAIR-006 repair() does not exceed the structure's hitsMax
+- creep.repair() REPAIR-007 returns ERR_NO_BODYPART when the creep has no WORK parts
+- creep.repair() REPAIR-008 a creep can repair another player's structure
+
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (5)
+
+- creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
+- creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
+- creep.dismantle() DISMANTLE-003 returns ERR_NOT_IN_RANGE
+- creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile
+- creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
+
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (10)
+
+- room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
+- room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
+- room.createConstructionSite() BUILD-004 completed construction site is replaced by the built structure on the same tile
+- room.createConstructionSite() CONSTRUCTION-SITE-002 createConstructionSite returns ERR_FULL after MAX_CONSTRUCTION_SITES
+- room.createConstructionSite() CONSTRUCTION-SITE-003 createConstructionSite returns ERR_RCL_NOT_ENOUGH for a structure unavailable at the room's RCL
+- room.createConstructionSite() CONSTRUCTION-SITE-004 a hostile creep moving onto a construction site destroys it
+- room.createConstructionSite() CONSTRUCTION-SITE-005 a site placed under an already-standing hostile creep survives the next tick
+- room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
+- room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
+- room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (19)
+
+- controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
+- controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
+- controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player
+- controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
+- controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player
+- controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
+- controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
+- controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
+- controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
+- controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX
+- controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
+- controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
+- controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
+- controller mechanics CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-SIGN-002 signController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)
+- controller mechanics CTRL-ATTACK-005 attackController is allowed on the player's own controller and applies the downgrade + upgradeBlocked effects
+
+**`tests/06-controller/6.4-upgrade.test.ts`** (10)
+
+- creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
+- creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
+- creep.upgradeController() CTRL-UPGRADE-003 returns ERR_NOT_IN_RANGE when not within range 3
+- creep.upgradeController() CTRL-UPGRADE-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
+- creep.upgradeController() CTRL-UPGRADE-005 upgradeController succeeds at Chebyshev range 3 and fails at range 4
+- creep.upgradeController() CTRL-UPGRADE-006 upgrade at RCL 8 is capped at CONTROLLER_MAX_UPGRADE_PER_TICK
+- creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
+- creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
+- creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
+- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
+
+**`tests/06-controller/6.6-gensafemode.test.ts`** (4)
+
+- creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store
+- creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- creep.generateSafeMode() CTRL-GENSAFE-003 generateSafeMode increments the controller's safeModeAvailable
+- creep.generateSafeMode() CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium
+
+**`tests/06-controller/6.7-downgrade.test.ts`** (7)
+
+- Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
+- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
+- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
+- Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
+- Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
+- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
+- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
+
+**`tests/06-controller/6.8-safemode.test.ts`** (10)
+
+- Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
+- Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
+- Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
+- Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
+- Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
+- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
+- Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack deals no damage under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack deals no damage under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack deals no damage under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:dismantle hostile dismantle deals no damage under safe mode
+
+**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+
+- StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
+
+**`tests/07-combat/7.1-melee-attack.test.ts`** (20)
+
+- creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
+- creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
+- creep.attack() COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent
+- creep.attack() COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts
+- creep.attack() COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2
+- creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead
+- creep.attack() COMBAT-MELEE-006 target ATTACK parts deal counter-damage back to a melee attacker
+- creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures (non-attackable target → ERR_INVALID_TARGET)
+- creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
+- creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
+- creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
+- creep.rangedAttack() COMBAT-RANGED-004 returns ERR_NO_BODYPART without RANGED_ATTACK parts
+- creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures (non-attackable → ERR_INVALID_TARGET)
+- creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
+- creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
+- creep.heal() COMBAT-HEAL-003 heal accepts any creep target regardless of ownership
+- creep.heal() COMBAT-HEAL-004 heal on a creep at full HP returns OK with no effect
+- creep.heal() COMBAT-RANGEDHEAL-001 rangedHeal heals RANGED_HEAL_POWER HP per HEAL part at range
+- creep.heal() COMBAT-RANGEDHEAL-002 rangedHeal accepts targets at range 1 through 3, ERR_NOT_IN_RANGE at range 4
+- creep.heal() COMBAT-RANGEDHEAL-003 rangedHeal takes priority over rangedAttack when both queue in the same tick
+
+**`tests/07-combat/7.12-tower-intent.test.ts`** (5)
+
+- Tower intent priority TOWER-INTENT-001 a tower performs at most one of attack, heal, or repair in a tick
+- Tower intent priority TOWER-INTENT-002 when heal, repair, and attack are all queued, heal is preferred
+- Tower intent priority TOWER-INTENT-003 lower-priority tower intents do not execute after the chosen action resolves
+- Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
+- Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (13)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
+- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
+- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
+- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
+- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
+- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
+- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
+- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
+- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
+- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
+- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
+- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
+- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+
+**`tests/07-combat/7.15-safemode-combat.test.ts`** (2)
+
+- Safe mode combat effects SAFEMODE-COMBAT-001 a tower in a safe-moded room can still attack a hostile creep
+- Safe mode combat effects SAFEMODE-COMBAT-002 hostile creeps cannot stomp a player's construction sites during safe mode
+
+**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (5)
+
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
+- creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures
+
+**`tests/07-combat/7.7-simultaneous.test.ts`** (5)
+
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick
+- Simultaneous damage & healing resolution COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick
+- Simultaneous damage & healing resolution COMBAT-SIMULT-003 overkill damage does not carry over to the next tick
+- Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
+- Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
+
+**`tests/07-combat/7.9-7.11-tower.test.ts`** (14)
+
+- StructureTower TOWER-ATTACK-002 [range=3] tower.attack() deals the expected falloff damage
+- StructureTower TOWER-ATTACK-002 [range=10] tower.attack() deals the expected falloff damage
+- StructureTower TOWER-ATTACK-002 [range=20] tower.attack() deals the expected falloff damage
+- StructureTower TOWER-ATTACK-001 tower.attack() spends 10 energy in the same tick
+- StructureTower TOWER-HEAL-002 [range=3] tower.heal() restores the expected falloff amount
+- StructureTower TOWER-HEAL-002 [range=10] tower.heal() restores the expected falloff amount
+- StructureTower TOWER-HEAL-002 [range=20] tower.heal() restores the expected falloff amount
+- StructureTower TOWER-HEAL-003 [friendly-creep] tower.heal() returns OK for an in-range friendly creep
+- StructureTower TOWER-HEAL-001 tower.heal() spends 10 energy in the same tick
+- StructureTower TOWER-REPAIR-002 [range=3] tower.repair() restores the expected falloff amount
+- StructureTower TOWER-REPAIR-002 [range=10] tower.repair() restores the expected falloff amount
+- StructureTower TOWER-REPAIR-002 [range=20] tower.repair() restores the expected falloff amount
+- StructureTower TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick
+- StructureTower TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
+
+**`tests/08-boosts/8.1-boost-application.test.ts`** (8)
+
+- Lab boostCreep BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted
+- Lab boostCreep BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part
+- Lab boostCreep BOOST-CREEP-003 boostCreep with bodyPartsCount limits the number of parts boosted
+- Lab boostCreep BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
+- Lab boostCreep BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral
+- Lab boostCreep BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts
+- Lab boostCreep BOOST-CREEP-007 boosted ATTACK part deals increased damage
+- Lab boostCreep BOOST-CREEP-008 boosted HEAL part heals increased HP
+
+**`tests/08-boosts/8.2-unboost.test.ts`** (5)
+
+- lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
+- lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
+- lab.unboostCreep() UNBOOST-004 unboost drops LAB_UNBOOST_MINERAL per part as a resource pile at the creep tile
+- lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
+- lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
+
+**`tests/08-boosts/8.3-boost-aggregation.test.ts`** (2)
+
+- BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 attack: 1 boosted + 1 unboosted ATTACK sums correctly
+- BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 repair: 2 boosted + 1 unboosted WORK sums correctly
+
+**`tests/08-boosts/8.4-8.13-boost-magnitudes.test.ts`** (35)
+
+- BOOST-RANGED-001 rangedAttack boost magnitudes KO (2x)
+- BOOST-RANGED-001 rangedAttack boost magnitudes KHO2 (3x)
+- BOOST-RANGED-001 rangedAttack boost magnitudes XKHO2 (4x)
+- BOOST-HEAL-001 heal boost magnitudes LO (2x)
+- BOOST-HEAL-001 heal boost magnitudes LHO2 (3x)
+- BOOST-HEAL-001 heal boost magnitudes XLHO2 (4x)
+- BOOST-ATTACK-001 attack boost magnitudes UH (2x)
+- BOOST-ATTACK-001 attack boost magnitudes UH2O (3x)
+- BOOST-ATTACK-001 attack boost magnitudes XUH2O (4x)
+- BOOST-DISMANTLE-001 dismantle boost magnitudes ZH (2x)
+- BOOST-DISMANTLE-001 dismantle boost magnitudes ZH2O (3x)
+- BOOST-DISMANTLE-001 dismantle boost magnitudes XZH2O (4x)
+- BOOST-HARVEST-001 harvest boost magnitudes UO (3x)
+- BOOST-HARVEST-001 harvest boost magnitudes UHO2 (5x)
+- BOOST-HARVEST-001 harvest boost magnitudes XUHO2 (7x)
+- BOOST-HARVEST-002 harvest boosts only apply during harvest() BOOST-HARVEST-002 boosted WORK part repairs at normal REPAIR_POWER, not boosted
+- BOOST-BUILD-001 build/repair boost magnitudes LH repair (1.5x)
+- BOOST-BUILD-001 build/repair boost magnitudes LH2O repair (1.8x)
+- BOOST-BUILD-001 build/repair boost magnitudes XLH2O repair (2x)
+- BOOST-BUILD-002 build/repair boosts do not increase energy cost boosted repair costs 1 energy per REPAIR_POWER hits repaired
+- BOOST-UPGRADE-001 upgrade boost magnitudes GH (1.5x)
+- BOOST-UPGRADE-001 upgrade boost magnitudes GH2O (1.8x)
+- BOOST-UPGRADE-001 upgrade boost magnitudes XGH2O (2x)
+- BOOST-UPGRADE-002 upgrade boosts do not increase energy cost boosted upgrade costs 1 energy per progress point
+- BOOST-TOUGH-001 tough damage reduction magnitudes GO (0.7x damage taken)
+- BOOST-TOUGH-001 tough damage reduction magnitudes GHO2 (0.5x damage taken)
+- BOOST-TOUGH-001 tough damage reduction magnitudes XGHO2 (0.3x damage taken)
+- BOOST-TOUGH-002 tough damage reduction applies only to the boosted part damage beyond the boosted TOUGH part hits unboosted parts at full damage
+- BOOST-MOVE-001 move boost fatigue reduction magnitudes ZO (2x fatigue reduction)
+- BOOST-MOVE-001 move boost fatigue reduction magnitudes ZHO2 (3x fatigue reduction)
+- BOOST-MOVE-001 move boost fatigue reduction magnitudes XZHO2 (4x fatigue reduction)
+- BOOST-CARRY-001 carry capacity boost magnitudes KH (2x)
+- BOOST-CARRY-001 carry capacity boost magnitudes KH2O (3x)
+- BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
+- BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
+
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (17)
+
+- StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
+- StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
+- StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
+- StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
+- StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
+- StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
+- StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
+- StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
+- StructureSpawn SPAWN-CREATE-002 spawnCreep returns ERR_INVALID_ARGS for a body exceeding MAX_CREEP_SIZE
+- StructureSpawn SPAWN-CREATE-003 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name
+- StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
+- StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
+- StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
+- StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
+- StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
+- StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
+- StructureSpawn SPAWN-TIMING-006 creep exits the spawn tile in the chosen direction on completion
+
+**`tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts`** (6)
+
+- Spawn stomping SPAWN-STOMP-001 hostile creep is destroyed when all tiles are blocked
+- Spawn stomping SPAWN-STOMP-002 new creep appears on the vacated tile
+- Spawn stomping SPAWN-STOMP-004 no stomp if an open tile exists in preferred directions
+- Spawn stomping SPAWN-STOMP-003 stomp destroys the hostile outside normal combat damage resolution
+- Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
+- Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
+
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (7)
+
+- Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
+- Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
+- Spawn.renewCreep RENEW-CREEP-003 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy
+- Spawn.renewCreep RENEW-CREEP-004 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
+- Spawn.renewCreep RENEW-CREEP-005 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME
+- Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part
+- Spawn.renewCreep RENEW-CREEP-006 renewCreep returns ERR_BUSY when the spawn is currently spawning
+
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (3)
+
+- Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
+- Spawn.recycleCreep RECYCLE-CREEP-002 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
+- Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
+
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (17)
+
+- creep.suicide() CREEP-SUICIDE-001 destroys the creep
+- creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
+- creep.suicide() CREEP-SUICIDE-003 suicide returns ERR_NOT_OWNER on another player's creep
+- creep.suicide() CREEP-SUICIDE-004 suicide returns ERR_BUSY on a spawning creep
+- creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone
+- creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone
+- creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone
+- creep.say() CREEP-SAY-001 say() makes the message visible to the owner for one tick
+- creep.say() CREEP-SAY-002 say(message, true) makes the message visible to all players
+- creep.say() CREEP-SAY-003 without the public flag, only the owner sees the message
+- creep body part damage COMBAT-BODYPART-002 each body part has 100 hits and contributes to hitsMax
+- creep body part damage COMBAT-BODYPART-001 incoming damage is applied to the earliest surviving body part first
+- creep body part damage COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)
+- Creep spawning state CREEP-SPAWNING-001 creep.spawning is true while the creep is being spawned
+- Creep spawning state CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning
+- Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
+- Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
+
+**`tests/09-spawning-lifecycle/9.7a-lifetime.test.ts`** (3)
+
+- creep lifetime CREEP-LIFETIME-001 ticksToLive decrements by 1 each tick
+- creep lifetime CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive
+- creep lifetime CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive
+
+**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (7)
+
+- creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
+- creep death CREEP-DEATH-002 death creates a tombstone at the position of death
+- creep death CREEP-DEATH-003 death resources go into a same-tile container first
+- creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
+- creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
+- creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
+- creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
+
+**`tests/10-structures-energy/10.1-extension.test.ts`** (2)
+
+- StructureExtension EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable
+- StructureExtension EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable
+
+**`tests/10-structures-energy/10.3-container.test.ts`** (1)
+
+- StructureContainer CONTAINER-003 a hostile creep adjacent to a container can withdraw from it
+
+**`tests/10-structures-energy/10.3b-container-decay.test.ts`** (3)
+
+- Container decay CONTAINER-001:unowned room container in unowned room decays by 5000 every 100 ticks
+- Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
+- Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
+
+**`tests/10-structures-energy/10.4-link.test.ts`** (12)
+
+- StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
+- StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
+- StructureLink LINK-003 transfer loss rounds up: sending 1 energy delivers 0
+- StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself
+- StructureLink LINK-005 transferEnergy returns ERR_INVALID_TARGET when target is not a StructureLink
+- StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player
+- StructureLink LINK-007 transferEnergy returns ERR_INVALID_ARGS for a negative amount
+- StructureLink LINK-008 transferEnergy returns ERR_TIRED while source link has cooldown > 0
+- StructureLink LINK-009 transferEnergy returns ERR_RCL_NOT_ENOUGH when source link is inactive
+- StructureLink LINK-010 transferEnergy returns ERR_NOT_ENOUGH_ENERGY when source lacks the requested amount
+- StructureLink LINK-011 transferEnergy returns ERR_FULL when target lacks free capacity for the amount
+- StructureLink LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room
+
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (90)
+
+- Lab runReaction LAB-RUN-001:H+O runReaction produces OH
+- Lab runReaction LAB-RUN-001:H+L runReaction produces LH
+- Lab runReaction LAB-RUN-001:H+K runReaction produces KH
+- Lab runReaction LAB-RUN-001:H+U runReaction produces UH
+- Lab runReaction LAB-RUN-001:H+Z runReaction produces ZH
+- Lab runReaction LAB-RUN-001:H+G runReaction produces GH
+- Lab runReaction LAB-RUN-001:O+L runReaction produces LO
+- Lab runReaction LAB-RUN-001:O+K runReaction produces KO
+- Lab runReaction LAB-RUN-001:O+U runReaction produces UO
+- Lab runReaction LAB-RUN-001:O+Z runReaction produces ZO
+- Lab runReaction LAB-RUN-001:O+G runReaction produces GO
+- Lab runReaction LAB-RUN-001:Z+K runReaction produces ZK
+- Lab runReaction LAB-RUN-001:L+U runReaction produces UL
+- Lab runReaction LAB-RUN-001:OH+UH runReaction produces UH2O
+- Lab runReaction LAB-RUN-001:OH+UO runReaction produces UHO2
+- Lab runReaction LAB-RUN-001:OH+ZH runReaction produces ZH2O
+- Lab runReaction LAB-RUN-001:OH+ZO runReaction produces ZHO2
+- Lab runReaction LAB-RUN-001:OH+KH runReaction produces KH2O
+- Lab runReaction LAB-RUN-001:OH+KO runReaction produces KHO2
+- Lab runReaction LAB-RUN-001:OH+LH runReaction produces LH2O
+- Lab runReaction LAB-RUN-001:OH+LO runReaction produces LHO2
+- Lab runReaction LAB-RUN-001:OH+GH runReaction produces GH2O
+- Lab runReaction LAB-RUN-001:OH+GO runReaction produces GHO2
+- Lab runReaction LAB-RUN-001:X+UH2O runReaction produces XUH2O
+- Lab runReaction LAB-RUN-001:X+UHO2 runReaction produces XUHO2
+- Lab runReaction LAB-RUN-001:X+LH2O runReaction produces XLH2O
+- Lab runReaction LAB-RUN-001:X+LHO2 runReaction produces XLHO2
+- Lab runReaction LAB-RUN-001:X+KH2O runReaction produces XKH2O
+- Lab runReaction LAB-RUN-001:X+KHO2 runReaction produces XKHO2
+- Lab runReaction LAB-RUN-001:X+ZH2O runReaction produces XZH2O
+- Lab runReaction LAB-RUN-001:X+ZHO2 runReaction produces XZHO2
+- Lab runReaction LAB-RUN-001:X+GH2O runReaction produces XGH2O
+- Lab runReaction LAB-RUN-001:X+GHO2 runReaction produces XGHO2
+- Lab runReaction LAB-RUN-001:ZK+UL runReaction produces G
+- Lab runReaction LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab
+- Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]
+- Lab runReaction LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far
+- Lab runReaction LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty
+- Lab runReaction LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity
+- Lab runReaction LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product
+- Lab runReaction LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab
+- Lab runReaction LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown
+- Lab runReaction LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
+- Lab runReaction LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount
+- Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab
+- Lab reverseReaction LAB-REVERSE-001:G reverseReaction splits into UL+ZK
+- Lab reverseReaction LAB-REVERSE-001:GH reverseReaction splits into G+H
+- Lab reverseReaction LAB-REVERSE-001:GH2O reverseReaction splits into GH+OH
+- Lab reverseReaction LAB-REVERSE-001:GHO2 reverseReaction splits into GO+OH
+- Lab reverseReaction LAB-REVERSE-001:GO reverseReaction splits into G+O
+- Lab reverseReaction LAB-REVERSE-001:KH reverseReaction splits into H+K
+- Lab reverseReaction LAB-REVERSE-001:KH2O reverseReaction splits into KH+OH
+- Lab reverseReaction LAB-REVERSE-001:KHO2 reverseReaction splits into KO+OH
+- Lab reverseReaction LAB-REVERSE-001:KO reverseReaction splits into K+O
+- Lab reverseReaction LAB-REVERSE-001:LH reverseReaction splits into H+L
+- Lab reverseReaction LAB-REVERSE-001:LH2O reverseReaction splits into LH+OH
+- Lab reverseReaction LAB-REVERSE-001:LHO2 reverseReaction splits into LO+OH
+- Lab reverseReaction LAB-REVERSE-001:LO reverseReaction splits into L+O
+- Lab reverseReaction LAB-REVERSE-001:OH reverseReaction splits into H+O
+- Lab reverseReaction LAB-REVERSE-001:UH reverseReaction splits into H+U
+- Lab reverseReaction LAB-REVERSE-001:UH2O reverseReaction splits into OH+UH
+- Lab reverseReaction LAB-REVERSE-001:UHO2 reverseReaction splits into OH+UO
+- Lab reverseReaction LAB-REVERSE-001:UL reverseReaction splits into L+U
+- Lab reverseReaction LAB-REVERSE-001:UO reverseReaction splits into O+U
+- Lab reverseReaction LAB-REVERSE-001:XGH2O reverseReaction splits into GH2O+X
+- Lab reverseReaction LAB-REVERSE-001:XGHO2 reverseReaction splits into GHO2+X
+- Lab reverseReaction LAB-REVERSE-001:XKH2O reverseReaction splits into KH2O+X
+- Lab reverseReaction LAB-REVERSE-001:XKHO2 reverseReaction splits into KHO2+X
+- Lab reverseReaction LAB-REVERSE-001:XLH2O reverseReaction splits into LH2O+X
+- Lab reverseReaction LAB-REVERSE-001:XLHO2 reverseReaction splits into LHO2+X
+- Lab reverseReaction LAB-REVERSE-001:XUH2O reverseReaction splits into UH2O+X
+- Lab reverseReaction LAB-REVERSE-001:XUHO2 reverseReaction splits into UHO2+X
+- Lab reverseReaction LAB-REVERSE-001:XZH2O reverseReaction splits into X+ZH2O
+- Lab reverseReaction LAB-REVERSE-001:XZHO2 reverseReaction splits into X+ZHO2
+- Lab reverseReaction LAB-REVERSE-001:ZH reverseReaction splits into H+Z
+- Lab reverseReaction LAB-REVERSE-001:ZH2O reverseReaction splits into OH+ZH
+- Lab reverseReaction LAB-REVERSE-001:ZHO2 reverseReaction splits into OH+ZO
+- Lab reverseReaction LAB-REVERSE-001:ZK reverseReaction splits into K+Z
+- Lab reverseReaction LAB-REVERSE-001:ZO reverseReaction splits into O+Z
+- Lab reverseReaction LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs
+- Lab reverseReaction LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]
+- Lab reverseReaction LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far
+- Lab reverseReaction LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound
+- Lab reverseReaction LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity
+- Lab reverseReaction LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair
+- Lab reverseReaction LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab
+- Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
+- Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
+- Lab reverseReaction LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount
+- Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab
+
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (78)
+
+- Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
+- Factory production FACTORY-PRODUCE-001:cell produce(cell) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:condensate produce(condensate) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:energy produce(energy) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:G produce(G) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:H produce(H) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:K produce(K) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:L produce(L) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:O produce(O) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:oxidant produce(oxidant) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:purifier produce(purifier) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:reductant produce(reductant) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:U produce(U) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:wire produce(wire) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
+- Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
+- Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
+- Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
+- Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
+- Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
+- Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
+- Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
+- Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player
+- Factory commodity chains FACTORY-COMMODITY-001:alloy COMMODITIES[alloy].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:battery COMMODITIES[battery].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:cell COMMODITIES[cell].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:circuit COMMODITIES[circuit].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:composite COMMODITIES[composite].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:concentrate COMMODITIES[concentrate].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:condensate COMMODITIES[condensate].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:crystal COMMODITIES[crystal].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:device COMMODITIES[device].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:emanation COMMODITIES[emanation].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:energy COMMODITIES[energy].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:essence COMMODITIES[essence].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:extract COMMODITIES[extract].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:fixtures COMMODITIES[fixtures].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:frame COMMODITIES[frame].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:G COMMODITIES[G].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:H COMMODITIES[H].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:hydraulics COMMODITIES[hydraulics].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:K COMMODITIES[K].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:L COMMODITIES[L].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:liquid COMMODITIES[liquid].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:machine COMMODITIES[machine].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:microchip COMMODITIES[microchip].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:muscle COMMODITIES[muscle].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:O COMMODITIES[O].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:organism COMMODITIES[organism].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:organoid COMMODITIES[organoid].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:oxidant COMMODITIES[oxidant].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:phlegm COMMODITIES[phlegm].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:purifier COMMODITIES[purifier].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:reductant COMMODITIES[reductant].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:spirit COMMODITIES[spirit].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:switch COMMODITIES[switch].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:tissue COMMODITIES[tissue].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:transistor COMMODITIES[transistor].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:tube COMMODITIES[tube].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:U COMMODITIES[U].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:wire COMMODITIES[wire].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
+- Factory commodity chains FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production
+
+**`tests/11-structures-production/11.6-power-spawn.test.ts`** (6)
+
+- StructurePowerSpawn processPower POWER-SPAWN-001 processPower returns OK and consumes 1 power + POWER_SPAWN_ENERGY_RATIO energy
+- StructurePowerSpawn processPower POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power
+- StructurePowerSpawn processPower POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking power
+- StructurePowerSpawn processPower POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking energy
+- StructurePowerSpawn processPower POWER-SPAWN-004 processPower returns ERR_RCL_NOT_ENOUGH when RCL < 8
+- StructurePowerSpawn processPower POWER-SPAWN-005 processPower returns ERR_NOT_OWNER when not owned by the player
+
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (17)
+
+- StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=4] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=5] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=6] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=7] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-DECAY-003 [rcl=8] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep
+- StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart
+- StructureRampart RAMPART-PROTECT-003 a non-public hostile rampart blocks hostile creep movement
+- StructureRampart RAMPART-PROTECT-004 hostile creep can move onto a public rampart
+- StructureRampart RAMPART-PROTECT-005 setPublic(true) sets isPublic to true
+- StructureRampart RAMPART-PROTECT-006 setPublic(false) sets isPublic to false
+- StructureRampart RAMPART-PROTECT-007 setPublic returns ERR_NOT_OWNER on a rampart not owned by the player
+- StructureRampart RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval
+- StructureRampart RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0
+- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
+
+**`tests/12-structures-military/12.3-wall.test.ts`** (2)
+
+- StructureWall WALL-001 ordinary constructed walls do not decay
+- StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
+
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (5)
+
+- StructureRoad ROAD-HITS-001 road initializes with ROAD_HITS
+- StructureRoad ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
+- StructureRoad ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
+- StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
+- StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
+
+**`tests/13-structures-infrastructure/13.1b-road-decay.test.ts`** (5)
+
+- Road decay ROAD-DECAY-002 road ticksToDecay decreases each tick and decay fires on schedule
+- Road decay ROAD-DECAY-001:plain road on plain terrain decays by 100 per interval
+- Road decay ROAD-DECAY-001:swamp road on swamp terrain decays by 500 per interval
+- Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
+- Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
+
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (9)
+
+- Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
+- Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
+- Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
+- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
+- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
+- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
+- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
+- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
+- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
+
+**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (6)
+
+- StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick
+- StructureObserver OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE
+- StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
+- StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
+- StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player
+- StructureObserver OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit
+
+**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (6)
+
+- StructureExtractor EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount
+- StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN
+- StructureExtractor EXTRACTOR-002 harvest(mineral) returns ERR_NOT_FOUND when no extractor is present
+- StructureExtractor EXTRACTOR-003 harvest(mineral) returns ERR_NOT_OWNER when extractor is not owned by the player
+- StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
+- StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
+
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (4)
+
+- Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
+- Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
+- Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
+- Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
+
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
+
+- Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
+- Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
+- Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
+- Invader core INVADER-CORE-001 ticksToDeploy counts down
+- Invader core INVADER-CORE-002 invader core exposes its level
+- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
+
+**`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
+
+- Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
+- Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
+- Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
+
+**`tests/15-structure-common/15.1-hits.test.ts`** (19)
+
+- Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
+- Structure hits STRUCTURE-HITS-001:extension initializes with 1000 hits
+- Structure hits STRUCTURE-HITS-001:road initializes with 5000 hits
+- Structure hits STRUCTURE-HITS-001:constructedWall initializes with 1 hits
+- Structure hits STRUCTURE-HITS-001:rampart initializes with 1 hits
+- Structure hits STRUCTURE-HITS-001:link initializes with 1000 hits
+- Structure hits STRUCTURE-HITS-001:storage initializes with 10000 hits
+- Structure hits STRUCTURE-HITS-001:tower initializes with 3000 hits
+- Structure hits STRUCTURE-HITS-001:observer initializes with 500 hits
+- Structure hits STRUCTURE-HITS-001:powerSpawn initializes with 5000 hits
+- Structure hits STRUCTURE-HITS-001:extractor initializes with 500 hits
+- Structure hits STRUCTURE-HITS-001:lab initializes with 500 hits
+- Structure hits STRUCTURE-HITS-001:terminal initializes with 3000 hits
+- Structure hits STRUCTURE-HITS-001:container initializes with 250000 hits
+- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
+- Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
+- Structure hits STRUCTURE-HITS-002 destroyable structures expose hits and hitsMax
+- Structure hits STRUCTURE-HITS-003 a structure at 0 hits is destroyed in the same tick
+- Structure hits STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store
+
+**`tests/15-structure-common/15.2-isactive.test.ts`** (23)
+
+- Structure isActive() CTRL-STRUCTLIMIT-002:extension extension reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:extension extension reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:tower tower reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:tower tower reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:storage storage reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:storage storage reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:link link reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:link link reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:extractor extractor reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:extractor extractor reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:lab lab reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:lab lab reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:observer observer reports isActive() === false below required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:observer observer reports isActive() === true at required RCL
+- Structure isActive() CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
+- Structure isActive() STRUCTURE-ACTIVE-001 isActive returns true only for allowed structures at the current RCL
+- Structure isActive() STRUCTURE-ACTIVE-002 inactive structures reject gated gameplay actions
+- Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
+- Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
+- Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
+- CONTROLLER_STRUCTURES limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
+
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (17)
+
+- Construction costs CONSTRUCTION-COST-001:spawn costs 15000
+- Construction costs CONSTRUCTION-COST-001:extension costs 3000
+- Construction costs CONSTRUCTION-COST-001:road costs 300
+- Construction costs CONSTRUCTION-COST-001:constructedWall costs 1
+- Construction costs CONSTRUCTION-COST-001:rampart costs 1
+- Construction costs CONSTRUCTION-COST-001:link costs 5000
+- Construction costs CONSTRUCTION-COST-001:storage costs 30000
+- Construction costs CONSTRUCTION-COST-001:tower costs 5000
+- Construction costs CONSTRUCTION-COST-001:observer costs 8000
+- Construction costs CONSTRUCTION-COST-001:powerSpawn costs 100000
+- Construction costs CONSTRUCTION-COST-001:extractor costs 5000
+- Construction costs CONSTRUCTION-COST-001:lab costs 50000
+- Construction costs CONSTRUCTION-COST-001:terminal costs 100000
+- Construction costs CONSTRUCTION-COST-001:container costs 5000
+- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
+- Construction costs CONSTRUCTION-COST-001:factory costs 100000
+- Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
+
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (6)
+
+- structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
+- structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
+- structure.destroy() STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store
+- structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
+- structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
+- structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
+
+**`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
+
+- Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side
+- Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the concatenation of all four side-specific exit sets
+- Room.find player-relative creep constants ROOM-FIND-006 FIND_MY_CREEPS and FIND_HOSTILE_CREEPS evaluate from the current player perspective
+
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (18)
+
+- room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
+- room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
+- room energy tracking ROOM-ENERGY-001 [active-extensions] room.energyAvailable sums stored energy in active extensions
+- room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
+- room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
+- room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
+- Room.find ROOM-FIND-001 [FIND_MY_CREEPS] player-relative FIND constants evaluate from the current player perspective
+- Room.find ROOM-FIND-001 [FIND_HOSTILE_CREEPS] player-relative FIND constants evaluate from the current player perspective
+- Room.find ROOM-FIND-001 [FIND_MY_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
+- Room.find ROOM-FIND-001 [FIND_HOSTILE_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
+- Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
+- Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
+- Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
+- RoomPosition basics ROOMPOS-001 RoomPosition exposes x, y, and roomName
+- RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
+- RoomPosition find helpers ROOMPOS-FIND-001 findClosestByPath() returns a target already on the same tile before considering other targets
+- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
+- store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
+
+**`tests/16-room-mechanics/16.4-look.test.ts`** (5)
+
+- Room look API ROOM-LOOK-001 lookAt returns all objects on the specified tile
+- Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
+- Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
+- Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
+- Room look API ROOM-LOOK-005 lookForAtArea returns objects within the bounding box
+
+**`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
+
+- Room terrain access ROOM-TERRAIN-001 [plain] Room.Terrain.get(x, y) returns the expected terrain mask
+- Room terrain access ROOM-TERRAIN-001 [wall] Room.Terrain.get(x, y) returns the expected terrain mask
+- Room terrain access ROOM-TERRAIN-001 [swamp] Room.Terrain.get(x, y) returns the expected terrain mask
+- Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
+- Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
+
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (4)
+
+- room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
+- room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
+- room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping
+- room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
+
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (6)
+
+- Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
+- Flags FLAG-002 a created flag stores name, color, and secondaryColor
+- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
+- Flags FLAG-004 Flag.remove() removes the flag from the player flag set
+- Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
+- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
+
+**`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (4)
+
+- source regeneration SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks
+- source regeneration SOURCE-REGEN-001 source energyCapacity in an owned room equals SOURCE_ENERGY_CAPACITY
+- source regeneration SOURCE-REGEN-003 a source below full capacity exposes ticksToRegeneration
+- source regeneration SOURCE-REGEN-004 ticksToRegeneration decreases by 1 each tick
+
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (8)
+
+- mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
+- mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
+- mineral regeneration MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount
+- mineral regeneration MINERAL-REGEN-005 mineral type remains the same after regeneration
+- mineral regeneration MINERAL-REGEN-001:low MINERAL_DENSITY[1] equals 15000
+- mineral regeneration MINERAL-REGEN-001:moderate MINERAL_DENSITY[2] equals 35000
+- mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
+- mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
+
+**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (5)
+
+- Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
+- Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
+- Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
+- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
+- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
+
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (2)
+
+- Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
+- Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
+
+**`tests/18-game-objects/18.2-ruin.test.ts`** (3)
+
+- Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
+- Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
+- Ruin RUIN-003 ruin resources can be withdrawn
+
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
+
+- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
+- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
+- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
+
+**`tests/19-power/19.1-lifecycle.test.ts`** (18)
+
+- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep
+- Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
+- Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
+- Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
+- Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
+- Power creep lifecycle POWERCREEP-ACTION-003 power creeps do not expose body-part action methods
+- Power creep lifecycle POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true
+- Power creep lifecycle POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range
+- Power creep lifecycle POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile
+- Power creep lifecycle POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep
+- Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
+- Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
+- Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
+- Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
+- Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
+- Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
+- Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
+- Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
+
+**`tests/19-power/19.4-19.8-powers.test.ts`** (23)
+
+- Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
+- Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
+- Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
+- Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
+- Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
+- Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
+- Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
+- Tower power effects TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power
+- Tower power effects TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower
+- Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
+- Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
+- Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
+- Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
+- Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
+- Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
+- Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
+- Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
+- Source power effects — additional SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
+- Spawn power effects SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time
+- Spawn power effects POWERCREEP-RENEW-001 renew resets ticksToLive
+- Spawn power effects POWERCREEP-RENEW-002 renew fails for invalid target or out of range
+- Spawn power effects POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
+- Spawn power effects POWERCREEP-DEATH-001 power creep death creates a tombstone
+
+**`tests/20-market/20.2-20.4-market.test.ts`** (16)
+
+- Market orders MARKET-ORDER-001 createOrder creates an order with the requested parameters
+- Market orders MARKET-ORDER-002 createOrder fails with appropriate error codes
+- Market orders MARKET-ORDER-003 cancelOrder returns OK and removes the order
+- Market orders MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for non-existent order
+- Market orders MARKET-ORDER-005 changeOrderPrice updates the order price
+- Market orders MARKET-ORDER-006 changeOrderPrice fails with appropriate error codes
+- Market orders MARKET-ORDER-007 extendOrder increases the remaining amount
+- Market orders MARKET-ORDER-008 extendOrder fails with appropriate error codes
+- Market deal MARKET-DEAL-001 successful deal returns OK and executes a trade
+- Market deal MARKET-DEAL-002 deal energy cost is paid by the caller terminal
+- Market deal MARKET-DEAL-003 deal fails with appropriate error codes
+- Market queries MARKET-QUERY-001 calcTransactionCost returns the formula-based cost
+- Market queries MARKET-QUERY-002 getAllOrders returns matching orders
+- Market queries MARKET-QUERY-003 getOrderById returns the order or null
+- Market queries MARKET-QUERY-004 getHistory returns market history
+- Market queries MARKET-QUERY-005 order prices use public credit units not internal milli-credits
+
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (13)
+
+- RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
+- RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
+- RoomPosition spatial queries ROOMPOS-SPATIAL-003 isNearTo returns true when target is within range 1
+- RoomPosition spatial queries ROOMPOS-SPATIAL-004 isEqualTo returns true when target is on the same tile
+- RoomPosition spatial queries ROOMPOS-SPATIAL-006 getRangeTo returns Infinity for a target in another room
+- RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets
+- RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
+- RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
+- RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set
+- RoomPosition look ROOMPOS-LOOK-001 look() returns {type, ...} records for objects and terrain
+- RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
+- RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
+- RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
+
+**`tests/22-roomposition/22.2-direction.test.ts`** (8)
+
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_RIGHT] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [RIGHT] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [BOTTOM_RIGHT] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [BOTTOM] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [BOTTOM_LEFT] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [LEFT] getDirectionTo() returns the expected direction constant
+- RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_LEFT] getDirectionTo() returns the expected direction constant
+
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (21)
+
+- Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
+- Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
+- Store STORE-OPEN-001:container getCapacity() returns total capacity for container
+- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
+- Store STORE-OPEN-002:storage getCapacity(RESOURCE_ENERGY) returns total capacity for storage
+- Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
+- Store STORE-OPEN-002:container getCapacity(RESOURCE_ENERGY) returns total capacity for container
+- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
+- Store STORE-OPEN-003 getUsedCapacity and getFreeCapacity reflect mixed contents
+- Store STORE-SINGLE-001:spawn getCapacity(RESOURCE_ENERGY) returns 300 for spawn
+- Store STORE-SINGLE-001:tower getCapacity(RESOURCE_ENERGY) returns 1000 for tower
+- Store STORE-SINGLE-001:link getCapacity(RESOURCE_ENERGY) returns 800 for link
+- Store STORE-SINGLE-001:extension getCapacity(RESOURCE_ENERGY) returns RCL-based capacity for extension
+- Store STORE-SINGLE-002 getCapacity() with no argument returns null for energy-only stores
+- Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
+- Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
+- Store STORE-RESTRICTED-001 lab getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-004 restricted store getCapacity returns null for disallowed resource
+- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
+
+**`tests/23-store-api/23.5-timers.test.ts`** (2)
+
+- Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
+- Timer gating TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0
+
+**`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (28)
+
+- Intent creep priority INTENT-CREEP-001:heal>rangedHeal heal blocks rangedHeal
+- Intent creep priority INTENT-CREEP-001:rangedHeal>dismantle rangedHeal blocks dismantle
+- Intent creep priority INTENT-CREEP-001:heal>dismantle heal blocks dismantle
+- Intent creep priority INTENT-CREEP-001:dismantle>repair dismantle blocks repair
+- Intent creep priority INTENT-CREEP-001:rangedHeal>repair rangedHeal blocks repair
+- Intent creep priority INTENT-CREEP-001:heal>repair heal blocks repair
+- Intent creep priority INTENT-CREEP-001:repair>build repair blocks build
+- Intent creep priority INTENT-CREEP-001:dismantle>build dismantle blocks build
+- Intent creep priority INTENT-CREEP-001:rangedHeal>build rangedHeal blocks build
+- Intent creep priority INTENT-CREEP-001:heal>build heal blocks build
+- Intent creep priority INTENT-CREEP-001:build>attack build blocks attack
+- Intent creep priority INTENT-CREEP-001:repair>attack repair blocks attack
+- Intent creep priority INTENT-CREEP-001:dismantle>attack dismantle blocks attack
+- Intent creep priority INTENT-CREEP-001:rangedHeal>attack rangedHeal blocks attack
+- Intent creep priority INTENT-CREEP-001:heal>attack heal blocks attack
+- Intent creep priority INTENT-CREEP-001:attack>harvest attack blocks harvest
+- Intent creep priority INTENT-CREEP-001:build>harvest build blocks harvest
+- Intent creep priority INTENT-CREEP-001:repair>harvest repair blocks harvest
+- Intent creep priority INTENT-CREEP-001:dismantle>harvest dismantle blocks harvest
+- Intent creep priority INTENT-CREEP-001:rangedHeal>harvest rangedHeal blocks harvest
+- Intent creep priority INTENT-CREEP-001:heal>harvest heal blocks harvest
+- Intent creep priority INTENT-CREEP-001:build>rangedMassAttack build blocks rangedMassAttack
+- Intent creep priority INTENT-CREEP-001:repair>rangedMassAttack repair blocks rangedMassAttack
+- Intent creep priority INTENT-CREEP-001:rangedHeal>rangedMassAttack rangedHeal blocks rangedMassAttack
+- Intent creep priority INTENT-CREEP-001:rangedMassAttack>rangedAttack rangedMassAttack blocks rangedAttack
+- Intent creep priority INTENT-CREEP-001:build>rangedAttack build blocks rangedAttack
+- Intent creep priority INTENT-CREEP-001:repair>rangedAttack repair blocks rangedAttack
+- Intent creep priority INTENT-CREEP-001:rangedHeal>rangedAttack rangedHeal blocks rangedAttack
+
+**`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`** (3)
+
+- Intent overwrite and cancel INTENT-CREEP-002 repeated same-tick calls keep only the last intent
+- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
+- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
+
+**`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
+
+- Same-tick resource intent visibility INTENT-RESOURCE-001 withdraw does not make resources available to same-tick actions
+- Same-tick resource intent visibility INTENT-RESOURCE-002 transfer removes from sender in same tick
+- Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist
+- Same-tick resource intent visibility INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed
+
+**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (2)
+
+- Per-tick intent limits INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table
+- Per-tick intent limits INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect
+
+**`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (2)
+
+- Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
+- Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
+
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (12)
+
+- Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
+- Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
+- Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
+- Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
+- RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
+- RawMemory RAWMEMORY-002 segment limits match canonical constants
+- RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
+- RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
+- Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
+- Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data
+- Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
+- Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
+
 </details>
+
+## xxscreeps passing tests
+
+_none_
+
 

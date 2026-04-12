@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, MOVE, WORK, FIND_CREEPS,
+	OK, MOVE, WORK, CARRY, FIND_CREEPS, BODYPART_HITS,
 } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
@@ -77,6 +77,61 @@ describe('Room transitions', () => {
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.name).toBe('Persistent');
 		expect(creep.pos.roomName).toBe('W2N1');
+	});
+
+	transitionTest('ROOM-TRANSITION-005 body, hits, and store preserved across room transition', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+			],
+		});
+		await shard.tick();
+
+		const exitInfo = await shard.runPlayer('p1', code`
+			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
+				.filter(e => e.y > 5 && e.y < 44);
+			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
+		`) as { x: number; y: number } | null;
+		expect(exitInfo).not.toBeNull();
+
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [exitInfo!.x + 1, exitInfo!.y], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 25 },
+			name: 'Packed',
+		});
+		await shard.tick();
+
+		// Snapshot state before transition.
+		const before = await shard.expectObject(creepId, 'creep');
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).move(LEFT)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		// Creep should have transitioned; if not after one tick, allow a second.
+		let after = await shard.expectObject(creepId, 'creep');
+		if (after.pos.roomName !== 'W2N1') {
+			await shard.tick();
+			after = await shard.expectObject(creepId, 'creep');
+		}
+		expect(after.pos.roomName).toBe('W2N1');
+
+		// Body parts preserved.
+		expect(after.body.map(p => ({ type: p.type, hits: p.hits }))).toEqual(
+			before.body.map(p => ({ type: p.type, hits: p.hits })),
+		);
+
+		// Hits preserved.
+		expect(after.hits).toBe(before.hits);
+		expect(after.hitsMax).toBe(before.hitsMax);
+
+		// Store preserved.
+		expect(after.store.energy).toBe(before.store.energy);
 	});
 
 	transitionTest('ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile', async ({ shard }) => {

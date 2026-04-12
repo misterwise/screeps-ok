@@ -1,10 +1,15 @@
 import { describe, test, expect, code, body,
-	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, ERR_NOT_OWNER, ERR_FULL, ERR_INVALID_TARGET,
+	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES,
+	ERR_FULL, ERR_INVALID_TARGET, ERR_INVALID_ARGS, ERR_BUSY,
 	WORK, CARRY, MOVE,
 	FIND_CREEPS, FIND_DROPPED_RESOURCES,
+	RESOURCE_ENERGY,
 	STRUCTURE_CONTAINER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_TERMINAL,
-	CARRY_CAPACITY, ENERGY_DECAY,
+	STRUCTURE_LAB, STRUCTURE_NUKER,
+	CARRY_CAPACITY, ENERGY_DECAY, SPAWN_ENERGY_CAPACITY,
+	LAB_MINERAL_CAPACITY,
 	PWR_DISRUPT_TERMINAL,
+	SAFE_MODE_DURATION,
 } from '../../src/index.js';
 
 describe('creep.withdraw()', () => {
@@ -213,6 +218,178 @@ describe('creep.withdraw()', () => {
 		`);
 		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
+
+	test('WITHDRAW-009 withdraw returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: [CARRY, MOVE],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('WITHDRAW-010 withdraw returns ERR_BUSY while spawning', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+		await shard.tick();
+
+		const spawnRc = await shard.runPlayer('p1', code`
+			Object.values(Game.spawns)[0].spawnCreep([CARRY, MOVE], 'Hauler')
+		`);
+		expect(spawnRc).toBe(OK);
+
+		const rc = await shard.runPlayer('p1', code`
+			const c = Game.creeps['Hauler'];
+			c ? c.withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY) : -99
+		`);
+		expect(rc).toBe(ERR_BUSY);
+	});
+
+	test('WITHDRAW-011 withdraw returns ERR_INVALID_ARGS for invalid resourceType or negative amount', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const creep = Game.getObjectById(${creepId});
+			const target = Game.getObjectById(${containerId});
+			({
+				invalidType: creep.withdraw(target, 'not_a_resource'),
+				negativeAmount: creep.withdraw(target, RESOURCE_ENERGY, -10),
+			})
+		`) as { invalidType: number; negativeAmount: number };
+
+		expect(result.invalidType).toBe(ERR_INVALID_ARGS);
+		expect(result.negativeAmount).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('WITHDRAW-012 withdraw returns ERR_NOT_OWNER during hostile safe mode', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 3, owner: 'p2', safeMode: SAFE_MODE_DURATION },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+			],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers', async ({ shard }) => {
+		shard.requires('nuke');
+		await shard.ownedRoom('p1', 'W1N1', 8);
+		const nukerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_NUKER, owner: 'p1',
+			store: { energy: 100000 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${nukerId}), RESOURCE_ENERGY)
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
+	});
+
+	test('WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${spawnId}), RESOURCE_HYDROGEN)
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
+	});
+
+	test('WITHDRAW-015 withdrawing last mineral from lab clears mineral slot', async ({ shard }) => {
+		shard.requires('chemistry');
+		await shard.ownedRoom('p1', 'W1N1', 6);
+		const labId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_LAB, owner: 'p1',
+			store: { H: 10 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${labId}), RESOURCE_HYDROGEN, 10)
+		`);
+		expect(rc).toBe(OK);
+
+		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
+		expect((lab.store as Record<string, number>).H ?? 0).toBe(0);
+		expect(lab.mineralType).toBeNull();
+	});
+
+	test('WITHDRAW-016 withdraw returns ERR_FULL when amount exceeds creep free capacity', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 40 },
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY, 20)
+		`);
+		expect(rc).toBe(ERR_FULL);
+	});
 });
 
 describe('creep.drop()', () => {
@@ -323,6 +500,129 @@ describe('creep.drop()', () => {
 			Game.getObjectById(${creepId}).drop(RESOURCE_HYDROGEN)
 		`);
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
+	});
+
+	test('DROP-005 drop returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: [CARRY, MOVE],
+			store: { energy: 50 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('DROP-006 drop returns ERR_BUSY while spawning', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const spawnRc = await shard.runPlayer('p1', code`
+			Object.values(Game.spawns)[0].spawnCreep([CARRY, MOVE], 'Dropper')
+		`);
+		expect(spawnRc).toBe(OK);
+
+		const rc = await shard.runPlayer('p1', code`
+			const c = Game.creeps['Dropper'];
+			c ? c.drop(RESOURCE_ENERGY) : -99
+		`);
+		expect(rc).toBe(ERR_BUSY);
+	});
+
+	test('DROP-007 drop returns ERR_INVALID_ARGS for invalid resourceType', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop('not_a_resource')
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('DROP-008 drop inserts into same-tile container before creating pile', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 100 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 30 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+
+		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
+		expect(container.store.energy).toBe(130);
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const piles = drops.filter(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(piles.length).toBe(0);
+	});
+
+	test('DROP-009 drop onto empty tile creates a new Resource', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 30 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(pile).toBeDefined();
+		expect(pile!.resourceType).toBe(RESOURCE_ENERGY);
+		expect(pile!.amount).toBeGreaterThan(0);
+	});
+
+	test('DROP-010 dropping different resource type creates separate Resource', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeDroppedResource('W1N1', {
+			pos: [25, 25], resourceType: RESOURCE_ENERGY, amount: 100,
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { H: 20 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_HYDROGEN)
+		`);
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const piles = drops.filter(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(piles.length).toBe(2);
+		expect(piles.find(r => r.resourceType === RESOURCE_ENERGY)).toBeDefined();
+		expect(piles.find(r => r.resourceType === 'H')).toBeDefined();
 	});
 });
 
@@ -461,6 +761,122 @@ describe('creep.pickup()', () => {
 		`);
 		expect(rc).toBe(ERR_FULL);
 	});
+
+	test('PICKUP-005 pickup returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		await shard.placeDroppedResource('W1N1', {
+			pos: [25, 25], resourceType: RESOURCE_ENERGY, amount: 50,
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p2',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const picker = Game.getObjectById(${creepId});
+			const pile = picker.room.lookForAt(LOOK_RESOURCES, picker.pos)[0];
+			pile ? picker.pickup(pile) : -99
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test('PICKUP-006 pickup returns ERR_BUSY while spawning', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.placeDroppedResource('W1N1', {
+			pos: [25, 26], resourceType: RESOURCE_ENERGY, amount: 50,
+		});
+		await shard.tick();
+
+		const spawnRc = await shard.runPlayer('p1', code`
+			Object.values(Game.spawns)[0].spawnCreep([CARRY, MOVE], 'Picker')
+		`);
+		expect(spawnRc).toBe(OK);
+
+		const rc = await shard.runPlayer('p1', code`
+			const c = Game.creeps['Picker'];
+			c ? (c.room.find(FIND_DROPPED_RESOURCES)[0] ? c.pickup(c.room.find(FIND_DROPPED_RESOURCES)[0]) : -98) : -99
+		`);
+		expect(rc).toBe(ERR_BUSY);
+	});
+
+	test('PICKUP-007 pickup returns ERR_INVALID_TARGET for a non-Resource target', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 500 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).pickup(Game.getObjectById(${containerId}))
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
+	});
+
+	test('PICKUP-008 pickup removes resource pile when amount reaches 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeDroppedResource('W1N1', {
+			pos: [25, 25], resourceType: RESOURCE_ENERGY, amount: 50,
+		});
+		const pickerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: body(3, CARRY, MOVE),
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			const picker = Game.getObjectById(${pickerId});
+			const pile = picker.room.lookForAt(LOOK_RESOURCES, picker.pos)[0];
+			pile ? picker.pickup(pile) : -99
+		`);
+
+		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const piles = remaining.filter(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(piles.length).toBe(0);
+	});
+
+	test('PICKUP-009 pickup reduces resource pile amount by picked-up quantity', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeDroppedResource('W1N1', {
+			pos: [25, 25], resourceType: RESOURCE_ENERGY, amount: 200,
+		});
+		const pickerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const picker = Game.getObjectById(${pickerId});
+			const pile = picker.room.lookForAt(LOOK_RESOURCES, picker.pos)[0];
+			({ preAmount: pile ? pile.amount : null, rc: pile ? picker.pickup(pile) : -99 })
+		`) as { preAmount: number | null; rc: number };
+		expect(result.rc).toBe(OK);
+
+		const picker = await shard.expectObject(pickerId, 'creep');
+		expect(picker.store.energy).toBe(CARRY_CAPACITY);
+
+		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const piles = remaining.filter(r => r.pos.x === 25 && r.pos.y === 25);
+		expect(piles.length).toBe(1);
+		const expectedAfter = (result.preAmount! - CARRY_CAPACITY) -
+			Math.ceil((result.preAmount! - CARRY_CAPACITY) / ENERGY_DECAY);
+		expect(piles[0].amount).toBe(expectedAfter);
+	});
 });
 
 describe('Dropped resource decay', () => {
@@ -594,5 +1010,29 @@ describe('Dropped resource decay', () => {
 		// after pickup intent) leave the picker with 48-50 energy.
 		expect(picker.store.energy).toBeGreaterThanOrEqual(48);
 		expect(picker.store.energy).toBeLessThanOrEqual(50);
+	});
+
+	test('DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 40 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).drop(RESOURCE_ENERGY)
+		`);
+
+		const result = await shard.runPlayer('p1', code`
+			const pile = Game.rooms['W1N1'].lookForAt(LOOK_RESOURCES, 25, 25)[0];
+			pile ? ({ amount: pile.amount, resourceType: pile.resourceType, hasId: typeof pile.id === 'string' }) : null
+		`) as { amount: number; resourceType: string; hasId: boolean } | null;
+
+		expect(result).not.toBeNull();
+		expect(result!.resourceType).toBe(RESOURCE_ENERGY);
+		expect(result!.amount).toBeGreaterThan(0);
+		expect(result!.hasId).toBe(true);
 	});
 });

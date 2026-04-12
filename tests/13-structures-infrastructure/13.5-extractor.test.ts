@@ -27,7 +27,7 @@ describe('StructureExtractor', () => {
 		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
 	});
 
-	test('EXTRACTOR-001 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN', async ({ shard }) => {
+	test('EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],

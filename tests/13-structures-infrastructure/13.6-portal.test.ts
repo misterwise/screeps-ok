@@ -90,6 +90,41 @@ describe('Portal mechanics', () => {
 		expect(decay).toBeNull();
 	});
 
+	portalTest('PORTAL-005 creep landing on a portal tile is transported next tick without a move intent', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+			],
+		});
+		await shard.placeObject('W1N1', 'portal', {
+			pos: [25, 25],
+			destination: { room: 'W2N1', x: 10, y: 10 },
+		});
+		// Creep starts adjacent. Step ONTO the portal tile this tick.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [MOVE],
+			name: 'PortalStepper',
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).move(TOP)
+		`);
+		expect(rc).toBe(0);
+
+		// After the step tick, the creep sits on the portal with NO pending move intent.
+		// The next tick advances without any player code, proving passive transport.
+		await shard.tick();
+
+		const creeps = await shard.findInRoom('W2N1', FIND_CREEPS);
+		const teleported = creeps.find(c => c.name === 'PortalStepper');
+		expect(teleported).toBeDefined();
+		expect(teleported!.pos.x).toBe(10);
+		expect(teleported!.pos.y).toBe(10);
+	});
+
 	portalTest('PORTAL-003 cross-shard portal exposes destination as { shard, room }', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
