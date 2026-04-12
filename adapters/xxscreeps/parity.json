@@ -28,9 +28,9 @@
 			"summary": "link.transferEnergy cooldown not persisted (processor missing context.didUpdate, only manifests in structure-only rooms without creeps)",
 			"tests": ["LINK-002"]
 		},
-		"lab-unrestricted-mineral-capacity": {
-			"summary": "Lab store.getCapacity returns LAB_MINERAL_CAPACITY for any mineral type",
-			"tests": ["STORE-RESTRICTED-004"]
+		"lab-bound-getfreecapacity-returns-zero": {
+			"summary": "Bound lab's store.getFreeCapacity(otherMineral) returns 0 instead of null; getCapacity and getUsedCapacity correctly return null",
+			"tests": ["STORE-BIND-002"]
 		},
 		"rampart-no-protection": {
 			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle/rangedAttack/rangedMassAttack processors)",

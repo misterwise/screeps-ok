@@ -2752,11 +2752,23 @@ Coverage Notes
   For restricted stores, `getCapacity(type)`, `getUsedCapacity(type)`, and
   `getFreeCapacity(type)` return numeric values for allowed resource types.
 - [ ] `STORE-RESTRICTED-004` `matrix` `verified_vanilla`
-  For restricted stores, `getCapacity(type)`, `getUsedCapacity(type)`, and
-  `getFreeCapacity(type)` return `null` for disallowed resource types.
+  For pre-bound restricted stores (nuker, power spawn), `getCapacity(type)`,
+  `getUsedCapacity(type)`, and `getFreeCapacity(type)` return `null` for
+  disallowed resource types. Labs are excluded from this behavior because
+  their mineral slot binds dynamically — see `STORE-BIND-001`/`-002`.
 - [ ] `STORE-RESTRICTED-005` `matrix` `verified_vanilla`
   For restricted stores, `getCapacity()`, `getUsedCapacity()`, and
   `getFreeCapacity()` without a resource argument return `null`.
+- [ ] `STORE-BIND-001` `behavior` `verified_vanilla`
+  On an unbound lab (no mineral stored), `store.getCapacity(mineralType)`
+  returns `LAB_MINERAL_CAPACITY` for any non-energy resource — the mineral
+  slot is open until a deposit binds it.
+- [ ] `STORE-BIND-002` `matrix` `verified_vanilla`
+  Once a mineral is stored in a lab, the mineral slot is bound to that type:
+  `getCapacity(boundMineral)` returns `LAB_MINERAL_CAPACITY`,
+  `getUsedCapacity(boundMineral)` reflects the stored amount, and
+  `getCapacity(otherMineral)`, `getUsedCapacity(otherMineral)`, and
+  `getFreeCapacity(otherMineral)` return `null`.
 
 ### 23.5 Timer Models
 - [ ] `TIMER-COOLDOWN-001` `behavior` `needs_vanilla_verification`

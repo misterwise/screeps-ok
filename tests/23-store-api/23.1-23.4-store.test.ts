@@ -11,6 +11,7 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { storeOpenCases } from '../../src/matrices/store-open.js';
 import { storeSingleFixedCases } from '../../src/matrices/store-single.js';
+import { storeDisallowedCases } from '../../src/matrices/store-disallowed.js';
 
 // Minimum RCL that allows at least one of each structure type.
 const minRcl: Record<string, number> = {
@@ -237,18 +238,98 @@ describe('Store', () => {
 		});
 	});
 
-	test('STORE-RESTRICTED-004 restricted store getCapacity returns null for disallowed resource', async ({ shard }) => {
+	// STORE-RESTRICTED-004 is scoped to pre-bound restricted stores (nuker,
+	// powerSpawn). Labs bind their mineral slot dynamically on first deposit,
+	// so on an unbound lab no non-energy resource is "disallowed" — see
+	// STORE-BIND-001/002 below for lab-specific binding semantics.
+	for (const { label, structureType, capability, rcl, disallowed } of storeDisallowedCases) {
+		test(`STORE-RESTRICTED-004:${label} restricted store returns null for disallowed resources`, async ({ shard }) => {
+			shard.requires(capability);
+
+			await shard.ownedRoom('p1', 'W1N1', rcl);
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType, owner: 'p1',
+			});
+
+			const result = await shard.runPlayer('p1', code`
+				const s = Game.getObjectById(${id}).store;
+				const resources = ${disallowed};
+				resources.map(r => ({
+					resource: r,
+					cap: s.getCapacity(r),
+					used: s.getUsedCapacity(r),
+					free: s.getFreeCapacity(r),
+				}))
+			`);
+
+			const expected = disallowed.map(r => ({
+				resource: r, cap: null, used: null, free: null,
+			}));
+			expect(result).toEqual(expected);
+		});
+	}
+
+	// ── STORE-LAB-BIND: lab mineral slot binding semantics ───────────────
+
+	test('STORE-BIND-001 unbound lab mineral slot accepts any non-energy resource', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 6);
 		const id = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
 		});
 
-		// Labs accept energy + one mineral, not power.
+		// Fresh lab (no mineral stored): the mineral slot is open, so
+		// getCapacity(mineral) returns LAB_MINERAL_CAPACITY for any candidate.
 		const result = await shard.runPlayer('p1', code`
-			Game.getObjectById(${id}).store.getCapacity(RESOURCE_POWER)
+			const s = Game.getObjectById(${id}).store;
+			({
+				capH: s.getCapacity('H'),
+				capO: s.getCapacity('O'),
+				capG: s.getCapacity('G'),
+				capEnergy: s.getCapacity(RESOURCE_ENERGY),
+			})
 		`);
-		expect(result).toBeNull();
+		expect(result).toEqual({
+			capH: LAB_MINERAL_CAPACITY,
+			capO: LAB_MINERAL_CAPACITY,
+			capG: LAB_MINERAL_CAPACITY,
+			capEnergy: LAB_ENERGY_CAPACITY,
+		});
 	});
+
+	for (const boundMineral of ['H', 'O', 'G'] as const) {
+		test(`STORE-BIND-002:${boundMineral} stored mineral binds the lab slot`, async ({ shard }) => {
+			await shard.ownedRoom('p1', 'W1N1', 6);
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
+				store: { [boundMineral]: 100 },
+			});
+
+			// Pick an "other" mineral distinct from the bound one.
+			const otherMineral = boundMineral === 'H' ? 'O' : 'H';
+
+			const result = await shard.runPlayer('p1', code`
+				const s = Game.getObjectById(${id}).store;
+				({
+					capBound: s.getCapacity(${boundMineral}),
+					capOther: s.getCapacity(${otherMineral}),
+					capEnergy: s.getCapacity(RESOURCE_ENERGY),
+					usedBound: s.getUsedCapacity(${boundMineral}),
+					usedOther: s.getUsedCapacity(${otherMineral}),
+					freeBound: s.getFreeCapacity(${boundMineral}),
+					freeOther: s.getFreeCapacity(${otherMineral}),
+				})
+			`);
+			expect(result).toEqual({
+				capBound: LAB_MINERAL_CAPACITY,
+				capOther: null,
+				capEnergy: LAB_ENERGY_CAPACITY,
+				usedBound: 100,
+				usedOther: null,
+				freeBound: LAB_MINERAL_CAPACITY - 100,
+				freeOther: null,
+			});
+		});
+	}
 
 	test('STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts', async ({ shard }) => {
 		shard.requires('nuke');
