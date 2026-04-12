@@ -2,7 +2,7 @@ import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS } from '../../s
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
 const memTest = hasDocumentedAdapterLimitation('memorySupport') ? test.skip : test;
-const preMemoryTest = (hasDocumentedAdapterLimitation('memorySupport') || hasDocumentedAdapterLimitation('rawMemoryBeforeMemoryAccess')) ? test.skip : test;
+const preMemoryTest = memTest;
 
 describe('Memory', () => {
 	preMemoryTest('MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees', async ({ shard }) => {

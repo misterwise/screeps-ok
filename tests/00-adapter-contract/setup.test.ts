@@ -1,13 +1,21 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
 
-// Vanilla's mockup runtime disables users that own no room objects, so a
-// "headless" second player cannot execute code there today.
-const supportsHeadlessMultiPlayer = !hasDocumentedAdapterLimitation('headlessMultiPlayer');
-const multiPlayerTest = supportsHeadlessMultiPlayer ? test : test.skip;
+// PlayerSpec.gcl is honored only by adapters that expose a per-player GCL
+// override (vanilla today). The `playerGclControl` gate reports adapters
+// that don't, so the contract test for the override skips honestly there.
+const playerGclTest = hasDocumentedAdapterLimitation('playerGclControl')
+	? test.skip
+	: test;
+
+// placeFlag is honored only by adapters that surface flags to player code
+// (vanilla today). The `flagSupport` gate reports adapters that don't.
+const flagTest = hasDocumentedAdapterLimitation('flagSupport')
+	? test.skip
+	: test;
 
 describe('adapter contract: setup', () => {
 	describe('createShard', () => {
@@ -20,7 +28,7 @@ describe('adapter contract: setup', () => {
 			expect(typeof time).toBe('number');
 		});
 
-		multiPlayerTest('creates multiple players', async ({ shard }) => {
+		test('creates multiple players', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -65,6 +73,35 @@ describe('adapter contract: setup', () => {
 			expect((result as any).hasRoom).toBe(true);
 			expect((result as any).level).toBe(4);
 			expect((result as any).my).toBe(true);
+		});
+
+		playerGclTest('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
+			// Contract: when a player spec sets a low `gcl`, the adapter must
+			// write that value into the engine's user record so Game.gcl.level
+			// reflects it. The cheapest end-to-end probe is the engine's own
+			// claim cap: with gcl=0 the player can own at most 1 room, so a
+			// second claimController() must return ERR_GCL_NOT_ENOUGH.
+			await shard.createShard({
+				players: [{ name: 'p1', gcl: 0 }],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1' },
+				],
+			});
+			const ctrlPos = await shard.getControllerPos('W2N1');
+			const creepId = await shard.placeCreep('W2N1', {
+				pos: [ctrlPos!.x + 1, ctrlPos!.y],
+				owner: 'p1',
+				body: [CLAIM, MOVE],
+			});
+			await shard.tick();
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).claimController(
+					Game.rooms['W2N1'].controller
+				)
+			`);
+			expect(rc).toBe(ERR_GCL_NOT_ENOUGH);
 		});
 
 		test('terrain spec is honored end-to-end (room.getTerrain and PathFinder)', async ({ shard }) => {
@@ -264,10 +301,7 @@ describe('adapter contract: setup', () => {
 			expect(result).toBe(200);
 		});
 
-		const supportsCustomHits = !hasDocumentedAdapterLimitation('structureCustomHits');
-		const customHitsTest = supportsCustomHits ? test : test.skip;
-
-		customHitsTest('structure hits is initialized', async ({ shard }) => {
+		test('structure hits is initialized', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeStructure('W1N1', {
 				pos: [25, 25],
@@ -383,10 +417,12 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('placeFlag', () => {
-		// xxscreeps simulate().player() uses runForUser (no TickPayload), so
-		// Game.flags is never populated. Same root cause as Memory/RawMemory.
-		// Tracked for upstream fix: simulate() needs TickPayload-aware player mode.
-		test.skip('places a flag retrievable by name in player code', async ({ shard }) => {
+		// Skipped on adapters that don't surface flags to player code; the
+		// `flagSupport` gate reports xxscreeps today (its `simulate().player()`
+		// uses `runForUser` without a TickPayload, so `Game.flags` is never
+		// populated). Vanilla writes flags to `db['rooms.flags']` and the
+		// engine driver loads them via `data.js:140`.
+		flagTest('places a flag retrievable by name in player code', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.placeFlag('W1N1', {
 				pos: [25, 25],

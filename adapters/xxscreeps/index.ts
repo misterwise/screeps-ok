@@ -138,8 +138,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		for (let i = 0; i < spec.players.length; i++) {
 			if (i >= playerSlots.length) throw new Error(`Max ${playerSlots.length} players`);
-			this.playerMap.set(spec.players[i], playerSlots[i]);
-			this.reversePlayerMap.set(playerSlots[i], spec.players[i]);
+			const entry = spec.players[i];
+			const handle = typeof entry === 'string' ? entry : entry.name;
+			// PlayerSpec.gcl is intentionally ignored: xxscreeps synthesizes
+			// Game.gcl from owned room count and exposes no override, so the
+			// `playerGclControl` limitation stays gated for this adapter.
+			this.playerMap.set(handle, playerSlots[i]);
+			this.reversePlayerMap.set(playerSlots[i], handle);
 		}
 
 		for (const roomSpec of spec.rooms) {
@@ -147,6 +152,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const owner = roomSpec.owner ? this.resolvePlayer(roomSpec.owner) : undefined;
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
 				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
+				const safeModeRemaining = roomSpec.safeMode ?? 0;
 				this.queueOp(roomSpec.name, room => {
 					if (rcl > 0 && owner) {
 						room['#level'] = rcl;
@@ -154,6 +160,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					}
 					if (safeModeAvail > 0 && room.controller) {
 						room.controller.safeModeAvailable = safeModeAvail;
+					}
+					if (safeModeRemaining > 0 && room.controller) {
+						// xxscreeps stores active safe mode as `#safeModeUntil`
+						// on the room object (absolute tick); the getter at
+						// `xxscreeps/src/mods/controller/controller.ts:28`
+						// reports `Math.max(0, #safeModeUntil - Game.time)`.
+						(room as any)['#safeModeUntil'] = Game.time + safeModeRemaining;
 					}
 				});
 			}

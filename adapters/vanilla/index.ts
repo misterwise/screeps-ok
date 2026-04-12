@@ -1,5 +1,5 @@
 import type {
-	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
+	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerSpec, PlayerReturnValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, TerrainSpec,
@@ -123,49 +123,98 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		// Create players manually (no addBot — avoids phantom spawns and controller overwrites)
+		// CRITICAL: the wrapper must NOT touch `Memory` before user code runs.
+		// `Memory` is a one-shot getter at @screeps/engine/dist/game/game.js:468
+		// — first access parses raw memory and replaces itself with a static
+		// value, so any later `RawMemory.set` from user code can no longer
+		// affect what `Memory` sees. MEMORY-001 (`RawMemory.set before first
+		// Memory access replaces what Memory sees`) requires that the user's
+		// expression is the first thing to touch Memory in the tick.
+		//
+		// Sequence: read the eval payload via RawMemory.get() (no Memory
+		// touch), eval user code, then write the result envelope into Memory
+		// at the very end. By that point user code has had its chance to
+		// access Memory or call RawMemory.set; the engine's tick-end
+		// auto-serialize at @screeps/driver/lib/runtime/runtime.js:246-248
+		// picks up our Memory mutation and persists it. We must NOT call
+		// RawMemory.set ourselves — that would drop any Memory mutations
+		// the user made (rawMemory._parsed wins over rawMemory.get() in
+		// the auto-serialize, but only if we don't override the raw string
+		// with a stale snapshot first).
 		const loopCode = `module.exports.loop = function() {
-			if (Memory._screepsOk) {
-				Memory._screepsOkExecuted = true;
-				try {
-					var _sokResult = eval(Memory._screepsOk);
-					if (_sokResult === undefined) {
-						_sokResult = null;
-					} else if (_sokResult !== null && typeof _sokResult === 'object'
-						&& !Array.isArray(_sokResult) && _sokResult.constructor !== Object) {
-						Memory._screepsOkResult = JSON.stringify({
-							ok: false, errorType: 'SerializationError',
-							error: 'Return value is a ' + (_sokResult.constructor ? _sokResult.constructor.name : 'non-plain') + ' object, not a plain JSON value',
-						});
-						delete Memory._screepsOk;
-						RawMemory.set(JSON.stringify(Memory));
-						return;
-					}
-					Memory._screepsOkResult = JSON.stringify({ ok: true, value: _sokResult });
-				} catch (e) {
-					Memory._screepsOkResult = JSON.stringify({
-						ok: false, error: e.message, errorType: e.constructor ? e.constructor.name : 'Error',
-					});
+			var _sokRaw = RawMemory.get();
+			var _sokParsed = null;
+			if (_sokRaw) {
+				try { _sokParsed = JSON.parse(_sokRaw); } catch (e) { _sokParsed = null; }
+			}
+			if (!_sokParsed || typeof _sokParsed !== 'object' || !_sokParsed._screepsOk) {
+				return;
+			}
+			var _sokCode = _sokParsed._screepsOk;
+			var _sokResultObj;
+			try {
+				var _sokResult = eval(_sokCode);
+				if (_sokResult === undefined) {
+					_sokResult = null;
 				}
+				if (_sokResult !== null && typeof _sokResult === 'object'
+					&& !Array.isArray(_sokResult) && _sokResult.constructor !== Object) {
+					_sokResultObj = {
+						ok: false, errorType: 'SerializationError',
+						error: 'Return value is a ' + (_sokResult.constructor ? _sokResult.constructor.name : 'non-plain') + ' object, not a plain JSON value',
+					};
+				} else {
+					_sokResultObj = { ok: true, value: _sokResult };
+				}
+			} catch (e) {
+				_sokResultObj = {
+					ok: false, error: e.message, errorType: e.constructor ? e.constructor.name : 'Error',
+				};
+			}
+			// Write result envelope into Memory and then force-serialize via
+			// RawMemory.set. The engine tick-end auto-serialize at
+			// @screeps/driver/lib/runtime/runtime.js:246-248 only overrides
+			// the raw string when rawMemory._parsed is set, but RawMemory.set
+			// deletes _parsed (runtime.bundle.js:15926-15929), so if user
+			// code called RawMemory.set their raw string would win and our
+			// Memory mutation would be lost. Calling RawMemory.set here with
+			// the composed Memory state guarantees the envelope is persisted
+			// regardless of which channel user code touched.
+			//
+			// If Memory parsed to null (user wrote a non-JSON string into raw
+			// memory, as MEMORY-004 size-limit probe does on the failing
+			// path), accessing it throws — fall back to a stub envelope.
+			try {
+				Memory._screepsOkExecuted = true;
+				Memory._screepsOkResult = JSON.stringify(_sokResultObj);
 				delete Memory._screepsOk;
-				// Force-serialize Memory back to RawMemory so the result channel
-				// survives even if user code called RawMemory.set() (which nulls
-				// the engine's internal _parsed reference and prevents auto-serialization).
 				RawMemory.set(JSON.stringify(Memory));
+			} catch (e) {
+				RawMemory.set(JSON.stringify({
+					_screepsOkExecuted: true,
+					_screepsOkResult: JSON.stringify(_sokResultObj),
+				}));
 			}
 		}`;
 
 		for (let i = 0; i < spec.players.length; i++) {
-			const handle = spec.players[i];
+			const entry = spec.players[i];
+			const playerSpec: PlayerSpec = typeof entry === 'string' ? { name: entry } : entry;
+			const handle = playerSpec.name;
 			const username = playerSlots[i] ?? `player_${i}`;
 			const ownedRooms = spec.rooms.filter(r => r.owner === handle);
 			const roomName = ownedRooms[0]?.name ?? spec.rooms[0].name;
+
+			// Default to a high GCL so multi-room claim tests aren't blocked
+			// by the cap; tests that need ERR_GCL_NOT_ENOUGH set this low.
+			const gcl = playerSpec.gcl ?? 10000000;
 
 			// Insert user directly
 			const user = await this.db.users.insert({
 				username,
 				cpu: 100,
 				cpuAvailable: 10000,
-				gcl: 10000000, // High GCL to allow claiming multiple rooms
+				gcl,
 				power: 10000000, // High GPL to allow creating power creeps
 				active: 10000,
 				money: 10000000000, // 10M credits (stored as milli-credits internally)
@@ -188,6 +237,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				const downgradeTime = ownedRoom.ticksToDowngrade != null
 					? gameTime + ownedRoom.ticksToDowngrade
 					: null;
+				// Engine stores active safe mode as the absolute tick the
+				// timer expires; the player-facing getter at
+				// `@screeps/engine/dist/game/structures.js:187` reports
+				// `safeMode - gameTime` (remaining ticks). RoomSpec.safeMode
+				// passes "remaining ticks", so we add the current gameTime.
+				const safeMode = ownedRoom.safeMode != null && ownedRoom.safeMode > 0
+					? gameTime + ownedRoom.safeMode
+					: null;
 				await this.db['rooms.objects'].update(
 					{ $and: [{ room: ownedRoom.name }, { type: 'controller' }] },
 					{ $set: {
@@ -195,7 +252,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 						level: ownedRoom.rcl ?? 1,
 						progress: 0,
 						downgradeTime,
-						safeMode: null,
+						safeMode,
 						safeModeAvailable: ownedRoom.safeModeAvailable ?? 0,
 						safeModeCooldown: 0,
 					} },
@@ -206,6 +263,30 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					{ $set: { active: true } },
 				);
 				await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [ownedRoom.name]);
+			}
+
+			// Anchor headless players (no owned rooms in the spec) with a
+			// sentinel flag in the preload neighbor room. The driver
+			// (`@screeps/driver/lib/runtime/data.js:103-109`) flips
+			// `active:0` on any user whose `rooms.objects.find({user})`
+			// is empty, which then removes them from the loop. Players
+			// with an owned room are already anchored by their controller
+			// (the `$set: { user }` above); headless players need their
+			// own anchor object. Flags are the cheapest choice — they
+			// have no game effect, no RCL/ownership requirements, and
+			// the driver counts them before the flag/site type filter
+			// at line 116.
+			if (ownedRooms.length === 0) {
+				await this.db['rooms.objects'].insert({
+					room: TERRAIN_FIXTURE_NEIGHBOR,
+					type: 'flag',
+					x: 0,
+					y: 0,
+					user: user._id,
+					name: `__sok_anchor_${username}`,
+					color: 1,
+					secondaryColor: 1,
+				});
 			}
 
 			// Create User object for pubsub (needed for console event listening)
@@ -356,18 +437,38 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeFlag(roomName: string, spec: FlagSpec): Promise<string> {
+		// Flags live in `db['rooms.flags']`, NOT `db['rooms.objects']`. The
+		// driver loads them via `db['rooms.flags'].find({user: userId})` at
+		// `@screeps/driver/lib/runtime/data.js:140`, then the engine parses
+		// the per-room `data` string in `@screeps/engine/dist/game/game.js:393`
+		// (split on `|` for entries, `~` for fields). One document holds all
+		// flags for a (user, room) pair, so subsequent placeFlag calls into
+		// the same room must append to the existing `data` string rather than
+		// inserting a new document.
 		const userId = this.resolvePlayer(spec.owner);
-		const result = await this.db['rooms.objects'].insert({
-			room: roomName,
-			type: 'flag',
-			x: spec.pos[0],
-			y: spec.pos[1],
-			user: userId,
-			name: spec.name,
-			color: spec.color ?? 1,
-			secondaryColor: spec.secondaryColor ?? spec.color ?? 1,
+		const safeName = spec.name.replace(/\|/g, '$VLINE$').replace(/~/g, '$TILDE$');
+		const color = spec.color ?? 1;
+		const secondaryColor = spec.secondaryColor ?? color;
+		const entry = `${safeName}~${color}~${secondaryColor}~${spec.pos[0]}~${spec.pos[1]}`;
+
+		const existing = await this.db['rooms.flags'].findOne({
+			$and: [{ user: userId }, { room: roomName }],
 		});
-		return result._id;
+		if (existing) {
+			const newData = existing.data ? `${existing.data}|${entry}` : entry;
+			await this.db['rooms.flags'].update(
+				{ _id: existing._id },
+				{ $set: { data: newData } },
+			);
+			return `flag_${spec.name}`;
+		}
+
+		await this.db['rooms.flags'].insert({
+			user: userId,
+			room: roomName,
+			data: entry,
+		});
+		return `flag_${spec.name}`;
 	}
 
 	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
@@ -830,6 +931,17 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				hits: C.CONTAINER_HITS, hitsMax: C.CONTAINER_HITS,
 				store: {},
 				storeCapacity: C.CONTAINER_CAPACITY ?? 2000,
+				// Default to a far-future decay so containers don't tick down
+				// on the first engine tick. The container processor at
+				// `@screeps/engine/src/processor/intents/containers/tick.js:10`
+				// triggers decay when `nextDecayTime` is undefined, which
+				// reduces hits by CONTAINER_DECAY (5000) immediately. With the
+				// default CONTAINER_HITS (250000) the container survives, but
+				// custom-hits placements (e.g. STRUCTURE-HITS-001 with hits=1000)
+				// drop below zero and get removed before the test can observe
+				// them. Tests that need a real decay schedule set ticksToDecay
+				// on the StructureSpec, which placeStructure honours below.
+				nextDecayTime: 9999999,
 			};
 			case 'road': return {
 				hits: C.ROAD_HITS, hitsMax: C.ROAD_HITS,

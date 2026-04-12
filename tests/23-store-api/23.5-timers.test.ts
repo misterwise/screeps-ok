@@ -1,8 +1,8 @@
 import { describe, test, expect, code,
-	OK, ERR_TIRED,
-	STRUCTURE_LAB,
+	OK, ERR_TIRED, ERR_NO_BODYPART,
+	STRUCTURE_LAB, STRUCTURE_RAMPART,
+	ATTACK, MOVE,
 	LAB_REACTION_AMOUNT, REACTION_TIME,
-	SAFE_MODE_DURATION,
 } from '../../src/index.js';
 
 describe('Timer gating', () => {
@@ -63,46 +63,67 @@ describe('Timer gating', () => {
 		expect(rc2).toBe(OK);
 	});
 
-	// TIMER-SAFEMODE-001: Safe mode lasts SAFE_MODE_DURATION (20000) ticks.
-	// Ticking 20000 times is computationally infeasible in a test environment.
-	// This test verifies the basic safe mode countdown behavior: after
-	// activation, safeMode decrements by 1 per tick.
-	test.skip('TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0', async ({ shard }) => {
-		// This test is skipped because SAFE_MODE_DURATION is 20000 ticks,
-		// making it infeasible to tick until expiry. There is no adapter API
-		// to set safeMode to an arbitrary low value, and the engine does not
-		// expose a way to fast-forward a single timer.
+	test('TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0', async ({ shard }) => {
+		// SAFE_MODE_DURATION is 20000 ticks, which is infeasible to tick
+		// through end-to-end. RoomSpec.safeMode pre-sets the active timer
+		// to a low remaining-tick value so the expiration path is reachable
+		// in a few ticks. The getter at `structures.js:187` returns
+		// `safeMode - gameTime` (or undefined when safeMode <= gameTime).
+		// Note: each runPlayer call advances gameTime by 1 (the eval rides
+		// on the next engine tick), so reads also consume time.
 		//
-		// To properly test this, the adapter would need:
-		// - A way to set controller.safeMode to a low value (e.g., 2), OR
-		// - A way to advance time by N ticks without running gameplay
-		//
-		// The fundamental behavior: when safeMode reaches 0, hostile actions
-		// that were blocked (attack, rangedAttack, dismantle, rangedMassAttack)
-		// should succeed again in the same tick.
+		// This test owns the post-expiration "effects end" assertion: no
+		// other test in the suite verifies that hostile combat actions
+		// blocked during safe mode become unblocked once the timer hits 0.
+		// CTRL-SAFEMODE-006 only checks the during-safemode block path.
 		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 }],
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeMode: 10 }],
 		});
 
-		// Activate safe mode.
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.activateSafeMode()
-		`);
-		expect(rc).toBe(OK);
+		// Friendly target + hostile attacker for the unblock probe.
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: 10000,
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [ATTACK, MOVE],
+		});
 		await shard.tick();
 
-		// Verify safeMode is set.
+		const sm0 = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.safeMode ?? 0
+		`) as number;
+		expect(sm0).toBeGreaterThan(0);
+		expect(sm0).toBeLessThanOrEqual(10);
+
+		// While safe mode is active, the hostile attack is short-circuited
+		// to ERR_NO_BODYPART (same path covered by CTRL-SAFEMODE-006).
+		const blockedRc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId}))
+		`);
+		expect(blockedRc).toBe(ERR_NO_BODYPART);
+
+		// Drive a few ticks and confirm the timer counted down.
+		await shard.tick(2);
 		const sm1 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.safeMode
+			Game.rooms['W1N1'].controller.safeMode ?? 0
 		`) as number;
 		expect(sm1).toBeGreaterThan(0);
+		expect(sm1).toBeLessThan(sm0);
 
-		// Verify countdown: after 1 tick, safeMode should decrease by 1.
-		await shard.tick();
-		const sm2 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.safeMode
-		`) as number;
-		expect(sm2).toBe(sm1 - 1);
+		// Drive well past expiration; the engine reports undefined once
+		// safeMode <= gameTime, which we map to null in the test return.
+		await shard.tick(sm1 + 5);
+		const smExpired = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.safeMode ?? null
+		`);
+		expect(smExpired).toBeNull();
+
+		// With safe mode expired, the same hostile attack now succeeds.
+		const unblockedRc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId}))
+		`);
+		expect(unblockedRc).toBe(OK);
 	});
 });

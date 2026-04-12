@@ -13,8 +13,21 @@ import {
 // ── Setup types ──────────────────────────────────────────────
 
 export interface ShardSpec {
-	players: string[];
+	players: (string | PlayerSpec)[];
 	rooms: RoomSpec[];
+}
+
+export interface PlayerSpec {
+	name: string;
+	/**
+	 * Override the player's GCL at user creation. Defaults to a high value
+	 * (~10M) so multi-room claim tests aren't blocked by the cap. Set this
+	 * to a low number to honestly trigger ERR_GCL_NOT_ENOUGH on extra claims.
+	 *
+	 * Honored by adapters that expose a GCL override; the limitations gate
+	 * `playerGclControl` reports which adapters do.
+	 */
+	gcl?: number;
 }
 
 export interface RoomSpec {
@@ -23,6 +36,13 @@ export interface RoomSpec {
 	rcl?: number;
 	owner?: string;
 	safeModeAvailable?: number;
+	/**
+	 * Pre-set the controller's active safe-mode timer in ticks remaining.
+	 * Useful for tests that need to observe expiration without ticking
+	 * SAFE_MODE_DURATION (20000) times. Adapters convert this to the
+	 * engine's absolute `safeMode` field at createShard time.
+	 */
+	safeMode?: number;
 	/** Set the controller's initial downgrade timer (ticks until level loss). */
 	ticksToDowngrade?: number;
 }

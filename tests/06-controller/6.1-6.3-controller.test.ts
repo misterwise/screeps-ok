@@ -1,14 +1,11 @@
 import { describe, test, expect, code,
-	OK, ERR_NO_BODYPART, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
+	OK, ERR_NO_BODYPART, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET, ERR_GCL_NOT_ENOUGH,
 	CLAIM, MOVE, WORK,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	CONTROLLER_RESERVE_MAX,
 } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const headlessMultiPlayerTest = hasDocumentedAdapterLimitation('headlessMultiPlayer')
-	? test.skip
-	: test;
 const playerGclControlTest = hasDocumentedAdapterLimitation('playerGclControl')
 	? test.skip
 	: test;
@@ -146,7 +143,15 @@ describe('controller mechanics', () => {
 		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
-	headlessMultiPlayerTest('CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player', async ({ shard }) => {
+	test('CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player', async ({ shard }) => {
+		// Engine creeps.js:838-840 gates claim on `target.reservation`, and
+		// the controller tick processor (`processor/intents/controllers/tick.js:12`)
+		// deletes reservations once `gameTime >= endTime - 1`. Each CLAIM
+		// part on the reserver adds CONTROLLER_RESERVE (1 tick) to endTime,
+		// so a single-CLAIM reservation decays within one tick of the
+		// reserve intent — too short to survive the intermediate tick before
+		// p1's claim runs. Give the reserver enough CLAIM parts to keep the
+		// reservation alive through reserve → tick → claim.
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -157,11 +162,12 @@ describe('controller mechanics', () => {
 		});
 		const ctrlPos = await shard.getControllerPos('W3N1');
 
-		// p2 reserves the neutral controller.
+		// p2 reserves the neutral controller. 5 CLAIM parts → endTime =
+		// gameTime + 1 + 5, well above the decay threshold at p1's claim tick.
 		const reserverId = await shard.placeCreep('W3N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p2',
-			body: [CLAIM, MOVE],
+			body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
 		});
 		// p1's claimer stands on another adjacent tile.
 		const claimerId = await shard.placeCreep('W3N1', {
@@ -213,19 +219,38 @@ describe('controller mechanics', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	playerGclControlTest('CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded', async () => {
-		// Both built-in adapters hardcode a very high GCL at user creation,
-		// so exceeding the per-player room cap cannot be produced honestly.
-		// Gated on `playerGclControl` until an adapter exposes a GCL override.
+	playerGclControlTest('CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded', async ({ shard }) => {
+		// Game.gcl.level is derived from user.gcl with GCL_POW=2.4 / GCL_MULTIPLY=1e6,
+		// so any gcl value below 1e6 yields level 1 → cap of 1 owned room. Start
+		// p1 with gcl=0, give them W1N1, and have them try to claim a second
+		// controller; the engine's claim check rejects with ERR_GCL_NOT_ENOUGH.
+		await shard.createShard({
+			players: [{ name: 'p1', gcl: 0 }],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [CLAIM, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).claimController(
+				Game.rooms['W2N1'].controller
+			)
+		`);
+		expect(rc).toBe(ERR_GCL_NOT_ENOUGH);
 	});
 
 	test('CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned', async ({ shard }) => {
-		// Per engine rules, a creep standing on an owned controller without
-		// being its owner cannot issue intents — use a hostile claimer for
-		// "already owned by another player" scoping with headlessMultiPlayer.
-		// Simpler: p1 attempts to claim its own controller and gets
-		// ERR_GCL_NOT_ENOUGH or ERR_INVALID_TARGET; the engine's checkClaim
-		// rejects owned controllers with ERR_INVALID_TARGET before the body
+		// p1 attempts to claim its own controller and gets ERR_INVALID_TARGET;
+		// the engine's checkClaim rejects owned controllers before the body
 		// check, so a single-player setup is enough.
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
@@ -368,8 +393,7 @@ describe('controller mechanics', () => {
 		// `target.downgradeTime` by `CONTROLLER_CLAIM_DOWNGRADE` per active CLAIM
 		// part on the attacker. CTRL-ATTACK-005 covers the own-controller variant;
 		// this case verifies the canonical hostile path. Reads ticksToDowngrade
-		// through p1's visibility on the hostile room (avoids requiring p2 to
-		// have any objects, which would trip the `headlessMultiPlayer` skip).
+		// through p1's visibility on the hostile room.
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

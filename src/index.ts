@@ -7,7 +7,7 @@ export { test, describe, expect } from './fixture.js';
 // Adapter contract
 export type {
 	ScreepsOkAdapter, AdapterCapabilities, CapabilityName, PlayerReturnValue,
-	ShardSpec, RoomSpec, TerrainSpec,
+	ShardSpec, RoomSpec, PlayerSpec, TerrainSpec,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec,

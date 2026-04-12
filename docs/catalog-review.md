@@ -377,9 +377,9 @@ Implementation notes:
   - `withdraw-enemy-rampart-no-protection` — `WITHDRAW-005`: xxscreeps
     `checkWithdraw` does not enforce `ERR_NOT_OWNER` for hostile structures
     under a non-public enemy rampart (no rampart check in the chain).
-- `WITHDRAW-005` and `DROP-DECAY-005` require multi-player; both are gated
-  on the `headlessMultiPlayer` limitation and skip on vanilla. xxscreeps
-  runs them (WITHDRAW-005 via parity gap, DROP-DECAY-005 passes).
+- `WITHDRAW-005` and `DROP-DECAY-005` require multi-player; both run on
+  vanilla and xxscreeps (WITHDRAW-005 hits a parity gap on xxscreeps,
+  DROP-DECAY-005 passes everywhere).
 - `WITHDRAW-008` gated on `powerCreeps` capability; both adapters currently
   support power creeps so the test runs when the capability check passes.
   The test drives a real `PWR_DISRUPT_TERMINAL` cast via a placed power
@@ -667,19 +667,25 @@ coverage.
 | Facet | Tested | Total | Untested IDs |
 |---|---|---|---|
 | 9.1 spawnCreep | 11 | 11 | — |
-| 9.2 Spawning Duration & Direction | 6 | 6 | — |
+| 9.2 Spawning Duration & Direction | 5 | 6 | SPAWN-TIMING-005 (PWR_OPERATE_SPAWN 1-tick override; `needs_vanilla_verification`) |
 | 9.3 Spawn Stomping | 6 | 6 | — |
 | 9.4 Renew Creep | 7 | 7 | — |
 | 9.5 Recycle Creep | 3 | 3 | — |
 | 9.6 Creep Spawning State | 4 | 4 | — |
-| 9.7 Aging & Death | 12 | 12 | — |
+| 9.7 Aging & Death | 11 | 12 | CREEP-DEATH-008 (matrix; implicitly covered by DEATH/SUICIDE union but no dedicated test) |
 | 9.8 Suicide | 4 | 4 | — |
 | 9.9 Say | 3 | 3 | — |
 
-**56/56 tested (100%)**
+**54/56 tested (96%)** — both gaps are low-priority: SPAWN-TIMING-005 requires
+`PWR_OPERATE_SPAWN` scripting on a power creep, CREEP-DEATH-008 is a cross-cut
+matrix claim that the existing behavior tests together validate.
 
-Full coverage across all facets. Section 9.10 (cancelOrder) has no entries —
-it contains only a coverage note deferring to section 24.2.
+Section 9.10 (cancelOrder) has no entries — it contains only a coverage note
+deferring to section 24.2.
+
+**Vanilla:** 0 skipped, 0 expected-failures — all 60 tests run and pass on the
+vanilla adapter (source verification: only gate is `shard.requires('terrain')`,
+which vanilla declares `true`).
 
 ---
 
