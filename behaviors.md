@@ -2148,6 +2148,11 @@ Coverage Notes
   A visible room has a `Game.rooms[roomName]` entry on that tick.
 - [ ] `ROOM-VIS-002` `behavior` `verified_vanilla`
   A non-visible room has no `Game.rooms[roomName]` entry on that tick.
+- [ ] `ROOM-VIS-003` `behavior` `verified_vanilla`
+  A room that exists in the engine but is unowned and has no player
+  structures or creeps has no `Game.rooms[roomName]` entry for that player.
+  Stricter than `ROOM-VIS-002`: the room is loaded, just outside the
+  player's visibility.
 
 Coverage Notes
 - Observer-provided visibility timing is owned by `13.4 Observer`.

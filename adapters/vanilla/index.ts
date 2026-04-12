@@ -44,9 +44,23 @@ function buildTerrainMatrix(terrain: TerrainSpec | null): any {
 
 let sharedServer: any = null;
 
+// @screeps/driver/lib/queue.js registers a SIGTERM handler that logs
+// "Got SIGTERM, disabling queue fetching" before calling process.exit(0).
+// The log clutters vitest output when the worker is torn down. Removing
+// the listener is safe: SIGTERM still terminates the process by Node's
+// default behavior, and the driver's other cleanup paths handle state.
+function silenceDriverSigtermLog(): void {
+	for (const listener of process.listeners('SIGTERM')) {
+		if (listener.toString().includes('disabling queue fetching')) {
+			process.removeListener('SIGTERM', listener);
+		}
+	}
+}
+
 async function getServer(): Promise<any> {
 	if (!sharedServer) {
 		sharedServer = new ScreepsServer();
+		silenceDriverSigtermLog();
 		await sharedServer.world.reset();
 		await sharedServer.start();
 	}
@@ -318,9 +332,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const name = spec.name ?? `creep-${this.nextId()}`;
 		const gameTime = await this.server.world.gameTime;
 
-		const body = spec.body.map(type => ({ type, hits: 100 }));
-		const storeCapacity = body.reduce((sum: number, p: any) =>
-			sum + (p.type === 'carry' ? 50 : 0), 0);
+		const body: { type: string; hits: number; boost?: string }[] =
+			spec.body.map(type => ({ type, hits: 100 }));
+		if (spec.boosts) {
+			for (const [idx, boost] of Object.entries(spec.boosts)) {
+				body[Number(idx)].boost = boost;
+			}
+		}
+		const C = this.server.constants;
+		const carryCapacity = C?.CARRY_CAPACITY ?? 50;
+		const storeCapacity = body.reduce((sum: number, p) => {
+			if (p.type !== 'carry') return sum;
+			const boostMult = p.boost
+				? (C?.BOOSTS?.carry?.[p.boost]?.capacity ?? 1)
+				: 1;
+			return sum + carryCapacity * boostMult;
+		}, 0);
 
 		const result = await this.db['rooms.objects'].insert({
 			room: roomName,

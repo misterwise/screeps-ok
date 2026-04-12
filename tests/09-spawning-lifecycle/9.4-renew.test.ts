@@ -2,7 +2,9 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, ERR_BUSY,
 	ERR_RCL_NOT_ENOUGH,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
-	STRUCTURE_SPAWN, CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, SPAWN_RENEW_RATIO,
+	STRUCTURE_SPAWN, STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
+	CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, CREEP_SPAWN_TIME, SPAWN_RENEW_RATIO,
+	BOOSTS, FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
 
 describe('Spawn.renewCreep', () => {
@@ -142,6 +144,163 @@ describe('Spawn.renewCreep', () => {
 		`);
 		// Vanilla rejects CLAIM creeps from renewal.
 		expect(rc).not.toBe(OK);
+	});
+
+	test('RENEW-CREEP-003 renewCreep spends the correct energy cost', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		// Use energy strictly above SPAWN_ENERGY_CAPACITY (300) so the spawn's
+		// per-tick auto-regen (spawns/tick.js:44 — +1 when store < cap) does
+		// not re-fund energy in the same tick the renew intent is processed.
+		// The regen makes observed spend = cost − 1 whenever post-renew energy
+		// is still below 300. See canonical formula below.
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 500 },
+		});
+		// Body: [WORK, CARRY, MOVE] — cost = 200.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 100,
+		});
+		await shard.tick();
+
+		const energyBefore = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).store.energy
+		`) as number;
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.renewCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		const energyAfter = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).store.energy
+		`) as number;
+
+		// Canonical engine (@screeps/engine/.../renew-creep.js:33):
+		// cost = ceil(SPAWN_RENEW_RATIO * calcCreepCost(body) / CREEP_SPAWN_TIME / body.length)
+		// Reproduce the same float ordering so rounding matches (1.2 × 200 is
+		// 239.999… in IEEE 754, which floors differently than the inverted form).
+		const bodyCostSum = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
+		const bodyLength = 3;
+		const expectedCost = Math.ceil(SPAWN_RENEW_RATIO * bodyCostSum / CREEP_SPAWN_TIME / bodyLength);
+		expect(energyBefore - energyAfter).toBe(expectedCost);
+	});
+
+	test('RENEW-CREEP-004 renewCreep removes all boosts from the target creep', async ({ shard }) => {
+		shard.requires('chemistry');
+		await shard.ownedRoom('p1', 'W1N1', 6);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		// Place a boosted creep.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 100,
+			boosts: { 0: 'UH' }, // Boost the WORK part with UH.
+		});
+		await shard.tick();
+
+		// Verify the creep is boosted before renew.
+		const boostBefore = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).body[0].boost
+		`);
+		expect(boostBefore).toBe('UH');
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.renewCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		// After renew, canonical processor (renew-creep.js:50-53) sets each
+		// body part's boost field to null (not undefined).
+		const boostAfter = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).body[0].boost
+		`);
+		expect(boostAfter).toBeNull();
+	});
+
+	test('RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy', async ({ shard }) => {
+		shard.requires('chemistry');
+		await shard.ownedRoom('p1', 'W1N1', 6);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const labId = await shard.placeStructure('W1N1', {
+			pos: [26, 26], structureType: STRUCTURE_LAB, owner: 'p1',
+			store: { UH: 0, energy: 0 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 100,
+			boosts: { 0: 'UH' },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.renewCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		// The lab should not have gained any UH or energy from the deboost.
+		const labStore = await shard.runPlayer('p1', code`
+			const lab = Game.getObjectById(${labId});
+			({ uh: lab.store['UH'] || 0, energy: lab.store.energy || 0 })
+		`) as { uh: number; energy: number };
+		expect(labStore.uh).toBe(0);
+		expect(labStore.energy).toBe(0);
+
+		// No dropped resources on the tile either.
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const boostDrop = drops.find(r => r.resourceType === 'UH');
+		expect(boostDrop).toBeUndefined();
+	});
+
+	test('RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources', async ({ shard }) => {
+		shard.requires('chemistry');
+		await shard.ownedRoom('p1', 'W1N1', 6);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		// Boosted CARRY part increases capacity. After deboost, capacity shrinks.
+		// Body: [CARRY, MOVE] with CARRY boosted by KH (carry capacity boost).
+		// Normal CARRY = 50 capacity. KH doubles carry → 100 effective.
+		// Place the creep with 75 energy (fits in boosted capacity, exceeds unboosted).
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [CARRY, MOVE],
+			ticksToLive: 100,
+			boosts: { 0: 'KH' },
+			store: { energy: 75 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.renewCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		// After renew, capacity is back to 50. Excess 25 should be dropped.
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBeLessThanOrEqual(50);
+
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const energyDrop = drops.find(r => r.pos.x === 25 && r.pos.y === 26 && r.resourceType === 'energy');
+		expect(energyDrop).toBeDefined();
 	});
 
 	test('RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {

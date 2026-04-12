@@ -56,6 +56,14 @@ export interface CreepSpec {
 	name?: string;
 	store?: Record<string, number>;
 	ticksToLive?: number;
+	/**
+	 * Pre-apply boosts to body parts. Map key is the body-part index (0-based,
+	 * matching the order in `body`); value is the boost mineral type (e.g. 'UH').
+	 * The adapter must set `body[index].boost = mineralType` and extend
+	 * `storeCapacity` for any boost whose effect is `capacity > 1` (carry
+	 * boosts: KH, KH2O, XKH2O).
+	 */
+	boosts?: Record<number, string>;
 }
 
 export interface StructureSpec {

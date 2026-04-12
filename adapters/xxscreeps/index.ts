@@ -32,7 +32,7 @@ import { makeWriter } from 'xxscreeps/schema/write.js';
 import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
 
 // Object creation imports
-import { create as createCreep } from 'xxscreeps/mods/creep/creep.js';
+import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/creep.js';
 import { create as createSpawn } from 'xxscreeps/mods/spawn/spawn.js';
 import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
 import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
@@ -208,6 +208,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				name,
 				userId,
 			);
+			if (spec.boosts) {
+				for (const [idx, boost] of Object.entries(spec.boosts)) {
+					(creep.body[Number(idx)] as any).boost = boost;
+				}
+				// createCreep set store capacity from the unboosted body; resize
+				// now that boosts may have extended CARRY capacity.
+				(creep.store as any)['#capacity'] = calculateCarry(creep.body);
+			}
 			if (spec.ticksToLive !== undefined) {
 				creep['#ageTime'] = Game.time + spec.ticksToLive;
 			}

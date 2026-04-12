@@ -1,7 +1,8 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_OWNER,
-	MOVE, WORK, CARRY,
-	STRUCTURE_SPAWN, FIND_DROPPED_RESOURCES,
+	MOVE, WORK, CARRY, BODYPART_COST,
+	STRUCTURE_SPAWN, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
+	CREEP_CORPSE_RATE, CREEP_LIFE_TIME,
 } from '../../src/index.js';
 
 describe('Spawn.recycleCreep', () => {
@@ -43,6 +44,55 @@ describe('Spawn.recycleCreep', () => {
 			spawn.recycleCreep(creep)
 		`);
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
+	});
+
+	test('RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		// Body: [WORK, CARRY, MOVE] — total cost = 200.
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 1000,
+		});
+		await shard.tick();
+
+		// Observe the creep's actual ticksToLive on the tick recycle runs, so
+		// the expected value reflects whatever the runner consumed. Canonical
+		// _die uses object._ticksToLive at death time.
+		const ttlAtRecycle = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).ticksToLive
+		`) as number;
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const creep = Game.getObjectById(${creepId});
+			spawn.recycleCreep(creep)
+		`);
+		expect(rc).toBe(OK);
+
+		// Canonical recycle (recycle-creep.js → _die.js with dropRate=1.0):
+		// kills creep *immediately*, creates a tombstone at the creep's position,
+		// tombstone.store.energy = floor(1.0 * ttl / CREEP_LIFE_TIME * bodyCost).
+		// No multi-tick body removal, no FIND_DROPPED_RESOURCES.
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
+		expect(tomb).toBeDefined();
+
+		// Canonical _die accumulates `part_cost * lifeRate` per part into a
+		// float, then floors the total once (_die.js:44-57). That equals
+		// floor(totalBodyCost * lifeRate) with dropRate = 1.0 for recycle.
+		const bodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
+		const expectedEnergy = Math.floor(bodyCost * ttlAtRecycle / CREEP_LIFE_TIME);
+		expect(tomb!.store.energy).toBe(expectedEnergy);
+
+		// No dropped resource on the ground.
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const energyDrop = drops.find(r => r.pos.x === 25 && r.pos.y === 26 && r.resourceType === 'energy');
+		expect(energyDrop).toBeUndefined();
 	});
 
 	test('RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy', async ({ shard }) => {

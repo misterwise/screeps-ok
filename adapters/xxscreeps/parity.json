@@ -40,6 +40,14 @@
 			"summary": "Spawn.renewCreep returns OK while spawn is actively spawning",
 			"tests": ["RENEW-CREEP-009"]
 		},
+		"renew-rejects-boosted-creep": {
+			"summary": "Spawn.renewCreep rejects boosted creeps with ERR_NO_BODYPART; canonical engine accepts and strips the boosts during renew",
+			"tests": ["RENEW-CREEP-004", "RENEW-CREEP-005", "RENEW-CREEP-006"]
+		},
+		"recycle-no-body-reclaim": {
+			"summary": "Spawn.recycleCreep only kills the creep (processor marked TODO); canonical engine deposits floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME) energy into the tombstone via _die with dropRate=1.0",
+			"tests": ["RECYCLE-CREEP-002"]
+		},
 		"lab-cooldown-no-decrement": {
 			"summary": "Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1",
 			"tests": ["LAB-RUN-004", "LAB-REVERSE-004", "UNBOOST-005"]
@@ -50,7 +58,7 @@
 		},
 		"observer-room-always-visible": {
 			"summary": "All rooms visible to all players regardless of observer usage",
-			"tests": ["OBSERVER-001"]
+			"tests": ["OBSERVER-001", "ROOM-VIS-003"]
 		},
 		"observer-not-owner-precedence": {
 			"summary": "Observer on unowned observer returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",

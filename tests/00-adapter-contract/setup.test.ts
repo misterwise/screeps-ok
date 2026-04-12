@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
@@ -284,6 +284,77 @@ describe('adapter contract: setup', () => {
 			const placed = creeps.filter((c: any) => c.kind === 'creep');
 			expect(placed.length).toBeGreaterThanOrEqual(1);
 		});
+
+		test('spec.boosts tags the target body parts with the boost mineral', async ({ shard }) => {
+			shard.requires('chemistry');
+			await shard.ownedRoom('p1');
+			// Body index 1 is ATTACK → boost with UH; index 2 is CARRY → boost
+			// with KH (the only index combo that exercises a capacity boost).
+			const id = await shard.placeCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				body: [MOVE, ATTACK, CARRY],
+				boosts: { 1: 'UH', 2: 'KH' },
+			});
+			await shard.tick();
+
+			const boosts = await shard.runPlayer('p1', code`
+				Game.getObjectById(${id}).body.map(p => ({ type: p.type, boost: p.boost || null }))
+			`);
+			expect(boosts).toEqual([
+				{ type: MOVE, boost: null },
+				{ type: ATTACK, boost: 'UH' },
+				{ type: CARRY, boost: 'KH' },
+			]);
+		});
+
+		test('spec.boosts on a CARRY part extends the creep storeCapacity', async ({ shard }) => {
+			shard.requires('chemistry');
+			await shard.ownedRoom('p1');
+			// Two CARRY parts, the second boosted with KH (×2 capacity). Total
+			// capacity must reflect canonical formula: CARRY_CAPACITY × (1 + 2).
+			const id = await shard.placeCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				body: [CARRY, CARRY],
+				boosts: { 1: 'KH' },
+			});
+			await shard.tick();
+
+			const capacity = await shard.runPlayer('p1', code`
+				Game.getObjectById(${id}).store.getCapacity(RESOURCE_ENERGY)
+			`);
+			expect(capacity).toBe(CARRY_CAPACITY * 3);
+		});
+
+		test('spec.boosts keys target specific body indexes (no shift or reorder)', async ({ shard }) => {
+			shard.requires('chemistry');
+			await shard.ownedRoom('p1');
+			// Three CARRY parts, indexes 0 and 2 boosted with different tiers.
+			// Per-index boost tags AND the summed capacity are both asymmetric
+			// across any index reordering, so together they pin the mapping.
+			// Expected per index: KH (×2), unboosted, XKH2O (×4).
+			// Expected capacity: CARRY_CAPACITY × (2 + 1 + 4) = 350.
+			const id = await shard.placeCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				body: [CARRY, CARRY, CARRY],
+				boosts: { 0: 'KH', 2: 'XKH2O' },
+			});
+			await shard.tick();
+
+			const result = await shard.runPlayer('p1', code`
+				const c = Game.getObjectById(${id});
+				({
+					boosts: c.body.map(p => p.boost || null),
+					capacity: c.store.getCapacity(RESOURCE_ENERGY),
+				})
+			`);
+			expect(result).toEqual({
+				boosts: ['KH', null, 'XKH2O'],
+				capacity: CARRY_CAPACITY * 7,
+			});
+		});
 	});
 
 	describe('placeStructure', () => {
@@ -378,30 +449,9 @@ describe('adapter contract: setup', () => {
 		}
 	});
 
-	describe('room visibility', () => {
-		// The adapter must not expose rooms to players who have no vision of them.
-		// Rooms with no player structures, creeps, or observer should not appear
-		// in Game.rooms for that player. This is a core Game API contract — if the
-		// adapter makes all rooms visible to all players (e.g., for processing
-		// reasons), tests that verify observer, scouting, or visibility mechanics
-		// are invalidated.
-		test('unowned room without player creeps is not in Game.rooms', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [
-					{ name: 'W1N1', rcl: 1, owner: 'p1' },
-					{ name: 'W2N1' }, // unowned, no p1 creeps
-				],
-			});
-			await shard.tick();
-
-			const visible = await shard.runPlayer('p1', code`
-				!!Game.rooms['W2N1']
-			`);
-			// W2N1 has no p1 structures or creeps — it must not be visible.
-			expect(visible).toBe(false);
-		});
-	});
+	// Per-player room visibility is a canonical Game API invariant, not an
+	// adapter surface contract — covered by ROOM-VIS-001/002/003 in
+	// tests/16-room-mechanics/16.3b-game-api.test.ts.
 
 	describe('placeSite', () => {
 		test('places a construction site', async ({ shard }) => {
