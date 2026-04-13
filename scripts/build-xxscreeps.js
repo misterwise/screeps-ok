@@ -11,6 +11,11 @@ const xxscreepsDir = resolve('node_modules/xxscreeps');
 const minNodeMajor = 24;
 const tscBin = require.resolve('typescript/bin/tsc');
 
+if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
+	console.log('[screeps-ok] SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL=1, skipping xxscreeps postinstall build');
+	process.exit(0);
+}
+
 if (!existsSync(xxscreepsDir)) {
 	console.log('[screeps-ok] xxscreeps not installed, skipping build');
 	process.exit(0);

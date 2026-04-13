@@ -30,7 +30,15 @@ jobs:
           node-version: 24.14.1
           cache: npm
 
+      - name: Restore node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Typecheck
@@ -56,10 +64,21 @@ jobs:
           node-version: 24.14.1
           cache: npm
 
+      - name: Restore node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', 'scripts/setup.js') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        env:
+          SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL: ${{ matrix.adapter == 'vanilla' && '1' || '' }}
         run: npm ci
 
       - name: Build adapter prerequisites
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm run setup:${{ matrix.adapter }}
 
       - name: Run ${{ matrix.adapter }} suite (shard ${{ matrix.shard }}/4)
