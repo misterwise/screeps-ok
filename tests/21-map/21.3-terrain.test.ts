@@ -1,6 +1,31 @@
 import { describe, test, expect, code, TERRAIN_WALL, TERRAIN_SWAMP } from '../../src/index.js';
 
 describe('Game.map terrain', () => {
+	test('MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const owned = Game.map.getRoomTerrain('W1N1');
+			const nonVisible = Game.map.getRoomTerrain('W2N1');
+			({
+				ownedHasGet: typeof owned.get === 'function',
+				nonVisibleHasGet: typeof nonVisible.get === 'function',
+				ownedSample: owned.get(0, 0),
+				nonVisibleSample: nonVisible.get(0, 0),
+			})
+		`) as { ownedHasGet: boolean; nonVisibleHasGet: boolean; ownedSample: number; nonVisibleSample: number };
+		expect(result.ownedHasGet).toBe(true);
+		expect(result.nonVisibleHasGet).toBe(true);
+		expect(typeof result.ownedSample).toBe('number');
+		expect(typeof result.nonVisibleSample).toBe('number');
+	});
+
 	test('MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 

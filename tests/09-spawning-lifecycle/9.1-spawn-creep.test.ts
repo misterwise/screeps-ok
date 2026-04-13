@@ -146,6 +146,34 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
 
+	test('SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const spawn1Id = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 600 },
+		});
+		const spawn2Id = await shard.placeStructure('W1N1', {
+			pos: [30, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 600 },
+		});
+		await shard.tick();
+
+		// Start spawning 'UniqueTest' on spawn1.
+		const rc1 = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawn1Id}).spawnCreep([MOVE, MOVE, MOVE], 'UniqueTest')
+		`);
+		expect(rc1).toBe(OK);
+
+		// Try to spawn the same name on spawn2 while the first is still spawning.
+		const rc2 = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawn2Id}).spawnCreep([MOVE], 'UniqueTest')
+		`);
+		expect(rc2).toBe(ERR_NAME_EXISTS);
+	});
+
 	test('SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],

@@ -93,7 +93,24 @@ describe('creep.build()', () => {
 		expect(returnCode).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('BUILD-005 BUILD-006 build() returns OK at Chebyshev range 3 and ERR_NOT_IN_RANGE at range 4', async ({ shard }) => {
+	test('BUILD-006 build() returns OK on success', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
+		`);
+		expect(rc).toBe(OK);
+	});
+
+	test('BUILD-005 build() returns OK at Chebyshev range 3 and ERR_NOT_IN_RANGE at range 4', async ({ shard }) => {
 		// Engine creeps.js + processor build.js: range check is
 		// `Math.abs(dx) > 3 || Math.abs(dy) > 3` (Chebyshev). A diagonal site
 		// at (28,28) is range 3 → OK; (29,29) is range 4 → ERR_NOT_IN_RANGE.

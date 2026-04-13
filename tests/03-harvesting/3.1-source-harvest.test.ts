@@ -190,6 +190,31 @@ describe('creep.harvest()', () => {
 		expect(source.energy).toBe(0);
 	});
 
+	test('HARVEST-005 successful harvest(source) increases store.energy by the harvested amount', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, WORK, CARRY, MOVE],
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
+
+		const storeBefore = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).store.energy
+		`) as number;
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
+		`);
+		expect(rc).toBe(OK);
+
+		const storeAfter = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).store.energy
+		`) as number;
+		expect(storeAfter).toBe(storeBefore + 2 * HARVEST_POWER);
+	});
+
 	test('HARVEST-006 harvest can exceed free carry capacity and drops overflow as a resource', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// 25 WORK = 50 energy/tick, 1 CARRY (50 capacity) with 5 already stored → 45 free.
