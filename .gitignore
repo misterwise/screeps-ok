@@ -1,7 +1,11 @@
 node_modules/
 dist/
-reports/*.json
+reports/*
 *.tsbuildinfo
 .parity-verdict.json
 screeps/
 server/
+
+# Private agent docs (symlinked from ~/Coding/agent-docs)
+.agent
+CLAUDE.local.md
