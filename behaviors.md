@@ -2900,6 +2900,127 @@ Coverage Notes
 
 ---
 
+## 26. Object Shape Conformance
+
+### 26.1 Creep Shape
+- [ ] `SHAPE-CREEP-001` `behavior` `verified_vanilla`
+  A live creep's public data-property surface matches the canonical Screeps
+  API exactly — no missing and no extra properties.
+- [ ] `SHAPE-CREEP-002` `behavior` `verified_vanilla`
+  A creep's nested sub-objects (`body[n]`, `owner`, `pos`) each expose
+  exactly the canonical property set.
+- [ ] `SHAPE-CREEP-003` `behavior` `verified_vanilla`
+  An unboosted body part exposes `hits` and `type`; a boosted body part
+  additionally exposes `boost`.
+
+### 26.2 Power Creep Shape
+- [ ] `SHAPE-POWERCREEP-001` `behavior` `verified_vanilla`
+  A spawned power creep's public data-property surface matches the
+  canonical Screeps API exactly.
+
+### 26.3 Room & Controller Shape
+- [ ] `SHAPE-ROOM-001` `behavior` `verified_vanilla`
+  A visible room's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-CTRL-001` `behavior` `verified_vanilla`
+  An owned room controller's public data-property surface matches the
+  canonical Screeps API exactly.
+- [ ] `SHAPE-CTRL-002` `behavior` `verified_vanilla`
+  A controller's `sign` sub-object (when present) exposes exactly
+  `datetime`, `text`, `time`, and `username`.
+- [ ] `SHAPE-CTRL-003` `behavior` `verified_vanilla`
+  A controller's `reservation` sub-object (when present) exposes exactly
+  `ticksToEnd` and `username`.
+
+### 26.4 Game Globals Shape
+- [ ] `SHAPE-GAME-001` `behavior` `verified_vanilla`
+  The `Game` object's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-GAME-002` `behavior` `verified_vanilla`
+  `Game.cpu` exposes exactly `bucket`, `limit`, and `tickLimit`.
+- [ ] `SHAPE-GAME-003` `behavior` `verified_vanilla`
+  `Game.map` exposes exactly `visual`.
+- [ ] `SHAPE-GAME-004` `behavior` `verified_vanilla`
+  `Game.shard` exposes exactly `name`, `ptr`, and `type`.
+- [ ] `SHAPE-GAME-005` `behavior` `verified_vanilla`
+  `Game.gcl` exposes exactly `level`, `progress`, and `progressTotal`.
+- [ ] `SHAPE-GAME-006` `behavior` `verified_vanilla`
+  `Game.gpl` exposes exactly `level`, `progress`, and `progressTotal`.
+- [ ] `SHAPE-GAME-007` `behavior` `verified_vanilla`
+  `Game.market` exposes exactly `credits`, `incomingTransactions`,
+  `orders`, and `outgoingTransactions`.
+
+### 26.5 Structure Shapes `matrix`
+- [ ] `SHAPE-STRUCT-001` `matrix` `verified_vanilla`
+  Each player-buildable structure type's public data-property surface
+  matches its canonical shape exactly — no missing and no extra
+  properties. Each structure type has a per-type canonical shape that
+  includes the common base plus type-specific properties.
+- [ ] `SHAPE-STRUCT-002` `behavior` `verified_vanilla`
+  An actively spawning `StructureSpawn`'s `spawning` sub-object exposes
+  exactly `directions`, `name`, `needTime`, `remainingTime`, and `spawn`.
+
+### 26.6 NPC Structure Shapes
+- [ ] `SHAPE-NPC-001` `behavior` `verified_vanilla`
+  A keeper lair's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-NPC-002` `behavior` `verified_vanilla`
+  An invader core's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-NPC-003` `behavior` `verified_vanilla`
+  A power bank's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-NPC-004` `behavior` `verified_vanilla`
+  A portal's public data-property surface matches the canonical Screeps
+  API exactly.
+
+### 26.7 World Object Shapes
+- [ ] `SHAPE-SOURCE-001` `behavior` `verified_vanilla`
+  A source's public data-property surface matches the canonical Screeps
+  API exactly.
+- [ ] `SHAPE-MINERAL-001` `behavior` `verified_vanilla`
+  A mineral's public data-property surface matches the canonical Screeps
+  API exactly.
+- [ ] `SHAPE-DEPOSIT-001` `behavior` `verified_vanilla`
+  A deposit's public data-property surface matches the canonical Screeps
+  API exactly.
+- [ ] `SHAPE-SITE-001` `behavior` `verified_vanilla`
+  A construction site's public data-property surface matches the
+  canonical Screeps API exactly.
+- [ ] `SHAPE-FLAG-001` `behavior` `verified_vanilla`
+  A flag's public data-property surface matches the canonical Screeps
+  API exactly.
+- [ ] `SHAPE-RESOURCE-001` `behavior` `verified_vanilla`
+  A dropped resource's public data-property surface matches the
+  canonical Screeps API exactly.
+- [ ] `SHAPE-TOMBSTONE-001` `behavior` `verified_vanilla`
+  A tombstone's public data-property surface matches the canonical
+  Screeps API exactly.
+- [ ] `SHAPE-RUIN-001` `behavior` `verified_vanilla`
+  A ruin's public data-property surface matches the canonical Screeps
+  API exactly.
+- [ ] `SHAPE-NUKE-001` `behavior` `verified_vanilla`
+  An in-flight nuke's public data-property surface matches the canonical
+  Screeps API exactly.
+
+Coverage Notes
+- "Public data-property surface" means prototype getters and non-function
+  own properties, walking the full prototype chain. Methods, constructor,
+  and underscore/hash-prefixed internal fields are excluded.
+- Canonical shapes are pinned in `src/matrices/object-shapes.ts` and
+  verified empirically against vanilla. Running on vanilla catches shape
+  drift; running on alternate servers catches surface divergence.
+- Store is excluded from shape testing. Its own-property keys are the
+  resource types it contains (dynamic, not a fixed shape). Store API
+  methods are covered in section 23.
+- `controller.reservation` and `controller.sign` are only testable when
+  their respective sub-objects are populated (after reserveController /
+  signController intents process).
+- Body part shape is state-dependent: `boost` only appears on boosted
+  parts.
+
+---
+
 ## Summary
 
 Coverage counts are temporarily omitted. The facet and behavior totals need to

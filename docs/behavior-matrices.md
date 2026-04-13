@@ -871,3 +871,32 @@ Each definition should include:
   This family covers limit values only; next-tick activation is owned by
   `RAWMEMORY-004`. The executable case list lives in
   `src/matrices/rawmemory-segments.ts`.
+
+### SHAPE-STRUCT
+
+- `Catalog Entries`
+  `SHAPE-STRUCT-001`
+- `Canonical Source`
+  Vanilla Screeps engine prototype chain — discovered empirically by
+  walking `Object.getOwnPropertyNames` on each structure type and keeping
+  getters and non-function values, filtering methods and internal fields.
+  Pinned in `src/matrices/object-shapes.ts`.
+- `Dimensions`
+  structure type (16 player-buildable types)
+- `Applicability`
+  `StructureSpawn`, `StructureExtension`, `StructureRoad`,
+  `StructureWall`, `StructureRampart`, `StructureLink`,
+  `StructureStorage`, `StructureTower`, `StructureExtractor`,
+  `StructureLab`, `StructureTerminal`, `StructureContainer`,
+  `StructureObserver`, `StructureFactory`, `StructureNuker`,
+  `StructurePowerSpawn`
+- `Exclusions`
+  NPC structures (keeper lair, invader core, power bank, portal) are
+  tested as individual behavior entries in 26.6, not as matrix cases.
+  `StructureController` is tested separately in 26.3.
+- `Verification Notes`
+  Each structure type has a distinct canonical shape reflecting its
+  type-specific properties (e.g. `cooldown` on link/extractor/lab,
+  `spawning` on spawn, `isPublic` on rampart). Capability-gated types
+  (terminal, factory, nuker, powerSpawn, observer) are skipped when the
+  adapter lacks the capability.
