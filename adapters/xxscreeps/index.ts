@@ -1,5 +1,5 @@
 import type { GameConstructor } from 'xxscreeps/game/index.js';
-import { Game, GameState, runForUser, runOneShot, runWithState } from 'xxscreeps/game/index.js';
+import { Game, GameState, runForPlayer, runForUser, runOneShot, runWithState } from 'xxscreeps/game/index.js';
 import { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
@@ -79,6 +79,22 @@ import 'xxscreeps/config/mods/import/game.js';
 await importMods('processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
+
+// Minimal TickPayload for `runForPlayer`. Fields are the union of what
+// `gameInitializer` hooks read during construction: controller uses `gcl` and
+// `controlledRoomCount`; flag/memory check `data` truthiness. Phase 1 uses
+// default values — downstream phases will populate per-user state.
+function buildTickPayload(time: number): any {
+	return {
+		cpu: { bucket: 10000, limit: 20, tickLimit: 500 },
+		time,
+		roomBlobs: [],
+		eval: [],
+		usernames: {},
+		gcl: 0,
+		controlledRoomCount: 0,
+	};
+}
 
 // Player handle → xxscreeps user ID
 const playerSlots = ['100', '101', '102', '103'];
@@ -633,16 +649,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				// Build a context with Game + all Screeps constants + globals
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-				// xxscreeps simulate() doesn't currently populate Game.gcl, but controller
-				// APIs assume it exists during claim checks. Read progress from DB.
-				if (!(Game as any).gcl) {
-					(Game as any).gcl = {
-						level: Math.max(ownedRoomCount + 1, 2),
-						progress: gclProgress,
-						progressTotal: 1,
-						'#roomCount': ownedRoomCount,
-					};
-				}
+				// The controller mod's gameInitializer seeds Game.gcl from
+				// payload.gcl (currently 0 → level 1). Override with the
+				// adapter's synthetic value until PlayerSpec.gcl is wired
+				// through the TickPayload (playerGclControl phase).
+				(Game as any).gcl = {
+					level: Math.max(ownedRoomCount + 1, 2),
+					progress: gclProgress,
+					progressTotal: 1,
+					'#roomCount': ownedRoomCount,
+				};
 
 				// Collect all available globals from the game environment
 				const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
@@ -745,13 +761,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					executedPlayers.add(userId);
 					const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-					if (!(Game as any).gcl) {
-						(Game as any).gcl = {
-							level: Math.max(ownedRoomCount + 1, 2),
-							progress: gclProgress, progressTotal: 1,
-							'#roomCount': ownedRoomCount,
-						};
-					}
+					(Game as any).gcl = {
+						level: Math.max(ownedRoomCount + 1, 2),
+						progress: gclProgress, progressTotal: 1,
+						'#roomCount': ownedRoomCount,
+					};
 					const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
 					Object.assign(globals, C);
 					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
@@ -1061,7 +1075,17 @@ async function createSimulation(
 				]);
 				const rooms = await Promise.all(Fn.map(visibleRooms, (rn: string) => shard.loadRoom(rn)));
 				const state = new GameState(world, shard.time, rooms);
-				const [intents] = runForUser(userId, state, task);
+
+				// Build a minimal TickPayload so `runForPlayer` triggers the
+				// mod `gameInitializer` hooks that expect `data`. Phase 1
+				// deliberately does NOT run runtimeConnector initialize/receive/
+				// send — those reset module-level memory/flag state on every
+				// call, which would break tests that accumulate state (e.g.
+				// spawnCreep memory) across player calls in the same process.
+				// Persistence is wired in per-mod in later phases.
+				const payload = buildTickPayload(shard.time);
+
+				const [intents] = runForPlayer(userId, state, payload, task);
 
 				for (const roomName of intentRooms) {
 					const roomIntents = intents.getIntentsForRoom(roomName);

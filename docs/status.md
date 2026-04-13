@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 04:16 UTC |
-| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 04:59 UTC |
+| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:37 UTC |
+| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 23:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2034,8 +2034,8 @@ xxscreeps has 290 skipped tests, grouped by the mechanism that gated them. **Cap
 | limitation | `portalPlacement` | placeObject for portals not supported | [6](#xxscreeps-skip-limitation-portalplacement) |
 | limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
 | limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
-| limitation | `xxscreepsPathFinderUseMissing` | PathFinder.use shim missing on the adapter | [1](#xxscreeps-skip-limitation-xxscreepspathfinderusemissing) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
+| limitation | `xxscreepsPathFinderUseMissing` | PathFinder.use shim missing on the adapter | [1](#xxscreeps-skip-limitation-xxscreepspathfinderusemissing) |
 
 Click a count to jump to the affected test list.
 
@@ -2561,21 +2561,21 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-xxscreepspathfinderusemissing">
-<summary><code>limitation:xxscreepsPathFinderUseMissing</code> — 1 test across 1 file</summary>
-
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (1)
-
-- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
-
-</details>
-
 <details id="xxscreeps-skip-limitation-pullselfhang">
 <summary><code>limitation:pullSelfHang</code> — 1 test across 1 file</summary>
 
 **`tests/01-movement/1.5-pulling.test.ts`** (1)
 
 - creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
+
+</details>
+
+<details id="xxscreeps-skip-limitation-xxscreepspathfinderusemissing">
+<summary><code>limitation:xxscreepsPathFinderUseMissing</code> — 1 test across 1 file</summary>
+
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (1)
+
+- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
 
 </details>
 
