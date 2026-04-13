@@ -1,9 +1,2 @@
 title: screeps-ok
 description: Behavioral conformance test suite for Screeps server implementations
-
-# Maintainer-only workflow docs — tracked in the repo but not published to the
-# Pages site. See docs/index.md for the public/internal split.
-exclude:
-  - catalog-review.md
-  - section-review-prompt.md
-  - section-implementation-prompt.md

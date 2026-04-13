@@ -36,17 +36,6 @@ Use these when you are reading, contributing, or integrating with the suite.
 - [`status.md`](status.md) — generated adapter status and parity dashboard
 - `coverage.html` — generated coverage report for catalog IDs
 
-## Maintainer/Internal Workflow Docs
-
-These are useful for maintainers working section-by-section on the catalog and
-test suite. They are not required reading for a normal contributor.
-
-- [`catalog-review.md`](catalog-review.md) — running review history and findings
-- [`section-review-prompt.md`](section-review-prompt.md) — internal prompt for
-  reviewing one catalog section
-- [`section-implementation-prompt.md`](section-implementation-prompt.md) —
-  internal prompt for implementing one reviewed section
-
 ## How The Docs Fit Together
 
 The shortest mental model is:
