@@ -24,6 +24,8 @@ const packageRoot = path.resolve(scriptsDir, '..');
 const reportsDir = path.join(packageRoot, 'reports');
 const adaptersDir = path.join(packageRoot, 'adapters');
 const outputPath = path.join(packageRoot, 'docs/status.md');
+const readmePath = path.join(packageRoot, 'README.md');
+const BADGE_MARKER_RE = /(<!-- BADGES:START -->)[\s\S]*?(<!-- BADGES:END -->)/;
 
 // Built-in adapters whose reports feed the dashboard by default. Downstream
 // adapters can reuse this script by passing their own adapter name on the
@@ -390,6 +392,18 @@ function render(summaries) {
 	return lines.join('\n') + '\n';
 }
 
+function updateReadmeBadges(summaries) {
+	if (!existsSync(readmePath)) return;
+	const current = readFileSync(readmePath, 'utf8');
+	if (!BADGE_MARKER_RE.test(current)) return;
+	const badges = renderHeaderBadges(summaries);
+	const replacement = `$1 ${badges} $2`;
+	const next = current.replace(BADGE_MARKER_RE, replacement);
+	if (next === current) return;
+	writeFileSync(readmePath, next);
+	console.log(`Wrote ${path.relative(packageRoot, readmePath)} (badge region)`);
+}
+
 function main(argv) {
 	const requestedAdapters = argv.length > 0 ? argv : DEFAULT_ADAPTERS;
 
@@ -404,6 +418,8 @@ function main(argv) {
 	const output = render(summaries);
 	writeFileSync(outputPath, output);
 	console.log(`Wrote ${path.relative(packageRoot, outputPath)}`);
+
+	updateReadmeBadges(summaries);
 
 	// Print a terse one-line summary per adapter to stdout.
 	for (const [adapter, { summary }] of Object.entries(summaries)) {

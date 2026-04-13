@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Regenerate the dashboard + README badges from the latest vitest JSON reports,
+# then fail the commit if either file drifted from what was staged. Keeps
+# README badge counts honest without running the multi-minute parity suite.
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if [[ ! -f reports/vanilla.json && ! -f reports/xxscreeps.json ]]; then
+	exit 0
+fi
+
+node scripts/generate-status.js >/dev/null
+
+changed=()
+for f in README.md docs/status.md; do
+	if ! git diff --quiet -- "$f"; then
+		changed+=("$f")
+	fi
+done
+
+if (( ${#changed[@]} > 0 )); then
+	echo "pre-commit: badges/status regenerated — stage the update and retry:" >&2
+	for f in "${changed[@]}"; do
+		echo "  git add $f" >&2
+	done
+	exit 1
+fi

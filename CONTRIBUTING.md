@@ -68,8 +68,15 @@ Read in this order:
 
 - `docs/status.md`
 - `docs/coverage.html`
+- the adapter badge region of `README.md` (between `<!-- BADGES:START -->`
+  and `<!-- BADGES:END -->`)
 
 That means even a targeted local test run can dirty the worktree.
+
+A pre-commit hook (installed via `npm install`, wired through `.githooks/`)
+re-runs `scripts/generate-status.js` and blocks the commit if the README
+badges or `docs/status.md` disagree with the latest `reports/*.json`. When
+it fires, stage the regenerated files and commit again.
 
 Commit regenerated files when the underlying behavior inventory, parity data, or
 published dashboard is intentionally changing.

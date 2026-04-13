@@ -8,6 +8,7 @@
   },
   "scripts": {
     "postinstall": "node scripts/build-xxscreeps.js",
+    "prepare": "node scripts/install-git-hooks.js",
     "preflight": "node scripts/preflight.js",
     "setup": "node scripts/setup.js",
     "setup:xxscreeps": "node scripts/setup.js xxscreeps",
