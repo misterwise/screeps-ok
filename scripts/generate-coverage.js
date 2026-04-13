@@ -174,8 +174,6 @@ function renderHTML(catalog, result) {
 		? Math.round(100 * totalTested / (totalTested + totalFeasible))
 		: 100;
 
-	const now = new Date().toISOString().slice(0, 16) + ' UTC';
-
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,7 +231,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <body>
 
 <h1>screeps-ok coverage</h1>
-<p class="subtitle">Generated ${esc(now)} &mdash; behavioral conformance catalog vs. test suite</p>
+<p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
   <div class="stat-card"><div class="num">${totalCatalog}</div><div class="label">catalog IDs</div></div>

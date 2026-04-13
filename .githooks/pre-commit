@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
-# Regenerate the dashboard + README badges from the latest vitest JSON reports,
-# then fail the commit if either file drifted from what was staged. Keeps
-# README badge counts honest without running the multi-minute parity suite.
+# Regenerate the status dashboard, README badges, and coverage report from
+# the current repo state, then fail the commit if any of those files drifted
+# from what was staged. Keeps published artifacts honest without running the
+# multi-minute parity suite.
 
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-if [[ ! -f reports/vanilla.json && ! -f reports/xxscreeps.json ]]; then
-	exit 0
+# Coverage derives from behaviors.md + tests/, so it can always regenerate.
+node scripts/generate-coverage.js >/dev/null
+
+# Status + README badges derive from reports/*.json — only run if at least
+# one report is present (skips cleanly on a fresh clone).
+if [[ -f reports/vanilla.json || -f reports/xxscreeps.json ]]; then
+	node scripts/generate-status.js >/dev/null
 fi
 
-node scripts/generate-status.js >/dev/null
-
 changed=()
-for f in README.md docs/status.md; do
+for f in README.md docs/status.md docs/coverage.html; do
 	if ! git diff --quiet -- "$f"; then
 		changed+=("$f")
 	fi
 done
 
 if (( ${#changed[@]} > 0 )); then
-	echo "pre-commit: badges/status regenerated — stage the update and retry:" >&2
+	echo "pre-commit: generated artifacts regenerated — stage and retry:" >&2
 	for f in "${changed[@]}"; do
 		echo "  git add $f" >&2
 	done
