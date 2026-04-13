@@ -342,9 +342,9 @@ describe('controller mechanics', () => {
 	test('CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX', async ({ shard }) => {
 		// Engine processor (reserveController.js:39-41) rejects a reserve
 		// intent if the new endTime would exceed gameTime + CONTROLLER_RESERVE_MAX.
-		// With a 50-CLAIM creep each reserve adds 50 ticks and natural decay
-		// removes 1 per tick, so the reservation caps around 5000 - 50 after
-		// ~110 ticks of continuous reserving.
+		// Use the three non-edge tiles adjacent to the canonical controller at
+		// (1,1). Three 50-CLAIM reservers can drive the controller near the cap
+		// in a few dozen reserve ticks without relying on engine internals.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -353,37 +353,40 @@ describe('controller mechanics', () => {
 			],
 		});
 		const ctrlPos = await shard.getControllerPos('W2N1');
-		const body: string[] = [];
-		for (let i = 0; i < 49; i++) body.push(CLAIM);
-		body.push(MOVE);
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body,
-		});
+		const body = Array.from({ length: 50 }, () => CLAIM);
+		const reserverPositions: Array<[number, number]> = [
+			[ctrlPos!.x + 1, ctrlPos!.y],
+			[ctrlPos!.x, ctrlPos!.y + 1],
+			[ctrlPos!.x + 1, ctrlPos!.y + 1],
+		];
+		const creepIds = await Promise.all(reserverPositions.map(pos =>
+			shard.placeCreep('W2N1', {
+				pos,
+				owner: 'p1',
+				body,
+			})
+		));
 		await shard.tick();
 
-		// Reserve long enough to exceed the cap and observe the rejection
-		// oscillation. Net +48/loop until cap hits at ~loop 107; a dozen
-		// more loops confirm the cap holds and ticksToEnd stays within
-		// [cap - 2*effect, cap].
-		for (let i = 0; i < 120; i++) {
+		// runPlayer() already advances one processing tick. Three reservers add
+		// at most 150 reservation per tick, minus the 1 natural decay, so
+		// 34 reserve ticks are enough to saturate from zero.
+		for (let i = 0; i < 34; i++) {
 			await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).reserveController(
-					Game.rooms['W2N1'].controller
-				)
+				const controller = Game.rooms['W2N1'].controller;
+				for (const id of ${creepIds}) {
+					Game.getObjectById(id).reserveController(controller);
+				}
 			`);
-			await shard.tick();
 		}
 
 		const ticksToEnd = await shard.runPlayer('p1', code`
 			Game.rooms['W2N1'].controller.reservation.ticksToEnd
 		`) as number;
-		// Cap is enforced at CONTROLLER_RESERVE_MAX (5000). The last successful
-		// reserve lands within `effect` of the cap (effect = 49), so the
-		// observed value sits in [cap - 2*effect, cap].
+		// Once saturated, the last successful reserve leaves the player-visible
+		// value within one 50-tick reserve effect of the cap.
 		expect(ticksToEnd).toBeLessThanOrEqual(CONTROLLER_RESERVE_MAX);
-		expect(ticksToEnd).toBeGreaterThan(CONTROLLER_RESERVE_MAX - 2 * 49);
+		expect(ticksToEnd).toBeGreaterThan(CONTROLLER_RESERVE_MAX - 50);
 	}, 30_000);
 
 	test('CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver', async ({ shard }) => {
