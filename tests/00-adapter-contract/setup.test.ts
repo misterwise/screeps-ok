@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
@@ -73,6 +73,28 @@ describe('adapter contract: setup', () => {
 			expect((result as any).hasRoom).toBe(true);
 			expect((result as any).level).toBe(4);
 			expect((result as any).my).toBe(true);
+		});
+
+		test('default room layout is canonical and sparse', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1' }],
+			});
+			await shard.tick();
+
+			const ctrlPos = await shard.getControllerPos('W1N1');
+			const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+			const sources = await shard.findInRoom('W1N1', FIND_SOURCES);
+			const minerals = await shard.findInRoom('W1N1', FIND_MINERALS);
+
+			expect(ctrlPos).toEqual({ x: 1, y: 1 });
+			expect(structures).toHaveLength(1);
+			expect(structures[0]).toMatchObject({
+				kind: 'structure',
+				structureType: 'controller',
+			});
+			expect(sources).toEqual([]);
+			expect(minerals).toEqual([]);
 		});
 
 		playerGclTest('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {

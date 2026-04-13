@@ -70,8 +70,9 @@ Investigate in this order:
      changes the assertion baseline.
    - Vanilla damages body parts in body order from index 0. To deal
      exactly 100 damage to the front part, use 10× `RANGED_ATTACK`.
-   - Default room layouts have a controller at `(1,1)` and may have
-     sources/minerals at fixed positions. `moveTo` paths may detour;
+   - Default room layouts are sparse: one controller at `(1,1)`, plain
+     terrain unless the test overrides it, and no ambient sources/minerals.
+     `moveTo` paths may detour;
      prefer Chebyshev-distance assertions over exact-direction
      assertions when the catalog rule is direction-agnostic.
 

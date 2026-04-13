@@ -144,6 +144,29 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		ops.push(fn);
 	}
 
+	private resetRoomToCanonicalLayout(room: Room, roomName: string): void {
+		for (const obj of [...room['#objects']]) {
+			room['#removeObject'](obj);
+		}
+
+		room['#level'] = 0;
+		room['#user'] = null;
+		(room as any)['#safeModeUntil'] = 0;
+		(room as any)['#sign'] = undefined;
+
+		const controller = new StructureController();
+		controller.id = this.nextId();
+		controller.pos = new RoomPosition(1, 1, roomName);
+		controller['#posId'] = controller.pos['#id'];
+		controller.safeModeAvailable = 0;
+		controller['#downgradeTime'] = 0;
+		controller['#progress'] = 0;
+		controller['#reservationEndTime'] = 0;
+		controller['#safeModeCooldownTime'] = 0;
+		controller['#upgradeBlockedUntil'] = 0;
+		room['#insertObject'](controller, true);
+	}
+
 	async createShard(spec: ShardSpec): Promise<void> {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
@@ -469,18 +492,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		await this.keepRoomsActive();
 
-		// Now apply all pending setup ops via poke: strip default
-		// sources/minerals, set controller ownership, place objects.
+		// Now apply all pending setup ops via poke on top of the canonical
+		// sparse room layout used by the adapter contract: plain terrain
+		// (handled above), one controller at (1,1), and no ambient objects.
 		for (const roomName of this.rooms) {
 			const ops = this.pendingSetup.get(roomName);
 			const stripAndSetup = (room: any) => {
-				for (const obj of [...room['#objects']]) {
-					try {
-						const st = getStructureType(obj);
-						if (!st && obj.energyCapacity !== undefined) room['#removeObject'](obj);
-						if (obj.mineralType !== undefined) room['#removeObject'](obj);
-					} catch {}
-				}
+				this.resetRoomToCanonicalLayout(room, roomName);
 				if (ops) {
 					for (const op of ops) op(room);
 				}

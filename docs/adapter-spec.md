@@ -65,6 +65,11 @@ That includes:
 - create the requested rooms
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
+- provide the canonical default room layout for rooms without extra typed
+  placements:
+  plain terrain unless `RoomSpec.terrain` overrides it, exactly one controller
+  at `(1,1)`, and no ambient sources, minerals, structures, or other room
+  objects
 
 If a room has an owner and no explicit `rcl`, adapters should treat it as
 controller level `1`.
