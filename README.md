@@ -92,16 +92,6 @@ installs with `npm i -D screeps-ok` is tracked as a pre-publish release
 gate — package metadata is not yet a stable installation contract, and
 `"exports"` still resolves to raw TypeScript.
 
-## Known Issues
-
-Per-adapter parity gaps live in [`docs/status.md`](docs/status.md). This
-section covers only harness-level issues.
-
-🔴 **Multi-player vanilla** — a second player without an owned room cannot
-execute code reliably. The mockup driver disables users that own no
-`rooms.objects`, so the adapter-contract test for that case is skipped on
-vanilla.
-
 ## Acknowledgments
 
 The xxscreeps adapter depends on [xxscreeps](https://github.com/laverdet/xxscreeps)
