@@ -250,6 +250,111 @@ function renderGapTestList(adapterName, gapId, tests) {
 	return lines.join('\n');
 }
 
+const CAPABILITY_DESCRIPTIONS = {
+	chemistry: 'Lab/boost mechanics',
+	powerCreeps: 'Power creeps and powers',
+	factory: 'Factory commodities',
+	market: 'Market and terminal',
+	observer: 'Observer rooms',
+	nuke: 'Nukes',
+	deposit: 'Deposits (highway)',
+	terrain: 'Custom terrain specs',
+};
+
+const LIMITATION_DESCRIPTIONS = {
+	controllerDowngrade: 'RoomSpec.ticksToDowngrade setup not supported',
+	portalPlacement: 'placeObject for portals not supported',
+	interRoomTransition: 'Inter-room creep transitions not supported',
+	flagSupport: 'Game.flags not populated for player code',
+	memorySupport: 'Memory/RawMemory not populated for player code',
+	npcStructures: 'placeObject for keeperLair/invaderCore not supported',
+	xxscreepsPathFinderUseMissing: 'PathFinder.use shim missing on the adapter',
+	playerGclControl: 'PlayerSpec.gcl override not supported',
+	pullSelfHang: 'pull(self) hangs the runner',
+};
+
+function describeSkipReason(reason) {
+	if (!reason) return { category: 'uncategorized', key: '(no reason)', description: 'Skip reason not recorded' };
+	const [category, key] = reason.split(':');
+	if (category === 'capability') {
+		return {
+			category: 'capability',
+			key,
+			description: CAPABILITY_DESCRIPTIONS[key] ?? `Adapter capability '${key}' is disabled`,
+		};
+	}
+	if (category === 'limitation') {
+		return {
+			category: 'limitation',
+			key,
+			description: LIMITATION_DESCRIPTIONS[key] ?? `Documented adapter limitation '${key}'`,
+		};
+	}
+	return { category: 'other', key: reason, description: reason };
+}
+
+function renderSkippedSection(adapterName, tests) {
+	const lines = [];
+	lines.push(`## ${adapterName} skipped tests`);
+	lines.push('');
+	if (tests.length === 0) {
+		lines.push('_none_');
+		lines.push('');
+		return lines.join('\n');
+	}
+
+	const groups = new Map();
+	for (const t of tests) {
+		const reason = t.meta?.skipReason ?? null;
+		const info = describeSkipReason(reason);
+		const groupKey = `${info.category}:${info.key}`;
+		const entry = groups.get(groupKey) ?? { info, tests: [] };
+		entry.tests.push(t);
+		groups.set(groupKey, entry);
+	}
+
+	const ordered = [...groups.entries()].sort(
+		([, a], [, b]) => b.tests.length - a.tests.length,
+	);
+
+	lines.push(
+		`${adapterName} has ${tests.length} skipped test${tests.length === 1 ? '' : 's'}, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in \`capabilities\` (see \`adapters/${adapterName}/index.ts\`). **Limitation** skips come from \`src/limitations.ts\` — features the canonical engine has but this adapter can't surface through the screeps-ok API.`,
+	);
+	lines.push('');
+	lines.push('| Category | Cause | What it means | Tests |');
+	lines.push('| --- | --- | --- | :-: |');
+	for (const [, { info, tests: reasonTests }] of ordered) {
+		const anchor = slug(`${adapterName} skip ${info.category} ${info.key}`);
+		const countCell = `[${reasonTests.length}](#${anchor})`;
+		lines.push(`| ${info.category} | \`${info.key}\` | ${info.description} | ${countCell} |`);
+	}
+	lines.push('');
+	lines.push('Click a count to jump to the affected test list.');
+	lines.push('');
+
+	for (const [, { info, tests: reasonTests }] of ordered) {
+		const anchor = slug(`${adapterName} skip ${info.category} ${info.key}`);
+		const byFile = groupTestsByFile(reasonTests);
+		lines.push(`<details id="${anchor}">`);
+		lines.push(
+			`<summary><code>${info.category}:${info.key}</code> — ${reasonTests.length} test${reasonTests.length === 1 ? '' : 's'} across ${byFile.length} file${byFile.length === 1 ? '' : 's'}</summary>`,
+		);
+		lines.push('');
+		for (const [file, fileTests] of byFile) {
+			lines.push(`**\`${file}\`** (${fileTests.length})`);
+			lines.push('');
+			for (const t of fileTests) {
+				lines.push(`- ${t.fullName}`);
+			}
+			lines.push('');
+		}
+		lines.push('</details>');
+		lines.push('');
+	}
+
+	return lines.join('\n');
+}
+
 function renderPerAdapterExpectedFailures(adapterName, data) {
 	const lines = [];
 	const parity = data.parity;
@@ -390,11 +495,7 @@ function render(summaries) {
 		const s = data.summary;
 		if (!s.loaded) continue;
 		if (s.skipped > 0) {
-			lines.push(renderTestListByFile(
-				`${adapter} skipped tests`,
-				s.skippedTests,
-				'_none_',
-			));
+			lines.push(renderSkippedSection(adapter, s.skippedTests));
 			lines.push('');
 		}
 		lines.push(renderTestListByFile(

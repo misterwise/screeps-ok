@@ -1,9 +1,9 @@
 import { describe, test, expect, code,
 	CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const downgradeTest = hasDocumentedAdapterLimitation('controllerDowngrade') ? test.skip : test;
+const downgradeTest = limitationGated('controllerDowngrade');
 
 describe('Controller downgrade', () => {
 	downgradeTest('CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0', async ({ shard }) => {

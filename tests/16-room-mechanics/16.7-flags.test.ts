@@ -1,10 +1,10 @@
 import { describe, test, expect, code,
 	COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
 	ERR_NAME_EXISTS, ERR_FULL, FLAGS_LIMIT,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const flagTest = hasDocumentedAdapterLimitation('flagSupport') ? test.skip : test;
+const flagTest = limitationGated('flagSupport');
 
 describe('Flags', () => {
 	flagTest('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player', async ({ shard }) => {

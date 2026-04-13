@@ -123,7 +123,11 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	requires(capability: CapabilityName, reason?: string): void;
 }
 
-function wrapAdapter(adapter: ScreepsOkAdapter, skip: (note?: string) => never): ShardFixture {
+function wrapAdapter(
+	adapter: ScreepsOkAdapter,
+	skip: (note?: string) => never,
+	task: { meta: Record<string, unknown> },
+): ShardFixture {
 	const shard = adapter as ShardFixture;
 	const runPlayers = adapter.runPlayers.bind(adapter);
 
@@ -160,6 +164,7 @@ function wrapAdapter(adapter: ScreepsOkAdapter, skip: (note?: string) => never):
 
 	shard.requires = (capability: CapabilityName, reason?: string): void => {
 		if (adapter.capabilities[capability]) return;
+		task.meta.skipReason = `capability:${capability}`;
 		skip(reason ?? `adapter capability '${capability}' is disabled`);
 	};
 
@@ -193,10 +198,10 @@ function wrapAdapter(adapter: ScreepsOkAdapter, skip: (note?: string) => never):
 }
 
 export const test = base.extend<{ shard: ShardFixture }>({
-	shard: async ({ skip }, use) => {
+	shard: async ({ skip, task }, use) => {
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
-		await use(wrapAdapter(adapter, skip));
+		await use(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
 		await adapter.teardown();
 	},
 });

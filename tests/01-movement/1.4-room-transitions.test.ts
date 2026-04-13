@@ -1,9 +1,9 @@
 import { describe, test, expect, code,
 	OK, MOVE, WORK, CARRY, FIND_CREEPS, BODYPART_HITS,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const transitionTest = hasDocumentedAdapterLimitation('interRoomTransition') ? test.skip : test;
+const transitionTest = limitationGated('interRoomTransition');
 
 describe('Room transitions', () => {
 	transitionTest('ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room', async ({ shard }) => {

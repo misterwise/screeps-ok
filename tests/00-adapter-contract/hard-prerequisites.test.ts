@@ -1,13 +1,12 @@
-import { describe, test, expect, code,
+import { describe, test, expect, code, limitationGated,
 	OK, MOVE, FIND_CREEPS,
 	STRUCTURE_SPAWN,
 	CONTROLLER_DOWNGRADE,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const downgradeTest = hasDocumentedAdapterLimitation('controllerDowngrade') ? test.skip : test;
-const portalTest = hasDocumentedAdapterLimitation('portalPlacement') ? test.skip : test;
-const transitionTest = hasDocumentedAdapterLimitation('interRoomTransition') ? test.skip : test;
+const downgradeTest = limitationGated('controllerDowngrade');
+const portalTest = limitationGated('portalPlacement');
+const transitionTest = limitationGated('interRoomTransition');
 
 describe('adapter contract: hard family prerequisites', () => {
 	describe('controller ticksToDowngrade', () => {

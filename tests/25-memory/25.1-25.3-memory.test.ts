@@ -1,7 +1,6 @@
-import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS, limitationGated } from '../../src/index.js';
 
-const memTest = hasDocumentedAdapterLimitation('memorySupport') ? test.skip : test;
+const memTest = limitationGated('memorySupport');
 const preMemoryTest = memTest;
 
 describe('Memory', () => {

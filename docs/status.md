@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 04:16 UTC |
-| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 03:59 UTC |
+| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 04:59 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2018,115 +2018,29 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-<details>
-<summary>290 tests across 41 files</summary>
+xxscreeps has 290 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (4)
+| Category | Cause | What it means | Tests |
+| --- | --- | --- | :-: |
+| capability | `factory` | Factory commodities | [83](#xxscreeps-skip-capability-factory) |
+| capability | `powerCreeps` | Power creeps and powers | [67](#xxscreeps-skip-capability-powercreeps) |
+| capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
+| capability | `nuke` | Nukes | [27](#xxscreeps-skip-capability-nuke) |
+| capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
+| limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
+| limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
+| limitation | `controllerDowngrade` | RoomSpec.ticksToDowngrade setup not supported | [9](#xxscreeps-skip-limitation-controllerdowngrade) |
+| limitation | `npcStructures` | placeObject for keeperLair/invaderCore not supported | [8](#xxscreeps-skip-limitation-npcstructures) |
+| limitation | `portalPlacement` | placeObject for portals not supported | [6](#xxscreeps-skip-limitation-portalplacement) |
+| limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
+| limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
+| limitation | `xxscreepsPathFinderUseMissing` | PathFinder.use shim missing on the adapter | [1](#xxscreeps-skip-limitation-xxscreepspathfinderusemissing) |
+| limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
-- adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
-- adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
-- adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
-- adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
+Click a count to jump to the affected test list.
 
-**`tests/00-adapter-contract/setup.test.ts`** (4)
-
-- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
-- adapter contract: setup placeFlag places a flag retrievable by name in player code
-- adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
-- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
-
-**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
-
-- Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
-- Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
-- Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
-- Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
-
-**`tests/01-movement/1.5-pulling.test.ts`** (1)
-
-- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
-
-**`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
-
-- Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
-
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (1)
-
-- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
-
-**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (10)
-
-- deposit lifecycle (section 17.5) DEPOSIT-005 repeated harvests increase lastCooldown
-- deposit lifecycle (section 17.5) DEPOSIT-001 deposit exposes canonical depositType values
-- deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
-- deposit lifecycle (section 17.5) DEPOSIT-003 lastCooldown reflects the most recent cooldown value
-- deposit lifecycle (section 17.5) DEPOSIT-006 deposit disappears when the decay timer expires
-- creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
-- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
-- creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
-- creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
-
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (2)
-
-- creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
-- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
-
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (1)
-
-- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
-
-**`tests/06-controller/6.10-structlimit.test.ts`** (2)
-
-- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
-- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
-
-**`tests/06-controller/6.4-upgrade.test.ts`** (1)
-
-- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
-
-**`tests/06-controller/6.7-downgrade.test.ts`** (6)
-
-- Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
-- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
-- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
-- Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
-- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
-- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
-
-**`tests/06-controller/6.8-safemode.test.ts`** (1)
-
-- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (13)
-
-- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
-- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
-- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
-- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
-- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
-- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
-- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
-- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
-- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
-- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
-- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
-- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-
-**`tests/07-combat/7.17-tower-power.test.ts`** (2)
-
-- Tower power effects TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power
-- Tower power effects TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower
-
-**`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
-
-- Spawn power effects SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time
-
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (2)
-
-- Lab runReaction LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount
-- Lab reverseReaction LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount
+<details id="xxscreeps-skip-capability-factory">
+<summary><code>capability:factory</code> — 83 tests across 5 files</summary>
 
 **`tests/11-structures-production/11.4-11.5-factory.test.ts`** (78)
 
@@ -2209,6 +2123,54 @@ Click a test count above to jump to the affected test list for that gap.
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 - Factory commodity chains FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production
 
+**`tests/15-structure-common/15.1-hits.test.ts`** (1)
+
+- Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
+
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
+
+- Construction costs CONSTRUCTION-COST-001:factory costs 100000
+
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
+
+- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
+- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
+
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-capability-powercreeps">
+<summary><code>capability:powerCreeps</code> — 67 tests across 18 files</summary>
+
+**`tests/00-adapter-contract/setup.test.ts`** (1)
+
+- adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+
+**`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
+
+- Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
+
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
+
+- creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
+
+**`tests/07-combat/7.17-tower-power.test.ts`** (2)
+
+- Tower power effects TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power
+- Tower power effects TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower
+
+**`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
+
+- Spawn power effects SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time
+
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (2)
+
+- Lab runReaction LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount
+- Lab reverseReaction LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount
+
 **`tests/11-structures-production/11.6-power-spawn.test.ts`** (6)
 
 - StructurePowerSpawn processPower POWER-SPAWN-001 processPower returns OK and consumes 1 power + POWER_SPAWN_ENERGY_RATIO energy
@@ -2218,52 +2180,14 @@ Click a test count above to jump to the affected test list for that gap.
 - StructurePowerSpawn processPower POWER-SPAWN-004 processPower returns ERR_RCL_NOT_ENOUGH when RCL < 8
 - StructurePowerSpawn processPower POWER-SPAWN-005 processPower returns ERR_NOT_OWNER when not owned by the player
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (1)
-
-- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
-
 **`tests/12-structures-military/12.4-rampart-power.test.ts`** (2)
 
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (12)
-
-- Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
-- Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
-- Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
-- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
-- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
-- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
-- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
-- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
-- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
-- Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
-- Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
-- Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
-
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (1)
 
 - StructureObserver OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit
-
-**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (5)
-
-- Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
-- Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
-- Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
-- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
-- Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
-
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
-
-- Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
-- Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
-- Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
-- Invader core INVADER-CORE-001 ticksToDeploy counts down
-- Invader core INVADER-CORE-002 invader core exposes its level
-- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
-- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
 **`tests/14-structures-npc/14.3-power-bank.test.ts`** (4)
 
@@ -2272,51 +2196,19 @@ Click a test count above to jump to the affected test list for that gap.
 - Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
 - Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile
 
-**`tests/15-structure-common/15.1-hits.test.ts`** (4)
+**`tests/15-structure-common/15.1-hits.test.ts`** (1)
 
 - Structure hits STRUCTURE-HITS-001:powerSpawn initializes with 5000 hits
-- Structure hits STRUCTURE-HITS-001:terminal initializes with 3000 hits
-- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
-- Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (4)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
 
 - Construction costs CONSTRUCTION-COST-001:powerSpawn costs 100000
-- Construction costs CONSTRUCTION-COST-001:terminal costs 100000
-- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
-- Construction costs CONSTRUCTION-COST-001:factory costs 100000
-
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
-
-- Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
-- Flags FLAG-002 a created flag stores name, color, and secondaryColor
-- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
-- Flags FLAG-004 Flag.remove() removes the flag from the player flag set
-- Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
-- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
-- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
-- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
 
 **`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (3)
 
 - Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
 - Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
 - Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
-
-**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
-
-- Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
-- Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
-- Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
-- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
-- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
-- Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
-
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
-
-- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
-- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
-- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
 
 **`tests/19-power/19.1-lifecycle.test.ts`** (16)
 
@@ -2363,6 +2255,50 @@ Click a test count above to jump to the affected test list for that gap.
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
 
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
+
+- Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-004:powerSpawn restricted store returns null for disallowed resources
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (3)
+
+- 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:powerSpawn structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-capability-market">
+<summary><code>capability:market</code> — 41 tests across 8 files</summary>
+
+**`tests/06-controller/6.10-structlimit.test.ts`** (2)
+
+- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
+- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
+
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (12)
+
+- Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
+- Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
+- Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
+- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
+- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
+- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
+- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
+- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
+- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
+- Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
+- Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
+- Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
+
+**`tests/15-structure-common/15.1-hits.test.ts`** (1)
+
+- Structure hits STRUCTURE-HITS-001:terminal initializes with 3000 hits
+
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
+
+- Construction costs CONSTRUCTION-COST-001:terminal costs 100000
+
 **`tests/20-market/20.2-20.4-market.test.ts`** (19)
 
 - Market orders MARKET-ORDER-001 createOrder creates an order with the requested parameters
@@ -2385,26 +2321,118 @@ Click a test count above to jump to the affected test list for that gap.
 - Market queries MARKET-QUERY-005 order prices use public credit units not internal milli-credits
 - Market queries MARKET-ORDER-009 order expires after MARKET_ORDER_LIFE_TIME ms of wall-clock time
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (1)
-
-- RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
-
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (9)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
 
 - Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
-- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
 - Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
-- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
-- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-004:powerSpawn restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
 
 **`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (2)
 
 - Per-tick intent limits INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table
 - Per-tick intent limits INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
+
+- 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-capability-nuke">
+<summary><code>capability:nuke</code> — 27 tests across 10 files</summary>
+
+**`tests/00-adapter-contract/setup.test.ts`** (1)
+
+- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
+
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
+
+- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
+
+**`tests/06-controller/6.4-upgrade.test.ts`** (1)
+
+- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (13)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
+- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
+- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
+- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
+- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
+- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
+- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
+- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
+- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
+- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
+- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
+- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
+- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (1)
+
+- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
+
+**`tests/15-structure-common/15.1-hits.test.ts`** (1)
+
+- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
+
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
+
+- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
+
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
+
+- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
+- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
+- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
+
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (3)
+
+- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
+- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
+
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-capability-deposit">
+<summary><code>capability:deposit</code> — 17 tests across 3 files</summary>
+
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (10)
+
+- deposit lifecycle (section 17.5) DEPOSIT-005 repeated harvests increase lastCooldown
+- deposit lifecycle (section 17.5) DEPOSIT-001 deposit exposes canonical depositType values
+- deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
+- deposit lifecycle (section 17.5) DEPOSIT-003 lastCooldown reflects the most recent cooldown value
+- deposit lifecycle (section 17.5) DEPOSIT-006 deposit disappears when the decay timer expires
+- creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
+- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
+- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
+- creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
+- creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
+
+**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
+
+- Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
+- Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
+- Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
+- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
+- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
+- Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
+
+- 26.0 Object Shape Conformance SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-limitation-memorysupport">
+<summary><code>limitation:memorySupport</code> — 13 tests across 1 file</summary>
 
 **`tests/25-memory/25.1-25.3-memory.test.ts`** (13)
 
@@ -2422,19 +2450,135 @@ Click a test count above to jump to the affected test list for that gap.
 - Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
 - Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (9)
+</details>
 
-- 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:powerSpawn structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
+<details id="xxscreeps-skip-limitation-flagsupport">
+<summary><code>limitation:flagSupport</code> — 10 tests across 3 files</summary>
+
+**`tests/00-adapter-contract/setup.test.ts`** (1)
+
+- adapter contract: setup placeFlag places a flag retrievable by name in player code
+
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
+
+- Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
+- Flags FLAG-002 a created flag stores name, color, and secondaryColor
+- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
+- Flags FLAG-004 Flag.remove() removes the flag from the player flag set
+- Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
+- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
+- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
+- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
+
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (1)
+
+- RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 
 </details>
+
+<details id="xxscreeps-skip-limitation-controllerdowngrade">
+<summary><code>limitation:controllerDowngrade</code> — 9 tests across 3 files</summary>
+
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (2)
+
+- adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
+- adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
+
+**`tests/06-controller/6.7-downgrade.test.ts`** (6)
+
+- Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
+- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
+- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
+- Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
+- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
+- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
+
+**`tests/06-controller/6.8-safemode.test.ts`** (1)
+
+- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
+
+</details>
+
+<details id="xxscreeps-skip-limitation-npcstructures">
+<summary><code>limitation:npcStructures</code> — 8 tests across 1 file</summary>
+
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
+
+- Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
+- Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
+- Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
+- Invader core INVADER-CORE-001 ticksToDeploy counts down
+- Invader core INVADER-CORE-002 invader core exposes its level
+- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
+
+</details>
+
+<details id="xxscreeps-skip-limitation-portalplacement">
+<summary><code>limitation:portalPlacement</code> — 6 tests across 2 files</summary>
+
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
+
+- adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
+
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (5)
+
+- Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
+- Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
+- Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
+- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
+
+</details>
+
+<details id="xxscreeps-skip-limitation-interroomtransition">
+<summary><code>limitation:interRoomTransition</code> — 5 tests across 2 files</summary>
+
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
+
+- adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
+
+**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
+
+- Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
+- Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
+- Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
+- Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
+
+</details>
+
+<details id="xxscreeps-skip-limitation-playergclcontrol">
+<summary><code>limitation:playerGclControl</code> — 2 tests across 2 files</summary>
+
+**`tests/00-adapter-contract/setup.test.ts`** (1)
+
+- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
+
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (1)
+
+- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
+
+</details>
+
+<details id="xxscreeps-skip-limitation-xxscreepspathfinderusemissing">
+<summary><code>limitation:xxscreepsPathFinderUseMissing</code> — 1 test across 1 file</summary>
+
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (1)
+
+- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
+
+</details>
+
+<details id="xxscreeps-skip-limitation-pullselfhang">
+<summary><code>limitation:pullSelfHang</code> — 1 test across 1 file</summary>
+
+**`tests/01-movement/1.5-pulling.test.ts`** (1)
+
+- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
+
+</details>
+
 
 ## xxscreeps passing tests
 

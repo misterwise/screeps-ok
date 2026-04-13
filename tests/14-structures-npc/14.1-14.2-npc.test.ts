@@ -1,7 +1,6 @@
-import { describe, test, expect, code } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { describe, test, expect, code, limitationGated } from '../../src/index.js';
 
-const npcTest = hasDocumentedAdapterLimitation('npcStructures') ? test.skip : test;
+const npcTest = limitationGated('npcStructures');
 
 describe('Keeper lair', () => {
 	npcTest('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick', async ({ shard }) => {

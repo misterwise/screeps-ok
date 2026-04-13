@@ -1,5 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, limitationGated } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -7,15 +6,11 @@ import {
 // PlayerSpec.gcl is honored only by adapters that expose a per-player GCL
 // override (vanilla today). The `playerGclControl` gate reports adapters
 // that don't, so the contract test for the override skips honestly there.
-const playerGclTest = hasDocumentedAdapterLimitation('playerGclControl')
-	? test.skip
-	: test;
+const playerGclTest = limitationGated('playerGclControl');
 
 // placeFlag is honored only by adapters that surface flags to player code
 // (vanilla today). The `flagSupport` gate reports adapters that don't.
-const flagTest = hasDocumentedAdapterLimitation('flagSupport')
-	? test.skip
-	: test;
+const flagTest = limitationGated('flagSupport');
 
 describe('adapter contract: setup', () => {
 	describe('createShard', () => {

@@ -1,13 +1,10 @@
-import { describe, test, expect, code } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { describe, test, expect, code, limitationGated } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC,
 	TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC,
 } from '../../src/terrain-fixture.js';
 
-const pathFinderUseTest = hasDocumentedAdapterLimitation('xxscreepsPathFinderUseMissing')
-	? test.skip
-	: test;
+const pathFinderUseTest = limitationGated('xxscreepsPathFinderUseMissing');
 
 describe('Legacy Pathfinding', () => {
 	test('LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room', async ({ shard }) => {

@@ -3,12 +3,10 @@ import { describe, test, expect, code,
 	CLAIM, MOVE, WORK,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const playerGclControlTest = hasDocumentedAdapterLimitation('playerGclControl')
-	? test.skip
-	: test;
+const playerGclControlTest = limitationGated('playerGclControl');
 
 describe('controller mechanics', () => {
 	test('CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
@@ -365,9 +363,11 @@ describe('controller mechanics', () => {
 		});
 		await shard.tick();
 
-		// Reserve for enough ticks to well exceed the cap if uncapped.
-		// 49 parts × 150 ticks = 7350 theoretical, capped at CONTROLLER_RESERVE_MAX.
-		for (let i = 0; i < 150; i++) {
+		// Reserve long enough to exceed the cap and observe the rejection
+		// oscillation. Net +48/loop until cap hits at ~loop 107; a dozen
+		// more loops confirm the cap holds and ticksToEnd stays within
+		// [cap - 2*effect, cap].
+		for (let i = 0; i < 120; i++) {
 			await shard.runPlayer('p1', code`
 				Game.getObjectById(${creepId}).reserveController(
 					Game.rooms['W2N1'].controller
@@ -384,7 +384,7 @@ describe('controller mechanics', () => {
 		// observed value sits in [cap - 2*effect, cap].
 		expect(ticksToEnd).toBeLessThanOrEqual(CONTROLLER_RESERVE_MAX);
 		expect(ticksToEnd).toBeGreaterThan(CONTROLLER_RESERVE_MAX - 2 * 49);
-	});
+	}, 30_000);
 
 	test('CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver', async ({ shard }) => {
 		// Engine controllers/tick.js:10 — reservation is cleared when

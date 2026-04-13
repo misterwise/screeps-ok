@@ -3,11 +3,11 @@ import { describe, test, expect, code,
 	MOVE, ATTACK, RANGED_ATTACK, WORK,
 	STRUCTURE_RAMPART,
 	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import { safeModeBlockedActionCases } from '../../src/matrices/ctrl-safemode-blocked.js';
 
-const downgradeTest = hasDocumentedAdapterLimitation('controllerDowngrade') ? test.skip : test;
+const downgradeTest = limitationGated('controllerDowngrade');
 
 describe('Safe mode mechanics', () => {
 	// ---- CTRL-SAFEMODE-001: activation consumes a charge and starts safe mode ----

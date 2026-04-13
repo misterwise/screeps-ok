@@ -1,8 +1,7 @@
-import { describe, test, expect, code,
+import { describe, test, expect, code, limitationGated,
 	OK, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
 describe('creep.pull()', () => {
 	test('MOVE-PULL-001 pull() on an adjacent friendly creep returns OK', async ({ shard }) => {
@@ -186,7 +185,7 @@ describe('creep.pull()', () => {
 		expect(c.pos.x).toBe(25); expect(c.pos.y).toBe(24);
 	});
 
-	const pullSelfTest = hasDocumentedAdapterLimitation('pullSelfHang') ? test.skip : test;
+	const pullSelfTest = limitationGated('pullSelfHang');
 	pullSelfTest('MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {

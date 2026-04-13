@@ -1,9 +1,9 @@
 import { describe, test, expect, code,
 	MOVE, FIND_CREEPS,
+	limitationGated,
 } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
-const portalTest = hasDocumentedAdapterLimitation('portalPlacement') ? test.skip : test;
+const portalTest = limitationGated('portalPlacement');
 
 describe('Portal mechanics', () => {
 	portalTest('PORTAL-001 creep on a same-shard portal tile appears at the destination next tick', async ({ shard }) => {
