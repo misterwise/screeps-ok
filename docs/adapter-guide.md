@@ -457,7 +457,8 @@ for declared tests so they don't break your CI.
 {
   "expected_failures": {
     "gap-id": {
-      "summary": "Short description of the divergence",
+      "actual": "What the engine currently does",
+      "expected": "What the canonical engine does",
       "tests": ["CATALOG-ID-001", "CATALOG-ID-002"]
     }
   }
@@ -465,7 +466,8 @@ for declared tests so they don't break your CI.
 ```
 
 - **gap-id** — a stable, adapter-neutral identifier for the divergence
-- **summary** — one-line description shown in the status dashboard
+- **actual** — short phrase describing the engine's observed behavior
+- **expected** — short phrase describing the canonical (vanilla) behavior
 - **tests** — catalog IDs of tests expected to fail due to this gap. When a
   single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
   you can list either the base ID (gates all variants) or specific suffixed

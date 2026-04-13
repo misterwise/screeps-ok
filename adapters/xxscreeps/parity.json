@@ -1,199 +1,248 @@
 {
 	"expected_failures": {
 		"creep-owner-undefined": {
-			"summary": "Creep.owner is undefined (key exists but value is undefined)",
+			"actual": "`Creep.owner` key exists but value is `undefined`",
+			"expected": "`Creep.owner` is an object with a `username` string",
 			"tests": ["CTRL-SIGN-001", "CTRL-SIGN-003", "CTRL-RESERVE-001", "CTRL-RESERVE-005", "CTRL-RESERVE-006", "CTRL-RESERVE-007"]
 		},
-"tombstone-corpse-rate": {
-			"summary": "Tombstone stores always reduced by CREEP_CORPSE_RATE, no body energy reclaim on suicide",
+		"tombstone-corpse-rate": {
+			"actual": "Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()`",
+			"expected": "On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources",
 			"tests": ["CREEP-DEATH-008", "CREEP-DEATH-009"]
 		},
 		"link-self-transfer": {
-			"summary": "StructureLink.transferEnergy allows self-transfer (returns OK)",
+			"actual": "`StructureLink.transferEnergy` to self returns `OK`",
+			"expected": "Returns `ERR_INVALID_TARGET` when target is the source link itself",
 			"tests": ["LINK-004"]
 		},
 		"link-cross-owner": {
-			"summary": "StructureLink.transferEnergy allows transfer to another player's link",
+			"actual": "`StructureLink.transferEnergy` allows transfer to another player's link",
+			"expected": "Returns `ERR_NOT_OWNER` when target link is owned by another player",
 			"tests": ["LINK-006"]
 		},
 		"death-container-diversion": {
-			"summary": "Creep death does not divert resources into same-tile container",
+			"actual": "Creep death does not divert resources into same-tile container",
+			"expected": "Death resources flow into a live same-tile container before any tombstone remainder",
 			"tests": ["CREEP-DEATH-003"]
 		},
 		"extractor-cooldown-off-by-one": {
-			"summary": "Extractor cooldown reports EXTRACTOR_COOLDOWN - 1 after harvest",
+			"actual": "Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest",
+			"expected": "Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest",
 			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-006"]
 		},
 		"link-cooldown-not-persisted": {
-			"summary": "link.transferEnergy cooldown not persisted (processor missing context.didUpdate, only manifests in structure-only rooms without creeps)",
+			"actual": "`link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`)",
+			"expected": "Link cooldown persists across ticks regardless of creep presence",
 			"tests": ["LINK-002"]
 		},
 		"lab-bound-getfreecapacity-returns-zero": {
-			"summary": "Bound lab's store.getFreeCapacity(otherMineral) returns 0 instead of null; getCapacity and getUsedCapacity correctly return null",
+			"actual": "Bound lab's `store.getFreeCapacity(otherMineral)` returns `0`",
+			"expected": "Returns `null` for a mineral the lab cannot hold",
 			"tests": ["STORE-BIND-002:H", "STORE-BIND-002:O", "STORE-BIND-002:G"]
 		},
 		"rampart-no-protection": {
-			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle/rangedAttack/rangedMassAttack processors)",
+			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
+			"expected": "Damage targeting an object on a rampart tile is redirected to the rampart",
 			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005", "COMBAT-RANGED-006", "COMBAT-RMA-004"]
 		},
 		"renew-while-spawning": {
-			"summary": "Spawn.renewCreep returns OK while spawn is actively spawning",
+			"actual": "`Spawn.renewCreep` returns `OK` while spawn is actively spawning",
+			"expected": "Returns `ERR_BUSY` while spawn is actively spawning",
 			"tests": ["RENEW-CREEP-009"]
 		},
 		"renew-rejects-boosted-creep": {
-			"summary": "Spawn.renewCreep rejects boosted creeps with ERR_NO_BODYPART; canonical engine accepts and strips the boosts during renew",
+			"actual": "`Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART`",
+			"expected": "Accepts boosted creeps and strips the boosts during renew",
 			"tests": ["RENEW-CREEP-004", "RENEW-CREEP-005", "RENEW-CREEP-006"]
 		},
 		"recycle-no-body-reclaim": {
-			"summary": "Spawn.recycleCreep only kills the creep (processor marked TODO); canonical engine deposits floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME) energy into the tombstone via _die with dropRate=1.0",
+			"actual": "`Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited",
+			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
 			"tests": ["RECYCLE-CREEP-002"]
 		},
 		"lab-cooldown-no-decrement": {
-			"summary": "Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1",
+			"actual": "Lab cooldown reports full `REACTION_TIME` after reaction/unboost",
+			"expected": "Lab cooldown reports `REACTION_TIME - 1` on the tick after the action",
 			"tests": ["LAB-RUN-004", "LAB-REVERSE-004", "UNBOOST-005"]
 		},
 		"lab-not-owner-precedence": {
-			"summary": "Lab on unowned lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
+			"actual": "Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH`",
+			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
 			"tests": ["LAB-RUN-012", "LAB-REVERSE-012"]
 		},
 		"observer-room-always-visible": {
-			"summary": "All rooms visible to all players regardless of observer usage",
+			"actual": "All rooms visible to all players regardless of observer usage",
+			"expected": "Room visibility requires an owned structure or an active observer targeting that room",
 			"tests": ["OBSERVER-001", "ROOM-VIS-003"]
 		},
 		"observer-not-owner-precedence": {
-			"summary": "Observer on unowned observer returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER",
+			"actual": "`observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH`",
+			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
 			"tests": ["OBSERVER-006"]
 		},
 		"safemode-concurrent-allowed": {
-			"summary": "Allows activateSafeMode on multiple owned controllers simultaneously",
+			"actual": "Allows `activateSafeMode` on multiple owned controllers simultaneously",
+			"expected": "Returns `ERR_BUSY` when any owned controller already has an active safe mode",
 			"tests": ["CTRL-SAFEMODE-007"]
 		},
 		"container-destroy-no-spill": {
-			"summary": "Container destroyed by decay does not drop its contents as ground resources",
+			"actual": "Container destroyed by decay does not drop its contents as ground resources",
+			"expected": "Container contents become dropped resources on the tile when decay destroys it",
 			"tests": ["CONTAINER-002"]
 		},
 		"destroy-ownership-bypass": {
-			"summary": "structure.destroy() allowed when room controller not owned by player",
+			"actual": "`structure.destroy()` allowed when room controller not owned by player",
+			"expected": "Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player",
 			"tests": ["STRUCTURE-API-001"]
 		},
 		"notifyWhenAttacked-not-implemented": {
-			"summary": "structure.notifyWhenAttacked() not implemented",
+			"actual": "`structure.notifyWhenAttacked()` not implemented",
+			"expected": "Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick",
 			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006"]
 		},
 		"eventlog-attack-missing": {
-			"summary": "getEventLog() missing EVENT_ATTACK entries for combat",
+			"actual": "`getEventLog()` missing `EVENT_ATTACK` entries for combat",
+			"expected": "`EVENT_ATTACK` entries appear in the event log for each combat hit",
 			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002"]
 		},
 		"tough-boost-no-reduction": {
-			"summary": "Boosted TOUGH parts do not reduce incoming damage",
+			"actual": "Boosted TOUGH parts do not reduce incoming damage",
+			"expected": "Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier",
 			"tests": ["BOOST-TOUGH-001", "BOOST-TOUGH-002"]
 		},
 		"boost-energy-cost-scales": {
-			"summary": "Energy cost scales with boost multiplier for repair/upgrade",
+			"actual": "Energy cost scales with boost multiplier for repair/upgrade",
+			"expected": "Boosted repair/upgrade consume the same unboosted energy amount per work part",
 			"tests": ["BOOST-BUILD-002", "BOOST-UPGRADE-002"]
 		},
 		"route-callback-ignored": {
-			"summary": "findRoute ignores routeCallback option",
+			"actual": "`Game.map.findRoute` ignores `routeCallback` option",
+			"expected": "`routeCallback` return values influence route selection (Infinity blocks, numbers weight)",
 			"tests": ["MAP-ROUTE-003"]
 		},
 		"transfer-wrong-resource-err-full": {
-			"summary": "transfer() of a wrong resource to a structure returns ERR_FULL instead of ERR_INVALID_TARGET (checkHasCapacity ordered before capacity-for-resource dispatch in mods/creep/creep.js:checkTransfer)",
+			"actual": "`transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch)",
+			"expected": "Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource",
 			"tests": ["TRANSFER-007", "TRANSFER-008"]
 		},
 		"withdraw-enemy-rampart-no-protection": {
-			"summary": "withdraw() does not enforce ERR_NOT_OWNER for hostile structures under a non-public enemy rampart (checkWithdraw in mods/creep/creep.js has no rampart check)",
+			"actual": "`withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart",
+			"expected": "Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart",
 			"tests": ["WITHDRAW-005"]
 		},
 		"generate-safe-mode-requires-work": {
-			"summary": "generateSafeMode() checkCommon requires a WORK body part (mods/controller/creep.js:58-59), vanilla engine has no body-part requirement (only ghodium + range)",
+			"actual": "`generateSafeMode()` requires a `WORK` body part (checkCommon guard)",
+			"expected": "No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range",
 			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
 		},
 		"controller-my-undefined-on-unowned": {
-			"summary": "StructureController.my returns undefined (not false) on an unowned/neutral controller; inherited OwnedStructure.my uses strict owner match against an absent #user field",
+			"actual": "`StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field)",
+			"expected": "Returns `false` on an unowned/neutral controller",
 			"tests": ["CTRL-UNCLAIM-001"]
 		},
 		"tombstone-store-missing": {
-			"summary": "Tombstone snapshot does not include store energy from combat kills",
+			"actual": "Tombstone snapshot does not include store energy from combat kills",
+			"expected": "Tombstone `store` includes carried resources plus body-part corpse energy",
 			"tests": ["TOMBSTONE-003"]
 		},
 		"tombstone-place-low-decay": {
-			"summary": "placeTombstone with low ticksToDecay does not persist for getObject",
+			"actual": "`placeTombstone` with low `ticksToDecay` does not persist for `getObject`",
+			"expected": "Tombstone persists in the room until `ticksToDecay` reaches `0`",
 			"tests": ["TOMBSTONE-004"]
 		},
 		"ruin-place-low-decay": {
-			"summary": "placeRuin with low ticksToDecay does not persist for getObject",
+			"actual": "`placeRuin` with low `ticksToDecay` does not persist for `getObject`",
+			"expected": "Ruin persists in the room until `ticksToDecay` reaches `0`",
 			"tests": ["RUIN-005"]
 		},
 		"moveto-nopathfinding-returns-ok": {
-			"summary": "moveTo({noPathFinding: true}) returns OK instead of ERR_NOT_FOUND when no cached path exists",
+			"actual": "`moveTo({noPathFinding: true})` returns `OK` when no cached path exists",
+			"expected": "Returns `ERR_NOT_FOUND` when no reusable path is available",
 			"tests": ["MOVE-BASIC-019"]
 		},
 		"pull-spawning-no-guard": {
-			"summary": "pull() on a spawning creep returns OK instead of ERR_INVALID_TARGET (no spawning check in pull intent)",
+			"actual": "`pull()` on a spawning creep returns `OK` (no spawning check in pull intent)",
+			"expected": "Returns `ERR_INVALID_TARGET` when the target is a spawning creep",
 			"tests": ["MOVE-PULL-007:spawning"]
 		},
 		"findpath-same-pos-not-empty": {
-			"summary": "room.findPath() returns a 1-step path when source equals destination instead of empty array",
+			"actual": "`Room.findPath()` returns a 1-step path when source equals destination",
+			"expected": "Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match",
 			"tests": ["LEGACY-PATH-006"]
 		},
 		"mineral-harvest-no-overflow-drop": {
-			"summary": "harvest(mineral) overflow does not create a dropped resource pile on xxscreeps",
+			"actual": "`harvest(mineral)` overflow does not create a dropped resource pile",
+			"expected": "Overflow amount drops as a resource pile on the harvester's tile",
 			"tests": ["HARVEST-MINERAL-012"]
 		},
 		"transfer-controller-no-upgrade-redirect": {
-			"summary": "transfer(controller, RESOURCE_ENERGY) does not redirect to upgradeController — returns ERR_NOT_IN_RANGE",
+			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
+			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
 			"tests": ["TRANSFER-011"]
 		},
 		"withdraw-wrong-resource-not-enough-energy": {
-			"summary": "withdraw() with a resource the target cannot hold returns ERR_NOT_ENOUGH_ENERGY instead of ERR_INVALID_TARGET",
+			"actual": "`withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY`",
+			"expected": "Returns `ERR_INVALID_TARGET` when the target cannot hold that resource",
 			"tests": ["WITHDRAW-014"]
 		},
 		"dismantle-no-destroy-at-zero-hits": {
-			"summary": "dismantle() reducing a structure's hits to 0 does not destroy it — the structure persists with hits=0",
+			"actual": "`dismantle()` reducing hits to `0` leaves the structure present with `hits=0`",
+			"expected": "Structure is destroyed in the same tick once hits reach `0`",
 			"tests": ["DISMANTLE-007"]
 		},
 		"ruin-spill-decay-on-spill-tick": {
-			"summary": "Ruin decay spill pile is subject to energy/tick decay in the same tick (vanilla inserts the pile after iteration so it skips decay until the following tick)",
+			"actual": "Ruin decay spill pile is subject to energy/tick decay on the same tick it spills",
+			"expected": "Spill pile is inserted after iteration and skips decay until the following tick",
 			"tests": ["STRUCTURE-HITS-005"]
 		},
 		"shape-extra-hits-my": {
-			"summary": "xxscreeps base RoomObject exposes hits/hitsMax/my on non-structure objects (source, mineral, resource, tombstone, ruin, constructionSite) and leaks my onto unowned structures (road, wall, container); wall also missing ticksToLive; ruin also missing structureType",
+			"actual": "Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType`",
+			"expected": "Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType`",
 			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]
 		},
 		"shape-struct-missing-legacy-compat": {
-			"summary": "Structures missing legacy compatibility getters: link.energy/energyCapacity, storage.storeCapacity",
+			"actual": "Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity`",
+			"expected": "Legacy compat getters are present on `link` and `storage`",
 			"tests": ["SHAPE-STRUCT-001:link", "SHAPE-STRUCT-001:storage"]
 		},
 		"shape-body-part-always-has-boost": {
-			"summary": "Unboosted body parts expose boost key (vanilla only includes boost when the part is actually boosted)",
+			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
+			"expected": "`boost` key is only present when the part is actually boosted",
 			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
 		},
 		"shape-room-missing-survivalInfo": {
-			"summary": "Room object missing survivalInfo property",
+			"actual": "`Room` object missing `survivalInfo` property",
+			"expected": "`Room.survivalInfo` is present (per canonical room shape)",
 			"tests": ["SHAPE-ROOM-001"]
 		},
 		"shape-ctrl-subobj-owner-undefined": {
-			"summary": "controller.sign and controller.reservation sub-objects crash on .username access (owner/user field is undefined)",
+			"actual": "`controller.sign` and `controller.reservation` crash on `.username` access (owner/user field undefined)",
+			"expected": "Sub-objects expose a populated `username` string",
 			"tests": ["SHAPE-CTRL-002", "SHAPE-CTRL-003"]
 		},
 		"shape-game-surface-mismatch": {
-			"summary": "Game missing cpu, cpuLimit, flags, powerCreeps properties; Game.cpu object has no bucket/limit/tickLimit",
+			"actual": "`Game` missing `cpu`/`cpuLimit`/`flags`/`powerCreeps`; `Game.cpu` missing `bucket`/`limit`/`tickLimit`",
+			"expected": "`Game` exposes `cpu`, `cpuLimit`, `flags`, `powerCreeps`; `Game.cpu` exposes `bucket`, `limit`, `tickLimit`",
 			"tests": ["SHAPE-GAME-001", "SHAPE-GAME-002"]
 		},
 		"shape-flag-crash": {
-			"summary": "Flag shape discovery crashes at runtime (Cannot use 'in' operator on undefined)",
+			"actual": "Flag shape discovery crashes (`Cannot use 'in' operator on undefined`)",
+			"expected": "Flag objects expose the documented shape without crashing",
 			"tests": ["SHAPE-FLAG-001"]
 		},
 		"claim-reserved-no-guard": {
-			"summary": "claimController returns OK on a hostile-reserved controller instead of ERR_INVALID_TARGET (no reservation check in checkClaim)",
+			"actual": "`claimController` on a hostile-reserved controller returns `OK` (no reservation check in `checkClaim`)",
+			"expected": "Returns `ERR_INVALID_TARGET` when the controller is reserved by another player",
 			"tests": ["CTRL-CLAIM-003"]
 		},
 		"upgrade-blocked-no-guard": {
-			"summary": "upgradeController returns OK while upgradeBlocked is active instead of ERR_INVALID_TARGET (no upgradeBlocked check in checkUpgradeController)",
+			"actual": "`upgradeController` while `upgradeBlocked` is active returns `OK` (no guard in `checkUpgradeController`)",
+			"expected": "Returns `ERR_INVALID_TARGET` while `upgradeBlocked` is active",
 			"tests": ["CTRL-UPGRADE-009"]
 		},
 		"spawn-duplicate-name-allowed": {
-			"summary": "spawnCreep allows a name that collides with a currently spawning creep (no check against spawning creeps in checkSpawn)",
+			"actual": "`spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`)",
+			"expected": "Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep",
 			"tests": ["SPAWN-CREATE-003"]
 		}
 	}

@@ -27,10 +27,62 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
-<details>
-<summary><strong><code>creep-owner-undefined</code></strong> — Creep.owner is undefined (key exists but value is undefined)</summary>
+| Gap | Actual | Expected | Tests |
+| --- | --- | --- | :-: |
+| `creep-owner-undefined` | `Creep.owner` key exists but value is `undefined` | `Creep.owner` is an object with a `username` string | [6](#xxscreeps-gap-creep-owner-undefined) |
+| `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
+| `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
+| `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
+| `death-container-diversion` | Creep death does not divert resources into same-tile container | Death resources flow into a live same-tile container before any tombstone remainder | [1](#xxscreeps-gap-death-container-diversion) |
+| `extractor-cooldown-off-by-one` | Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest | Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest | [2](#xxscreeps-gap-extractor-cooldown-off-by-one) |
+| `link-cooldown-not-persisted` | `link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`) | Link cooldown persists across ticks regardless of creep presence | [1](#xxscreeps-gap-link-cooldown-not-persisted) |
+| `lab-bound-getfreecapacity-returns-zero` | Bound lab's `store.getFreeCapacity(otherMineral)` returns `0` | Returns `null` for a mineral the lab cannot hold | [3](#xxscreeps-gap-lab-bound-getfreecapacity-returns-zero) |
+| `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
+| `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
+| `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
+| `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
+| `lab-cooldown-no-decrement` | Lab cooldown reports full `REACTION_TIME` after reaction/unboost | Lab cooldown reports `REACTION_TIME - 1` on the tick after the action | [3](#xxscreeps-gap-lab-cooldown-no-decrement) |
+| `lab-not-owner-precedence` | Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [2](#xxscreeps-gap-lab-not-owner-precedence) |
+| `observer-room-always-visible` | All rooms visible to all players regardless of observer usage | Room visibility requires an owned structure or an active observer targeting that room | [2](#xxscreeps-gap-observer-room-always-visible) |
+| `observer-not-owner-precedence` | `observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-observer-not-owner-precedence) |
+| `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
+| `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
+| `destroy-ownership-bypass` | `structure.destroy()` allowed when room controller not owned by player | Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player | [1](#xxscreeps-gap-destroy-ownership-bypass) |
+| `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [3](#xxscreeps-gap-notifywhenattacked-not-implemented) |
+| `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
+| `tough-boost-no-reduction` | Boosted TOUGH parts do not reduce incoming damage | Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier | [4](#xxscreeps-gap-tough-boost-no-reduction) |
+| `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
+| `route-callback-ignored` | `Game.map.findRoute` ignores `routeCallback` option | `routeCallback` return values influence route selection (Infinity blocks, numbers weight) | [1](#xxscreeps-gap-route-callback-ignored) |
+| `transfer-wrong-resource-err-full` | `transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch) | Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource | [2](#xxscreeps-gap-transfer-wrong-resource-err-full) |
+| `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
+| `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
+| `controller-my-undefined-on-unowned` | `StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field) | Returns `false` on an unowned/neutral controller | [1](#xxscreeps-gap-controller-my-undefined-on-unowned) |
+| `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
+| `tombstone-place-low-decay` | `placeTombstone` with low `ticksToDecay` does not persist for `getObject` | Tombstone persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-tombstone-place-low-decay) |
+| `ruin-place-low-decay` | `placeRuin` with low `ticksToDecay` does not persist for `getObject` | Ruin persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-ruin-place-low-decay) |
+| `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
+| `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
+| `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
+| `mineral-harvest-no-overflow-drop` | `harvest(mineral)` overflow does not create a dropped resource pile | Overflow amount drops as a resource pile on the harvester's tile | [1](#xxscreeps-gap-mineral-harvest-no-overflow-drop) |
+| `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
+| `withdraw-wrong-resource-not-enough-energy` | `withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY` | Returns `ERR_INVALID_TARGET` when the target cannot hold that resource | [1](#xxscreeps-gap-withdraw-wrong-resource-not-enough-energy) |
+| `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
+| `ruin-spill-decay-on-spill-tick` | Ruin decay spill pile is subject to energy/tick decay on the same tick it spills | Spill pile is inserted after iteration and skips decay until the following tick | [1](#xxscreeps-gap-ruin-spill-decay-on-spill-tick) |
+| `shape-extra-hits-my` | Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType` | Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType` | [9](#xxscreeps-gap-shape-extra-hits-my) |
+| `shape-struct-missing-legacy-compat` | Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity` | Legacy compat getters are present on `link` and `storage` | [2](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
+| `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
+| `shape-room-missing-survivalInfo` | `Room` object missing `survivalInfo` property | `Room.survivalInfo` is present (per canonical room shape) | [1](#xxscreeps-gap-shape-room-missing-survivalinfo) |
+| `shape-ctrl-subobj-owner-undefined` | `controller.sign` and `controller.reservation` crash on `.username` access (owner/user field undefined) | Sub-objects expose a populated `username` string | [2](#xxscreeps-gap-shape-ctrl-subobj-owner-undefined) |
+| `shape-game-surface-mismatch` | `Game` missing `cpu`/`cpuLimit`/`flags`/`powerCreeps`; `Game.cpu` missing `bucket`/`limit`/`tickLimit` | `Game` exposes `cpu`, `cpuLimit`, `flags`, `powerCreeps`; `Game.cpu` exposes `bucket`, `limit`, `tickLimit` | [2](#xxscreeps-gap-shape-game-surface-mismatch) |
+| `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
+| `claim-reserved-no-guard` | `claimController` on a hostile-reserved controller returns `OK` (no reservation check in `checkClaim`) | Returns `ERR_INVALID_TARGET` when the controller is reserved by another player | [1](#xxscreeps-gap-claim-reserved-no-guard) |
+| `upgrade-blocked-no-guard` | `upgradeController` while `upgradeBlocked` is active returns `OK` (no guard in `checkUpgradeController`) | Returns `ERR_INVALID_TARGET` while `upgradeBlocked` is active | [1](#xxscreeps-gap-upgrade-blocked-no-guard) |
+| `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 
-6 tests affected:
+Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-creep-owner-undefined">
+<summary><code>creep-owner-undefined</code> — 6 tests</summary>
 
 - `controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign`
 - `controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player`
@@ -41,10 +93,8 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>tombstone-corpse-rate</code></strong> — Tombstone stores always reduced by CREEP_CORPSE_RATE, no body energy reclaim on suicide</summary>
-
-3 tests affected:
+<details id="xxscreeps-gap-tombstone-corpse-rate">
+<summary><code>tombstone-corpse-rate</code> — 3 tests</summary>
 
 - `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
 - `creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone`
@@ -52,56 +102,44 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>link-self-transfer</code></strong> — StructureLink.transferEnergy allows self-transfer (returns OK)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-link-self-transfer">
+<summary><code>link-self-transfer</code> — 1 test</summary>
 
 - `StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself`
 
 </details>
 
-<details>
-<summary><strong><code>link-cross-owner</code></strong> — StructureLink.transferEnergy allows transfer to another player's link</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-link-cross-owner">
+<summary><code>link-cross-owner</code> — 1 test</summary>
 
 - `StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player`
 
 </details>
 
-<details>
-<summary><strong><code>death-container-diversion</code></strong> — Creep death does not divert resources into same-tile container</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-death-container-diversion">
+<summary><code>death-container-diversion</code> — 1 test</summary>
 
 - `creep death CREEP-DEATH-003 death resources go into a same-tile container first`
 
 </details>
 
-<details>
-<summary><strong><code>extractor-cooldown-off-by-one</code></strong> — Extractor cooldown reports EXTRACTOR_COOLDOWN - 1 after harvest</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-extractor-cooldown-off-by-one">
+<summary><code>extractor-cooldown-off-by-one</code> — 2 tests</summary>
 
 - `creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest`
 - `StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN`
 
 </details>
 
-<details>
-<summary><strong><code>link-cooldown-not-persisted</code></strong> — link.transferEnergy cooldown not persisted (processor missing context.didUpdate, only manifests in structure-only rooms without creeps)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-link-cooldown-not-persisted">
+<summary><code>link-cooldown-not-persisted</code> — 1 test</summary>
 
 - `StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance`
 
 </details>
 
-<details>
-<summary><strong><code>lab-bound-getfreecapacity-returns-zero</code></strong> — Bound lab's store.getFreeCapacity(otherMineral) returns 0 instead of null; getCapacity and getUsedCapacity correctly return null</summary>
-
-3 tests affected:
+<details id="xxscreeps-gap-lab-bound-getfreecapacity-returns-zero">
+<summary><code>lab-bound-getfreecapacity-returns-zero</code> — 3 tests</summary>
 
 - `Store STORE-BIND-002:H stored mineral binds the lab slot`
 - `Store STORE-BIND-002:O stored mineral binds the lab slot`
@@ -109,10 +147,8 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>rampart-no-protection</code></strong> — Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle/rangedAttack/rangedMassAttack processors)</summary>
-
-6 tests affected:
+<details id="xxscreeps-gap-rampart-no-protection">
+<summary><code>rampart-no-protection</code> — 6 tests</summary>
 
 - `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
 - `creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead`
@@ -123,19 +159,15 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>renew-while-spawning</code></strong> — Spawn.renewCreep returns OK while spawn is actively spawning</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-renew-while-spawning">
+<summary><code>renew-while-spawning</code> — 1 test</summary>
 
 - `Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning`
 
 </details>
 
-<details>
-<summary><strong><code>renew-rejects-boosted-creep</code></strong> — Spawn.renewCreep rejects boosted creeps with ERR_NO_BODYPART; canonical engine accepts and strips the boosts during renew</summary>
-
-3 tests affected:
+<details id="xxscreeps-gap-renew-rejects-boosted-creep">
+<summary><code>renew-rejects-boosted-creep</code> — 3 tests</summary>
 
 - `Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep`
 - `Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy`
@@ -143,19 +175,15 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>recycle-no-body-reclaim</code></strong> — Spawn.recycleCreep only kills the creep (processor marked TODO); canonical engine deposits floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME) energy into the tombstone via _die with dropRate=1.0</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-recycle-no-body-reclaim">
+<summary><code>recycle-no-body-reclaim</code> — 1 test</summary>
 
 - `Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position`
 
 </details>
 
-<details>
-<summary><strong><code>lab-cooldown-no-decrement</code></strong> — Lab cooldown reports full REACTION_TIME instead of REACTION_TIME - 1</summary>
-
-3 tests affected:
+<details id="xxscreeps-gap-lab-cooldown-no-decrement">
+<summary><code>lab-cooldown-no-decrement</code> — 3 tests</summary>
 
 - `lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT`
 - `Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]`
@@ -163,66 +191,52 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>lab-not-owner-precedence</code></strong> — Lab on unowned lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-lab-not-owner-precedence">
+<summary><code>lab-not-owner-precedence</code> — 2 tests</summary>
 
 - `Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab`
 - `Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab`
 
 </details>
 
-<details>
-<summary><strong><code>observer-room-always-visible</code></strong> — All rooms visible to all players regardless of observer usage</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-observer-room-always-visible">
+<summary><code>observer-room-always-visible</code> — 2 tests</summary>
 
 - `StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick`
 - `room visibility ROOM-VIS-003 existing but unowned room with no player presence has no Game.rooms entry`
 
 </details>
 
-<details>
-<summary><strong><code>observer-not-owner-precedence</code></strong> — Observer on unowned observer returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-observer-not-owner-precedence">
+<summary><code>observer-not-owner-precedence</code> — 1 test</summary>
 
 - `StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player`
 
 </details>
 
-<details>
-<summary><strong><code>safemode-concurrent-allowed</code></strong> — Allows activateSafeMode on multiple owned controllers simultaneously</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-safemode-concurrent-allowed">
+<summary><code>safemode-concurrent-allowed</code> — 1 test</summary>
 
 - `Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode`
 
 </details>
 
-<details>
-<summary><strong><code>container-destroy-no-spill</code></strong> — Container destroyed by decay does not drop its contents as ground resources</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-container-destroy-no-spill">
+<summary><code>container-destroy-no-spill</code> — 1 test</summary>
 
 - `Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources`
 
 </details>
 
-<details>
-<summary><strong><code>destroy-ownership-bypass</code></strong> — structure.destroy() allowed when room controller not owned by player</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-destroy-ownership-bypass">
+<summary><code>destroy-ownership-bypass</code> — 1 test</summary>
 
 - `structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player`
 
 </details>
 
-<details>
-<summary><strong><code>notifyWhenAttacked-not-implemented</code></strong> — structure.notifyWhenAttacked() not implemented</summary>
-
-3 tests affected:
+<details id="xxscreeps-gap-notifywhenattacked-not-implemented">
+<summary><code>notifyWhenAttacked-not-implemented</code> — 3 tests</summary>
 
 - `structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure`
 - `structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean`
@@ -230,20 +244,16 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>eventlog-attack-missing</code></strong> — getEventLog() missing EVENT_ATTACK entries for combat</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-eventlog-attack-missing">
+<summary><code>eventlog-attack-missing</code> — 2 tests</summary>
 
 - `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
 - `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
 
 </details>
 
-<details>
-<summary><strong><code>tough-boost-no-reduction</code></strong> — Boosted TOUGH parts do not reduce incoming damage</summary>
-
-4 tests affected:
+<details id="xxscreeps-gap-tough-boost-no-reduction">
+<summary><code>tough-boost-no-reduction</code> — 4 tests</summary>
 
 - `BOOST-TOUGH-001 tough damage reduction magnitudes GO (0.7x damage taken)`
 - `BOOST-TOUGH-001 tough damage reduction magnitudes GHO2 (0.5x damage taken)`
@@ -252,48 +262,38 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>boost-energy-cost-scales</code></strong> — Energy cost scales with boost multiplier for repair/upgrade</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-boost-energy-cost-scales">
+<summary><code>boost-energy-cost-scales</code> — 2 tests</summary>
 
 - `BOOST-BUILD-002 build/repair boosts do not increase energy cost boosted repair costs 1 energy per REPAIR_POWER hits repaired`
 - `BOOST-UPGRADE-002 upgrade boosts do not increase energy cost boosted upgrade costs 1 energy per progress point`
 
 </details>
 
-<details>
-<summary><strong><code>route-callback-ignored</code></strong> — findRoute ignores routeCallback option</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-route-callback-ignored">
+<summary><code>route-callback-ignored</code> — 1 test</summary>
 
 - `Game.map route finding MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity`
 
 </details>
 
-<details>
-<summary><strong><code>transfer-wrong-resource-err-full</code></strong> — transfer() of a wrong resource to a structure returns ERR_FULL instead of ERR_INVALID_TARGET (checkHasCapacity ordered before capacity-for-resource dispatch in mods/creep/creep.js:checkTransfer)</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-transfer-wrong-resource-err-full">
+<summary><code>transfer-wrong-resource-err-full</code> — 2 tests</summary>
 
 - `creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type`
 - `creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET`
 
 </details>
 
-<details>
-<summary><strong><code>withdraw-enemy-rampart-no-protection</code></strong> — withdraw() does not enforce ERR_NOT_OWNER for hostile structures under a non-public enemy rampart (checkWithdraw in mods/creep/creep.js has no rampart check)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-withdraw-enemy-rampart-no-protection">
+<summary><code>withdraw-enemy-rampart-no-protection</code> — 1 test</summary>
 
 - `creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target`
 
 </details>
 
-<details>
-<summary><strong><code>generate-safe-mode-requires-work</code></strong> — generateSafeMode() checkCommon requires a WORK body part (mods/controller/creep.js:58-59), vanilla engine has no body-part requirement (only ghodium + range)</summary>
-
-4 tests affected:
+<details id="xxscreeps-gap-generate-safe-mode-requires-work">
+<summary><code>generate-safe-mode-requires-work</code> — 4 tests</summary>
 
 - `creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store`
 - `creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller`
@@ -302,118 +302,92 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>controller-my-undefined-on-unowned</code></strong> — StructureController.my returns undefined (not false) on an unowned/neutral controller; inherited OwnedStructure.my uses strict owner match against an absent #user field</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-controller-my-undefined-on-unowned">
+<summary><code>controller-my-undefined-on-unowned</code> — 1 test</summary>
 
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
 
 </details>
 
-<details>
-<summary><strong><code>tombstone-store-missing</code></strong> — Tombstone snapshot does not include store energy from combat kills</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-tombstone-store-missing">
+<summary><code>tombstone-store-missing</code> — 1 test</summary>
 
 - `Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death`
 
 </details>
 
-<details>
-<summary><strong><code>tombstone-place-low-decay</code></strong> — placeTombstone with low ticksToDecay does not persist for getObject</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-tombstone-place-low-decay">
+<summary><code>tombstone-place-low-decay</code> — 1 test</summary>
 
 - `Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0`
 
 </details>
 
-<details>
-<summary><strong><code>ruin-place-low-decay</code></strong> — placeRuin with low ticksToDecay does not persist for getObject</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-ruin-place-low-decay">
+<summary><code>ruin-place-low-decay</code> — 1 test</summary>
 
 - `Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0`
 
 </details>
 
-<details>
-<summary><strong><code>moveto-nopathfinding-returns-ok</code></strong> — moveTo({noPathFinding: true}) returns OK instead of ERR_NOT_FOUND when no cached path exists</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-moveto-nopathfinding-returns-ok">
+<summary><code>moveto-nopathfinding-returns-ok</code> — 1 test</summary>
 
 - `creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path`
 
 </details>
 
-<details>
-<summary><strong><code>pull-spawning-no-guard</code></strong> — pull() on a spawning creep returns OK instead of ERR_INVALID_TARGET (no spawning check in pull intent)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-pull-spawning-no-guard">
+<summary><code>pull-spawning-no-guard</code> — 1 test</summary>
 
 - `creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep`
 
 </details>
 
-<details>
-<summary><strong><code>findpath-same-pos-not-empty</code></strong> — room.findPath() returns a 1-step path when source equals destination instead of empty array</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-findpath-same-pos-not-empty">
+<summary><code>findpath-same-pos-not-empty</code> — 1 test</summary>
 
 - `Legacy Pathfinding LEGACY-PATH-006 findPath() returns empty array when source equals destination`
 
 </details>
 
-<details>
-<summary><strong><code>mineral-harvest-no-overflow-drop</code></strong> — harvest(mineral) overflow does not create a dropped resource pile on xxscreeps</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-mineral-harvest-no-overflow-drop">
+<summary><code>mineral-harvest-no-overflow-drop</code> — 1 test</summary>
 
 - `creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity`
 
 </details>
 
-<details>
-<summary><strong><code>transfer-controller-no-upgrade-redirect</code></strong> — transfer(controller, RESOURCE_ENERGY) does not redirect to upgradeController — returns ERR_NOT_IN_RANGE</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-transfer-controller-no-upgrade-redirect">
+<summary><code>transfer-controller-no-upgrade-redirect</code> — 1 test</summary>
 
 - `creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController`
 
 </details>
 
-<details>
-<summary><strong><code>withdraw-wrong-resource-not-enough-energy</code></strong> — withdraw() with a resource the target cannot hold returns ERR_NOT_ENOUGH_ENERGY instead of ERR_INVALID_TARGET</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-withdraw-wrong-resource-not-enough-energy">
+<summary><code>withdraw-wrong-resource-not-enough-energy</code> — 1 test</summary>
 
 - `creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource`
 
 </details>
 
-<details>
-<summary><strong><code>dismantle-no-destroy-at-zero-hits</code></strong> — dismantle() reducing a structure's hits to 0 does not destroy it — the structure persists with hits=0</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-dismantle-no-destroy-at-zero-hits">
+<summary><code>dismantle-no-destroy-at-zero-hits</code> — 1 test</summary>
 
 - `creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0`
 
 </details>
 
-<details>
-<summary><strong><code>ruin-spill-decay-on-spill-tick</code></strong> — Ruin decay spill pile is subject to energy/tick decay in the same tick (vanilla inserts the pile after iteration so it skips decay until the following tick)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-ruin-spill-decay-on-spill-tick">
+<summary><code>ruin-spill-decay-on-spill-tick</code> — 1 test</summary>
 
 - `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
 
 </details>
 
-<details>
-<summary><strong><code>shape-extra-hits-my</code></strong> — xxscreeps base RoomObject exposes hits/hitsMax/my on non-structure objects (source, mineral, resource, tombstone, ruin, constructionSite) and leaks my onto unowned structures (road, wall, container); wall also missing ticksToLive; ruin also missing structureType</summary>
-
-9 tests affected:
+<details id="xxscreeps-gap-shape-extra-hits-my">
+<summary><code>shape-extra-hits-my</code> — 9 tests</summary>
 
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape`
@@ -427,86 +401,68 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 
 </details>
 
-<details>
-<summary><strong><code>shape-struct-missing-legacy-compat</code></strong> — Structures missing legacy compatibility getters: link.energy/energyCapacity, storage.storeCapacity</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-shape-struct-missing-legacy-compat">
+<summary><code>shape-struct-missing-legacy-compat</code> — 2 tests</summary>
 
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape`
 
 </details>
 
-<details>
-<summary><strong><code>shape-body-part-always-has-boost</code></strong> — Unboosted body parts expose boost key (vanilla only includes boost when the part is actually boosted)</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-shape-body-part-always-has-boost">
+<summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
 
 - `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
 - `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
 
 </details>
 
-<details>
-<summary><strong><code>shape-room-missing-survivalInfo</code></strong> — Room object missing survivalInfo property</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-shape-room-missing-survivalinfo">
+<summary><code>shape-room-missing-survivalInfo</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape`
 
 </details>
 
-<details>
-<summary><strong><code>shape-ctrl-subobj-owner-undefined</code></strong> — controller.sign and controller.reservation sub-objects crash on .username access (owner/user field is undefined)</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-shape-ctrl-subobj-owner-undefined">
+<summary><code>shape-ctrl-subobj-owner-undefined</code> — 2 tests</summary>
 
 - `26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape`
 
 </details>
 
-<details>
-<summary><strong><code>shape-game-surface-mismatch</code></strong> — Game missing cpu, cpuLimit, flags, powerCreeps properties; Game.cpu object has no bucket/limit/tickLimit</summary>
-
-2 tests affected:
+<details id="xxscreeps-gap-shape-game-surface-mismatch">
+<summary><code>shape-game-surface-mismatch</code> — 2 tests</summary>
 
 - `26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape`
 
 </details>
 
-<details>
-<summary><strong><code>shape-flag-crash</code></strong> — Flag shape discovery crashes at runtime (Cannot use 'in' operator on undefined)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-shape-flag-crash">
+<summary><code>shape-flag-crash</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
 
 </details>
 
-<details>
-<summary><strong><code>claim-reserved-no-guard</code></strong> — claimController returns OK on a hostile-reserved controller instead of ERR_INVALID_TARGET (no reservation check in checkClaim)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-claim-reserved-no-guard">
+<summary><code>claim-reserved-no-guard</code> — 1 test</summary>
 
 - `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
 
 </details>
 
-<details>
-<summary><strong><code>upgrade-blocked-no-guard</code></strong> — upgradeController returns OK while upgradeBlocked is active instead of ERR_INVALID_TARGET (no upgradeBlocked check in checkUpgradeController)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-upgrade-blocked-no-guard">
+<summary><code>upgrade-blocked-no-guard</code> — 1 test</summary>
 
 - `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
 
 </details>
 
-<details>
-<summary><strong><code>spawn-duplicate-name-allowed</code></strong> — spawnCreep allows a name that collides with a currently spawning creep (no check against spawning creeps in checkSpawn)</summary>
-
-1 test affected:
+<details id="xxscreeps-gap-spawn-duplicate-name-allowed">
+<summary><code>spawn-duplicate-name-allowed</code> — 1 test</summary>
 
 - `StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep`
 

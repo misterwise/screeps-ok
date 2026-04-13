@@ -225,20 +225,25 @@ function renderAdapterRow(adapter, report, summary) {
 	return `| ${icon} | **${adapter}** | ${passCell} | ${expectedCell} | ${failedCell} | ${skippedCell} | ${formatTimestamp(report)} |`;
 }
 
-function renderGapDetails(gapId, canonicalSummary, adapter, parityNote) {
+function gapAnchor(adapterName, gapId) {
+	return slug(`${adapterName} gap ${gapId}`);
+}
+
+function gapBehaviorFields(gap) {
+	// New schema: { actual, expected }. Legacy schema: { summary }.
+	const actual = gap.actual ?? gap.summary ?? '(no description)';
+	const expected = gap.expected ?? '(see test assertion)';
+	return { actual, expected };
+}
+
+function renderGapTestList(adapterName, gapId, tests) {
 	const lines = [];
-	lines.push('<details>');
-	lines.push(`<summary><strong><code>${gapId}</code></strong> — ${canonicalSummary}</summary>`);
+	const anchor = gapAnchor(adapterName, gapId);
+	lines.push(`<details id="${anchor}">`);
+	lines.push(`<summary><code>${gapId}</code> — ${tests.length} test${tests.length === 1 ? '' : 's'}</summary>`);
 	lines.push('');
-	const testCount = adapter.tests.length;
-	lines.push(`${testCount} test${testCount === 1 ? '' : 's'} affected:`);
-	lines.push('');
-	for (const testName of adapter.tests) {
+	for (const testName of tests) {
 		lines.push(`- \`${testName}\``);
-	}
-	if (parityNote) {
-		lines.push('');
-		lines.push(`> ${parityNote}`);
 	}
 	lines.push('');
 	lines.push('</details>');
@@ -262,16 +267,23 @@ function renderPerAdapterExpectedFailures(adapterName, data) {
 	lines.push('');
 	lines.push(`${adapterName} currently declares ${gapIds.length} parity gap${gapIds.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. Each gap is verified by a test that continues to run as a regression trap — if ${adapterName} fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.`);
 	lines.push('');
+	lines.push('| Gap | Actual | Expected | Tests |');
+	lines.push('| --- | --- | --- | :-: |');
 
 	for (const gapId of gapIds) {
-		const gapSummary = gaps[gapId].summary ?? '(no summary)';
+		const { actual, expected } = gapBehaviorFields(gaps[gapId]);
+		const testCount = (summary.expectedFailureByGap?.[gapId] ?? []).length;
+		const anchor = gapAnchor(adapterName, gapId);
+		const countCell = testCount > 0 ? `[${testCount}](#${anchor})` : `${testCount}`;
+		lines.push(`| \`${gapId}\` | ${actual} | ${expected} | ${countCell} |`);
+	}
+
+	lines.push('');
+	lines.push('Click a test count above to jump to the affected test list for that gap.');
+	lines.push('');
+	for (const gapId of gapIds) {
 		const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
-		lines.push(renderGapDetails(
-			gapId,
-			gapSummary,
-			{ tests },
-			'',
-		));
+		lines.push(renderGapTestList(adapterName, gapId, tests));
 		lines.push('');
 	}
 
