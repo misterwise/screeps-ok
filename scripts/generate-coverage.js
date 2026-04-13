@@ -32,6 +32,8 @@ function parseCatalog() {
 // ---------------------------------------------------------------------------
 
 const TEST_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/g;
+const MATRIX_IMPORT_RE = /from\s+['"]([^'"]+\/matrices\/[^'"]+?)(?:\.js)?['"]/g;
+const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([A-Z]+-(?:[A-Z]+-)?[0-9]{3})['"]/g;
 
 function walkDir(dir) {
 	const results = [];
@@ -46,17 +48,52 @@ function walkDir(dir) {
 	return results;
 }
 
+/**
+ * Resolve matrix file paths imported by a test file. Test files import
+ * from '../../src/matrices/foo.js' but the source is foo.ts.
+ */
+function resolveMatrixImports(testFile, content) {
+	const resolved = new Set();
+	for (const m of content.matchAll(MATRIX_IMPORT_RE)) {
+		const spec = m[1];
+		const tsPath = path.resolve(path.dirname(testFile), `${spec}.ts`);
+		resolved.add(tsPath);
+	}
+	return [...resolved];
+}
+
 function scanTests() {
 	const idToFiles = new Map();
+	const matrixCache = new Map();
 	const testFiles = walkDir(testsDir);
+
+	const claim = (id, relFile) => {
+		if (!idToFiles.has(id)) idToFiles.set(id, new Set());
+		idToFiles.get(id).add(relFile);
+	};
 
 	for (const file of testFiles) {
 		const content = readFileSync(file, 'utf8');
 		const relFile = path.relative(root, file);
+
 		for (const match of content.matchAll(TEST_ID_RE)) {
-			const id = match[1];
-			if (!idToFiles.has(id)) idToFiles.set(id, new Set());
-			idToFiles.get(id).add(relFile);
+			claim(match[1], relFile);
+		}
+
+		for (const matrixPath of resolveMatrixImports(file, content)) {
+			let matrixContent = matrixCache.get(matrixPath);
+			if (matrixContent === undefined) {
+				try {
+					matrixContent = readFileSync(matrixPath, 'utf8');
+				} catch {
+					matrixContent = null;
+				}
+				matrixCache.set(matrixPath, matrixContent);
+			}
+			if (!matrixContent) continue;
+			for (const match of matrixContent.matchAll(MATRIX_CATALOG_ID_RE)) {
+				claim(match[1], relFile);
+			}
 		}
 	}
 

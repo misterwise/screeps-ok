@@ -329,9 +329,10 @@ describe('Nuke impact — section 7.14', () => {
 		expect(r2Hits - r2.hits).toBe(NUKE_DAMAGE[2]);
 	});
 
-	// NUKE-IMPACT-004 (rampart absorbs nuke damage for structures underneath) is
-	// the same observable as RAMPART-PROTECT-008 in section 12.1 — see catalog
-	// coverage note. Not duplicated here.
+	// Rampart absorbing nuke damage on behalf of structures underneath is the
+	// same observable as rampart damage absorption in section 12.1 — see that
+	// test and the catalog coverage note for the merge rationale. Not
+	// duplicated here.
 
 	test('NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage', async ({ shard }) => {
 		// Engine: @screeps/engine/dist/processor/intents/nukes/tick.js:18-24 —

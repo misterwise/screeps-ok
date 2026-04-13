@@ -16,7 +16,7 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 03:59 UTC |
+| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 04:16 UTC |
 | 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 03:59 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures

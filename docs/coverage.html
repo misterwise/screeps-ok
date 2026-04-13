@@ -59,11 +59,11 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 
 <div class="stats">
   <div class="stat-card"><div class="num">789</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">785</div><div class="label">tested</div></div>
-  <div class="stat-card"><div class="num yellow">4</div><div class="label">feasible untested</div></div>
+  <div class="stat-card"><div class="num green">789</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num yellow">0</div><div class="label">feasible untested</div></div>
   <div class="stat-card"><div class="num">0</div><div class="label">blocked</div></div>
-  <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
-  <div class="stat-card"><div class="num">99%</div><div class="label">of feasible</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
 </div>
 
 <h2>Coverage by section</h2>
@@ -245,8 +245,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="26. Object Shape Conformance">26. Object Shape Conformance</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:87%;background:var(--yellow)"></div>
-    <span class="bar-text">26/30</span>
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">30/30</span>
   </div>
 </div>
 
@@ -254,7 +254,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
-<tr><td><span class="badge badge-yellow">feasible</span></td><td>4</td><td><code>SHAPE-NPC-001</code> <code>SHAPE-NPC-002</code> <code>SHAPE-NPC-003</code> <code>SHAPE-NPC-004</code></td></tr>
+
 </tbody>
 </table>
 
@@ -4761,7 +4761,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/07-combat/7.13-7.14-nukes.test.ts, tests/12-structures-military/12.1-12.2-rampart.test.ts</small></td>
+  <td><small>tests/12-structures-military/12.1-12.2-rampart.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>RAMPART-PROTECT-009</code></td>
@@ -7247,41 +7247,41 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>SHAPE-NPC-001</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>SHAPE-NPC-002</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>SHAPE-NPC-003</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>SHAPE-NPC-004</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SHAPE-SOURCE-001</code></td>
@@ -7373,7 +7373,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <table>
 <thead><tr><th>ID</th><th>File(s)</th></tr></thead>
 <tbody>
-<tr><td><code>NUKE-IMPACT-004</code></td><td><small>tests/07-combat/7.13-7.14-nukes.test.ts</small></td></tr>
 <tr><td><code>EXTRACTOR-006</code></td><td><small>tests/13-structures-infrastructure/13.5-extractor.test.ts</small></td></tr>
 <tr><td><code>EXTRACTOR-003</code></td><td><small>tests/13-structures-infrastructure/13.5-extractor.test.ts</small></td></tr>
 <tr><td><code>EXTRACTOR-004</code></td><td><small>tests/13-structures-infrastructure/13.5-extractor.test.ts</small></td></tr>
