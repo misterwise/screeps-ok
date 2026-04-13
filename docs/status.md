@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-830%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-830%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter

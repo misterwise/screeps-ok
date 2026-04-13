@@ -177,6 +177,7 @@ function renderHeaderBadges(summaries) {
 	// badge for each adapter that has any. Two separate badges so the visual
 	// signal for "fully passing" is distinct from "passing with known gaps".
 	const badges = [];
+	const linkTo = (anchor) => `docs/status.md#${anchor}`;
 	for (const [adapter, data] of Object.entries(summaries)) {
 		const s = data.summary;
 		if (!s.loaded) {
@@ -184,12 +185,15 @@ function renderHeaderBadges(summaries) {
 			continue;
 		}
 		if (s.failed > 0 || s.unexpectedPasses.length > 0) {
-			badges.push(`![${adapter}](${shieldBadge(adapter, `${s.failed || s.unexpectedPasses.length} failing`, 'red')})`);
+			const url = linkTo(slug(`${adapter} unexpected failures`));
+			badges.push(`[![${adapter}](${shieldBadge(adapter, `${s.failed || s.unexpectedPasses.length} failing`, 'red')})](${url})`);
 			continue;
 		}
-		badges.push(`![${adapter}](${shieldBadge(adapter, `${s.passed} passing`, 'brightgreen')})`);
+		const passUrl = linkTo(slug(`${adapter} passing tests`));
+		badges.push(`[![${adapter}](${shieldBadge(adapter, `${s.passed} passing`, 'brightgreen')})](${passUrl})`);
 		if (s.expectedFailure > 0) {
-			badges.push(`![${adapter} expected-fail](${shieldBadge(`${adapter} expected-fail`, `${s.expectedFailure}`, 'yellow')})`);
+			const efUrl = linkTo(slug(`${adapter} expected failures`));
+			badges.push(`[![${adapter} expected-fail](${shieldBadge(`${adapter} expected-fail`, `${s.expectedFailure}`, 'yellow')})](${efUrl})`);
 		}
 	}
 	return badges.join(' ');
