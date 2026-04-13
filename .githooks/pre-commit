@@ -9,6 +9,12 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
+# Lint first — fast and catches type regressions before they ship.
+if ! npx tsc --noEmit; then
+	echo "pre-commit: lint failed — fix type errors and retry." >&2
+	exit 1
+fi
+
 # Coverage derives from behaviors.md + tests/, so it can always regenerate.
 node scripts/generate-coverage.js >/dev/null
 
