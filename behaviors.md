@@ -236,8 +236,9 @@ Coverage Notes
 - [ ] `MOVE-PULL-006` `behavior` `verified_vanilla`
   Pull can chain through multiple creeps in a train.
 - [ ] `MOVE-PULL-007` `behavior` `verified_vanilla`
-  `pull()` returns `ERR_INVALID_TARGET` for an invalid target such as self, a
-  non-creep object, or a spawning creep.
+  `pull()` returns `ERR_INVALID_TARGET` for an invalid target: `:self` (pull
+  yourself), `:nonCreep` (pull a structure), `:spawning` (pull a creep that is
+  still spawning).
 - [ ] `MOVE-PULL-008` `behavior` `verified_vanilla`
   `pull()` on an adjacent enemy creep returns `OK`; cross-owner pulling is
   permitted.

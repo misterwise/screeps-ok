@@ -1,6 +1,15 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-const adapter = process.env.SCREEPS_OK_ADAPTER ?? '';
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const defaultAdapter = path.join(projectRoot, 'adapters/xxscreeps/index.ts');
+const adapter = process.env.SCREEPS_OK_ADAPTER || defaultAdapter;
+
+// Make the default visible to test code when vitest is invoked directly
+if (!process.env.SCREEPS_OK_ADAPTER) {
+	process.env.SCREEPS_OK_ADAPTER = defaultAdapter;
+}
 const reportName = (
 	process.env.SCREEPS_OK_REPORT_NAME
 	?? adapter.replace(/.*\//, '').replace(/\..*/, '')

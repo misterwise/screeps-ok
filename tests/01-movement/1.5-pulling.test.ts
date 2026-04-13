@@ -187,7 +187,7 @@ describe('creep.pull()', () => {
 	});
 
 	const pullSelfTest = hasDocumentedAdapterLimitation('pullSelfHang') ? test.skip : test;
-	pullSelfTest('MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
+	pullSelfTest('MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'solo',
@@ -200,7 +200,7 @@ describe('creep.pull()', () => {
 		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
-	test('MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for non-creep', async ({ shard }) => {
+	test('MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'puller',
@@ -216,7 +216,7 @@ describe('creep.pull()', () => {
 		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
-	test('MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for spawning creep', async ({ shard }) => {
+	test('MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 1);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',

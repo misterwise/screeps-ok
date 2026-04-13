@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-22%20failing-red)
+![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen) ![xxscreeps](https://img.shields.io/badge/xxscreeps-830%20passing-brightgreen) ![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,49 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 02:06 UTC |
-| 🔴 | **xxscreeps** | [829](#xxscreeps-passing-tests) | [71](#xxscreeps-expected-failures) | [22](#xxscreeps-unexpected-failures) | [290](#xxscreeps-skipped-tests) | 2026-04-13 02:05 UTC |
+| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 02:38 UTC |
+| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 02:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## 🚨 Regression traps triggered
-
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for non-creep`
-
-## xxscreeps unexpected failures
-
-- `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
-- `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
-- `StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep`
-- `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
-- `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
-- `26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape`
-
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior, covering 71 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 <details>
 <summary><strong><code>creep-owner-undefined</code></strong> — Creep.owner is undefined (key exists but value is undefined)</summary>
@@ -385,7 +352,7 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 
 1 test affected:
 
-- `creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for spawning creep`
+- `creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep`
 
 </details>
 
@@ -440,6 +407,108 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 1 test affected:
 
 - `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
+
+</details>
+
+<details>
+<summary><strong><code>shape-extra-hits-my</code></strong> — xxscreeps base RoomObject exposes hits/hitsMax/my on non-structure objects (source, mineral, resource, tombstone, ruin, constructionSite) and leaks my onto unowned structures (road, wall, container); wall also missing ticksToLive; ruin also missing structureType</summary>
+
+9 tests affected:
+
+- `26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>shape-struct-missing-legacy-compat</code></strong> — Structures missing legacy compatibility getters: link.energy/energyCapacity, storage.storeCapacity</summary>
+
+2 tests affected:
+
+- `26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>shape-body-part-always-has-boost</code></strong> — Unboosted body parts expose boost key (vanilla only includes boost when the part is actually boosted)</summary>
+
+2 tests affected:
+
+- `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
+- `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
+
+</details>
+
+<details>
+<summary><strong><code>shape-room-missing-survivalInfo</code></strong> — Room object missing survivalInfo property</summary>
+
+1 test affected:
+
+- `26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>shape-ctrl-subobj-owner-undefined</code></strong> — controller.sign and controller.reservation sub-objects crash on .username access (owner/user field is undefined)</summary>
+
+2 tests affected:
+
+- `26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>shape-game-surface-mismatch</code></strong> — Game missing cpu, cpuLimit, flags, powerCreeps properties; Game.cpu object has no bucket/limit/tickLimit</summary>
+
+2 tests affected:
+
+- `26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape`
+- `26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>shape-flag-crash</code></strong> — Flag shape discovery crashes at runtime (Cannot use 'in' operator on undefined)</summary>
+
+1 test affected:
+
+- `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
+
+</details>
+
+<details>
+<summary><strong><code>claim-reserved-no-guard</code></strong> — claimController returns OK on a hostile-reserved controller instead of ERR_INVALID_TARGET (no reservation check in checkClaim)</summary>
+
+1 test affected:
+
+- `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
+
+</details>
+
+<details>
+<summary><strong><code>upgrade-blocked-no-guard</code></strong> — upgradeController returns OK while upgradeBlocked is active instead of ERR_INVALID_TARGET (no upgradeBlocked check in checkUpgradeController)</summary>
+
+1 test affected:
+
+- `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
+
+</details>
+
+<details>
+<summary><strong><code>spawn-duplicate-name-allowed</code></strong> — spawnCreep allows a name that collides with a currently spawning creep (no check against spawning creeps in checkSpawn)</summary>
+
+1 test affected:
+
+- `StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep`
 
 </details>
 
@@ -641,9 +710,9 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 - creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
-- creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for self
-- creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for non-creep
-- creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for spawning creep
+- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
+- creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
+- creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
 - creep.pull() MOVE-PULL-009 pulled creep moving away from puller breaks the pull
 - creep.pull() MOVE-PULL-010 pull() returns OK but does not resolve when puller is fatigued
@@ -2019,7 +2088,7 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 
 **`tests/01-movement/1.5-pulling.test.ts`** (1)
 
-- creep.pull() MOVE-PULL-007 pull() returns ERR_INVALID_TARGET for self
+- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
 
 **`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
 
@@ -2414,7 +2483,7 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 ## xxscreeps passing tests
 
 <details>
-<summary>829 tests across 83 files</summary>
+<summary>830 tests across 83 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2581,7 +2650,7 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
 
-**`tests/01-movement/1.5-pulling.test.ts`** (9)
+**`tests/01-movement/1.5-pulling.test.ts`** (10)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -2589,6 +2658,7 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 - creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
+- creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
 - creep.pull() MOVE-PULL-009 pulled creep moving away from puller breaks the pull
 - creep.pull() MOVE-PULL-010 pull() returns OK but does not resolve when puller is fatigued

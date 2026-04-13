@@ -466,12 +466,16 @@ for declared tests so they don't break your CI.
 
 - **gap-id** — a stable, adapter-neutral identifier for the divergence
 - **summary** — one-line description shown in the status dashboard
-- **tests** — catalog IDs of tests expected to fail due to this gap
+- **tests** — catalog IDs of tests expected to fail due to this gap. When a
+  single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
+  you can list either the base ID (gates all variants) or specific suffixed
+  IDs (gates only those variants, letting siblings that pass remain ungated).
 
 The parity reporter (loaded automatically via `vitest.config.ts`) matches
-test names against catalog IDs. A failing test whose ID is declared →
-expected failure (suite still passes). A passing test whose ID is declared →
-unexpected pass (regression trap — the engine may have fixed the behavior).
+test names against catalog IDs including optional `:variant` suffixes. A
+failing test whose ID is declared → expected failure (suite still passes). A
+passing test whose ID is declared → unexpected pass (regression trap — the
+engine may have fixed the behavior).
 
 Run `npm run status:refresh` to regenerate the dashboard with parity details.
 

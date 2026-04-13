@@ -25,7 +25,7 @@ interface ParityFile {
 
 // ── Catalog ID extraction ─────────────────────────────────────
 
-const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/;
+const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
 
 function extractCatalogId(testFullName: string): string | null {
 	const match = testFullName.match(CATALOG_ID_RE);

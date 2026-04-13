@@ -1,15 +1,29 @@
 import process from 'node:process';
-import { runSuite } from './run-suite.js';
+import { parseRunnerArgs, runSuite } from './run-suite.js';
 
-const args = process.argv.slice(2);
-let adapter = 'xxscreeps';
+const parsed = parseRunnerArgs(process.argv.slice(2));
 
-// Use first arg as adapter if it matches
-if (args[0] === 'xxscreeps' || args[0] === 'vanilla') {
-  adapter = args.shift();
+if (parsed.showHelp) {
+  console.log(`Usage: npm test [-- [adapter] [options] [vitest-args]]
+
+Options:
+  xxscreeps | vanilla    Adapter to test (default: xxscreeps)
+  --adapter=<name|path>  Adapter by flag instead of positional
+  --preflight=<target>   Preflight target (default: adapter name, "none" to skip)
+  --preflight-only       Run preflight only, skip tests
+  -h, --help             Show this help
+
+Everything else is passed to vitest. Examples:
+  npm test                                          # run all tests on xxscreeps
+  npm test -- vanilla                               # run all tests on vanilla
+  npm test -- -t "non-creep" tests/01-movement/1.5-pulling.test.ts
+  npm test -- --adapter=xxscreeps --reporter=verbose tests/foo.test.ts`);
+  process.exit(0);
 }
 
 process.exit(runSuite({
-	adapter,
-	vitestArgs: args,
+  adapter: parsed.adapter,
+  preflight: parsed.preflight,
+  preflightOnly: parsed.preflightOnly,
+  vitestArgs: parsed.vitestArgs,
 }));

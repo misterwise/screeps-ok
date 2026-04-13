@@ -29,7 +29,7 @@ const outputPath = path.join(packageRoot, 'docs/status.md');
 // adapters can reuse this script by passing their own adapter name on the
 // command line (see CLI block at the bottom).
 const DEFAULT_ADAPTERS = ['vanilla', 'xxscreeps'];
-const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/;
+const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
 
 function loadReport(adapter) {
 	const reportPath = path.join(reportsDir, `${adapter}.json`);

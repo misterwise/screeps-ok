@@ -43,6 +43,13 @@ For each untested ID:
   `ERR_NO_PATH` when no path exists", test exactly that.
 - **One catalog ID, one test.** Title each test with the ID as the first
   token (`'MOVE-BASIC-010 ...'`) so coverage scanning picks it up.
+  When a single behaviors.md rule covers multiple sub-cases (e.g. a matrix
+  of structure types or a set of invalid-target variants), append a
+  **`:variant`** suffix to the catalog ID: `'MOVE-PULL-007:self ...'`,
+  `'SHAPE-STRUCT-001:road ...'`. The base ID (`MOVE-PULL-007`) is still
+  the catalog entry for coverage; the suffixed form (`MOVE-PULL-007:self`)
+  is a distinct parity-addressable unit so `parity.json` can target
+  individual variants without gating siblings that pass.
 - **Assert exact outcomes** (return code AND resulting state where both
   matter). No qualitative assertions like "moved correctly".
 - **Use the smallest world setup that proves the rule.** Default to

@@ -30,7 +30,7 @@
 		},
 		"lab-bound-getfreecapacity-returns-zero": {
 			"summary": "Bound lab's store.getFreeCapacity(otherMineral) returns 0 instead of null; getCapacity and getUsedCapacity correctly return null",
-			"tests": ["STORE-BIND-002"]
+			"tests": ["STORE-BIND-002:H", "STORE-BIND-002:O", "STORE-BIND-002:G"]
 		},
 		"rampart-no-protection": {
 			"summary": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in attack/dismantle/rangedAttack/rangedMassAttack processors)",
@@ -130,7 +130,7 @@
 		},
 		"pull-spawning-no-guard": {
 			"summary": "pull() on a spawning creep returns OK instead of ERR_INVALID_TARGET (no spawning check in pull intent)",
-			"tests": ["MOVE-PULL-007"]
+			"tests": ["MOVE-PULL-007:spawning"]
 		},
 		"findpath-same-pos-not-empty": {
 			"summary": "room.findPath() returns a 1-step path when source equals destination instead of empty array",
@@ -155,6 +155,46 @@
 		"ruin-spill-decay-on-spill-tick": {
 			"summary": "Ruin decay spill pile is subject to energy/tick decay in the same tick (vanilla inserts the pile after iteration so it skips decay until the following tick)",
 			"tests": ["STRUCTURE-HITS-005"]
+		},
+		"shape-extra-hits-my": {
+			"summary": "xxscreeps base RoomObject exposes hits/hitsMax/my on non-structure objects (source, mineral, resource, tombstone, ruin, constructionSite) and leaks my onto unowned structures (road, wall, container); wall also missing ticksToLive; ruin also missing structureType",
+			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]
+		},
+		"shape-struct-missing-legacy-compat": {
+			"summary": "Structures missing legacy compatibility getters: link.energy/energyCapacity, storage.storeCapacity",
+			"tests": ["SHAPE-STRUCT-001:link", "SHAPE-STRUCT-001:storage"]
+		},
+		"shape-body-part-always-has-boost": {
+			"summary": "Unboosted body parts expose boost key (vanilla only includes boost when the part is actually boosted)",
+			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
+		},
+		"shape-room-missing-survivalInfo": {
+			"summary": "Room object missing survivalInfo property",
+			"tests": ["SHAPE-ROOM-001"]
+		},
+		"shape-ctrl-subobj-owner-undefined": {
+			"summary": "controller.sign and controller.reservation sub-objects crash on .username access (owner/user field is undefined)",
+			"tests": ["SHAPE-CTRL-002", "SHAPE-CTRL-003"]
+		},
+		"shape-game-surface-mismatch": {
+			"summary": "Game missing cpu, cpuLimit, flags, powerCreeps properties; Game.cpu object has no bucket/limit/tickLimit",
+			"tests": ["SHAPE-GAME-001", "SHAPE-GAME-002"]
+		},
+		"shape-flag-crash": {
+			"summary": "Flag shape discovery crashes at runtime (Cannot use 'in' operator on undefined)",
+			"tests": ["SHAPE-FLAG-001"]
+		},
+		"claim-reserved-no-guard": {
+			"summary": "claimController returns OK on a hostile-reserved controller instead of ERR_INVALID_TARGET (no reservation check in checkClaim)",
+			"tests": ["CTRL-CLAIM-003"]
+		},
+		"upgrade-blocked-no-guard": {
+			"summary": "upgradeController returns OK while upgradeBlocked is active instead of ERR_INVALID_TARGET (no upgradeBlocked check in checkUpgradeController)",
+			"tests": ["CTRL-UPGRADE-009"]
+		},
+		"spawn-duplicate-name-allowed": {
+			"summary": "spawnCreep allows a name that collides with a currently spawning creep (no check against spawning creeps in checkSpawn)",
+			"tests": ["SPAWN-CREATE-003"]
 		}
 	}
 }
