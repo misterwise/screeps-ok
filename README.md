@@ -12,6 +12,8 @@ a test once, run it against any engine.
 
 Current pass/fail breakdown and per-adapter parity gaps live in
 [`docs/status.md`](docs/status.md) (regenerate with `npm run status:refresh`).
+The browsable coverage dashboard is published at
+[misterwise.github.io/screeps-ok](https://misterwise.github.io/screeps-ok/).
 
 ## Core docs
 
