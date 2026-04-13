@@ -269,6 +269,7 @@ export const structureShapes: readonly StructureShapeEntry[] = [
 // kept in a separate array with a different placement interface.
 
 export interface NpcShapeEntry {
+	catalogId: string;
 	objectType: string;
 	shape: readonly string[];
 	/** Adapter limitation that gates placement. */
@@ -281,6 +282,7 @@ export interface NpcShapeEntry {
 
 export const npcShapes: readonly NpcShapeEntry[] = [
 	{
+		catalogId: 'SHAPE-NPC-001',
 		objectType: 'keeperLair', limitation: 'npcStructures',
 		spec: { pos: [25, 25], nextSpawnTime: 100 },
 		shape: shape(
@@ -289,6 +291,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 		),
 	},
 	{
+		catalogId: 'SHAPE-NPC-002',
 		objectType: 'invaderCore', limitation: 'npcStructures',
 		spec: { pos: [25, 25], level: 2, deployTime: 100 },
 		shape: shape(
@@ -297,6 +300,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 		),
 	},
 	{
+		catalogId: 'SHAPE-NPC-003',
 		objectType: 'powerBank', cap: 'powerCreeps',
 		spec: { pos: [25, 25], store: { power: 1000 }, hits: 10000000, hitsMax: 10000000, decayTime: 50000 },
 		shape: shape(
@@ -305,6 +309,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 		),
 	},
 	{
+		catalogId: 'SHAPE-NPC-004',
 		objectType: 'portal', limitation: 'portalPlacement',
 		spec: { pos: [25, 25], destination: { x: 25, y: 25, room: 'W3N3' }, decayTime: 50000 },
 		shape: shape(

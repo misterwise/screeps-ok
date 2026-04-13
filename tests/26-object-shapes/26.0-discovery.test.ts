@@ -43,7 +43,7 @@ import {
  * Self-contained player-code function that collects the public
  * data-property surface of a game object. Walks the prototype chain,
  * keeps getters and non-function data values, skips methods,
- * constructor, and underscore-prefixed internal fields.
+ * constructor, and underscore/hash-prefixed internal fields.
  */
 const DATA_PROPS_FN = `function dataProps(obj) {
 	var props = new Set();
@@ -83,9 +83,9 @@ function shapeCode(strings: TemplateStringsArray, ...values: unknown[]): PlayerC
 
 describe('26.0 Object Shape Conformance', () => {
 
-	// ── Creep ────────────────────────────────────────────────────────
+	// ── 26.1 Creep Shape ─────────────────────────────────────────────
 
-	test('creep shape', async ({ shard }) => {
+	test('SHAPE-CREEP-001 creep data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -102,7 +102,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...CREEP_SHAPE]);
 	});
 
-	test('creep nested sub-objects', async ({ shard }) => {
+	test('SHAPE-CREEP-002 creep nested sub-objects match canonical shapes', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -126,7 +126,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(shape!.pos).toEqual([...ROOM_POSITION_SHAPE]);
 	});
 
-	test('creep body part shape when boosted', async ({ shard }) => {
+	test('SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost', async ({ shard }) => {
 		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
 		const id = await shard.placeCreep('W1N1', {
@@ -149,9 +149,29 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(shape!.boosted).toEqual([...BODY_PART_BOOSTED_SHAPE]);
 	});
 
-	// ── Room & Controller ────────────────────────────────────────────
+	// ── 26.2 Power Creep Shape ───────────────────────────────────────
 
-	test('room shape', async ({ shard }) => {
+	test('SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.ownedRoom('p1', 'W1N1', 8);
+		const id = await shard.placePowerCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			name: 'shape_pc',
+			powers: { 12: 1 },
+		});
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const pc = Game.getObjectById(${id});
+			pc ? dataProps(pc) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...POWER_CREEP_SHAPE]);
+	});
+
+	// ── 26.3 Room & Controller Shape ─────────────────────────────────
+
+	test('SHAPE-ROOM-001 room data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -163,7 +183,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...ROOM_SHAPE]);
 	});
 
-	test('controller shape', async ({ shard }) => {
+	test('SHAPE-CTRL-001 controller data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -175,9 +195,69 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...CONTROLLER_SHAPE]);
 	});
 
-	// ── Game globals ─────────────────────────────────────────────────
+	test('SHAPE-CTRL-002 controller.sign sub-object matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos.x + 1, ctrlPos.y],
+			owner: 'p1',
+			body: [MOVE],
+		});
+		await shard.tick();
 
-	test('Game shape', async ({ shard }) => {
+		await shard.runPlayer('p1', code`
+			const c = Game.getObjectById(${creepId});
+			const ctrl = Game.rooms['W1N1'].controller;
+			c.signController(ctrl, 'shape test')
+		`);
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const ctrl = Game.rooms['W1N1'].controller;
+			ctrl && ctrl.sign ? dataProps(ctrl.sign) : null
+		`) as string[] | null;
+
+		if (keys) {
+			expect(keys).toEqual([...SIGN_SHAPE]);
+		}
+	});
+
+	test('SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos.x + 1, ctrlPos.y],
+			owner: 'p1',
+			body: [CLAIM, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			const c = Game.getObjectById(${creepId});
+			const ctrl = Game.rooms['W2N1'] && Game.rooms['W2N1'].controller;
+			c && ctrl ? c.reserveController(ctrl) : -1
+		`);
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const ctrl = Game.rooms['W2N1'] && Game.rooms['W2N1'].controller;
+			ctrl && ctrl.reservation ? dataProps(ctrl.reservation) : null
+		`) as string[] | null;
+
+		if (keys) {
+			expect(keys).toEqual([...RESERVATION_SHAPE]);
+		}
+	});
+
+	// ── 26.4 Game Globals Shape ──────────────────────────────────────
+
+	test('SHAPE-GAME-001 Game data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -188,7 +268,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_SHAPE]);
 	});
 
-	test('Game.cpu shape', async ({ shard }) => {
+	test('SHAPE-GAME-002 Game.cpu matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -199,7 +279,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_CPU_SHAPE]);
 	});
 
-	test('Game.map shape', async ({ shard }) => {
+	test('SHAPE-GAME-003 Game.map matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -210,7 +290,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_MAP_SHAPE]);
 	});
 
-	test('Game.shard shape', async ({ shard }) => {
+	test('SHAPE-GAME-004 Game.shard matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -222,7 +302,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_SHARD_SHAPE]);
 	});
 
-	test('Game.gcl shape', async ({ shard }) => {
+	test('SHAPE-GAME-005 Game.gcl matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -234,7 +314,7 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_GCL_SHAPE]);
 	});
 
-	test('Game.gpl shape', async ({ shard }) => {
+	test('SHAPE-GAME-006 Game.gpl matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.tick();
 
@@ -246,10 +326,22 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...GAME_GPL_SHAPE]);
 	});
 
-	// ── Structures (per-type) ────────────────────────────────────────
+	test('SHAPE-GAME-007 Game.market matches canonical shape', async ({ shard }) => {
+		shard.requires('market');
+		await shard.ownedRoom('p1');
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			Game.market ? dataProps(Game.market) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...GAME_MARKET_SHAPE]);
+	});
+
+	// ── 26.5 Structure Shapes (matrix) ───────────────────────────────
 
 	for (const entry of structureShapes) {
-		test(`structure:${entry.structureType}`, async ({ shard }) => {
+		test(`SHAPE-STRUCT-001:${entry.structureType} structure data-property surface matches canonical shape`, async ({ shard }) => {
 			if (entry.cap) shard.requires(entry.cap);
 
 			await shard.ownedRoom('p1', 'W1N1', entry.rcl);
@@ -270,9 +362,7 @@ describe('26.0 Object Shape Conformance', () => {
 		});
 	}
 
-	// ── Spawn.spawning sub-object ────────────────────────────────────
-
-	test('spawn.spawning shape', async ({ shard }) => {
+	test('SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [26, 25], structureType: 'spawn', owner: 'p1',
@@ -295,185 +385,10 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...SPAWNING_SHAPE]);
 	});
 
-	// ── Source ────────────────────────────────────────────────────────
-
-	test('source shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeSource('W1N1', {
-			pos: [10, 10],
-			energy: 1500,
-			energyCapacity: 3000,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const s = Game.getObjectById(${id});
-			s ? dataProps(s) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...SOURCE_SHAPE]);
-	});
-
-	// ── Mineral ──────────────────────────────────────────────────────
-
-	test('mineral shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeMineral('W1N1', {
-			pos: [40, 40],
-			mineralType: 'H',
-			mineralAmount: 50000,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const m = Game.getObjectById(${id});
-			m ? dataProps(m) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...MINERAL_SHAPE]);
-	});
-
-	// ── Construction site ────────────────────────────────────────────
-
-	test('constructionSite shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeSite('W1N1', {
-			pos: [30, 30], owner: 'p1',
-			structureType: STRUCTURE_ROAD,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const s = Game.getObjectById(${id});
-			s ? dataProps(s) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...CONSTRUCTION_SITE_SHAPE]);
-	});
-
-	// ── Flag ─────────────────────────────────────────────────────────
-
-	test('flag shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeFlag('W1N1', {
-			pos: [20, 20], owner: 'p1',
-			name: 'shape_flag',
-			color: COLOR_RED,
-			secondaryColor: COLOR_BLUE,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const f = Game.flags['shape_flag'];
-			f ? dataProps(f) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...FLAG_SHAPE]);
-	});
-
-	// ── Dropped resource ─────────────────────────────────────────────
-
-	test('droppedResource shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeDroppedResource('W1N1', {
-			pos: [25, 25],
-			resourceType: RESOURCE_ENERGY,
-			amount: 100,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const r = Game.getObjectById(${id});
-			r ? dataProps(r) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...DROPPED_RESOURCE_SHAPE]);
-	});
-
-	// ── Tombstone ────────────────────────────────────────────────────
-
-	test('tombstone shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeTombstone('W1N1', {
-			pos: [25, 25],
-			creepName: 'shape_victim',
-			store: { energy: 50 },
-			ticksToDecay: 100,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const t = Game.getObjectById(${id});
-			t ? dataProps(t) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...TOMBSTONE_SHAPE]);
-	});
-
-	// ── Ruin ─────────────────────────────────────────────────────────
-
-	test('ruin shape', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeRuin('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_CONTAINER,
-			store: { energy: 75 },
-			ticksToDecay: 200,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const r = Game.getObjectById(${id});
-			r ? dataProps(r) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...RUIN_SHAPE]);
-	});
-
-	// ── Power Creep (capability-gated) ───────────────────────────────
-
-	test('powerCreep shape', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.ownedRoom('p1', 'W1N1', 8);
-		const id = await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			name: 'shape_pc',
-			powers: { 12: 1 },
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const pc = Game.getObjectById(${id});
-			pc ? dataProps(pc) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...POWER_CREEP_SHAPE]);
-	});
-
-	// ── Nuke (in-flight, capability-gated) ───────────────────────────
-
-	test('nuke shape', async ({ shard }) => {
-		shard.requires('nuke');
-		await shard.ownedRoom('p1');
-		const id = await shard.placeNuke('W1N1', {
-			pos: [25, 25],
-			launchRoomName: 'W5N5',
-			timeToLand: 50000,
-		});
-		await shard.tick();
-
-		const keys = await shard.runPlayer('p1', shapeCode`
-			const n = Game.getObjectById(${id});
-			n ? dataProps(n) : null
-		`) as string[] | null;
-
-		expect(keys).toEqual([...NUKE_SHAPE]);
-	});
-
-	// ── NPC / Special Structures (per-type) ──────────────────────────
+	// ── 26.6 NPC Structure Shapes ────────────────────────────────────
 
 	for (const entry of npcShapes) {
-		test(`npc:${entry.objectType}`, async ({ shard }) => {
+		test(`${entry.catalogId} ${entry.objectType} data-property surface matches canonical shape`, async ({ shard }) => {
 			if (entry.limitation) {
 				const skip = hasDocumentedAdapterLimitation(
 					entry.limitation as Parameters<typeof hasDocumentedAdapterLimitation>[0],
@@ -506,9 +421,43 @@ describe('26.0 Object Shape Conformance', () => {
 		});
 	}
 
-	// ── Deposit ──────────────────────────────────────────────────────
+	// ── 26.7 World Object Shapes ─────────────────────────────────────
 
-	test('deposit shape', async ({ shard }) => {
+	test('SHAPE-SOURCE-001 source data-property surface matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeSource('W1N1', {
+			pos: [10, 10],
+			energy: 1500,
+			energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const s = Game.getObjectById(${id});
+			s ? dataProps(s) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...SOURCE_SHAPE]);
+	});
+
+	test('SHAPE-MINERAL-001 mineral data-property surface matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeMineral('W1N1', {
+			pos: [40, 40],
+			mineralType: 'H',
+			mineralAmount: 50000,
+		});
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const m = Game.getObjectById(${id});
+			m ? dataProps(m) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...MINERAL_SHAPE]);
+	});
+
+	test('SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape', async ({ shard }) => {
 		shard.requires('deposit');
 		await shard.ownedRoom('p1');
 		const id = await shard.placeObject('W1N1', 'deposit', {
@@ -525,81 +474,108 @@ describe('26.0 Object Shape Conformance', () => {
 		expect(keys).toEqual([...DEPOSIT_SHAPE]);
 	});
 
-	// ── Game.market sub-object ───────────────────────────────────────
-
-	test('Game.market shape', async ({ shard }) => {
-		shard.requires('market');
+	test('SHAPE-SITE-001 constructionSite data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		const id = await shard.placeSite('W1N1', {
+			pos: [30, 30], owner: 'p1',
+			structureType: STRUCTURE_ROAD,
+		});
 		await shard.tick();
 
 		const keys = await shard.runPlayer('p1', shapeCode`
-			Game.market ? dataProps(Game.market) : null
+			const s = Game.getObjectById(${id});
+			s ? dataProps(s) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual([...GAME_MARKET_SHAPE]);
+		expect(keys).toEqual([...CONSTRUCTION_SITE_SHAPE]);
 	});
 
-	// ── Controller sub-objects (reservation, sign) ───────────────────
-
-	test('controller.reservation shape', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
+	test('SHAPE-FLAG-001 flag data-property surface matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeFlag('W1N1', {
+			pos: [20, 20], owner: 'p1',
+			name: 'shape_flag',
+			color: COLOR_RED,
+			secondaryColor: COLOR_BLUE,
 		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos.x + 1, ctrlPos.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			const c = Game.getObjectById(${creepId});
-			const ctrl = Game.rooms['W2N1'] && Game.rooms['W2N1'].controller;
-			c && ctrl ? c.reserveController(ctrl) : -1
-		`);
 		await shard.tick();
 
 		const keys = await shard.runPlayer('p1', shapeCode`
-			const ctrl = Game.rooms['W2N1'] && Game.rooms['W2N1'].controller;
-			ctrl && ctrl.reservation ? dataProps(ctrl.reservation) : null
+			const f = Game.flags['shape_flag'];
+			f ? dataProps(f) : null
 		`) as string[] | null;
 
-		if (keys) {
-			expect(keys).toEqual([...RESERVATION_SHAPE]);
-		}
-		// reservation may be null if the intent didn't process — not a
-		// shape failure, but a setup limitation.
+		expect(keys).toEqual([...FLAG_SHAPE]);
 	});
 
-	test('controller.sign shape', async ({ shard }) => {
+	test('SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos.x + 1, ctrlPos.y],
-			owner: 'p1',
-			body: [MOVE],
+		const id = await shard.placeDroppedResource('W1N1', {
+			pos: [25, 25],
+			resourceType: RESOURCE_ENERGY,
+			amount: 100,
 		});
 		await shard.tick();
 
-		await shard.runPlayer('p1', code`
-			const c = Game.getObjectById(${creepId});
-			const ctrl = Game.rooms['W1N1'].controller;
-			c.signController(ctrl, 'shape test')
-		`);
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const r = Game.getObjectById(${id});
+			r ? dataProps(r) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...DROPPED_RESOURCE_SHAPE]);
+	});
+
+	test('SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeTombstone('W1N1', {
+			pos: [25, 25],
+			creepName: 'shape_victim',
+			store: { energy: 50 },
+			ticksToDecay: 100,
+		});
 		await shard.tick();
 
 		const keys = await shard.runPlayer('p1', shapeCode`
-			const ctrl = Game.rooms['W1N1'].controller;
-			ctrl && ctrl.sign ? dataProps(ctrl.sign) : null
+			const t = Game.getObjectById(${id});
+			t ? dataProps(t) : null
 		`) as string[] | null;
 
-		if (keys) {
-			expect(keys).toEqual([...SIGN_SHAPE]);
-		}
+		expect(keys).toEqual([...TOMBSTONE_SHAPE]);
+	});
+
+	test('SHAPE-RUIN-001 ruin data-property surface matches canonical shape', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeRuin('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_CONTAINER,
+			store: { energy: 75 },
+			ticksToDecay: 200,
+		});
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const r = Game.getObjectById(${id});
+			r ? dataProps(r) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...RUIN_SHAPE]);
+	});
+
+	test('SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape', async ({ shard }) => {
+		shard.requires('nuke');
+		await shard.ownedRoom('p1');
+		const id = await shard.placeNuke('W1N1', {
+			pos: [25, 25],
+			launchRoomName: 'W5N5',
+			timeToLand: 50000,
+		});
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const n = Game.getObjectById(${id});
+			n ? dataProps(n) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...NUKE_SHAPE]);
 	});
 });
