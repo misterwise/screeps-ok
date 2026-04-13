@@ -397,7 +397,7 @@ function updateReadmeBadges(summaries) {
 	const current = readFileSync(readmePath, 'utf8');
 	if (!BADGE_MARKER_RE.test(current)) return;
 	const badges = renderHeaderBadges(summaries);
-	const replacement = `$1 ${badges} $2`;
+	const replacement = `$1\n${badges}\n$2`;
 	const next = current.replace(BADGE_MARKER_RE, replacement);
 	if (next === current) return;
 	writeFileSync(readmePath, next);
