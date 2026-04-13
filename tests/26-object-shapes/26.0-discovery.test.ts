@@ -198,6 +198,7 @@ describe('26.0 Object Shape Conformance', () => {
 	test('SHAPE-CTRL-002 controller.sign sub-object matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
+		if (!ctrlPos) throw new Error('W1N1 has no controller');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos.x + 1, ctrlPos.y],
 			owner: 'p1',
@@ -231,6 +232,7 @@ describe('26.0 Object Shape Conformance', () => {
 			],
 		});
 		const ctrlPos = await shard.getControllerPos('W2N1');
+		if (!ctrlPos) throw new Error('W2N1 has no controller');
 		const creepId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos.x + 1, ctrlPos.y],
 			owner: 'p1',

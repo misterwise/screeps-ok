@@ -47,7 +47,6 @@ import { create as createStorage } from 'xxscreeps/mods/logistics/storage.js';
 import { create as createLink } from 'xxscreeps/mods/logistics/link.js';
 import { create as createContainer } from 'xxscreeps/mods/resource/container.js';
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
-import { create as createTerminal } from 'xxscreeps/mods/market/terminal.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { createFlag } from 'xxscreeps/mods/flag/game.js';
@@ -57,11 +56,19 @@ import { create as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/controller/controller.js';
 
-// Optional mods — not all xxscreeps builds include these
+// Optional mods — not all xxscreeps builds include these exports.
+// Use variable-named dynamic imports so TS doesn't statically require the
+// module, and so a missing named export degrades to `undefined` instead of
+// a type error. Factory is an optional mod; terminal.js in the pinned
+// xxscreeps build defines `create` locally but does not export it.
 let createFactory: ((pos: any, owner: string) => any) | undefined;
-try {
-	({ create: createFactory } = await import('xxscreeps/mods/factory/factory.js'));
-} catch {}
+let createTerminal: ((pos: any, owner: string) => any) | undefined;
+for (const [name, assign] of [
+	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
+	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
+] as const) {
+	try { assign(await import(name)); } catch {}
+}
 
 // Module-level initialization
 import { importMods } from 'xxscreeps/config/mods/index.js';
@@ -244,7 +251,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					creep.store['#add'](resource, amount);
+					creep.store['#add'](resource as any, amount);
 				}
 			}
 			room['#insertObject'](creep);
@@ -912,7 +919,9 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'road': return createRoad(pos);
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
-		case 'terminal': return createTerminal(pos, owner!);
+		case 'terminal':
+			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
+			return createTerminal(pos, owner!);
 		case 'factory':
 			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
 			return createFactory(pos, owner!);

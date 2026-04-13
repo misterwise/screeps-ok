@@ -102,6 +102,7 @@ describe('source regeneration', () => {
 
 		// Place a CLAIM creep adjacent to the controller.
 		const ctrlPos = await shard.getControllerPos('W2N1');
+		if (!ctrlPos) throw new Error('W2N1 has no controller');
 		const claimerId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos.x + 1, ctrlPos.y], owner: 'p1',
 			body: [CLAIM, MOVE],

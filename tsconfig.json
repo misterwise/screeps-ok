@@ -9,7 +9,14 @@
     "outDir": "dist",
     "rootDir": ".",
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "xxscreeps/*": [
+        "./node_modules/xxscreeps/dist/types/*",
+        "./node_modules/xxscreeps/dist/*"
+      ]
+    }
   },
   "include": ["src/**/*", "adapters/**/*", "tests/**/*"]
 }

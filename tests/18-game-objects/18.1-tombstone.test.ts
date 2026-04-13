@@ -101,7 +101,7 @@ describe('Tombstone', () => {
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
-		const targetBody: typeof CARRY[] = [CARRY, MOVE];
+		const targetBody = [CARRY, MOVE];
 		const carriedEnergy = 50;
 		const attackerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
