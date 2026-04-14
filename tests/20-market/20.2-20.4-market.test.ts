@@ -614,11 +614,11 @@ describe('Market queries', () => {
 		`);
 		expect(stillThere).toBe(true);
 
-		// ── Part 3: seed an order whose expiry lies within the test window ──
-		// Give it 2 000 ms of remaining life at seed time, then sleep 2 500 ms
-		// past the expiry threshold before ticking.
-		const aliveMsAtSeed = 2_000;
-		const sleepMs = 2_500;
+		// ── Part 3: seed an order whose expiry lies just ahead of the test ──
+		// Keep a modest wall-clock margin so the order is definitely alive when
+		// first observed, then wait only the measured remaining lifetime plus a
+		// small buffer before ticking past expiry.
+		const aliveMsAtSeed = 250;
 		const seedTimestamp = Date.now() - MARKET_ORDER_LIFE_TIME + aliveMsAtSeed;
 		const expiringId = await shard.placeMarketOrder({
 			owner: 'p1',
@@ -640,10 +640,11 @@ describe('Market queries', () => {
 		expect(initial.createdTimestamp).toBe(seedTimestamp);
 		expect(initial.remainingAmount).toBe(50);
 		// Sanity: Date.now() - createdTimestamp is still below MARKET_ORDER_LIFE_TIME here.
-		expect(Date.now() - initial.createdTimestamp).toBeLessThan(MARKET_ORDER_LIFE_TIME);
+		const remainingMs = MARKET_ORDER_LIFE_TIME - (Date.now() - initial.createdTimestamp);
+		expect(remainingMs).toBeGreaterThan(0);
 
-		// ── Part 4: sleep past the wall-clock threshold, tick, order is gone ──
-		await new Promise(resolve => setTimeout(resolve, sleepMs));
+		// ── Part 4: sleep just past the wall-clock threshold, tick, order is gone ──
+		await new Promise(resolve => setTimeout(resolve, remainingMs + 50));
 		// Sanity: now past the expiry threshold.
 		expect(Date.now() - seedTimestamp).toBeGreaterThan(MARKET_ORDER_LIFE_TIME);
 		await shard.tick();

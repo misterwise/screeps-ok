@@ -36,7 +36,6 @@ describe('Lab runReaction', () => {
 				lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
 			const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
 			expect(lab.mineralType).toBe(expectedProduct);
@@ -68,7 +67,6 @@ describe('Lab runReaction', () => {
 			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const r1 = await shard.expectStructure(lab1, STRUCTURE_LAB);
 		expect(r1.store.H).toBe(startAmount - LAB_REACTION_AMOUNT);
@@ -261,7 +259,6 @@ describe('Lab runReaction', () => {
 			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc1).toBe(OK);
-		await shard.tick();
 
 		// Second reaction while still on cooldown.
 		const rc2 = await shard.runPlayer('p1', code`
@@ -334,7 +331,6 @@ describe('Lab runReaction', () => {
 			Game.getObjectById(${labId}).runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
 		expect(lab.mineralType).toBe('OH');
@@ -407,7 +403,6 @@ describe('Lab reverseReaction', () => {
 				lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
 			// The two output labs should each receive one reagent.
 			const r1 = await shard.expectStructure(lab1, STRUCTURE_LAB);
@@ -442,7 +437,6 @@ describe('Lab reverseReaction', () => {
 			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const calling = await shard.expectStructure(labId, STRUCTURE_LAB);
 		expect(calling.store.OH).toBe(startAmount - LAB_REACTION_AMOUNT);
@@ -641,7 +635,6 @@ describe('Lab reverseReaction', () => {
 			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc1).toBe(OK);
-		await shard.tick();
 
 		// Second reverse while still on cooldown.
 		const rc2 = await shard.runPlayer('p1', code`
@@ -715,7 +708,6 @@ describe('Lab reverseReaction', () => {
 			Game.getObjectById(${labId}).reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const calling = await shard.expectStructure(labId, STRUCTURE_LAB);
 		expect(calling.store.OH ?? 0).toBe(0);
