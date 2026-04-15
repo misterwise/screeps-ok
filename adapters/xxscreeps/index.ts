@@ -30,6 +30,18 @@ import { loadTerrain } from 'xxscreeps/driver/path-finder.js';
 import * as MapSchema from 'xxscreeps/game/map.js';
 import { makeWriter } from 'xxscreeps/schema/write.js';
 import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
+import {
+	insertRoomObject, removeRoomObject, iterateRoomObjects,
+	setRoomLevel, getRoomLevel, setRoomOwner, setControllerOwner,
+	setRoomSafeModeUntil, setControllerDowngradeTime,
+	resetControllerTimers, resetRoomControllerFlags,
+	bindObjectPos, setCreepAgeTime,
+	setSourceNextRegenerationTime, setMineralNextRegenerationTime,
+	setStructureNextDecayTime,
+	primeTombstoneCorpse, primeRuinStructure,
+	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	buildGclPayload,
+} from './engine-internals.js';
 
 // Object creation imports
 import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/creep.js';
@@ -182,26 +194,20 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	private resetRoomToCanonicalLayout(room: Room, roomName: string): void {
-		for (const obj of [...room['#objects']]) {
-			room['#removeObject'](obj);
+		for (const obj of [...iterateRoomObjects(room)]) {
+			removeRoomObject(room, obj);
 		}
 
-		room['#level'] = 0;
-		room['#user'] = null;
-		(room as any)['#safeModeUntil'] = 0;
-		(room as any)['#sign'] = undefined;
+		setRoomLevel(room, 0);
+		setRoomOwner(room, null);
+		resetRoomControllerFlags(room);
 
 		const controller = new StructureController();
 		controller.id = this.nextId();
-		controller.pos = new RoomPosition(1, 1, roomName);
-		controller['#posId'] = controller.pos['#id'];
+		bindObjectPos(controller, new RoomPosition(1, 1, roomName));
 		controller.safeModeAvailable = 0;
-		controller['#downgradeTime'] = 0;
-		controller['#progress'] = 0;
-		controller['#reservationEndTime'] = 0;
-		controller['#safeModeCooldownTime'] = 0;
-		controller['#upgradeBlockedUntil'] = 0;
-		room['#insertObject'](controller, true);
+		resetControllerTimers(controller);
+		insertRoomObject(room, controller, true);
 	}
 
 	async createShard(spec: ShardSpec): Promise<void> {
@@ -233,29 +239,22 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 						if (!room.controller) {
 							const ctrl = new StructureController();
 							ctrl.id = this.nextId();
-							ctrl.pos = new RoomPosition(1, 1, rName);
-							ctrl['#posId'] = ctrl.pos['#id'];
-							room['#user'] = null;
-							room['#insertObject'](ctrl, true);
+							bindObjectPos(ctrl, new RoomPosition(1, 1, rName));
+							setRoomOwner(room, null);
+							insertRoomObject(room, ctrl, true);
 						}
-						room['#level'] = rcl;
-						room['#user'] = room.controller!['#user'] = owner;
+						setRoomLevel(room, rcl);
+						setRoomOwner(room, owner);
+						setControllerOwner(room.controller!, owner);
 					}
 					if (safeModeAvail > 0 && room.controller) {
 						room.controller.safeModeAvailable = safeModeAvail;
 					}
 					if (safeModeRemaining > 0 && room.controller) {
-						// xxscreeps stores active safe mode as `#safeModeUntil`
-						// on the room object (absolute tick); the getter at
-						// `xxscreeps/src/mods/controller/controller.ts:28`
-						// reports `Math.max(0, #safeModeUntil - Game.time)`.
-						(room as any)['#safeModeUntil'] = Game.time + safeModeRemaining;
+						setRoomSafeModeUntil(room, Game.time, safeModeRemaining);
 					}
 					if (ticksToDowngrade > 0 && room.controller) {
-						// xxscreeps stores the downgrade expiry as `#downgradeTime`
-						// (absolute tick); the `ticksToDowngrade` getter returns
-						// `Math.max(0, #downgradeTime - Game.time)`.
-						room.controller['#downgradeTime'] = Game.time + ticksToDowngrade;
+						setControllerDowngradeTime(room.controller, Game.time, ticksToDowngrade);
 					}
 				});
 			}
@@ -281,17 +280,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 				// createCreep set store capacity from the unboosted body; resize
 				// now that boosts may have extended CARRY capacity.
-				(creep.store as any)['#capacity'] = calculateCarry(creep.body);
+				setStoreCapacity(creep.store, calculateCarry(creep.body));
 			}
 			if (spec.ticksToLive !== undefined) {
-				creep['#ageTime'] = Game.time + spec.ticksToLive;
+				setCreepAgeTime(creep, Game.time, spec.ticksToLive);
 			}
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					creep.store['#add'](resource as any, amount);
+					storeAdd(creep.store, resource, amount);
 				}
 			}
-			room['#insertObject'](creep);
+			insertRoomObject(room, creep);
 		});
 
 		return id;
@@ -304,7 +303,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		this.queueOp(roomName, room => {
 			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			const structure = buildStructure(spec.structureType, pos, userId, room['#level'] ?? 0);
+			const structure = buildStructure(spec.structureType, pos, userId, getRoomLevel(room));
 			structure.id = id;
 			if (spec.hits !== undefined) {
 				structure.hits = spec.hits;
@@ -313,9 +312,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				setStoreContentsExact(structure.store, spec.store);
 			}
 			if (spec.ticksToDecay !== undefined) {
-				(structure as any)['#nextDecayTime'] = this.simulation!.shard.time + spec.ticksToDecay;
+				setStructureNextDecayTime(structure, this.simulation!.shard.time, spec.ticksToDecay);
 			}
-			room['#insertObject'](structure);
+			insertRoomObject(room, structure);
 		});
 
 		return id;
@@ -336,7 +335,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.progress !== undefined) {
 				site.progress = spec.progress;
 			}
-			room['#insertObject'](site);
+			insertRoomObject(room, site);
 		});
 
 		return id;
@@ -349,17 +348,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.queueOp(roomName, room => {
 			const source = new Source();
 			source.id = id;
-			source.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			source['#posId'] = source.pos['#id'];
+			bindObjectPos(source, new RoomPosition(spec.pos[0], spec.pos[1], roomName));
 			source.energyCapacity = spec.energyCapacity ?? 3000;
 			source.energy = spec.energy ?? source.energyCapacity;
 			// Set regen timer if source is depleted
 			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
-				source['#nextRegenerationTime'] = Game.time + spec.ticksToRegeneration;
+				setSourceNextRegenerationTime(source, Game.time, spec.ticksToRegeneration);
 			} else if (source.energy < source.energyCapacity) {
-				source['#nextRegenerationTime'] = Game.time + 300; // ENERGY_REGEN_TIME
+				setSourceNextRegenerationTime(source, Game.time, 300); // ENERGY_REGEN_TIME
 			}
-			room['#insertObject'](source);
+			insertRoomObject(room, source);
 		});
 
 		return id;
@@ -373,15 +371,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.queueOp(roomName, room => {
 			const mineral = new Mineral();
 			mineral.id = id;
-			mineral.pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
-			mineral['#posId'] = mineral.pos['#id'];
+			bindObjectPos(mineral, new RoomPosition(spec.pos[0], spec.pos[1], roomName));
 			mineral.mineralType = spec.mineralType as any;
 			mineral.mineralAmount = spec.mineralAmount ?? 100000;
 			mineral.density = 3; // DENSITY_HIGH — matches vanilla default
 			if (ticksToRegen !== undefined) {
-				(mineral as any)['#nextRegenerationTime'] = this.simulation!.shard.time + ticksToRegen;
+				setMineralNextRegenerationTime(mineral, this.simulation!.shard.time, ticksToRegen);
 			}
-			room['#insertObject'](mineral);
+			insertRoomObject(room, mineral);
 		});
 
 		return id;
@@ -424,19 +421,22 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			tombstone.store = new OpenStore();
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					if (amount > 0) tombstone.store['#add'](resource as any, amount);
+					if (amount > 0) storeAdd(tombstone.store, resource, amount);
 				}
 			}
-			tombstone['#creep'] = {
-				body: [],
-				id: id,
-				name: spec.creepName,
-				saying: undefined as any,
-				ticksToLive: 0,
-				user: '',
-			};
-			tombstone['#decayTime'] = (spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500);
-			room['#insertObject'](tombstone);
+			primeTombstoneCorpse(
+				tombstone,
+				{
+					body: [],
+					id,
+					name: spec.creepName,
+					saying: undefined as any,
+					ticksToLive: 0,
+					user: '',
+				},
+				(spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500),
+			);
+			insertRoomObject(room, tombstone);
 		});
 
 		return id;
@@ -454,17 +454,20 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			ruin.store = new OpenStore();
 			if (spec.store) {
 				for (const [resource, amount] of Object.entries(spec.store)) {
-					if (amount > 0) ruin.store['#add'](resource as any, amount);
+					if (amount > 0) storeAdd(ruin.store, resource, amount);
 				}
 			}
-			ruin['#decayTime'] = (spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500);
-			ruin['#structure'] = {
-				id: id,
-				hitsMax: 0,
-				type: spec.structureType,
-				user: null as any,
-			};
-			room['#insertObject'](ruin);
+			primeRuinStructure(
+				ruin,
+				{
+					id,
+					hitsMax: 0,
+					type: spec.structureType,
+					user: null as any,
+				},
+				(spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500),
+			);
+			insertRoomObject(room, ruin);
 		});
 
 		return id;
@@ -481,7 +484,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				spec.amount,
 			);
 			resource.id = id;
-			room['#insertObject'](resource);
+			insertRoomObject(room, resource);
 		});
 
 		return id;
@@ -556,7 +559,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Build the ID map by scanning rooms for objects placed by name/position.
 		for (const roomName of this.rooms) {
 			await this.simulation.peekRoom(roomName, (room: any) => {
-				for (const obj of room['#objects']) {
+				for (const obj of iterateRoomObjects(room)) {
 					// Match by name for creeps
 					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
 						idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
@@ -619,7 +622,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Rebuild ID map after poke (new objects need mapping)
 		for (const roomName of this.rooms) {
 			await this.simulation.peekRoom(roomName, (room: any) => {
-				for (const obj of room['#objects']) {
+				for (const obj of iterateRoomObjects(room)) {
 					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
 						this.idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
 					}
@@ -674,12 +677,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				// payload.gcl (currently 0 → level 1). Override with the
 				// adapter's synthetic value until PlayerSpec.gcl is wired
 				// through the TickPayload (playerGclControl phase).
-				(Game as any).gcl = {
-					level: Math.max(ownedRoomCount + 1, 2),
-					progress: gclProgress,
-					progressTotal: 1,
-					'#roomCount': ownedRoomCount,
-				};
+				(Game as any).gcl = buildGclPayload(
+					Math.max(ownedRoomCount + 1, 2), gclProgress, ownedRoomCount);
 
 				// Collect all available globals from the game environment
 				const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
@@ -782,11 +781,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					executedPlayers.add(userId);
 					const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-					(Game as any).gcl = {
-						level: Math.max(ownedRoomCount + 1, 2),
-						progress: gclProgress, progressTotal: 1,
-						'#roomCount': ownedRoomCount,
-					};
+					(Game as any).gcl = buildGclPayload(
+						Math.max(ownedRoomCount + 1, 2), gclProgress, ownedRoomCount);
 					const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
 					Object.assign(globals, C);
 					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
@@ -885,7 +881,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const engineId = this.resolveId(id);
 		for (const roomName of this.rooms) {
 			const snapshot = await this.simulation!.peekRoom(roomName, (room: any) => {
-				for (const obj of room['#objects']) {
+				for (const obj of iterateRoomObjects(room)) {
 					if (obj.id === engineId) return snapshotObject(obj, this);
 				}
 				return null;
@@ -913,7 +909,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
 		return this.simulation!.peekRoom(roomName, (room: any) => {
-			for (const obj of room['#objects']) {
+			for (const obj of iterateRoomObjects(room)) {
 				try {
 					if (obj.structureType === 'controller') {
 						return { x: obj.pos.x, y: obj.pos.y };
@@ -966,17 +962,14 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 }
 
 function setStoreContentsExact(store: any, desired: Record<string, number>): void {
-	const entries = typeof store?.['#entries'] === 'function'
-		? [...store['#entries']()]
-		: Object.entries(store ?? {});
-	for (const [resource, amount] of entries) {
+	for (const [resource, amount] of [...storeEntries(store)]) {
 		if (typeof amount === 'number' && amount > 0) {
-			store['#subtract'](resource, amount);
+			storeSubtract(store, resource, amount);
 		}
 	}
 	for (const [resource, amount] of Object.entries(desired)) {
 		if (amount > 0) {
-			store['#add'](resource, amount);
+			storeAdd(store, resource, amount);
 		}
 	}
 }

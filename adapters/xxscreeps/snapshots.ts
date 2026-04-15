@@ -15,6 +15,7 @@ import { Source } from 'xxscreeps/mods/source/source.js';
 import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
+import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
@@ -25,10 +26,7 @@ function snapPos(obj: any) {
 }
 
 function snapOwner(obj: any, resolver: PlayerResolver): string | undefined {
-	// #user gives the raw user ID needed by resolvePlayerReverse.
-	// The public obj.owner getter depends on the userInfo map, which
-	// is only populated during player simulation — not during peekRoom.
-	const user = obj['#user'] ?? obj.owner?.username;
+	const user = readRawOwnerId(obj);
 	return user ? resolver.resolvePlayerReverse(user) : undefined;
 }
 
@@ -365,9 +363,7 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 
 export function snapshotRoom(room: any, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {
 	const results: ObjectSnapshot[] = [];
-	// #objects is the only way to iterate all room objects; Room.find()
-	// requires FIND constants and there is no public "all objects" API.
-	for (const obj of room['#objects']) {
+	for (const obj of iterateRoomObjects(room)) {
 		let match = false;
 		switch (findType) {
 			case 'creeps':
