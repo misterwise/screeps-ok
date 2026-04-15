@@ -79,6 +79,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		nuke: true,
 		deposit: true,
 		terrain: true,
+		portals: true,
+		invaderCore: true,
 	};
 
 	private server: any = null;

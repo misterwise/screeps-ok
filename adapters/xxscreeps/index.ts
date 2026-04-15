@@ -126,6 +126,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		nuke: false,
 		deposit: false,
 		terrain: true,
+		// xxscreeps has no portal mod — `StructurePortal` is a bare stub at
+		// game/runtime.ts:18 with no class, schema, or processor.
+		portals: false,
+		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
+		// bare stub at game/runtime.ts:13.
+		invaderCore: false,
 	};
 
 	private playerMap = new Map<string, string>();

@@ -272,6 +272,8 @@ Current capability flags are:
 - `observer`
 - `nuke`
 - `terrain`
+- `portals`
+- `invaderCore`
 
 Rules:
 

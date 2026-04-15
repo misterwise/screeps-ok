@@ -5,7 +5,6 @@ import { describe, test, expect, code, limitationGated,
 } from '../../src/index.js';
 
 const downgradeTest = limitationGated('controllerDowngrade');
-const portalTest = limitationGated('portalPlacement');
 const transitionTest = limitationGated('interRoomTransition');
 
 describe('adapter contract: hard family prerequisites', () => {
@@ -47,7 +46,8 @@ describe('adapter contract: hard family prerequisites', () => {
 	});
 
 	describe('portal placement', () => {
-		portalTest('placeObject creates a same-shard portal retrievable by player code', async ({ shard }) => {
+		test('placeObject creates a same-shard portal retrievable by player code', async ({ shard }) => {
+			shard.requires('portals');
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [

@@ -259,16 +259,14 @@ const CAPABILITY_DESCRIPTIONS = {
 	nuke: 'Nukes',
 	deposit: 'Deposits (highway)',
 	terrain: 'Custom terrain specs',
+	portals: 'Portal structures and teleport mechanics',
+	invaderCore: 'Invader core structures',
 };
 
 const LIMITATION_DESCRIPTIONS = {
-	controllerDowngrade: 'RoomSpec.ticksToDowngrade setup not supported',
-	portalPlacement: 'placeObject for portals not supported',
 	interRoomTransition: 'Inter-room creep transitions not supported',
 	flagSupport: 'Game.flags not populated for player code',
 	memorySupport: 'Memory/RawMemory not populated for player code',
-	npcStructures: 'placeObject for keeperLair/invaderCore not supported',
-	xxscreepsPathFinderUseMissing: 'PathFinder.use shim missing on the adapter',
 	playerGclControl: 'PlayerSpec.gcl override not supported',
 	pullSelfHang: 'pull(self) hangs the runner',
 };

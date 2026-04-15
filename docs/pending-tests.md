@@ -222,7 +222,7 @@ ends at the rampart position (blocking rule only applies to hostiles).
 ## ~~13. Structures — Infrastructure~~ — DONE
 
 4 new tests written, verified on vanilla. Capability-gated on xxscreeps
-(`market` + `portalPlacement`).
+(`market` + `portals`).
 
 **Written:** TERMINAL-SEND-010, TERMINAL-SEND-011, TERMINAL-SEND-012, PORTAL-005
 

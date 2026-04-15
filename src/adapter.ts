@@ -175,6 +175,10 @@ export interface AdapterCapabilities {
 	deposit: boolean;
 	/** Custom terrain setup through RoomSpec.terrain / setTerrain. */
 	terrain: boolean;
+	/** Portal structures and inter-room/inter-shard teleport mechanics. */
+	portals: boolean;
+	/** Invader core structures (level, deploy timer, collapse lifecycle). */
+	invaderCore: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;

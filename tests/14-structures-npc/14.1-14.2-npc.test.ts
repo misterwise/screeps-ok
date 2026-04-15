@@ -1,6 +1,4 @@
-import { describe, test, expect, code, limitationGated } from '../../src/index.js';
-
-const invaderCoreTest = limitationGated('npcStructures');
+import { describe, test, expect, code } from '../../src/index.js';
 
 describe('Keeper lair', () => {
 	test('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick', async ({ shard }) => {
@@ -80,7 +78,8 @@ describe('Keeper lair', () => {
 });
 
 describe('Invader core', () => {
-	invaderCoreTest('INVADER-CORE-001 ticksToDeploy counts down', async ({ shard }) => {
+	test('INVADER-CORE-001 ticksToDeploy counts down', async ({ shard }) => {
+		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -108,7 +107,8 @@ describe('Invader core', () => {
 		}
 	});
 
-	invaderCoreTest('INVADER-CORE-002 invader core exposes its level', async ({ shard }) => {
+	test('INVADER-CORE-002 invader core exposes its level', async ({ shard }) => {
+		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -127,7 +127,8 @@ describe('Invader core', () => {
 		expect(level).toBe(3);
 	});
 
-	invaderCoreTest('INVADER-CORE-003 invader core spawns a creep when spawning completes', async ({ shard }) => {
+	test('INVADER-CORE-003 invader core spawns a creep when spawning completes', async ({ shard }) => {
+		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -147,7 +148,8 @@ describe('Invader core', () => {
 		expect(result).toBe('invaderCore');
 	});
 
-	invaderCoreTest('INVADER-CORE-004 invader core collapse timer clears the room controller', async ({ shard }) => {
+	test('INVADER-CORE-004 invader core collapse timer clears the room controller', async ({ shard }) => {
+		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

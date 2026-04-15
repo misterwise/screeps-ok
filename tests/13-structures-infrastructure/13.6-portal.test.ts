@@ -1,12 +1,10 @@
 import { describe, test, expect, code,
 	MOVE, FIND_CREEPS,
-	limitationGated,
 } from '../../src/index.js';
 
-const portalTest = limitationGated('portalPlacement');
-
 describe('Portal mechanics', () => {
-	portalTest('PORTAL-001 creep on a same-shard portal tile appears at the destination next tick', async ({ shard }) => {
+	test('PORTAL-001 creep on a same-shard portal tile appears at the destination next tick', async ({ shard }) => {
+		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -38,7 +36,8 @@ describe('Portal mechanics', () => {
 		expect(teleported!.pos.y).toBe(10);
 	});
 
-	portalTest('PORTAL-002 same-shard portal exposes destination as a RoomPosition', async ({ shard }) => {
+	test('PORTAL-002 same-shard portal exposes destination as a RoomPosition', async ({ shard }) => {
+		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -68,7 +67,8 @@ describe('Portal mechanics', () => {
 		expect(result.y).toBe(30);
 	});
 
-	portalTest('PORTAL-004 permanent portal has undefined ticksToDecay', async ({ shard }) => {
+	test('PORTAL-004 permanent portal has undefined ticksToDecay', async ({ shard }) => {
+		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -90,7 +90,8 @@ describe('Portal mechanics', () => {
 		expect(decay).toBeNull();
 	});
 
-	portalTest('PORTAL-005 creep landing on a portal tile is transported next tick without a move intent', async ({ shard }) => {
+	test('PORTAL-005 creep landing on a portal tile is transported next tick without a move intent', async ({ shard }) => {
+		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -125,7 +126,8 @@ describe('Portal mechanics', () => {
 		expect(teleported!.pos.y).toBe(10);
 	});
 
-	portalTest('PORTAL-003 cross-shard portal exposes destination as { shard, room }', async ({ shard }) => {
+	test('PORTAL-003 cross-shard portal exposes destination as { shard, room }', async ({ shard }) => {
+		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

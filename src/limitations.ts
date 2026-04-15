@@ -1,10 +1,8 @@
 export type DocumentedAdapterLimitation =
 	| 'controllerDowngrade'
-	| 'portalPlacement'
 	| 'interRoomTransition'
 	| 'flagSupport'
 	| 'memorySupport'
-	| 'npcStructures'
 	| 'xxscreepsPathFinderUseMissing'
 	| 'playerGclControl'
 	| 'pullSelfHang';
@@ -24,9 +22,6 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// Closed 2026-04-14: xxscreeps adapter now honors
 			// RoomSpec.ticksToDowngrade via `#downgradeTime` in createShard.
 			return false;
-		case 'portalPlacement':
-			// xxscreeps adapter does not support placeObject for portals.
-			return isBuiltInAdapter('xxscreeps');
 		case 'interRoomTransition':
 			// xxscreeps adapter does not support inter-room creep transitions.
 			return isBuiltInAdapter('xxscreeps');
@@ -35,13 +30,6 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			return isBuiltInAdapter('xxscreeps');
 		case 'memorySupport':
 			// xxscreeps simulate() does not populate Memory/RawMemory (no TickPayload-aware player mode).
-			return isBuiltInAdapter('xxscreeps');
-		case 'npcStructures':
-			// Narrowed 2026-04-14: keeperLair placement now closes via
-			// placeObject in the xxscreeps adapter. invaderCore is still
-			// gated — xxscreeps registers it only as an empty stub
-			// (`game/runtime.ts:13`) with no class, schema, or processor,
-			// so placement would need an engine-side mod upstream.
 			return isBuiltInAdapter('xxscreeps');
 		case 'xxscreepsPathFinderUseMissing':
 			// Closed 2026-04-14: adapter's synthetic PathFinder now includes

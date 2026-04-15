@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-844%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-842%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
-| 🟡 | **xxscreeps** | [844](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [276](#xxscreeps-skipped-tests) | 2026-04-15 01:28 UTC |
+| 🟡 | **xxscreeps** | [842](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-04-15 01:34 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2018,7 +2018,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 276 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 278 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2029,9 +2029,9 @@ xxscreeps has 276 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
 | limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
-| limitation | `portalPlacement` | placeObject for portals not supported | [6](#xxscreeps-skip-limitation-portalplacement) |
+| capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
 | limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
-| limitation | `npcStructures` | placeObject for keeperLair/invaderCore not supported | [4](#xxscreeps-skip-limitation-npcstructures) |
+| capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
 | limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
@@ -2474,8 +2474,8 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-portalplacement">
-<summary><code>limitation:portalPlacement</code> — 6 tests across 2 files</summary>
+<details id="xxscreeps-skip-capability-portals">
+<summary><code>capability:portals</code> — 7 tests across 3 files</summary>
 
 **`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
 
@@ -2488,6 +2488,10 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
 - Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
+
+- 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
 
 </details>
 
@@ -2507,8 +2511,8 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-npcstructures">
-<summary><code>limitation:npcStructures</code> — 4 tests across 1 file</summary>
+<details id="xxscreeps-skip-capability-invadercore">
+<summary><code>capability:invaderCore</code> — 5 tests across 2 files</summary>
 
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
 
@@ -2516,6 +2520,10 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
 - Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
+
+- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
 
 </details>
 
@@ -2545,7 +2553,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>844 tests across 85 files</summary>
+<summary>842 tests across 85 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3626,7 +3634,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (17)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (15)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
@@ -3643,8 +3651,6 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:observer structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
 
 </details>
 

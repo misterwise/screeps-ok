@@ -283,7 +283,7 @@ export interface NpcShapeEntry {
 export const npcShapes: readonly NpcShapeEntry[] = [
 	{
 		catalogId: 'SHAPE-NPC-001',
-		objectType: 'keeperLair', limitation: 'npcStructures',
+		objectType: 'keeperLair',
 		spec: { pos: [25, 25], nextSpawnTime: 100 },
 		shape: shape(
 			'hits', 'hitsMax', 'id', 'my', 'owner', 'pos', 'room',
@@ -292,7 +292,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	},
 	{
 		catalogId: 'SHAPE-NPC-002',
-		objectType: 'invaderCore', limitation: 'npcStructures',
+		objectType: 'invaderCore', cap: 'invaderCore',
 		spec: { pos: [25, 25], level: 2, deployTime: 100 },
 		shape: shape(
 			'effects', 'hits', 'hitsMax', 'id', 'level', 'my', 'owner',
@@ -310,7 +310,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	},
 	{
 		catalogId: 'SHAPE-NPC-004',
-		objectType: 'portal', limitation: 'portalPlacement',
+		objectType: 'portal', cap: 'portals',
 		spec: { pos: [25, 25], destination: { x: 25, y: 25, room: 'W3N3' }, decayTime: 50000 },
 		shape: shape(
 			'destination', 'hits', 'hitsMax', 'id', 'pos', 'room',
