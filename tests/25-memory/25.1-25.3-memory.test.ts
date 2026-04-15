@@ -1,10 +1,7 @@
-import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS, limitationGated } from '../../src/index.js';
-
-const memTest = limitationGated('memorySupport');
-const preMemoryTest = memTest;
+import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS } from '../../src/index.js';
 
 describe('Memory', () => {
-	preMemoryTest('MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees', async ({ shard }) => {
+	test('MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -14,7 +11,7 @@ describe('Memory', () => {
 		expect(result).toBe(42);
 	});
 
-	memTest('MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory', async ({ shard }) => {
+	test('MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// First set up some memory
@@ -35,7 +32,7 @@ describe('Memory', () => {
 		expect(result.replaced).toBeUndefined();
 	});
 
-	memTest('MEMORY-003 Memory mutations are serialized back to RawMemory at tick end', async ({ shard }) => {
+	test('MEMORY-003 Memory mutations are serialized back to RawMemory at tick end', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Write to Memory in tick N
@@ -52,7 +49,7 @@ describe('Memory', () => {
 		expect(raw).toContain('testValue');
 	});
 
-	memTest('MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB', async ({ shard }) => {
+	test('MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Try to set a string larger than 2 MB.
@@ -69,7 +66,7 @@ describe('Memory', () => {
 });
 
 describe('RawMemory', () => {
-	memTest('RAWMEMORY-001 RawMemory.set and get round-trip on the same tick', async ({ shard }) => {
+	test('RAWMEMORY-001 RawMemory.set and get round-trip on the same tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -79,7 +76,7 @@ describe('RawMemory', () => {
 		expect(result).toBe('{"hello":"world"}');
 	});
 
-	memTest('RAWMEMORY-002 segment limits match canonical constants', async ({ shard }) => {
+	test('RAWMEMORY-002 segment limits match canonical constants', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// The engine enforces: max 10 active segments, segment ids 0-99,
@@ -107,7 +104,7 @@ describe('RawMemory', () => {
 		expect(result11).toBe('error-11');
 	});
 
-	memTest('RAWMEMORY-003 setActiveSegments makes those segments active on the next tick', async ({ shard }) => {
+	test('RAWMEMORY-003 setActiveSegments makes those segments active on the next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Request segment 5
@@ -123,7 +120,7 @@ describe('RawMemory', () => {
 		expect(result).toBe(true);
 	});
 
-	memTest('RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments', async ({ shard }) => {
+	test('RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Activate segment 0 and write to it.
@@ -149,7 +146,7 @@ describe('RawMemory', () => {
 		`);
 		expect(content).toBe('test-data');
 	});
-	memTest('RAWMEMORY-005 writing to segments[id] persists the new content to the next tick', async ({ shard }) => {
+	test('RAWMEMORY-005 writing to segments[id] persists the new content to the next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Activate segment 2 and write content.
@@ -175,7 +172,7 @@ describe('RawMemory', () => {
 });
 
 describe('Foreign segments', () => {
-	memTest('RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick', async ({ shard }) => {
+	test('RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -211,7 +208,7 @@ describe('Foreign segments', () => {
 		expect(result).toBe('not-available');
 	});
 
-	memTest('RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data', async ({ shard }) => {
+	test('RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -252,7 +249,7 @@ describe('Foreign segments', () => {
 		expect(result!.data).toBe('shared-data');
 	});
 
-	memTest('RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed', async ({ shard }) => {
+	test('RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -294,7 +291,7 @@ describe('Foreign segments', () => {
 		expect(result!.data).toBe('public');
 	});
 
-	memTest('RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers', async ({ shard }) => {
+	test('RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

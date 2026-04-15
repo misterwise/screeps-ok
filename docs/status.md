@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-849%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-94-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-874%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-92-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 03:37 UTC |
-| 🟡 | **xxscreeps** | [849](#xxscreeps-passing-tests) | [94](#xxscreeps-expected-failures) | — | [271](#xxscreeps-skipped-tests) | 2026-04-15 03:37 UTC |
+| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 04:42 UTC |
+| 🟡 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [92](#xxscreeps-expected-failures) | — | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,12 +25,12 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 94 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 53 parity gaps against vanilla's canonical behavior, covering 92 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `corner-exit-branch-order` | At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49` | Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73` | [1](#xxscreeps-gap-corner-exit-branch-order) |
-| `creep-owner-undefined` | `Creep.owner` key exists but value is `undefined` | `Creep.owner` is an object with a `username` string | [6](#xxscreeps-gap-creep-owner-undefined) |
+| `reserve-007-processor-finalize-missing-room` | `sim.tick` finalize-phase tries to `shard.loadRoom("W4N1")` which was never saved by the adapter — an unowned fourth room the engine's attackController processor touches via reservation-adjacent routing | Test passes end-to-end without the finalize loop touching uncreated rooms | [1](#xxscreeps-gap-reserve-007-processor-finalize-missing-room) |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
 | `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
 | `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
@@ -73,12 +73,15 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `shape-struct-missing-legacy-compat` | Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity` | Legacy compat getters are present on `link` and `storage` | [2](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-room-missing-survivalInfo` | `Room` object missing `survivalInfo` property | `Room.survivalInfo` is present (per canonical room shape) | [1](#xxscreeps-gap-shape-room-missing-survivalinfo) |
-| `shape-ctrl-subobj-owner-undefined` | `controller.sign` and `controller.reservation` crash on `.username` access (owner/user field undefined) | Sub-objects expose a populated `username` string | [2](#xxscreeps-gap-shape-ctrl-subobj-owner-undefined) |
-| `shape-game-surface-mismatch` | `Game` missing `cpu`/`cpuLimit`/`flags`/`powerCreeps`; `Game.cpu` missing `bucket`/`limit`/`tickLimit` | `Game` exposes `cpu`, `cpuLimit`, `flags`, `powerCreeps`; `Game.cpu` exposes `bucket`, `limit`, `tickLimit` | [2](#xxscreeps-gap-shape-game-surface-mismatch) |
+| `shape-game-surface-mismatch` | `Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla | `Game` exposes canonical top-level fields with matching data-property surface | [1](#xxscreeps-gap-shape-game-surface-mismatch) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `claim-reserved-no-guard` | `claimController` on a hostile-reserved controller returns `OK` (no reservation check in `checkClaim`) | Returns `ERR_INVALID_TARGET` when the controller is reserved by another player | [1](#xxscreeps-gap-claim-reserved-no-guard) |
 | `upgrade-blocked-no-guard` | `upgradeController` while `upgradeBlocked` is active returns `OK` (no guard in `checkUpgradeController`) | Returns `ERR_INVALID_TARGET` while `upgradeBlocked` is active | [1](#xxscreeps-gap-upgrade-blocked-no-guard) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
+| `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
+| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
+| `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
+| `flag-setposition-ignored` | `Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves | The flag relocates to the requested position on the next tick | [1](#xxscreeps-gap-flag-setposition-ignored) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -89,15 +92,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-creep-owner-undefined">
-<summary><code>creep-owner-undefined</code> — 6 tests</summary>
+<details id="xxscreeps-gap-reserve-007-processor-finalize-missing-room">
+<summary><code>reserve-007-processor-finalize-missing-room</code> — 1 test</summary>
 
-- `controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign`
-- `controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player`
-- `controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX`
-- `controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver`
 - `controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part`
-- `controller mechanics CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)`
 
 </details>
 
@@ -432,19 +430,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-shape-ctrl-subobj-owner-undefined">
-<summary><code>shape-ctrl-subobj-owner-undefined</code> — 2 tests</summary>
-
-- `26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape`
-
-</details>
-
 <details id="xxscreeps-gap-shape-game-surface-mismatch">
-<summary><code>shape-game-surface-mismatch</code> — 2 tests</summary>
+<summary><code>shape-game-surface-mismatch</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape`
 
 </details>
 
@@ -473,6 +462,36 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>spawn-duplicate-name-allowed</code> — 1 test</summary>
 
 - `StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep`
+
+</details>
+
+<details id="xxscreeps-gap-rawmemory-set-no-eager-limit-check">
+<summary><code>rawmemory-set-no-eager-limit-check</code> — 1 test</summary>
+
+- `Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB`
+
+</details>
+
+<details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
+<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
+
+- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
+
+</details>
+
+<details id="xxscreeps-gap-foreign-segment-not-supported">
+<summary><code>foreign-segment-not-supported</code> — 3 tests</summary>
+
+- `Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data`
+- `Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed`
+- `Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers`
+
+</details>
+
+<details id="xxscreeps-gap-flag-setposition-ignored">
+<summary><code>flag-setposition-ignored</code> — 1 test</summary>
+
+- `Flags FLAG-006 Flag.setPosition moves the flag to the requested room position`
 
 </details>
 
@@ -2027,7 +2046,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 271 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 248 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2036,8 +2055,6 @@ xxscreeps has 271 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
 | capability | `nuke` | Nukes | [27](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
-| limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
-| limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
 | capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -2436,51 +2453,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-memorysupport">
-<summary><code>limitation:memorySupport</code> — 13 tests across 1 file</summary>
-
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (13)
-
-- Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
-- Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
-- Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
-- Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
-- RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
-- RawMemory RAWMEMORY-002 segment limits match canonical constants
-- RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
-- RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
-- RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
-- Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
-- Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data
-- Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
-- Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
-
-</details>
-
-<details id="xxscreeps-skip-limitation-flagsupport">
-<summary><code>limitation:flagSupport</code> — 10 tests across 3 files</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (1)
-
-- adapter contract: setup placeFlag places a flag retrievable by name in player code
-
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
-
-- Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
-- Flags FLAG-002 a created flag stores name, color, and secondaryColor
-- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
-- Flags FLAG-004 Flag.remove() removes the flag from the player flag set
-- Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
-- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
-- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
-- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
-
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (1)
-
-- RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
-
-</details>
-
 <details id="xxscreeps-skip-capability-portals">
 <summary><code>capability:portals</code> — 7 tests across 3 files</summary>
 
@@ -2531,7 +2503,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>849 tests across 86 files</summary>
+<summary>874 tests across 88 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2613,7 +2585,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (33)
+**`tests/00-adapter-contract/setup.test.ts`** (34)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -2647,6 +2619,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeMineral places a mineral
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
+- adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeDroppedResource places a dropped resource
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (31)
@@ -2912,9 +2885,11 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (15)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (20)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
+- controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
+- controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player
 - controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
@@ -2922,11 +2897,14 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX
+- controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
 - controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
 - controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
 - controller mechanics CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-SIGN-002 signController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)
 - controller mechanics CTRL-ATTACK-006 attackController returns ERR_INVALID_TARGET on an unowned, unreserved controller
 - controller mechanics CTRL-ATTACK-005 attackController is allowed on the player's own controller and applies the downgrade + upgradeBlocked effects
 
@@ -3458,6 +3436,16 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (7)
+
+- Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
+- Flags FLAG-002 a created flag stores name, color, and secondaryColor
+- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
+- Flags FLAG-004 Flag.remove() removes the flag from the player flag set
+- Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
+- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
+- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
+
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
 - source regeneration SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks
@@ -3518,7 +3506,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (14)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (15)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -3533,6 +3521,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set
 - RoomPosition look ROOMPOS-LOOK-001 look() returns {type, ...} records for objects and terrain
 - RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
+- RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 - RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
 
 **`tests/22-roomposition/22.2-direction.test.ts`** (8)
@@ -3622,10 +3611,24 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (15)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (8)
+
+- Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
+- Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
+- RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
+- RawMemory RAWMEMORY-002 segment limits match canonical constants
+- RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
+- RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
+- RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
+- Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (18)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-003 Game.map matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-004 Game.shard matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-005 Game.gcl matches canonical shape

@@ -1,7 +1,5 @@
 export type DocumentedAdapterLimitation =
 	| 'controllerDowngrade'
-	| 'flagSupport'
-	| 'memorySupport'
 	| 'xxscreepsPathFinderUseMissing'
 	| 'pullSelfHang';
 
@@ -20,12 +18,6 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// Closed 2026-04-14: xxscreeps adapter now honors
 			// RoomSpec.ticksToDowngrade via `#downgradeTime` in createShard.
 			return false;
-		case 'flagSupport':
-			// xxscreeps simulate() does not populate Game.flags (no TickPayload-aware player mode).
-			return isBuiltInAdapter('xxscreeps');
-		case 'memorySupport':
-			// xxscreeps simulate() does not populate Memory/RawMemory (no TickPayload-aware player mode).
-			return isBuiltInAdapter('xxscreeps');
 		case 'xxscreepsPathFinderUseMissing':
 			// Closed 2026-04-14: adapter's synthetic PathFinder now includes
 			// `use` as a no-op, matching xxscreeps/game/path-finder/index.js.

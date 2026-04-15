@@ -1,13 +1,10 @@
 import { describe, test, expect, code,
 	COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
 	ERR_NAME_EXISTS, ERR_FULL, FLAGS_LIMIT,
-	limitationGated,
 } from '../../src/index.js';
 
-const flagTest = limitationGated('flagSupport');
-
 describe('Flags', () => {
-	flagTest('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player', async ({ shard }) => {
+	test('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -30,7 +27,7 @@ describe('Flags', () => {
 		expect(result.room).toBe('W1N1');
 	});
 
-	flagTest('FLAG-002 a created flag stores name, color, and secondaryColor', async ({ shard }) => {
+	test('FLAG-002 a created flag stores name, color, and secondaryColor', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -44,7 +41,7 @@ describe('Flags', () => {
 		expect(result!.secondary).toBe(COLOR_BLUE);
 	});
 
-	flagTest('FLAG-003 player cannot exceed FLAGS_LIMIT total flags', async ({ shard }) => {
+	test('FLAG-003 player cannot exceed FLAGS_LIMIT total flags', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// We can't create 10000 flags in a test. Instead, verify createFlag
@@ -70,7 +67,7 @@ describe('Flags', () => {
 		expect(result.found).toBe(5);
 	});
 
-	flagTest('FLAG-004 Flag.remove() removes the flag from the player flag set', async ({ shard }) => {
+	test('FLAG-004 Flag.remove() removes the flag from the player flag set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Create the flag.
@@ -92,7 +89,7 @@ describe('Flags', () => {
 		expect(stillExists).toBe(false);
 	});
 
-	flagTest('FLAG-005 Flag.setColor updates the flag color and secondaryColor', async ({ shard }) => {
+	test('FLAG-005 Flag.setColor updates the flag color and secondaryColor', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		await shard.runPlayer('p1', code`
@@ -114,7 +111,7 @@ describe('Flags', () => {
 		expect(result.secondary).toBe(COLOR_WHITE);
 	});
 
-	flagTest('FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name', async ({ shard }) => {
+	test('FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Create the flag in one tick, then try to create another with the same
@@ -128,7 +125,7 @@ describe('Flags', () => {
 		expect(rc).toBe(ERR_NAME_EXISTS);
 	});
 
-	flagTest('FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT', async ({ shard }) => {
+	test('FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// Engine check is `_.size(Game.flags) >= FLAGS_LIMIT` (rooms.js:984).
@@ -142,7 +139,7 @@ describe('Flags', () => {
 		expect(rc).toBe(ERR_FULL);
 	});
 
-	flagTest('FLAG-006 Flag.setPosition moves the flag to the requested room position', async ({ shard }) => {
+	test('FLAG-006 Flag.setPosition moves the flag to the requested room position', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		await shard.runPlayer('p1', code`

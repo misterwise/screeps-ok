@@ -46,15 +46,32 @@ Each `#`-field access must classify as exactly one of:
 - `index.ts` and `snapshots.ts` contain **zero** direct `#` accesses.
 - A pre-commit drift trap greps for violations and fails the commit.
 
-## Out-of-scope: the inlined `createSimulation`
+## Out-of-scope: engine-level orchestration
 
-`adapters/xxscreeps/index.ts` contains a ~200-line fork of
-`xxscreeps/src/test/simulate.ts` (the `createSimulation` function and
-helpers). That fork has its own `#` accesses (`#flushObjects`) which are
-part of the engine-level simulation loop, not adapter-side poking. They
-are exempt from Rule 3 because they belong to the forked runner, not the
-adapter's translation layer. If the fork is retired (either upstreamed or
-replaced), these accesses go with it.
+Two parts of the adapter drive the engine's own machinery from the outside
+rather than poking at `#`-fields. They are exempt from Rule 3 because they
+use public-ish engine exports as-designed, not private state:
+
+1. **`createSimulation` fork** — `adapters/xxscreeps/index.ts` inlines a
+   ~200-line fork of `xxscreeps/src/test/simulate.ts`. Its own `#` accesses
+   (`#flushObjects`) are part of the engine's simulation loop. If the fork
+   is retired (upstreamed or replaced), these go with it.
+
+2. **`sandbox-runner.ts`** — drives `createSandbox` + iterates
+   `hooks.map('runnerConnector')` to round-trip per-user state
+   (`flagBlob`, `memoryBlob`) through a real `NodejsSandbox`. Treats the
+   engine's `Sandbox.run` and `runnerConnector` hooks as a public boundary.
+   No `#`-field writes, no hook fingerprinting, no synthetic blobs; each
+   mod owns its own persistence via its `save` hook. Two adapter-side
+   adjustments go through `RunOptions`:
+   - `gclBaseline` is ADDED to `payload.gcl` after refresh so
+     `Game.gcl.level` reflects `PlayerSpec.gcl` (or the polyfill) while
+     `Game.gcl.progress` still reflects the DB delta the engine's
+     `mods/controller/processor.ts:239` increments on upgradeController.
+   - `controlledRoomCount` REPLACES `payload.controlledRoomCount` because
+     the `processorHooks.refreshRoom` path that would maintain
+     `user/<id>/controlledRooms` scratch only fires inside a real
+     processor worker, not the in-process simulation.
 
 ## Adding a new helper
 

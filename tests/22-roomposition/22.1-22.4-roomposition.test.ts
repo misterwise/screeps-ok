@@ -1,4 +1,4 @@
-import { describe, test, expect, code, limitationGated, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
 
 describe('RoomPosition spatial queries', () => {
 	test('ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room', async ({ shard }) => {
@@ -198,9 +198,7 @@ describe('RoomPosition look', () => {
 });
 
 describe('RoomPosition actions', () => {
-	const flagTest = limitationGated('flagSupport');
-
-	flagTest('ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates', async ({ shard }) => {
+	test('ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		// createFlag at a specific position. Returns the flag name on success.

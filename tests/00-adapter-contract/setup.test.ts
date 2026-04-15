@@ -1,11 +1,7 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, limitationGated } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
-
-// placeFlag is honored only by adapters that surface flags to player code
-// (vanilla today). The `flagSupport` gate reports adapters that don't.
-const flagTest = limitationGated('flagSupport');
 
 describe('adapter contract: setup', () => {
 	describe('createShard', () => {
@@ -567,12 +563,7 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('placeFlag', () => {
-		// Skipped on adapters that don't surface flags to player code; the
-		// `flagSupport` gate reports xxscreeps today (its `simulate().player()`
-		// uses `runForUser` without a TickPayload, so `Game.flags` is never
-		// populated). Vanilla writes flags to `db['rooms.flags']` and the
-		// engine driver loads them via `data.js:140`.
-		flagTest('places a flag retrievable by name in player code', async ({ shard }) => {
+		test('places a flag retrievable by name in player code', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.placeFlag('W1N1', {
 				pos: [25, 25],

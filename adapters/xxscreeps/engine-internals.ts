@@ -180,22 +180,6 @@ export function setStoreCapacity(store: any, capacity: number): void {
 	(store as any)['#capacity'] = capacity;
 }
 
-// ── SETUP: payload shapes ────────────────────────────────────────────
-
-/** SETUP — mods/controller/user.ts: the shape `Game.gcl` exposes to player code.
- *  `#roomCount` is an internal field consumed by mod helpers. Callers pass
- *  `PlayerSpec.gcl` when set, or a generous polyfill (`ownedRoomCount + 1`,
- *  floor 2) when not, so claimController's `level <= #roomCount` check fires
- *  correctly for tests that need ERR_GCL_NOT_ENOUGH. */
-export function buildGclPayload(level: number, progress: number, roomCount: number): any {
-	return {
-		level,
-		progress,
-		progressTotal: 1,
-		'#roomCount': roomCount,
-	};
-}
-
 // ── SNAPSHOT ─────────────────────────────────────────────────────────
 
 /** SNAPSHOT — mods/creep/creep.ts:76 `obj.owner` depends on `userInfo` which is

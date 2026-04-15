@@ -5,10 +5,10 @@
 			"expected": "Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73`",
 			"tests": ["ROOM-TRANSITION-006"]
 		},
-		"creep-owner-undefined": {
-			"actual": "`Creep.owner` key exists but value is `undefined`",
-			"expected": "`Creep.owner` is an object with a `username` string",
-			"tests": ["CTRL-SIGN-001", "CTRL-SIGN-003", "CTRL-RESERVE-001", "CTRL-RESERVE-005", "CTRL-RESERVE-006", "CTRL-RESERVE-007"]
+		"reserve-007-processor-finalize-missing-room": {
+			"actual": "`sim.tick` finalize-phase tries to `shard.loadRoom(\"W4N1\")` which was never saved by the adapter — an unowned fourth room the engine's attackController processor touches via reservation-adjacent routing",
+			"expected": "Test passes end-to-end without the finalize loop touching uncreated rooms",
+			"tests": ["CTRL-RESERVE-007"]
 		},
 		"tombstone-corpse-rate": {
 			"actual": "Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()`",
@@ -220,15 +220,10 @@
 			"expected": "`Room.survivalInfo` is present (per canonical room shape)",
 			"tests": ["SHAPE-ROOM-001"]
 		},
-		"shape-ctrl-subobj-owner-undefined": {
-			"actual": "`controller.sign` and `controller.reservation` crash on `.username` access (owner/user field undefined)",
-			"expected": "Sub-objects expose a populated `username` string",
-			"tests": ["SHAPE-CTRL-002", "SHAPE-CTRL-003"]
-		},
 		"shape-game-surface-mismatch": {
-			"actual": "`Game` missing `cpu`/`cpuLimit`/`flags`/`powerCreeps`; `Game.cpu` missing `bucket`/`limit`/`tickLimit`",
-			"expected": "`Game` exposes `cpu`, `cpuLimit`, `flags`, `powerCreeps`; `Game.cpu` exposes `bucket`, `limit`, `tickLimit`",
-			"tests": ["SHAPE-GAME-001", "SHAPE-GAME-002"]
+			"actual": "`Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla",
+			"expected": "`Game` exposes canonical top-level fields with matching data-property surface",
+			"tests": ["SHAPE-GAME-001"]
 		},
 		"shape-flag-crash": {
 			"actual": "Flag shape discovery crashes (`Cannot use 'in' operator on undefined`)",
@@ -249,6 +244,26 @@
 			"actual": "`spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`)",
 			"expected": "Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep",
 			"tests": ["SPAWN-CREATE-003"]
+		},
+		"rawmemory-set-no-eager-limit-check": {
+			"actual": "`RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception",
+			"expected": "`RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw",
+			"tests": ["MEMORY-004"]
+		},
+		"rawmemory-set-invalidates-parsed-memhack": {
+			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations",
+			"expected": "Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack)",
+			"tests": ["MEMORY-002"]
+		},
+		"foreign-segment-not-supported": {
+			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
+			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
+			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004"]
+		},
+		"flag-setposition-ignored": {
+			"actual": "`Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves",
+			"expected": "The flag relocates to the requested position on the next tick",
+			"tests": ["FLAG-006"]
 		}
 	}
 }

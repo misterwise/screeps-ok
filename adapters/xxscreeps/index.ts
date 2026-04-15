@@ -1,5 +1,5 @@
-import type { GameConstructor } from 'xxscreeps/game/index.js';
-import { Game, GameState, runForPlayer, runForUser, runOneShot, runWithState } from 'xxscreeps/game/index.js';
+import { Game, GameState, runForUser, runOneShot, runWithState } from 'xxscreeps/game/index.js';
+import { UserSandbox } from './sandbox-runner.js';
 import { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
@@ -44,7 +44,6 @@ import {
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
-	buildGclPayload,
 } from './engine-internals.js';
 
 // Object creation imports
@@ -93,24 +92,23 @@ import { initializeIntentConstraints } from 'xxscreeps/engine/processor/index.js
 import { initializeGameEnvironment } from 'xxscreeps/game/index.js';
 import 'xxscreeps/config/mods/import/game.js';
 
+// `driver` mods register `runnerConnector` hooks (flag, memory, visual,
+// controller). These must be imported before `createSimulation` runs so the
+// sandbox wiring in `UserSandbox.create` can iterate them.
+await importMods('driver');
 await importMods('processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
 
-// Minimal TickPayload for `runForPlayer`. Fields are the union of what
-// `gameInitializer` hooks read during construction: controller uses `gcl` and
-// `controlledRoomCount`; flag/memory check `data` truthiness. Phase 1 uses
-// default values — downstream phases will populate per-user state.
-function buildTickPayload(time: number): any {
-	return {
-		cpu: { bucket: 10000, limit: 20, tickLimit: 500 },
-		time,
-		roomBlobs: [],
-		eval: [],
-		usernames: {},
-		gcl: 0,
-		controlledRoomCount: 0,
-	};
+// Convert a desired `Game.gcl.level` to the `payload.gcl` progress value the
+// controller mod's gameInitializer consumes to produce that level.
+// Inverse of `mods/controller/game.ts:64`:
+//     level = floor((gcl / GCL_MULTIPLY) ** (1 / GCL_POW))
+//     Game.gcl.level = level + 1
+// So pick gcl = (desiredLevel - 1)^GCL_POW * GCL_MULTIPLY, floored to 0.
+function gclLevelToProgress(desiredLevel: number): number {
+	const floor = Math.max(0, desiredLevel - 1);
+	return Math.floor(floor ** 2.4 * 1_000_000);
 }
 
 // Player handle → xxscreeps user ID
@@ -691,105 +689,27 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
+		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
 		await this.keepRoomsActive();
 		const engineUserId = this.resolvePlayer(userId);
 		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
-		let result: PlayerReturnValue = null;
-		let executed = false;
 
-		// Replace synthetic IDs with engine IDs in the code string
+		// Replace synthetic IDs with engine IDs in the code string.
 		let codeStr = String(playerCode);
 		for (const [syntheticId, engineId] of this.idMap) {
 			codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
 		}
+		const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-		// Read GCL from DB before invoking player code — the engine
-		// increments gcl in the DB (controller/processor.ts:239) but
-		// simulate().player() never populates Game.gcl from it.
-		const gclRaw = await this.simulation!.shard.db.data.hget(
-			`user/${engineUserId}`, 'gcl');
-		const gclProgress = Number(gclRaw) || 0;
-
-		try {
-			await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
-				// Build a context with Game + all Screeps constants + globals
-				const trimmed = codeStr.trimEnd().replace(/;$/, '');
-
-				// Game.gcl.level: PlayerSpec.gcl override if set (honest
-				// value, used by tests that need ERR_GCL_NOT_ENOUGH), else
-				// a generous polyfill so multi-room claim tests aren't
-				// blocked by the cap. `#roomCount` reflects current
-				// ownership so `level <= #roomCount` fires correctly when
-				// the override is low.
-				const gclLevel = this.playerGcl.get(userId)
-					?? Math.max(ownedRoomCount + 1, 2);
-				(Game as any).gcl = buildGclPayload(
-					gclLevel, gclProgress, ownedRoomCount);
-
-				// Collect all available globals from the game environment
-				const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
-				// Add all constants (TOP, WORK, FIND_MY_CREEPS, etc.)
-				Object.assign(globals, C);
-				// Add registered globals (Memory, RawMemory, structure classes, etc.)
-				// that were placed on globalThis by xxscreeps registerGlobal
-				for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
-					'Creep', 'Tombstone', 'Ruin', 'Source', 'Resource', 'Store',
-					'Room', 'RoomObject', 'ConstructionSite',
-					'Structure', 'OwnedStructure',
-					'StructureSpawn', 'StructureExtension', 'StructureTower',
-					'StructureLink', 'StructureStorage', 'StructureTerminal',
-					'StructureContainer', 'StructureExtractor', 'StructureRampart',
-					'StructureWall', 'StructureRoad', 'StructureController',
-					'StructureLab', 'StructureObserver', 'StructureFactory',
-					'StructureKeeperLair',
-					'RoomVisual', 'MapVisual', '_',
-				] as const) {
-					if ((globalThis as any)[name] !== undefined) {
-						globals[name] = (globalThis as any)[name];
-					}
-				}
-
-				const names = Object.keys(globals);
-				const values = Object.values(globals);
-				const fn = new Function(...names,
-					`return eval(${JSON.stringify(trimmed)})`);
-				result = fn(...values) as PlayerReturnValue;
-				executed = true;
-
-				// Detect game objects: non-plain objects that serialize lossily.
-				// Allow null-prototype objects (Object.create(null)) which
-				// xxscreeps APIs like Fn.fromEntries return — they're plain data.
-				if (result !== null && typeof result === 'object'
-					&& !Array.isArray(result)
-					&& result.constructor !== Object
-					&& result.constructor !== undefined) {
-					throw new RunPlayerError('serialization',
-						`Return value is a ${result.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
-				}
-				if (result !== null && typeof result === 'object') {
-					try {
-						JSON.stringify(result);
-					} catch {
-						throw new RunPlayerError('serialization', 'Return value is not JSON-serializable');
-					}
-				}
-			});
-		} catch (err) {
-			if (err instanceof RunPlayerError) throw err;
-			const error = err as Error;
-			if (error instanceof SyntaxError) {
-				throw new RunPlayerError('syntax', error.message);
-			}
-			throw new RunPlayerError('runtime', error.message);
-		}
-
-		if (!executed) {
-			throw new Error(
-				`runPlayer: task for '${userId}' was not invoked by the simulation. ` +
-				`Check that engine user ID '${engineUserId}' is active.`,
-			);
-		}
+		// Game.gcl.level: PlayerSpec.gcl override if set (honest value for
+		// tests that need ERR_GCL_NOT_ENOUGH), else a generous polyfill so
+		// multi-room claim tests aren't blocked by the cap.
+		const gclLevel = this.playerGcl.get(userId) ?? Math.max(ownedRoomCount + 1, 2);
+		const result = await this.simulation!.player(engineUserId, trimmed, {
+			gclBaseline: gclLevelToProgress(gclLevel),
+			controlledRoomCount: ownedRoomCount,
+		});
 
 		// Contract: runPlayer advances exactly 1 tick.
 		// simulation.player() only collects intents — tick() processes them.
@@ -801,11 +721,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
 		await this.ensureSimulation();
+		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
 		await this.keepRoomsActive();
 
 		const results: Record<string, PlayerReturnValue> = {};
-		const executedPlayers = new Set<string>();
 		const errors: Array<{ handle: string; error: RunPlayerError }> = [];
 
 		// Phase 1: collect intents from all players without ticking.
@@ -818,55 +738,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			for (const [syntheticId, engineId] of this.idMap) {
 				codeStr = codeStr.replaceAll(JSON.stringify(syntheticId), JSON.stringify(engineId));
 			}
+			const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-			const gclRaw = await this.simulation!.shard.db.data.hget(
-				`user/${engineUserId}`, 'gcl');
-			const gclProgress = Number(gclRaw) || 0;
-
+			const gclLevel = this.playerGcl.get(userId) ?? Math.max(ownedRoomCount + 1, 2);
 			try {
-				await this.simulation!.player(engineUserId, (Game: GameConstructor) => {
-					executedPlayers.add(userId);
-					const trimmed = codeStr.trimEnd().replace(/;$/, '');
-
-					const gclLevel = this.playerGcl.get(userId)
-						?? Math.max(ownedRoomCount + 1, 2);
-					(Game as any).gcl = buildGclPayload(
-						gclLevel, gclProgress, ownedRoomCount);
-					const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
-					Object.assign(globals, C);
-					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
-						'Creep', 'Tombstone', 'Ruin', 'Source', 'Resource', 'Store',
-						'Room', 'RoomObject', 'ConstructionSite',
-						'Structure', 'OwnedStructure',
-						'StructureSpawn', 'StructureExtension', 'StructureTower',
-						'StructureLink', 'StructureStorage', 'StructureTerminal',
-						'StructureContainer', 'StructureExtractor', 'StructureRampart',
-						'StructureWall', 'StructureRoad', 'StructureController',
-						'StructureLab', 'StructureObserver', 'StructureFactory',
-						'StructureKeeperLair',
-						'RoomVisual', 'MapVisual', '_',
-					] as const) {
-						if ((globalThis as any)[name] !== undefined) {
-							globals[name] = (globalThis as any)[name];
-						}
-					}
-					const names = Object.keys(globals);
-					const values = Object.values(globals);
-					const fn = new Function(...names, `return eval(${JSON.stringify(trimmed)})`);
-					results[userId] = fn(...values) as PlayerReturnValue;
-
-					const val = results[userId];
-					if (val !== null && typeof val === 'object'
-						&& !Array.isArray(val)
-						&& val.constructor !== Object
-						&& val.constructor !== undefined) {
-						throw new RunPlayerError('serialization',
-							`Return value is a ${val.constructor?.name ?? 'non-plain'} object, not a plain JSON value`);
-					}
-					if (val !== null && typeof val === 'object') {
-						try { JSON.stringify(val); }
-						catch { throw new RunPlayerError('serialization', 'Return value is not JSON-serializable'); }
-					}
+				results[userId] = await this.simulation!.player(engineUserId, trimmed, {
+					gclBaseline: gclLevelToProgress(gclLevel),
+					controlledRoomCount: ownedRoomCount,
 				});
 			} catch (err) {
 				if (err instanceof RunPlayerError) {
@@ -881,15 +759,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		// Surface first error
 		if (errors.length > 0) throw errors[0].error;
-
-		// Execution confirmation
-		for (const handle of Object.keys(codesByUser)) {
-			if (!executedPlayers.has(handle)) {
-				throw new Error(
-					`runPlayers: task for '${handle}' was not invoked by the simulation.`,
-				);
-			}
-		}
 
 		// Phase 2: process all collected intents in a single tick.
 		await this.keepRoomsActive();
@@ -916,12 +785,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		if (this.deferredFlagOps.length === 0) return;
 		// Flags live in per-user blobs, not room objects. Create them via
 		// player code after the simulation is running and game state is
-		// initialized. Must tick after creation so the flag blob is persisted.
-		for (const op of this.deferredFlagOps) {
+		// initialized. Clear the queue first so nested runPlayer calls (each
+		// op IS a runPlayer call) don't re-enter this flush loop.
+		const ops = this.deferredFlagOps;
+		this.deferredFlagOps = [];
+		for (const op of ops) {
 			await op();
 		}
-		this.deferredFlagOps.length = 0;
-		await this.simulation!.tick(1);
 	}
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
@@ -1103,6 +973,10 @@ async function createSimulation(
 		const intentsByRoom = new Map<string, { userId: string; intents: any }[]>();
 		const playersThisTick = new Set<string>();
 		let roomInstances = new Map<string, any>();
+		// Sandbox cache: one NodejsSandbox per user, created lazily on first
+		// `player()` call and reused across ticks. Module-level state inside
+		// each sandbox (flags, memory) persists naturally.
+		const userSandboxes = new Map<string, UserSandbox>();
 
 		const sim = {
 			db,
@@ -1129,7 +1003,11 @@ async function createSimulation(
 				return result;
 			},
 
-			async player(userId: string, task: (game: GameConstructor) => void): Promise<void> {
+			async player(userId: string, codeSource: string, opts: {
+				gclBaseline?: number;
+				controlledRoomCount?: number;
+				usernames?: Record<string, string>;
+			} = {}): Promise<PlayerReturnValue> {
 				assert(!playersThisTick.has(userId), `player '${userId}' already invoked this tick`);
 				playersThisTick.add(userId);
 
@@ -1137,32 +1015,37 @@ async function createSimulation(
 					shard.scratch.smembers(userToIntentRoomsSetKey(userId)),
 					shard.scratch.smembers(userToVisibleRoomsSetKey(userId)),
 				]);
-				const rooms = await Promise.all(Fn.map(visibleRooms, (rn: string) => shard.loadRoom(rn)));
-				const state = new GameState(world, shard.time, rooms);
+				const roomBlobs = await Promise.all(Fn.map(visibleRooms,
+					(rn: string) => shard.loadRoomBlob(rn, shard.time)));
 
-				// Build a minimal TickPayload so `runForPlayer` triggers the
-				// mod `gameInitializer` hooks that expect `data`. Phase 1
-				// deliberately does NOT run runtimeConnector initialize/receive/
-				// send — those reset module-level memory/flag state on every
-				// call, which would break tests that accumulate state (e.g.
-				// spawnCreep memory) across player calls in the same process.
-				// Persistence is wired in per-mod in later phases.
-				const payload = buildTickPayload(shard.time);
+				let sandbox = userSandboxes.get(userId);
+				if (!sandbox) {
+					sandbox = await UserSandbox.create(shard, world, userId);
+					userSandboxes.set(userId, sandbox);
+				}
 
-				const [intents] = runForPlayer(userId, state, payload, task);
+				const { value, intentPayloads } = await sandbox.run(codeSource, {
+					time: shard.time,
+					roomBlobs,
+					usernames: opts.usernames,
+					gclBaseline: opts.gclBaseline,
+					controlledRoomCount: opts.controlledRoomCount,
+				});
 
-				for (const roomName of intentRooms) {
-					const roomIntents = intents.getIntentsForRoom(roomName);
-					if (roomIntents) {
+				const intentRoomSet = new Set(intentRooms);
+				for (const [roomName, roomIntents] of Object.entries(intentPayloads)) {
+					if (intentRoomSet.has(roomName) && roomIntents) {
 						getOrSet(intentsByRoom, roomName, () => []).push({ userId, intents: roomIntents });
 					}
 				}
+
+				return value;
 			},
 
-			async tick(count = 1, players: Record<string, (game: GameConstructor) => void> = {}): Promise<void> {
+			async tick(count = 1, players: Record<string, string> = {}): Promise<void> {
 				for (let ii = 0; ii < count; ++ii) {
-					for (const [userId, task] of Object.entries(players)) {
-						await sim.player(userId, task);
+					for (const [userId, code] of Object.entries(players)) {
+						await sim.player(userId, code);
 					}
 					playersThisTick.clear();
 
@@ -1211,6 +1094,10 @@ async function createSimulation(
 				await rebuildWorld();
 			},
 			async dispose() {
+				for (const sandbox of userSandboxes.values()) {
+					try { sandbox.dispose(); } catch {}
+				}
+				userSandboxes.clear();
 				shard.disconnect();
 				db.disconnect();
 			},
