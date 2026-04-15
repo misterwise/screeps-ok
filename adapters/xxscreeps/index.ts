@@ -135,20 +135,34 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
 
-	// xxscreeps deactivates rooms and clears user-room associations after
-	// idle ticks (ticks where no player code ran). In a test harness every
-	// room must stay processable and every player must keep intent/vision
-	// access regardless of idle gaps. Re-add both before every tick.
+	// Keep every room in the processor queue and every player's intentRooms
+	// set so idle ticks don't silently drop intent routing. visibleRooms is
+	// scoped to rooms the player owns per shardSpec; the engine's `flushUsers`
+	// (`xxscreeps/game/room/room.ts`) and observer processor populate the
+	// rest after the first processed tick. Seeding every room here was the
+	// root cause of observer-room-always-visible.
 	private async keepRoomsActive(): Promise<void> {
 		if (!this.simulation) return;
 		const { scratch } = this.simulation.shard;
 		for (const roomName of this.rooms) {
 			await scratch.zadd('processor/activeRooms', [[1, roomName]]);
 		}
+		const ownedByEngineId = new Map<string, string[]>();
+		for (const roomSpec of this.shardSpec?.rooms ?? []) {
+			if (!roomSpec.owner) continue;
+			const engineId = this.playerMap.get(roomSpec.owner);
+			if (!engineId) continue;
+			let rooms = ownedByEngineId.get(engineId);
+			if (!rooms) { rooms = []; ownedByEngineId.set(engineId, rooms); }
+			rooms.push(roomSpec.name);
+		}
 		for (const [, engineId] of this.playerMap) {
 			for (const roomName of this.rooms) {
 				await scratch.sadd(`user/${engineId}/intentRooms`, [roomName]);
-				await scratch.sadd(`user/${engineId}/visibleRooms`, [roomName]);
+			}
+			const owned = ownedByEngineId.get(engineId);
+			if (owned && owned.length > 0) {
+				await scratch.sadd(`user/${engineId}/visibleRooms`, owned);
 			}
 		}
 	}

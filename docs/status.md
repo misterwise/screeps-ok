@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-830%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-832%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-91-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:37 UTC |
-| 🟡 | **xxscreeps** | [830](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-13 23:36 UTC |
+| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
+| 🟡 | **xxscreeps** | [832](#xxscreeps-passing-tests) | [91](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-15 00:56 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 48 parity gaps against vanilla's canonical behavior, covering 91 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -43,7 +43,6 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
 | `lab-cooldown-no-decrement` | Lab cooldown reports full `REACTION_TIME` after reaction/unboost | Lab cooldown reports `REACTION_TIME - 1` on the tick after the action | [3](#xxscreeps-gap-lab-cooldown-no-decrement) |
 | `lab-not-owner-precedence` | Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [2](#xxscreeps-gap-lab-not-owner-precedence) |
-| `observer-room-always-visible` | All rooms visible to all players regardless of observer usage | Room visibility requires an owned structure or an active observer targeting that room | [2](#xxscreeps-gap-observer-room-always-visible) |
 | `observer-not-owner-precedence` | `observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-observer-not-owner-precedence) |
 | `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
 | `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
@@ -196,14 +195,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab`
 - `Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab`
-
-</details>
-
-<details id="xxscreeps-gap-observer-room-always-visible">
-<summary><code>observer-room-always-visible</code> — 2 tests</summary>
-
-- `StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick`
-- `room visibility ROOM-VIS-003 existing but unowned room with no player presence has no Game.rooms entry`
 
 </details>
 
@@ -2583,7 +2574,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>830 tests across 83 files</summary>
+<summary>832 tests across 83 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3377,8 +3368,9 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (3)
+**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (4)
 
+- StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick
 - StructureObserver OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE
 - StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
 - StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
@@ -3444,10 +3436,11 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the concatenation of all four side-specific exit sets
 - Room.find player-relative creep constants ROOM-FIND-006 FIND_MY_CREEPS and FIND_HOSTILE_CREEPS evaluate from the current player perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (12)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (13)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
+- room visibility ROOM-VIS-003 existing but unowned room with no player presence has no Game.rooms entry
 - room energy tracking ROOM-ENERGY-001 [active-extensions] room.energyAvailable sums stored energy in active extensions
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions

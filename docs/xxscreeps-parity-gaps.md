@@ -157,8 +157,5 @@ These gaps are still failing in the latest run, but the xxscreeps source contain
 
 ## Adapter bugs (not engine)
 
-### observer-room-always-visible
-- Tests: OBSERVER-001
-- Cause: `adapters/xxscreeps/index.ts:116` `keepRoomsActive()` adds ALL rooms to ALL players' `visibleRooms` set before every tick. This overrides the engine's native visibility mechanism: `flushUsers()` (`game/room/room.ts:259-290`) computes per-room vision from objects with `#providesVision === true` (owned structures, creeps), and `model.ts:304-311` syncs that into the `visibleRooms` scratch key after processing. The adapter bulldozes this before every tick.
-- Caught by: contract test `tests/00-adapter-contract/setup.test.ts: unowned room without player creeps is not in Game.rooms` — added 2026-04-11. Vanilla passes, xxscreeps fails.
-- Fix shape: In `keepRoomsActive`, keep `activeRooms` (all rooms) and `intentRooms` (all rooms per player) as-is — these are needed for processing. Only add `visibleRooms` for rooms the player owns per `shardSpec.rooms[].owner`. The engine handles creep-in-foreign-room visibility after the first processing tick via `flushUsers`. The pre-tick seeding is needed because `keepRoomsActive` runs before the first `tick()` where `flushUsers` hasn't executed yet.
+### observer-room-always-visible — FIXED (2026-04-14)
+- `keepRoomsActive` now scopes `visibleRooms` seeding to each player's owned rooms per `shardSpec`; the engine's `flushUsers` and observer processor populate the rest. OBSERVER-001 and ROOM-VIS-003 pass on xxscreeps; parity entry removed.

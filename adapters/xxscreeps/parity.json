@@ -70,11 +70,6 @@
 			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
 			"tests": ["LAB-RUN-012", "LAB-REVERSE-012"]
 		},
-		"observer-room-always-visible": {
-			"actual": "All rooms visible to all players regardless of observer usage",
-			"expected": "Room visibility requires an owned structure or an active observer targeting that room",
-			"tests": ["OBSERVER-001", "ROOM-VIS-003"]
-		},
 		"observer-not-owner-precedence": {
 			"actual": "`observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH`",
 			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
