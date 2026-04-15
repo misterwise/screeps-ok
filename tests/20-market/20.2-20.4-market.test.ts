@@ -615,10 +615,11 @@ describe('Market queries', () => {
 		expect(stillThere).toBe(true);
 
 		// ── Part 3: seed an order whose expiry lies just ahead of the test ──
-		// Keep a modest wall-clock margin so the order is definitely alive when
-		// first observed, then wait only the measured remaining lifetime plus a
-		// small buffer before ticking past expiry.
-		const aliveMsAtSeed = 250;
+		// Keep a generous wall-clock margin so the order is definitely alive when
+		// first observed — shared CI runners can spend >2 s on tick+runPlayer —
+		// then wait only the measured remaining lifetime plus a small buffer
+		// before ticking past expiry.
+		const aliveMsAtSeed = 5_000;
 		const seedTimestamp = Date.now() - MARKET_ORDER_LIFE_TIME + aliveMsAtSeed;
 		const expiringId = await shard.placeMarketOrder({
 			owner: 'p1',
@@ -653,5 +654,5 @@ describe('Market queries', () => {
 			!!Game.market.orders[${expiringId}]
 		`);
 		expect(afterExpiry).toBe(false);
-	}, 15_000);
+	}, 20_000);
 });
