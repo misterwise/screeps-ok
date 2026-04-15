@@ -183,11 +183,10 @@ export function setStoreCapacity(store: any, capacity: number): void {
 // ── SETUP: payload shapes ────────────────────────────────────────────
 
 /** SETUP — mods/controller/user.ts: the shape `Game.gcl` exposes to player code.
- *  `#roomCount` is an internal field consumed by mod helpers.
- *
- *  Note: the `level` passed in today is a polyfill (see the `playerGclControl`
- *  limitation) — when TickPayload wiring lands, callers will pass an honest
- *  engine-computed value. */
+ *  `#roomCount` is an internal field consumed by mod helpers. Callers pass
+ *  `PlayerSpec.gcl` when set, or a generous polyfill (`ownedRoomCount + 1`,
+ *  floor 2) when not, so claimController's `level <= #roomCount` check fires
+ *  correctly for tests that need ERR_GCL_NOT_ENOUGH. */
 export function buildGclPayload(level: number, progress: number, roomCount: number): any {
 	return {
 		level,

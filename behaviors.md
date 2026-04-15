@@ -804,9 +804,6 @@ Coverage Notes
   Range is 1 (adjacent).
 - [ ] `CTRL-CLAIM-005` `behavior` `needs_vanilla_verification`
   GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
-  (Gated on `playerGclControl` limitation: both built-in adapters hardcode a
-  high GCL at user creation, so exceeding the cap cannot be produced honestly
-  without an adapter-level GCL override.)
 - [ ] `CTRL-CLAIM-006` `behavior` `verified_vanilla`
   Returns ERR_INVALID_TARGET if the controller is already owned.
 

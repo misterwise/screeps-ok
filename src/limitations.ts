@@ -3,7 +3,6 @@ export type DocumentedAdapterLimitation =
 	| 'flagSupport'
 	| 'memorySupport'
 	| 'xxscreepsPathFinderUseMissing'
-	| 'playerGclControl'
 	| 'pullSelfHang';
 
 function activeAdapterPath(): string {
@@ -31,13 +30,6 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// Closed 2026-04-14: adapter's synthetic PathFinder now includes
 			// `use` as a no-op, matching xxscreeps/game/path-finder/index.js.
 			return false;
-		case 'playerGclControl':
-			// xxscreeps synthesizes `Game.gcl.level = ownedRoomCount + 1` and
-			// exposes no override, so the per-player room cap can't be reached
-			// honestly there. Vanilla supports `PlayerSpec.gcl` (see
-			// adapters/vanilla/index.ts createShard); tests that need
-			// ERR_GCL_NOT_ENOUGH should set a low gcl on the player spec.
-			return isBuiltInAdapter('xxscreeps');
 		case 'pullSelfHang':
 			// xxscreeps pull(self) enters an infinite loop in the recursive
 			// circular-pull check, hanging the test runner. Must skip, not fail.

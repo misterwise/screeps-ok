@@ -266,7 +266,6 @@ const CAPABILITY_DESCRIPTIONS = {
 const LIMITATION_DESCRIPTIONS = {
 	flagSupport: 'Game.flags not populated for player code',
 	memorySupport: 'Memory/RawMemory not populated for player code',
-	playerGclControl: 'PlayerSpec.gcl override not supported',
 	pullSelfHang: 'pull(self) hangs the runner',
 };
 

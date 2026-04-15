@@ -23,9 +23,6 @@ export interface PlayerSpec {
 	 * Override the player's GCL at user creation. Defaults to a high value
 	 * (~10M) so multi-room claim tests aren't blocked by the cap. Set this
 	 * to a low number to honestly trigger ERR_GCL_NOT_ENOUGH on extra claims.
-	 *
-	 * Honored by adapters that expose a GCL override; the limitations gate
-	 * `playerGclControl` reports which adapters do.
 	 */
 	gcl?: number;
 }

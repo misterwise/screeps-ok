@@ -136,6 +136,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private playerMap = new Map<string, string>();
 	private reversePlayerMap = new Map<string, string>();
+	// PlayerSpec.gcl overrides, keyed by handle. When set, runPlayer uses
+	// this level for `Game.gcl.level` instead of the `ownedRoomCount+1`
+	// polyfill, so tests with `gcl: 0` can honestly trigger
+	// ERR_GCL_NOT_ENOUGH (see `mods/controller/creep.ts:137` —
+	// `level <= #roomCount` fails).
+	private playerGcl = new Map<string, number>();
 	private pendingSetup = new Map<string, Array<(room: Room) => void>>();
 	private rooms: string[] = [];
 	private simulation: Awaited<ReturnType<typeof createSimulation>> | null = null;
@@ -229,11 +235,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (i >= playerSlots.length) throw new Error(`Max ${playerSlots.length} players`);
 			const entry = spec.players[i];
 			const handle = typeof entry === 'string' ? entry : entry.name;
-			// PlayerSpec.gcl is intentionally ignored: xxscreeps synthesizes
-			// Game.gcl from owned room count and exposes no override, so the
-			// `playerGclControl` limitation stays gated for this adapter.
 			this.playerMap.set(handle, playerSlots[i]);
 			this.reversePlayerMap.set(playerSlots[i], handle);
+			if (typeof entry !== 'string' && entry.gcl !== undefined) {
+				this.playerGcl.set(handle, entry.gcl);
+			}
 		}
 
 		for (const roomSpec of spec.rooms) {
@@ -710,12 +716,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				// Build a context with Game + all Screeps constants + globals
 				const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-				// The controller mod's gameInitializer seeds Game.gcl from
-				// payload.gcl (currently 0 → level 1). Override with the
-				// adapter's synthetic value until PlayerSpec.gcl is wired
-				// through the TickPayload (playerGclControl phase).
+				// Game.gcl.level: PlayerSpec.gcl override if set (honest
+				// value, used by tests that need ERR_GCL_NOT_ENOUGH), else
+				// a generous polyfill so multi-room claim tests aren't
+				// blocked by the cap. `#roomCount` reflects current
+				// ownership so `level <= #roomCount` fires correctly when
+				// the override is low.
+				const gclLevel = this.playerGcl.get(userId)
+					?? Math.max(ownedRoomCount + 1, 2);
 				(Game as any).gcl = buildGclPayload(
-					Math.max(ownedRoomCount + 1, 2), gclProgress, ownedRoomCount);
+					gclLevel, gclProgress, ownedRoomCount);
 
 				// Collect all available globals from the game environment
 				const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
@@ -818,8 +828,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					executedPlayers.add(userId);
 					const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
+					const gclLevel = this.playerGcl.get(userId)
+						?? Math.max(ownedRoomCount + 1, 2);
 					(Game as any).gcl = buildGclPayload(
-						Math.max(ownedRoomCount + 1, 2), gclProgress, ownedRoomCount);
+						gclLevel, gclProgress, ownedRoomCount);
 					const globals: Record<string, any> = { Game, RoomPosition, PathFinder, Room };
 					Object.assign(globals, C);
 					for (const name of ['Memory', 'RawMemory', 'Mineral', 'Flag',
@@ -967,6 +979,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.deferredFlagOps.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
+		this.playerGcl.clear();
 		this.idMap.clear();
 		this.nameToSyntheticId.clear();
 		this.posToSyntheticId.clear();

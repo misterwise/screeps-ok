@@ -3,10 +3,7 @@ import { describe, test, expect, code,
 	CLAIM, MOVE, WORK,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
-	limitationGated,
 } from '../../src/index.js';
-
-const playerGclControlTest = limitationGated('playerGclControl');
 
 describe('controller mechanics', () => {
 	test('CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
@@ -217,7 +214,7 @@ describe('controller mechanics', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	playerGclControlTest('CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded', async ({ shard }) => {
+	test('CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded', async ({ shard }) => {
 		// Game.gcl.level is derived from user.gcl with GCL_POW=2.4 / GCL_MULTIPLY=1e6,
 		// so any gcl value below 1e6 yields level 1 → cap of 1 owned room. Start
 		// p1 with gcl=0, give them W1N1, and have them try to claim a second

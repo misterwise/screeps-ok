@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-847%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-94-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-849%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-94-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 03:21 UTC |
-| 🟡 | **xxscreeps** | [847](#xxscreeps-passing-tests) | [94](#xxscreeps-expected-failures) | — | [273](#xxscreeps-skipped-tests) | 2026-04-15 03:21 UTC |
+| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 03:37 UTC |
+| 🟡 | **xxscreeps** | [849](#xxscreeps-passing-tests) | [94](#xxscreeps-expected-failures) | — | [271](#xxscreeps-skipped-tests) | 2026-04-15 03:37 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2027,7 +2027,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 273 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 271 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2040,7 +2040,6 @@ xxscreeps has 273 skipped tests, grouped by the mechanism that gated them. **Cap
 | limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
 | capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
-| limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
 Click a count to jump to the affected test list.
@@ -2519,19 +2518,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-playergclcontrol">
-<summary><code>limitation:playerGclControl</code> — 2 tests across 2 files</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (1)
-
-- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
-
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (1)
-
-- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
-
-</details>
-
 <details id="xxscreeps-skip-limitation-pullselfhang">
 <summary><code>limitation:pullSelfHang</code> — 1 test across 1 file</summary>
 
@@ -2545,7 +2531,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>847 tests across 86 files</summary>
+<summary>849 tests across 86 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2627,13 +2613,14 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (32)
+**`tests/00-adapter-contract/setup.test.ts`** (33)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard default room layout is canonical and sparse
+- adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup default room terrain default rooms have all-plain interior terrain
 - adapter contract: setup default room terrain default rooms have all four exits open
@@ -2925,11 +2912,12 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (14)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (15)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned

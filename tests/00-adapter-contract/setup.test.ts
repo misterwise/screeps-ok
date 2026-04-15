@@ -3,11 +3,6 @@ import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
 
-// PlayerSpec.gcl is honored only by adapters that expose a per-player GCL
-// override (vanilla today). The `playerGclControl` gate reports adapters
-// that don't, so the contract test for the override skips honestly there.
-const playerGclTest = limitationGated('playerGclControl');
-
 // placeFlag is honored only by adapters that surface flags to player code
 // (vanilla today). The `flagSupport` gate reports adapters that don't.
 const flagTest = limitationGated('flagSupport');
@@ -92,7 +87,7 @@ describe('adapter contract: setup', () => {
 			expect(minerals).toEqual([]);
 		});
 
-		playerGclTest('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
+		test('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
 			// Contract: when a player spec sets a low `gcl`, the adapter must
 			// write that value into the engine's user record so Game.gcl.level
 			// reflects it. The cheapest end-to-end probe is the engine's own
