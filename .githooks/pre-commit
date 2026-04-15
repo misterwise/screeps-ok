@@ -15,6 +15,20 @@ if ! npx tsc --noEmit; then
 	exit 1
 fi
 
+# Drift trap: xxscreeps engine-internals access must go through the helper
+# module (adapters/xxscreeps/engine-internals.ts). See
+# docs/xxscreeps-engine-internals-policy.md. Exception: `#flushObjects` in
+# the inlined createSimulation fork.
+drift=$(grep -nE "['\"]#[a-zA-Z_]" \
+	adapters/xxscreeps/index.ts adapters/xxscreeps/snapshots.ts \
+	| grep -v '#flushObjects' || true)
+if [[ -n "$drift" ]]; then
+	echo "pre-commit: xxscreeps engine-internals drift — direct \`#\` access outside engine-internals.ts:" >&2
+	echo "$drift" >&2
+	echo "See docs/xxscreeps-engine-internals-policy.md." >&2
+	exit 1
+fi
+
 # Coverage derives from behaviors.md + tests/, so it can always regenerate.
 node scripts/generate-coverage.js >/dev/null
 
