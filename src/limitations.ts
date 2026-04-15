@@ -21,8 +21,9 @@ function isBuiltInAdapter(name: 'vanilla' | 'xxscreeps'): boolean {
 export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimitation): boolean {
 	switch (limitation) {
 		case 'controllerDowngrade':
-			// xxscreeps adapter does not support RoomSpec.ticksToDowngrade.
-			return isBuiltInAdapter('xxscreeps');
+			// Closed 2026-04-14: xxscreeps adapter now honors
+			// RoomSpec.ticksToDowngrade via `#downgradeTime` in createShard.
+			return false;
 		case 'portalPlacement':
 			// xxscreeps adapter does not support placeObject for portals.
 			return isBuiltInAdapter('xxscreeps');

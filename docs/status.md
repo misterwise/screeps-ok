@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-832%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-91-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-839%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
-| 🟡 | **xxscreeps** | [832](#xxscreeps-passing-tests) | [91](#xxscreeps-expected-failures) | — | [290](#xxscreeps-skipped-tests) | 2026-04-15 00:56 UTC |
+| 🟡 | **xxscreeps** | [839](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [281](#xxscreeps-skipped-tests) | 2026-04-15 01:07 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 48 parity gaps against vanilla's canonical behavior, covering 91 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -55,7 +55,8 @@ xxscreeps currently declares 48 parity gaps against vanilla's canonical behavior
 | `transfer-wrong-resource-err-full` | `transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch) | Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource | [2](#xxscreeps-gap-transfer-wrong-resource-err-full) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
-| `controller-my-undefined-on-unowned` | `StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field) | Returns `false` on an unowned/neutral controller | [1](#xxscreeps-gap-controller-my-undefined-on-unowned) |
+| `controller-my-undefined-on-unowned` | `StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field) | Returns `false` on an unowned/neutral controller | [2](#xxscreeps-gap-controller-my-undefined-on-unowned) |
+| `safemode-ignores-downgrade-threshold` | `activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` | Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold | [1](#xxscreeps-gap-safemode-ignores-downgrade-threshold) |
 | `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
 | `tombstone-place-low-decay` | `placeTombstone` with low `ticksToDecay` does not persist for `getObject` | Tombstone persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-tombstone-place-low-decay) |
 | `ruin-place-low-decay` | `placeRuin` with low `ticksToDecay` does not persist for `getObject` | Ruin persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-ruin-place-low-decay) |
@@ -294,9 +295,17 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-controller-my-undefined-on-unowned">
-<summary><code>controller-my-undefined-on-unowned</code> — 1 test</summary>
+<summary><code>controller-my-undefined-on-unowned</code> — 2 tests</summary>
 
+- `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
+
+</details>
+
+<details id="xxscreeps-gap-safemode-ignores-downgrade-threshold">
+<summary><code>safemode-ignores-downgrade-threshold</code> — 1 test</summary>
+
+- `Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`
 
 </details>
 
@@ -2009,7 +2018,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 290 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 281 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2020,7 +2029,6 @@ xxscreeps has 290 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
 | limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
-| limitation | `controllerDowngrade` | RoomSpec.ticksToDowngrade setup not supported | [9](#xxscreeps-skip-limitation-controllerdowngrade) |
 | limitation | `npcStructures` | placeObject for keeperLair/invaderCore not supported | [8](#xxscreeps-skip-limitation-npcstructures) |
 | limitation | `portalPlacement` | placeObject for portals not supported | [6](#xxscreeps-skip-limitation-portalplacement) |
 | limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
@@ -2467,29 +2475,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-controllerdowngrade">
-<summary><code>limitation:controllerDowngrade</code> — 9 tests across 3 files</summary>
-
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (2)
-
-- adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
-- adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
-
-**`tests/06-controller/6.7-downgrade.test.ts`** (6)
-
-- Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
-- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
-- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
-- Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
-- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
-- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
-
-**`tests/06-controller/6.8-safemode.test.ts`** (1)
-
-- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
-
-</details>
-
 <details id="xxscreeps-skip-limitation-npcstructures">
 <summary><code>limitation:npcStructures</code> — 8 tests across 1 file</summary>
 
@@ -2574,7 +2559,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>832 tests across 83 files</summary>
+<summary>839 tests across 84 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2630,6 +2615,11 @@ Click a count to jump to the affected test list.
 - adapter contract: execution runPlayers runPlayers advances game time by exactly 1
 - adapter contract: execution tick advances game time by 1
 - adapter contract: execution tick tick(N) advances game time by N
+
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (2)
+
+- adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
+- adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
 
 **`tests/00-adapter-contract/inspection.test.ts`** (16)
 
@@ -2989,9 +2979,14 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (1)
+**`tests/06-controller/6.7-downgrade.test.ts`** (6)
 
+- Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
+- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
 - Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
+- Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
+- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
+- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 
 **`tests/06-controller/6.8-safemode.test.ts`** (8)
 

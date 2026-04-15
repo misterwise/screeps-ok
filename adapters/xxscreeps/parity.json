@@ -133,7 +133,12 @@
 		"controller-my-undefined-on-unowned": {
 			"actual": "`StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field)",
 			"expected": "Returns `false` on an unowned/neutral controller",
-			"tests": ["CTRL-UNCLAIM-001"]
+			"tests": ["CTRL-UNCLAIM-001", "CTRL-DOWNGRADE-002"]
+		},
+		"safemode-ignores-downgrade-threshold": {
+			"actual": "`activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`",
+			"expected": "Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold",
+			"tests": ["CTRL-SAFEMODE-005"]
 		},
 		"tombstone-store-missing": {
 			"actual": "Tombstone snapshot does not include store energy from combat kills",

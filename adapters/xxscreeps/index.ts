@@ -225,6 +225,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
 				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
 				const safeModeRemaining = roomSpec.safeMode ?? 0;
+				const ticksToDowngrade = roomSpec.ticksToDowngrade ?? 0;
 				const rName = roomSpec.name;
 				this.queueOp(rName, room => {
 					if (rcl > 0 && owner) {
@@ -249,6 +250,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 						// `xxscreeps/src/mods/controller/controller.ts:28`
 						// reports `Math.max(0, #safeModeUntil - Game.time)`.
 						(room as any)['#safeModeUntil'] = Game.time + safeModeRemaining;
+					}
+					if (ticksToDowngrade > 0 && room.controller) {
+						// xxscreeps stores the downgrade expiry as `#downgradeTime`
+						// (absolute tick); the `ticksToDowngrade` getter returns
+						// `Math.max(0, #downgradeTime - Game.time)`.
+						room.controller['#downgradeTime'] = Game.time + ticksToDowngrade;
 					}
 				});
 			}

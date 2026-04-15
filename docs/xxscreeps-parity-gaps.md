@@ -20,8 +20,12 @@ Last refreshed: 2026-04-11 against `reports/parity-full-20260411-184741.log`.
 - Cause: `buryCreep`-style resource spill on structure death is not implemented for containers. When `container.hits <= 0` the processor at `mods/resource/processor/container.ts:10-11` removes the object but does not create dropped resources for `container.store`.
 
 ### controller-my-undefined-on-unowned
-- Tests: CTRL-UNCLAIM-001
+- Tests: CTRL-UNCLAIM-001, CTRL-DOWNGRADE-002
 - Cause: `OwnedStructure.my` does strict `#user === me` against an absent `#user` field on neutral controllers, returning `false`/`undefined` rather than `false` cleanly — `mods/structure/structure.ts:108-111`.
+
+### safemode-ignores-downgrade-threshold
+- Tests: CTRL-SAFEMODE-005
+- Cause: `checkActivateSafeMode` at `mods/controller/controller.ts:103-115` checks `safeModeAvailable`, `safeModeCooldown`, and `safeMode`, but has no `ticksToDowngrade < CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` (15000) guard. Vanilla returns `ERR_TIRED` when the downgrade timer is below the threshold.
 
 ### creep-owner-undefined
 - Tests: CTRL-SIGN-001, CTRL-SIGN-003, CTRL-RESERVE-001, CTRL-RESERVE-005
