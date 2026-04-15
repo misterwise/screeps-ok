@@ -1,6 +1,5 @@
 export type DocumentedAdapterLimitation =
 	| 'controllerDowngrade'
-	| 'interRoomTransition'
 	| 'flagSupport'
 	| 'memorySupport'
 	| 'xxscreepsPathFinderUseMissing'
@@ -22,9 +21,6 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// Closed 2026-04-14: xxscreeps adapter now honors
 			// RoomSpec.ticksToDowngrade via `#downgradeTime` in createShard.
 			return false;
-		case 'interRoomTransition':
-			// xxscreeps adapter does not support inter-room creep transitions.
-			return isBuiltInAdapter('xxscreeps');
 		case 'flagSupport':
 			// xxscreeps simulate() does not populate Game.flags (no TickPayload-aware player mode).
 			return isBuiltInAdapter('xxscreeps');

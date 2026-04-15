@@ -1,5 +1,10 @@
 {
 	"expected_failures": {
+		"corner-exit-branch-order": {
+			"actual": "At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49`",
+			"expected": "Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73`",
+			"tests": ["ROOM-TRANSITION-006"]
+		},
 		"creep-owner-undefined": {
 			"actual": "`Creep.owner` key exists but value is `undefined`",
 			"expected": "`Creep.owner` is an object with a `username` string",

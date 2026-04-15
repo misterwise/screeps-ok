@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-842%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-847%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-94-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
-| 🟡 | **xxscreeps** | [842](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-04-15 01:34 UTC |
+| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 03:21 UTC |
+| 🟡 | **xxscreeps** | [847](#xxscreeps-passing-tests) | [94](#xxscreeps-expected-failures) | — | [273](#xxscreeps-skipped-tests) | 2026-04-15 03:21 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,10 +25,11 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 94 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `corner-exit-branch-order` | At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49` | Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73` | [1](#xxscreeps-gap-corner-exit-branch-order) |
 | `creep-owner-undefined` | `Creep.owner` key exists but value is `undefined` | `Creep.owner` is an object with a `username` string | [6](#xxscreeps-gap-creep-owner-undefined) |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
 | `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
@@ -80,6 +81,13 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-corner-exit-branch-order">
+<summary><code>corner-exit-branch-order</code> — 1 test</summary>
+
+- `Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first`
+
+</details>
 
 <details id="xxscreeps-gap-creep-owner-undefined">
 <summary><code>creep-owner-undefined</code> — 6 tests</summary>
@@ -472,7 +480,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1213 tests across 109 files</summary>
+<summary>1214 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -651,12 +659,13 @@ Click a test count above to jump to the affected test list for that gap.
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
 
-**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
+**`tests/01-movement/1.4-room-transitions.test.ts`** (5)
 
 - Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
 - Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
+- Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first
 
 **`tests/01-movement/1.5-pulling.test.ts`** (12)
 
@@ -2018,7 +2027,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 278 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 273 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2030,7 +2039,6 @@ xxscreeps has 278 skipped tests, grouped by the mechanism that gated them. **Cap
 | limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
 | limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
 | capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
-| limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
 | limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -2495,22 +2503,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-interroomtransition">
-<summary><code>limitation:interRoomTransition</code> — 5 tests across 2 files</summary>
-
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
-
-- adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
-
-**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
-
-- Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
-- Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
-- Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
-- Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
-
-</details>
-
 <details id="xxscreeps-skip-capability-invadercore">
 <summary><code>capability:invaderCore</code> — 5 tests across 2 files</summary>
 
@@ -2553,7 +2545,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>842 tests across 85 files</summary>
+<summary>847 tests across 86 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2610,10 +2602,11 @@ Click a count to jump to the affected test list.
 - adapter contract: execution tick advances game time by 1
 - adapter contract: execution tick tick(N) advances game time by N
 
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (2)
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (3)
 
 - adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
 - adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
+- adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
 **`tests/00-adapter-contract/inspection.test.ts`** (16)
 
@@ -2724,6 +2717,13 @@ Click a count to jump to the affected test list.
 
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
+
+**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
+
+- Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
+- Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
+- Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
+- Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
 **`tests/01-movement/1.5-pulling.test.ts`** (10)
 

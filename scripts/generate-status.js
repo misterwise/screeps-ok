@@ -264,7 +264,6 @@ const CAPABILITY_DESCRIPTIONS = {
 };
 
 const LIMITATION_DESCRIPTIONS = {
-	interRoomTransition: 'Inter-room creep transitions not supported',
 	flagSupport: 'Game.flags not populated for player code',
 	memorySupport: 'Memory/RawMemory not populated for player code',
 	playerGclControl: 'PlayerSpec.gcl override not supported',

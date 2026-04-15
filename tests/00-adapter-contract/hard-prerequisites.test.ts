@@ -5,7 +5,6 @@ import { describe, test, expect, code, limitationGated,
 } from '../../src/index.js';
 
 const downgradeTest = limitationGated('controllerDowngrade');
-const transitionTest = limitationGated('interRoomTransition');
 
 describe('adapter contract: hard family prerequisites', () => {
 	describe('controller ticksToDowngrade', () => {
@@ -77,7 +76,7 @@ describe('adapter contract: hard family prerequisites', () => {
 	});
 
 	describe('inter-room creep transition', () => {
-		transitionTest('creep moving to exit tile appears in the adjacent room', async ({ shard }) => {
+		test('creep moving to exit tile appears in the adjacent room', async ({ shard }) => {
 			// W1N1 left exit (x=0) leads to W2N1.
 			await shard.createShard({
 				players: ['p1'],
@@ -88,9 +87,13 @@ describe('adapter contract: hard family prerequisites', () => {
 			});
 			await shard.tick();
 
-			// Find an actual exit tile on the left edge using the game API.
+			// Non-corner exit tile. Corner exits (y=0, y=49) trigger
+			// engine-specific branch ordering at the two-axis intersection
+			// (see ROOM-TRANSITION-006); this contract test only asserts
+			// the basic single-axis transition.
 			const exitInfo = await shard.runPlayer('p1', code`
-				const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
+				const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
+					.filter(e => e.y > 5 && e.y < 44);
 				exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 			`) as { x: number; y: number } | null;
 
@@ -112,9 +115,10 @@ describe('adapter contract: hard family prerequisites', () => {
 			`);
 			expect(rc).toBe(OK);
 
-			// Extra tick for global processor to handle inter-room transition.
-			await shard.tick();
-
+			// runPlayer advances one tick, which processes the move intent
+			// and the inter-room transition atomically. No extra tick — a
+			// creep left on an exit tile auto-transitions again next tick,
+			// so checking after another tick would see it back in W1N1.
 			// The creep should now be in W2N1 at x=49.
 			const creeps = await shard.findInRoom('W2N1', FIND_CREEPS);
 			const traveler = creeps.find(c => c.name === 'Traveler');

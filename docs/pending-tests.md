@@ -303,7 +303,6 @@ xxscreeps stubs throw). `MarketOrderSpec` added to `src/adapter.ts`.
 
 - **Capability-gated entries** (deposit, market, chemistry) skip on xxscreeps; verify on vanilla only.
 - **Flag entries** (FLAG-007, FLAG-008) skip on xxscreeps (`flagSupport` limitation).
-- **ROOM-TRANSITION-005** skips on xxscreeps (`interRoomTransition` limitation).
 - **MARKET-ORDER-009** is likely untestable — would require advancing 30 days of ticks. Consider marking as infeasible or testing with a shorter-than-production timer if the engine exposes one.
 - **STRUCTURE-HITS-005** overlaps with RUIN-005 (already tested); verify whether this entry adds anything beyond what RUIN-005 covers (it adds the store-spill assertion).
 - When writing tests, check the engine source at `node_modules/@screeps/engine/src/` to determine exact formulas — don't guess. Example: TOMBSTONE-003 required reading `_die.js` to get the corpse energy formula.
