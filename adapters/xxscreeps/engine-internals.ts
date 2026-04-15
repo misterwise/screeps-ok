@@ -146,6 +146,14 @@ export function primeRuinStructure(ruin: any, structureSummary: any, decayTime: 
 	ruin['#decayTime'] = decayTime;
 }
 
+/** SETUP — mods/source/keeper-lair.ts:26 ticksToSpawn getter returns
+ *  `Math.max(0, #nextSpawnTime - Game.time)`. */
+export function setKeeperLairNextSpawnTime(
+	lair: any, gameTime: number, ticksRemaining: number,
+): void {
+	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
+}
+
 // ── SETUP: store manipulation ────────────────────────────────────────
 
 /** SETUP — game/store.ts: `#add` adds resource amount to the store. Mirrors what

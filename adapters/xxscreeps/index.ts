@@ -42,6 +42,7 @@ import {
 	setSourceNextRegenerationTime, setMineralNextRegenerationTime,
 	setStructureNextDecayTime,
 	primeTombstoneCorpse, primeRuinStructure,
+	setKeeperLairNextSpawnTime,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
 	buildGclPayload,
 } from './engine-internals.js';
@@ -63,6 +64,7 @@ import { create as createLink } from 'xxscreeps/mods/logistics/link.js';
 import { create as createContainer } from 'xxscreeps/mods/resource/container.js';
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
+import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { createFlag } from 'xxscreeps/mods/flag/game.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
@@ -505,8 +507,34 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('placeMarketOrder not yet implemented for xxscreeps');
 	}
 
-	async placeObject(_room: string, _type: string, _spec: Record<string, unknown>): Promise<string> {
-		throw new Error('generic placeObject not yet implemented — use typed helpers');
+	async placeObject(roomName: string, type: string, spec: Record<string, unknown>): Promise<string> {
+		switch (type) {
+			case 'keeperLair':
+				return this.placeKeeperLair(roomName, spec);
+			default:
+				throw new Error(
+					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
+					`Supported types: keeperLair.`,
+				);
+		}
+	}
+
+	private async placeKeeperLair(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:keeperLair`, id);
+		const nextSpawnTime = typeof spec.nextSpawnTime === 'number' ? spec.nextSpawnTime : undefined;
+
+		this.queueOp(roomName, room => {
+			const lair = createKeeperLair(new RoomPosition(pos[0], pos[1], roomName));
+			lair.id = id;
+			if (nextSpawnTime !== undefined) {
+				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, nextSpawnTime);
+			}
+			insertRoomObject(room, lair);
+		});
+
+		return id;
 	}
 
 	async setTerrain(roomName: string, terrain: TerrainSpec): Promise<void> {

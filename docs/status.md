@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-840%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-844%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
-| 🟡 | **xxscreeps** | [840](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [280](#xxscreeps-skipped-tests) | 2026-04-15 01:22 UTC |
+| 🟡 | **xxscreeps** | [844](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [276](#xxscreeps-skipped-tests) | 2026-04-15 01:28 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2018,7 +2018,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 280 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 276 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2029,9 +2029,9 @@ xxscreeps has 280 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | limitation | `memorySupport` | Memory/RawMemory not populated for player code | [13](#xxscreeps-skip-limitation-memorysupport) |
 | limitation | `flagSupport` | Game.flags not populated for player code | [10](#xxscreeps-skip-limitation-flagsupport) |
-| limitation | `npcStructures` | placeObject for keeperLair/invaderCore not supported | [8](#xxscreeps-skip-limitation-npcstructures) |
 | limitation | `portalPlacement` | placeObject for portals not supported | [6](#xxscreeps-skip-limitation-portalplacement) |
 | limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
+| limitation | `npcStructures` | placeObject for keeperLair/invaderCore not supported | [4](#xxscreeps-skip-limitation-npcstructures) |
 | limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
@@ -2474,22 +2474,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-npcstructures">
-<summary><code>limitation:npcStructures</code> — 8 tests across 1 file</summary>
-
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
-
-- Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
-- Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
-- Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
-- Invader core INVADER-CORE-001 ticksToDeploy counts down
-- Invader core INVADER-CORE-002 invader core exposes its level
-- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
-- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
-
-</details>
-
 <details id="xxscreeps-skip-limitation-portalplacement">
 <summary><code>limitation:portalPlacement</code> — 6 tests across 2 files</summary>
 
@@ -2523,6 +2507,18 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-limitation-npcstructures">
+<summary><code>limitation:npcStructures</code> — 4 tests across 1 file</summary>
+
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
+
+- Invader core INVADER-CORE-001 ticksToDeploy counts down
+- Invader core INVADER-CORE-002 invader core exposes its level
+- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+
+</details>
+
 <details id="xxscreeps-skip-limitation-playergclcontrol">
 <summary><code>limitation:playerGclControl</code> — 2 tests across 2 files</summary>
 
@@ -2549,7 +2545,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>840 tests across 84 files</summary>
+<summary>844 tests across 85 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3368,6 +3364,13 @@ Click a count to jump to the affected test list.
 - StructureExtractor EXTRACTOR-003 harvest(mineral) returns ERR_NOT_OWNER when extractor is not owned by the player
 - StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
 - StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
+
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
+
+- Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
+- Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
+- Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
+- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (15)
 
