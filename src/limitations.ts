@@ -40,14 +40,9 @@ export function hasDocumentedAdapterLimitation(limitation: DocumentedAdapterLimi
 			// xxscreeps doesn't support placeObject for keeperLair/invaderCore.
 			return isBuiltInAdapter('xxscreeps');
 		case 'xxscreepsPathFinderUseMissing':
-			// xxscreeps itself exposes `PathFinder.use` as a no-op in its user
-			// sandbox (xxscreeps/dist/game/path-finder/index.js:78), but the
-			// screeps-ok xxscreeps adapter builds its own synthetic
-			// `PathFinder = { search, CostMatrix }` wrapper at
-			// adapters/xxscreeps/index.ts:19 that omits the `use` property.
-			// Adding `use: () => {}` to that object would make LEGACY-PATH-003
-			// runnable on xxscreeps; until then, gate the test on this limit.
-			return isBuiltInAdapter('xxscreeps');
+			// Closed 2026-04-14: adapter's synthetic PathFinder now includes
+			// `use` as a no-op, matching xxscreeps/game/path-finder/index.js.
+			return false;
 		case 'playerGclControl':
 			// xxscreeps synthesizes `Game.gcl.level = ownedRoomCount + 1` and
 			// exposes no override, so the per-player room cap can't be reached

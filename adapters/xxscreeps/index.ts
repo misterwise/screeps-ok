@@ -15,8 +15,11 @@ import { RoomPosition } from 'xxscreeps/game/position.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/path-finder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
 
-// Build synthetic PathFinder object matching the Screeps global API
-const PathFinder = { search: pfSearch, CostMatrix };
+// Build synthetic PathFinder object matching the Screeps global API.
+// `use` is a no-op mirroring xxscreeps/game/path-finder/index.js:77 —
+// Screeps exposes it for legacy/new-pathfinder toggling but xxscreeps
+// only ships the new pathfinder, so toggling has no effect.
+const PathFinder = { search: pfSearch, CostMatrix, use: (_: boolean) => {} };
 import assert from 'node:assert';
 import { instantiateTestShard } from 'xxscreeps/test/import.js';
 import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-839%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1213%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-840%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1213](#vanilla-passing-tests) | — | — | — | 2026-04-13 23:56 UTC |
-| 🟡 | **xxscreeps** | [839](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [281](#xxscreeps-skipped-tests) | 2026-04-15 01:16 UTC |
+| 🟡 | **xxscreeps** | [840](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [280](#xxscreeps-skipped-tests) | 2026-04-15 01:22 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -2018,7 +2018,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 281 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 280 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -2034,7 +2034,6 @@ xxscreeps has 281 skipped tests, grouped by the mechanism that gated them. **Cap
 | limitation | `interRoomTransition` | Inter-room creep transitions not supported | [5](#xxscreeps-skip-limitation-interroomtransition) |
 | limitation | `playerGclControl` | PlayerSpec.gcl override not supported | [2](#xxscreeps-skip-limitation-playergclcontrol) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
-| limitation | `xxscreepsPathFinderUseMissing` | PathFinder.use shim missing on the adapter | [1](#xxscreeps-skip-limitation-xxscreepspathfinderusemissing) |
 
 Click a count to jump to the affected test list.
 
@@ -2546,20 +2545,11 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-xxscreepspathfinderusemissing">
-<summary><code>limitation:xxscreepsPathFinderUseMissing</code> — 1 test across 1 file</summary>
-
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (1)
-
-- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
-
-</details>
-
 
 ## xxscreeps passing tests
 
 <details>
-<summary>839 tests across 84 files</summary>
+<summary>840 tests across 84 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2788,7 +2778,7 @@ Click a count to jump to the affected test list.
 - CostMatrix COSTMATRIX-008 CostMatrix values 1–254 override terrain cost
 - CostMatrix COSTMATRIX-007 CostMatrix value 255 means the tile is unwalkable
 
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (7)
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (8)
 
 - Legacy Pathfinding LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room
 - Legacy Pathfinding LEGACY-PATH-002 Room.serializePath() and Room.deserializePath() round-trip a path
@@ -2797,6 +2787,7 @@ Click a count to jump to the affected test list.
 - Legacy Pathfinding LEGACY-PATH-007 findPath() returns a single step for adjacent positions
 - Legacy Pathfinding LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
+- Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
 
 **`tests/03-harvesting/3.1-source-harvest.test.ts`** (15)
 
