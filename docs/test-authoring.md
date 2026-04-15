@@ -178,7 +178,7 @@ of these is still missing:
 - the catalog entry is too vague
 - the matrix definition is incomplete
 - the adapter surface is insufficient
-- the behavior should remain a note instead of a checklist item
+- the behavior should remain a note instead of a catalog entry
 
 Do not patch around that by writing a vague or inspection-based test.
 

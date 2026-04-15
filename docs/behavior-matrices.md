@@ -223,18 +223,30 @@ Each definition should include:
 - `Catalog Entries`
   `CTRL-SAFEMODE-006`
 - `Canonical Source`
-  Official safe-mode checks in hostile creep combat and dismantle processors.
+  Official Creep prototype guards in `@screeps/engine/src/game/creeps.js`,
+  cross-checked against matching processor blocks in
+  `@screeps/engine/src/processor/intents/creeps/*.js`. All listed methods
+  share the API guard
+  `!this.room.controller.my && this.room.controller.safeMode`.
 - `Dimensions`
-  hostile action method
+  hostile creep intent method
 - `Applicability`
-  `attack()`, `rangedAttack()`, `rangedMassAttack()`, `dismantle()`
+  `attack()`, `rangedAttack()`, `rangedMassAttack()`, `dismantle()`,
+  `withdraw()`, `heal()`, `rangedHeal()`, `attackController()`. Per-method
+  return codes (matrix records both): `withdraw()` returns `ERR_NOT_OWNER`,
+  the others return `ERR_NO_BODYPART`.
 - `Exclusions`
-  Safe-mode activation requirements, movement restrictions, and non-hostile
-  actions
+  Safe-mode activation requirements, movement restrictions, and non-creep
+  actions (towers, nukes, power creep powers, structure intents).
+  `claimController()` is intentionally excluded: its source contains the
+  same safe-mode guard, but the guard is unreachable because a safe-moded
+  controller is always `level >= 1` and `claimController()` rejects any
+  target with `level > 0` first.
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until each blocked action is
-  exercised as a concrete scenario. The executable case list lives in
-  `src/matrices/ctrl-safemode-blocked.ts`.
+  Applicability set verified closed by source audit of every Creep
+  prototype method in `@screeps/engine/src/game/creeps.js` for the guard
+  shape above. Each listed action has a concrete vanilla-passing scenario
+  in `safeModeBlockedActionCases` (`src/matrices/ctrl-safemode-blocked.ts`).
 
 ### CTRL-STRUCTLIMIT
 

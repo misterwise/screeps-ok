@@ -58,10 +58,10 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">790</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num">793</div><div class="label">catalog IDs</div></div>
   <div class="stat-card"><div class="num green">790</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">0</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">0</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">100%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
 </div>
@@ -196,8 +196,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="19. Power Creeps">19. Power Creeps</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">33/33</span>
+    <div class="bar-fill" style="width:92%;background:var(--yellow)"></div>
+    <span class="bar-text">33/36</span>
   </div>
 </div>
 <div class="bar-row">
@@ -254,7 +254,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
-
+<tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>3</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code></td></tr>
 </tbody>
 </table>
 
@@ -547,7 +547,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>matrix</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/01-movement/1.2-fatigue.test.ts</small></td>
 </tr>
@@ -583,7 +583,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/01-movement/1.2b-road-fatigue.test.ts</small></td>
 </tr>
@@ -781,7 +781,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/01-movement/1.7-power-creep-movement.test.ts</small></td>
 </tr>
@@ -2203,7 +2203,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>5. Construction &amp; Repair</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts</small></td>
 </tr>
@@ -2248,7 +2248,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/06-controller/6.1-6.3-controller.test.ts</small></td>
 </tr>
@@ -2653,7 +2653,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/06-controller/6.8-safemode.test.ts</small></td>
 </tr>
@@ -2662,7 +2662,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
   <td>matrix</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/06-controller/6.8-safemode.test.ts, tests/07-combat/7.15-safemode-combat.test.ts, tests/23-store-api/23.5-timers.test.ts</small></td>
 </tr>
@@ -3643,7 +3643,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts</small></td>
 </tr>
@@ -3652,7 +3652,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts</small></td>
 </tr>
@@ -3760,7 +3760,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.9-spawn-power.test.ts</small></td>
 </tr>
@@ -3778,7 +3778,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3787,7 +3787,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3796,7 +3796,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3805,7 +3805,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3814,7 +3814,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3823,7 +3823,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts</small></td>
 </tr>
@@ -3940,7 +3940,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/09-spawning-lifecycle/9.5-recycle.test.ts</small></td>
 </tr>
@@ -5227,7 +5227,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>14. Structures — NPC</td>
   <td>matrix</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/14-structures-npc/14.1-14.2-npc.test.ts</small></td>
 </tr>
@@ -5740,7 +5740,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>17. Source, Mineral &amp; Deposit Lifecycle</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/17-source-mineral-deposit/17.2-source-power.test.ts</small></td>
 </tr>
@@ -6163,7 +6163,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>19. Power Creeps</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td>powerCreeps</td>
   <td><small>tests/19-power/19.4-19.8-powers.test.ts</small></td>
 </tr>
@@ -6172,7 +6172,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>19. Power Creeps</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td>powerCreeps</td>
   <td><small>tests/19-power/19.4-19.8-powers.test.ts</small></td>
 </tr>
@@ -6253,9 +6253,36 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>19. Power Creeps</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td>powerCreeps</td>
   <td><small>tests/19-power/19.4-19.8-powers.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-GENERATE-OPS-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>matrix</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-GENERATE-OPS-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>POWER-GENERATE-OPS-003</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>19. Power Creeps</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>MARKET-ORDER-001</code></td>
@@ -6874,7 +6901,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>23. Store API</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/23-store-api/23.5-timers.test.ts</small></td>
 </tr>
@@ -6883,7 +6910,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>23. Store API</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/23-store-api/23.5-timers.test.ts</small></td>
 </tr>
@@ -6919,7 +6946,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.2-resource-visibility.test.ts</small></td>
 </tr>
@@ -6928,7 +6955,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.2-resource-visibility.test.ts</small></td>
 </tr>
@@ -6937,7 +6964,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.2-resource-visibility.test.ts</small></td>
 </tr>
@@ -6946,7 +6973,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.2-resource-visibility.test.ts</small></td>
 </tr>
@@ -6964,7 +6991,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>matrix</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.3-intent-limits.test.ts</small></td>
 </tr>
@@ -6973,7 +7000,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.4-simultaneous-actions.test.ts</small></td>
 </tr>
@@ -6982,7 +7009,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/24-intent-resolution/24.4-simultaneous-actions.test.ts</small></td>
 </tr>

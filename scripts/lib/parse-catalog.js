@@ -6,7 +6,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-const ID_RE = /^-\s+\[[ xX]\]\s+`([A-Z]+-(?:[A-Z]+-)?[0-9]{3})`/;
+const ID_RE = /^-\s+`([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})`\s+`(?:behavior|matrix)`/;
 const CLASS_RE = /`(behavior|matrix)`/;
 const ORACLE_RE = /`(verified_vanilla|needs_vanilla_verification)`/;
 const CAPABILITY_RE = /`capability:\s*(\w+)`/;

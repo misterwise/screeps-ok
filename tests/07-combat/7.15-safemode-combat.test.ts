@@ -10,8 +10,9 @@ import { describe, test, expect, code,
 // Section 7.15 — Safe Mode combat effects.
 //
 // CTRL-SAFEMODE-006 (section 6.8) already covers the broader claim that hostile
-// attack/rangedAttack/rangedMassAttack/dismantle intents are blocked while safe mode
-// is active. The two entries here cover the orthogonal positive cases:
+// creep intents (attack, rangedAttack, rangedMassAttack, dismantle, withdraw,
+// heal, rangedHeal, attackController) are blocked while safe mode is active.
+// The two entries here cover the orthogonal positive cases:
 //   - Owned-room defenses (towers) continue to operate.
 //   - Hostile creeps walking onto a player's construction sites do NOT destroy them
 //     while safe mode is active.

@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_BUSY, ERR_NO_BODYPART,
-	MOVE, ATTACK, RANGED_ATTACK, WORK,
-	STRUCTURE_RAMPART,
+	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_BUSY,
+	MOVE, ATTACK, RANGED_ATTACK, WORK, HEAL, CLAIM, CARRY,
+	STRUCTURE_RAMPART, STRUCTURE_CONTAINER,
 	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD,
 	limitationGated,
 } from '../../src/index.js';
@@ -140,17 +140,23 @@ describe('Safe mode mechanics', () => {
 		expect(after.safeModeAvailable).toBe(1);
 	});
 
-	// ---- CTRL-SAFEMODE-006: hostile actions blocked matrix ----
-	// Build the body needed for each action type.
+	// ---- CTRL-SAFEMODE-006: hostile cross-room intents blocked matrix ----
+	// The vanilla Creep prototype short-circuits each listed intent on the
+	// guard `!this.room.controller.my && this.room.controller.safeMode`,
+	// returning a method-specific code before the intent is queued.
 	const actionBodyMap: Record<string, string[]> = {
 		attack: [ATTACK, MOVE],
 		rangedAttack: [RANGED_ATTACK, MOVE],
 		rangedMassAttack: [RANGED_ATTACK, MOVE],
 		dismantle: [WORK, MOVE],
+		withdraw: [CARRY, MOVE],
+		heal: [HEAL, MOVE],
+		rangedHeal: [HEAL, MOVE],
+		attackController: [CLAIM, MOVE],
 	};
 
-	for (const { label, method } of safeModeBlockedActionCases) {
-		test(`CTRL-SAFEMODE-006:${label} hostile ${label} deals no damage under safe mode`, async ({ shard }) => {
+	for (const { label, method, target, expectedRc } of safeModeBlockedActionCases) {
+		test(`CTRL-SAFEMODE-006:${label} hostile ${label} returns guard code under safe mode`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -166,40 +172,77 @@ describe('Safe mode mechanics', () => {
 			expect(smRc).toBe(OK);
 			await shard.tick();
 
-			// Place a target (rampart) for the hostile creep to attack/dismantle.
-			const rampartId = await shard.placeStructure('W1N1', {
-				pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-				hits: 10000,
-			});
-			const body = actionBodyMap[method];
-			const creepId = await shard.placeCreep('W1N1', {
-				pos: [25, 26], owner: 'p2', body,
+			// Place a target appropriate for the method under test and position
+			// the hostile creep adjacent to it. Controllers live at (1,1);
+			// other targets go near mid-room.
+			let targetId: string | null = null;
+			let attackerPos: [number, number];
+			if (target === 'rampart') {
+				targetId = await shard.placeStructure('W1N1', {
+					pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
+					hits: 10000,
+				});
+				attackerPos = [25, 26];
+			} else if (target === 'container') {
+				targetId = await shard.placeStructure('W1N1', {
+					pos: [25, 25], structureType: STRUCTURE_CONTAINER,
+					store: { energy: 500 },
+				});
+				attackerPos = [25, 26];
+			} else if (target === 'friendlyCreep') {
+				targetId = await shard.placeCreep('W1N1', {
+					pos: [25, 25], owner: 'p2', body: [MOVE],
+				});
+				attackerPos = [25, 26];
+			} else {
+				// 'controller' — use Game.rooms['W1N1'].controller directly;
+				// vanilla/xxscreeps both place the controller at (1, 1).
+				attackerPos = [2, 2];
+			}
+
+			const attackerId = await shard.placeCreep('W1N1', {
+				pos: attackerPos, owner: 'p2', body: actionBodyMap[method],
 			});
 			await shard.tick();
 
-			// Issue hostile action — each method needs its own code template
-			// since code`` serializes interpolated values, not code fragments.
+			// Each method is dispatched with its own template since code``
+			// serializes interpolated values, not code fragments.
 			let rc: unknown;
 			if (method === 'attack') {
 				rc = await shard.runPlayer('p2', code`
-					Game.getObjectById(${creepId}).attack(Game.getObjectById(${rampartId}))
+					Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId!}))
 				`);
 			} else if (method === 'rangedAttack') {
 				rc = await shard.runPlayer('p2', code`
-					Game.getObjectById(${creepId}).rangedAttack(Game.getObjectById(${rampartId}))
+					Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${targetId!}))
 				`);
 			} else if (method === 'rangedMassAttack') {
 				rc = await shard.runPlayer('p2', code`
-					Game.getObjectById(${creepId}).rangedMassAttack()
+					Game.getObjectById(${attackerId}).rangedMassAttack()
 				`);
-			} else {
-				// dismantle
+			} else if (method === 'dismantle') {
 				rc = await shard.runPlayer('p2', code`
-					Game.getObjectById(${creepId}).dismantle(Game.getObjectById(${rampartId}))
+					Game.getObjectById(${attackerId}).dismantle(Game.getObjectById(${targetId!}))
+				`);
+			} else if (method === 'withdraw') {
+				rc = await shard.runPlayer('p2', code`
+					Game.getObjectById(${attackerId}).withdraw(Game.getObjectById(${targetId!}), 'energy')
+				`);
+			} else if (method === 'heal') {
+				rc = await shard.runPlayer('p2', code`
+					Game.getObjectById(${attackerId}).heal(Game.getObjectById(${targetId!}))
+				`);
+			} else if (method === 'rangedHeal') {
+				rc = await shard.runPlayer('p2', code`
+					Game.getObjectById(${attackerId}).rangedHeal(Game.getObjectById(${targetId!}))
+				`);
+			} else if (method === 'attackController') {
+				rc = await shard.runPlayer('p2', code`
+					Game.getObjectById(${attackerId}).attackController(Game.rooms['W1N1'].controller)
 				`);
 			}
-			// Safe mode blocks hostile combat intents with ERR_NO_BODYPART.
-			expect(rc).toBe(ERR_NO_BODYPART);
+
+			expect(rc).toBe(expectedRc);
 		});
 	}
 });

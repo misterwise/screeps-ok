@@ -2,8 +2,8 @@
  * Extracts catalog IDs from behaviors.md and test IDs from tests/, cross-
  * references them, and writes an HTML coverage report to docs/coverage.html.
  *
- * The report is the single source of truth for "what's tested?" — it replaces
- * manual checkbox tracking in behaviors.md.
+ * The report is the single source of truth for "what's tested?" — catalog
+ * entries in behaviors.md are not marked with per-entry status.
  *
  * Usage:
  *   node scripts/generate-coverage.js
