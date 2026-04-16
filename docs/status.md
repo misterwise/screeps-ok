@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-6%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1241%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-985%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-88-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,25 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 04:42 UTC |
-| 🔴 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [86](#xxscreeps-expected-failures) | [6](#xxscreeps-unexpected-failures) | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
+| 🟢 | **vanilla** | [1241](#vanilla-passing-tests) | — | — | — | 2026-04-16 06:03 UTC |
+| 🟡 | **xxscreeps** | [985](#xxscreeps-passing-tests) | [88](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-16 06:01 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## xxscreeps unexpected failures
-
-- `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
-- `controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part`
-- `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
-- `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
-- `Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0`
-- `Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0`
-
 ## xxscreeps expected failures
 
-xxscreeps currently declares 47 parity gaps against vanilla's canonical behavior, covering 86 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 88 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -44,6 +35,8 @@ xxscreeps currently declares 47 parity gaps against vanilla's canonical behavior
 | `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
 | `death-container-diversion` | Creep death does not divert resources into same-tile container | Death resources flow into a live same-tile container before any tombstone remainder | [1](#xxscreeps-gap-death-container-diversion) |
 | `extractor-cooldown-off-by-one` | Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest | Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest | [2](#xxscreeps-gap-extractor-cooldown-off-by-one) |
+| `factory-cooldown-no-decrement` | Factory cooldown reports full `COMMODITIES[resource].cooldown` on the tick after `produce()` | Factory cooldown reports `COMMODITIES[resource].cooldown - 1` on the tick after `produce()` | [1](#xxscreeps-gap-factory-cooldown-no-decrement) |
+| `factory-not-owner-precedence` | `factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-factory-not-owner-precedence) |
 | `link-cooldown-not-persisted` | `link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`) | Link cooldown persists across ticks regardless of creep presence | [1](#xxscreeps-gap-link-cooldown-not-persisted) |
 | `lab-bound-getfreecapacity-returns-zero` | Bound lab's `store.getFreeCapacity(otherMineral)` returns `0` | Returns `null` for a mineral the lab cannot hold | [3](#xxscreeps-gap-lab-bound-getfreecapacity-returns-zero) |
 | `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
@@ -130,6 +123,20 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest`
 - `StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN`
+
+</details>
+
+<details id="xxscreeps-gap-factory-cooldown-no-decrement">
+<summary><code>factory-cooldown-no-decrement</code> — 1 test</summary>
+
+- `Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown`
+
+</details>
+
+<details id="xxscreeps-gap-factory-not-owner-precedence">
+<summary><code>factory-not-owner-precedence</code> — 1 test</summary>
+
+- `Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player`
 
 </details>
 
@@ -460,7 +467,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1214 tests across 109 files</summary>
+<summary>1241 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -480,7 +487,7 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: tile coexistence road + rampart + creep on the same tile all resolve independently
 - adapter contract: tile coexistence findInRoom returns both structures when two share a tile
 
-**`tests/00-adapter-contract/error-model.test.ts`** (13)
+**`tests/00-adapter-contract/error-model.test.ts`** (20)
 
 - adapter contract: error model syntax errors syntax error throws RunPlayerError with errorKind "syntax"
 - adapter contract: error model syntax errors syntax error engineMessage is non-empty
@@ -488,12 +495,19 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: error model runtime errors TypeError throws RunPlayerError with errorKind "runtime"
 - adapter contract: error model runtime errors explicit throw produces RunPlayerError with errorKind "runtime"
 - adapter contract: error model runtime errors runtime error engineMessage is non-empty
+- adapter contract: error model runtime errors throw null produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw undefined produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw string produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw number produces RunPlayerError with errorKind "runtime"
 - adapter contract: error model serialization errors returning a creep object throws RunPlayerError with errorKind "serialization"
 - adapter contract: error model serialization errors returning a room object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model serialization errors returning a circular plain object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model serialization errors returning a function throws RunPlayerError with errorKind "serialization"
 - adapter contract: error model undefined normalization explicit undefined return is normalized to null
 - adapter contract: error model undefined normalization void expression return is normalized to null
 - adapter contract: error model undefined normalization implicit undefined from statement is normalized to null
 - adapter contract: error model error kind discrimination syntax error is not misclassified as runtime
+- adapter contract: error model error kind discrimination runPlayers preserves engineMessage without handle prefix
 - adapter contract: error model error kind discrimination game object return does not silently produce empty object
 
 **`tests/00-adapter-contract/execution.test.ts`** (18)
@@ -524,7 +538,7 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (16)
+**`tests/00-adapter-contract/inspection.test.ts`** (18)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -541,9 +555,11 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: inspection findInRoom returns empty array for empty room type
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
+- adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (36)
+**`tests/00-adapter-contract/setup.test.ts`** (50)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -551,6 +567,7 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard default room layout is canonical and sparse
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
+- adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup default room terrain default rooms have all-plain interior terrain
 - adapter contract: setup default room terrain default rooms have all four exits open
@@ -581,6 +598,19 @@ Click a test count above to jump to the affected test list for that gap.
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
+- adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeSite + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeSource + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeMineral + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
+- adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
+- adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (32)
 
@@ -956,7 +986,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 
-**`tests/06-controller/6.8-safemode.test.ts`** (10)
+**`tests/06-controller/6.8-safemode.test.ts`** (14)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
@@ -964,10 +994,14 @@ Click a test count above to jump to the affected test list for that gap.
 - Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
 - Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
 - Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
-- Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:dismantle hostile dismantle deals no damage under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:dismantle hostile dismantle returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:withdraw hostile withdraw returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:heal hostile heal returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedHeal hostile rangedHeal returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:attackController hostile attackController returns guard code under safe mode
 
 **`tests/06-controller/6.9-unclaim.test.ts`** (1)
 
@@ -2007,14 +2041,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 248 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 168 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `factory` | Factory commodities | [83](#xxscreeps-skip-capability-factory) |
-| capability | `powerCreeps` | Power creeps and powers | [67](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [69](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
-| capability | `nuke` | Nukes | [27](#xxscreeps-skip-capability-nuke) |
+| capability | `nuke` | Nukes | [28](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
@@ -2022,115 +2055,13 @@ xxscreeps has 248 skipped tests, grouped by the mechanism that gated them. **Cap
 
 Click a count to jump to the affected test list.
 
-<details id="xxscreeps-skip-capability-factory">
-<summary><code>capability:factory</code> — 83 tests across 5 files</summary>
-
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (78)
-
-- Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
-- Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
-- Factory production FACTORY-PRODUCE-001:cell produce(cell) consumes components and yields 20
-- Factory production FACTORY-PRODUCE-001:condensate produce(condensate) consumes components and yields 20
-- Factory production FACTORY-PRODUCE-001:energy produce(energy) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:G produce(G) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:H produce(H) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:K produce(K) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:L produce(L) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:O produce(O) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:oxidant produce(oxidant) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:purifier produce(purifier) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:reductant produce(reductant) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:U produce(U) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-001:wire produce(wire) consumes components and yields 20
-- Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
-- Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
-- Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
-- Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
-- Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
-- Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
-- Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
-- Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
-- Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
-- Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player
-- Factory commodity chains FACTORY-COMMODITY-001:alloy COMMODITIES[alloy].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:battery COMMODITIES[battery].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:cell COMMODITIES[cell].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:circuit COMMODITIES[circuit].level is 4
-- Factory commodity chains FACTORY-COMMODITY-001:composite COMMODITIES[composite].level is 1
-- Factory commodity chains FACTORY-COMMODITY-001:concentrate COMMODITIES[concentrate].level is 1
-- Factory commodity chains FACTORY-COMMODITY-001:condensate COMMODITIES[condensate].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:crystal COMMODITIES[crystal].level is 2
-- Factory commodity chains FACTORY-COMMODITY-001:device COMMODITIES[device].level is 5
-- Factory commodity chains FACTORY-COMMODITY-001:emanation COMMODITIES[emanation].level is 4
-- Factory commodity chains FACTORY-COMMODITY-001:energy COMMODITIES[energy].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:essence COMMODITIES[essence].level is 5
-- Factory commodity chains FACTORY-COMMODITY-001:extract COMMODITIES[extract].level is 2
-- Factory commodity chains FACTORY-COMMODITY-001:fixtures COMMODITIES[fixtures].level is 2
-- Factory commodity chains FACTORY-COMMODITY-001:frame COMMODITIES[frame].level is 3
-- Factory commodity chains FACTORY-COMMODITY-001:G COMMODITIES[G].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:H COMMODITIES[H].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:hydraulics COMMODITIES[hydraulics].level is 4
-- Factory commodity chains FACTORY-COMMODITY-001:K COMMODITIES[K].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:L COMMODITIES[L].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:liquid COMMODITIES[liquid].level is 3
-- Factory commodity chains FACTORY-COMMODITY-001:machine COMMODITIES[machine].level is 5
-- Factory commodity chains FACTORY-COMMODITY-001:microchip COMMODITIES[microchip].level is 3
-- Factory commodity chains FACTORY-COMMODITY-001:muscle COMMODITIES[muscle].level is 3
-- Factory commodity chains FACTORY-COMMODITY-001:O COMMODITIES[O].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:organism COMMODITIES[organism].level is 5
-- Factory commodity chains FACTORY-COMMODITY-001:organoid COMMODITIES[organoid].level is 4
-- Factory commodity chains FACTORY-COMMODITY-001:oxidant COMMODITIES[oxidant].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:phlegm COMMODITIES[phlegm].level is 1
-- Factory commodity chains FACTORY-COMMODITY-001:purifier COMMODITIES[purifier].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:reductant COMMODITIES[reductant].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:spirit COMMODITIES[spirit].level is 3
-- Factory commodity chains FACTORY-COMMODITY-001:switch COMMODITIES[switch].level is 1
-- Factory commodity chains FACTORY-COMMODITY-001:tissue COMMODITIES[tissue].level is 2
-- Factory commodity chains FACTORY-COMMODITY-001:transistor COMMODITIES[transistor].level is 2
-- Factory commodity chains FACTORY-COMMODITY-001:tube COMMODITIES[tube].level is 1
-- Factory commodity chains FACTORY-COMMODITY-001:U COMMODITIES[U].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:wire COMMODITIES[wire].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
-- Factory commodity chains FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production
-
-**`tests/15-structure-common/15.1-hits.test.ts`** (1)
-
-- Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
-
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
-
-- Construction costs CONSTRUCTION-COST-001:factory costs 100000
-
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
-
-- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
-- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
-
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
-
-</details>
-
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 67 tests across 18 files</summary>
+<summary><code>capability:powerCreeps</code> — 69 tests across 19 files</summary>
 
-**`tests/00-adapter-contract/setup.test.ts`** (1)
+**`tests/00-adapter-contract/setup.test.ts`** (2)
 
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
 
 **`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
 
@@ -2153,6 +2084,10 @@ Click a count to jump to the affected test list.
 
 - Lab runReaction LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount
 - Lab reverseReaction LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount
+
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (1)
+
+- Factory commodity chains FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production
 
 **`tests/11-structures-production/11.6-power-spawn.test.ts`** (6)
 
@@ -2322,11 +2257,12 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 27 tests across 10 files</summary>
+<summary><code>capability:nuke</code> — 28 tests across 10 files</summary>
 
-**`tests/00-adapter-contract/setup.test.ts`** (1)
+**`tests/00-adapter-contract/setup.test.ts`** (2)
 
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
+- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
@@ -2464,7 +2400,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>874 tests across 88 files</summary>
+<summary>985 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2484,7 +2420,7 @@ Click a count to jump to the affected test list.
 - adapter contract: tile coexistence road + rampart + creep on the same tile all resolve independently
 - adapter contract: tile coexistence findInRoom returns both structures when two share a tile
 
-**`tests/00-adapter-contract/error-model.test.ts`** (13)
+**`tests/00-adapter-contract/error-model.test.ts`** (20)
 
 - adapter contract: error model syntax errors syntax error throws RunPlayerError with errorKind "syntax"
 - adapter contract: error model syntax errors syntax error engineMessage is non-empty
@@ -2492,12 +2428,19 @@ Click a count to jump to the affected test list.
 - adapter contract: error model runtime errors TypeError throws RunPlayerError with errorKind "runtime"
 - adapter contract: error model runtime errors explicit throw produces RunPlayerError with errorKind "runtime"
 - adapter contract: error model runtime errors runtime error engineMessage is non-empty
+- adapter contract: error model runtime errors throw null produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw undefined produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw string produces RunPlayerError with errorKind "runtime"
+- adapter contract: error model runtime errors throw number produces RunPlayerError with errorKind "runtime"
 - adapter contract: error model serialization errors returning a creep object throws RunPlayerError with errorKind "serialization"
 - adapter contract: error model serialization errors returning a room object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model serialization errors returning a circular plain object throws RunPlayerError with errorKind "serialization"
+- adapter contract: error model serialization errors returning a function throws RunPlayerError with errorKind "serialization"
 - adapter contract: error model undefined normalization explicit undefined return is normalized to null
 - adapter contract: error model undefined normalization void expression return is normalized to null
 - adapter contract: error model undefined normalization implicit undefined from statement is normalized to null
 - adapter contract: error model error kind discrimination syntax error is not misclassified as runtime
+- adapter contract: error model error kind discrimination runPlayers preserves engineMessage without handle prefix
 - adapter contract: error model error kind discrimination game object return does not silently produce empty object
 
 **`tests/00-adapter-contract/execution.test.ts`** (18)
@@ -2527,7 +2470,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (16)
+**`tests/00-adapter-contract/inspection.test.ts`** (18)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -2544,9 +2487,11 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection findInRoom returns empty array for empty room type
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
+- adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (34)
+**`tests/00-adapter-contract/setup.test.ts`** (46)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -2554,6 +2499,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard default room layout is canonical and sparse
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
+- adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup default room terrain default rooms have all-plain interior terrain
 - adapter contract: setup default room terrain default rooms have all four exits open
@@ -2582,6 +2528,17 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
 - adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeDroppedResource places a dropped resource
+- adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeSite + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeSource + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeMineral + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
+- adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
+- adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (31)
 
@@ -2846,12 +2803,13 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (20)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
 - controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player
 - controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
+- controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
@@ -2860,6 +2818,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX
 - controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
+- controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
 - controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
@@ -2888,7 +2847,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (10)
+**`tests/06-controller/6.4-upgrade.test.ts`** (11)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -2898,6 +2857,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-006 upgrade at RCL 8 is capped at CONTROLLER_MAX_UPGRADE_PER_TICK
 - creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
+- creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 
@@ -2910,16 +2870,20 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 
-**`tests/06-controller/6.8-safemode.test.ts`** (8)
+**`tests/06-controller/6.8-safemode.test.ts`** (12)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
 - Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
 - Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
-- Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack deals no damage under safe mode
-- Safe mode mechanics CTRL-SAFEMODE-006:dismantle hostile dismantle deals no damage under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:dismantle hostile dismantle returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:withdraw hostile withdraw returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:heal hostile heal returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:rangedHeal hostile rangedHeal returns guard code under safe mode
+- Safe mode mechanics CTRL-SAFEMODE-006:attackController hostile attackController returns guard code under safe mode
 
 **`tests/07-combat/7.1-melee-attack.test.ts`** (24)
 
@@ -3248,6 +3212,84 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
 - Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
 
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (75)
+
+- Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
+- Factory production FACTORY-PRODUCE-001:cell produce(cell) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:condensate produce(condensate) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:energy produce(energy) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:G produce(G) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:H produce(H) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:K produce(K) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:L produce(L) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:O produce(O) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:oxidant produce(oxidant) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:purifier produce(purifier) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:reductant produce(reductant) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:U produce(U) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:wire produce(wire) consumes components and yields 20
+- Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
+- Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
+- Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
+- Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
+- Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
+- Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
+- Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
+- Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
+- Factory commodity chains FACTORY-COMMODITY-001:alloy COMMODITIES[alloy].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:battery COMMODITIES[battery].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:cell COMMODITIES[cell].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:circuit COMMODITIES[circuit].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:composite COMMODITIES[composite].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:concentrate COMMODITIES[concentrate].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:condensate COMMODITIES[condensate].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:crystal COMMODITIES[crystal].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:device COMMODITIES[device].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:emanation COMMODITIES[emanation].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:energy COMMODITIES[energy].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:essence COMMODITIES[essence].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:extract COMMODITIES[extract].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:fixtures COMMODITIES[fixtures].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:frame COMMODITIES[frame].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:G COMMODITIES[G].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:H COMMODITIES[H].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:hydraulics COMMODITIES[hydraulics].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:K COMMODITIES[K].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:L COMMODITIES[L].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:liquid COMMODITIES[liquid].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:machine COMMODITIES[machine].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:microchip COMMODITIES[microchip].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:muscle COMMODITIES[muscle].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:O COMMODITIES[O].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:organism COMMODITIES[organism].level is 5
+- Factory commodity chains FACTORY-COMMODITY-001:organoid COMMODITIES[organoid].level is 4
+- Factory commodity chains FACTORY-COMMODITY-001:oxidant COMMODITIES[oxidant].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:phlegm COMMODITIES[phlegm].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:purifier COMMODITIES[purifier].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:reductant COMMODITIES[reductant].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:spirit COMMODITIES[spirit].level is 3
+- Factory commodity chains FACTORY-COMMODITY-001:switch COMMODITIES[switch].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:tissue COMMODITIES[tissue].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:transistor COMMODITIES[transistor].level is 2
+- Factory commodity chains FACTORY-COMMODITY-001:tube COMMODITIES[tube].level is 1
+- Factory commodity chains FACTORY-COMMODITY-001:U COMMODITIES[U].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:wire COMMODITIES[wire].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
+
 **`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (15)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
@@ -3307,7 +3349,7 @@ Click a count to jump to the affected test list.
 - Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
-**`tests/15-structure-common/15.1-hits.test.ts`** (15)
+**`tests/15-structure-common/15.1-hits.test.ts`** (17)
 
 - Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
 - Structure hits STRUCTURE-HITS-001:extension initializes with 1000 hits
@@ -3321,9 +3363,11 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-001:extractor initializes with 500 hits
 - Structure hits STRUCTURE-HITS-001:lab initializes with 500 hits
 - Structure hits STRUCTURE-HITS-001:container initializes with 250000 hits
+- Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-002 destroyable structures expose hits and hitsMax
 - Structure hits STRUCTURE-HITS-003 a structure at 0 hits is destroyed in the same tick
 - Structure hits STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store
+- Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
 
 **`tests/15-structure-common/15.2-isactive.test.ts`** (5)
 
@@ -3333,7 +3377,7 @@ Click a count to jump to the affected test list.
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 - Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (13)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (14)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -3347,6 +3391,7 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:extractor costs 5000
 - Construction costs CONSTRUCTION-COST-001:lab costs 50000
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
+- Construction costs CONSTRUCTION-COST-001:factory costs 100000
 - Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
 
 **`tests/15-structure-common/15.4-structure-api.test.ts`** (2)
@@ -3427,17 +3472,19 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
 - mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (2)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (3)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
+- Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (4)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (5)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
 - Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
 - Ruin RUIN-003 ruin resources can be withdrawn
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
+- Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
 
@@ -3496,12 +3543,14 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [LEFT] getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_LEFT] getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (14)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (16)
 
 - Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
 - Store STORE-OPEN-001:container getCapacity() returns total capacity for container
+- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
 - Store STORE-OPEN-002:storage getCapacity(RESOURCE_ENERGY) returns total capacity for storage
 - Store STORE-OPEN-002:container getCapacity(RESOURCE_ENERGY) returns total capacity for container
+- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
 - Store STORE-OPEN-003 getUsedCapacity and getFreeCapacity reflect mixed contents
 - Store STORE-SINGLE-001:spawn getCapacity(RESOURCE_ENERGY) returns 300 for spawn
 - Store STORE-SINGLE-001:tower getCapacity(RESOURCE_ENERGY) returns 1000 for tower
@@ -3583,7 +3632,7 @@ Click a count to jump to the affected test list.
 - RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
 - Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (18)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (19)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
@@ -3601,6 +3650,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extractor structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:lab structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:observer structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
 

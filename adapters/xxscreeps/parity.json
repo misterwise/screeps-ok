@@ -30,6 +30,16 @@
 			"expected": "Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest",
 			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-006"]
 		},
+		"factory-cooldown-no-decrement": {
+			"actual": "Factory cooldown reports full `COMMODITIES[resource].cooldown` on the tick after `produce()`",
+			"expected": "Factory cooldown reports `COMMODITIES[resource].cooldown - 1` on the tick after `produce()`",
+			"tests": ["FACTORY-PRODUCE-002"]
+		},
+		"factory-not-owner-precedence": {
+			"actual": "`factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH`",
+			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
+			"tests": ["FACTORY-PRODUCE-010"]
+		},
 		"link-cooldown-not-persisted": {
 			"actual": "`link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`)",
 			"expected": "Link cooldown persists across ticks regardless of creep presence",

@@ -12,11 +12,11 @@ import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
-import { search as pfSearch, CostMatrix } from 'xxscreeps/game/path-finder/index.js';
+import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
 
 // Build synthetic PathFinder object matching the Screeps global API.
-// `use` is a no-op mirroring xxscreeps/game/path-finder/index.js:77 —
+// `use` is a no-op mirroring xxscreeps/game/pathfinder/index.js —
 // Screeps exposes it for legacy/new-pathfinder toggling but xxscreeps
 // only ships the new pathfinder, so toggling has no effect.
 const PathFinder = { search: pfSearch, CostMatrix, use: (_: boolean) => {} };
@@ -29,7 +29,7 @@ import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
 import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
-import { loadTerrain } from 'xxscreeps/driver/path-finder.js';
+import { loadTerrain } from 'xxscreeps/driver/pathfinder.js';
 import * as MapSchema from 'xxscreeps/game/map.js';
 import { makeWriter } from 'xxscreeps/schema/write.js';
 import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';

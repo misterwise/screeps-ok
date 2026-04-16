@@ -37,9 +37,9 @@ function setupXxscreeps() {
 	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
 	runTypeScriptBuild(root);
 	runGeneratedModsBootstrap(root);
-	run('npx node-gyp rebuild --release', {
-		cwd: path.join(root, 'src/driver/path-finder'),
-	});
+	const pathfinderRoot = resolvePackageRoot('@xxscreeps/pathfinder');
+	console.log(`[screeps-ok] Building path-finder native addon in ${pathfinderRoot}`);
+	run('npx node-gyp rebuild --release', { cwd: pathfinderRoot });
 }
 
 function setupVanilla() {

@@ -1,11 +1,11 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (53 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (55 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/src`.
 
-Last refreshed: 2026-04-14 against `adapters/xxscreeps/parity.json`.
+Last refreshed: 2026-04-16 against `adapters/xxscreeps/parity.json`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here.
 
@@ -41,6 +41,15 @@ Last refreshed: 2026-04-14 against `adapters/xxscreeps/parity.json`.
 - Tests: HARVEST-MINERAL-003, EXTRACTOR-006
 - Cause: `#cooldownTime = Game.time + EXTRACTOR_COOLDOWN - 1` at `mods/mineral/processor.ts:21`. Reports `EXTRACTOR_COOLDOWN - 1` (5) on the next tick; vanilla expects `EXTRACTOR_COOLDOWN` (6). The `- 1` must be REMOVED — opposite direction from the lab fix.
 - Root cause shared with lab-cooldown-no-decrement: xxscreeps advances `shard.time` before processing, so `Game.time` during processing = T+1. But vanilla's constants have different semantics: `EXTRACTOR_COOLDOWN` is pure wait time (next tick shows full value), while `REACTION_TIME` includes the action tick (next tick shows value - 1). The extractor's `- 1` double-corrects.
+
+### factory-cooldown-no-decrement
+- Tests: FACTORY-PRODUCE-002 (got 10, expected 9 for `RESOURCE_BATTERY` with cooldown=10)
+- Cause: `factory['#cooldownTime'] = Game.time + recipe.cooldown` at `mods/factory/processor.ts:21`. Reports full `recipe.cooldown` on the next tick; vanilla expects `recipe.cooldown - 1`. Same pattern as lab-cooldown-no-decrement — add `- 1`.
+- Context: factory follows the `REACTION_TIME`-style constant (includes the action tick), not the `EXTRACTOR_COOLDOWN`-style pure-wait constant — confirmed by this test now that factory mod ships upstream.
+
+### factory-not-owner-precedence
+- Tests: FACTORY-PRODUCE-010 (got `-14` ERR_RCL_NOT_ENOUGH, expected `-1` ERR_NOT_OWNER)
+- Cause: Same root as `destroy-ownership-bypass` / `lab-not-owner-precedence`. `checkMyStructure` at `mods/structure/structure.ts:206` accepts the call because `room.controller?.my` is true for p1 even though the factory is p2's. `checkProduce` then reaches `checkIsActive` which returns `ERR_RCL_NOT_ENOUGH` via `checkActiveStructures`. Fixing `checkMyStructure` to require `structure.my` for `OwnedStructure` subclasses resolves this alongside lab/observer/destroy variants.
 
 ### generate-safe-mode-requires-work
 - Tests: CTRL-GENSAFE-001..004
@@ -93,7 +102,7 @@ Last refreshed: 2026-04-14 against `adapters/xxscreeps/parity.json`.
 - Tests: LAB-RUN-004 (got 20, expected 19), LAB-REVERSE-004, UNBOOST-005 (got 30, expected 29)
 - Cause: `lab['#cooldownTime'] = Game.time + reactionTime` at `mods/chemistry/processor.ts:32`, `:92`, and `:139`. Reports `reactionTime` on the next tick; vanilla expects `reactionTime - 1`. Fix: add `- 1` to all three lab cooldown assignments.
 - Important: this is the OPPOSITE fix direction from extractor-cooldown-off-by-one. The earlier framing "missing the `-1` that extractor uses" was misleading — the extractor's `-1` is itself wrong (needs removal). Both bugs share the same root (Game.time = T+1 during processing) but vanilla's constants differ: `REACTION_TIME` includes the action tick, `EXTRACTOR_COOLDOWN` does not.
-- Also at risk: `factory/processor.ts:21` uses `Game.time + recipe.cooldown` (no `-1`). No test data yet to confirm whether factory cooldown follows the lab pattern or extractor pattern.
+- Factory follows the lab pattern — see `factory-cooldown-no-decrement` below.
 
 ### lab-not-owner-precedence + observer-not-owner-precedence
 - Tests: LAB-RUN-012, LAB-REVERSE-012, OBSERVER-006 (all got `-14` ERR_RCL_NOT_ENOUGH, expected `-1` ERR_NOT_OWNER)

@@ -1,71 +1,186 @@
-// Post-install helper: prepare xxscreeps JavaScript output when available.
-// Native addons are built explicitly via `npm run setup:xxscreeps`.
+// Post-install helper: assemble the pinned xxscreeps package from upstream.
+//
+// Upstream (laverdet/xxscreeps) is a pnpm monorepo whose workspace root
+// package.json cannot be consumed by npm. Rather than fight npm's git-dep
+// resolver, we fetch just the subtrees we need (`packages/xxscreeps` and
+// `packages/pathfinder`) via a sparse git checkout and lay them out under
+// `node_modules/` at the same paths our adapter imports expect.
+//
+// The pin sha lives in `.xxscreeps-pin` at the repo root so bumps are a
+// one-line change. Native addon compilation is still deferred to
+// `npm run setup:xxscreeps`.
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+	cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync,
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 
 const require = createRequire(import.meta.url);
-const xxscreepsDir = resolve('node_modules/xxscreeps');
 const minNodeMajor = 24;
 const tscBin = require.resolve('typescript/bin/tsc');
 
-if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
-	console.log('[screeps-ok] SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL=1, skipping xxscreeps postinstall build');
-	process.exit(0);
-}
+const repoRoot = resolve('.');
+const pinFile = join(repoRoot, '.xxscreeps-pin');
+const xxscreepsDir = join(repoRoot, 'node_modules/xxscreeps');
+const pathfinderDir = join(repoRoot, 'node_modules/@xxscreeps/pathfinder');
+const cacheDir = join(repoRoot, 'node_modules/.cache/screeps-ok/xxscreeps-src');
+const stampFile = join(xxscreepsDir, '.screeps-ok-pin');
+const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 
-if (!existsSync(xxscreepsDir)) {
-	console.log('[screeps-ok] xxscreeps not installed, skipping build');
+if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
+	console.log('[screeps-ok] SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL=1, skipping xxscreeps postinstall');
 	process.exit(0);
 }
 
 const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
 if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 	console.log(
-		`[screeps-ok] Skipping xxscreeps postinstall build on ${process.version}. ` +
+		`[screeps-ok] Skipping xxscreeps postinstall on ${process.version}. ` +
 		`Use Node ${minNodeMajor}+ and run npm install again for a supported environment.`,
 	);
 	process.exit(0);
 }
 
+if (!existsSync(pinFile)) {
+	console.error(`[screeps-ok] Missing ${pinFile}`);
+	process.exit(1);
+}
+const pin = readFileSync(pinFile, 'utf8').trim();
+if (!/^[0-9a-f]{40}$/.test(pin)) {
+	console.error(`[screeps-ok] .xxscreeps-pin must contain a full 40-char sha; got '${pin}'`);
+	process.exit(1);
+}
+const shortPin = pin.slice(0, 8);
+
 if (
-	existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js')) &&
-	existsSync(resolve(xxscreepsDir, 'dist/config/mods.static/constants.js'))
+	existsSync(stampFile) && readFileSync(stampFile, 'utf8').trim() === pin &&
+	existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))
 ) {
-	console.log('[screeps-ok] xxscreeps JavaScript build already present');
+	console.log(`[screeps-ok] xxscreeps already built at pin ${shortPin}`);
 	process.exit(0);
 }
 
-console.log('[screeps-ok] Building xxscreeps JavaScript output...');
-let tscError = null;
-try {
-	// Run the root project's TypeScript compiler from within xxscreeps so it
-	// uses xxscreeps's tsconfig without depending on nested devDependencies.
-	execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
-		cwd: xxscreepsDir,
-		stdio: 'inherit',
-	});
-} catch (err) {
-	// tsc exits non-zero on type errors but still emits JS. Harmless type
-	// drift (e.g. nested package duplication) should not block the build as
-	// long as tsc produced the expected output — verified below.
-	tscError = err;
-}
-
-if (!existsSync(resolve(xxscreepsDir, 'dist/test/simulate.js'))) {
-	console.error('[screeps-ok] xxscreeps build failed:', tscError ? tscError.message : 'dist/test/simulate.js was not emitted');
-	process.exit(1);
-}
-
+console.log(`[screeps-ok] Fetching xxscreeps ${shortPin} from upstream`);
+fetchSubtrees(pin);
+layOutPackages();
+inlineTsconfigBase();
+rewriteWorkspaceRefs();
+installNestedDeps();
+buildTypeScript();
 runGeneratedModsBootstrap();
-if (tscError) {
-	console.log('[screeps-ok] xxscreeps JavaScript build completed with warnings');
-} else {
-	console.log('[screeps-ok] xxscreeps JavaScript build complete');
-}
+writeFileSync(stampFile, pin + '\n');
+console.log(`[screeps-ok] xxscreeps ready at pin ${shortPin}`);
 console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
+
+function fetchSubtrees(sha) {
+	rmSync(cacheDir, { recursive: true, force: true });
+	mkdirSync(cacheDir, { recursive: true });
+	const git = (args, opts = {}) => execFileSync('git', args, {
+		cwd: cacheDir,
+		stdio: ['ignore', 'inherit', 'inherit'],
+		...opts,
+	});
+	git(['init', '--quiet']);
+	git(['remote', 'add', 'origin', repoUrl]);
+	git(['config', 'extensions.partialClone', 'origin']);
+	git(['fetch', '--depth=1', '--filter=blob:none', 'origin', sha]);
+	// Root-level files like tsconfig.base.json aren't captured by a cone-mode
+	// sparse-checkout scoped to packages/*, so stay in non-cone mode and list
+	// the exact paths we need.
+	git(['sparse-checkout', 'set', '--no-cone',
+		'/tsconfig.base.json',
+		'/packages/xxscreeps/',
+		'/packages/pathfinder/',
+	]);
+	git(['checkout', '--quiet', 'FETCH_HEAD']);
+}
+
+function layOutPackages() {
+	rmSync(xxscreepsDir, { recursive: true, force: true });
+	mkdirSync(dirname(xxscreepsDir), { recursive: true });
+	cpSync(join(cacheDir, 'packages/xxscreeps'), xxscreepsDir, { recursive: true });
+
+	rmSync(pathfinderDir, { recursive: true, force: true });
+	mkdirSync(dirname(pathfinderDir), { recursive: true });
+	cpSync(join(cacheDir, 'packages/pathfinder'), pathfinderDir, { recursive: true });
+}
+
+function inlineTsconfigBase() {
+	// `packages/xxscreeps/tsconfig.json` extends `../../tsconfig.base.json`
+	// (the monorepo root). Our flat layout has no such ancestor, so copy the
+	// base next to the xxscreeps tsconfig and rewrite the extends ref.
+	// Use a string replace instead of JSON.parse because the tsconfig has
+	// JSONC features (trailing commas).
+	cpSync(join(cacheDir, 'tsconfig.base.json'), join(xxscreepsDir, 'tsconfig.base.json'));
+	const configPath = join(xxscreepsDir, 'tsconfig.json');
+	const original = readFileSync(configPath, 'utf8');
+	const patched = original.replace(
+		/"extends":\s*"[^"]*tsconfig\.base\.json"/,
+		'"extends": "./tsconfig.base.json"',
+	);
+	if (patched === original) {
+		throw new Error('Failed to rewrite extends in xxscreeps tsconfig.json');
+	}
+	writeFileSync(configPath, patched);
+}
+
+function rewriteWorkspaceRefs() {
+	const pkgPath = join(xxscreepsDir, 'package.json');
+	const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+	for (const field of ['dependencies', 'devDependencies']) {
+		const deps = pkg[field];
+		if (!deps) continue;
+		for (const [name, spec] of Object.entries(deps)) {
+			if (typeof spec !== 'string' || !spec.startsWith('workspace:')) continue;
+			if (name === '@xxscreeps/pathfinder') {
+				deps[name] = `file:${pathfinderDir}`;
+			} else {
+				// No other workspace sibling is actually imported by the
+				// xxscreeps subtree we use — strip to keep npm happy.
+				delete deps[name];
+			}
+		}
+	}
+	writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+}
+
+function installNestedDeps() {
+	execFileSync('npm', [
+		'install',
+		'--prefix', xxscreepsDir,
+		'--no-package-lock',
+		'--omit=dev',
+		'--ignore-scripts',
+		'--no-audit',
+		'--no-fund',
+	], { stdio: 'inherit' });
+}
+
+function buildTypeScript() {
+	let tscError = null;
+	try {
+		execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
+			cwd: xxscreepsDir,
+			stdio: 'inherit',
+		});
+	} catch (err) {
+		// tsc exits non-zero on type errors but still emits JS. Harmless
+		// type drift shouldn't block the build as long as the expected
+		// output exists — verified below.
+		tscError = err;
+	}
+	if (!existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))) {
+		console.error('[screeps-ok] xxscreeps build failed:', tscError ? tscError.message : 'dist/test/simulate.js was not emitted');
+		process.exit(1);
+	}
+	if (tscError) {
+		console.log('[screeps-ok] xxscreeps JavaScript build completed with warnings');
+	} else {
+		console.log('[screeps-ok] xxscreeps JavaScript build complete');
+	}
+}
 
 function runGeneratedModsBootstrap() {
 	execFileSync(process.execPath, ['dist/config/mods/index.js'], {

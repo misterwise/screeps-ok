@@ -34,9 +34,12 @@ export default defineConfig({
 		],
 		server: {
 			deps: {
-				// Inline our adapter code but externalize xxscreeps itself
+				// Inline our adapter code but externalize xxscreeps itself.
+				// Anchor the external match to node_modules so worktree paths
+				// containing "xxscreeps" (e.g. a feature-branch worktree name)
+				// don't get treated as the xxscreeps package.
 				inline: [/adapters/],
-				external: [/xxscreeps/],
+				external: [/node_modules\/(?:@[^/]+\/)?xxscreeps/],
 			},
 		},
 		reporters: [
