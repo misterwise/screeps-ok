@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-874%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-92-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,15 +17,21 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 04:42 UTC |
-| 🟡 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [92](#xxscreeps-expected-failures) | — | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
+| 🔴 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [89](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## xxscreeps unexpected failures
+
+- `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
+- `Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0`
+- `Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0`
+
 ## xxscreeps expected failures
 
-xxscreeps currently declares 53 parity gaps against vanilla's canonical behavior, covering 92 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 89 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -59,8 +65,6 @@ xxscreeps currently declares 53 parity gaps against vanilla's canonical behavior
 | `controller-my-undefined-on-unowned` | `StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field) | Returns `false` on an unowned/neutral controller | [2](#xxscreeps-gap-controller-my-undefined-on-unowned) |
 | `safemode-ignores-downgrade-threshold` | `activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` | Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold | [1](#xxscreeps-gap-safemode-ignores-downgrade-threshold) |
 | `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
-| `tombstone-place-low-decay` | `placeTombstone` with low `ticksToDecay` does not persist for `getObject` | Tombstone persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-tombstone-place-low-decay) |
-| `ruin-place-low-decay` | `placeRuin` with low `ticksToDecay` does not persist for `getObject` | Ruin persists in the room until `ticksToDecay` reaches `0` | [1](#xxscreeps-gap-ruin-place-low-decay) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
 | `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
@@ -68,7 +72,6 @@ xxscreeps currently declares 53 parity gaps against vanilla's canonical behavior
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
 | `withdraw-wrong-resource-not-enough-energy` | `withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY` | Returns `ERR_INVALID_TARGET` when the target cannot hold that resource | [1](#xxscreeps-gap-withdraw-wrong-resource-not-enough-energy) |
 | `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
-| `ruin-spill-decay-on-spill-tick` | Ruin decay spill pile is subject to energy/tick decay on the same tick it spills | Spill pile is inserted after iteration and skips decay until the following tick | [1](#xxscreeps-gap-ruin-spill-decay-on-spill-tick) |
 | `shape-extra-hits-my` | Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType` | Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType` | [9](#xxscreeps-gap-shape-extra-hits-my) |
 | `shape-struct-missing-legacy-compat` | Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity` | Legacy compat getters are present on `link` and `storage` | [2](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
@@ -322,20 +325,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-tombstone-place-low-decay">
-<summary><code>tombstone-place-low-decay</code> — 1 test</summary>
-
-- `Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0`
-
-</details>
-
-<details id="xxscreeps-gap-ruin-place-low-decay">
-<summary><code>ruin-place-low-decay</code> — 1 test</summary>
-
-- `Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0`
-
-</details>
-
 <details id="xxscreeps-gap-moveto-nopathfinding-returns-ok">
 <summary><code>moveto-nopathfinding-returns-ok</code> — 1 test</summary>
 
@@ -382,13 +371,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>dismantle-no-destroy-at-zero-hits</code> — 1 test</summary>
 
 - `creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0`
-
-</details>
-
-<details id="xxscreeps-gap-ruin-spill-decay-on-spill-tick">
-<summary><code>ruin-spill-decay-on-spill-tick</code> — 1 test</summary>
-
-- `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
 
 </details>
 

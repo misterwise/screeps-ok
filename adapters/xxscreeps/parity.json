@@ -150,16 +150,6 @@
 			"expected": "Tombstone `store` includes carried resources plus body-part corpse energy",
 			"tests": ["TOMBSTONE-003"]
 		},
-		"tombstone-place-low-decay": {
-			"actual": "`placeTombstone` with low `ticksToDecay` does not persist for `getObject`",
-			"expected": "Tombstone persists in the room until `ticksToDecay` reaches `0`",
-			"tests": ["TOMBSTONE-004"]
-		},
-		"ruin-place-low-decay": {
-			"actual": "`placeRuin` with low `ticksToDecay` does not persist for `getObject`",
-			"expected": "Ruin persists in the room until `ticksToDecay` reaches `0`",
-			"tests": ["RUIN-005"]
-		},
 		"moveto-nopathfinding-returns-ok": {
 			"actual": "`moveTo({noPathFinding: true})` returns `OK` when no cached path exists",
 			"expected": "Returns `ERR_NOT_FOUND` when no reusable path is available",
@@ -195,12 +185,7 @@
 			"expected": "Structure is destroyed in the same tick once hits reach `0`",
 			"tests": ["DISMANTLE-007"]
 		},
-		"ruin-spill-decay-on-spill-tick": {
-			"actual": "Ruin decay spill pile is subject to energy/tick decay on the same tick it spills",
-			"expected": "Spill pile is inserted after iteration and skips decay until the following tick",
-			"tests": ["STRUCTURE-HITS-005"]
-		},
-		"shape-extra-hits-my": {
+"shape-extra-hits-my": {
 			"actual": "Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType`",
 			"expected": "Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType`",
 			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]

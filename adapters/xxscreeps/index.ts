@@ -478,7 +478,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					ticksToLive: 0,
 					user: '',
 				},
-				(spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500),
+				this.simulation!.shard.time + (spec.ticksToDecay ?? 500),
 			);
 			insertRoomObject(room, tombstone);
 		});
@@ -509,7 +509,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					type: spec.structureType,
 					user: null as any,
 				},
-				(spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500),
+				this.simulation!.shard.time + (spec.ticksToDecay ?? 500),
 			);
 			insertRoomObject(room, ruin);
 		});
