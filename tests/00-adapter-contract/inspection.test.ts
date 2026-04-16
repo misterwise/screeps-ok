@@ -251,6 +251,60 @@ describe('adapter contract: inspection', () => {
 
 	});
 
+	describe('snapshot timer relativity', () => {
+		// Snapshot timer fields name themselves after the player API getters
+		// (Source.ticksToRegeneration, Container.ticksToDecay, etc.) which
+		// always report ticks-remaining (relative to Game.time). The contract
+		// is that snapshot field == player-code observable value. Adapters
+		// that pass through raw absolute DB fields break this.
+
+		test('controller snapshot ticksToDowngrade matches player-code value', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 500 }],
+			});
+			await shard.tick();
+
+			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+			const ctrl = sites.find((s: any) =>
+				s.kind === 'structure' && s.structureType === 'controller') as any;
+			const playerView = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].controller.ticksToDowngrade
+			`) as number;
+
+			expect(ctrl).toBeDefined();
+			expect(typeof ctrl.ticksToDowngrade).toBe('number');
+			// findInRoom and runPlayer's user code both observe the current
+			// gameTime; with no tick between them, the snapshot field must
+			// equal what player code reads. A snapshot that returns the raw
+			// absolute DB field (downgradeTime) will diverge by Game.time.
+			expect(ctrl.ticksToDowngrade).toBe(playerView);
+			// Sanity: must be a remaining-tick count near the configured 500,
+			// not a multi-thousand absolute timestamp.
+			expect(ctrl.ticksToDowngrade).toBeLessThan(600);
+		});
+
+		test('controller snapshot safeMode matches player-code value when active', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeMode: 200 }],
+			});
+			await shard.tick();
+
+			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+			const ctrl = sites.find((s: any) =>
+				s.kind === 'structure' && s.structureType === 'controller') as any;
+			const playerView = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].controller.safeMode || 0
+			`) as number;
+
+			expect(typeof ctrl.safeMode).toBe('number');
+			expect(ctrl.safeMode).toBe(playerView);
+			// Must be a remaining-tick count near 200, not an absolute timestamp.
+			expect(ctrl.safeMode).toBeLessThan(300);
+		});
+	});
+
 	describe('player handle mapping', () => {
 		test('snapshot owner matches player handle, not engine ID', async ({ shard }) => {
 			await shard.createShard({

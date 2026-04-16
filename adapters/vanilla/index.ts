@@ -69,6 +69,15 @@ async function getServer(): Promise<any> {
 
 const playerSlots = ['p1_user', 'p2_user', 'p3_user', 'p4_user'];
 
+// Structure types the engine always attributes to a user. Omitting `owner`
+// in placeStructure for these produces a cryptic engine-internal crash
+// downstream, so reject at the boundary.
+const STRUCTURE_TYPES_UNOWNED = new Set(['container', 'road', 'constructedWall']);
+const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
+	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
+	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
+]);
+
 class VanillaAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
@@ -91,6 +100,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	private idCounter = 0;
 	private db: any = null;
 	private env: any = null;
+	private firstTickRun = false;
 	private nextId(): string {
 		return `sok${++this.idCounter}`;
 	}
@@ -173,19 +183,37 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				if (_sokResult === undefined) {
 					_sokResult = null;
 				}
-				if (_sokResult !== null && typeof _sokResult === 'object'
-					&& !Array.isArray(_sokResult) && _sokResult.constructor !== Object) {
-					_sokResultObj = {
-						ok: false, errorType: 'SerializationError',
-						error: 'Return value is a ' + (_sokResult.constructor ? _sokResult.constructor.name : 'non-plain') + ' object, not a plain JSON value',
-					};
+				var _sokSerErr = null;
+				if (typeof _sokResult === 'function' || typeof _sokResult === 'symbol') {
+					_sokSerErr = 'Return value is a ' + typeof _sokResult + ', not a plain JSON value';
+				} else if (_sokResult !== null && typeof _sokResult === 'object'
+					&& !Array.isArray(_sokResult)) {
+					var _sokCtor = _sokResult.constructor;
+					if (_sokCtor !== Object && _sokCtor !== undefined) {
+						_sokSerErr = 'Return value is a ' + (_sokCtor.name || 'non-plain') + ' object, not a plain JSON value';
+					} else {
+						try { JSON.stringify(_sokResult); }
+						catch (e) {
+							_sokSerErr = 'Return value is not JSON-serializable: ' + (e && e.message ? e.message : 'cycle');
+						}
+					}
+				}
+				if (_sokSerErr) {
+					_sokResultObj = { ok: false, errorType: 'SerializationError', error: _sokSerErr };
 				} else {
 					_sokResultObj = { ok: true, value: _sokResult };
 				}
 			} catch (e) {
-				_sokResultObj = {
-					ok: false, error: e.message, errorType: e.constructor ? e.constructor.name : 'Error',
-				};
+				var _sokErrType = 'Error';
+				var _sokErrMsg = '';
+				try { _sokErrType = (e && e.constructor && e.constructor.name) || 'Error'; } catch (_) {}
+				try {
+					if (e === null) _sokErrMsg = 'null';
+					else if (e === undefined) _sokErrMsg = 'undefined';
+					else if (e && e.message != null) _sokErrMsg = String(e.message);
+					else _sokErrMsg = String(e);
+				} catch (_) { _sokErrMsg = 'Unknown error'; }
+				_sokResultObj = { ok: false, error: _sokErrMsg, errorType: _sokErrType };
 			}
 			// Write result envelope into Memory and then force-serialize via
 			// RawMemory.set. The engine tick-end auto-serialize at
@@ -325,7 +353,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		// Warm-up tick: the engine needs one tick to load user code into
 		// isolated-vm and initialize the runtime. Without this, the first
-		// runPlayer call may fail silently.
+		// runPlayer call may fail silently. The runtime's terrain cache is
+		// not yet armed at this point — that happens on the first
+		// user-facing tick (runPlayer/runPlayers/tick), so post-warmup
+		// setTerrain is still observable to player code as long as no
+		// user tick has run yet.
 		await this.server.tick();
 	}
 
@@ -379,6 +411,12 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
+		if (!spec.owner && STRUCTURE_TYPES_REQUIRING_OWNER.has(spec.structureType)) {
+			throw new Error(
+				`placeStructure: owner is required for structureType '${spec.structureType}'. ` +
+				`Unowned structures: ${[...STRUCTURE_TYPES_UNOWNED].join(', ')}.`,
+			);
+		}
 		const userId = spec.owner ? this.resolvePlayer(spec.owner) : undefined;
 		const rcl = await this.getRoomRcl(roomName);
 		const defaults = this.getStructureDefaults(spec.structureType, rcl);
@@ -774,6 +812,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async setTerrain(room: string, terrain: TerrainSpec): Promise<void> {
+		// `@screeps/driver/lib/runtime/make.js` snapshots `env.TERRAIN_DATA`
+		// once the runtime cache is armed and never refreshes it. The
+		// runtime is armed on the first user-facing tick (runPlayer /
+		// runPlayers / shard.tick), so post-arm setTerrain leaves
+		// player-visible `Room.getTerrain` and `PathFinder` reading the
+		// cached blob — a silent divergence. Spec §Terrain requires
+		// explicit failure when the engine cannot honor the mutation.
+		if (this.firstTickRun) {
+			throw new Error(
+				`vanilla adapter: setTerrain('${room}') called after a user-facing tick. ` +
+				`The driver caches terrain on its first runtime fetch and never ` +
+				`refreshes it, so post-tick terrain mutations are invisible to ` +
+				`Room.getTerrain and PathFinder. Pass terrain via RoomSpec.terrain ` +
+				`at createShard time, or call setTerrain before the first runPlayer/tick.`,
+			);
+		}
 		await this.server.world.setTerrain(room, this.buildTerrain(terrain));
 	}
 
@@ -795,6 +849,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		// Tick to execute — the main loop evals Memory._screepsOk and stores result
 		await this.server.tick();
+		this.firstTickRun = true;
 
 		// Read result from Memory
 		const memAfter = JSON.parse(
@@ -844,6 +899,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		await this.server.tick();
+		this.firstTickRun = true;
 
 		const results: Record<string, PlayerReturnValue> = {};
 		for (const handle of handles) {
@@ -870,7 +926,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
 					: parsed.errorType === 'SerializationError' ? 'serialization' as const
 					: 'runtime' as const;
-				throw new RunPlayerError(kind, `${handle}: ${parsed.error}`);
+				throw new RunPlayerError(kind, parsed.error);
 			}
 
 			results[handle] = parsed.value ?? null;
@@ -883,6 +939,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		for (let i = 0; i < count; i++) {
 			await this.server.tick();
 		}
+		if (count > 0) this.firstTickRun = true;
 	}
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
@@ -915,6 +972,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		this.db = null;
 		this.env = null;
 		this.idCounter = 0;
+		this.firstTickRun = false;
 	}
 
 	private buildTerrain(terrain: TerrainSpec): any {

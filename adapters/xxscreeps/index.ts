@@ -65,7 +65,10 @@ import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
-import { createFlag } from 'xxscreeps/mods/flag/game.js';
+import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
+import { Flag } from 'xxscreeps/mods/flag/flag.js';
+import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/flag/model.js';
+import { instantiate } from 'xxscreeps/utility/utility.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 import { create as createObject } from 'xxscreeps/game/object.js';
@@ -114,6 +117,15 @@ function gclLevelToProgress(desiredLevel: number): number {
 // Player handle → xxscreeps user ID
 const playerSlots = ['100', '101', '102', '103'];
 
+// Structure types the engine always attributes to a user. Omitting `owner`
+// in placeStructure for these produces a cryptic engine-internal crash
+// (e.g. null-destructure in createSpawn), so reject at the boundary.
+const STRUCTURE_TYPES_UNOWNED = new Set(['container', 'road', 'constructedWall']);
+const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
+	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
+	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
+]);
+
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
@@ -145,6 +157,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private simulation: Awaited<ReturnType<typeof createSimulation>> | null = null;
 	private shardSpec: ShardSpec | null = null;
 	private idCounter = 0;
+	private firstTickRun = false;
 
 	private nextId(): string {
 		return (++this.idCounter).toString(16).padStart(24, '0');
@@ -312,6 +325,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
+		if (!spec.owner && STRUCTURE_TYPES_REQUIRING_OWNER.has(spec.structureType)) {
+			throw new Error(
+				`placeStructure: owner is required for structureType '${spec.structureType}'. ` +
+				`Unowned structures: ${[...STRUCTURE_TYPES_UNOWNED].join(', ')}.`,
+			);
+		}
 		const id = this.nextId();
 		const userId = spec.owner ? this.resolvePlayer(spec.owner) : undefined;
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:${spec.structureType}`, id);
@@ -403,26 +422,36 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const name = spec.name;
 		this.nameToSyntheticId.set(name, name); // flags use name as ID
 
-		// Flags are stored in a per-user blob, not in room objects.
-		// Create them via player code so the runtime flag system handles
-		// persistence correctly.
-		const owner = spec.owner;
-		const color = spec.color ?? 1;
-		const secondaryColor = spec.secondaryColor ?? color;
-		const x = spec.pos[0];
-		const y = spec.pos[1];
-
-		this.deferredFlagOps.push(async () => {
-			const { code } = await import('../../src/code.js');
-			await this.runPlayer(owner, code`
-				new RoomPosition(${x}, ${y}, ${roomName}).createFlag(${name}, ${color}, ${secondaryColor})
-			`);
+		// Flags live in a per-user blob keyed `user/<id>/flags`. The blob is
+		// loaded once at sandbox init (runnerConnector.initialize, see
+		// mods/flag/driver.ts:29) and never re-read — so same-tick visibility
+		// of Game.flags[name] requires the blob to be in the DB BEFORE the
+		// user's sandbox is created. Queue the spec; the next flushDeferredFlags
+		// writes all pending flags via the flag mod's public persistence API
+		// and invalidates any cached sandbox for the owner so the fresh blob
+		// is loaded at re-init.
+		this.deferredFlagOps.push({
+			owner: spec.owner,
+			roomName,
+			name,
+			x: spec.pos[0],
+			y: spec.pos[1],
+			color: spec.color ?? 1,
+			secondaryColor: spec.secondaryColor ?? (spec.color ?? 1),
 		});
 
 		return name;
 	}
 
-	private deferredFlagOps: Array<() => Promise<void>> = [];
+	private deferredFlagOps: Array<{
+		owner: string;
+		roomName: string;
+		name: string;
+		x: number;
+		y: number;
+		color: number;
+		secondaryColor: number;
+	}> = [];
 
 	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
 		const id = this.nextId();
@@ -548,6 +577,22 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async setTerrain(roomName: string, terrain: TerrainSpec): Promise<void> {
+		// Cached per-user sandboxes snapshot `terrainBlob` at initialize()
+		// and never refresh it (driver/sandbox/nodejs.ts:createContext).
+		// After a user-facing tick, at least one sandbox has likely been
+		// built, so a post-tick setTerrain would land in the DB but remain
+		// invisible to player code — a silent divergence. Spec §Terrain
+		// requires explicit failure when the engine can't honor the
+		// mutation.
+		if (this.firstTickRun) {
+			throw new Error(
+				`xxscreeps adapter: setTerrain('${roomName}') called after a user-facing tick. ` +
+				`Player sandboxes snapshot terrainBlob at creation and do not ` +
+				`refresh it, so post-tick terrain mutations are invisible to ` +
+				`Room.getTerrain and PathFinder. Pass terrain via RoomSpec.terrain ` +
+				`at createShard time, or call setTerrain before the first runPlayer/tick.`,
+			);
+		}
 		await this.ensureSimulation();
 		await this.simulation!.updateTerrain(roomName, terrain);
 	}
@@ -715,6 +760,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// simulation.player() only collects intents — tick() processes them.
 		await this.keepRoomsActive();
 		await this.simulation!.tick(1);
+		this.firstTickRun = true;
 
 		return result ?? null;
 	}
@@ -763,6 +809,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Phase 2: process all collected intents in a single tick.
 		await this.keepRoomsActive();
 		await this.simulation!.tick(1);
+		this.firstTickRun = true;
 
 		// Normalize undefined → null
 		for (const key of Object.keys(results)) {
@@ -779,18 +826,52 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			await this.keepRoomsActive();
 			await this.simulation!.tick(1);
 		}
+		if (count > 0) this.firstTickRun = true;
 	}
 
 	private async flushDeferredFlags(): Promise<void> {
 		if (this.deferredFlagOps.length === 0) return;
-		// Flags live in per-user blobs, not room objects. Create them via
-		// player code after the simulation is running and game state is
-		// initialized. Clear the queue first so nested runPlayer calls (each
-		// op IS a runPlayer call) don't re-enter this flush loop.
 		const ops = this.deferredFlagOps;
 		this.deferredFlagOps = [];
+		const shard = this.simulation!.shard;
+
+		// Group ops by owner so each user's blob is loaded, mutated, and
+		// saved once. The flag mod's public persistence path:
+		//   loadUserFlagBlob → readFlagBlob → mutate → writeFlagBlob →
+		//   saveUserFlagBlobForNextTick. This is the same path mods/flag/
+		//   driver.ts:38 uses from the backend.
+		const byOwner = new Map<string, typeof ops>();
 		for (const op of ops) {
-			await op();
+			const list = byOwner.get(op.owner) ?? [];
+			list.push(op);
+			byOwner.set(op.owner, list);
+		}
+
+		for (const [ownerHandle, ownerOps] of byOwner) {
+			const engineUserId = this.resolvePlayer(ownerHandle);
+			const existingBlob = await loadUserFlagBlob(shard, engineUserId);
+			const flags = existingBlob ? readFlagBlob(existingBlob) : Object.create(null);
+
+			for (const op of ownerOps) {
+				const pos = new RoomPosition(op.x, op.y, op.roomName);
+				const flag = instantiate(Flag, {
+					id: null as never,
+					pos,
+					name: op.name,
+					color: op.color as any,
+					secondaryColor: op.secondaryColor as any,
+				});
+				bindObjectPos(flag, pos);
+				(flags as Record<string, any>)[op.name] = flag;
+			}
+
+			await saveUserFlagBlobForNextTick(shard, engineUserId, writeFlagBlob(flags));
+
+			// Cached sandbox (if any) holds the pre-write flag state in its
+			// module-level `flags` var (mods/flag/game.ts:37). Dispose so
+			// the next runPlayer re-creates the sandbox and initialize()
+			// reloads the fresh blob from DB.
+			await this.simulation!.disposeUserSandbox(engineUserId);
 		}
 	}
 
@@ -854,6 +935,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.nameToSyntheticId.clear();
 		this.posToSyntheticId.clear();
 		this.idCounter = 0;
+		this.firstTickRun = false;
 	}
 }
 
@@ -1092,6 +1174,12 @@ async function createSimulation(
 				terrainMap.set(roomName, buildTerrainEntry(spec));
 				await shard.data.sadd('rooms', [roomName]);
 				await rebuildWorld();
+			},
+			async disposeUserSandbox(userId: string): Promise<void> {
+				const sandbox = userSandboxes.get(userId);
+				if (!sandbox) return;
+				try { sandbox.dispose(); } catch {}
+				userSandboxes.delete(userId);
 			},
 			async dispose() {
 				for (const sandbox of userSandboxes.values()) {

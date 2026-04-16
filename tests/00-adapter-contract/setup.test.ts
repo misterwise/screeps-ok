@@ -112,6 +112,55 @@ describe('adapter contract: setup', () => {
 			expect(rc).toBe(ERR_GCL_NOT_ENOUGH);
 		});
 
+		// Spec §Terrain: "setTerrain() is part of the contract, but adapters
+		// may reject it when the engine cannot mutate terrain after shard
+		// creation. If so, the failure must be explicit and actionable."
+		// Silent no-op (resolving without mutating) is a contract violation —
+		// downstream tests would build on stale terrain assumptions.
+		test('setTerrain after first tick either succeeds or throws explicitly', async ({ shard }) => {
+			shard.requires('terrain', 'setTerrain post-tick contract requires terrain capability');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+			await shard.tick(); // arm any "first makeRuntime" caches
+
+			const wallTerrain = new Array<0 | 1 | 2>(2500).fill(0);
+			const wx = 25, wy = 25;
+			wallTerrain[wy * 50 + wx] = 1; // TERRAIN_WALL
+
+			let threw: Error | null = null;
+			try {
+				await shard.setTerrain('W1N1', wallTerrain);
+			} catch (err) {
+				threw = err as Error;
+			}
+
+			if (threw) {
+				expect(threw.message.length).toBeGreaterThan(0);
+				return;
+			}
+
+			// Resolved — must actually be observable via player APIs in the
+			// next tick. PathFinder is the strict probe: a wall must force
+			// a detour. If terrain only landed in the DB but the runtime
+			// cache is stale, the path will go straight through.
+			const result = await shard.runPlayer('p1', code`
+				const wx = ${wx}, wy = ${wy};
+				const terrain = Game.map.getRoomTerrain('W1N1');
+				const result = PathFinder.search(
+					new RoomPosition(wx - 1, wy, 'W1N1'),
+					{ pos: new RoomPosition(wx + 1, wy, 'W1N1'), range: 0 },
+					{ maxRooms: 1 },
+				);
+				const goesThroughWall = result.path.some(p => p.x === wx && p.y === wy);
+				({ terrainMask: terrain.get(wx, wy), goesThroughWall })
+			`) as { terrainMask: number; goesThroughWall: boolean };
+
+			expect(result.terrainMask).toBe(1);
+			expect(result.goesThroughWall).toBe(false);
+		});
+
 		test('terrain spec is honored end-to-end (room.getTerrain and PathFinder)', async ({ shard }) => {
 			shard.requires('terrain', 'createShard.terrain spec is required for this contract test');
 			// Contract: the terrain passed to createShard via RoomSpec.terrain
@@ -674,6 +723,161 @@ describe('adapter contract: setup', () => {
 			expect(nukeInfo!.y).toBe(25);
 			// timeToLand should have decreased by 1 from the tick.
 			expect(nukeInfo!.timeToLand).toBe(9);
+		});
+	});
+
+	describe('setup helpers do not inject extra ticks', () => {
+		// Spec §Execution: runPlayer() advances time by exactly 1 tick.
+		// Placement helpers stage world state for the next flush but must
+		// not run an engine tick even indirectly — otherwise absolute-time
+		// fields (ticksToLive, deathTime, ticksToDecay) set during setup
+		// would be off by the number of helpers called before runPlayer.
+		// Each test asserts: (after-runPlayer) - (before-place) === 1.
+
+		test('placeCreep + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeStructure + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeStructure('W1N1', { pos: [25, 25], structureType: STRUCTURE_CONTAINER });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeSite + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeSite('W1N1', { pos: [25, 25], owner: 'p1', structureType: STRUCTURE_CONTAINER });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeSource + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeSource('W1N1', { pos: [20, 20] });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeMineral + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeMineral('W1N1', { pos: [30, 30], mineralType: 'H' });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeFlag + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeFlag('W1N1', { pos: [25, 25], owner: 'p1', name: 'InvariantFlag' });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeTombstone + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeTombstone('W1N1', { pos: [25, 25], creepName: 'Dead' });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeRuin + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeRuin('W1N1', { pos: [25, 25], structureType: STRUCTURE_SPAWN });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeDroppedResource + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await shard.placeDroppedResource('W1N1', { pos: [25, 25], resourceType: 'energy', amount: 100 });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placePowerCreep + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const before = await shard.getGameTime();
+			await shard.placePowerCreep('W1N1', { pos: [25, 25], owner: 'p1', name: 'TimePC', powers: {} });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+
+		test('placeNuke + runPlayer advances exactly 1 tick', async ({ shard }) => {
+			shard.requires('nuke');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const before = await shard.getGameTime();
+			await shard.placeNuke('W1N1', { pos: [25, 25], launchRoomName: 'W1N1', timeToLand: 100 });
+			await shard.runPlayer('p1', code`1`);
+			expect((await shard.getGameTime()) - before).toBe(1);
+		});
+	});
+
+	describe('placeStructure required-field validation', () => {
+		// Spec §Setup: StructureSpec.owner is optional at the type level
+		// only because some structures are unowned (container, road,
+		// constructedWall). For structure types the engine always
+		// attributes to a user, omitting owner is a placement error and
+		// must produce an actionable boundary error — not a cryptic crash
+		// inside engine internals from a null assertion on owner.
+		test('placeStructure for a spawn without owner throws with an actionable error', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			let err: Error | null = null;
+			try {
+				await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_SPAWN,
+				});
+				// Some adapters may defer the crash until flush; force it.
+				await shard.tick();
+			} catch (e) {
+				err = e as Error;
+			}
+			expect(err).not.toBeNull();
+			expect(err!.message).toMatch(/owner/i);
+		});
+	});
+
+	describe('setTerrain after runPlayer', () => {
+		// Spec §Terrain: terrain is a setup-only property. Once runPlayer
+		// has started simulating user code, an adapter may have built
+		// player sandboxes, cached world blobs, or otherwise committed to
+		// the current terrain. Late-mutating terrain is not a supported
+		// runtime scenario — tests should not rely on mid-run terrain
+		// changes. Adapters must reject the call with an actionable error
+		// rather than silently accept a mutation that isn't visible to
+		// player code.
+		test('setTerrain after runPlayer throws with an actionable error', async ({ shard }) => {
+			shard.requires('terrain');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+			await shard.runPlayer('p1', code`1`);
+
+			const wall = new Array<0 | 1 | 2>(2500).fill(0);
+			wall[25 * 50 + 25] = 1;
+
+			let err: Error | null = null;
+			try {
+				await shard.setTerrain('W1N1', wall);
+			} catch (e) {
+				err = e as Error;
+			}
+			expect(err).not.toBeNull();
+			expect(err!.message.length).toBeGreaterThan(0);
 		});
 	});
 });

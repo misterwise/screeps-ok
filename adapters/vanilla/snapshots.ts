@@ -100,17 +100,27 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?:
 	};
 
 	switch (obj.type) {
-		case 'controller':
+		case 'controller': {
+			// Engine stores `downgradeTime`, `safeMode`, `safeModeCooldown`
+			// as absolute tick counts; the player API getters
+			// (engine/dist/game/structures.js:178 etc.) report
+			// `field - Game.time`. Snapshot fields name themselves after
+			// the player API, so they must report remaining ticks too.
+			const absToRel = (abs: unknown): number | undefined => {
+				if (typeof abs !== 'number' || gameTime === undefined) return undefined;
+				return Math.max(0, abs - gameTime);
+			};
+			const safeModeRel = absToRel(obj.safeMode);
 			return {
 				...base,
 				structureType: 'controller',
 				level: obj.level ?? 0,
 				progress: obj.progress ?? 0,
 				progressTotal: obj.level >= 8 ? null : (obj.progressTotal ?? 0),
-				ticksToDowngrade: obj.ticksToDowngrade ?? obj.downgradeTime ?? 0,
-				safeMode: obj.safeMode,
+				ticksToDowngrade: absToRel(obj.downgradeTime) ?? 0,
+				safeMode: safeModeRel && safeModeRel > 0 ? safeModeRel : undefined,
 				safeModeAvailable: obj.safeModeAvailable ?? 0,
-				safeModeCooldown: obj.safeModeCooldown ?? 0,
+				safeModeCooldown: absToRel(obj.safeModeCooldown) ?? 0,
 				isPowerEnabled: obj.isPowerEnabled ?? false,
 				...(obj.reservation ? {
 					reservation: {
@@ -126,6 +136,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?:
 					},
 				} : {}),
 			} satisfies ControllerSnapshot;
+		}
 
 		case 'spawn':
 			return {

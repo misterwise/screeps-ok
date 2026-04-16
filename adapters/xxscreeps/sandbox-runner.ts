@@ -199,6 +199,9 @@ function buildWrappedExpr(userCode: string): string {
 	return `JSON.stringify((() => {
 		try {
 			const _r = eval(${src});
+			if (typeof _r === 'function' || typeof _r === 'symbol') {
+				return { _kind: 'serialization', message: 'Return value is a ' + typeof _r + ', not a plain JSON value' };
+			}
 			if (_r !== null && typeof _r === 'object') {
 				const _c = _r.constructor;
 				if (!Array.isArray(_r) && _c !== Object && _c !== undefined) {
