@@ -1154,7 +1154,12 @@ async function createSimulation(
 					// Second phase
 					await Promise.all(Fn.map(contexts.values(), (ctx: any) => ctx.finalize(false)));
 					for await (const roomName of consumeSet(shard.scratch, finalizeExtraRoomsSetKey(time))) {
-						const room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
+						let room;
+						try {
+							room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
+						} catch {
+							continue;
+						}
 						const context = new RoomProcessor(shard, world, room, time);
 						await context.process(true);
 						await context.finalize(true);

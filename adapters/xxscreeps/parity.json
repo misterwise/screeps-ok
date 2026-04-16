@@ -6,8 +6,8 @@
 			"tests": ["ROOM-TRANSITION-006"]
 		},
 		"reserve-007-processor-finalize-missing-room": {
-			"actual": "`sim.tick` finalize-phase tries to `shard.loadRoom(\"W4N1\")` which was never saved by the adapter — an unowned fourth room the engine's attackController processor touches via reservation-adjacent routing",
-			"expected": "Test passes end-to-end without the finalize loop touching uncreated rooms",
+			"actual": "Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p1 reads `Game.rooms['W3N1'].controller` and gets `undefined` despite having a creep in W3N1 — adapter does not grant cross-room visibility from creep presence",
+			"expected": "p1's creep presence in W3N1 grants `Game.rooms['W3N1']` access for p1's player-code execution",
 			"tests": ["CTRL-RESERVE-007"]
 		},
 		"tombstone-corpse-rate": {
@@ -216,13 +216,13 @@
 			"tests": ["SHAPE-FLAG-001"]
 		},
 		"claim-reserved-no-guard": {
-			"actual": "`claimController` on a hostile-reserved controller returns `OK` (no reservation check in `checkClaim`)",
-			"expected": "Returns `ERR_INVALID_TARGET` when the controller is reserved by another player",
+			"actual": "Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p1's `Game.getObjectById(claimerId)` returns `null` for p1's own creep in an unowned cross-room after a reserve tick — not an engine-missing guard, an adapter cross-room object-index wiring issue",
+			"expected": "p1's `Game.getObjectById(...)` resolves p1's own creep in any room p1 has presence in; `claimController` on a hostile-reserved controller then returns `ERR_INVALID_TARGET`",
 			"tests": ["CTRL-CLAIM-003"]
 		},
 		"upgrade-blocked-no-guard": {
-			"actual": "`upgradeController` while `upgradeBlocked` is active returns `OK` (no guard in `checkUpgradeController`)",
-			"expected": "Returns `ERR_INVALID_TARGET` while `upgradeBlocked` is active",
+			"actual": "Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p2's `Game.getObjectById(upgraderId)` returns `null` for p2's own upgrader in p2's own room after a cross-room attackController intent fires on the prior tick — adapter cross-room-intent finalize appears to corrupt or re-scope p2's object index",
+			"expected": "After a cross-room attackController tick, p2's own-room object-index remains intact; `upgradeController` while `upgradeBlocked` is active returns `ERR_INVALID_TARGET`",
 			"tests": ["CTRL-UPGRADE-009"]
 		},
 		"spawn-duplicate-name-allowed": {

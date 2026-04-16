@@ -14,11 +14,16 @@ Last refreshed: 2026-04-14.
 - **Plan:** Replace `(spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500)` and `(spec.destroyTime ?? 0) + ...` with `this.simulation!.shard.time + (spec.ticksToDecay ?? 500)` (mirror of the 2026-04-11 placeStructure fix). Keep death/destroyTime for cosmetic property setters.
 - **Risk:** None — adapter-only, contract test catches regressions.
 
-### AD-2: Finalize-extras error handler
-- **File:** `adapters/xxscreeps/index.ts:1075`
-- **Closes:** `reserve-007-processor-finalize-missing-room` (CTRL-RESERVE-007), `claim-reserved-no-guard` (CTRL-CLAIM-003), `upgrade-blocked-no-guard` (CTRL-UPGRADE-009)
-- **Plan:** Wrap `shard.loadRoom(roomName)` in try/catch; skip rooms that don't exist. The engine's `publishInterRoomIntents` enqueues neighbor rooms for cross-room intents (reserve/attack/claim); test setups don't always create those neighbors.
-- **Risk:** Low — silently dropping cross-room finalize work for unmodelled rooms is correct test-harness behavior.
+### AD-2: Finalize-extras error handler (landed; closes nothing on its own)
+- **File:** `adapters/xxscreeps/index.ts:1156` (`sim.tick` phase-2 extras loop)
+- **Originally scoped to close:** `reserve-007-processor-finalize-missing-room` (CTRL-RESERVE-007), `claim-reserved-no-guard` (CTRL-CLAIM-003), `upgrade-blocked-no-guard` (CTRL-UPGRADE-009). **All three remain open in `parity.json` after AD-2** — the originally-scoped closures were themselves misdiagnosed.
+- **What landed:** Wrap `shard.loadRoom(roomName)` in try/catch; `continue` past rooms that don't exist. Correct on its own merits — the engine's `publishInterRoomIntents` enqueues neighbor rooms for cross-room intents (reserve/attack/claim) that test setups don't always create, and silently dropping that finalize work is correct test-harness behavior.
+- **Why closure was expected but didn't happen:** Pre-AD-2 the loadRoom throw masked the actual failure. Post-AD-2 the three tests fail further downstream, at the player-code sandbox boundary:
+  - CTRL-RESERVE-007 — p1 reads `Game.rooms['W3N1'].controller` and gets `undefined` despite having an attacker creep in W3N1. Vanilla grants room visibility from creep presence; xxscreeps doesn't wire it that way in our runner.
+  - CTRL-CLAIM-003 — p1's `Game.getObjectById(claimerId)` returns null for p1's own creep in an unowned cross-room after a reserve tick.
+  - CTRL-UPGRADE-009 — p2's `Game.getObjectById(upgraderId)` returns null for p2's own upgrader in p2's own room after a cross-room attack intent fired.
+- **Follow-up:** a separate adapter-wiring PR is needed — likely around per-user `visibleRooms` / `intentRooms` scratch sets in `ensureSimulation` and the runner's Game-object index scoping. Defer scoping until someone picks it up.
+- **Risk of what landed:** Low (localized try/catch).
 
 ---
 
@@ -164,7 +169,7 @@ Last refreshed: 2026-04-14.
 
 | Area | PR | Gaps closed |
 |---|---|---|
-| Adapter (this repo) | AD-1, AD-2 | 5 (3 misdiagnosed) |
+| Adapter (this repo) | AD-1, AD-2 | AD-1 closed 3 (inc. STRUCTURE-HITS-005 bonus); AD-2 landed but closes 0 — its 3 originally-scoped gaps are themselves misdiagnosed (see AD-2) |
 | Structure ownership | PR-1 | 3 |
 | Resource store | PR-2 | 3 |
 | Controller safe-mode | PR-3 | 3 |
