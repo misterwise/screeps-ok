@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1214%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-6%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1214](#vanilla-passing-tests) | — | — | — | 2026-04-15 04:42 UTC |
-| 🔴 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [89](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
+| 🔴 | **xxscreeps** | [874](#xxscreeps-passing-tests) | [86](#xxscreeps-expected-failures) | [6](#xxscreeps-unexpected-failures) | [248](#xxscreeps-skipped-tests) | 2026-04-15 04:40 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,18 +25,20 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps unexpected failures
 
+- `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
+- `controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part`
+- `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
 - `Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount`
 - `Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0`
 - `Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0`
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 89 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 47 parity gaps against vanilla's canonical behavior, covering 86 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `corner-exit-branch-order` | At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49` | Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73` | [1](#xxscreeps-gap-corner-exit-branch-order) |
-| `reserve-007-processor-finalize-missing-room` | Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p1 reads `Game.rooms['W3N1'].controller` and gets `undefined` despite having a creep in W3N1 — adapter does not grant cross-room visibility from creep presence | p1's creep presence in W3N1 grants `Game.rooms['W3N1']` access for p1's player-code execution | [1](#xxscreeps-gap-reserve-007-processor-finalize-missing-room) |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
 | `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
 | `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
@@ -78,8 +80,6 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `shape-room-missing-survivalInfo` | `Room` object missing `survivalInfo` property | `Room.survivalInfo` is present (per canonical room shape) | [1](#xxscreeps-gap-shape-room-missing-survivalinfo) |
 | `shape-game-surface-mismatch` | `Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla | `Game` exposes canonical top-level fields with matching data-property surface | [1](#xxscreeps-gap-shape-game-surface-mismatch) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
-| `claim-reserved-no-guard` | Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p1's `Game.getObjectById(claimerId)` returns `null` for p1's own creep in an unowned cross-room after a reserve tick — not an engine-missing guard, an adapter cross-room object-index wiring issue | p1's `Game.getObjectById(...)` resolves p1's own creep in any room p1 has presence in; `claimController` on a hostile-reserved controller then returns `ERR_INVALID_TARGET` | [1](#xxscreeps-gap-claim-reserved-no-guard) |
-| `upgrade-blocked-no-guard` | Post-AD-2 the finalize-extras loadRoom throw is caught; test still fails because p2's `Game.getObjectById(upgraderId)` returns `null` for p2's own upgrader in p2's own room after a cross-room attackController intent fires on the prior tick — adapter cross-room-intent finalize appears to corrupt or re-scope p2's object index | After a cross-room attackController tick, p2's own-room object-index remains intact; `upgradeController` while `upgradeBlocked` is active returns `ERR_INVALID_TARGET` | [1](#xxscreeps-gap-upgrade-blocked-no-guard) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
@@ -92,13 +92,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>corner-exit-branch-order</code> — 1 test</summary>
 
 - `Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first`
-
-</details>
-
-<details id="xxscreeps-gap-reserve-007-processor-finalize-missing-room">
-<summary><code>reserve-007-processor-finalize-missing-room</code> — 1 test</summary>
-
-- `controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part`
 
 </details>
 
@@ -423,20 +416,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>shape-flag-crash</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
-
-</details>
-
-<details id="xxscreeps-gap-claim-reserved-no-guard">
-<summary><code>claim-reserved-no-guard</code> — 1 test</summary>
-
-- `controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player`
-
-</details>
-
-<details id="xxscreeps-gap-upgrade-blocked-no-guard">
-<summary><code>upgrade-blocked-no-guard</code> — 1 test</summary>
-
-- `creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active`
 
 </details>
 

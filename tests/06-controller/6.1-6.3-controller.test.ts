@@ -164,9 +164,9 @@ describe('controller mechanics', () => {
 			owner: 'p2',
 			body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
 		});
-		// p1's claimer stands on another adjacent tile.
+		// p1's claimer stands on another adjacent tile (avoid x=0 border).
 		const claimerId = await shard.placeCreep('W3N1', {
-			pos: [ctrlPos!.x - 1, ctrlPos!.y],
+			pos: [ctrlPos!.x, ctrlPos!.y + 1],
 			owner: 'p1',
 			body: [CLAIM, MOVE],
 		});
@@ -461,7 +461,7 @@ describe('controller mechanics', () => {
 			body: reserverBody,
 		});
 		const attackerId = await shard.placeCreep('W3N1', {
-			pos: [ctrlPos!.x - 1, ctrlPos!.y],
+			pos: [ctrlPos!.x, ctrlPos!.y + 1],
 			owner: 'p1',
 			body: [CLAIM, CLAIM, MOVE],
 		});

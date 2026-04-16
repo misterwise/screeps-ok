@@ -200,9 +200,9 @@ describe('creep.upgradeController()', () => {
 			owner: 'p1',
 			body: [CLAIM, MOVE],
 		});
-		// p2's upgrader stands on the other side of the controller.
+		// p2's upgrader stands on another adjacent tile (avoid x=0 border).
 		const upgraderId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x - 1, ctrlPos!.y],
+			pos: [ctrlPos!.x, ctrlPos!.y + 1],
 			owner: 'p2',
 			body: [WORK, CARRY, MOVE],
 			store: { energy: 50 },
