@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Edit(node_modules/xxscreeps/**)",
+      "Edit(node_modules/@xxscreeps/**)",
+      "Write(node_modules/xxscreeps/**)",
+      "Write(node_modules/@xxscreeps/**)",
+      "MultiEdit(node_modules/xxscreeps/**)",
+      "MultiEdit(node_modules/@xxscreeps/**)",
+      "NotebookEdit(node_modules/xxscreeps/**)",
+      "NotebookEdit(node_modules/@xxscreeps/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command'); case \"$cmd\" in \"rm node_modules/xxscreeps/.screeps-ok-pin\"|\"rm -f node_modules/xxscreeps/.screeps-ok-pin\") exit 0;; esac; first=$(printf '%s' \"$cmd\" | awk '{print $1}'); blocked=0; case \"$first\" in rm|mv|cp|rsync|tee|touch|chmod|chown|patch|sed|awk) printf '%s' \"$cmd\" | grep -qE 'node_modules/@?xxscreeps' && blocked=1;; esac; printf '%s' \"$cmd\" | grep -qE '>>?\\s*[^|]*node_modules/@?xxscreeps' && blocked=1; if [ \"$blocked\" = 1 ]; then echo 'Blocked: bash command would write into node_modules/(@)?xxscreeps. The pinned install tree is owned by scripts/build-xxscreeps.js (run npm run setup:xxscreeps to refresh). Do PR work in ~/Coding/Screeps/xxscreeps-pr-* worktrees instead.' >&2; exit 2; fi; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

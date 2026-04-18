@@ -448,38 +448,86 @@ for outside consumption.
 
 ## Declaring Expected Failures (parity.json)
 
-When your engine intentionally diverges from vanilla behavior, declare expected
-failures in a `parity.json` file next to your adapter entry module. Tests always
-assert canonical (vanilla) behavior — the parity reporter reclassifies failures
-for declared tests so they don't break your CI.
+Your `adapters/screeps-ok/parity.json` is an overlay on top of the canonical
+gap list shipped inside the `screeps-ok` package. The starter writes it for
+you with sensible defaults:
 
 ```json
 {
-  "expected_failures": {
-    "gap-id": {
-      "actual": "What the engine currently does",
-      "expected": "What the canonical engine does",
-      "tests": ["CATALOG-ID-001", "CATALOG-ID-002"]
-    }
-  }
+  "extends": "screeps-ok/parity/xxscreeps.json",
+  "expected_failures": {},
+  "expected_passes": []
 }
 ```
 
-- **gap-id** — a stable, adapter-neutral identifier for the divergence
-- **actual** — short phrase describing the engine's observed behavior
-- **expected** — short phrase describing the canonical (vanilla) behavior
+Tests always assert canonical (vanilla) behavior. The parity reporter merges
+`base ∪ expected_failures` and removes anything in `expected_passes`; failing
+tests in the merged set are reclassified as expected and don't break CI.
+
+### Most common: you fixed a gap in your engine
+
+You shipped a fix that brings your engine closer to canonical. A test that
+the base still lists as expected-to-fail is now passing, the reporter flags
+it as an unexpected pass, and CI goes red. Add the base gap id to
+`expected_passes` to suppress it:
+
+```json
+{
+  "extends": "screeps-ok/parity/xxscreeps.json",
+  "expected_failures": {},
+  "expected_passes": ["link-self-transfer"]
+}
+```
+
+The entry vanishes from the merged set, the test stays passing, CI is green.
+The next `screeps-ok` release prunes the base entry; after `npm update`,
+your override becomes a no-op (harmless to leave, fine to delete).
+
+To find the gap id: the reporter prints `Parity: N unexpected pass(es)` with
+the gap id alongside the affected test ids. Or grep `node_modules/screeps-ok/parity/<engine>.json` for the failing catalog id.
+
+### Less common: a new red test surfaced a gap not in the base
+
+The catalog grew (or you noticed an engine divergence the base didn't cover),
+and CI is now red on a test the merged set doesn't expect. Add an entry to
+`expected_failures` so the suite passes, and open an issue upstream so the
+gap moves into the base on the next release:
+
+```json
+{
+  "extends": "screeps-ok/parity/xxscreeps.json",
+  "expected_failures": {
+    "link-self-transfer": {
+      "actual": "StructureLink.transferEnergy to self returns OK",
+      "expected": "Returns ERR_INVALID_TARGET when target is the source link",
+      "tests": ["LINK-004"]
+    }
+  },
+  "expected_passes": []
+}
+```
+
+When upstream catalogs the same gap and publishes, the base covers it and
+your overlay entry becomes redundant. Reusing the upstream gap id (once you
+know it) makes that transition silent.
+
+### Field reference
+
+Each `expected_failures` entry:
+
+- **gap id** (the JSON key) — stable, adapter-neutral identifier for the
+  divergence. Overlay entries with the same id as a base entry replace it
+  (handy for narrowing `tests` rather than fully suppressing).
+- **actual** — short phrase describing the engine's observed behavior.
+- **expected** — short phrase describing the canonical (vanilla) behavior.
 - **tests** — catalog IDs of tests expected to fail due to this gap. When a
   single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
-  you can list either the base ID (gates all variants) or specific suffixed
-  IDs (gates only those variants, letting siblings that pass remain ungated).
+  list either the base ID (gates all variants) or specific suffixed IDs
+  (gates only those variants, letting siblings that pass remain ungated).
 
-The parity reporter (loaded automatically via `vitest.config.ts`) matches
-test names against catalog IDs including optional `:variant` suffixes. A
-failing test whose ID is declared → expected failure (suite still passes). A
-passing test whose ID is declared → unexpected pass (regression trap — the
-engine may have fixed the behavior).
-
-Run `npm run status:refresh` to regenerate the dashboard with parity details.
+`extends` accepts any specifier `createRequire` can resolve (package subpath,
+absolute path, relative path). Leave the default unless you're pinning to a
+fork. `npm run status:refresh` regenerates the dashboard with parity details.
 
 ## Current Status of This Guide
 

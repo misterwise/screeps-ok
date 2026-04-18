@@ -128,7 +128,7 @@ The resulting layout:
 <engine-repo>/
   adapters/screeps-ok/
     index.ts, snapshots.ts, sandbox-runner.ts, engine-internals.ts
-    parity.json         — expected-failures baseline, owned by the consumer
+    parity.json         — overlay; extends screeps-ok/parity/xxscreeps.json
   package.json
     devDependencies: { "screeps-ok": "^0.2", "vitest": "^3" }
     scripts:
@@ -140,9 +140,32 @@ To pick up new framework capabilities added upstream, the consumer re-copies `st
 
 For forks that have renamed xxscreeps dirs (e.g., `pathfinder` → `path-finder`), patch the bare `xxscreeps/*` specifiers in the copied adapter. Failure mode is a clean "Failed to load url" at resolve time — easy to find, trivial to fix.
 
-### Parity baseline lives with the consumer
+### Parity baseline ships in the package; consumer file is an overlay
 
-The parity reporter (`src/reporters/parity-reporter.ts`) resolves `parity.json` relative to `SCREEPS_OK_ADAPTER` (the adapter file path). That already puts the baseline next to the consumer's adapter file — no runner changes needed. When we add a canonical test, the consumer's CI flags it as an unexpected failure; they fix the engine or add a gap entry to their own `parity.json`. When we remove a test, stale entries surface on the next run.
+The canonical expected-failure list for each engine ships inside the package at `parity/<engine>.json` (currently `parity/xxscreeps.json`, generated from `adapters/xxscreeps/parity.json` by `scripts/generate-starter.js`). Consumers don't author or copy that file — they get it via `npm install screeps-ok`, and `npm update screeps-ok` is what propagates our pin bumps and gap prunes.
+
+The consumer-facing `parity.json` (shipped in `starter/<engine>/parity.json` and copied into their `adapters/screeps-ok/` dir) is a thin overlay:
+
+```json
+{
+  "extends": "screeps-ok/parity/xxscreeps.json",
+  "expected_failures": {},
+  "expected_passes": []
+}
+```
+
+The reporter (`src/reporters/parity-reporter.ts`) resolves `extends` via `createRequire(overlayPath).resolve(spec)` — standard Node subpath resolution, made reachable by the `./parity/*` export in `package.json`. It then merges:
+
+- `base.expected_failures ∪ overlay.expected_failures` — overlay entries with the same gap id replace the base entry.
+- minus any gap id listed in `overlay.expected_passes` — the consumer's escape hatch for "I fixed this in my fork before screeps-ok pruned it from base."
+
+Two-direction sync, no manual mirror:
+
+- We add a canonical test → consumer CI flags it as an unexpected failure → they fix the engine or add a gap entry to their overlay's `expected_failures` (and file an issue so we catalog it).
+- We bump our xxscreeps pin and prune base entries → publish a patch → consumer `npm update`s and the entries disappear from their merged set automatically.
+- Consumer fixes a base-listed gap before we publish → they add the gap id to `expected_passes` until the next package update makes it a no-op.
+
+In this repo's own dev path the reporter still loads `adapters/xxscreeps/parity.json` directly (no `extends`), so the merge is a no-op and behavior is unchanged.
 
 ### Starter templates ship in the tarball
 
@@ -191,6 +214,6 @@ At 1.0:
 
 - **Tarball leaks** — repo has `CLAUDE.local.md`, `.agent/`, internal workspace refs. `files` allowlist + `validate-package.js` is the mitigation.
 - **Node version drift** — we require Node 24; consumer CI may be older. Document in README; preflight catches it at runtime.
-- **Parity-baseline maintenance lands on consumers** — intentional (they own their engine), but docs need to explain what `parity.json` is. Covered in `adapter-guide.md`.
+- **Parity-baseline maintenance** — base list ships in the `screeps-ok` package (`parity/<engine>.json`); consumer's `parity.json` is an overlay that `extends` it. `npm update screeps-ok` is the sync mechanism. `adapter-guide.md` should explain the overlay shape and the `expected_passes` escape hatch.
 - **Starter-adapter drift** — if our reference changes and a consumer's copy doesn't, they miss fixes. README note: "your adapter is yours; rebasing from our reference is manual."
 - **Future cross-realm hazards** — any new exported class used across the adapter/fixture/test boundary must adopt the `Symbol.hasInstance` marker pattern. Adding a new class without this is a silent trap; adapter-spec.md should call it out in the extension section.

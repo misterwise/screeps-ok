@@ -8,19 +8,43 @@
  *   - A passing test whose catalog ID is in expected_failures → unexpected pass (regression fixed)
  *   - Sets process.exitCode = 0 when all failures are expected
  */
+import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Reporter, TestCase, TestModule } from 'vitest/node';
 
 // ── Parity.json schema ────────────────────────────────────────
+//
+// A consumer's `parity.json` is an *overlay*. It may extend a base file
+// (typically shipped inside the screeps-ok package) and add or remove
+// entries on top:
+//
+//   {
+//     "extends": "screeps-ok/parity/xxscreeps.json",
+//     "expected_failures": { "their-new-gap": { ... } },
+//     "expected_passes": ["BASE-GAP-ID-they-fixed"]
+//   }
+//
+// `extends` is resolved via Node's package resolution from the overlay
+// file's directory. Both files share the same gap schema. Overlay entries
+// with the same gap id replace the base entry. `expected_passes` removes
+// matching gap ids from the merged set entirely (consumer fixed it before
+// the next package release prunes it).
+//
+// In this repo the canonical file (`adapters/xxscreeps/parity.json`) is
+// authored directly with no `extends` — the merge is a no-op and behavior
+// matches the pre-overlay reporter.
 
 interface ParityGap {
-	summary: string;
+	actual?: string;
+	expected?: string;
 	tests: string[];
 }
 
 interface ParityFile {
+	extends?: string;
 	expected_failures?: Record<string, ParityGap>;
+	expected_passes?: string[];
 }
 
 // ── Catalog ID extraction ─────────────────────────────────────
@@ -30,6 +54,31 @@ const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
 function extractCatalogId(testFullName: string): string | null {
 	const match = testFullName.match(CATALOG_ID_RE);
 	return match ? match[1] : null;
+}
+
+// ── Parity file loading ───────────────────────────────────────
+
+function loadParityFile(path: string): ParityFile | null {
+	try {
+		return JSON.parse(readFileSync(path, 'utf8')) as ParityFile;
+	} catch {
+		return null;
+	}
+}
+
+function loadExtends(fromPath: string, spec: string): ParityFile | null {
+	let resolved: string;
+	try {
+		resolved = createRequire(fromPath).resolve(spec);
+	} catch (err) {
+		console.error(`Parity reporter: failed to resolve extends "${spec}" from ${fromPath}:`, err);
+		return null;
+	}
+	const base = loadParityFile(resolved);
+	if (!base) {
+		console.error(`Parity reporter: could not read base parity file at ${resolved}`);
+	}
+	return base;
 }
 
 // ── Reporter ──────────────────────────────────────────────────
@@ -43,16 +92,22 @@ export default class ParityReporter implements Reporter {
 		if (!adapterPath) return;
 
 		const parityPath = resolve(dirname(adapterPath), 'parity.json');
-		let raw: string;
-		try {
-			raw = readFileSync(parityPath, 'utf8');
-		} catch {
-			return; // No parity.json → no expected failures
+		const overlay = loadParityFile(parityPath);
+		if (!overlay) return;
+
+		const base = overlay.extends
+			? loadExtends(parityPath, overlay.extends)
+			: null;
+
+		const merged: Record<string, ParityGap> = {
+			...(base?.expected_failures ?? {}),
+			...(overlay.expected_failures ?? {}),
+		};
+		for (const gapId of overlay.expected_passes ?? []) {
+			delete merged[gapId];
 		}
 
-		const parsed: ParityFile = JSON.parse(raw);
-		const gaps = parsed.expected_failures ?? {};
-		for (const [gapId, gap] of Object.entries(gaps)) {
+		for (const [gapId, gap] of Object.entries(merged)) {
 			for (const testId of gap.tests) {
 				this.expectedFailIds.add(testId);
 				this.gapForId.set(testId, gapId);

@@ -12,7 +12,8 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
-    }
+    },
+    "./parity/*": "./parity/*"
   },
   "files": [
     "src",
@@ -22,6 +23,7 @@
     "scripts/preflight.js",
     "scripts/lib",
     "starter",
+    "parity",
     "behaviors.md",
     "docs/adapter-spec.md",
     "docs/adapter-guide.md",

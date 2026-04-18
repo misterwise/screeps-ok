@@ -22,6 +22,7 @@ const allowedTopLevel = new Set([
 	'bin',
 	'scripts',
 	'starter',
+	'parity',
 	'docs',
 	'behaviors.md',
 	'package.json',

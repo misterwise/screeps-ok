@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1241%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-989%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1241%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-985%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-88-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1241](#vanilla-passing-tests) | — | — | — | 2026-04-16 01:45 UTC |
-| 🟡 | **xxscreeps** | [989](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 01:26 UTC |
+| 🟡 | **xxscreeps** | [985](#xxscreeps-passing-tests) | [88](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 02:30 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,10 +25,11 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 45 parity gaps against vanilla's canonical behavior, covering 84 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 88 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `corner-exit-branch-order` | At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49` | Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73` | [1](#xxscreeps-gap-corner-exit-branch-order) |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
 | `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
 | `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
@@ -52,6 +53,7 @@ xxscreeps currently declares 45 parity gaps against vanilla's canonical behavior
 | `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
 | `tough-boost-no-reduction` | Boosted TOUGH parts do not reduce incoming damage | Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier | [4](#xxscreeps-gap-tough-boost-no-reduction) |
 | `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
+| `route-callback-ignored` | `Game.map.findRoute` ignores `routeCallback` option | `routeCallback` return values influence route selection (Infinity blocks, numbers weight) | [1](#xxscreeps-gap-route-callback-ignored) |
 | `transfer-wrong-resource-err-full` | `transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch) | Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource | [2](#xxscreeps-gap-transfer-wrong-resource-err-full) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
@@ -60,6 +62,7 @@ xxscreeps currently declares 45 parity gaps against vanilla's canonical behavior
 | `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
+| `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
 | `mineral-harvest-no-overflow-drop` | `harvest(mineral)` overflow does not create a dropped resource pile | Overflow amount drops as a resource pile on the harvester's tile | [1](#xxscreeps-gap-mineral-harvest-no-overflow-drop) |
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
 | `withdraw-wrong-resource-not-enough-energy` | `withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY` | Returns `ERR_INVALID_TARGET` when the target cannot hold that resource | [1](#xxscreeps-gap-withdraw-wrong-resource-not-enough-energy) |
@@ -74,8 +77,16 @@ xxscreeps currently declares 45 parity gaps against vanilla's canonical behavior
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
+| `flag-setposition-ignored` | `Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves | The flag relocates to the requested position on the next tick | [1](#xxscreeps-gap-flag-setposition-ignored) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-corner-exit-branch-order">
+<summary><code>corner-exit-branch-order</code> — 1 test</summary>
+
+- `Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first`
+
+</details>
 
 <details id="xxscreeps-gap-tombstone-corpse-rate">
 <summary><code>tombstone-corpse-rate</code> — 3 tests</summary>
@@ -260,6 +271,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-route-callback-ignored">
+<summary><code>route-callback-ignored</code> — 1 test</summary>
+
+- `Game.map route finding MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity`
+
+</details>
+
 <details id="xxscreeps-gap-transfer-wrong-resource-err-full">
 <summary><code>transfer-wrong-resource-err-full</code> — 2 tests</summary>
 
@@ -318,6 +336,13 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>pull-spawning-no-guard</code> — 1 test</summary>
 
 - `creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep`
+
+</details>
+
+<details id="xxscreeps-gap-findpath-same-pos-not-empty">
+<summary><code>findpath-same-pos-not-empty</code> — 1 test</summary>
+
+- `Legacy Pathfinding LEGACY-PATH-006 findPath() returns empty array when source equals destination`
 
 </details>
 
@@ -428,6 +453,13 @@ Click a test count above to jump to the affected test list for that gap.
 - `Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data`
 - `Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed`
 - `Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers`
+
+</details>
+
+<details id="xxscreeps-gap-flag-setposition-ignored">
+<summary><code>flag-setposition-ignored</code> — 1 test</summary>
+
+- `Flags FLAG-006 Flag.setPosition moves the flag to the requested room position`
 
 </details>
 
@@ -2368,7 +2400,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>989 tests across 89 files</summary>
+<summary>985 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2564,13 +2596,12 @@ Click a count to jump to the affected test list.
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
 
-**`tests/01-movement/1.4-room-transitions.test.ts`** (5)
+**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
 
 - Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
 - Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
-- Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first
 
 **`tests/01-movement/1.5-pulling.test.ts`** (10)
 
@@ -2629,13 +2660,12 @@ Click a count to jump to the affected test list.
 - CostMatrix COSTMATRIX-008 CostMatrix values 1–254 override terrain cost
 - CostMatrix COSTMATRIX-007 CostMatrix value 255 means the tile is unwalkable
 
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (9)
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (8)
 
 - Legacy Pathfinding LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room
 - Legacy Pathfinding LEGACY-PATH-002 Room.serializePath() and Room.deserializePath() round-trip a path
 - Legacy Pathfinding LEGACY-PATH-004 findPath() returns empty array when source is not in the room
 - Legacy Pathfinding LEGACY-PATH-005 findPath() with cross-room destination returns only intra-room steps
-- Legacy Pathfinding LEGACY-PATH-006 findPath() returns empty array when source equals destination
 - Legacy Pathfinding LEGACY-PATH-007 findPath() returns a single step for adjacent positions
 - Legacy Pathfinding LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
@@ -3412,7 +3442,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (7)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
@@ -3421,7 +3451,6 @@ Click a count to jump to the affected test list.
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
 - Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
 - Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
-- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -3465,11 +3494,10 @@ Click a count to jump to the affected test list.
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
 - Game.map room queries MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge
 
-**`tests/21-map/21.2-route-finding.test.ts`** (5)
+**`tests/21-map/21.2-route-finding.test.ts`** (4)
 
 - Game.map route finding MAP-ROUTE-001 findRoute returns an array of {exit, room} steps
 - Game.map route finding MAP-ROUTE-002 findRoute returns ERR_NO_PATH for an invalid room name
-- Game.map route finding MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity
 - Game.map route finding MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map route finding MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 
