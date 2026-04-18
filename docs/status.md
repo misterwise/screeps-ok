@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1241%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-985%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-88-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1245%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-987%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-90-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1241](#vanilla-passing-tests) | — | — | — | 2026-04-16 01:45 UTC |
-| 🟡 | **xxscreeps** | [985](#xxscreeps-passing-tests) | [88](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 02:30 UTC |
+| 🟢 | **vanilla** | [1245](#vanilla-passing-tests) | — | — | — | 2026-04-18 23:35 UTC |
+| 🟡 | **xxscreeps** | [987](#xxscreeps-passing-tests) | [90](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 23:33 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior, covering 88 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 90 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -78,6 +78,7 @@ xxscreeps currently declares 49 parity gaps against vanilla's canonical behavior
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
 | `flag-setposition-ignored` | `Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves | The flag relocates to the requested position on the next tick | [1](#xxscreeps-gap-flag-setposition-ignored) |
+| `road-site-progresstotal-no-terrain-scaling` | `ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300 | A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp | [2](#xxscreeps-gap-road-site-progresstotal-no-terrain-scaling) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -463,11 +464,19 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-road-site-progresstotal-no-terrain-scaling">
+<summary><code>road-site-progresstotal-no-terrain-scaling</code> — 2 tests</summary>
+
+- `Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost`
+- `Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost`
+
+</details>
+
 
 ## vanilla passing tests
 
 <details>
-<summary>1241 tests across 109 files</summary>
+<summary>1245 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1510,9 +1519,11 @@ Click a test count above to jump to the affected test list for that gap.
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (3)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (5)
 
-- StructureRoad ROAD-HITS-001 road initializes with ROAD_HITS
+- StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
+- StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
+- StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
 - StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
 
@@ -1614,7 +1625,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 - Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (17)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (19)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -1633,6 +1644,8 @@ Click a test count above to jump to the affected test list for that gap.
 - Construction costs CONSTRUCTION-COST-001:nuker costs 100000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
 - Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
+- Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
+- Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
 **`tests/15-structure-common/15.4-structure-api.test.ts`** (6)
 
@@ -2400,7 +2413,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>985 tests across 89 files</summary>
+<summary>987 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3313,9 +3326,11 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (3)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (5)
 
-- StructureRoad ROAD-HITS-001 road initializes with ROAD_HITS
+- StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
+- StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
+- StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
 - StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
 

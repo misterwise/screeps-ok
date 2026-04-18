@@ -244,6 +244,11 @@
 			"actual": "`Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves",
 			"expected": "The flag relocates to the requested position on the next tick",
 			"tests": ["FLAG-006"]
+		},
+		"road-site-progresstotal-no-terrain-scaling": {
+			"actual": "`ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300",
+			"expected": "A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp",
+			"tests": ["CONSTRUCTION-COST-003:wall", "CONSTRUCTION-COST-003:swamp"]
 		}
 	}
 }

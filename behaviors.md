@@ -188,8 +188,9 @@ Coverage Notes
 
 Coverage Notes
 - Road wear mechanics are owned by `13.2 Road — Wear` (`ROAD-WEAR-*`).
-- Swamp road construction cost is owned by `15.3 Construction Costs`
-  (`CONSTRUCTION-COST-001`).
+- Road construction costs (including terrain-ratio scaling on swamp and
+  wall) are owned by `15.3 Construction Costs` (`CONSTRUCTION-COST-001`,
+  `CONSTRUCTION-COST-003`).
 
 ### 1.4 Room Transitions
 - `ROOM-TRANSITION-001` `behavior` `verified_vanilla`
@@ -1893,8 +1894,13 @@ Coverage Notes
 ## 13. Structures — Infrastructure
 
 ### 13.1 Road — Decay
-- `ROAD-HITS-001` `behavior` `verified_vanilla`
-  A road initializes with `ROAD_HITS` (5000) hits.
+- `ROAD-HITS-001` `matrix` `verified_vanilla`
+  A road produced by completing a construction site initializes with
+  `ROAD_HITS` (5000) scaled by the underlying terrain ratio:
+  1× on plain, `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp,
+  `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on natural wall. The engine
+  branches on terrain at completion time, independent of the site's stored
+  `progressTotal`.
 - `ROAD-DECAY-001` `matrix` `verified_vanilla`
   Road decay amount by underlying terrain matches the canonical Screeps
   constants for plain, swamp, and wall terrain.
@@ -1904,8 +1910,8 @@ Coverage Notes
   A road is removed in the same tick when decay reduces its hits to 0 or below.
 
 Coverage Notes
-- Initial road hits by terrain belong with construction behavior rather than
-  ongoing road state.
+- `ROAD-HITS-001` is observed via `build()` completion (not `placeStructure`)
+  so the engine's terrain-scaling branch actually runs.
 
 ### 13.2 Road — Wear
 - `ROAD-WEAR-001` `matrix` `verified_vanilla`
@@ -2123,6 +2129,11 @@ Coverage Notes
 - `CONSTRUCTION-COST-002` `behavior` `verified_vanilla`
   A construction site's `progressTotal` equals its structure's construction
   cost.
+- `CONSTRUCTION-COST-003` `matrix` `verified_vanilla`
+  A road construction site's `progressTotal` scales by the terrain ratio of
+  the underlying tile: `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp
+  and `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on natural wall. Covers
+  swamp- and wall-tile variants; plain is covered by `CONSTRUCTION-COST-001`.
 
 ### 15.4 Structure APIs
 - `STRUCTURE-API-001` `behavior` `verified_vanilla`

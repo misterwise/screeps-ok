@@ -1,11 +1,11 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (55 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (50 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/src`.
 
-Last refreshed: 2026-04-16 against `adapters/xxscreeps/parity.json`.
+Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here.
 
@@ -277,4 +277,9 @@ Last refreshed: 2026-04-16 against `adapters/xxscreeps/parity.json`.
   2. **`setDefaultPublicSegment` no-op** — `mods/memory/memory.ts:129` is `console.error('TODO: setDefaultPublicSegment')`.
   3. **`setPublicSegments` no-op** — `mods/memory/memory.ts:136` is a silent stub (`/* console.error('TODO: setPublicSegments') */`).
 - Plus: `RawMemory.foreignSegment` is never declared on the `RawMemory` object (`mods/memory/memory.ts:56-137`) — even if the driver fetched the blob, there's no return path. Needs a new `payload.foreignSegment` field on `TickPayload` mirroring `memorySegments`, plus a `loadForeignSegment(payload.foreignSegment)` in the runtime connector that assigns onto `RawMemory.foreignSegment`.
+
+### road-site-progresstotal-no-terrain-scaling
+- Tests: CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp
+- Cause: `ConstructionSite.progressTotal` getter at `mods/construction/construction-site.ts:34` is `C.CONSTRUCTION_COST[this.structureType]` — no terrain lookup. A road site on wall reports 300 (vanilla expects 300 × 150 = 45000); on swamp it reports 300 (vanilla expects 1500). Hits and decay already scale correctly via `mods/road/road.ts:26` and `:55`; only the site cost getter is missing the same branch.
+- Fix shape: teach `progressTotal` (or a helper it delegates to) to multiply by `CONSTRUCTION_COST_ROAD_WALL_RATIO` / `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` when `structureType === STRUCTURE_ROAD` and the underlying terrain is wall/swamp. Mirror the pattern used in `road.ts:23-28`.
 

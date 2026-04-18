@@ -1,19 +1,90 @@
 import { describe, test, expect, code,
 	OK, MOVE, WORK, CARRY,
 	STRUCTURE_ROAD, ROAD_HITS, ROAD_WEAROUT, TOP,
+	CONSTRUCTION_COST, CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
+	FIND_STRUCTURES,
 } from '../../src/index.js';
+import {
+	TERRAIN_FIXTURE_ROOM,
+	TERRAIN_FIXTURE_SPEC,
+	TERRAIN_FIXTURE_LANDMARKS,
+} from '../../src/terrain-fixture.js';
 
 describe('StructureRoad', () => {
-	test('ROAD-HITS-001 road initializes with ROAD_HITS', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const roadId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_ROAD,
-		});
+	// ── ROAD-HITS-001: completed-road hits scale by underlying terrain ──
+	// Engine @screeps/engine/src/processor/intents/creeps/build.js:171-187 sets
+	// a completed road's hits to `ROAD_HITS * CONSTRUCTION_COST_ROAD_*_RATIO`
+	// based on the underlying terrain at the moment of completion, independent
+	// of the site's stored progressTotal. Exercises the engine's completion
+	// branch end-to-end via build() rather than the adapter's placeStructure
+	// helper (which lets tests pre-set `hits` and bypass the scaling logic).
 
-		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.hits).toBe(ROAD_HITS);
-		expect(road.hitsMax).toBe(ROAD_HITS);
-	});
+	const roadHitsTerrainCases = [
+		{
+			label: 'plain',
+			landmark: 'plainOrigin' as const,
+			ratio: 1,
+			neighbor: [-1, 0] as [number, number],
+		},
+		{
+			label: 'swamp',
+			landmark: 'swampTile' as const,
+			ratio: CONSTRUCTION_COST_ROAD_SWAMP_RATIO,
+			neighbor: [-1, 0] as [number, number],
+		},
+		{
+			label: 'wall',
+			landmark: 'isolatedWallTile' as const,
+			ratio: CONSTRUCTION_COST_ROAD_WALL_RATIO,
+			neighbor: [0, 1] as [number, number],
+		},
+	];
+
+	for (const { label, landmark, ratio, neighbor: [dx, dy] } of roadHitsTerrainCases) {
+		test(`ROAD-HITS-001:${label} road built on ${label} initializes with ROAD_HITS × ${ratio}`, async ({ shard }) => {
+			shard.requires('terrain', `custom terrain required for ${label}-tile road completion`);
+			const [x, y] = TERRAIN_FIXTURE_LANDMARKS[landmark];
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{
+					name: TERRAIN_FIXTURE_ROOM, rcl: 2, owner: 'p1',
+					terrain: TERRAIN_FIXTURE_SPEC,
+				}],
+			});
+			// progressTotal for a road site scales by terrain ratio, so seed
+			// progress at `scaled - 5` and let one build() with 5 energy close
+			// the gap. The engine's completion branch reads terrain directly
+			// and scales hits — stored progressTotal isn't consulted for hits.
+			const scaledTotal = CONSTRUCTION_COST[STRUCTURE_ROAD] * ratio;
+			const siteId = await shard.placeSite(TERRAIN_FIXTURE_ROOM, {
+				pos: [x, y], owner: 'p1',
+				structureType: STRUCTURE_ROAD,
+				progress: scaledTotal - 5,
+			});
+			const creepId = await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
+				pos: [x + dx, y + dy], owner: 'p1',
+				body: [WORK, CARRY, MOVE],
+				store: { energy: 5 },
+			});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
+			`);
+			expect(rc).toBe(OK);
+			await shard.tick();
+
+			const site = await shard.getObject(siteId);
+			expect(site).toBeNull();
+			const structures = await shard.findInRoom(TERRAIN_FIXTURE_ROOM, FIND_STRUCTURES);
+			const road = structures.find(
+				s => s.structureType === STRUCTURE_ROAD && s.pos.x === x && s.pos.y === y,
+			);
+			expect(road).toBeDefined();
+			const expectedHits = ROAD_HITS * ratio;
+			expect(road!.hits).toBe(expectedHits);
+			expect(road!.hitsMax).toBe(expectedHits);
+		});
+	}
 
 	test('ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length', async ({ shard }) => {
 		await shard.ownedRoom('p1');

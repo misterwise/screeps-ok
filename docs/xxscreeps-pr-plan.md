@@ -1,8 +1,20 @@
 # xxscreeps PR plan
 
-Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 48 confirmed entries (51 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
+Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-14.
+Last refreshed: 2026-04-18.
+
+## Submitted (awaiting review)
+
+| Plan | PR | Title |
+|---|---|---|
+| PR-16 | [laverdet/xxscreeps#118](https://github.com/laverdet/xxscreeps/pull/118) | Fix Flag.setPosition to use parsed position id |
+| PR-17 | [laverdet/xxscreeps#119](https://github.com/laverdet/xxscreeps/pull/119) | Match vanilla corner-exit branch order in creep room transition |
+| PR-11a | [laverdet/xxscreeps#120](https://github.com/laverdet/xxscreeps/pull/120) | Short-circuit Room.findPath when origin === goal |
+| PR-11b | [laverdet/xxscreeps#121](https://github.com/laverdet/xxscreeps/pull/121) | Fix Game.map.findRoute: routeCallback arg order and null-exit guard |
+| PR-18 | [laverdet/xxscreeps#122](https://github.com/laverdet/xxscreeps/pull/122) | Scale ConstructionSite.progressTotal for roads by terrain ratio |
+
+PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/src`; this repo's adapter at `adapters/xxscreeps/`.
 
@@ -107,12 +119,11 @@ Last refreshed: 2026-04-14.
   5. `create` (line 414): drop `boost: undefined` from the literal — `parts.map(type => ({ type, hits: 100 }))`.
 - **Blast radius:** Mixed — each fix is local but together they touch all creep client-side intents. Could split into two PRs (intents vs. shape) if too large.
 
-### PR-11: PathFinder + Map (`game/room/path.ts`, `game/map.ts`)
-- **Closes (2 entries / 2 tests):** `findpath-same-pos-not-empty` (LEGACY-PATH-006), `route-callback-ignored` (MAP-ROUTE-003)
-- **Plan:**
-  1. `path.ts:127`: add `if (origin.isEqualTo(goal)) return options.serialize ? '' : [];` at function entry.
-  2. `map.ts:161-163`: trace astar callback invocation per-room; ensure `routeCallback` return value is consulted for each room cost (currently appears threaded but may not be invoked). Needs side-by-side debug with vanilla.
-- **Blast radius:** Path/route changes are well-tested; isolated.
+### PR-11: PathFinder + Map — split and submitted as #120 + #121
+- **Closed (2 entries / 2 tests):** `findpath-same-pos-not-empty` (LEGACY-PATH-006) via #120; `route-callback-ignored` (MAP-ROUTE-003) via #121.
+- **PR-11a (#120):** `path.ts:127`: added `if (origin.isEqualTo(goal)) return options.serialize ? '' : [];`. Mirrors vanilla `_findPath2` (`@screeps/engine/src/game/rooms.js:227-229`).
+- **PR-11b (#121):** Two bugs, both in `game/map.ts`'s astar wiring. First, `routeCallback` args were reversed — xxscreeps passed `(from, to)`, vanilla calls `(roomName, fromRoomName)` with neighbor first (`@screeps/engine/src/game/map.js:164`). Second, `describeExits` returns null for rooms with no terrain data, and `Object.values(null)` throws once astar starts actually exploring (unmasked by the arg-order fix) — vanilla's `for...in` no-ops on null. Both fixed together.
+- The original "trace astar callback invocation; may not be invoked" diagnosis was wrong — callback was invoked, but with swapped args.
 
 ### PR-12: Boost energy cost (`mods/controller/processor.ts`, `mods/construction/processor.ts`)
 - **Closes (1 entry / 2 tests):** `boost-energy-cost-scales` (BOOST-BUILD-002, BOOST-UPGRADE-002)
@@ -149,15 +160,17 @@ Last refreshed: 2026-04-14.
   6. `mods/memory/driver.ts`: add `payload.foreignSegment` to TickPayload type declaration.
 - **Blast radius:** New surface area; needs DB schema confirmation for public-segment storage.
 
-### PR-16: Flag setPosition (`mods/flag/flag.ts`)
-- **Closes (1 entry / 1 test):** `flag-setposition-ignored` (FLAG-006)
-- **Plan:** `flag.ts:81`: change `this.pos['#id']` → `pos!['#id']`. Literal one-character semantic fix — `pos` was parsed from args but never used in the intent.
-- **Blast radius:** Minimal — single line.
+### PR-16: Flag setPosition — submitted as #118
+- **Closed (1 entry / 1 test):** `flag-setposition-ignored` (FLAG-006).
+- **Fix:** `flag.ts:81`: `this.pos['#id']` → `pos!['#id']`.
 
-### PR-17: Corner-exit branch order (`mods/creep/processor.ts`)
-- **Closes (1 entry / 1 test):** `corner-exit-branch-order` (ROOM-TRANSITION-006)
-- **Plan:** `processor.ts:311-319`: reorder the four-branch sequence to match vanilla's precedence (`@screeps/engine/src/processor/intents/creeps/tick.js:58-73` — `y=0` before `x=49`). At corner (49, 0), the test expects NORTH; xxscreeps currently picks EAST. Verify the exact vanilla order across all four branches, then mirror.
-- **Blast radius:** Localized to corner-position transitions; affects very few real-game scenarios but observable in tests.
+### PR-17: Corner-exit branch order — submitted as #119
+- **Closed (1 entry / 1 test):** `corner-exit-branch-order` (ROOM-TRANSITION-006).
+- **Fix:** `processor.ts:311-319`: swap branches 2 and 3 so the order is `x=0 → y=0 → x=49 → y=49`, matching vanilla (`@screeps/engine/src/processor/intents/creeps/tick.js:58-73`). Verified all four corners: only (49, 0) diverged; the other three resolve identically in both orderings.
+
+### PR-18: Road construction site terrain scaling — submitted as #122
+- **Closed (1 entry / 2 tests):** `road-site-progresstotal-no-terrain-scaling` (CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp).
+- **Fix:** `mods/construction/construction-site.ts:34`: extend the `progressTotal` getter so that for `STRUCTURE_ROAD` it multiplies `CONSTRUCTION_COST[structureType]` by `CONSTRUCTION_COST_ROAD_WALL_RATIO` on wall or `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` on swamp, via `this.room.getTerrain().get(this.pos.x, this.pos.y)`. Every other structureType short-circuits through the same single-cost path as before. Mirrors the existing ratio application in `mods/road/road.ts` `checkPlacement` and the post-build hits scaling in the shared `build.js` completion branch.
 
 ---
 
@@ -183,24 +196,26 @@ Last refreshed: 2026-04-14.
 | Memory | PR-15 | 3 |
 | Flag setPosition | PR-16 | 1 |
 | Corner-exit branch order | PR-17 | 1 |
-| **Total xxscreeps PRs** | **17** | **46** |
-| **Grand total** | | **48 entries / 51 parity.json keys** |
+| Road-site terrain scaling | PR-18 | 1 |
+| **Total xxscreeps PRs** | **18** | **47** |
+| **Grand total** | | **49 entries / 50 parity.json keys** |
 
 ## Suggested submission order
 
 Lowest blast radius first, builds reviewer trust before submitting wider changes.
 
-1. **PR-16** (flag setPosition — 1 char) — proof-of-life
-2. **PR-17** (corner-exit reorder — single block) — also tiny
-3. **PR-11** (pathfinder same-pos) — tiny, well-bounded
-4. **PR-12** (boost energy cost) — 2-file targeted fix
-5. **PR-3** (safe-mode guards) — tight area
-6. **PR-5** (link) — self-contained mod
-7. **PR-1** (structure ownership) — high-impact but localized; unblocks lab/observer
-8. **PR-4** (cooldowns) — well-explained shared root
-9. **PR-2** (resource store) — wide-impact, needs careful review; better after some trust built
-10. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
-11. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
+1. ~~**PR-16**~~ submitted as #118 — flag setPosition
+2. ~~**PR-17**~~ submitted as #119 — corner-exit reorder
+3. ~~**PR-11**~~ split + submitted as #120 (findPath same-pos) and #121 (routeCallback)
+4. ~~**PR-18**~~ submitted as #122 — road-site terrain scaling
+5. **PR-12** (boost energy cost) — 2-file targeted fix ← next
+6. **PR-3** (safe-mode guards) — tight area
+7. **PR-5** (link) — self-contained mod
+8. **PR-1** (structure ownership) — high-impact but localized; unblocks lab/observer
+9. **PR-4** (cooldowns) — well-explained shared root
+10. **PR-2** (resource store) — wide-impact, needs careful review; better after some trust built
+11. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
+12. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
 
 ## Adapter changes (do these first)
 
