@@ -147,4 +147,48 @@ describe('StructureRoad', () => {
 		// Wear (ROAD_WEAROUT * 1) + 2 ticks elapsed (runPlayer + tick).
 		expect(roadAfter.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT * 1 - 2);
 	});
+
+	test('ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road', async ({ shard }) => {
+		// Vanilla wall-roads share the wear code path with plain/swamp roads —
+		// the wear branch in `@screeps/engine/src/processor/intents/creeps/move.js`
+		// only keys off the presence of a road structure, not the underlying
+		// terrain. Pair with ROAD-WEAR-001: same wear formula, different tile.
+		shard.requires('terrain', 'custom terrain required for wall-road wear');
+		const [wx, wy] = TERRAIN_FIXTURE_LANDMARKS.isolatedWallTile;
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{
+				name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1',
+				terrain: TERRAIN_FIXTURE_SPEC,
+			}],
+		});
+		// Place the wall-road with terrain-scaled hits (matches what BUILD
+		// completion would produce) and a known decay anchor.
+		const roadId = await shard.placeStructure(TERRAIN_FIXTURE_ROOM, {
+			pos: [wx, wy], structureType: STRUCTURE_ROAD,
+			hits: ROAD_HITS * CONSTRUCTION_COST_ROAD_WALL_RATIO,
+			ticksToDecay: 1000,
+		});
+		const creepId = await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
+			pos: [wx, wy + 1], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const roadBefore = await shard.expectStructure(roadId, STRUCTURE_ROAD);
+		const ttdBefore = roadBefore.ticksToDecay;
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).move(TOP)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.pos.y).toBe(wy);
+
+		const roadAfter = await shard.expectStructure(roadId, STRUCTURE_ROAD);
+		// Wear (ROAD_WEAROUT * 3 body parts) + 2 ticks elapsed (runPlayer + tick).
+		expect(roadAfter.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT * 3 - 2);
+	});
 });

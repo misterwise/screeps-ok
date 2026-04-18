@@ -185,6 +185,18 @@ Coverage Notes
   to 1 (half of the plain-terrain multiplier).
 - `ROAD-FATIGUE-002` `behavior` `verified_vanilla`
   A road on swamp reduces the fatigue multiplier to 1.
+- `ROAD-FATIGUE-003` `behavior` `verified_vanilla`
+  A road on a natural-wall tile reduces the fatigue multiplier to 1 (same as
+  plain- and swamp-road).
+- `ROAD-TRAVERSAL-001` `behavior` `verified_vanilla`
+  A completed road structure on a natural-wall tile makes that tile
+  traversable by creeps — paired with `MOVE-BASIC-002`, which covers the
+  wall-without-road case (move returns OK but the creep does not move).
+- `ROAD-TRAVERSAL-002` `behavior` `verified_vanilla`
+  `Room.findPath` routes through a road on a natural-wall tile when that is
+  the only traversable path — the room's CostMatrix treats the wall-road
+  as cost-1 walkable, matching the move-resolver's acceptance in
+  `ROAD-TRAVERSAL-001`.
 
 Coverage Notes
 - Road wear mechanics are owned by `13.2 Road — Wear` (`ROAD-WEAR-*`).
@@ -1921,6 +1933,10 @@ Coverage Notes
 - `ROAD-WEAR-002` `behavior` `verified_vanilla`
   Road wear is applied in the same tick each time a unit successfully moves onto
   the road tile.
+- `ROAD-WEAR-003` `behavior` `verified_vanilla`
+  Road wear applies identically when the road is on a natural-wall tile —
+  the engine keys off the presence of the road structure, not the underlying
+  terrain.
 
 ### 13.3 Terminal
 - `TERMINAL-SEND-001` `behavior` `verified_vanilla`

@@ -249,6 +249,11 @@
 			"actual": "`ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300",
 			"expected": "A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp",
 			"tests": ["CONSTRUCTION-COST-003:wall", "CONSTRUCTION-COST-003:swamp"]
+		},
+		"wall-road-not-traversable": {
+			"actual": "The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it",
+			"expected": "A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile",
+			"tests": ["ROAD-TRAVERSAL-001", "ROAD-FATIGUE-003", "ROAD-WEAR-003"]
 		}
 	}
 }

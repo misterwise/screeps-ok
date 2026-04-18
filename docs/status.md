@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1245%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-987%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-90-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1249%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-988%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1245](#vanilla-passing-tests) | — | — | — | 2026-04-18 23:35 UTC |
-| 🟡 | **xxscreeps** | [987](#xxscreeps-passing-tests) | [90](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 23:33 UTC |
+| 🟢 | **vanilla** | [1249](#vanilla-passing-tests) | — | — | — | 2026-04-18 23:43 UTC |
+| 🟡 | **xxscreeps** | [988](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 23:41 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 90 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 51 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -79,6 +79,7 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
 | `flag-setposition-ignored` | `Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves | The flag relocates to the requested position on the next tick | [1](#xxscreeps-gap-flag-setposition-ignored) |
 | `road-site-progresstotal-no-terrain-scaling` | `ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300 | A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp | [2](#xxscreeps-gap-road-site-progresstotal-no-terrain-scaling) |
+| `wall-road-not-traversable` | The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it | A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile | [3](#xxscreeps-gap-wall-road-not-traversable) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -472,11 +473,20 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-wall-road-not-traversable">
+<summary><code>wall-road-not-traversable</code> — 3 tests</summary>
+
+- `Road fatigue ROAD-TRAVERSAL-001 a road makes a natural-wall tile walkable by creeps`
+- `Road fatigue ROAD-FATIGUE-003 a road on a natural wall reduces the fatigue multiplier to 1`
+- `StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road`
+
+</details>
+
 
 ## vanilla passing tests
 
 <details>
-<summary>1245 tests across 109 files</summary>
+<summary>1249 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -673,10 +683,13 @@ Click a test count above to jump to the affected test list for that gap.
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
 - MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
 
-**`tests/01-movement/1.2b-road-fatigue.test.ts`** (2)
+**`tests/01-movement/1.2b-road-fatigue.test.ts`** (5)
 
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
+- Road fatigue ROAD-TRAVERSAL-001 a road makes a natural-wall tile walkable by creeps
+- Road fatigue ROAD-FATIGUE-003 a road on a natural wall reduces the fatigue multiplier to 1
+- Road fatigue ROAD-TRAVERSAL-002 Room.findPath routes through a wall-road when the path is otherwise blocked
 
 **`tests/01-movement/1.4-room-transitions.test.ts`** (5)
 
@@ -1519,13 +1532,14 @@ Click a test count above to jump to the affected test list for that gap.
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (5)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
 - StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
 - StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
 - StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
+- StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road
 
 **`tests/13-structures-infrastructure/13.1b-road-decay.test.ts`** (5)
 
@@ -2413,7 +2427,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>987 tests across 89 files</summary>
+<summary>988 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2604,10 +2618,11 @@ Click a count to jump to the affected test list.
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
 - MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
 
-**`tests/01-movement/1.2b-road-fatigue.test.ts`** (2)
+**`tests/01-movement/1.2b-road-fatigue.test.ts`** (3)
 
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
+- Road fatigue ROAD-TRAVERSAL-002 Room.findPath routes through a wall-road when the path is otherwise blocked
 
 **`tests/01-movement/1.4-room-transitions.test.ts`** (4)
 

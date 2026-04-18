@@ -1,6 +1,6 @@
 # xxscreeps PR plan
 
-Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
+Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 50 confirmed entries (51 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
 Last refreshed: 2026-04-18.
 
@@ -172,6 +172,21 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **Closed (1 entry / 2 tests):** `road-site-progresstotal-no-terrain-scaling` (CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp).
 - **Fix:** `mods/construction/construction-site.ts:34`: extend the `progressTotal` getter so that for `STRUCTURE_ROAD` it multiplies `CONSTRUCTION_COST[structureType]` by `CONSTRUCTION_COST_ROAD_WALL_RATIO` on wall or `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` on swamp, via `this.room.getTerrain().get(this.pos.x, this.pos.y)`. Every other structureType short-circuits through the same single-cost path as before. Mirrors the existing ratio application in `mods/road/road.ts` `checkPlacement` and the post-build hits scaling in the shared `build.js` completion branch.
 
+### PR-19: Wall-road movement resolver (`engine/processor/movement.ts`)
+- **Closes (1 entry / 3 tests):** `wall-road-not-traversable` (ROAD-TRAVERSAL-001, ROAD-FATIGUE-003, ROAD-WEAR-003)
+- **Plan:** `engine/processor/movement.ts:117-120`: the resolver currently short-circuits on `TERRAIN_MASK_WALL` without checking whether a road covers the tile. Change the branch to:
+  ```ts
+  if (terrain.get(nextPosition.x, nextPosition.y) === C.TERRAIN_MASK_WALL) {
+      if (!lookForStructureAt(room, nextPosition, C.STRUCTURE_ROAD)) {
+          move.resolved = true;
+          return false;
+      }
+  }
+  ```
+  Downstream fatigue and wear code at `mods/creep/processor.ts:152-165` already handles road-on-any-terrain correctly, so the single resolver change also unblocks `ROAD-FATIGUE-003` and `ROAD-WEAR-003`.
+- **Pathfinder side is already correct:** `ROAD-TRAVERSAL-002` (`Room.findPath` routing through a wall-road) passes on xxscreeps today — the CostMatrix respects roads. This PR aligns the resolver with the pathfinder, eliminating an observable inconsistency where pathfinding routed creeps onto wall-roads the resolver then refused.
+- **Blast radius:** One block in a hot path. `lookForStructureAt` is already used in the fatigue calculation in this file's callers, so no new imports needed.
+
 ---
 
 ## Summary
@@ -197,8 +212,9 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Flag setPosition | PR-16 | 1 |
 | Corner-exit branch order | PR-17 | 1 |
 | Road-site terrain scaling | PR-18 | 1 |
-| **Total xxscreeps PRs** | **18** | **47** |
-| **Grand total** | | **49 entries / 50 parity.json keys** |
+| Wall-road movement resolver | PR-19 | 1 |
+| **Total xxscreeps PRs** | **19** | **48** |
+| **Grand total** | | **50 entries / 51 parity.json keys** |
 
 ## Suggested submission order
 
@@ -208,14 +224,15 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 2. ~~**PR-17**~~ submitted as #119 — corner-exit reorder
 3. ~~**PR-11**~~ split + submitted as #120 (findPath same-pos) and #121 (routeCallback)
 4. ~~**PR-18**~~ submitted as #122 — road-site terrain scaling
-5. **PR-12** (boost energy cost) — 2-file targeted fix ← next
-6. **PR-3** (safe-mode guards) — tight area
-7. **PR-5** (link) — self-contained mod
-8. **PR-1** (structure ownership) — high-impact but localized; unblocks lab/observer
-9. **PR-4** (cooldowns) — well-explained shared root
-10. **PR-2** (resource store) — wide-impact, needs careful review; better after some trust built
-11. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
-12. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
+5. **PR-19** (wall-road movement resolver) — single-block fix, closes 3 tests ← next
+6. **PR-12** (boost energy cost) — 2-file targeted fix
+7. **PR-3** (safe-mode guards) — tight area
+8. **PR-5** (link) — self-contained mod
+9. **PR-1** (structure ownership) — high-impact but localized; unblocks lab/observer
+10. **PR-4** (cooldowns) — well-explained shared root
+11. **PR-2** (resource store) — wide-impact, needs careful review; better after some trust built
+12. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
+13. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
 
 ## Adapter changes (do these first)
 

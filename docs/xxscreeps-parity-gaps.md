@@ -1,6 +1,6 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (50 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (51 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/src`.
@@ -282,4 +282,10 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Tests: CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp
 - Cause: `ConstructionSite.progressTotal` getter at `mods/construction/construction-site.ts:34` is `C.CONSTRUCTION_COST[this.structureType]` — no terrain lookup. A road site on wall reports 300 (vanilla expects 300 × 150 = 45000); on swamp it reports 300 (vanilla expects 1500). Hits and decay already scale correctly via `mods/road/road.ts:26` and `:55`; only the site cost getter is missing the same branch.
 - Fix shape: teach `progressTotal` (or a helper it delegates to) to multiply by `CONSTRUCTION_COST_ROAD_WALL_RATIO` / `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` when `structureType === STRUCTURE_ROAD` and the underlying terrain is wall/swamp. Mirror the pattern used in `road.ts:23-28`.
+
+### wall-road-not-traversable
+- Tests: ROAD-TRAVERSAL-001, ROAD-FATIGUE-003, ROAD-WEAR-003
+- Cause: Movement resolver at `engine/processor/movement.ts:117-120` rejects any target on `TERRAIN_MASK_WALL` before looking at structures on that tile, so a road covering a natural wall never makes the tile walkable. Vanilla's `checkMovement` only blocks wall terrain when no road is present. The downstream fatigue and wear code at `mods/creep/processor.ts:152-165` already handles road-on-any-terrain correctly, so fixing the resolver also unblocks the fatigue and wear assertions.
+- Note: `Room.findPath` is *not* affected — xxscreeps's path cost matrix correctly treats a wall-road as walkable (`ROAD-TRAVERSAL-002` passes), creating an observable inconsistency where the pathfinder happily routes creeps onto wall-roads that the resolver then refuses to enter.
+- Fix shape: in the terrain branch of `dispatch()`, if `terrain.get(nextPosition) === TERRAIN_MASK_WALL`, look for a `STRUCTURE_ROAD` at that position via `room['#lookAt']` (or the existing `lookForStructureAt`) and only return `false` when no road is present. One-block change; the pathfinder side already agrees.
 
