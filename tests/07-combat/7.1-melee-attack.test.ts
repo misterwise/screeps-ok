@@ -1,5 +1,4 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_INVALID_TARGET, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, CARRY, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 
 describe('creep.attack()', () => {
 	test('COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part', async ({ shard }) => {

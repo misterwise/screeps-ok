@@ -5,6 +5,8 @@ reports/*
 .parity-verdict.json
 screeps/
 server/
+# npm pack output
+*.tgz
 
 # Private agent docs (symlinked from ~/Coding/agent-docs)
 .agent

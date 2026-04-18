@@ -2,22 +2,35 @@
 // game-constant package consumed by both vanilla and xxscreeps.
 //
 // We re-export from the package rather than hand-maintaining values to
-// prevent drift. TypeScript's ESM named-export inference works for most
-// constants; a small number need the require() fallback because they are
-// assigned to `exports` dynamically.
-
-// ── Tables (ESM-exportable) ────────────────────────────────────────
-export {
-	REACTIONS, BOOSTS, COMMODITIES, POWER_INFO,
-} from '@screeps/common/lib/constants.js';
-
-// ── Everything else ────────────────────────────────────────────────
-// @screeps/common uses Object.assign(exports, {...}) which TypeScript
-// can resolve for simple scalars but not for all names. Import the
-// whole module once and re-export with explicit types.
-//
+// prevent drift. @screeps/common is CJS and uses `Object.assign(exports,
+// {...})`, which Node's static CJS→ESM interop can't enumerate, so we
+// reach for createRequire and type every re-export by hand. This pattern
+// works uniformly under native Node ESM, vitest's SSR transform, and any
+// downstream bundler.
+import { createRequire } from 'node:module';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const C = require('@screeps/common/lib/constants.js');
+const C = createRequire(import.meta.url)('@screeps/common/lib/constants.js');
+
+// ── Tables ─────────────────────────────────────────────────────────
+export const REACTIONS: Record<string, Record<string, string>> = C.REACTIONS;
+export const BOOSTS: Record<string, Record<string, Record<string, number>>> = C.BOOSTS;
+export const COMMODITIES: Record<string, {
+	amount: number;
+	cooldown: number;
+	components: Record<string, number>;
+	level?: number;
+}> = C.COMMODITIES;
+export const POWER_INFO: Record<number, {
+	className: string;
+	level: number[];
+	cooldown: number;
+	duration?: number;
+	effect?: number[];
+	range?: number;
+	ops?: number;
+	energy?: number;
+	period?: number;
+}> = C.POWER_INFO;
 
 // Tables that need explicit typing (not picked up by ESM inference)
 export const REACTION_TIME: Record<string, number> = C.REACTION_TIME;

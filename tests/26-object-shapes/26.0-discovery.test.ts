@@ -392,7 +392,7 @@ describe('26.0 Object Shape Conformance', () => {
 	for (const entry of npcShapes) {
 		test(`${entry.catalogId} ${entry.objectType} data-property surface matches canonical shape`, async ({ shard }) => {
 			if (entry.limitation) {
-				const skip = hasDocumentedAdapterLimitation(
+				const skip = await hasDocumentedAdapterLimitation(
 					entry.limitation as Parameters<typeof hasDocumentedAdapterLimitation>[0],
 				);
 				if (skip) return;

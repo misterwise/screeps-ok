@@ -1,17 +1,40 @@
 {
   "name": "screeps-ok",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Behavioral conformance suite for Screeps server implementations",
   "type": "module",
   "engines": {
     "node": ">=24"
   },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "tests",
+    "bin",
+    "scripts/run-suite.js",
+    "scripts/preflight.js",
+    "scripts/lib",
+    "starter",
+    "behaviors.md",
+    "docs/adapter-spec.md",
+    "docs/adapter-guide.md",
+    "docs/test-authoring.md",
+    "vitest.config.ts"
+  ],
   "scripts": {
-    "postinstall": "node scripts/build-xxscreeps.js",
     "prepare": "node scripts/install-git-hooks.js",
+    "prepublishOnly": "node scripts/generate-starter.js && node scripts/validate-package.js",
+    "build:starter": "node scripts/generate-starter.js",
     "preflight": "node scripts/preflight.js",
     "setup": "node scripts/setup.js",
-    "setup:xxscreeps": "node scripts/setup.js xxscreeps",
+    "setup:xxscreeps": "node scripts/build-xxscreeps.js && node scripts/setup.js xxscreeps",
     "setup:vanilla": "node scripts/setup.js vanilla",
     "test": "node scripts/test.js",
     "posttest": "node scripts/generate-status.js && node scripts/generate-coverage.js",
@@ -22,13 +45,17 @@
     "status:refresh": "node scripts/parity-report.js && node scripts/generate-status.js",
     "build": "tsc",
     "lint": "tsc --noEmit",
-    "validate:capabilities": "node scripts/validate-capabilities.js"
+    "validate:capabilities": "node scripts/validate-capabilities.js",
+    "validate:package": "node scripts/validate-package.js"
   },
   "bin": {
     "screeps-ok": "./bin/run.js"
   },
-  "exports": {
-    ".": "./src/index.ts"
+  "dependencies": {
+    "@screeps/common": "^2.16.0"
+  },
+  "peerDependencies": {
+    "vitest": "^3"
   },
   "devDependencies": {
     "@types/node": "^24",

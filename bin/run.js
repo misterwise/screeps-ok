@@ -38,6 +38,6 @@ Options:
 Examples:
   screeps-ok xxscreeps
   screeps-ok --adapter vanilla -- tests/06-controller/controller.test.ts
-  screeps-ok --adapter ./test/screeps-ok-adapter.ts --preflight none
+  screeps-ok --adapter ./adapters/screeps-ok/index.ts --preflight none
 `);
 }

@@ -4,6 +4,7 @@ export type { PlayerCode } from './code.js';
 export { RunPlayerError } from './errors.js';
 export { test, describe, expect } from './fixture.js';
 export { limitationGated } from './test-helpers.js';
+export type { AdapterLimitation, AdapterLimitations } from './limitations.js';
 
 // Adapter contract
 export type {
@@ -14,6 +15,7 @@ export type {
 	PowerCreepSpec, NukeSpec,
 } from './adapter.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
+export { selectorFromFindConstant } from './find.js';
 
 // Snapshots
 export type {

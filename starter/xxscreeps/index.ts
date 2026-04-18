@@ -6,11 +6,11 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
-} from '../../src/adapter.js';
-import type { ObjectSnapshot } from '../../src/snapshots/common.js';
-import type { PlayerCode } from '../../src/code.js';
-import { RunPlayerError } from '../../src/errors.js';
-import { selectorFromFindConstant } from '../../src/find.js';
+} from 'screeps-ok';
+import type { ObjectSnapshot } from 'screeps-ok';
+import type { PlayerCode } from 'screeps-ok';
+import { RunPlayerError } from 'screeps-ok';
+import { selectorFromFindConstant } from 'screeps-ok';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';

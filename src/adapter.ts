@@ -196,6 +196,15 @@ export interface ScreepsOkAdapter {
 	/** Feature areas the adapter can exercise honestly. Tests skip on false. */
 	readonly capabilities: AdapterCapabilities;
 
+	/**
+	 * Documented engine quirks that require skipping specific tests (not
+	 * asserting failure). Distinct from capabilities: a limitation says the
+	 * engine implements the feature but misbehaves in a way that would hang
+	 * or corrupt the runner if the test ran. Omitted flags default to false.
+	 * See `AdapterLimitation` in `limitations.ts` for the catalog.
+	 */
+	readonly limitations?: import('./limitations.js').AdapterLimitations;
+
 	/** Create a fresh isolated shard for a single test. */
 	createShard(spec: ShardSpec): Promise<void>;
 
