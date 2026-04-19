@@ -13,6 +13,7 @@ Last refreshed: 2026-04-18.
 | PR-11a | [laverdet/xxscreeps#120](https://github.com/laverdet/xxscreeps/pull/120) | Short-circuit Room.findPath when origin === goal |
 | PR-11b | [laverdet/xxscreeps#121](https://github.com/laverdet/xxscreeps/pull/121) | Fix Game.map.findRoute: routeCallback arg order and null-exit guard |
 | PR-18 | [laverdet/xxscreeps#122](https://github.com/laverdet/xxscreeps/pull/122) | Scale ConstructionSite.progressTotal for roads by terrain ratio |
+| PR-19 | [laverdet/xxscreeps#123](https://github.com/laverdet/xxscreeps/pull/123) | Respect roads over wall terrain in the movement resolver |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -172,20 +173,9 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **Closed (1 entry / 2 tests):** `road-site-progresstotal-no-terrain-scaling` (CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp).
 - **Fix:** `mods/construction/construction-site.ts:34`: extend the `progressTotal` getter so that for `STRUCTURE_ROAD` it multiplies `CONSTRUCTION_COST[structureType]` by `CONSTRUCTION_COST_ROAD_WALL_RATIO` on wall or `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` on swamp, via `this.room.getTerrain().get(this.pos.x, this.pos.y)`. Every other structureType short-circuits through the same single-cost path as before. Mirrors the existing ratio application in `mods/road/road.ts` `checkPlacement` and the post-build hits scaling in the shared `build.js` completion branch.
 
-### PR-19: Wall-road movement resolver (`engine/processor/movement.ts`)
-- **Closes (1 entry / 3 tests):** `wall-road-not-traversable` (ROAD-TRAVERSAL-001, ROAD-FATIGUE-003, ROAD-WEAR-003)
-- **Plan:** `engine/processor/movement.ts:117-120`: the resolver currently short-circuits on `TERRAIN_MASK_WALL` without checking whether a road covers the tile. Change the branch to:
-  ```ts
-  if (terrain.get(nextPosition.x, nextPosition.y) === C.TERRAIN_MASK_WALL) {
-      if (!lookForStructureAt(room, nextPosition, C.STRUCTURE_ROAD)) {
-          move.resolved = true;
-          return false;
-      }
-  }
-  ```
-  Downstream fatigue and wear code at `mods/creep/processor.ts:152-165` already handles road-on-any-terrain correctly, so the single resolver change also unblocks `ROAD-FATIGUE-003` and `ROAD-WEAR-003`.
-- **Pathfinder side is already correct:** `ROAD-TRAVERSAL-002` (`Room.findPath` routing through a wall-road) passes on xxscreeps today — the CostMatrix respects roads. This PR aligns the resolver with the pathfinder, eliminating an observable inconsistency where pathfinding routed creeps onto wall-roads the resolver then refused.
-- **Blast radius:** One block in a hot path. `lookForStructureAt` is already used in the fatigue calculation in this file's callers, so no new imports needed.
+### PR-19: Wall-road movement resolver — submitted as #123
+- **Closed (1 entry / 3 tests):** `wall-road-not-traversable` (ROAD-TRAVERSAL-001, ROAD-FATIGUE-003, ROAD-WEAR-003).
+- **Fix:** `engine/processor/movement.ts:117-120`: before failing the move on a wall tile, scan `room.lookForAt(LOOK_STRUCTURES, nextPosition)` for a `STRUCTURE_ROAD`. If present, fall through to the existing obstacle checks. Mirrors vanilla's `checkObstacleAtXY` in `@screeps/engine/src/processor/intents/movement.js:17-37` (`checkTerrain(... WALL) && !hasRoad`). Used `room.lookForAt` rather than `lookForStructureAt` to avoid an `engine/` → `mods/` import; downstream fatigue and `ROAD_WEAROUT` paths in `mods/creep/processor.ts` already key off `lookForStructureAt(..., STRUCTURE_ROAD)` and don't re-examine terrain, so the single resolver change unblocks all three tests.
 
 ---
 
@@ -224,8 +214,8 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 2. ~~**PR-17**~~ submitted as #119 — corner-exit reorder
 3. ~~**PR-11**~~ split + submitted as #120 (findPath same-pos) and #121 (routeCallback)
 4. ~~**PR-18**~~ submitted as #122 — road-site terrain scaling
-5. **PR-19** (wall-road movement resolver) — single-block fix, closes 3 tests ← next
-6. **PR-12** (boost energy cost) — 2-file targeted fix
+5. ~~**PR-19**~~ submitted as #123 — wall-road movement resolver
+6. **PR-12** (boost energy cost) — 2-file targeted fix ← next
 7. **PR-3** (safe-mode guards) — tight area
 8. **PR-5** (link) — self-contained mod
 9. **PR-1** (structure ownership) — high-impact but localized; unblocks lab/observer
