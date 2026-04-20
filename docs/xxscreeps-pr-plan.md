@@ -142,17 +142,18 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **Closes (1 entry / 2 tests):** `boost-energy-cost-scales` (BOOST-BUILD-002, BOOST-UPGRADE-002).
 - **Fix:** Added `calculateBoundedEffect` in `mods/creep/creep.ts` returning `{ unboosted, boosted }`, mirroring vanilla's sort-boost-deltas-desc-and-slice-to-effect pattern so energy-limited mixed-boost creeps use their most-boosted WORK parts first. Rewired `upgradeController` (`mods/controller/processor.ts:173-182`), `build` (`mods/construction/processor.ts:46-51`), and `repair` (`mods/construction/processor.ts:89-94`) to charge unboosted energy and apply boosted output. Level-8 `upgradePowerThisTick` now tracks unboosted spend, matching vanilla's `target._upgraded`. Dismantle/harvest/combat intents keep `calculatePower` — their yield is supposed to scale with the boost.
 
-### PR-13: Structure API surface (`mods/structure/structure.ts`, `mods/defense/wall.ts`, `mods/structure/ruin.ts`, `mods/logistics/storage.ts`)
-- **Closes (3 entries / 4 tests):** `notifyWhenAttacked-not-implemented` (STRUCTURE-API-004/005/006), `shape-extra-hits-my:wall+ruin` (SHAPE-STRUCT-001:constructedWall, SHAPE-RUIN-001), `shape-struct-missing-legacy-compat:storage` (SHAPE-STRUCT-001:storage)
-- **Plan:**
-  1. Add `notifyWhenAttacked(enabled)` method on `Structure` base — validate ownership, validate boolean arg, persist via a `#notifyWhenAttacked` schema field.
-  2. `defense/wall.ts`: add `get ticksToLive()` getter (return null for permanent walls or actual ticks for temporary).
-  3. `structure/ruin.ts`: add top-level `get structureType()` delegating to `this['#structure'].type` (currently only on inner sub-object).
-  4. `logistics/storage.ts`: add `get storeCapacity()` legacy compat getter.
-- **Blast radius:** Surface additions only; doesn't change behavior.
+### PR-13: Structure API surface (`mods/structure/structure.ts`, `mods/structure/processor.ts`, `mods/defense/wall.ts`, `mods/structure/ruin.ts`, `mods/logistics/storage.ts`)
+- **Closes on its own (4 tests):** `notifyWhenAttacked-not-implemented` (STRUCTURE-API-004/005/006), `shape-struct-missing-legacy-compat:storage` (SHAPE-STRUCT-001:storage).
+- **Closes jointly with PR-14 (2 tests):** SHAPE-STRUCT-001:constructedWall and SHAPE-RUIN-001 need PR-13's `ticksToLive`/`structureType` getters AND PR-14's RoomObject cleanup (removing leaked `hits`/`hitsMax`/`my` from the base). Either PR alone leaves the other side failing. Both sub-tests stay under `shape-extra-hits-my` (PR-14's entry) because the RoomObject leak is the dominant blocker; PR-13 contributes the missing getters.
+- **Fix:**
+  1. `structure.ts`: wrap the base Structure shape in `struct(objectFormat, { '#notifyWhenAttacked': optional('bool') })`; add `notifyWhenAttacked(enabled)` method + `checkNotifyWhenAttacked` helper on Structure, mirroring `@screeps/engine/src/game/structures.js:89` — reject if `my === false` or the room controller has an owner who isn't the caller, then validate boolean arg. `mods/structure/processor.ts` registers the intent processor on `Structure` to persist the bool, matching the `setPublic` pattern at `mods/defense/processor.ts:83`.
+  2. `defense/wall.ts`: add `@enumerable get ticksToLive()` returning `undefined` for persistent walls. Mirrors `@screeps/engine/src/game/structures.js:840`; NPC-spawned temporary walls are not modeled.
+  3. `structure/ruin.ts`: add top-level `@enumerable get structureType()` delegating to `this['#structure'].type`. The inner `structure` sub-object already exposed it via `defineProperty`, but vanilla's canonical shape puts `structureType` on the ruin itself.
+  4. `logistics/storage.ts`: add `@deprecated @enumerable get storeCapacity()` returning `this.store.getCapacity()`. Mirrors the `@deprecated energy`/`energyCapacity` pair on `StructureLab` at `mods/chemistry/lab.ts:36-38`.
+- **Blast radius:** Surface additions + one schema field (`optional('bool')`, lazy). No behavior change. Full parity confirmed clean — 4 unexpected passes, 0 new regressions.
 
 ### PR-14: Object/Room/Game runtime shape (`game/object.ts`, `game/room/room.ts`, `game/game.ts`, `mods/flag/game.ts`)
-- **Closes (3 entries / 11+ tests):** `shape-extra-hits-my:base+flag` (SHAPE-SOURCE/MINERAL/SITE/RESOURCE/TOMBSTONE/RUIN/STRUCT-001 family + SHAPE-FLAG-001), `shape-room-missing-survivalInfo` (SHAPE-ROOM-001), `shape-game-surface-mismatch` (SHAPE-GAME-001)
+- **Closes (3 entries / 11+ tests):** `shape-extra-hits-my` family (SHAPE-SOURCE/MINERAL/SITE/RESOURCE/TOMBSTONE/RUIN/STRUCT-001 + SHAPE-FLAG-001), `shape-room-missing-survivalInfo` (SHAPE-ROOM-001), `shape-game-surface-mismatch` (SHAPE-GAME-001). Note: `SHAPE-STRUCT-001:constructedWall` and `SHAPE-RUIN-001` additionally require PR-13's `ticksToLive`/`structureType` getters — they flip only when both land.
 - **Plan:**
   1. `game/object.ts:60-62`: remove `hits`/`hitsMax`/`my` getters from base RoomObject. Add per-subclass — every class that has those concepts gets explicit getters; Source/Mineral/Resource/etc. inherit nothing.
   2. `game/object.ts:21`: Flag declares `id: never` — the schema struct's `id` field still surfaces. Either suppress it via Flag-specific serialization or accept the divergence and update test expectation.
@@ -207,7 +208,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Creep client API | PR-10 | 5 |
 | PathFinder/Map | PR-11 | 2 |
 | Boost energy | PR-12 | 1 |
-| Structure API surface | PR-13 | 3 |
+| Structure API surface | PR-13 | 2 (+2 joint with PR-14) |
 | Object/Game shape | PR-14 | 3 |
 | Memory | PR-15 | 3 |
 | Flag setPosition | PR-16 | 1 (merged; entry removed) |
@@ -233,8 +234,9 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 10. ~~**PR-1**~~ submitted as #128 — structure ownership precedence (also closed factory-not-owner-precedence bonus)
 11. ~~**PR-4**~~ submitted as #129 — cooldown anchoring for lab, factory, and extractor intents (also closed factory-cooldown-no-decrement bonus)
 12. ~~**PR-2**~~ submitted as #130 — Store.getFreeCapacity null propagation and OpenStore pool semantics
-13. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion ← next
-14. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
+13. **PR-13** (structure API surface) — ready for upstream on branch `fix/structure-api-surface`; flips 4 tests alone, 2 more jointly with PR-14 ← next
+14. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
+15. Remaining PRs (PR-6, 7, 8, 9, 10, 14) in any order based on capacity
 
 ## Adapter changes (do these first)
 
