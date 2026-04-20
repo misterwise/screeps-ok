@@ -1,10 +1,5 @@
 {
 	"expected_failures": {
-		"corner-exit-branch-order": {
-			"actual": "At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49`",
-			"expected": "Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73`",
-			"tests": ["ROOM-TRANSITION-006"]
-		},
 		"tombstone-corpse-rate": {
 			"actual": "Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()`",
 			"expected": "On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources",
@@ -240,11 +235,6 @@
 			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
 			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004"]
 		},
-		"flag-setposition-ignored": {
-			"actual": "`Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves",
-			"expected": "The flag relocates to the requested position on the next tick",
-			"tests": ["FLAG-006"]
-		},
 		"road-site-progresstotal-no-terrain-scaling": {
 			"actual": "`ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300",
 			"expected": "A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp",
@@ -254,6 +244,11 @@
 			"actual": "The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it",
 			"expected": "A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile",
 			"tests": ["ROAD-TRAVERSAL-001", "ROAD-FATIGUE-003", "ROAD-WEAR-003"]
+		},
+		"getrawbuffer-uint8-truncation": {
+			"actual": "`terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero.",
+			"expected": "Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y).",
+			"tests": ["MAP-TERRAIN-003"]
 		}
 	}
 }

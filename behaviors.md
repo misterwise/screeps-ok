@@ -216,13 +216,6 @@ Coverage Notes
 - `ROOM-TRANSITION-005` `behavior` `verified_vanilla`
   A creep's body composition, hit points, and store contents are preserved
   intact across a room transition.
-- `ROOM-TRANSITION-006` `behavior` `verified_vanilla`
-  At a corner exit tile (both axes simultaneously at an edge), the engine
-  resolves the transition in a fixed branch order:
-  `x=0 → y=0 → x=49 → y=49`. A creep at `(49, 0)` therefore transitions
-  NORTH (matching the `y=0` branch before `x=49`), arriving at `(49, 49)`
-  in the room one step north. Other corners `(0, 0)`, `(0, 49)`,
-  `(49, 49)` are unambiguous because only one edge-axis matches first.
 
 Coverage Notes
 - Room adjacency and coordinate topology are owned by `21. Map`

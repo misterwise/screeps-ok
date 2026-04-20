@@ -22,10 +22,26 @@ export const TERRAIN_FIXTURE_ROOM = 'W5N5';
  * A blank-terrain neighbor of TERRAIN_FIXTURE_ROOM, also pre-loaded into the
  * vanilla engine_runner cache. Exists so tests that need cross-room
  * PathFinder behavior (e.g. maxRooms) have a pair of adjacent rooms both
- * visible to the runner's static terrain cache. Kept deliberately far from
- * W1N1/W2N1 to avoid interfering with ROOM-TRANSITION corner-exit tests.
+ * visible to the runner's static terrain cache.
  */
 export const TERRAIN_FIXTURE_NEIGHBOR = 'W5N6';
+
+/**
+ * Canonical map-generator invariant: every room corner is a wall. The Screeps
+ * map generator (`@screeps/backend/lib/cli/map.js`) restricts exits to
+ * x∈[2,47] on every edge and unconditionally walls all border tiles that
+ * aren't exit-forced, so (0,0), (49,0), (0,49), (49,49) are always walls in
+ * a generated world. Adapters apply this to every test-supplied terrain spec
+ * so tests can't observe behaviors that are impossible in real gameplay.
+ */
+export function withCornerWalls(terrain: TerrainSpec): TerrainSpec {
+	const out = terrain.slice() as TerrainSpec;
+	out[0] = 1;
+	out[49] = 1;
+	out[49 * 50] = 1;
+	out[49 * 50 + 49] = 1;
+	return out;
+}
 
 // Landmark coordinates baked into TERRAIN_FIXTURE_SPEC below. Tests reference
 // these instead of hard-coding positions, so the fixture layout can evolve

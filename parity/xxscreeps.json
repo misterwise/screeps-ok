@@ -1,10 +1,5 @@
 {
 	"expected_failures": {
-		"corner-exit-branch-order": {
-			"actual": "At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49`",
-			"expected": "Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73`",
-			"tests": ["ROOM-TRANSITION-006"]
-		},
 		"tombstone-corpse-rate": {
 			"actual": "Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()`",
 			"expected": "On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources",
@@ -240,10 +235,10 @@
 			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
 			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004"]
 		},
-		"flag-setposition-ignored": {
-			"actual": "`Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves",
-			"expected": "The flag relocates to the requested position on the next tick",
-			"tests": ["FLAG-006"]
+		"getrawbuffer-uint8-truncation": {
+			"actual": "`terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero.",
+			"expected": "Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y).",
+			"tests": ["MAP-TERRAIN-003"]
 		}
 	}
 }

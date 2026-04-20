@@ -1,6 +1,6 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (51 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (50 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/src`.
@@ -132,11 +132,6 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Cause: `RawMemory.set` unconditionally clears the parsed cache at `mods/memory/memory.ts:86` (`RawMemory._parsed = json = undefined;`). The next `Memory.x` access falls through to `get()` (lines 142-159) which re-parses the just-set string, dropping any in-tick mutations made before the `set`. Vanilla's memhack preserves the already-parsed `Memory` object identity for the rest of the tick.
 - Fix shape: in `set()`, only invalidate `json`/`_parsed` when the parsed cache hasn't been touched (`!accessedJson`). When the user has already accessed `Memory`, leave the parsed object live so reads return the in-tick mutations.
 
-### flag-setposition-ignored
-- Tests: FLAG-006
-- Cause: Copy-paste from `setColor`. `Flag.setPosition` at `mods/flag/flag.ts:75-86` parses the new `pos` from the args (line 76), then pushes a `create` intent with `this.pos['#id']` — the **old** position id — instead of `pos!['#id']`. The `pos` variable is computed but never used in the intent push. The engine-side `createFlag` (`mods/flag/game.ts:106-109`) WOULD relocate (`flag.pos = pos; flag['#posId'] = pos['#id']`) if given the new `posInt`.
-- Fix shape: change `this.pos['#id']` to `pos!['#id']` on `flag.ts:81`. One-character semantic fix.
-
 ### shape-flag-crash (misnamed — same root as shape-extra-hits-my)
 - Tests: SHAPE-FLAG-001
 - Cause: Misnamed in `parity.json` — the crash is gone (resolved by `e515285`'s sandbox-per-user). Test now fails for the same root as `shape-extra-hits-my`: base `RoomObject` (`game/object.ts:60-62`) declares getters for `hits`, `hitsMax`, `my` that return `undefined` and leak onto every subclass's data-property surface, including Flag. Plus a Flag-specific extra: the schema struct on RoomObject (`game/object.ts:21`) contributes an `id` field that surfaces on Flag despite `Flag.id` being declared `never` (`mods/flag/flag.ts:30`) because flags don't actually have ids in vanilla.
@@ -265,11 +260,6 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Cause: Adapter bug, not engine. Same shape as the 2026-04-11 `placeStructure` ticksToDecay fix. `placeTombstone` (`adapters/xxscreeps/index.ts:452`) and `placeRuin` (`adapters/xxscreeps/index.ts:483`) compute the absolute decay anchor as `(spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500)` and `(spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500)` respectively. With the death/destroy time defaulted to 0, the resulting absolute `#decayTime` is just `ticksToDecay` — already in the past once `shard.time` advances. Engine processors anchor correctly: `mods/creep/tombstone.ts:83` does `Game.time + body.length × TOMBSTONE_DECAY_PER_PART`, `mods/structure/ruin.ts:84` does `Game.time + decayTimeout`.
 - Fix shape: anchor on live shard time, mirror of the `setStructureNextDecayTime` call at `index.ts:330`. Replace the `(deathTime ?? 0) + (ticksToDecay ?? 500)` argument with `this.simulation!.shard.time + (spec.ticksToDecay ?? 500)`. The `deathTime`/`destroyTime` spec fields should remain as cosmetic setters for `tombstone.deathTime` / `ruin.destroyTime` (already done at index.ts:435 / 468) but stop participating in the decay-anchor math.
 
-### corner-exit-branch-order
-- Tests: ROOM-TRANSITION-006
-- Cause: At corner (49, 0), xxscreeps's transition logic at `mods/creep/processor.ts:311-319` orders branches `x=0 → x=49 → y=0 → y=49`. Vanilla orders `y=0 → x=49` per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73`. Different exit chosen at corner positions.
-- Fix shape: reorder the branches in `mods/creep/processor.ts:311-319` to match vanilla's `y=0 → y=49 → x=0 → x=49` precedence (or whichever exact order vanilla uses — verify the four-branch sequence). One-block reorder, no other changes.
-
 ### foreign-segment-not-supported
 - Tests: RAWMEMORY-FOREIGN-002, RAWMEMORY-FOREIGN-003, RAWMEMORY-FOREIGN-004
 - Cause: Three holes:
@@ -288,4 +278,9 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Cause: Movement resolver at `engine/processor/movement.ts:117-120` rejects any target on `TERRAIN_MASK_WALL` before looking at structures on that tile, so a road covering a natural wall never makes the tile walkable. Vanilla's `checkMovement` only blocks wall terrain when no road is present. The downstream fatigue and wear code at `mods/creep/processor.ts:152-165` already handles road-on-any-terrain correctly, so fixing the resolver also unblocks the fatigue and wear assertions.
 - Note: `Room.findPath` is *not* affected — xxscreeps's path cost matrix correctly treats a wall-road as walkable (`ROAD-TRAVERSAL-002` passes), creating an observable inconsistency where the pathfinder happily routes creeps onto wall-roads that the resolver then refuses to enter.
 - Fix shape: in the terrain branch of `dispatch()`, if `terrain.get(nextPosition) === TERRAIN_MASK_WALL`, look for a `STRUCTURE_ROAD` at that position via `room['#lookAt']` (or the existing `lookForStructureAt`) and only return `false` when no road is present. One-block change; the pathfinder side already agrees.
+
+### getrawbuffer-uint8-truncation
+- Tests: MAP-TERRAIN-003
+- Cause: `Terrain.getRawBuffer(destinationArray)` in `game/terrain.ts:68-85` has a non-`'xxscreeps'` branch (the Screeps-compat path) that builds a 32-bit-packed value per source byte and assigns it with `buffer[ii] = <32-bit-value>`. The code works when `destinationArray` is a `Uint32Array` (each slot holds 4 tiles' masks, 8 bits each, and the final `new Uint8Array(buffer.buffer)` view unpacks them into the correct 2500 byte positions). Given a `Uint8Array` — which is what the Screeps API documents and what `screeps-game-api.d.ts` types — `buffer[ii] =` truncates to the low byte, so only tile `4*ii+0` survives at byte `ii`; tiles `4*ii+1..4*ii+3` are lost, and bytes 625..2499 stay uninitialised. The bug was previously masked because every tile in the test harness was plain (mask 0), so the truncated output and the true mask agreed everywhere. Corner walls in generated maps (now enforced by `src/terrain-fixture.ts:withCornerWalls`) land on offsets `49`, `2450`, `2499` which all fall on truncated-or-untouched bytes, producing exactly 3 mismatches vs `terrain.get(49, 0)` / `get(0, 49)` / `get(49, 49)`.
+- Fix shape: when `destinationArray` is a `Uint8Array`, write one mask per tile: `for (let i = 0; i < 2500; ++i) buffer[i] = (source[i >>> 2] >>> ((i & 0x03) << 1)) & 0x03;`. Keep the existing `Uint32Array` path for internal callers. Simplest: dispatch on `destinationArray instanceof Uint8Array`.
 

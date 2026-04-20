@@ -9,7 +9,7 @@ import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
 import { snapshotObject, snapshotRoomObjects } from './snapshots.js';
-import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC } from '../../src/terrain-fixture.js';
+import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC, withCornerWalls } from '../../src/terrain-fixture.js';
 
 // @ts-expect-error -- screeps-server-mockup has no type declarations
 import { ScreepsServer, TerrainMatrix } from 'screeps-server-mockup';
@@ -25,8 +25,7 @@ const PRELOAD_ROOMS: { name: string; terrain: TerrainSpec | null }[] = [
 	{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
 	// Blank-terrain neighbor of the fixture room so cross-room PathFinder
 	// tests (e.g. maxRooms) have an adjacent room the runner's static cache
-	// already knows about. Kept far from W1N1 to leave ROOM-TRANSITION
-	// corner-exit resolution undisturbed.
+	// already knows about.
 	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
 ];
 
@@ -128,7 +127,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		for (const roomSpec of spec.rooms) {
 			await this.server.world.addRoom(roomSpec.name);
 			await this.server.world.setTerrain(roomSpec.name,
-				roomSpec.terrain ? this.buildTerrain(roomSpec.terrain) : new TerrainMatrix());
+				this.buildTerrain(withCornerWalls(roomSpec.terrain ?? new Array(2500).fill(0))));
 			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
 				level: roomSpec.rcl ?? 0,
 			});
@@ -828,7 +827,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				`at createShard time, or call setTerrain before the first runPlayer/tick.`,
 			);
 		}
-		await this.server.world.setTerrain(room, this.buildTerrain(terrain));
+		await this.server.world.setTerrain(room, this.buildTerrain(withCornerWalls(terrain)));
 	}
 
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {

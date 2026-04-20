@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1249%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-988%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-93-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1248%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-988%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-92-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1249](#vanilla-passing-tests) | — | — | — | 2026-04-18 23:43 UTC |
-| 🟡 | **xxscreeps** | [988](#xxscreeps-passing-tests) | [93](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-18 23:41 UTC |
+| 🟢 | **vanilla** | [1248](#vanilla-passing-tests) | — | — | — | 2026-04-20 03:43 UTC |
+| 🟡 | **xxscreeps** | [988](#xxscreeps-passing-tests) | [92](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-20 03:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,11 +25,10 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 51 parity gaps against vanilla's canonical behavior, covering 93 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 92 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `corner-exit-branch-order` | At corner (49, 0) xxscreeps transitions EAST (`x=49` branch) because `mods/creep/processor.ts:311-319` orders `x=0 → x=49 → y=0 → y=49` | Vanilla engine transitions NORTH (`y=0` branch before `x=49`) per `@screeps/engine/src/processor/intents/creeps/tick.js:58-73` | [1](#xxscreeps-gap-corner-exit-branch-order) |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
 | `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
 | `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
@@ -77,18 +76,11 @@ xxscreeps currently declares 51 parity gaps against vanilla's canonical behavior
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
-| `flag-setposition-ignored` | `Flag.setPosition` pushes a `create` intent with the flag's OLD `#posId`, so the engine-side createFlag re-applies to the same tile and the flag never moves | The flag relocates to the requested position on the next tick | [1](#xxscreeps-gap-flag-setposition-ignored) |
 | `road-site-progresstotal-no-terrain-scaling` | `ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300 | A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp | [2](#xxscreeps-gap-road-site-progresstotal-no-terrain-scaling) |
 | `wall-road-not-traversable` | The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it | A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile | [3](#xxscreeps-gap-wall-road-not-traversable) |
+| `getrawbuffer-uint8-truncation` | `terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero. | Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y). | [1](#xxscreeps-gap-getrawbuffer-uint8-truncation) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-corner-exit-branch-order">
-<summary><code>corner-exit-branch-order</code> — 1 test</summary>
-
-- `Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first`
-
-</details>
 
 <details id="xxscreeps-gap-tombstone-corpse-rate">
 <summary><code>tombstone-corpse-rate</code> — 3 tests</summary>
@@ -458,13 +450,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-flag-setposition-ignored">
-<summary><code>flag-setposition-ignored</code> — 1 test</summary>
-
-- `Flags FLAG-006 Flag.setPosition moves the flag to the requested room position`
-
-</details>
-
 <details id="xxscreeps-gap-road-site-progresstotal-no-terrain-scaling">
 <summary><code>road-site-progresstotal-no-terrain-scaling</code> — 2 tests</summary>
 
@@ -482,11 +467,18 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-getrawbuffer-uint8-truncation">
+<summary><code>getrawbuffer-uint8-truncation</code> — 1 test</summary>
+
+- `Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()`
+
+</details>
+
 
 ## vanilla passing tests
 
 <details>
-<summary>1249 tests across 109 files</summary>
+<summary>1248 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -691,13 +683,12 @@ Click a test count above to jump to the affected test list for that gap.
 - Road fatigue ROAD-FATIGUE-003 a road on a natural wall reduces the fatigue multiplier to 1
 - Road fatigue ROAD-TRAVERSAL-002 Room.findPath routes through a wall-road when the path is otherwise blocked
 
-**`tests/01-movement/1.4-room-transitions.test.ts`** (5)
+**`tests/01-movement/1.4-room-transitions.test.ts`** (4)
 
 - Room transitions ROOM-TRANSITION-001 creep moving to an exit tile appears in the adjacent room
 - Room transitions ROOM-TRANSITION-002 creep retains identity across room transition
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
-- Room transitions ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first
 
 **`tests/01-movement/1.5-pulling.test.ts`** (12)
 
@@ -3472,7 +3463,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (7)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
@@ -3481,6 +3472,7 @@ Click a count to jump to the affected test list.
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
 - Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
 - Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
+- Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -3531,11 +3523,10 @@ Click a count to jump to the affected test list.
 - Game.map route finding MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map route finding MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 
-**`tests/21-map/21.3-terrain.test.ts`** (3)
+**`tests/21-map/21.3-terrain.test.ts`** (2)
 
 - Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms
 - Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
-- Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
 
 **`tests/22-roomposition/22.0-basics.test.ts`** (4)
 

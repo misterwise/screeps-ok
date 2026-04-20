@@ -13,13 +13,8 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		// Find an actual non-corner exit on the left edge (leads to W2N1).
-		// Corner exits (y=0, y=49) trigger divergent branch-ordering in the
-		// engine's exit-crossing logic (see ROOM-TRANSITION-006); avoid them
-		// here so this test isolates the standard single-axis transition.
 		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
-				.filter(e => e.y > 5 && e.y < 44);
+			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
 			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 		`) as { x: number; y: number } | null;
 		expect(exitInfo).not.toBeNull();
@@ -59,10 +54,8 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		// Non-corner exit; see ROOM-TRANSITION-006 for corner semantics.
 		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
-				.filter(e => e.y > 5 && e.y < 44);
+			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
 			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 		`) as { x: number; y: number } | null;
 		expect(exitInfo).not.toBeNull();
@@ -95,8 +88,7 @@ describe('Room transitions', () => {
 		await shard.tick();
 
 		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
-				.filter(e => e.y > 5 && e.y < 44);
+			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
 			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 		`) as { x: number; y: number } | null;
 		expect(exitInfo).not.toBeNull();
@@ -144,12 +136,8 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		// Pick a left-edge exit that is NOT in a corner — corner exits make the
-		// inner tile (exitX+1, exitY=0) already at-edge (because y=0), and the
-		// fatigue-reset rule requires the source tile to NOT be at edge.
 		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
-				.filter(e => e.y > 5 && e.y < 44);
+			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
 			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 		`) as { x: number; y: number } | null;
 		expect(exitInfo).not.toBeNull();
@@ -171,47 +159,6 @@ describe('Room transitions', () => {
 		// Without the reset, fatigue would be 6; with the reset it must be 0.
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.fatigue).toBe(0);
-	});
-
-	test('ROOM-TRANSITION-006 corner (49,0) transitions NORTH via the y=0 branch first', async ({ shard }) => {
-		// Canonical vanilla branch order (from `@screeps/engine/src/processor/
-		// intents/creeps/tick.js:58-73`): `x=0 → y=0 → x=49 → y=49`. So a
-		// creep at (49, 0) matches `y=0` before `x=49` and goes NORTH to
-		// (49, 49) of the adjacent upper room.
-		//
-		// xxscreeps orders `x=0 → x=49 → y=0 → y=49` (see
-		// `xxscreeps/src/mods/creep/processor.ts:311-319`) and instead goes
-		// EAST to (0, 0) of the adjacent eastern room. Tracked as parity gap
-		// `corner-exit-branch-order` in `adapters/xxscreeps/parity.json`.
-		//
-		// The shard includes both potential destinations so whichever branch
-		// fires has an accessible target and actually crosses; any creep
-		// that is still in W1N1 after the tick has been aborted rather than
-		// transitioned, which isn't what we're testing.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W1N2' },  // Vanilla's destination (NORTH).
-				{ name: 'W0N1' },  // xxscreeps' destination (EAST).
-			],
-		});
-		await shard.tick();
-
-		// Place creep directly at (49, 0) — the corner itself. The creep's
-		// idle exit-crossing processor fires on the very next tick; no
-		// player intent is needed because simply being on a border tile
-		// triggers the cross-room logic.
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [49, 0], owner: 'p1', body: [MOVE],
-			name: 'Cornered',
-		});
-		await shard.tick();
-
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.pos.roomName).toBe('W1N2');
-		expect(creep.pos.x).toBe(49);
-		expect(creep.pos.y).toBe(49);
 	});
 
 });

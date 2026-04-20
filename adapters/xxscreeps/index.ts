@@ -11,6 +11,7 @@ import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
+import { withCornerWalls } from '../../src/terrain-fixture.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
@@ -600,7 +601,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			);
 		}
 		await this.ensureSimulation();
-		await this.simulation!.updateTerrain(roomName, terrain);
+		await this.simulation!.updateTerrain(roomName, withCornerWalls(terrain));
 	}
 
 	// Map our synthetic IDs → engine-generated IDs (populated during setup flush)
@@ -613,11 +614,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const idMap = this.idMap;
 
 		// Compute terrain for each room: explicit from spec, or all-plain
-		// (matching vanilla's TerrainMatrix() default).
+		// (matching vanilla's TerrainMatrix() default). Corners are always
+		// walled to match canonical map-generator semantics.
 		const terrainOverrides: Record<string, TerrainSpec> = {};
 		const allPlain = new Array(2500).fill(0) as TerrainSpec;
 		for (const roomSpec of this.shardSpec.rooms) {
-			terrainOverrides[roomSpec.name] = roomSpec.terrain ?? allPlain;
+			terrainOverrides[roomSpec.name] = withCornerWalls(roomSpec.terrain ?? allPlain);
 		}
 
 		// Create simulation with bare rooms (no test objects) and terrain

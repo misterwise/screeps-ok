@@ -9,6 +9,13 @@
 // The pin sha lives in `.xxscreeps-pin` at the repo root so bumps are a
 // one-line change. Native addon compilation is still deferred to
 // `npm run setup:xxscreeps`.
+//
+// Local override: setting XXSCREEPS_LOCAL=/path/to/xxscreeps-checkout skips
+// the fetch and lays out from that directory instead. The path must have the
+// upstream monorepo layout (tsconfig.base.json, packages/xxscreeps,
+// packages/pathfinder). The pin sha is ignored in this mode, and every run
+// rebuilds (no stamp check) since the source tree is assumed to be edited.
+// Intended for the screeps-ok-pr workspace — see .agent/workflows/xxscreeps-pr.md.
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import {
@@ -43,35 +50,54 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 	process.exit(0);
 }
 
-if (!existsSync(pinFile)) {
-	console.error(`[screeps-ok] Missing ${pinFile}`);
-	process.exit(1);
-}
-const pin = readFileSync(pinFile, 'utf8').trim();
-if (!/^[0-9a-f]{40}$/.test(pin)) {
-	console.error(`[screeps-ok] .xxscreeps-pin must contain a full 40-char sha; got '${pin}'`);
-	process.exit(1);
-}
-const shortPin = pin.slice(0, 8);
+const localOverride = process.env.XXSCREEPS_LOCAL
+	? resolve(process.env.XXSCREEPS_LOCAL)
+	: null;
 
-if (
-	existsSync(stampFile) && readFileSync(stampFile, 'utf8').trim() === pin &&
-	existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))
-) {
-	console.log(`[screeps-ok] xxscreeps already built at pin ${shortPin}`);
-	process.exit(0);
+let pin = null;
+let shortPin = null;
+if (localOverride) {
+	validateLocalCheckout(localOverride);
+} else {
+	if (!existsSync(pinFile)) {
+		console.error(`[screeps-ok] Missing ${pinFile}`);
+		process.exit(1);
+	}
+	pin = readFileSync(pinFile, 'utf8').trim();
+	if (!/^[0-9a-f]{40}$/.test(pin)) {
+		console.error(`[screeps-ok] .xxscreeps-pin must contain a full 40-char sha; got '${pin}'`);
+		process.exit(1);
+	}
+	shortPin = pin.slice(0, 8);
+
+	if (
+		existsSync(stampFile) && readFileSync(stampFile, 'utf8').trim() === pin &&
+		existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))
+	) {
+		console.log(`[screeps-ok] xxscreeps already built at pin ${shortPin}`);
+		process.exit(0);
+	}
 }
 
-console.log(`[screeps-ok] Fetching xxscreeps ${shortPin} from upstream`);
-fetchSubtrees(pin);
-layOutPackages();
-inlineTsconfigBase();
+let srcDir;
+if (localOverride) {
+	console.log(`[screeps-ok] Using local xxscreeps checkout at ${localOverride}`);
+	srcDir = localOverride;
+} else {
+	console.log(`[screeps-ok] Fetching xxscreeps ${shortPin} from upstream`);
+	fetchSubtrees(pin);
+	srcDir = cacheDir;
+}
+layOutPackages(srcDir);
+inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
 buildTypeScript();
 runGeneratedModsBootstrap();
-writeFileSync(stampFile, pin + '\n');
-console.log(`[screeps-ok] xxscreeps ready at pin ${shortPin}`);
+writeFileSync(stampFile, (localOverride ? `local:${localOverride}` : pin) + '\n');
+console.log(localOverride
+	? `[screeps-ok] xxscreeps ready from local ${localOverride}`
+	: `[screeps-ok] xxscreeps ready at pin ${shortPin}`);
 console.log('[screeps-ok] Run npm run setup:xxscreeps to build the path-finder native addon');
 
 function fetchSubtrees(sha) {
@@ -97,23 +123,38 @@ function fetchSubtrees(sha) {
 	git(['checkout', '--quiet', 'FETCH_HEAD']);
 }
 
-function layOutPackages() {
+function validateLocalCheckout(dir) {
+	const required = [
+		join(dir, 'tsconfig.base.json'),
+		join(dir, 'packages/xxscreeps'),
+		join(dir, 'packages/pathfinder'),
+	];
+	for (const p of required) {
+		if (!existsSync(p)) {
+			console.error(`[screeps-ok] XXSCREEPS_LOCAL=${dir} is missing ${p}`);
+			console.error('[screeps-ok] Expected the upstream xxscreeps monorepo layout.');
+			process.exit(1);
+		}
+	}
+}
+
+function layOutPackages(srcDir) {
 	rmSync(xxscreepsDir, { recursive: true, force: true });
 	mkdirSync(dirname(xxscreepsDir), { recursive: true });
-	cpSync(join(cacheDir, 'packages/xxscreeps'), xxscreepsDir, { recursive: true });
+	cpSync(join(srcDir, 'packages/xxscreeps'), xxscreepsDir, { recursive: true });
 
 	rmSync(pathfinderDir, { recursive: true, force: true });
 	mkdirSync(dirname(pathfinderDir), { recursive: true });
-	cpSync(join(cacheDir, 'packages/pathfinder'), pathfinderDir, { recursive: true });
+	cpSync(join(srcDir, 'packages/pathfinder'), pathfinderDir, { recursive: true });
 }
 
-function inlineTsconfigBase() {
+function inlineTsconfigBase(srcDir) {
 	// `packages/xxscreeps/tsconfig.json` extends `../../tsconfig.base.json`
 	// (the monorepo root). Our flat layout has no such ancestor, so copy the
 	// base next to the xxscreeps tsconfig and rewrite the extends ref.
 	// Use a string replace instead of JSON.parse because the tsconfig has
 	// JSONC features (trailing commas).
-	cpSync(join(cacheDir, 'tsconfig.base.json'), join(xxscreepsDir, 'tsconfig.base.json'));
+	cpSync(join(srcDir, 'tsconfig.base.json'), join(xxscreepsDir, 'tsconfig.base.json'));
 	const configPath = join(xxscreepsDir, 'tsconfig.json');
 	const original = readFileSync(configPath, 'utf8');
 	const patched = original.replace(

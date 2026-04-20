@@ -87,13 +87,8 @@ describe('adapter contract: hard family prerequisites', () => {
 			});
 			await shard.tick();
 
-			// Non-corner exit tile. Corner exits (y=0, y=49) trigger
-			// engine-specific branch ordering at the two-axis intersection
-			// (see ROOM-TRANSITION-006); this contract test only asserts
-			// the basic single-axis transition.
 			const exitInfo = await shard.runPlayer('p1', code`
-				const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT)
-					.filter(e => e.y > 5 && e.y < 44);
+				const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
 				exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
 			`) as { x: number; y: number } | null;
 
