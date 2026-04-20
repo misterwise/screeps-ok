@@ -26,6 +26,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-5 | [laverdet/xxscreeps#127](https://github.com/laverdet/xxscreeps/pull/127) | Guard link.transferEnergy, persist cooldown, restore legacy getters |
 | PR-1 | [laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128) | Fix structure ownership precedence in checkMyStructure and destroy |
 | PR-4 | [laverdet/xxscreeps#129](https://github.com/laverdet/xxscreeps/pull/129) | Fix cooldown anchoring for lab, factory, and extractor intents |
+| PR-2 | [laverdet/xxscreeps#130](https://github.com/laverdet/xxscreeps/pull/130) | Fix Store.getFreeCapacity null propagation and OpenStore pool semantics |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -57,13 +58,13 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   2. `structure.ts:203` `checkMyStructure`: replace `!structure.my && !structure.room.controller?.my` with `!(structure instanceof OwnedStructure) || !structure.my`. Vanilla's per-structure intents (lab reactions, observer, factory, terminal, spawn, tower) gate on `!this.my` alone; the old disjunction let a structure owned by another player succeed if the caller owned the room controller.
   3. `structure.ts:219` `checkDestroy`: stopped delegating to `checkMyStructure`. Vanilla `Structure.prototype.destroy` checks only `this.room.controller.my` (`@screeps/engine/src/game/structures.js:72-78`). The shared helper accepted self-ownership on `OwnedStructure`, letting a player destroy their own rampart placed in another player's room.
 
-### PR-2: Resource store mechanics (`mods/resource/store.ts`)
-- **Closes (3 entries / 6 tests):** `mineral-harvest-no-overflow-drop` (HARVEST-MINERAL-012), `transfer-wrong-resource-err-full` (TRANSFER-007/008) + `withdraw-wrong-resource-not-enough-energy` (WITHDRAW-014), `lab-bound-getfreecapacity-returns-zero` (STORE-BIND-002:H/O/G)
-- **Plan:**
-  1. Override `OpenStore.getFreeCapacity` to return `this['#capacity'] - this._sum` regardless of `resourceType` (shared-capacity stores need shared free-cap math).
-  2. Base `Store.getFreeCapacity` (line 74): short-circuit on `null` from `getCapacity`/`getUsedCapacity` (returns `null` instead of `null - null === 0`).
-  3. `checkHasResource` and `checkHasCapacity` (lines 331-348): if `target.store.getCapacity(resourceType) === null`, return `ERR_INVALID_TARGET` before the amount comparison.
-- **Blast radius:** Wide — every place using `getFreeCapacity(specificType)` on shared-cap stores. Likely fixes or exposes other gaps; rerun parity post-fix.
+### PR-2: Resource store mechanics — submitted as #130
+- **Closes (3 entries / 7 tests):** `mineral-harvest-no-overflow-drop` (HARVEST-MINERAL-012), `transfer-wrong-resource-err-full` (TRANSFER-007/008) + `withdraw-wrong-resource-not-enough-energy` (WITHDRAW-014), `lab-bound-getfreecapacity-returns-zero` (STORE-BIND-002:H/O/G).
+- **Fix:** Three edits in `mods/resource/store.ts`, all keyed off the invariant `Store.getCapacity(rt) === null` is the canonical "wrong type" signal.
+  1. `Store.getFreeCapacity` (line 74): short-circuit to `null` when `getCapacity(rt)` or `getUsedCapacity(rt)` is `null`. Closes `lab-bound-getfreecapacity-returns-zero` — restricted/lab stores now report null free-cap for unsupported types instead of `null - null === 0`.
+  2. `OpenStore.getFreeCapacity` override: return `this['#capacity'] - this._sum` regardless of `resourceType`. Shared-pool semantics. Closes `mineral-harvest-no-overflow-drop` — `creep.store.getFreeCapacity('H')` on a partially-loaded creep now reports remaining pool, not full capacity, so `mods/mineral/processor.ts:14` overflow math triggers.
+  3. `checkHasResource` and `checkHasCapacity` (lines 331-348): gate on `target.store.getCapacity(rt) === null → ERR_INVALID_TARGET` before the amount/capacity comparison. Closes `transfer-wrong-resource-err-full` and `withdraw-wrong-resource-not-enough-energy` — energy-only structures (spawn/extension/tower SingleStore) and bound labs now reject wrong types with the right error.
+- Wide blast radius confirmed clean by full parity: 0 regressions, exactly the 7 expected unexpected passes (plus one stale-baseline FLAG-006 already fixed in pin).
 
 ### PR-3: Controller safe-mode + generateSafeMode guards — submitted as #126
 - **Closes (3 entries / 6 tests):** `safemode-ignores-downgrade-threshold` (CTRL-SAFEMODE-005), `safemode-concurrent-allowed` (CTRL-SAFEMODE-007), `generate-safe-mode-requires-work` (CTRL-GENSAFE-001..004).
@@ -231,8 +232,8 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 9. ~~**PR-5**~~ submitted as #127 — link transferEnergy guards, cooldown persistence, legacy getters
 10. ~~**PR-1**~~ submitted as #128 — structure ownership precedence (also closed factory-not-owner-precedence bonus)
 11. ~~**PR-4**~~ submitted as #129 — cooldown anchoring for lab, factory, and extractor intents (also closed factory-cooldown-no-decrement bonus)
-12. **PR-2** (resource store) — wide-impact, needs careful review; better after some trust built ← next
-13. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
+12. ~~**PR-2**~~ submitted as #130 — Store.getFreeCapacity null propagation and OpenStore pool semantics
+13. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion ← next
 14. Remaining PRs (PR-6, 7, 8, 9, 10, 13, 14) in any order based on capacity
 
 ## Adapter changes (do these first)
