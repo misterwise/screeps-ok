@@ -28,6 +28,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-4 | [laverdet/xxscreeps#129](https://github.com/laverdet/xxscreeps/pull/129) | Fix cooldown anchoring for lab, factory, and extractor intents |
 | PR-2 | [laverdet/xxscreeps#130](https://github.com/laverdet/xxscreeps/pull/130) | Fix Store.getFreeCapacity null propagation and OpenStore pool semantics |
 | PR-15 | [laverdet/xxscreeps#131](https://github.com/laverdet/xxscreeps/pull/131) | Fix RawMemory.set guards and implement foreign/public memory segments |
+| PR-13 | [laverdet/xxscreeps#132](https://github.com/laverdet/xxscreeps/pull/132) | Add notifyWhenAttacked and missing structure surface getters |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -277,9 +278,9 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 10. ~~**PR-1**~~ submitted as #128 — structure ownership precedence (also closed factory-not-owner-precedence bonus)
 11. ~~**PR-4**~~ submitted as #129 — cooldown anchoring for lab, factory, and extractor intents (also closed factory-cooldown-no-decrement bonus)
 12. ~~**PR-2**~~ submitted as #130 — Store.getFreeCapacity null propagation and OpenStore pool semantics
-13. **PR-13** (structure API surface) — ready for upstream on branch `fix/structure-api-surface`; flips 4 tests alone, 2 more jointly with PR-14 ← next
+13. ~~**PR-13**~~ submitted as #132 — notifyWhenAttacked + wall ticksToLive + ruin structureType + storage storeCapacity (flips 6 tests alone, 2 more jointly with PR-14)
 14. ~~**PR-15**~~ submitted as #131 — RawMemory.set guards + foreign/public memory segments
-15. Remaining PRs (PR-6, 7, 8, 9, 10, 14) in any order based on capacity
+15. Remaining PRs (PR-6, 7, 8, 9, 10, 14) in any order based on capacity — PR-14 is next for its joint coverage with PR-13
 
 ## Adapter changes (do these first)
 
