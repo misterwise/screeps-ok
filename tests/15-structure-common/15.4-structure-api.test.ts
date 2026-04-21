@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS,
 	MOVE,
 	FIND_STRUCTURES, FIND_RUINS,
-	STRUCTURE_RAMPART, STRUCTURE_TOWER,
+	STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_TOWER,
 } from '../../src/index.js';
 
 describe('structure.destroy()', () => {
@@ -134,5 +134,47 @@ describe('structure.notifyWhenAttacked()', () => {
 			Game.getObjectById(${towerId}).notifyWhenAttacked(false)
 		`);
 		expect(rc).toBe(OK);
+	});
+
+	test('STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller\'s own room', async ({ shard }) => {
+		// Vanilla's check (structures.js:89) rejects only if my === false OR another
+		// player owns the room controller. An unowned structure (road) in your own
+		// room passes both clauses.
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_ROAD,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${roadId}).notifyWhenAttacked(true)
+		`);
+		expect(rc).toBe(OK);
+	});
+
+	test('STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player\'s room', async ({ shard }) => {
+		// The controller-owner branch of the check: even though the road itself
+		// is unowned, the room controller belongs to p1, so p2 is rejected.
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_ROAD,
+		});
+		// Place p2 creep in W1N1 for visibility on the road.
+		await shard.placeCreep('W1N1', {
+			pos: [30, 30], owner: 'p2', body: [MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p2', code`
+			const s = Game.getObjectById(${roadId});
+			s ? s.notifyWhenAttacked(true) : -99
+		`);
+		expect(rc).toBe(ERR_NOT_OWNER);
 	});
 });

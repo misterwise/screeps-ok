@@ -98,7 +98,7 @@
 		"notifyWhenAttacked-not-implemented": {
 			"actual": "`structure.notifyWhenAttacked()` not implemented",
 			"expected": "Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick",
-			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006"]
+			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006", "STRUCTURE-API-007", "STRUCTURE-API-008"]
 		},
 		"eventlog-attack-missing": {
 			"actual": "`getEventLog()` missing `EVENT_ATTACK` entries for combat",

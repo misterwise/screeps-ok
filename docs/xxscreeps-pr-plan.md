@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-19.
+Last refreshed: 2026-04-19 (PR-15 memory plan expanded with vanilla-parity storage mapping).
 
 PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-precedence` (FACTORY-PRODUCE-010) shared the same root cause in `checkMyStructure` and cleared without a separate fix.
 
@@ -27,6 +27,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-1 | [laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128) | Fix structure ownership precedence in checkMyStructure and destroy |
 | PR-4 | [laverdet/xxscreeps#129](https://github.com/laverdet/xxscreeps/pull/129) | Fix cooldown anchoring for lab, factory, and extractor intents |
 | PR-2 | [laverdet/xxscreeps#130](https://github.com/laverdet/xxscreeps/pull/130) | Fix Store.getFreeCapacity null propagation and OpenStore pool semantics |
+| PR-15 | [laverdet/xxscreeps#131](https://github.com/laverdet/xxscreeps/pull/131) | Fix RawMemory.set guards and implement foreign/public memory segments |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -143,14 +144,14 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **Fix:** Added `calculateBoundedEffect` in `mods/creep/creep.ts` returning `{ unboosted, boosted }`, mirroring vanilla's sort-boost-deltas-desc-and-slice-to-effect pattern so energy-limited mixed-boost creeps use their most-boosted WORK parts first. Rewired `upgradeController` (`mods/controller/processor.ts:173-182`), `build` (`mods/construction/processor.ts:46-51`), and `repair` (`mods/construction/processor.ts:89-94`) to charge unboosted energy and apply boosted output. Level-8 `upgradePowerThisTick` now tracks unboosted spend, matching vanilla's `target._upgraded`. Dismantle/harvest/combat intents keep `calculatePower` — their yield is supposed to scale with the boost.
 
 ### PR-13: Structure API surface (`mods/structure/structure.ts`, `mods/structure/processor.ts`, `mods/defense/wall.ts`, `mods/structure/ruin.ts`, `mods/logistics/storage.ts`)
-- **Closes on its own (4 tests):** `notifyWhenAttacked-not-implemented` (STRUCTURE-API-004/005/006), `shape-struct-missing-legacy-compat:storage` (SHAPE-STRUCT-001:storage).
+- **Closes on its own (6 tests):** `notifyWhenAttacked-not-implemented` (STRUCTURE-API-004/005/006/007/008), `shape-struct-missing-legacy-compat:storage` (SHAPE-STRUCT-001:storage). STRUCTURE-API-007/008 were added alongside the PR to cover the unowned-structure-in-own-room and controller-owner-mismatch branches that the original three didn't exercise.
 - **Closes jointly with PR-14 (2 tests):** SHAPE-STRUCT-001:constructedWall and SHAPE-RUIN-001 need PR-13's `ticksToLive`/`structureType` getters AND PR-14's RoomObject cleanup (removing leaked `hits`/`hitsMax`/`my` from the base). Either PR alone leaves the other side failing. Both sub-tests stay under `shape-extra-hits-my` (PR-14's entry) because the RoomObject leak is the dominant blocker; PR-13 contributes the missing getters.
 - **Fix:**
-  1. `structure.ts`: wrap the base Structure shape in `struct(objectFormat, { '#notifyWhenAttacked': optional('bool') })`; add `notifyWhenAttacked(enabled)` method + `checkNotifyWhenAttacked` helper on Structure, mirroring `@screeps/engine/src/game/structures.js:89` — reject if `my === false` or the room controller has an owner who isn't the caller, then validate boolean arg. `mods/structure/processor.ts` registers the intent processor on `Structure` to persist the bool, matching the `setPublic` pattern at `mods/defense/processor.ts:83`.
+  1. `structure.ts`: wrap the base Structure shape in `struct(objectFormat, { '#noAttackNotify': 'bool' })` — negated so the zero-default matches vanilla's "notifications on" default. Add `notifyWhenAttacked(enabled)` method + `checkNotifyWhenAttacked` helper on Structure, mirroring `@screeps/engine/src/game/structures.js:89` — reject if `my === false` or the room controller has an owner who isn't the caller, then validate boolean arg. `mods/structure/processor.ts` registers the intent processor on `Structure` to persist `!enabled`, matching the `setPublic` pattern at `mods/defense/processor.ts:83`. A TODO at the write site flags the missing consumer — damage processors need to read `'#noAttackNotify'` to actually emit attack notifications, which is out of scope for this surface-only PR.
   2. `defense/wall.ts`: add `@enumerable get ticksToLive()` returning `undefined` for persistent walls. Mirrors `@screeps/engine/src/game/structures.js:840`; NPC-spawned temporary walls are not modeled.
   3. `structure/ruin.ts`: add top-level `@enumerable get structureType()` delegating to `this['#structure'].type`. The inner `structure` sub-object already exposed it via `defineProperty`, but vanilla's canonical shape puts `structureType` on the ruin itself.
   4. `logistics/storage.ts`: add `@deprecated @enumerable get storeCapacity()` returning `this.store.getCapacity()`. Mirrors the `@deprecated energy`/`energyCapacity` pair on `StructureLab` at `mods/chemistry/lab.ts:36-38`.
-- **Blast radius:** Surface additions + one schema field (`optional('bool')`, lazy). No behavior change. Full parity confirmed clean — 4 unexpected passes, 0 new regressions.
+- **Blast radius:** Surface additions + one schema field (`'bool'`, 1 byte per structure; negated so zero-default matches the common case). No behavior change. Full parity confirmed clean — 6 unexpected passes, 0 new regressions.
 
 ### PR-14: Object/Room/Game runtime shape (`game/object.ts`, `game/room/room.ts`, `game/game.ts`, `mods/flag/game.ts`)
 - **Closes (3 entries / 11+ tests):** `shape-extra-hits-my` family (SHAPE-SOURCE/MINERAL/SITE/RESOURCE/TOMBSTONE/RUIN/STRUCT-001 + SHAPE-FLAG-001), `shape-room-missing-survivalInfo` (SHAPE-ROOM-001), `shape-game-surface-mismatch` (SHAPE-GAME-001). Note: `SHAPE-STRUCT-001:constructedWall` and `SHAPE-RUIN-001` additionally require PR-13's `ticksToLive`/`structureType` getters — they flip only when both land.
@@ -162,16 +163,58 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   5. `mods/flag/game.ts:74` and `mods/power/game.ts` (powerCreeps): convert `Game.foo = bar` to `Object.defineProperty(Game, 'foo', { get: () => bar, enumerable: true, configurable: true })` to match vanilla's prototype-getter descriptor shape.
 - **Blast radius:** Wide — every RoomObject subclass needs review for which getters to expose. Mechanical refactor.
 
-### PR-15: Memory mod (`mods/memory/memory.ts`, `mods/memory/driver.ts`)
-- **Closes (3 entries / 6 tests):** `rawmemory-set-no-eager-limit-check` (MEMORY-004), `rawmemory-set-invalidates-parsed-memhack` (MEMORY-002), `foreign-segment-not-supported` (RAWMEMORY-FOREIGN-002/003/004)
-- **Plan:**
-  1. `memory.ts:82-89` `RawMemory.set`: add `if (value.length > kMaxMemoryLength) throw new Error(...)` before the assignment.
-  2. `memory.ts:86`: gate the cache invalidation — only clear `_parsed`/`json` when `!accessedJson`. Preserves memhack identity when user has already accessed `Memory`.
-  3. `memory.ts:129, 136`: implement `setDefaultPublicSegment` and `setPublicSegments` (persist to user record).
-  4. `driver.ts:55-57`: replace `// TODO` with actual foreign segment fetch (read user/${username}/segments/${id} from DB; pass back via `payload.foreignSegment`).
-  5. `memory.ts`: add `RawMemory.foreignSegment` declaration on the object; add `loadForeignSegment(payload)` runtime hook that assigns it.
-  6. `mods/memory/driver.ts`: add `payload.foreignSegment` to TickPayload type declaration.
-- **Blast radius:** New surface area; needs DB schema confirmation for public-segment storage.
+### PR-15: Memory mod (`mods/memory/{memory.ts,driver.ts,model.ts,game.ts}`)
+- **Closes (3 entries / 6 tests):** `rawmemory-set-no-eager-limit-check` (MEMORY-004), `rawmemory-set-invalidates-parsed-memhack` (MEMORY-002), `foreign-segment-not-supported` (RAWMEMORY-FOREIGN-002/003/004).
+
+- **Self-contained fixes** — no new storage, can split off as a mini-PR if foreign-segment scope is too wide:
+  1. `memory.ts:82-89` `RawMemory.set`: add `if (value.length > kMaxMemoryLength) throw new Error(...)` before `string = value`. Closes MEMORY-004.
+  2. `memory.ts:86`: only clear `_parsed`/`json` when `!accessedJson`. Preserves memhack identity when user already accessed `Memory` this tick. Closes MEMORY-002.
+
+- **Foreign/public segments — vanilla storage split (via `@screeps/driver/lib/runtime/{runtime,make,data}.js`):**
+
+  | State | Vanilla | Shard scope | Persistent? |
+  |---|---|---|---|
+  | `defaultPublicSegment` | Mongo `users` doc field (`make.js:203-204`) | cross-shard | yes |
+  | `activeForeignSegment` `{username, user_id, id}` | Mongo `users` doc field (`make.js:216-247`) | cross-shard | yes |
+  | `publicSegments` | `env.set(PUBLIC_MEMORY_SEGMENTS+userId, ids.join(','))` (`make.js:250`) | **per-shard** (env is per-shard) | yes (Redis AOF/RDB) |
+  | segment blobs | `env.hmget(MEMORY_SEGMENTS+userId, ids)` (`data.js:229`) | per-shard | yes |
+
+  Per-shard `publicSegments` is load-bearing: each shard has its own env, and vanilla's foreign-read authorization (`data.js:254`) reads the current-shard env only. Blob storage is per-shard too, so "segment N is public" only makes sense relative to the shard that holds segment N.
+
+- **xxscreeps storage mapping — reuses existing primitives, no new abstractions:**
+
+  xxscreeps tiers: `db.data` (cross-shard persistent, hosts `user/${userId}` hash → `engine/db/user/index.ts:6`), `shard.data` (per-shard persistent, hosts segment blobs → `mods/memory/model.ts:23-36`), `shard.scratch` (per-shard **ephemeral** per `config/config.ts:218` — wrong home for this).
+
+  | Vanilla | xxscreeps | Reused pattern |
+  |---|---|---|
+  | `users.defaultPublicSegment` | `db.data.hset(User.infoKey(userId), 'defaultPublicSegment', id)` (`hdel` on null) | `engine/db/user/badge.ts:47` |
+  | `users.activeForeignSegment` | `db.data.hset(User.infoKey(userId), 'activeForeignSegment', JSON.stringify({username, user_id, id}))` | Same |
+  | `env.PUBLIC_MEMORY_SEGMENTS+userId` string | `shard.data` set at `user/${userId}/publicSegments` via `sadd`/`srem`/`sismember` | `KeyValProvider` set ops already used by `shard.scratch` for `user/${id}/{intentRooms,visibleRooms,...}` (`mods/cli/cli.ts:794-801`); moved to `shard.data` for persistence parity |
+  | Segment blob fetch | `loadMemorySegmentBlob(shard, userId, id)` — unchanged | `model.ts:23` |
+  | `username → user_id` | `User.findUserByName(db, username)` — unchanged | `engine/db/user/index.ts:68` |
+  | Flush pattern | mirror `flushActiveSegments`/`flushForeignSegment` (`memory.ts:247,259`) | Same module |
+
+  `sismember` is O(1) — strict improvement over vanilla's comma-string parse at `data.js:254`, at zero design cost because the primitive is already in the provider interface (`storage/provider.ts:65`).
+
+- **Plan (in order):**
+  1. Self-contained fixes (items 1-2 above).
+  2. `model.ts` helpers — no new files, just add:
+     - `saveDefaultPublicSegment(db, userId, id | null)` → `hset`/`hdel`
+     - `loadActiveForeignSegment(db, userId)` / `saveActiveForeignSegment(db, userId, req | null)` → `hget`/`hset`/`hdel`
+     - `savePublicSegments(shard, userId, ids)` → `del` then `sadd` (rewrite-each-call semantics)
+     - `isPublicSegment(shard, userId, id)` → `sismember`
+  3. `memory.ts`: replace the two stubs with module-local capture (mirror `activeSegments`/`requestedForeignSegment`); add `flushDefaultPublicSegment()` + `flushPublicSegments()`. Declare `RawMemory.foreignSegment` shape; add a `loadForeignSegment(payload)` runtime hook.
+  4. `game.ts:54`: extend `save` hook to also emit `defaultPublicSegmentUpdate` and `publicSegmentsUpdate`. Declare the new fields on `TickResult` in `driver.ts:16-24`; add `foreignSegment` to `TickPayload`.
+  5. `driver.ts save()`: persist the three fields via the model helpers. Mirror vanilla's resolution logic (`make.js:216-247`): if prior `activeForeignSegment.username` matches and the new request carries an explicit `id`, just update `id`; else `findUserByName` → fill `user_id`, then if no `id` supplied fall back to target's `defaultPublicSegment` via `hget`.
+  6. `driver.ts refresh()`: replace the `// TODO`. Read stored `activeForeignSegment`; if `user_id && id && isPublicSegment(shard, user_id, id)`, `loadMemorySegmentBlob(shard, user_id, id)` and set `payload.foreignSegment = { username, id, data }`. Gate blob load on `sismember` rather than fetching first and filtering — strict improvement over vanilla.
+
+- **Vanilla alignment check:**
+  - Cross-shard: `defaultPublicSegment`, `activeForeignSegment` — ✓ `db.data` user hash is cross-shard.
+  - Per-shard: `publicSegments`, segment blobs — ✓ `shard.data` is per-shard.
+  - Persistence: all four slots — ✓ both `db.data` and `shard.data` are persistent tiers.
+  - Resolution timing: username→user_id + defaultPublicSegment fallback happens at save, not refresh — ✓ mirror of `make.js:233-244`.
+
+- **Blast radius:** memory mod only; no engine/processor touches. If upstream prefers smaller surface, ship items 1-2 as PR-15a and the foreign-segment work as PR-15b — the self-contained fixes are independent.
 
 ### PR-16: Flag setPosition — merged as #118
 - **Closed (1 entry / 1 test):** `flag-setposition-ignored` (FLAG-006). Merged to upstream/main; entry removed from `parity.json`.
@@ -208,7 +251,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Creep client API | PR-10 | 5 |
 | PathFinder/Map | PR-11 | 2 |
 | Boost energy | PR-12 | 1 |
-| Structure API surface | PR-13 | 2 (+2 joint with PR-14) |
+| Structure API surface | PR-13 | 6 tests (+2 joint with PR-14) |
 | Object/Game shape | PR-14 | 3 |
 | Memory | PR-15 | 3 |
 | Flag setPosition | PR-16 | 1 (merged; entry removed) |
@@ -235,7 +278,7 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 11. ~~**PR-4**~~ submitted as #129 — cooldown anchoring for lab, factory, and extractor intents (also closed factory-cooldown-no-decrement bonus)
 12. ~~**PR-2**~~ submitted as #130 — Store.getFreeCapacity null propagation and OpenStore pool semantics
 13. **PR-13** (structure API surface) — ready for upstream on branch `fix/structure-api-surface`; flips 4 tests alone, 2 more jointly with PR-14 ← next
-14. **PR-15** (memory) — depends on DB schema for public segments; could need design discussion
+14. ~~**PR-15**~~ submitted as #131 — RawMemory.set guards + foreign/public memory segments
 15. Remaining PRs (PR-6, 7, 8, 9, 10, 14) in any order based on capacity
 
 ## Adapter changes (do these first)
