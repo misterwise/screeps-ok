@@ -35,11 +35,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js') }}
+          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', '.xxscreeps-pin') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Build xxscreeps for typecheck
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: node scripts/build-xxscreeps.js
 
       - name: Typecheck
         run: npm run lint
@@ -69,7 +73,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', 'scripts/setup.js') }}
+          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', 'scripts/setup.js', '.xxscreeps-pin') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
