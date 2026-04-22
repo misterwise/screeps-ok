@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1256%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1256%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1019%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-69-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,38 +16,26 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1256](#vanilla-passing-tests) | — | — | — | 2026-04-22 03:15 UTC |
-| 🔴 | **xxscreeps** | [989](#xxscreeps-passing-tests) | [97](#xxscreeps-expected-failures) | [2](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-22 03:13 UTC |
+| 🟢 | **vanilla** | [1256](#vanilla-passing-tests) | — | — | — | 2026-04-22 03:51 UTC |
+| 🟡 | **xxscreeps** | [1019](#xxscreeps-passing-tests) | [69](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-22 03:50 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## xxscreeps unexpected failures
-
-- `adapter contract: setup placeFlag places a flag retrievable by name in player code`
-- `adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick`
-
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 97 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 35 parity gaps against vanilla's canonical behavior, covering 69 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
-| `link-self-transfer` | `StructureLink.transferEnergy` to self returns `OK` | Returns `ERR_INVALID_TARGET` when target is the source link itself | [1](#xxscreeps-gap-link-self-transfer) |
-| `link-cross-owner` | `StructureLink.transferEnergy` allows transfer to another player's link | Returns `ERR_NOT_OWNER` when target link is owned by another player | [1](#xxscreeps-gap-link-cross-owner) |
 | `death-container-diversion` | Creep death does not divert resources into same-tile container | Death resources flow into a live same-tile container before any tombstone remainder | [1](#xxscreeps-gap-death-container-diversion) |
-| `extractor-cooldown-off-by-one` | Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest | Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest | [2](#xxscreeps-gap-extractor-cooldown-off-by-one) |
-| `factory-cooldown-no-decrement` | Factory cooldown reports full `COMMODITIES[resource].cooldown` on the tick after `produce()` | Factory cooldown reports `COMMODITIES[resource].cooldown - 1` on the tick after `produce()` | [1](#xxscreeps-gap-factory-cooldown-no-decrement) |
 | `factory-not-owner-precedence` | `factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-factory-not-owner-precedence) |
-| `link-cooldown-not-persisted` | `link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`) | Link cooldown persists across ticks regardless of creep presence | [1](#xxscreeps-gap-link-cooldown-not-persisted) |
-| `lab-bound-getfreecapacity-returns-zero` | Bound lab's `store.getFreeCapacity(otherMineral)` returns `0` | Returns `null` for a mineral the lab cannot hold | [3](#xxscreeps-gap-lab-bound-getfreecapacity-returns-zero) |
 | `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
-| `lab-cooldown-no-decrement` | Lab cooldown reports full `REACTION_TIME` after reaction/unboost | Lab cooldown reports `REACTION_TIME - 1` on the tick after the action | [3](#xxscreeps-gap-lab-cooldown-no-decrement) |
 | `lab-not-owner-precedence` | Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [2](#xxscreeps-gap-lab-not-owner-precedence) |
 | `observer-not-owner-precedence` | `observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-observer-not-owner-precedence) |
 | `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
@@ -55,10 +43,7 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `destroy-ownership-bypass` | `structure.destroy()` allowed when room controller not owned by player | Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player | [1](#xxscreeps-gap-destroy-ownership-bypass) |
 | `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [5](#xxscreeps-gap-notifywhenattacked-not-implemented) |
 | `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
-| `tough-boost-no-reduction` | Boosted TOUGH parts do not reduce incoming damage | Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier | [4](#xxscreeps-gap-tough-boost-no-reduction) |
 | `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
-| `route-callback-ignored` | `Game.map.findRoute` ignores `routeCallback` option | `routeCallback` return values influence route selection (Infinity blocks, numbers weight) | [1](#xxscreeps-gap-route-callback-ignored) |
-| `transfer-wrong-resource-err-full` | `transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch) | Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource | [2](#xxscreeps-gap-transfer-wrong-resource-err-full) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
 | `controller-my-previously-owned-returns-undefined` | `StructureController.my` returns `undefined` on a previously-owned controller (after `unclaim()` or downgrade-to-zero, where xxscreeps sets `#user` to `null` and the getter maps `null` → `undefined`) | Returns `false` on a previously-owned controller (vanilla maps `user === null` → `false`, reserving `undefined` for never-owned) | [2](#xxscreeps-gap-controller-my-previously-owned-returns-undefined) |
@@ -67,12 +52,10 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
 | `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
-| `mineral-harvest-no-overflow-drop` | `harvest(mineral)` overflow does not create a dropped resource pile | Overflow amount drops as a resource pile on the harvester's tile | [1](#xxscreeps-gap-mineral-harvest-no-overflow-drop) |
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
-| `withdraw-wrong-resource-not-enough-energy` | `withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY` | Returns `ERR_INVALID_TARGET` when the target cannot hold that resource | [1](#xxscreeps-gap-withdraw-wrong-resource-not-enough-energy) |
 | `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
 | `shape-extra-hits-my` | Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType` | Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType` | [9](#xxscreeps-gap-shape-extra-hits-my) |
-| `shape-struct-missing-legacy-compat` | Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity` | Legacy compat getters are present on `link` and `storage` | [2](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
+| `shape-struct-missing-legacy-compat` | Structure missing legacy compat getter: `storage.storeCapacity` | Legacy compat getter is present on `storage` | [1](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-room-missing-survivalInfo` | `Room` object missing `survivalInfo` property | `Room.survivalInfo` is present (per canonical room shape) | [1](#xxscreeps-gap-shape-room-missing-survivalinfo) |
 | `shape-game-surface-mismatch` | `Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla | `Game` exposes canonical top-level fields with matching data-property surface | [1](#xxscreeps-gap-shape-game-surface-mismatch) |
@@ -81,9 +64,6 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [6](#xxscreeps-gap-foreign-segment-not-supported) |
-| `road-site-progresstotal-no-terrain-scaling` | `ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300 | A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp | [2](#xxscreeps-gap-road-site-progresstotal-no-terrain-scaling) |
-| `wall-road-not-traversable` | The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it | A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile | [3](#xxscreeps-gap-wall-road-not-traversable) |
-| `getrawbuffer-uint8-truncation` | `terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero. | Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y). | [1](#xxscreeps-gap-getrawbuffer-uint8-truncation) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -96,20 +76,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-link-self-transfer">
-<summary><code>link-self-transfer</code> — 1 test</summary>
-
-- `StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself`
-
-</details>
-
-<details id="xxscreeps-gap-link-cross-owner">
-<summary><code>link-cross-owner</code> — 1 test</summary>
-
-- `StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player`
-
-</details>
-
 <details id="xxscreeps-gap-death-container-diversion">
 <summary><code>death-container-diversion</code> — 1 test</summary>
 
@@ -117,41 +83,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-extractor-cooldown-off-by-one">
-<summary><code>extractor-cooldown-off-by-one</code> — 2 tests</summary>
-
-- `creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest`
-- `StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN`
-
-</details>
-
-<details id="xxscreeps-gap-factory-cooldown-no-decrement">
-<summary><code>factory-cooldown-no-decrement</code> — 1 test</summary>
-
-- `Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown`
-
-</details>
-
 <details id="xxscreeps-gap-factory-not-owner-precedence">
 <summary><code>factory-not-owner-precedence</code> — 1 test</summary>
 
 - `Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player`
-
-</details>
-
-<details id="xxscreeps-gap-link-cooldown-not-persisted">
-<summary><code>link-cooldown-not-persisted</code> — 1 test</summary>
-
-- `StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance`
-
-</details>
-
-<details id="xxscreeps-gap-lab-bound-getfreecapacity-returns-zero">
-<summary><code>lab-bound-getfreecapacity-returns-zero</code> — 3 tests</summary>
-
-- `Store STORE-BIND-002:H stored mineral binds the lab slot`
-- `Store STORE-BIND-002:O stored mineral binds the lab slot`
-- `Store STORE-BIND-002:G stored mineral binds the lab slot`
 
 </details>
 
@@ -187,15 +122,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>recycle-no-body-reclaim</code> — 1 test</summary>
 
 - `Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position`
-
-</details>
-
-<details id="xxscreeps-gap-lab-cooldown-no-decrement">
-<summary><code>lab-cooldown-no-decrement</code> — 3 tests</summary>
-
-- `lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT`
-- `Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]`
-- `Lab reverseReaction LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]`
 
 </details>
 
@@ -254,36 +180,11 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-tough-boost-no-reduction">
-<summary><code>tough-boost-no-reduction</code> — 4 tests</summary>
-
-- `BOOST-TOUGH-001 tough damage reduction magnitudes GO (0.7x damage taken)`
-- `BOOST-TOUGH-001 tough damage reduction magnitudes GHO2 (0.5x damage taken)`
-- `BOOST-TOUGH-001 tough damage reduction magnitudes XGHO2 (0.3x damage taken)`
-- `BOOST-TOUGH-002 tough damage reduction applies only to the boosted part damage beyond the boosted TOUGH part hits unboosted parts at full damage`
-
-</details>
-
 <details id="xxscreeps-gap-boost-energy-cost-scales">
 <summary><code>boost-energy-cost-scales</code> — 2 tests</summary>
 
 - `BOOST-BUILD-002 build/repair boosts do not increase energy cost boosted repair costs 1 energy per REPAIR_POWER hits repaired`
 - `BOOST-UPGRADE-002 upgrade boosts do not increase energy cost boosted upgrade costs 1 energy per progress point`
-
-</details>
-
-<details id="xxscreeps-gap-route-callback-ignored">
-<summary><code>route-callback-ignored</code> — 1 test</summary>
-
-- `Game.map route finding MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity`
-
-</details>
-
-<details id="xxscreeps-gap-transfer-wrong-resource-err-full">
-<summary><code>transfer-wrong-resource-err-full</code> — 2 tests</summary>
-
-- `creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type`
-- `creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET`
 
 </details>
 
@@ -347,24 +248,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-mineral-harvest-no-overflow-drop">
-<summary><code>mineral-harvest-no-overflow-drop</code> — 1 test</summary>
-
-- `creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity`
-
-</details>
-
 <details id="xxscreeps-gap-transfer-controller-no-upgrade-redirect">
 <summary><code>transfer-controller-no-upgrade-redirect</code> — 1 test</summary>
 
 - `creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-wrong-resource-not-enough-energy">
-<summary><code>withdraw-wrong-resource-not-enough-energy</code> — 1 test</summary>
-
-- `creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource`
 
 </details>
 
@@ -391,9 +278,8 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-shape-struct-missing-legacy-compat">
-<summary><code>shape-struct-missing-legacy-compat</code> — 2 tests</summary>
+<summary><code>shape-struct-missing-legacy-compat</code> — 1 test</summary>
 
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape`
 
 </details>
@@ -457,30 +343,6 @@ Click a test count above to jump to the affected test list for that gap.
 - `Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks`
 - `Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request`
 - `Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick`
-
-</details>
-
-<details id="xxscreeps-gap-road-site-progresstotal-no-terrain-scaling">
-<summary><code>road-site-progresstotal-no-terrain-scaling</code> — 2 tests</summary>
-
-- `Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost`
-- `Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost`
-
-</details>
-
-<details id="xxscreeps-gap-wall-road-not-traversable">
-<summary><code>wall-road-not-traversable</code> — 3 tests</summary>
-
-- `Road fatigue ROAD-TRAVERSAL-001 a road makes a natural-wall tile walkable by creeps`
-- `Road fatigue ROAD-FATIGUE-003 a road on a natural wall reduces the fatigue multiplier to 1`
-- `StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road`
-
-</details>
-
-<details id="xxscreeps-gap-getrawbuffer-uint8-truncation">
-<summary><code>getrawbuffer-uint8-truncation</code> — 1 test</summary>
-
-- `Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()`
 
 </details>
 
@@ -2436,7 +2298,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>989 tests across 89 files</summary>
+<summary>1019 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2527,7 +2389,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (44)
+**`tests/00-adapter-contract/setup.test.ts`** (46)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -2562,12 +2424,14 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeMineral places a mineral
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
+- adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeSite + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeSource + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeMineral + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
@@ -2625,10 +2489,12 @@ Click a count to jump to the affected test list.
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
 - MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
 
-**`tests/01-movement/1.2b-road-fatigue.test.ts`** (3)
+**`tests/01-movement/1.2b-road-fatigue.test.ts`** (5)
 
 - Road fatigue ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain
 - Road fatigue ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1
+- Road fatigue ROAD-TRAVERSAL-001 a road makes a natural-wall tile walkable by creeps
+- Road fatigue ROAD-FATIGUE-003 a road on a natural wall reduces the fatigue multiplier to 1
 - Road fatigue ROAD-TRAVERSAL-002 Room.findPath routes through a wall-road when the path is otherwise blocked
 
 **`tests/01-movement/1.4-room-transitions.test.ts`** (4)
@@ -2724,10 +2590,11 @@ Click a count to jump to the affected test list.
 - creep.harvest() HARVEST-012 harvest returns ERR_BUSY while the creep is spawning
 - creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for a non-source target
 
-**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (11)
+**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (13)
 
 - creep.harvest(mineral) HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part
 - creep.harvest(mineral) HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity
+- creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest
 - creep.harvest(mineral) HARVEST-MINERAL-004 harvest returns ERR_NOT_ENOUGH_RESOURCES on depleted mineral
 - creep.harvest(mineral) HARVEST-MINERAL-005 harvested resource key matches mineral.mineralType
 - creep.harvest(mineral) HARVEST-MINERAL-006 harvest(mineral) returns ERR_NOT_FOUND without extractor
@@ -2736,9 +2603,10 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-009 harvest(mineral) returns ERR_TIRED during extractor cooldown
 - creep.harvest(mineral) HARVEST-MINERAL-010 harvest(mineral) returns ERR_NOT_IN_RANGE when not adjacent
 - creep.harvest(mineral) HARVEST-MINERAL-011 harvest(mineral) returns OK when all preconditions met
+- creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity
 - creep.harvest(mineral) HARVEST-MINERAL-013 partial harvest when mineral amount < full amount
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (11)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (13)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -2746,13 +2614,15 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store
 - creep.transfer() TRANSFER-005 requires a resource type — omitted or unknown returns ERR_INVALID_ARGS
 - creep.transfer() TRANSFER-006 returns ERR_FULL when target store has no free capacity
+- creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type
+- creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET
 - creep.transfer() TRANSFER-009 transfer returns ERR_NOT_OWNER on unowned creep
 - creep.transfer() TRANSFER-010 transfer returns ERR_BUSY while spawning
 - creep.transfer() TRANSFER-012 transferring mineral into empty lab initializes mineral slot
 - creep.transfer() TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity
 - creep.transfer() TRANSFER-014 transfer to another creep follows same store mechanics
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (37)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (38)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -2764,6 +2634,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-010 withdraw returns ERR_BUSY while spawning
 - creep.withdraw() WITHDRAW-011 withdraw returns ERR_INVALID_ARGS for invalid resourceType or negative amount
 - creep.withdraw() WITHDRAW-012 withdraw returns ERR_NOT_OWNER during hostile safe mode
+- creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource
 - creep.withdraw() WITHDRAW-015 withdrawing last mineral from lab clears mineral slot
 - creep.withdraw() WITHDRAW-016 withdraw returns ERR_FULL when amount exceeds creep free capacity
 - creep.drop() DROP-001 drop() removes the dropped amount from the creep store
@@ -3015,11 +2886,12 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-008 boosted HEAL part heals increased HP
 - Lab boostCreep BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (4)
+**`tests/08-boosts/8.2-unboost.test.ts`** (5)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
 - lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
 - lab.unboostCreep() UNBOOST-004 unboost drops LAB_UNBOOST_MINERAL per part as a resource pile at the creep tile
+- lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
 - lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 
 **`tests/08-boosts/8.3-boost-aggregation.test.ts`** (2)
@@ -3027,7 +2899,7 @@ Click a count to jump to the affected test list.
 - BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 attack: 1 boosted + 1 unboosted ATTACK sums correctly
 - BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 repair: 2 boosted + 1 unboosted WORK sums correctly
 
-**`tests/08-boosts/8.4-8.13-boost-magnitudes.test.ts`** (29)
+**`tests/08-boosts/8.4-8.13-boost-magnitudes.test.ts`** (33)
 
 - BOOST-RANGED-001 rangedAttack boost magnitudes KO (2x)
 - BOOST-RANGED-001 rangedAttack boost magnitudes KHO2 (3x)
@@ -3051,6 +2923,10 @@ Click a count to jump to the affected test list.
 - BOOST-UPGRADE-001 upgrade boost magnitudes GH (1.5x)
 - BOOST-UPGRADE-001 upgrade boost magnitudes GH2O (1.8x)
 - BOOST-UPGRADE-001 upgrade boost magnitudes XGH2O (2x)
+- BOOST-TOUGH-001 tough damage reduction magnitudes GO (0.7x damage taken)
+- BOOST-TOUGH-001 tough damage reduction magnitudes GHO2 (0.5x damage taken)
+- BOOST-TOUGH-001 tough damage reduction magnitudes XGHO2 (0.3x damage taken)
+- BOOST-TOUGH-002 tough damage reduction applies only to the boosted part damage beyond the boosted TOUGH part hits unboosted parts at full damage
 - BOOST-MOVE-001 move boost fatigue reduction magnitudes ZO (2x fatigue reduction)
 - BOOST-MOVE-001 move boost fatigue reduction magnitudes ZHO2 (3x fatigue reduction)
 - BOOST-MOVE-001 move boost fatigue reduction magnitudes XZHO2 (4x fatigue reduction)
@@ -3148,11 +3024,14 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:unowned room container in unowned room decays by 5000 every 100 ticks
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (10)
+**`tests/10-structures-energy/10.4-link.test.ts`** (13)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
+- StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
 - StructureLink LINK-003 transfer loss rounds up: sending 1 energy delivers 0
+- StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself
 - StructureLink LINK-005 transferEnergy returns ERR_INVALID_TARGET when target is not a StructureLink
+- StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player
 - StructureLink LINK-007 transferEnergy returns ERR_INVALID_ARGS for a negative amount
 - StructureLink LINK-008 transferEnergy returns ERR_TIRED while source link has cooldown > 0
 - StructureLink LINK-009 transferEnergy returns ERR_RCL_NOT_ENOUGH when source link is inactive
@@ -3161,7 +3040,7 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room
 - StructureLink LINK-013 transferEnergy with no amount transfers all stored energy
 
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (84)
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (86)
 
 - Lab runReaction LAB-RUN-001:H+O runReaction produces OH
 - Lab runReaction LAB-RUN-001:H+L runReaction produces LH
@@ -3198,6 +3077,7 @@ Click a count to jump to the affected test list.
 - Lab runReaction LAB-RUN-001:X+GHO2 runReaction produces XGHO2
 - Lab runReaction LAB-RUN-001:ZK+UL runReaction produces G
 - Lab runReaction LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab
+- Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]
 - Lab runReaction LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far
 - Lab runReaction LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty
 - Lab runReaction LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity
@@ -3240,6 +3120,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-001:ZK reverseReaction splits into K+Z
 - Lab reverseReaction LAB-REVERSE-001:ZO reverseReaction splits into O+Z
 - Lab reverseReaction LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs
+- Lab reverseReaction LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]
 - Lab reverseReaction LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far
 - Lab reverseReaction LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound
 - Lab reverseReaction LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity
@@ -3248,7 +3129,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
 - Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (75)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (76)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -3272,6 +3153,7 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
 - Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
 - Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
 - Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
@@ -3349,13 +3231,14 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (5)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
 - StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
 - StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
 - StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
+- StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road
 
 **`tests/13-structures-infrastructure/13.1b-road-decay.test.ts`** (5)
 
@@ -3372,9 +3255,10 @@ Click a count to jump to the affected test list.
 - StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
 - StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
 
-**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (5)
+**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (6)
 
 - StructureExtractor EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount
+- StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN
 - StructureExtractor EXTRACTOR-002 harvest(mineral) returns ERR_NOT_FOUND when no extractor is present
 - StructureExtractor EXTRACTOR-003 harvest(mineral) returns ERR_NOT_OWNER when extractor is not owned by the player
 - StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
@@ -3415,7 +3299,7 @@ Click a count to jump to the affected test list.
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 - Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (14)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (16)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -3431,6 +3315,8 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
 - Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
+- Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
+- Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
 **`tests/15-structure-common/15.4-structure-api.test.ts`** (2)
 
@@ -3533,17 +3419,19 @@ Click a count to jump to the affected test list.
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
 - Game.map room queries MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge
 
-**`tests/21-map/21.2-route-finding.test.ts`** (4)
+**`tests/21-map/21.2-route-finding.test.ts`** (5)
 
 - Game.map route finding MAP-ROUTE-001 findRoute returns an array of {exit, room} steps
 - Game.map route finding MAP-ROUTE-002 findRoute returns ERR_NO_PATH for an invalid room name
+- Game.map route finding MAP-ROUTE-003 findRoute with routeCallback excluding rooms via Infinity
 - Game.map route finding MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map route finding MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 
-**`tests/21-map/21.3-terrain.test.ts`** (2)
+**`tests/21-map/21.3-terrain.test.ts`** (3)
 
 - Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms
 - Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
+- Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
 
 **`tests/22-roomposition/22.0-basics.test.ts`** (4)
 
@@ -3581,7 +3469,7 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [LEFT] getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_LEFT] getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (16)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (19)
 
 - Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
 - Store STORE-OPEN-001:container getCapacity() returns total capacity for container
@@ -3599,6 +3487,9 @@ Click a count to jump to the affected test list.
 - Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
 - Store STORE-RESTRICTED-001 lab getCapacity returns per-resource caps
 - Store STORE-BIND-001 unbound lab mineral slot accepts any non-energy resource
+- Store STORE-BIND-002:H stored mineral binds the lab slot
+- Store STORE-BIND-002:O stored mineral binds the lab slot
+- Store STORE-BIND-002:G stored mineral binds the lab slot
 
 **`tests/23-store-api/23.5-timers.test.ts`** (2)
 
@@ -3672,7 +3563,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (19)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (20)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
@@ -3686,6 +3577,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:spawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extension structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:rampart structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:tower structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extractor structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:lab structure data-property surface matches canonical shape

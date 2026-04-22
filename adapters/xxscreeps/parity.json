@@ -5,45 +5,15 @@
 			"expected": "On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources",
 			"tests": ["CREEP-DEATH-008", "CREEP-DEATH-009"]
 		},
-		"link-self-transfer": {
-			"actual": "`StructureLink.transferEnergy` to self returns `OK`",
-			"expected": "Returns `ERR_INVALID_TARGET` when target is the source link itself",
-			"tests": ["LINK-004"]
-		},
-		"link-cross-owner": {
-			"actual": "`StructureLink.transferEnergy` allows transfer to another player's link",
-			"expected": "Returns `ERR_NOT_OWNER` when target link is owned by another player",
-			"tests": ["LINK-006"]
-		},
 		"death-container-diversion": {
 			"actual": "Creep death does not divert resources into same-tile container",
 			"expected": "Death resources flow into a live same-tile container before any tombstone remainder",
 			"tests": ["CREEP-DEATH-003"]
 		},
-		"extractor-cooldown-off-by-one": {
-			"actual": "Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest",
-			"expected": "Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest",
-			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-006"]
-		},
-		"factory-cooldown-no-decrement": {
-			"actual": "Factory cooldown reports full `COMMODITIES[resource].cooldown` on the tick after `produce()`",
-			"expected": "Factory cooldown reports `COMMODITIES[resource].cooldown - 1` on the tick after `produce()`",
-			"tests": ["FACTORY-PRODUCE-002"]
-		},
 		"factory-not-owner-precedence": {
 			"actual": "`factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH`",
 			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
 			"tests": ["FACTORY-PRODUCE-010"]
-		},
-		"link-cooldown-not-persisted": {
-			"actual": "`link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`)",
-			"expected": "Link cooldown persists across ticks regardless of creep presence",
-			"tests": ["LINK-002"]
-		},
-		"lab-bound-getfreecapacity-returns-zero": {
-			"actual": "Bound lab's `store.getFreeCapacity(otherMineral)` returns `0`",
-			"expected": "Returns `null` for a mineral the lab cannot hold",
-			"tests": ["STORE-BIND-002:H", "STORE-BIND-002:O", "STORE-BIND-002:G"]
 		},
 		"rampart-no-protection": {
 			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
@@ -64,11 +34,6 @@
 			"actual": "`Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited",
 			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
 			"tests": ["RECYCLE-CREEP-002"]
-		},
-		"lab-cooldown-no-decrement": {
-			"actual": "Lab cooldown reports full `REACTION_TIME` after reaction/unboost",
-			"expected": "Lab cooldown reports `REACTION_TIME - 1` on the tick after the action",
-			"tests": ["LAB-RUN-004", "LAB-REVERSE-004", "UNBOOST-005"]
 		},
 		"lab-not-owner-precedence": {
 			"actual": "Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH`",
@@ -105,25 +70,10 @@
 			"expected": "`EVENT_ATTACK` entries appear in the event log for each combat hit",
 			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002"]
 		},
-		"tough-boost-no-reduction": {
-			"actual": "Boosted TOUGH parts do not reduce incoming damage",
-			"expected": "Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier",
-			"tests": ["BOOST-TOUGH-001", "BOOST-TOUGH-002"]
-		},
 		"boost-energy-cost-scales": {
 			"actual": "Energy cost scales with boost multiplier for repair/upgrade",
 			"expected": "Boosted repair/upgrade consume the same unboosted energy amount per work part",
 			"tests": ["BOOST-BUILD-002", "BOOST-UPGRADE-002"]
-		},
-		"route-callback-ignored": {
-			"actual": "`Game.map.findRoute` ignores `routeCallback` option",
-			"expected": "`routeCallback` return values influence route selection (Infinity blocks, numbers weight)",
-			"tests": ["MAP-ROUTE-003"]
-		},
-		"transfer-wrong-resource-err-full": {
-			"actual": "`transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch)",
-			"expected": "Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource",
-			"tests": ["TRANSFER-007", "TRANSFER-008"]
 		},
 		"withdraw-enemy-rampart-no-protection": {
 			"actual": "`withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart",
@@ -165,35 +115,25 @@
 			"expected": "Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match",
 			"tests": ["LEGACY-PATH-006"]
 		},
-		"mineral-harvest-no-overflow-drop": {
-			"actual": "`harvest(mineral)` overflow does not create a dropped resource pile",
-			"expected": "Overflow amount drops as a resource pile on the harvester's tile",
-			"tests": ["HARVEST-MINERAL-012"]
-		},
 		"transfer-controller-no-upgrade-redirect": {
 			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
 			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
 			"tests": ["TRANSFER-011"]
-		},
-		"withdraw-wrong-resource-not-enough-energy": {
-			"actual": "`withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY`",
-			"expected": "Returns `ERR_INVALID_TARGET` when the target cannot hold that resource",
-			"tests": ["WITHDRAW-014"]
 		},
 		"dismantle-no-destroy-at-zero-hits": {
 			"actual": "`dismantle()` reducing hits to `0` leaves the structure present with `hits=0`",
 			"expected": "Structure is destroyed in the same tick once hits reach `0`",
 			"tests": ["DISMANTLE-007"]
 		},
-"shape-extra-hits-my": {
+		"shape-extra-hits-my": {
 			"actual": "Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType`",
 			"expected": "Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType`",
 			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]
 		},
 		"shape-struct-missing-legacy-compat": {
-			"actual": "Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity`",
-			"expected": "Legacy compat getters are present on `link` and `storage`",
-			"tests": ["SHAPE-STRUCT-001:link", "SHAPE-STRUCT-001:storage"]
+			"actual": "Structure missing legacy compat getter: `storage.storeCapacity`",
+			"expected": "Legacy compat getter is present on `storage`",
+			"tests": ["SHAPE-STRUCT-001:storage"]
 		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
@@ -215,7 +155,7 @@
 			"expected": "Flag objects expose the documented shape without crashing",
 			"tests": ["SHAPE-FLAG-001"]
 		},
-"spawn-duplicate-name-allowed": {
+		"spawn-duplicate-name-allowed": {
 			"actual": "`spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`)",
 			"expected": "Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep",
 			"tests": ["SPAWN-CREATE-003"]
@@ -234,21 +174,6 @@
 			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
 			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
 			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004", "RAWMEMORY-FOREIGN-005", "RAWMEMORY-FOREIGN-006", "RAWMEMORY-FOREIGN-008"]
-		},
-		"road-site-progresstotal-no-terrain-scaling": {
-			"actual": "`ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300",
-			"expected": "A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp",
-			"tests": ["CONSTRUCTION-COST-003:wall", "CONSTRUCTION-COST-003:swamp"]
-		},
-		"wall-road-not-traversable": {
-			"actual": "The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it",
-			"expected": "A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile",
-			"tests": ["ROAD-TRAVERSAL-001", "ROAD-FATIGUE-003", "ROAD-WEAR-003"]
-		},
-		"getrawbuffer-uint8-truncation": {
-			"actual": "`terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero.",
-			"expected": "Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y).",
-			"tests": ["MAP-TERRAIN-003"]
 		}
 	}
 }

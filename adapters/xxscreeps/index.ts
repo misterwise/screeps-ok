@@ -52,6 +52,7 @@ import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/cree
 import { create as createSpawn } from 'xxscreeps/mods/spawn/spawn.js';
 import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
 import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
+import { structureFactories } from 'xxscreeps/mods/construction/symbols.js';
 import { Source } from 'xxscreeps/mods/source/source.js';
 import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
 import { create as createLab } from 'xxscreeps/mods/chemistry/lab.js';
@@ -367,11 +368,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:constructionSite`, id);
 
 		this.queueOp(roomName, room => {
-			const site = createSite(
-				new RoomPosition(spec.pos[0], spec.pos[1], roomName),
-				spec.structureType as any,
-				userId,
-			);
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const progressTotal = structureFactories.get(spec.structureType)?.checkPlacement(room, pos)
+				?? C.CONSTRUCTION_COST[spec.structureType as keyof typeof C.CONSTRUCTION_COST]
+				?? 0;
+			const site = createSite(pos, spec.structureType as any, userId, progressTotal);
 			site.id = id;
 			if (spec.progress !== undefined) {
 				site.progress = spec.progress;
@@ -863,6 +864,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			for (const op of ownerOps) {
 				const pos = new RoomPosition(op.x, op.y, op.roomName);
 				const flag = instantiate(Flag, {
+					id: null as never,
 					pos,
 					name: op.name,
 					color: op.color as any,
