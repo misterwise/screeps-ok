@@ -58,11 +58,11 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">802</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">794</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">803</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">800</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">0</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">8</div><div class="label">blocked</div></div>
-  <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
 </div>
 
@@ -106,7 +106,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="6. Controller">6. Controller</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">55/55</span>
+    <span class="bar-text">56/56</span>
   </div>
 </div>
 <div class="bar-row">
@@ -238,8 +238,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="25. Memory">25. Memory</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:72%;background:var(--yellow)"></div>
-    <span class="bar-text">13/18</span>
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">18/18</span>
   </div>
 </div>
 <div class="bar-row">
@@ -255,7 +255,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
 <tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>3</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code></td></tr>
-<tr><td><span class="badge badge-muted">simulate()-blocked</span></td><td>5</td><td><code>RAWMEMORY-FOREIGN-005</code> <code>RAWMEMORY-FOREIGN-006</code> <code>RAWMEMORY-FOREIGN-007</code> <code>RAWMEMORY-FOREIGN-008</code> <code>RAWMEMORY-FOREIGN-009</code></td></tr>
 </tbody>
 </table>
 
@@ -2281,6 +2280,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/06-controller/6.1-6.3-controller.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>CTRL-CLAIM-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.1-6.3-controller.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>CTRL-RESERVE-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
@@ -2584,7 +2592,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+  <td><small>tests/06-controller/6.1-6.3-controller.test.ts, tests/06-controller/6.7-downgrade.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>CTRL-DOWNGRADE-003</code></td>
@@ -2701,7 +2709,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/06-controller/6.9-unclaim.test.ts</small></td>
+  <td><small>tests/06-controller/6.1-6.3-controller.test.ts, tests/06-controller/6.9-unclaim.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>CTRL-STRUCTLIMIT-001</code></td>
@@ -7167,50 +7175,50 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="simulate()-blocked">
+<tr data-status="tested" data-blocker="">
   <td><code>RAWMEMORY-FOREIGN-005</code></td>
-  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>25. Memory</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="simulate()-blocked">
+<tr data-status="tested" data-blocker="">
   <td><code>RAWMEMORY-FOREIGN-006</code></td>
-  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>25. Memory</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="simulate()-blocked">
+<tr data-status="tested" data-blocker="">
   <td><code>RAWMEMORY-FOREIGN-007</code></td>
-  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>25. Memory</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="simulate()-blocked">
+<tr data-status="tested" data-blocker="">
   <td><code>RAWMEMORY-FOREIGN-008</code></td>
-  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>25. Memory</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="simulate()-blocked">
+<tr data-status="tested" data-blocker="">
   <td><code>RAWMEMORY-FOREIGN-009</code></td>
-  <td><span class="badge badge-muted">simulate()-blocked</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>25. Memory</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/25-memory/25.1-25.3-memory.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SHAPE-CREEP-001</code></td>

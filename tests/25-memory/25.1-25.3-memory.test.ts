@@ -331,4 +331,219 @@ describe('Foreign segments', () => {
 		expect(result!.id).toBe(7);
 		expect(result!.data).toBe('seg7');
 	});
+
+	test('RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+
+		await shard.placeCreep('W1N1', { pos: [10, 10], owner: 'p2', body: [MOVE] });
+		await shard.tick();
+
+		// p2 publishes segment 2.
+		await shard.runPlayer('p2', code`
+			RawMemory.setActiveSegments([2]);
+			'ok'
+		`);
+		await shard.runPlayer('p2', code`
+			RawMemory.segments[2] = 'persistent';
+			RawMemory.setPublicSegments([2]);
+			RawMemory.setDefaultPublicSegment(2);
+			'ok'
+		`);
+
+		// p1 requests p2's foreign segment.
+		await shard.runPlayer('p1', code`
+			const hostile = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)[0];
+			RawMemory.setActiveForeignSegment(hostile.owner.username);
+			'ok'
+		`);
+
+		// First read: foreign segment is available.
+		const first = await shard.runPlayer('p1', code`
+			const fs = RawMemory.foreignSegment;
+			fs ? fs.data : null
+		`);
+		expect(first).toBe('persistent');
+
+		// Second read on the next tick WITHOUT re-issuing setActiveForeignSegment:
+		// the request persists.
+		const second = await shard.runPlayer('p1', code`
+			const fs = RawMemory.foreignSegment;
+			fs ? fs.data : null
+		`);
+		expect(second).toBe('persistent');
+	});
+
+	test('RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+
+		await shard.placeCreep('W1N1', { pos: [10, 10], owner: 'p2', body: [MOVE] });
+		await shard.tick();
+
+		// p2 publishes segment 1. (Segment id 0 is intentionally avoided —
+		// vanilla treats `activeForeignSegment.id === 0` as falsy and never
+		// fetches it, so a non-zero id is required to exercise delivery.)
+		await shard.runPlayer('p2', code`
+			RawMemory.setActiveSegments([1]);
+			'ok'
+		`);
+		await shard.runPlayer('p2', code`
+			RawMemory.segments[1] = 'p2-data';
+			RawMemory.setPublicSegments([1]);
+			RawMemory.setDefaultPublicSegment(1);
+			'ok'
+		`);
+
+		// p1 requests, then confirms delivery.
+		await shard.runPlayer('p1', code`
+			const hostile = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)[0];
+			RawMemory.setActiveForeignSegment(hostile.owner.username);
+			'ok'
+		`);
+		const delivered = await shard.runPlayer('p1', code`
+			const fs = RawMemory.foreignSegment;
+			fs ? fs.data : null
+		`);
+		expect(delivered).toBe('p2-data');
+
+		// p1 clears the pending request.
+		await shard.runPlayer('p1', code`
+			RawMemory.setActiveForeignSegment(null);
+			'ok'
+		`);
+
+		// Next tick: foreignSegment is undefined (checked inside player code
+		// because the JSON transport normalizes undefined to null).
+		const cleared = await shard.runPlayer('p1', code`
+			RawMemory.foreignSegment === undefined ? 'undefined' : 'defined'
+		`);
+		expect(cleared).toBe('undefined');
+	});
+
+	test('RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// Random suffix avoids accidental NPC-username collisions (Invader,
+		// Source Keeper, etc.).
+		const fakeName = `DoesNotExist-${Math.random().toString(36).slice(2, 6)}`;
+
+		// Calling with an unknown username must not throw.
+		const called = await shard.runPlayer('p1', code`
+			try {
+				RawMemory.setActiveForeignSegment(${fakeName});
+				'ok'
+			} catch (e) {
+				'threw'
+			}
+		`);
+		expect(called).toBe('ok');
+
+		// Next tick: foreignSegment is undefined (no delivery, no crash).
+		const result = await shard.runPlayer('p1', code`
+			RawMemory.foreignSegment === undefined ? 'undefined' : 'defined'
+		`);
+		expect(result).toBe('undefined');
+	});
+
+	test('RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+
+		await shard.placeCreep('W1N1', { pos: [10, 10], owner: 'p2', body: [MOVE] });
+		await shard.tick();
+
+		// p2 publishes segment 4.
+		await shard.runPlayer('p2', code`
+			RawMemory.setActiveSegments([4]);
+			'ok'
+		`);
+		await shard.runPlayer('p2', code`
+			RawMemory.segments[4] = 'revocable';
+			RawMemory.setPublicSegments([4]);
+			RawMemory.setDefaultPublicSegment(4);
+			'ok'
+		`);
+
+		// p1 requests, confirms delivery.
+		await shard.runPlayer('p1', code`
+			const hostile = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)[0];
+			RawMemory.setActiveForeignSegment(hostile.owner.username);
+			'ok'
+		`);
+		const delivered = await shard.runPlayer('p1', code`
+			const fs = RawMemory.foreignSegment;
+			fs ? fs.data : null
+		`);
+		expect(delivered).toBe('revocable');
+
+		// p2 revokes segment 4 by replacing the public set with a different id.
+		// (A literal `setPublicSegments([])` is a no-op in vanilla — the
+		// runtime emits an empty string, which the intent processor's
+		// truthy-check discards — so we remove the id by swapping the set
+		// instead.)
+		await shard.runPlayer('p2', code`
+			RawMemory.setPublicSegments([9]);
+			'ok'
+		`);
+
+		// p1 reads again without re-issuing setActiveForeignSegment.
+		// Authorization has been withdrawn → undefined.
+		const revoked = await shard.runPlayer('p1', code`
+			RawMemory.foreignSegment === undefined ? 'undefined' : 'defined'
+		`);
+		expect(revoked).toBe('undefined');
+	});
+
+	test('RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+
+		await shard.placeCreep('W1N1', { pos: [10, 10], owner: 'p2', body: [MOVE] });
+		await shard.tick();
+
+		// p2 publishes segment 7 only — deliberately no setDefaultPublicSegment,
+		// so the default-fallback path is not exercised.
+		await shard.runPlayer('p2', code`
+			RawMemory.setActiveSegments([7]);
+			'ok'
+		`);
+		await shard.runPlayer('p2', code`
+			RawMemory.segments[7] = 'seg7';
+			RawMemory.setPublicSegments([7]);
+			'ok'
+		`);
+
+		// p1 requests segment 5, which p2 has NOT published.
+		await shard.runPlayer('p1', code`
+			const hostile = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)[0];
+			RawMemory.setActiveForeignSegment(hostile.owner.username, 5);
+			'ok'
+		`);
+
+		const result = await shard.runPlayer('p1', code`
+			RawMemory.foreignSegment === undefined ? 'undefined' : 'defined'
+		`);
+		expect(result).toBe('undefined');
+	});
 });

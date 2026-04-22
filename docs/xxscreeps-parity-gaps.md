@@ -19,9 +19,9 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Tests: CONTAINER-002
 - Cause: `buryCreep`-style resource spill on structure death is not implemented for containers. When `container.hits <= 0` the processor at `mods/resource/processor/container.ts:10-11` removes the object but does not create dropped resources for `container.store`.
 
-### controller-my-undefined-on-unowned
+### controller-my-previously-owned-returns-undefined
 - Tests: CTRL-UNCLAIM-001, CTRL-DOWNGRADE-002
-- Cause: `OwnedStructure.my` does strict `#user === me` against an absent `#user` field on neutral controllers, returning `false`/`undefined` rather than `false` cleanly — `mods/structure/structure.ts:108-111`.
+- Cause: `OwnedStructure.my` at `mods/structure/structure.ts:108-111` returns `user === null ? undefined : user === me`. xxscreeps stores `#user = null` for *both* never-owned controllers (initial state) and previously-owned controllers (after `unclaim()` or downgrade-to-zero), so the getter returns `undefined` in both cases — the engine cannot distinguish the two states. Vanilla's getter (`@screeps/engine/src/game/structures.js:139`) returns `_.isUndefined(o.user) ? undefined : o.user == me`, which leaves `user` undefined for never-owned (→ `undefined`) and sets `user = null` only on `unclaim` (→ `false`). The never-owned case happens to agree by coincidence (both return `undefined`); only the previously-owned case is observable as a parity gap. CTRL-CLAIM-007 covers the never-owned sentinel and currently passes on both engines. Fix shape: either keep `#user` undefined until first claim, or have the `my` getter distinguish initial-null from cleared-null (e.g. via a separate `#everOwned` flag).
 
 ### safemode-ignores-downgrade-threshold
 - Tests: CTRL-SAFEMODE-005
@@ -129,8 +129,8 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 
 ### rawmemory-set-invalidates-parsed-memhack
 - Tests: MEMORY-002
-- Cause: `RawMemory.set` unconditionally clears the parsed cache at `mods/memory/memory.ts:86` (`RawMemory._parsed = json = undefined;`). The next `Memory.x` access falls through to `get()` (lines 142-159) which re-parses the just-set string, dropping any in-tick mutations made before the `set`. Vanilla's memhack preserves the already-parsed `Memory` object identity for the rest of the tick.
-- Fix shape: in `set()`, only invalidate `json`/`_parsed` when the parsed cache hasn't been touched (`!accessedJson`). When the user has already accessed `Memory`, leave the parsed object live so reads return the in-tick mutations.
+- Cause: xxscreeps and vanilla reach the same user-visible "post-access `set()` doesn't clobber in-tick Memory mutations" by different mechanisms, and xxscreeps's doesn't compose cleanly with `set()`. Vanilla (`@screeps/engine/src/game/game.js:479-500`) binds `Memory` as a **self-replacing lazy getter** — first access redefines `Memory` as a `value:` property pointing at `_parsed`. After first access, `Memory` is a direct value binding; subsequent `RawMemory.set(...)`'s `delete this._parsed` has no observable effect in-tick because `Memory` no longer goes through the getter. xxscreeps (`mods/memory/game.ts:41-45`) binds `Memory` as a **per-access getter** that always routes through `get()`, so the module-level `json` cache determines what every access sees. `RawMemory.set` at `mods/memory/memory.ts:86` does `RawMemory._parsed = json = undefined`, so the next `Memory.x` re-parses the just-set string and drops in-tick mutations.
+- Fix shape: in `set()`, gate the cache invalidation on `!accessedJson`. Once the user has accessed `Memory`, pin `json` to the live object for the rest of the tick so `get()`'s `if (json) return json` short-circuit keeps returning it; `set()` still updates the underlying string (used by `RawMemory.get()`) without touching the live parsed object. Matches vanilla's observable semantic without changing xxscreeps's getter strategy.
 
 ### shape-flag-crash (misnamed — same root as shape-extra-hits-my)
 - Tests: SHAPE-FLAG-001

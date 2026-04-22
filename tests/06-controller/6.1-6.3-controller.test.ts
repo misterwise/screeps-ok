@@ -265,6 +265,37 @@ describe('controller mechanics', () => {
 		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
+	test('CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller', async ({ shard }) => {
+		// Engine: @screeps/engine/src/game/structures.js:139 OwnedStructure.my
+		//   (o) => _.isUndefined(o.user) ? undefined : o.user == runtimeData.user._id
+		// A never-owned controller has `user` undefined → my === undefined.
+		// The previously-owned sentinel (`user === null` after unclaim or
+		// downgrade-to-zero → my === false) is asserted by CTRL-UNCLAIM-001 and
+		// CTRL-DOWNGRADE-002.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' }, // keep p1 active
+				{ name: 'W2N1' }, // never owned
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		// Place a creep so p1 has visibility into the never-owned room.
+		await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [MOVE],
+		});
+		await shard.tick();
+
+		// Evaluate the strict-undefined check inside the player runtime so the
+		// sentinel survives the runPlayer boundary (JSON drops bare `undefined`).
+		const isUndefined = await shard.runPlayer('p1', code`
+			Game.rooms['W2N1'].controller.my === undefined
+		`) as boolean;
+		expect(isUndefined).toBe(true);
+	});
+
 	// ── 6.2 Reserve Controller ────────────────────────────────
 
 	test('CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part', async ({ shard }) => {

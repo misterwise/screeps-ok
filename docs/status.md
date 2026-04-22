@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1248%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-988%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-92-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1256%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,21 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1248](#vanilla-passing-tests) | — | — | — | 2026-04-20 03:43 UTC |
-| 🟡 | **xxscreeps** | [988](#xxscreeps-passing-tests) | [92](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-20 03:42 UTC |
+| 🟢 | **vanilla** | [1256](#vanilla-passing-tests) | — | — | — | 2026-04-22 03:15 UTC |
+| 🔴 | **xxscreeps** | [989](#xxscreeps-passing-tests) | [97](#xxscreeps-expected-failures) | [2](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-22 03:13 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## xxscreeps unexpected failures
+
+- `adapter contract: setup placeFlag places a flag retrievable by name in player code`
+- `adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick`
+
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 92 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior, covering 97 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -48,7 +53,7 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
 | `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
 | `destroy-ownership-bypass` | `structure.destroy()` allowed when room controller not owned by player | Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player | [1](#xxscreeps-gap-destroy-ownership-bypass) |
-| `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [3](#xxscreeps-gap-notifywhenattacked-not-implemented) |
+| `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [5](#xxscreeps-gap-notifywhenattacked-not-implemented) |
 | `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
 | `tough-boost-no-reduction` | Boosted TOUGH parts do not reduce incoming damage | Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier | [4](#xxscreeps-gap-tough-boost-no-reduction) |
 | `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
@@ -56,7 +61,7 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `transfer-wrong-resource-err-full` | `transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch) | Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource | [2](#xxscreeps-gap-transfer-wrong-resource-err-full) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
-| `controller-my-undefined-on-unowned` | `StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field) | Returns `false` on an unowned/neutral controller | [2](#xxscreeps-gap-controller-my-undefined-on-unowned) |
+| `controller-my-previously-owned-returns-undefined` | `StructureController.my` returns `undefined` on a previously-owned controller (after `unclaim()` or downgrade-to-zero, where xxscreeps sets `#user` to `null` and the getter maps `null` → `undefined`) | Returns `false` on a previously-owned controller (vanilla maps `user === null` → `false`, reserving `undefined` for never-owned) | [2](#xxscreeps-gap-controller-my-previously-owned-returns-undefined) |
 | `safemode-ignores-downgrade-threshold` | `activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` | Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold | [1](#xxscreeps-gap-safemode-ignores-downgrade-threshold) |
 | `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
@@ -75,7 +80,7 @@ xxscreeps currently declares 50 parity gaps against vanilla's canonical behavior
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [3](#xxscreeps-gap-foreign-segment-not-supported) |
+| `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [6](#xxscreeps-gap-foreign-segment-not-supported) |
 | `road-site-progresstotal-no-terrain-scaling` | `ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300 | A road site's `progressTotal` is scaled by the terrain ratio: `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on wall and `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp | [2](#xxscreeps-gap-road-site-progresstotal-no-terrain-scaling) |
 | `wall-road-not-traversable` | The movement resolver in `engine/processor/movement.ts:117-120` rejects any move onto a `TERRAIN_MASK_WALL` tile before checking for a road, so a creep cannot walk onto a wall tile even when a road covers it | A road structure on a wall terrain tile makes it traversable — the resolver must allow the move if a road is present on that tile | [3](#xxscreeps-gap-wall-road-not-traversable) |
 | `getrawbuffer-uint8-truncation` | `terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero. | Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y). | [1](#xxscreeps-gap-getrawbuffer-uint8-truncation) |
@@ -231,11 +236,13 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-notifywhenattacked-not-implemented">
-<summary><code>notifyWhenAttacked-not-implemented</code> — 3 tests</summary>
+<summary><code>notifyWhenAttacked-not-implemented</code> — 5 tests</summary>
 
 - `structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure`
 - `structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument`
+- `structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room`
+- `structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room`
 
 </details>
 
@@ -297,8 +304,8 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-controller-my-undefined-on-unowned">
-<summary><code>controller-my-undefined-on-unowned</code> — 2 tests</summary>
+<details id="xxscreeps-gap-controller-my-previously-owned-returns-undefined">
+<summary><code>controller-my-previously-owned-returns-undefined</code> — 2 tests</summary>
 
 - `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
@@ -442,11 +449,14 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-foreign-segment-not-supported">
-<summary><code>foreign-segment-not-supported</code> — 3 tests</summary>
+<summary><code>foreign-segment-not-supported</code> — 6 tests</summary>
 
 - `Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data`
 - `Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed`
 - `Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers`
+- `Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks`
+- `Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request`
+- `Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick`
 
 </details>
 
@@ -478,7 +488,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1248 tests across 109 files</summary>
+<summary>1256 tests across 109 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -921,7 +931,7 @@ Click a test count above to jump to the affected test list for that gap.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -931,6 +941,7 @@ Click a test count above to jump to the affected test list for that gap.
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
+- controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
@@ -1652,7 +1663,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (6)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (8)
 
 - structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
 - structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
@@ -1660,6 +1671,8 @@ Click a test count above to jump to the affected test list for that gap.
 - structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
 - structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
 - structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
+- structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room
+- structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
@@ -1991,7 +2004,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (13)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (18)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
@@ -2006,6 +2019,11 @@ Click a test count above to jump to the affected test list for that gap.
 - Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data
 - Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
 - Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
+- Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks
+- Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request
+- Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
+- Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
+- Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (45)
 
@@ -2418,7 +2436,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>988 tests across 89 files</summary>
+<summary>989 tests across 89 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2509,7 +2527,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (46)
+**`tests/00-adapter-contract/setup.test.ts`** (44)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -2544,14 +2562,12 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeMineral places a mineral
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
-- adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeSite + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeSource + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeMineral + runPlayer advances exactly 1 tick
-- adapter contract: setup setup helpers do not inject extra ticks placeFlag + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
@@ -2822,7 +2838,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -2832,6 +2848,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
+- controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
@@ -3642,7 +3659,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (8)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (10)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
@@ -3652,6 +3669,8 @@ Click a count to jump to the affected test list.
 - RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
 - RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
 - Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
+- Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
+- Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (19)
 

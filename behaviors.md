@@ -812,6 +812,13 @@ Coverage Notes
   GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
 - `CTRL-CLAIM-006` `behavior` `verified_vanilla`
   Returns ERR_INVALID_TARGET if the controller is already owned.
+- `CTRL-CLAIM-007` `behavior` `verified_vanilla`
+  `controller.my` returns `undefined` on a never-owned controller (vanilla
+  `OwnedStructure.my` returns `undefined` when `user` is unset). This is the
+  never-owned sentinel — distinct from the previously-owned `my === false`
+  sentinel produced by `unclaim()` (CTRL-UNCLAIM-001) or downgrade-to-zero
+  (CTRL-DOWNGRADE-002), where the engine sets `user` to `null` rather than
+  clearing it.
 
 ### 6.2 Reserve Controller
 - `CTRL-RESERVE-001` `behavior` `verified_vanilla`
@@ -912,8 +919,10 @@ Coverage Notes
 - `CTRL-DOWNGRADE-001` `behavior` `verified_vanilla`
   The controller loses a level when `ticksToDowngrade` reaches 0.
 - `CTRL-DOWNGRADE-002` `behavior` `verified_vanilla`
-  An owned controller at level 1 that loses its level becomes unowned
-  (level 0, `my === false`).
+  An owned controller at level 1 that loses its level becomes unowned: level
+  drops to 0, owner is cleared, and `my === false` (the previously-owned
+  sentinel — `unclaim`-style processors set `user` to `null`, distinct from
+  the never-owned `my === undefined` covered by CTRL-CLAIM-007).
 - `CTRL-DOWNGRADE-003` `behavior` `verified_vanilla`
   `upgradeController()` resets the controller's downgrade timer.
 - `CTRL-DOWNGRADE-004` `behavior` `verified_vanilla`
@@ -966,11 +975,13 @@ Notes
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
   `StructureController.unclaim()` resets the controller to level 0 (unowned),
-  clearing `user`, `progress`, `downgradeTime`, `safeMode`, and
-  `safeModeAvailable` in a single processor step. Owned structures in the
-  room are **not** destroyed by unclaim itself; they remain present and
-  simply become inactive because every `CONTROLLER_STRUCTURES[type][0]` is 0
-  (already covered by `CTRL-STRUCTLIMIT-002`).
+  clearing `user` (set to `null`), `progress`, `downgradeTime`, `safeMode`, and
+  `safeModeAvailable` in a single processor step. After unclaim, `controller.my`
+  is `false` (the previously-owned sentinel — distinct from never-owned
+  `undefined`, covered by CTRL-CLAIM-007). Owned structures in the room are
+  **not** destroyed by unclaim itself; they remain present and simply become
+  inactive because every `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered
+  by `CTRL-STRUCTLIMIT-002`).
 
 Coverage Notes
 - Original CTRL-UNCLAIM-002 ("All owned structures in the room are
@@ -2923,6 +2934,24 @@ Coverage Notes
 - `RAWMEMORY-FOREIGN-004` `behavior` `verified_vanilla`
   After `RawMemory.setDefaultPublicSegment(id)`, foreign-segment readers
   without an explicit id receive that segment by default.
+- `RAWMEMORY-FOREIGN-005` `behavior` `verified_vanilla`
+  A foreign-segment request persists across ticks: after `setActiveForeignSegment`,
+  subsequent ticks deliver the segment via `RawMemory.foreignSegment` without
+  the caller re-invoking `setActiveForeignSegment`.
+- `RAWMEMORY-FOREIGN-006` `behavior` `verified_vanilla`
+  `setActiveForeignSegment(null)` clears the pending foreign-segment request;
+  the next tick's `RawMemory.foreignSegment` is `undefined`.
+- `RAWMEMORY-FOREIGN-007` `behavior` `verified_vanilla`
+  `setActiveForeignSegment` with an unknown username results in
+  `RawMemory.foreignSegment === undefined` on the next tick (no throw, no crash).
+- `RAWMEMORY-FOREIGN-008` `behavior` `verified_vanilla`
+  Revocation via `setPublicSegments` takes effect on the next foreign read:
+  after a target removes a segment id from its public set, the foreign
+  reader's `RawMemory.foreignSegment` becomes `undefined`.
+- `RAWMEMORY-FOREIGN-009` `behavior` `verified_vanilla`
+  `setActiveForeignSegment` with an explicit id that the target has not
+  published via `setPublicSegments` yields `RawMemory.foreignSegment === undefined`
+  on the next tick.
 
 ---
 

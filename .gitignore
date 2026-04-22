@@ -1,6 +1,7 @@
 node_modules/
 dist/
 reports/*
+.test-output/
 *.tsbuildinfo
 .parity-verdict.json
 screeps/

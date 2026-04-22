@@ -863,7 +863,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			for (const op of ownerOps) {
 				const pos = new RoomPosition(op.x, op.y, op.roomName);
 				const flag = instantiate(Flag, {
-					id: null as never,
 					pos,
 					name: op.name,
 					color: op.color as any,

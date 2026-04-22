@@ -135,9 +135,9 @@
 			"expected": "No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range",
 			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
 		},
-		"controller-my-undefined-on-unowned": {
-			"actual": "`StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field)",
-			"expected": "Returns `false` on an unowned/neutral controller",
+		"controller-my-previously-owned-returns-undefined": {
+			"actual": "`StructureController.my` returns `undefined` on a previously-owned controller (after `unclaim()` or downgrade-to-zero, where xxscreeps sets `#user` to `null` and the getter maps `null` → `undefined`)",
+			"expected": "Returns `false` on a previously-owned controller (vanilla maps `user === null` → `false`, reserving `undefined` for never-owned)",
 			"tests": ["CTRL-UNCLAIM-001", "CTRL-DOWNGRADE-002"]
 		},
 		"safemode-ignores-downgrade-threshold": {
@@ -233,7 +233,7 @@
 		"foreign-segment-not-supported": {
 			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
 			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
-			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004"]
+			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004", "RAWMEMORY-FOREIGN-005", "RAWMEMORY-FOREIGN-006", "RAWMEMORY-FOREIGN-008"]
 		},
 		"road-site-progresstotal-no-terrain-scaling": {
 			"actual": "`ConstructionSite.progressTotal` returns `CONSTRUCTION_COST[structureType]` with no terrain lookup — a road site on wall or swamp reports the base 300",
