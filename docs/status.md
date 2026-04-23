@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1047%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,18 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1291](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-23 06:09 UTC |
-| 🔴 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-23 05:58 UTC |
+| 🟡 | **vanilla** | [1291](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-23 06:22 UTC |
+| 🟡 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-23 06:20 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## xxscreeps unexpected failures
-
-- `creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate`
-- `creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container`
-- `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
 
 ## vanilla expected failures
 
@@ -49,12 +43,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 parity gaps against vanilla's canonical behavior, covering 74 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior, covering 77 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `tombstone-corpse-rate` | Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()` | On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources | [3](#xxscreeps-gap-tombstone-corpse-rate) |
-| `death-container-diversion` | Creep death does not divert resources into same-tile container | Death resources flow into a live same-tile container before any tombstone remainder | [1](#xxscreeps-gap-death-container-diversion) |
+| `tombstone-corpse-rate` | No body energy/mineral reclaim at all on death — `mods/creep/tombstone.ts` buryCreep only multiplies carried store by rate, never iterates the body for part-cost or boost resources | On death, tombstone store includes reclaimed body resources (`BODYPART_COST[type] * lifeRate`, boost minerals at `LAB_BOOST_MINERAL * lifeRate`). CLAIM bodies use `CREEP_CLAIM_LIFE_TIME` as the life-rate denominator; other bodies use `CREEP_LIFE_TIME` | [2](#xxscreeps-gap-tombstone-corpse-rate) |
+| `death-carried-store-rate-multiplied` | `buryCreep` multiplies carried store by `rate` (`Math.floor(amount * CREEP_CORPSE_RATE)`), so a creep carrying 50 energy leaves only 10 in the tombstone | Carried resources are deposited 1:1 regardless of `dropRate` (vanilla `_die.js:75-91` iterates `object.store` without the rate multiplier — only body-reclaim resources are scaled by `lifeRate`) | [3](#xxscreeps-gap-death-carried-store-rate-multiplied) |
+| `death-container-diversion` | Creep death never diverts into a same-tile container — `buryCreep` writes directly to the tombstone. Mixed-resource deaths that should sequentially fill the container (body-energy, then body-minerals, then carried store) leave the container untouched | Death resources flow into a live same-tile container before any tombstone remainder, with each resource type tried against the container's current free capacity in vanilla's deposit order | [2](#xxscreeps-gap-death-container-diversion) |
 | `factory-not-owner-precedence` | `factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-factory-not-owner-precedence) |
 | `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
@@ -95,18 +90,27 @@ xxscreeps currently declares 38 parity gaps against vanilla's canonical behavior
 Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-tombstone-corpse-rate">
-<summary><code>tombstone-corpse-rate</code> — 3 tests</summary>
+<summary><code>tombstone-corpse-rate</code> — 2 tests</summary>
 
 - `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
+- `creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate`
+
+</details>
+
+<details id="xxscreeps-gap-death-carried-store-rate-multiplied">
+<summary><code>death-carried-store-rate-multiplied</code> — 3 tests</summary>
+
 - `creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone`
 - `creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone`
+- `creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container`
 
 </details>
 
 <details id="xxscreeps-gap-death-container-diversion">
-<summary><code>death-container-diversion</code> — 1 test</summary>
+<summary><code>death-container-diversion</code> — 2 tests</summary>
 
 - `creep death CREEP-DEATH-003 death resources go into a same-tile container first`
+- `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
 
 </details>
 
