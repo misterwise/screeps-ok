@@ -174,6 +174,7 @@ export const CARRY_CAPACITY: number = C.CARRY_CAPACITY;
 export const ENERGY_REGEN_TIME: number = C.ENERGY_REGEN_TIME;
 export const CREEP_LIFE_TIME: number = C.CREEP_LIFE_TIME;
 export const CREEP_CLAIM_LIFE_TIME: number = C.CREEP_CLAIM_LIFE_TIME;
+export const CREEP_PART_MAX_ENERGY: number = C.CREEP_PART_MAX_ENERGY;
 export const CREEP_SPAWN_TIME: number = C.CREEP_SPAWN_TIME;
 export const MAX_CREEP_SIZE: number = C.MAX_CREEP_SIZE;
 export const SPAWN_RENEW_RATIO: number = C.SPAWN_RENEW_RATIO;

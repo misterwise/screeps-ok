@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-19 (PR-15 memory plan expanded with vanilla-parity storage mapping).
+Last refreshed: 2026-04-21 (PR-14 split and submitted as #133 + #134).
 
 PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-precedence` (FACTORY-PRODUCE-010) shared the same root cause in `checkMyStructure` and cleared without a separate fix.
 
@@ -29,6 +29,8 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-2 | [laverdet/xxscreeps#130](https://github.com/laverdet/xxscreeps/pull/130) | Fix Store.getFreeCapacity null propagation and OpenStore pool semantics |
 | PR-15 | [laverdet/xxscreeps#131](https://github.com/laverdet/xxscreeps/pull/131) | Fix RawMemory.set guards and implement foreign/public memory segments |
 | PR-13 | [laverdet/xxscreeps#132](https://github.com/laverdet/xxscreeps/pull/132) | Add notifyWhenAttacked and missing structure surface getters |
+| PR-14a | [laverdet/xxscreeps#133](https://github.com/laverdet/xxscreeps/pull/133) | Add Game.cpuLimit, Game.powerCreeps, Room.survivalInfo |
+| PR-14b | [laverdet/xxscreeps#134](https://github.com/laverdet/xxscreeps/pull/134) | Remove hits/hitsMax/my leak from RoomObject base |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -100,12 +102,28 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   4. `spawn.ts:308-310` `checkSpawnCreep`: drop `checkIsActive(spawn)` from user-side validation (vanilla parity — only enforced at processing time).
 - **Blast radius:** Affects all spawn lifecycle tests; needs careful re-run.
 
-### PR-7: Creep death + tombstone (`mods/creep/tombstone.ts`, `mods/creep/processor.ts`)
-- **Closes (2 entries / 4 tests):** `tombstone-corpse-rate + tombstone-store-missing` (CREEP-DEATH-008/009, TOMBSTONE-003), `death-container-diversion` (CREEP-DEATH-003)
-- **Plan:**
-  1. `tombstone.ts:68-86` `buryCreep`: take a `dropRate` parameter (`1.0` for suicide, `CREEP_CORPSE_RATE` for combat). Add body-energy reclaim: `lifeRate = CREEP_CORPSE_RATE × ticksToLive / CREEP_LIFE_TIME; bodyEnergy = floor(sum(BODYPART_COST[part] × lifeRate))`. Add to tombstone.store.energy.
-  2. `processor.ts:282`: before calling `buryCreep`, check for a same-tile container; if present and has capacity, divert resources there before tombstone path.
-- **Blast radius:** Tombstone behavior wide-impact; verify with all CREEP-DEATH tests.
+### PR-7: Creep death — body energy reclaim + container diversion (`mods/creep/tombstone.ts`)
+- **Closes (3 entries / 5 tests):**
+  - `tombstone-corpse-rate` — CREEP-DEATH-008 (`source=suicide`, `source=ticksToLive`), CREEP-DEATH-009
+  - `tombstone-store-missing` — TOMBSTONE-003
+  - `death-container-diversion` — CREEP-DEATH-003
+- **Root cause:** `buryCreep` scales the creep's carried store by `rate` and never reclaims body energy, while vanilla's `_die.js` (`@screeps/engine/src/processor/intents/creeps/_die.js:39-91`) copies the creep's store over at full amount, adds reclaimed body energy at `lifeRate = dropRate × ticksToLive / lifeTime`, and diverts every deposit into a same-tile container first before tombstone remainder. The failing tests observe the full-store + body-reclaim contract directly (TOMBSTONE-003 computes `floor(Σ BODYPART_COST[part] × lifeRate) + carried`; CREEP-DEATH-009 asserts `tomb.store.energy === 19` for a `[CARRY, MOVE]` suicide — which requires `lifeRate × (50+50)` to be reclaimed, not zero).
+- **Fix (one file, `mods/creep/tombstone.ts`):** rewrite `buryCreep(creep, rate = C.CREEP_CORPSE_RATE)` around a `deposits: Map<ResourceType, number>` and a container-diversion helper, mirroring `_die.js:39-91`:
+  1. `const lifeTime = creep.body.some(p => p.type === C.CLAIM) ? C.CREEP_CLAIM_LIFE_TIME : C.CREEP_LIFE_TIME;` `const lifeRate = rate * (creep.ticksToLive ?? 0) / lifeTime;`. `creep.ticksToLive` returns `undefined` when `#ageTime - Game.time` is `≤ 0` (aging death), so the nullish fallback pins lifeRate to 0 on natural TTL death — matches vanilla's `_ticksToLive = 0` at that moment and explains why CREEP-DEATH-008:`source=ticksToLive` only asserts carried power, not body energy.
+  2. Guard body reclaim behind `rate > 0` (collapses vanilla's `dropRate > 0 && !userSummoned && !strongholdId` — `userSummoned`/`strongholdId` aren't modeled; the existing suicide-site check `creep['#user'].length > 2 ? undefined : 0` already routes NPC suicides through rate=0).
+  3. For each body part: `deposit(C.RESOURCE_ENERGY, Math.min(C.CREEP_PART_MAX_ENERGY, C.BODYPART_COST[part.type] * lifeRate))`. Floor each resource total after accumulation, before depositing. **Skip boost-mineral reclaim** — vanilla also adds `LAB_BOOST_MINERAL × lifeRate` per boosted part, but importing `mods/chemistry/constants` into `mods/creep/tombstone.ts` inverts mod dependency (today only `mods/combat/test.ts` and `mods/resource/test.ts` cross into chemistry, both tests). Park behind a `registerBodyReclaim` hook when a boost-reclaim test arrives; no current parity test requires it.
+  4. Add the creep's carried store verbatim (no `rate` scaling — matches vanilla `_die.js:75-91`, which iterates `object.store` with the raw `amount` and only scales `bodyResources`).
+  5. `const container = lookForStructureAt(creep.room, creep.pos, C.STRUCTURE_CONTAINER)`. For each `(type, amount)` deposit: if `container && container.hits > 0`, divert `Math.min(amount, container.store.getFreeCapacity(type) ?? 0)` via `container.store['#add']`; whatever remains flows into `tombstone.store['#add']`. (Pulling `lookForStructureAt` and `STRUCTURE_CONTAINER` into tombstone.ts is safe — `mods/resource/container.ts` → `mods/structure/structure.ts` → `game/object.ts`, no back-edge to creep.)
+  6. Keep `tombstone.deathTime`, `tombstone['#creep']`, and `tombstone['#decayTime']` wiring unchanged.
+- **Caller audit (no behavior change — just confirming the existing call sites already pass the right rate):**
+  - `processor.ts:228` suicide intent: `buryCreep(creep, creep['#user'].length > 2 ? undefined : 0)` — default `C.CREEP_CORPSE_RATE` for real users (playerSlots are length 3: `'100'`..`'103'`), `0` for NPC ids `'2'`/`'3'`. Matches `_die.js` callers in `suicide.js:15 object.user == '2' ? 0 : undefined`.
+  - `processor.ts:282` TTL/hits-zero path: `buryCreep(creep)` — default `C.CREEP_CORPSE_RATE`. Matches `tick.js:94,111,115 require('./_die')(object, undefined, ...)`.
+- **Out of scope (one-line TODOs at the relevant code sites, no new tests):**
+  - Boost-mineral body reclaim (`LAB_BOOST_MINERAL` / `LAB_BOOST_ENERGY` per boosted part) — needs a hook to avoid a chemistry→creep back-dependency.
+  - `EVENT_OBJECT_DESTROYED` event-log entry (`_die.js:97`) — belongs with PR-8's `eventlog-attack-missing` surface work.
+  - NPC `userSummoned` / `strongholdId` body-reclaim suppression — not modeled upstream.
+  - Nuke-skips-tombstone branch (`_die.js:20`) — no nuke mod yet.
+- **Blast radius:** Low. One file, no signature change, no new cross-mod imports beyond `mods/structure/structure.js` (already imported transitively elsewhere). Expected unexpected passes: 5. Watch CREEP-DEATH-004 / CREEP-DEATH-005 / CREEP-DEATH-007 — their assertions (`tomb.store` defined, amount-stability across ticks, decay-to-drop) are preserved by the new path; confirm on the PR test run before submit.
 
 ### PR-8: Combat damage (`mods/combat/`, `mods/defense/rampart.ts`, `mods/creep/creep.ts`, `mods/engine/processor/room.ts`)
 - **Closes (3 entries / 7 tests):** `rampart-no-protection` (RAMPART-PROTECT-001/002, DISMANTLE-004, COMBAT-MELEE-005, COMBAT-RANGED-006, COMBAT-RMA-004), `tough-boost-no-reduction` (BOOST-TOUGH-001/002), `eventlog-attack-missing` (ROOM-EVENTLOG-001/002)
@@ -154,15 +172,20 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   4. `logistics/storage.ts`: add `@deprecated @enumerable get storeCapacity()` returning `this.store.getCapacity()`. Mirrors the `@deprecated energy`/`energyCapacity` pair on `StructureLab` at `mods/chemistry/lab.ts:36-38`.
 - **Blast radius:** Surface additions + one schema field (`'bool'`, 1 byte per structure; negated so zero-default matches the common case). No behavior change. Full parity confirmed clean — 6 unexpected passes, 0 new regressions.
 
-### PR-14: Object/Room/Game runtime shape (`game/object.ts`, `game/room/room.ts`, `game/game.ts`, `mods/flag/game.ts`)
-- **Closes (3 entries / 11+ tests):** `shape-extra-hits-my` family (SHAPE-SOURCE/MINERAL/SITE/RESOURCE/TOMBSTONE/RUIN/STRUCT-001 + SHAPE-FLAG-001), `shape-room-missing-survivalInfo` (SHAPE-ROOM-001), `shape-game-surface-mismatch` (SHAPE-GAME-001). Note: `SHAPE-STRUCT-001:constructedWall` and `SHAPE-RUIN-001` additionally require PR-13's `ticksToLive`/`structureType` getters — they flip only when both land.
-- **Plan:**
-  1. `game/object.ts:60-62`: remove `hits`/`hitsMax`/`my` getters from base RoomObject. Add per-subclass — every class that has those concepts gets explicit getters; Source/Mineral/Resource/etc. inherit nothing.
-  2. `game/object.ts:21`: Flag declares `id: never` — the schema struct's `id` field still surfaces. Either suppress it via Flag-specific serialization or accept the divergence and update test expectation.
-  3. `game/room/room.ts`: add `get survivalInfo() { return null; }`.
-  4. `game/game.ts`: add `Game.cpuLimit` to gameInitializer (mirror of `cpu.limit`).
-  5. `mods/flag/game.ts:74` and `mods/power/game.ts` (powerCreeps): convert `Game.foo = bar` to `Object.defineProperty(Game, 'foo', { get: () => bar, enumerable: true, configurable: true })` to match vanilla's prototype-getter descriptor shape.
-- **Blast radius:** Wide — every RoomObject subclass needs review for which getters to expose. Mechanical refactor.
+### PR-14: Object/Room/Game runtime shape — split and submitted as #133 + #134
+- **Closes (3 entries / 11+ tests):** `shape-extra-hits-my` family (SHAPE-SOURCE/MINERAL/SITE/RESOURCE/TOMBSTONE/RUIN/STRUCT-001 + SHAPE-FLAG-001) via #134; `shape-room-missing-survivalInfo` (SHAPE-ROOM-001) + `shape-game-surface-mismatch` (SHAPE-GAME-001) via #133. `SHAPE-STRUCT-001:constructedWall` and `SHAPE-RUIN-001` flip jointly with PR-13 (#132).
+- **PR-14a (#133) — Game/Room surface additions:**
+  - `game/game.ts`: `Game.cpuLimit` getter derived from `this.cpu.limit`.
+  - `mods/power/game.ts`: `Game.powerCreeps = {}` with `@deprecated` marker.
+  - `game/room/room.ts`: `get survivalInfo() { return null; }`.
+  - Scope trimmed: Flag-id restructure deferred (maintainer feedback — flag id should stay narrow to Flag, not a base-schema change).
+- **PR-14b (#134) — RoomObject base cleanup:**
+  - Delete base `hits`/`hitsMax`/`my` getters + `hits` setter from `game/object.ts`.
+  - Narrow `#applyDamage` receiver via `this: RoomObject & { hits: number; '#destroy'(): unknown }` — type-level parallel to the existing `this:` patterns in `game/room/room.ts` (`#initialize`, `#flushObjects`, `find`). Base genuinely has no `hits` after this, at type level and runtime.
+  - Add `hasHits(object)` type guard (parallel to `hasSpawn`) for four call sites that previously narrowed via `object.hits === undefined`.
+  - Drop now-redundant `override` on `hits`/`hitsMax`/`my` in `Creep`, `Structure`, `ConstructionSite`, `OwnedStructure`.
+  - Narrow `FIND_MY_STRUCTURES`/`FIND_HOSTILE_STRUCTURES` and `checkMyStructure` via `instanceof OwnedStructure` instead of reading `my` through the base leak.
+- **Flag `id: never` (deferred):** Option A (schema-layout split) was shelved after breaking ConstructionSite on 2026-04-21 (`docs/xxscreeps-flag-id-plan.md`). Not pursued further pending maintainer direction — `SHAPE-FLAG-001` remains open until a follow-up.
 
 ### PR-15: Memory mod (`mods/memory/{memory.ts,driver.ts,model.ts,game.ts}`)
 - **Closes (3 entries / 6 tests):** `rawmemory-set-no-eager-limit-check` (MEMORY-004), `rawmemory-set-invalidates-parsed-memhack` (MEMORY-002), `foreign-segment-not-supported` (RAWMEMORY-FOREIGN-002/003/004).
@@ -246,7 +269,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Cooldowns | PR-4 | 3 (inc. factory-cooldown-no-decrement) |
 | Link | PR-5 | 4 |
 | Spawn | PR-6 | 4 |
-| Creep death | PR-7 | 2 |
+| Creep death | PR-7 | 3 |
 | Combat | PR-8 | 3 |
 | Hits→destroy | PR-9 | 3 |
 | Creep client API | PR-10 | 5 |
@@ -280,7 +303,8 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 12. ~~**PR-2**~~ submitted as #130 — Store.getFreeCapacity null propagation and OpenStore pool semantics
 13. ~~**PR-13**~~ submitted as #132 — notifyWhenAttacked + wall ticksToLive + ruin structureType + storage storeCapacity (flips 6 tests alone, 2 more jointly with PR-14)
 14. ~~**PR-15**~~ submitted as #131 — RawMemory.set guards + foreign/public memory segments
-15. Remaining PRs (PR-6, 7, 8, 9, 10, 14) in any order based on capacity — PR-14 is next for its joint coverage with PR-13
+15. ~~**PR-14**~~ split + submitted as #133 (Game/Room surface) + #134 (RoomObject base cleanup)
+16. Remaining PRs (PR-6, 7, 8, 9, 10) in any order based on capacity
 
 ## Adapter changes (do these first)
 

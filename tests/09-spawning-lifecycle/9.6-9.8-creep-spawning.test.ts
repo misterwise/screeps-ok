@@ -1,9 +1,11 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY,
-	MOVE, WORK, CARRY, ATTACK, TOUGH,
+	MOVE, WORK, CARRY, ATTACK, TOUGH, CLAIM,
 	STRUCTURE_SPAWN,
 	FIND_TOMBSTONES, RESOURCE_POWER,
-	CREEP_SPAWN_TIME, CREEP_LIFE_TIME,
+	BODYPART_COST,
+	CREEP_SPAWN_TIME, CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME,
+	CREEP_PART_MAX_ENERGY, CREEP_CORPSE_RATE,
 } from '../../src/index.js';
 import { creepDeathResourceCases } from '../../src/matrices/creep-death-sources.js';
 
@@ -113,6 +115,40 @@ describe('creep.suicide()', () => {
 			expect(tomb.store.energy).toBe(19);
 			expect(tomb.store.power).toBe(30);
 		}
+	});
+
+	test('CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CLAIM, MOVE],
+			name: 'ClaimSuicide',
+			ticksToLive: 600,
+		});
+		await shard.tick();
+
+		// Capture ticksToLive as observed by the suicide tick's buryCreep.
+		const { ttl } = await shard.runPlayer('p1', code`
+			const creep = Game.creeps['ClaimSuicide'];
+			const ttl = creep.ticksToLive;
+			creep.suicide();
+			({ ttl })
+		`) as { ttl: number };
+
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const tomb = tombstones.find(t => t.creepName === 'ClaimSuicide');
+		expect(tomb).toBeDefined();
+
+		// Engine formula with CLAIM body: lifeRate = CREEP_CORPSE_RATE * ttl / CREEP_CLAIM_LIFE_TIME.
+		// Regressing to CREEP_LIFE_TIME here would yield ~40% of the expected value.
+		const lifeRate = CREEP_CORPSE_RATE * ttl / CREEP_CLAIM_LIFE_TIME;
+		let bodyEnergy = 0;
+		for (const part of [CLAIM, MOVE]) {
+			bodyEnergy += Math.min(CREEP_PART_MAX_ENERGY, BODYPART_COST[part] * lifeRate);
+		}
+		bodyEnergy = Math.floor(bodyEnergy);
+
+		expect(tomb!.store.energy ?? 0).toBe(bodyEnergy);
 	});
 
 	for (const { label, creepName, ticksToLive, trigger } of creepDeathResourceCases) {

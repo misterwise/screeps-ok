@@ -1553,6 +1553,10 @@ Coverage Notes
 - `CREEP-DEATH-009` `behavior` `verified_vanilla`
   On `suicide()`, the tombstone store includes reclaimed body energy in addition
   to carried resources.
+- `CREEP-DEATH-010` `behavior` `verified_vanilla`
+  Body energy reclaim on death uses `CREEP_CLAIM_LIFE_TIME` for the life-rate
+  denominator when the body contains any `CLAIM` part; otherwise it uses
+  `CREEP_LIFE_TIME`.
 
 ### 9.8 Suicide
 - `CREEP-SUICIDE-001` `behavior` `verified_vanilla`

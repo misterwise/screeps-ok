@@ -1,5 +1,7 @@
 # xxscreeps Flag/id Plan
 
+**Status (2026-04-21): shelved.** Option A was implemented on branch `fix/flag-id-base-schema` (worktree `/Users/mrwise/Coding/Screeps/xxscreeps-pr-flag-id`) and validated against screeps-ok. It introduced ~18 new xxscreeps regressions clustered on ConstructionSite (`placeSite`/`getObjectById` return null, all 12 `CONSTRUCTION-COST-001:*`, `CONSTRUCTION-COST-002`, `BUILD-001/002/009/010`, `SAFEMODE-COMBAT-002`). Symptom: site placed but buffer `id` slot reads back wrong — likely a schema-layout packing collision between the moved `id` field and the `variant('constructionSite')` discriminator slot in `schema/layout.ts`. SHAPE-FLAG-001 no longer crashes but still fails a shape mismatch (needs PR-14's `hits`/`hitsMax`/`my` cleanup first). User decision: not worth the debugging time. Branch retained with the uncommitted diff for future reference.
+
 Deferred work from the original PR 133 scope (see `xxscreeps-pr-plan.md` for the broader tracker). PR 133 was split into three:
 
 - **Landed as rescoped PR 133**: Game/Room surface additions (`cpuLimit` as `@deprecated` getter deriving from `cpu.limit`, `powerCreeps` stub, `Room.survivalInfo`).
