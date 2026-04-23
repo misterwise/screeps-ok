@@ -298,27 +298,14 @@ xxscreeps stubs throw). `MarketOrderSpec` added to `src/adapter.ts`.
 
 ---
 
-## 9. Spawning & Lifecycle — blocked on adapter work
+## ~~9. Spawning & Lifecycle — CREEP-DEATH-011~~ — DONE
 
-### CREEP-DEATH-011 — rate=0 death produces an empty tombstone
-
-Vanilla `_die.js:39` guards body AND store deposits on
-`dropRate > 0 && !userSummoned && !strongholdId`. The only player-reachable
-rate=0 path with a tombstone is Source Keeper suicide (`suicide.js:15` passes
-`user == '2' ? 0 : undefined`) — nuke deaths skip the tombstone entirely.
-xxscreeps' suicide processor generalizes this to `user.length <= 2`, so both
-Source Keeper (`'2'`) and Invader (`'3'`) trigger rate=0.
-
-**Adapter gap:** `placeCreep` resolves `spec.owner` through `playerMap`, which
-only maps the handles registered via `createShard({players: [...]})` and hands
-out engine user ids from fixed slots (`'100','101',...` on xxscreeps,
-`'p1_user','p2_user',...` on vanilla). None of those slots produce the short
-NPC user ids the rate=0 branch keys on. Needs an NPC-owner escape hatch — e.g.
-a reserved handle like `'sk'` that resolves to `'2'` on both adapters.
-
-**Test shape once unblocked:** place a CARRY+MOVE Source Keeper-owned creep
-with a non-empty store, run suicide via `runPlayer` (or trigger via aging),
-assert the resulting tombstone's store is empty for every resource type.
+CREEP-DEATH-011 (rate=0 death leaves an empty tombstone) is written and verified
+on both adapters. Adapter unblock: `placeCreep` now resolves a reserved `'sk'`
+handle to engine user id `'2'` on both vanilla and xxscreeps, and the xxscreeps
+adapter additionally calls `activateNPC(room, '2')` so the built-in Invader loop
+(`mods/invader/loop/find-attack.ts:60`) auto-suicides the creep in a player-owned
+room with no hostiles and no spawns.
 
 ## Notes
 

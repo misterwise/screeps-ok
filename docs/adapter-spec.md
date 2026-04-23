@@ -27,6 +27,11 @@ The adapter must not:
 - player handles such as `'p1'` and `'p2'` are opaque test-side identities;
   adapters map them to engine-specific user IDs internally and map them back in
   snapshots.
+- the handle `'sk'` is reserved for an NPC owner whose engine user id has
+  length `≤ 2` (vanilla/xxscreeps Invader, id `'2'`). Tests use it via
+  `placeCreep({ owner: 'sk', ... })` to hit the zero-deposit-rate death
+  branch (e.g. CREEP-DEATH-011); adapters must resolve it without requiring
+  it to appear in `ShardSpec.players`.
 - setup crosses the boundary as typed specs
 - player code crosses the boundary as a `PlayerCode` string
 - inspection crosses the boundary as plain JSON snapshots

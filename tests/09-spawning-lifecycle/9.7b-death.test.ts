@@ -139,9 +139,35 @@ describe('creep death', () => {
 		expect(tomb!.ticksToDecay).toBeLessThanOrEqual(expected);
 	});
 
-	// CREEP-DEATH-011 (rate=0 death leaves empty tombstone) requires placing an
-	// NPC-owned creep (user id length ≤ 2 in xxscreeps, user='2' in vanilla). The
-	// adapter API has no NPC-owner hook today — tracked in docs/pending-tests.md.
+	test('CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone', async ({ shard }) => {
+		// Vanilla `_die.js:39` gates both body reclaim and carried-store deposits
+		// on `dropRate > 0`; suicide.js:15 passes `user == '2' ? 0 : undefined`,
+		// so an NPC-owned creep that runs the suicide intent hits the rate=0
+		// branch and buries with an empty store. xxscreeps generalises to
+		// `user.length <= 2` in `mods/creep/processor.ts` (buryCreep receives
+		// rate=0 for any short-ID user).
+		//
+		// The adapter seeds `'sk' → '2'` independent of `spec.players`, and on
+		// xxscreeps also `activateNPC`s the room so the built-in Invader loop
+		// (`mods/invader/loop/find-attack.ts:60`) runs. With no hostiles, no
+		// spawns, and a player-owned controller in the room, both engines
+		// auto-emit a suicide intent for the NPC creep on the next tick.
+		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'sk',
+			body: [ATTACK, MOVE, CARRY],
+			store: { energy: 50 },
+			name: 'npcDoomed',
+			ticksToLive: 1500,
+		});
+		await shard.tick();
+
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const tomb = tombstones.find(t => t.creepName === 'npcDoomed');
+		expect(tomb).toBeDefined();
+		// Neither body reclaim nor the carried 50 energy is deposited.
+		expect(tomb!.store).toEqual({});
+	});
 
 	test('CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone', async ({ shard }) => {
 		await shard.ownedRoom('p1');

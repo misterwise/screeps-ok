@@ -1557,7 +1557,7 @@ Coverage Notes
   Body energy reclaim on death uses `CREEP_CLAIM_LIFE_TIME` for the life-rate
   denominator when the body contains any `CLAIM` part; otherwise it uses
   `CREEP_LIFE_TIME`.
-- `CREEP-DEATH-011` `behavior` `needs_vanilla_verification`
+- `CREEP-DEATH-011` `behavior` `verified_vanilla`
   Death at a zero deposit rate (Source Keeper suicide, nuke — vanilla `_die.js`
   `dropRate <= 0`) produces a tombstone with an empty store: neither body
   reclaim nor carried resources are deposited.

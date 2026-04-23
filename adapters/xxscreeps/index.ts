@@ -70,6 +70,7 @@ import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
 import { Flag } from 'xxscreeps/mods/flag/flag.js';
 import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/flag/model.js';
+import { activateNPC } from 'xxscreeps/mods/npc/processor.js';
 import { instantiate } from 'xxscreeps/utility/utility.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
@@ -118,6 +119,17 @@ function gclLevelToProgress(desiredLevel: number): number {
 
 // Player handle → xxscreeps user ID
 const playerSlots = ['100', '101', '102', '103'];
+
+// Reserved NPC handles that resolve to short engine user IDs independent of
+// spec.players. The rate=0 path in `mods/creep/processor.ts` fires when the
+// creep's engine user id has length <= 2 — seeding these handles lets tests
+// hit the rate=0 tombstone path (CREEP-DEATH-011) through placeCreep's
+// existing `owner: string` contract. Placing a creep with an NPC handle also
+// `activateNPC`s the room so the matching NPC loop runs (e.g. the Invader
+// AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
+const NPC_HANDLES: Record<string, string> = {
+	sk: '2',
+};
 
 // Structure types the engine always attributes to a user. Omitting `owner`
 // in placeStructure for these produces a cryptic engine-internal crash
@@ -250,6 +262,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
 
+		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
+			this.playerMap.set(handle, engineId);
+			this.reversePlayerMap.set(engineId, handle);
+		}
+
 		for (let i = 0; i < spec.players.length; i++) {
 			if (i >= playerSlots.length) throw new Error(`Max ${playerSlots.length} players`);
 			const entry = spec.players[i];
@@ -302,6 +319,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const userId = this.resolvePlayer(spec.owner);
 		const name = spec.name ?? `creep-${id}`;
 		this.nameToSyntheticId.set(name, id);
+		// NPC-owned creeps (short engine user ids like '2') need their room
+		// to be flagged active in `#npcData` so the NPC processor runs the
+		// registered loop for that user on subsequent ticks. Without this,
+		// an Invader-owned creep just sits idle and never triggers its
+		// built-in suicide/attack intents.
+		const isNpc = userId.length <= 2;
 
 		this.queueOp(roomName, room => {
 			const creep = createCreep(
@@ -327,6 +350,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			insertRoomObject(room, creep);
+			if (isNpc) activateNPC(room, userId);
 		});
 
 		return id;

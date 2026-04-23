@@ -68,6 +68,17 @@ async function getServer(): Promise<any> {
 
 const playerSlots = ['p1_user', 'p2_user', 'p3_user', 'p4_user'];
 
+// Reserved NPC handles that resolve to short engine user IDs independent of
+// spec.players. The only player-observable effect we rely on today is the
+// `dropRate=0` branch in `_die.js:39`, which suicide.js:15 triggers when
+// `object.user == '2'` — seeding this handle lets tests hit the rate=0
+// tombstone path (CREEP-DEATH-011). Vanilla's mockup pre-inserts both '2'
+// (Invader) and '3' (Source Keeper) into `db.users` during `world.reset()`,
+// so no additional user record is needed.
+const NPC_HANDLES: Record<string, string> = {
+	sk: '2',
+};
+
 // Structure types the engine always attributes to a user. Omitting `owner`
 // in placeStructure for these produces a cryptic engine-internal crash
 // downstream, so reject at the boundary.
@@ -122,6 +133,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		this.env = storage.env;
 
 		this.rooms = spec.rooms.map(r => r.name);
+
+		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
+			this.playerMap.set(handle, engineId);
+			this.reversePlayerMap.set(engineId, handle);
+		}
 
 		// Create rooms with terrain and controllers
 		for (const roomSpec of spec.rooms) {

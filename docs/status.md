@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1288%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1046%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-74-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,18 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1288](#vanilla-passing-tests) | — | — | — | 2026-04-23 02:15 UTC |
-| 🟡 | **xxscreeps** | [1046](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-23 02:13 UTC |
+| 🟢 | **vanilla** | [1291](#vanilla-passing-tests) | — | — | — | 2026-04-23 05:50 UTC |
+| 🔴 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-23 05:48 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate`
+- `creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container`
+- `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
 
 ## xxscreeps expected failures
 
@@ -376,7 +382,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1288 tests across 118 files</summary>
+<summary>1291 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1140,13 +1146,14 @@ Click a test count above to jump to the affected test list for that gap.
 - Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (14)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
 - creep.suicide() CREEP-SUICIDE-003 suicide returns ERR_NOT_OWNER on another player's creep
 - creep.suicide() CREEP-SUICIDE-004 suicide returns ERR_BUSY on a spawning creep
 - creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone
+- creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate
 - creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone
 - creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone
 - creep.say() CREEP-SAY-001 say() makes the message visible to the owner for one tick
@@ -1163,7 +1170,7 @@ Click a test count above to jump to the affected test list for that gap.
 - creep lifetime CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive
 - creep lifetime CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive
 
-**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (7)
+**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (9)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
 - creep death CREEP-DEATH-002 death creates a tombstone at the position of death
@@ -1171,6 +1178,8 @@ Click a test count above to jump to the affected test list for that gap.
 - creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
 - creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
+- creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
+- creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone
 - creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
 
 **`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
@@ -2383,7 +2392,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1046 tests across 98 files</summary>
+<summary>1047 tests across 98 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3090,9 +3099,9 @@ Click a count to jump to the affected test list.
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
 - creep death CREEP-DEATH-002 death creates a tombstone at the position of death
-- creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
 - creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
+- creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
 - creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
 
 **`tests/10-structures-energy/10.1-extension.test.ts`** (2)
@@ -3635,10 +3644,11 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (10)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (11)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
+- Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002 segment limits match canonical constants
 - RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
