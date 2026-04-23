@@ -2917,6 +2917,10 @@ Coverage Notes
 - `MEMORY-004` `behavior` `verified_vanilla`
   `RawMemory.set()` throws when the raw memory string exceeds the `2 MB`
   limit.
+- `MEMORY-005` `behavior`
+  `RawMemory.set(value)` called after `Memory` was accessed earlier in the
+  tick still persists `value` as the new raw memory across the tick
+  boundary; on the next tick `Memory` reflects the parsed `value`.
 
 ### 25.2 RawMemory
 - `RAWMEMORY-001` `behavior` `verified_vanilla`

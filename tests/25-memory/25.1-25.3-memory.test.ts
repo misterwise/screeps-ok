@@ -63,6 +63,38 @@ describe('Memory', () => {
 		`);
 		expect(result).toBe('threw');
 	});
+
+	test('MEMORY-005 RawMemory.set after Memory access persists across ticks', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// Tick 1: seed memory with an original value.
+		await shard.runPlayer('p1', code`
+			Memory.existing = 'original';
+			'ok'
+		`);
+
+		// Tick 2: access Memory (caches the parsed object), then overwrite via
+		// RawMemory.set. The documented contract of RawMemory.set is "replace Memory
+		// with this raw string" — the new value must survive to the next tick.
+		await shard.runPlayer('p1', code`
+			Memory.existing;
+			RawMemory.set('{"replaced":true}');
+			'ok'
+		`);
+
+		// Tick 3: the previous tick's set() should be the source of truth.
+		const result = await shard.runPlayer('p1', code`
+			({
+				replaced: Memory.replaced,
+				existing: Memory.existing,
+				raw: RawMemory.get(),
+			})
+		`) as { replaced: unknown; existing: unknown; raw: string };
+		expect(result.replaced).toBe(true);
+		expect(result.existing).toBeUndefined();
+		expect(result.raw).toContain('replaced');
+		expect(result.raw).not.toContain('original');
+	});
 });
 
 describe('RawMemory', () => {

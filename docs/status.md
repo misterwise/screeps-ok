@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1291](#vanilla-passing-tests) | — | — | — | 2026-04-23 05:50 UTC |
-| 🔴 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-23 05:48 UTC |
+| 🟡 | **vanilla** | [1291](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-23 06:09 UTC |
+| 🔴 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | [3](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-23 05:58 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -28,6 +28,24 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 - `creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate`
 - `creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container`
 - `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
+
+## vanilla expected failures
+
+vanilla currently declares 1 parity gap against vanilla's canonical behavior, covering 1 test. Each gap is verified by a test that continues to run as a regression trap — if vanilla fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+
+| Gap | Actual | Expected | Tests |
+| --- | --- | --- | :-: |
+| `vanilla-adapter-envelope-overrides-rawmemory-set` | The vanilla adapter's tick envelope always calls `RawMemory.set(JSON.stringify(Memory))` at tick end (`adapters/vanilla/index.ts`) to persist the `_screepsOk*` round-trip fields. When user code calls `RawMemory.set(value)` after first accessing `Memory`, `Memory` is already bound to the captured `_parsed` object; the envelope's `JSON.stringify(Memory)` re-serializes that captured object and overwrites the user's raw string. The user's `set()` is silently lost before the tick ends. | User-code `RawMemory.set(value)` persists across the tick boundary so the next tick's `Memory` reflects the parsed `value`. Vanilla `@screeps/engine` alone supports this (its tick-end auto-serialize is gated on `if (_parsed)`, and `set()` deletes `_parsed`). The bug lives in the screeps-ok adapter envelope, not the engine. | [1](#vanilla-gap-vanilla-adapter-envelope-overrides-rawmemory-set) |
+
+Click a test count above to jump to the affected test list for that gap.
+
+<details id="vanilla-gap-vanilla-adapter-envelope-overrides-rawmemory-set">
+<summary><code>vanilla-adapter-envelope-overrides-rawmemory-set</code> — 1 test</summary>
+
+- `Memory MEMORY-005 RawMemory.set after Memory access persists across ticks`
+
+</details>
+
 
 ## xxscreeps expected failures
 
