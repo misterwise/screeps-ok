@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1256%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1019%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-69-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1288%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1046%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-74-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1256](#vanilla-passing-tests) | — | — | — | 2026-04-22 03:51 UTC |
-| 🟡 | **xxscreeps** | [1019](#xxscreeps-passing-tests) | [69](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-22 03:50 UTC |
+| 🟢 | **vanilla** | [1288](#vanilla-passing-tests) | — | — | — | 2026-04-23 02:15 UTC |
+| 🟡 | **xxscreeps** | [1046](#xxscreeps-passing-tests) | [74](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-23 02:13 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 35 parity gaps against vanilla's canonical behavior, covering 69 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 38 parity gaps against vanilla's canonical behavior, covering 74 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -64,6 +64,9 @@ xxscreeps currently declares 35 parity gaps against vanilla's canonical behavior
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [6](#xxscreeps-gap-foreign-segment-not-supported) |
+| `packedpos-write-ignored` | Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`) | Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges) | [1](#xxscreeps-gap-packedpos-write-ignored) |
+| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [3](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
+| `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -346,11 +349,34 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-packedpos-write-ignored">
+<summary><code>packedpos-write-ignored</code> — 1 test</summary>
+
+- `Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters`
+
+</details>
+
+<details id="xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks">
+<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 3 tests</summary>
+
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick`
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick`
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick`
+
+</details>
+
+<details id="xxscreeps-gap-memory-circular-ref-crash">
+<summary><code>memory-circular-ref-crash</code> — 1 test</summary>
+
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
+
+</details>
+
 
 ## vanilla passing tests
 
 <details>
-<summary>1256 tests across 109 files</summary>
+<summary>1288 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1935,6 +1961,65 @@ Click a test count above to jump to the affected test list for that gap.
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
+**`tests/27-undocumented/27.1-memhack.test.ts`** (6)
+
+- Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
+- Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
+- Undocumented API Surface — memhack UNDOC-MEMHACK-003 delete+assign global.Memory before first access bypasses JSON deserialization
+- Undocumented API Surface — memhack UNDOC-MEMHACK-004 first Memory access populates RawMemory._parsed as a reference to Memory
+- Undocumented API Surface — memhack UNDOC-MEMHACK-005 RawMemory._parsed assignment alone does NOT short-circuit deserialization
+- Undocumented API Surface — memhack UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end
+
+**`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
+
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
+
+**`tests/27-undocumented/27.3-memjson.test.ts`** (5)
+
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-002 undefined-valued Memory keys are dropped on the next tick
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist
+
+**`tests/27-undocumented/27.4-costmatrix-bits.test.ts`** (4)
+
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-001 _bits is a Uint8Array of length 2500
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-002 _bits[x*50+y] equals get(x, y) across the grid
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-003 writes via _bits are observable through get() and affect PathFinder.search
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-004 serialize/deserialize preserves _bits byte-for-byte
+
+**`tests/27-undocumented/27.5-creep-memory.test.ts`** (2)
+
+- Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
+- Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
+
+**`tests/27-undocumented/27.6-identity.test.ts`** (5)
+
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
+
+**`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
+
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-004 positions in the same room share the upper 16 bits of __packedPos
+
+**`tests/27-undocumented/27.8-system-username.test.ts`** (1)
+
+- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is a non-empty string accessible on the global scope
+
+**`tests/27-undocumented/27.9-move-cache.test.ts`** (3)
+
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-001 moveTo with reusePath > 0 writes _move with path/dest/time/room keys
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
+
 </details>
 
 ## xxscreeps skipped tests
@@ -2298,7 +2383,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1019 tests across 89 files</summary>
+<summary>1046 tests across 98 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3585,6 +3670,60 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
+
+**`tests/27-undocumented/27.1-memhack.test.ts`** (6)
+
+- Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
+- Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
+- Undocumented API Surface — memhack UNDOC-MEMHACK-003 delete+assign global.Memory before first access bypasses JSON deserialization
+- Undocumented API Surface — memhack UNDOC-MEMHACK-004 first Memory access populates RawMemory._parsed as a reference to Memory
+- Undocumented API Surface — memhack UNDOC-MEMHACK-005 RawMemory._parsed assignment alone does NOT short-circuit deserialization
+- Undocumented API Surface — memhack UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end
+
+**`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
+
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
+
+**`tests/27-undocumented/27.3-memjson.test.ts`** (1)
+
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-002 undefined-valued Memory keys are dropped on the next tick
+
+**`tests/27-undocumented/27.4-costmatrix-bits.test.ts`** (4)
+
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-001 _bits is a Uint8Array of length 2500
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-002 _bits[x*50+y] equals get(x, y) across the grid
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-003 writes via _bits are observable through get() and affect PathFinder.search
+- Undocumented API Surface — CostMatrix._bits UNDOC-COSTMATRIX-004 serialize/deserialize preserves _bits byte-for-byte
+
+**`tests/27-undocumented/27.5-creep-memory.test.ts`** (2)
+
+- Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
+- Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
+
+**`tests/27-undocumented/27.6-identity.test.ts`** (5)
+
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
+- Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
+
+**`tests/27-undocumented/27.7-packedpos.test.ts`** (3)
+
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-004 positions in the same room share the upper 16 bits of __packedPos
+
+**`tests/27-undocumented/27.8-system-username.test.ts`** (1)
+
+- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is a non-empty string accessible on the global scope
+
+**`tests/27-undocumented/27.9-move-cache.test.ts`** (3)
+
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-001 moveTo with reusePath > 0 writes _move with path/dest/time/room keys
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
 
 </details>
 

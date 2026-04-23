@@ -174,6 +174,21 @@
 			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
 			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
 			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004", "RAWMEMORY-FOREIGN-005", "RAWMEMORY-FOREIGN-006", "RAWMEMORY-FOREIGN-008"]
+		},
+		"packedpos-write-ignored": {
+			"actual": "Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`)",
+			"expected": "Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges)",
+			"tests": ["UNDOC-PACKEDPOS-003"]
+		},
+		"memory-parsed-json-not-refreshed-across-ticks": {
+			"actual": "xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string.",
+			"expected": "`Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics.",
+			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004"]
+		},
+		"memory-circular-ref-crash": {
+			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",
+			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
+			"tests": ["UNDOC-MEMJSON-005"]
 		}
 	}
 }

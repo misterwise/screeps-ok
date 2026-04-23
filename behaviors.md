@@ -3076,6 +3076,404 @@ Coverage Notes
 
 ---
 
+## 27. Undocumented API Surface
+
+This section catalogs Screeps API surface that is observable, player-visible,
+and depended on by real bots, but is not described on `docs.screeps.com`.
+Entries are scoped to observable outcomes only — engine-internal properties
+that have no effect on player code are out of scope.
+
+Entries in this section start at `needs_vanilla_verification` by default.
+An entry only graduates to `verified_vanilla` after the canonical behavior is
+confirmed against vanilla in this repo.
+
+### 27.1 Memory Deserialization Short-Circuit (memhack)
+
+Folklore has long claimed that assigning `RawMemory._parsed` short-circuits
+JSON deserialization of raw memory. Diagnostic testing against vanilla shows
+the folklore is inverted: `RawMemory._parsed` is an output of first-access
+deserialization (a cache), not an input. The real memhack short-circuit
+operates on the `Memory` global's property descriptor.
+
+- `UNDOC-MEMHACK-001` `behavior` `verified_vanilla`
+  At tick start (before first `Memory` access), the `Memory` property on the
+  global object is a configurable accessor with a getter, no setter, and
+  `configurable: true`.
+- `UNDOC-MEMHACK-002` `behavior` `verified_vanilla`
+  A plain assignment `global.Memory = obj` (or `Memory = obj` at global
+  scope in non-strict user code) before first Memory access does NOT
+  replace the accessor: subsequent `Memory` reads return the JSON-parsed
+  raw memory, not the assigned object. (Consequence of the getter-without-
+  setter descriptor in `UNDOC-MEMHACK-001`; non-strict assignment to an
+  accessor with no setter silently fails.)
+- `UNDOC-MEMHACK-003` `behavior` `verified_vanilla`
+  `delete global.Memory` followed by `global.Memory = obj` before first
+  Memory access in a tick removes the accessor and installs `obj` as a
+  plain data property. Subsequent `Memory` reads return `obj` by
+  reference, and the raw memory string is not JSON-parsed during that
+  tick.
+- `UNDOC-MEMHACK-004` `behavior` `verified_vanilla`
+  After the first `Memory` access that triggers JSON deserialization,
+  `RawMemory._parsed === Memory` holds. The engine populates `_parsed` as
+  a side effect of first-access parsing.
+- `UNDOC-MEMHACK-005` `behavior` `verified_vanilla`
+  Assigning `RawMemory._parsed = obj` before first `Memory` access does
+  NOT short-circuit JSON deserialization: the first Memory read still
+  returns the parsed raw memory string, not `obj`. (Negative behavior;
+  disproves a common folklore claim.)
+- `UNDOC-MEMHACK-006` `behavior` `verified_vanilla`
+  When `Memory` has been replaced via `delete global.Memory; global.Memory = obj`
+  (per `UNDOC-MEMHACK-003`) and `RawMemory._parsed = obj` is set before tick
+  end, tick-end auto-serialization persists `JSON.stringify(obj)` to raw
+  memory — propagating mutations made to `obj` during the tick even though
+  `Memory` was never JSON-parsed from raw.
+
+Notes
+- The canonical cross-tick memhack pattern is the composition of
+  `UNDOC-MEMHACK-003` + `UNDOC-MEMHACK-006` + `UNDOC-GLOBAL-001` (global
+  persistence of the cached `obj` across ticks). Each half is separately
+  testable and cataloged; the composition is not its own entry.
+- Setting `RawMemory._parsed = obj` without also performing the delete+
+  assign from `UNDOC-MEMHACK-003` does not skip JSON.parse. See
+  `UNDOC-MEMHACK-005`.
+- Lazy-parse variants using `Object.defineProperty` getters on `Memory`
+  subtrees are a user-space technique built on top of `UNDOC-MEMHACK-003`
+  and are not a separate engine contract.
+
+### 27.2 Global / VM Persistence
+- `UNDOC-GLOBAL-001` `behavior` `verified_vanilla`
+  Top-level assignments to `global.X` persist across ticks within the same
+  VM instance and are observable on subsequent ticks as `global.X` or `X`.
+- `UNDOC-GLOBAL-002` `behavior` `verified_vanilla`
+  `require(name)` returns the same module-exports object reference
+  across ticks within a single VM instance. (Observable consequence of the
+  engine caching parsed modules so top-level code does not re-execute per
+  tick.)
+
+Notes
+- VM reset *timing* (when a global reset occurs) is engine-scheduler
+  behavior and is not a player-observable contract. It is deliberately out
+  of scope for catalog entries.
+- `Game.cpu.getHeapStatistics()` is documented API; its use as a
+  reset-prediction heuristic is a user-space pattern, not an engine
+  contract, and does not belong in this catalog.
+
+### 27.3 Memory Serialization Fidelity
+- `UNDOC-MEMJSON-001` `behavior` `verified_vanilla`
+  A function value assigned to a `Memory` property is absent from `Memory`
+  on the next tick (stripped during serialization).
+- `UNDOC-MEMJSON-002` `behavior` `verified_vanilla`
+  A property explicitly assigned the value `undefined` on `Memory` is absent
+  from `Memory` on the next tick.
+- `UNDOC-MEMJSON-003` `behavior` `verified_vanilla`
+  A `NaN` value assigned to a `Memory` property reads as `null` on the next
+  tick.
+- `UNDOC-MEMJSON-004` `behavior` `verified_vanilla`
+  An `Infinity` value assigned to a `Memory` property reads as `null` on the
+  next tick.
+- `UNDOC-MEMJSON-005` `behavior` `verified_vanilla`
+  A circular reference introduced into `Memory` during a tick causes tick-end
+  serialization to fail; the failure does not crash the player runtime but
+  does not persist the unserializable subtree.
+
+Notes
+- `UNDOC-MEMJSON-005` was verified against vanilla as a *silent* subtree
+  drop — the runtime stays alive and unrelated Memory keys are not
+  observed to be affected. The entry asserts absence of the circular
+  subtree and runtime liveness; it deliberately does not assert anything
+  about "other keys in the same Memory root survive" because the vanilla
+  serializer's partial-write behavior has not been fully pinned.
+
+### 27.4 PathFinder CostMatrix Direct Access
+- `UNDOC-COSTMATRIX-001` `behavior` `verified_vanilla`
+  A `PathFinder.CostMatrix` instance exposes a `_bits` property that is a
+  `Uint8Array` of length 2500.
+- `UNDOC-COSTMATRIX-002` `behavior` `verified_vanilla`
+  `matrix._bits[x * 50 + y]` and `matrix.get(x, y)` return the same value
+  for every `(x, y)` in the 50x50 room grid.
+- `UNDOC-COSTMATRIX-003` `behavior` `verified_vanilla`
+  Writes via `matrix._bits[x * 50 + y] = v` are observable through
+  `matrix.get(x, y)` and affect `PathFinder.search` costs identically to
+  `matrix.set(x, y, v)`.
+- `UNDOC-COSTMATRIX-004` `behavior` `verified_vanilla`
+  A `CostMatrix` produced by `CostMatrix.deserialize(matrix.serialize())` has
+  `_bits` contents byte-for-byte equal to the source matrix's `_bits`.
+  (Distinct from `COSTMATRIX-003`, which only asserts `get(x,y)` round-trips;
+  this entry pins the specific `_bits` layout that bots bulk-copy through.)
+
+### 27.5 Creep Memory Accessor
+- `UNDOC-CREEPMEM-001` `behavior` `verified_vanilla`
+  `creep.memory` reads and writes are aliased to `Memory.creeps[creep.name]`:
+  mutations via one path are observable via the other in the same tick.
+- `UNDOC-CREEPMEM-002` `behavior` `verified_vanilla`
+  Deleting `Memory.creeps[creep.name]` causes subsequent same-tick reads of
+  `creep.memory` to return an empty object, and the empty object is written
+  back to `Memory.creeps[creep.name]` on next access.
+
+Notes
+- Analogous aliasing for `spawn.memory`, `flag.memory`, `room.memory`, and
+  `powerCreep.memory` is expected to follow the same contract and should be
+  cataloged as sibling entries once `UNDOC-CREEPMEM-001/002` are verified
+  against vanilla.
+
+### 27.6 Within-Tick Object Identity
+
+Real bots write ad-hoc underscore-prefixed fields onto game objects
+(`room._creepMatrix = ...`, `creep._hasMoveIntent = true`, ...) and read them
+back via a subsequent `Game.rooms[name]` / `Game.creeps[name]` / `room.find()`
+lookup the same tick. This requires the engine to return reference-identical
+objects for the same entity within a tick.
+
+- `UNDOC-IDENTITY-001` `behavior` `verified_vanilla`
+  Within a single tick, repeated lookups of the same creep via
+  `Game.creeps[name]` return the same object by reference.
+- `UNDOC-IDENTITY-002` `behavior` `verified_vanilla`
+  Within a single tick, repeated lookups of the same room via
+  `Game.rooms[name]` return the same object by reference.
+- `UNDOC-IDENTITY-003` `behavior` `verified_vanilla`
+  Within a single tick, a structure, source, mineral, or deposit surfaced
+  by multiple `Room.find()` / `Game.getObjectById()` calls is returned by
+  the same reference.
+- `UNDOC-IDENTITY-004` `behavior` `verified_vanilla`
+  A property assigned to a game object during a tick
+  (`creep.fooBar = 123`) is readable via a later same-tick lookup of the
+  same entity, without the engine stripping the assigned property.
+- `UNDOC-IDENTITY-005` `behavior` `verified_vanilla`
+  Properties assigned to a game object in one tick are NOT present on
+  the object returned by a lookup in a subsequent tick (cross-tick object
+  discard). (Documents the expected reset so bots know heap-only caches
+  reset per tick.)
+
+Notes
+- `room.find()`'s own per-tick result caching is covered by `ROOM-FIND-*`
+  (if present); this facet is about object-reference identity across lookup
+  paths within a tick.
+
+### 27.7 RoomPosition `__packedPos`
+
+Every `RoomPosition` carries a bit-packed numeric `__packedPos` that encodes
+`(roomCode, x, y)`. Bots read it for fast room-distance computations and
+write it to construct positions cheaply (including from WASM bridges).
+Catalog entries pin only the portable invariants — the specific `roomCode`
+encoding is engine-internal.
+
+- `UNDOC-PACKEDPOS-001` `behavior` `verified_vanilla`
+  Every `RoomPosition` instance has a `__packedPos` property whose value
+  is a 32-bit signed integer (may be negative when the room-code upper
+  bit is set — bots use `packed >>> 16` for portable upper-half extraction).
+- `UNDOC-PACKEDPOS-002` `behavior` `verified_vanilla`
+  Two `RoomPosition` instances constructed with the same `(x, y, roomName)`
+  have equal `__packedPos` values.
+- `UNDOC-PACKEDPOS-003` `behavior` `verified_vanilla`
+  `__packedPos` is writable: assigning `p.__packedPos = other.__packedPos`
+  (where `other` is a valid `RoomPosition`) makes `p.x`, `p.y`, and
+  `p.roomName` equal to `other.x`, `other.y`, `other.roomName`.
+- `UNDOC-PACKEDPOS-004` `behavior` `verified_vanilla`
+  For any valid `RoomPosition`, extracting `__packedPos >>> 16` yields the
+  same value for two positions that share `roomName`, regardless of
+  `(x, y)`. (Documents the room-code-in-upper-16-bits layout bots depend
+  on for fast same-room / room-distance checks, without pinning the
+  encoding's specific integer value.)
+
+### 27.8 SYSTEM_USERNAME Global
+
+- `UNDOC-SYSUSER-001` `behavior` `verified_vanilla`
+  `SYSTEM_USERNAME` is defined as a non-empty string constant on the global
+  scope (reachable as `SYSTEM_USERNAME` or `global.SYSTEM_USERNAME` from
+  user code).
+- `UNDOC-SYSUSER-002` `behavior` `needs_vanilla_verification`
+  A `Controller.sign` placed by the engine (novice area, respawn area,
+  system-reserved rooms) has `sign.username === SYSTEM_USERNAME`.
+
+Coverage Notes
+- `UNDOC-SYSUSER-002` is fixture-blocked: the current `RoomSpec` has no
+  way to mark a room as a novice-area / respawn-area room so the engine
+  auto-places a system-owned sign. Deferring until the fixture gains
+  support, or until a different observable invariant (e.g. test reading a
+  pre-existing system sign in a real sandbox) is available.
+
+### 27.9 Engine-Written Memory Keys
+
+The engine writes specific underscore-prefixed keys into `creep.memory` as
+side effects of documented API calls. Bots read these directly. Presence of
+the key is undocumented even though the behavior that produces it
+(`moveTo(..., { reusePath: N })`) is documented.
+
+- `UNDOC-MOVECACHE-001` `behavior` `verified_vanilla`
+  After `creep.moveTo(target, { reusePath: N })` with `N > 0` produces a
+  path, `creep.memory._move` holds an object with keys `path`, `dest`,
+  `time`, and `room`.
+- `UNDOC-MOVECACHE-002` `behavior` `verified_vanilla`
+  `creep.memory._move.path` is a serialized path string accepted by
+  `Room.deserializePath` and round-trips via
+  `Room.serializePath(Room.deserializePath(path)) === path`.
+- `UNDOC-MOVECACHE-003` `behavior` `verified_vanilla`
+  Deleting `creep.memory._move` before a subsequent `moveTo` call causes
+  that call to recompute the path rather than reuse; the engine writes a
+  fresh `_move` object whose `time` equals the current `Game.time`.
+
+Coverage Notes
+- Entries in this section interact with `§25 Memory` and `§24.2 Same-Tick
+  Resource Visibility`. When a test could be written either under an
+  established section or here, prefer the established section and leave a
+  pointer in this section's Notes rather than duplicating.
+- Multi-bot evidence for each facet is logged in the bot-corpus survey
+  (see conversation history / `docs/pending-tests.md` if promoted):
+  27.1 (5 bots), 27.4 (2), 27.6 (4), 27.7 (2), 27.8 (2). Facets 27.2,
+  27.3, and 27.5 are coverage-completeness entries not surfaced by the
+  corpus; they remain in catalog because they describe observable engine
+  contracts that parity tests should pin even if no surveyed bot grep'd
+  for the symbol.
+
+Framework Notes
+- The `simulate()` public API is sufficient for all entries in this section;
+  no adapter internals are required. Entries that would require adapter
+  internals to assert are out of scope regardless of folklore support.
+- Entries asserting absence (e.g. `UNDOC-MEMJSON-001` stripping a function)
+  must compare against a control fixture that would have persisted a
+  non-stripped value, to distinguish "stripped" from "never written."
+
+---
+
+## 28. Deprecation Notices
+
+Vanilla exposes an engine-internal dedup log helper (`register.deprecated`)
+that emits one `console.log` line to the calling player when deprecated APIs
+or option shapes are used. The player-observable behavior is the console
+emission itself: the deprecated method still returns its normal value, and
+no return-code, world state, or intent is altered by the notice.
+
+Entries in this section describe the emission as observable player output
+(a line appearing in the player's `console.log` stream for that tick). They
+do not assert anything about `register.deprecated` as a symbol — that
+helper is an engine internal and is not a catalog target.
+
+General contract for every entry below:
+- The triggering call returns its normal gameplay result (same return
+  value, same side effects, same intent). The notice is an additional
+  observable, not a replacement outcome.
+- The emitted log line is a plain string addressed to the calling player's
+  console only. It is not broadcast to other players.
+
+### 28.1 `Game.map` Deprecations
+- `DEPRECATED-MAP-001` `behavior` `needs_vanilla_verification`
+  A call to `Game.map.isRoomAvailable(roomName)` emits a deprecation log
+  line to the caller's console naming `Game.map.isRoomAvailable` and
+  recommending `Game.map.getRoomStatus`. The method still returns its
+  normal boolean result.
+- `DEPRECATED-MAP-002` `behavior` `needs_vanilla_verification`
+  A call to `Game.map.getTerrainAt(x, y, roomName)` or the object-form
+  overload `Game.map.getTerrainAt(pos)` emits a deprecation log line to
+  the caller's console naming `Game.map.getTerrainAt` and recommending
+  `Game.map.getRoomTerrain`. The method still returns its normal terrain
+  string.
+
+### 28.2 Pathfinding Deprecations
+- `DEPRECATED-PATH-001` `behavior` `needs_vanilla_verification`
+  A call to `PathFinder.use(false)` emits a deprecation log line to the
+  caller's console naming `PathFinder.use`. A call to `PathFinder.use(true)`
+  does not emit the notice. The toggle still takes effect on subsequent
+  pathfinding calls in either case.
+- `DEPRECATED-PATH-002` `behavior` `needs_vanilla_verification`
+  When the new pathfinder is active (the default), passing a truthy
+  `opts.avoid` to any pathfinder-integrated API — `Room.findPath`,
+  `RoomPosition.findPathTo`, `Room.findClosestByPath`, or
+  `RoomPosition.findClosestByPath` — emits a deprecation log line to the
+  caller's console stating that `avoid` cannot be used when
+  `PathFinder.use()` is enabled and recommending `costCallback`. The call
+  still returns a path (or closest target) computed as if `avoid` had not
+  been supplied.
+- `DEPRECATED-PATH-003` `behavior` `needs_vanilla_verification`
+  When the new pathfinder is active (the default), passing a truthy
+  `opts.ignore` to any pathfinder-integrated API — `Room.findPath`,
+  `RoomPosition.findPathTo`, `Room.findClosestByPath`, or
+  `RoomPosition.findClosestByPath` — emits a deprecation log line to the
+  caller's console stating that `ignore` cannot be used when
+  `PathFinder.use()` is enabled and recommending `costCallback`. The call
+  still returns a path (or closest target) computed as if `ignore` had
+  not been supplied.
+
+### 28.3 Spawn Deprecations
+- `DEPRECATED-SPAWN-001` `behavior` `needs_vanilla_verification`
+  A successful call to `StructureSpawn.renewCreep(target)` where the
+  target creep has at least one body part with a non-falsy `boost` field
+  emits a deprecation log line to the caller's console stating that
+  renewing a boosted creep is deprecated and recommending
+  `StructureLab.unboostCreep` before renewing. The renewal still succeeds
+  (`OK`) with the boost-removal behavior cataloged in `RENEW-CREEP-004`
+  through `RENEW-CREEP-006`.
+
+### 28.4 Emission Dedup
+- `DEPRECATED-DEDUP-001` `behavior` `needs_vanilla_verification`
+  Within a single tick, identical deprecation messages are emitted at
+  most once to the caller's console. Repeated triggering calls in the
+  same tick (e.g. two `Game.map.isRoomAvailable` calls, or
+  `Room.findPath({avoid})` followed by
+  `Room.findClosestByPath({avoid})` which share the same avoid-message
+  text) produce exactly one log line. Dedup scope is per-tick per-player:
+  the same message is eligible to be logged again on a subsequent tick.
+
+Notes
+- `DEPRECATED-PATH-002` and `DEPRECATED-PATH-003` fire only when the new
+  pathfinder is the active resolver. Because the new pathfinder is the
+  default, the notice fires by default; disabling it via
+  `PathFinder.use(false)` (itself deprecated, per `DEPRECATED-PATH-001`)
+  suppresses the `avoid`/`ignore` notices.
+- `Room.findPath` (called directly, not via `RoomPosition.findPathTo`)
+  also mutates the caller's `opts.avoid`/`opts.ignore` to `undefined`
+  alongside the notice. This mutation is not mirrored by
+  `findClosestByPath`, and the routing wrappers (`findPathTo`,
+  `RoomPosition.findClosestByPath`) clone opts before dispatching, so
+  the mutation is invisible through those paths. This quirk is adjacent
+  to the deprecation but is not a deprecation-notice behavior and is
+  left to a dedicated pathfinding-options catalog entry if pinned later.
+- The exact deprecation message strings emitted by vanilla are fixed in
+  engine source. Catalog entries above reference the message content
+  (which API, which replacement) rather than the exact string so that
+  engines can match semantically without being forced to byte-match
+  vanilla copy.
+
+Coverage Notes
+- Non-deprecation behavior of the named APIs is owned by their primary
+  sections: `MAP-*` for `Game.map`, `LEGACY-PATH-*` and section 2 for
+  pathfinding, and `RENEW-CREEP-*` for `renewCreep`. Section 28 owns
+  only the deprecation-notice emission.
+- None of these notices are emitted at runtime by `xxscreeps`, so every
+  entry in this section is a latent parity gap. Static-surface handling
+  in `xxscreeps` is uneven: `Game.map.isRoomAvailable` and
+  `Game.map.getTerrainAt` carry a JSDoc `@deprecated` tag;
+  `PathFinder.use` is a no-op function with no tag; `opts.avoid` and
+  `opts.ignore` are simply unhandled options on `Room.findPath` /
+  `findClosestByPath` (neither honored nor flagged); and
+  `renewCreep` on a boosted creep hard-rejects with `ERR_NO_BODYPART`
+  rather than proceeding with a notice (tracked separately as
+  `renew-rejects-boosted-creep` covering `RENEW-CREEP-004`..`006`).
+  None of these gaps are wired into
+  `docs/xxscreeps-parity-gaps.md` as deprecation-notice entries because
+  the framework has no console-capture adapter path (see Framework
+  Notes).
+
+Framework Notes
+- The current adapter contract (`src/adapter.ts`) exposes no API for
+  reading a player's `console.log` output. Asserting these entries
+  requires either extending the adapter with a capability-gated
+  log-capture method or routing console output through a known side
+  channel (e.g. writing to `Memory` from a monkey-patched `console.log`).
+  Until that plumbing exists, entries in this section cannot be directly
+  asserted and must remain at `needs_vanilla_verification`.
+- The catalog rule against console-output inspection in
+  `docs/test-authoring.md` concerns using console as a stand-in for
+  gameplay state. Deprecation notices are a case where the console
+  emission is itself the gameplay-adjacent observable; any future
+  verification path should be narrowly scoped to this section rather
+  than lifted as a general pattern.
+- `Game.notify()` is deliberately excluded from the catalog as a
+  side-effect API (see Summary). Deprecation notices are distinct:
+  emission is engine-mandated and deterministic given the triggering
+  call, not a user-controlled notification.
+
+---
+
 ## Summary
 
 Coverage counts are temporarily omitted. The facet and behavior totals need to

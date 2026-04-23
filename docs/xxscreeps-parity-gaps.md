@@ -1,11 +1,11 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (50 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (39 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
-- **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/src`.
+- **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`.
 
-Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
+Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here.
 
@@ -283,4 +283,19 @@ Last refreshed: 2026-04-18 against `adapters/xxscreeps/parity.json`.
 - Tests: MAP-TERRAIN-003
 - Cause: `Terrain.getRawBuffer(destinationArray)` in `game/terrain.ts:68-85` has a non-`'xxscreeps'` branch (the Screeps-compat path) that builds a 32-bit-packed value per source byte and assigns it with `buffer[ii] = <32-bit-value>`. The code works when `destinationArray` is a `Uint32Array` (each slot holds 4 tiles' masks, 8 bits each, and the final `new Uint8Array(buffer.buffer)` view unpacks them into the correct 2500 byte positions). Given a `Uint8Array` — which is what the Screeps API documents and what `screeps-game-api.d.ts` types — `buffer[ii] =` truncates to the low byte, so only tile `4*ii+0` survives at byte `ii`; tiles `4*ii+1..4*ii+3` are lost, and bytes 625..2499 stay uninitialised. The bug was previously masked because every tile in the test harness was plain (mask 0), so the truncated output and the true mask agreed everywhere. Corner walls in generated maps (now enforced by `src/terrain-fixture.ts:withCornerWalls`) land on offsets `49`, `2450`, `2499` which all fall on truncated-or-untouched bytes, producing exactly 3 mismatches vs `terrain.get(49, 0)` / `get(0, 49)` / `get(49, 49)`.
 - Fix shape: when `destinationArray` is a `Uint8Array`, write one mask per tile: `for (let i = 0; i < 2500; ++i) buffer[i] = (source[i >>> 2] >>> ((i & 0x03) << 1)) & 0x03;`. Keep the existing `Uint32Array` path for internal callers. Simplest: dispatch on `destinationArray instanceof Uint8Array`.
+
+### packedpos-write-ignored
+- Tests: UNDOC-PACKEDPOS-003
+- Cause: `RoomPosition.__packedPos` at `game/position.ts:111-115` is defined as a `@deprecated` getter-only accessor (no setter) backed by the private `#id` field; user-code assignment silently no-ops in non-strict mode. Vanilla's `RoomPosition` allows `__packedPos` writes that propagate to `x`/`y`/`roomName` via decoded accessors — bot WASM bridges rely on this for cheap position construction (e.g. TheInternational's `src/wasm/pkg/commiebot_wasm.js:381` assigns `getObject(arg0).__packedPos = arg1 >>> 0;`).
+- Fix shape: add a setter that decomposes `value` into `x`, `y`, `rx`, `ry` and writes into `#id` using the inverse of the getter's bit layout (line 113-114). Alternative: leave read-only and mark as wontfix given the `@deprecated` annotation.
+
+### memory-parsed-json-not-refreshed-across-ticks
+- Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004
+- Cause: xxscreeps caches the parsed-Memory object in the module-level `json` variable at `mods/memory/memory.ts:14` and never invalidates it across ticks. `runtimeConnector.receive` at `mods/memory/game.ts:38-46` redefines the `Memory` global as an accessor each tick but does NOT reset `json`. Result: `JSON.stringify(json)` at tick end correctly produces vanilla-compatible raw memory (functions stripped, `NaN`/`Infinity` → `null`), but the live `Memory` object on subsequent ticks is still the same cached `json` reference — so `Memory.nan` reads as `NaN` (not `null`), `Memory.fn` reads as the function object (not absent), etc. Vanilla's per-tick lazy getter re-parses from raw every tick, producing the JSON-normalized values on read.
+- Fix shape: at the start of each tick (either in `receive()` in `mods/memory/game.ts:38` or early in `flush()` before `if (json)` at `memory.ts:172`), set `json = undefined` so the next `get()` re-parses from `RawMemory.get()`. Aligns with the code comment on `memory.ts:30` ("Vanilla Screeps runs a flagrantly wasteful `JSON.parse` each tick") which frames `crunch` as an intentional optimization — but the divergence wasn't noticed because the test fixture bots only write JSON-safe values.
+
+### memory-circular-ref-crash
+- Tests: UNDOC-MEMJSON-005
+- Cause: `crunch(payload)` at `mods/memory/memory.ts:34-54` recurses through the Memory object tree (normalizing `undefined`) with no cycle detection. When `Memory` contains a self-reference (`obj.self = obj`), `crunch` recurses infinitely and hits `RangeError: Maximum call stack size exceeded`. The `try/catch` in `flush()` at `memory.ts:187-192` wraps only `JSON.stringify` (line 188) — the `crunch(json)` call at line 182 is one branch above and has no guard, so the stack overflow propagates out of `flush()` and crashes the player runtime. Vanilla's `JSON.stringify` throws `TypeError` on cycles which Screeps' engine catches silently (dropping the unserializable subtree without crashing the runtime).
+- Fix shape: either (a) add a `WeakSet` cycle guard to `crunch()` that short-circuits on re-entry, or (b) move the `crunch(json)` call at line 182 inside the existing try/catch. Option (a) is structurally correct; option (b) is a one-line patch.
 
