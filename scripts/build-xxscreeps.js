@@ -36,6 +36,15 @@ const cacheDir = join(repoRoot, 'node_modules/.cache/screeps-ok/xxscreeps-src');
 const stampFile = join(xxscreepsDir, '.screeps-ok-pin');
 const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 
+// Bump when the build pipeline gains a step that prior stamps wouldn't
+// have produced (e.g. v2 added applyUpstreamPatches for lodash-es; v3
+// added buildNestedNativeAddons for isolated-vm + ivm-inspect).
+const stampSchema = 'v3';
+
+function stampContent(token) {
+	return `${token}\nschema=${stampSchema}`;
+}
+
 if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
 	console.log('[screeps-ok] SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL=1, skipping xxscreeps postinstall');
 	process.exit(0);
@@ -71,7 +80,7 @@ if (localOverride) {
 	shortPin = pin.slice(0, 8);
 
 	if (
-		existsSync(stampFile) && readFileSync(stampFile, 'utf8').trim() === pin &&
+		existsSync(stampFile) && readFileSync(stampFile, 'utf8').trim() === stampContent(pin) &&
 		existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))
 	) {
 		console.log(`[screeps-ok] xxscreeps already built at pin ${shortPin}`);
@@ -92,9 +101,11 @@ layOutPackages(srcDir);
 inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
+applyUpstreamPatches(srcDir);
+buildNestedNativeAddons();
 buildTypeScript();
 runGeneratedModsBootstrap();
-writeFileSync(stampFile, (localOverride ? `local:${localOverride}` : pin) + '\n');
+writeFileSync(stampFile, stampContent(localOverride ? `local:${localOverride}` : pin) + '\n');
 console.log(localOverride
 	? `[screeps-ok] xxscreeps ready from local ${localOverride}`
 	: `[screeps-ok] xxscreeps ready at pin ${shortPin}`);
@@ -119,6 +130,7 @@ function fetchSubtrees(sha) {
 		'/tsconfig.base.json',
 		'/packages/xxscreeps/',
 		'/packages/pathfinder/',
+		'/patches/',
 	]);
 	git(['checkout', '--quiet', 'FETCH_HEAD']);
 }
@@ -197,6 +209,35 @@ function installNestedDeps() {
 		'--no-audit',
 		'--no-fund',
 	], { stdio: 'inherit' });
+}
+
+function buildNestedNativeAddons() {
+	// installNestedDeps() runs with --ignore-scripts to avoid pulling in
+	// arbitrary install hooks from transitives. The runtime, however, needs
+	// the native addons built — `isolated-vm` (sandbox) and `ivm-inspect`
+	// (debugger glue) both ship a `binding.gyp` and rely on their `install`
+	// script to compile or fetch a prebuild. Run them explicitly.
+	const natives = ['isolated-vm', 'ivm-inspect'];
+	for (const name of natives) {
+		if (!existsSync(join(xxscreepsDir, 'node_modules', name, 'binding.gyp'))) continue;
+		execFileSync('npm', ['rebuild', '--prefix', xxscreepsDir, name], { stdio: 'inherit' });
+	}
+}
+
+function applyUpstreamPatches(srcDir) {
+	// Upstream uses pnpm's `patchedDependencies` to patch lodash-es 3.10.1
+	// (adds `.js` extensions to legacy extension-less imports + an `exports`
+	// map so `import lodash_es from 'lodash-es'` resolves under ESM). pnpm
+	// applies it automatically; npm does not, so we apply it here.
+	// Guarded by existsSync — pins predating eb14786 have no patches/ dir.
+	const patchPath = join(srcDir, 'patches/lodash-es.patch');
+	if (!existsSync(patchPath)) return;
+	const target = join(xxscreepsDir, 'node_modules/lodash-es');
+	if (!existsSync(target)) return;
+	execFileSync('git', ['apply', '--unsafe-paths', '--directory', target, patchPath], {
+		stdio: 'inherit',
+	});
+	console.log('[screeps-ok] Applied upstream lodash-es.patch');
 }
 
 function buildTypeScript() {

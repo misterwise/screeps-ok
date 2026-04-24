@@ -967,6 +967,11 @@ Coverage Notes
 - `CTRL-SAFEMODE-007` `behavior` `verified_vanilla`
   `activateSafeMode()` returns `ERR_BUSY` when another owned controller already
   has an active safe mode.
+- `CTRL-SAFEMODE-008` `behavior` `verified_vanilla`
+  When `activateSafeMode()` is called on two different owned controllers in the
+  same tick, both calls return `OK` but only the most recent call's intent is
+  processed; the earlier intent is dropped so its controller keeps its
+  `safeModeAvailable` charge and does not enter safe mode.
 
 Notes
 - Any hostile movement restrictions during safe mode should be added only as

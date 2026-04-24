@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1291%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1047%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1292%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1062%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-63-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1291](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-24 03:11 UTC |
-| 🟡 | **xxscreeps** | [1047](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-24 03:09 UTC |
+| 🟡 | **vanilla** | [1292](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-24 12:58 UTC |
+| 🟡 | **xxscreeps** | [1062](#xxscreeps-passing-tests) | [63](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-24 04:02 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -43,29 +43,26 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior, covering 77 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 34 parity gaps against vanilla's canonical behavior, covering 63 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `tombstone-corpse-rate` | No body energy/mineral reclaim at all on death — `mods/creep/tombstone.ts` buryCreep only multiplies carried store by rate, never iterates the body for part-cost or boost resources | On death, tombstone store includes reclaimed body resources (`BODYPART_COST[type] * lifeRate`, boost minerals at `LAB_BOOST_MINERAL * lifeRate`). CLAIM bodies use `CREEP_CLAIM_LIFE_TIME` as the life-rate denominator; other bodies use `CREEP_LIFE_TIME` | [2](#xxscreeps-gap-tombstone-corpse-rate) |
 | `death-carried-store-rate-multiplied` | `buryCreep` multiplies carried store by `rate` (`Math.floor(amount * CREEP_CORPSE_RATE)`), so a creep carrying 50 energy leaves only 10 in the tombstone | Carried resources are deposited 1:1 regardless of `dropRate` (vanilla `_die.js:75-91` iterates `object.store` without the rate multiplier — only body-reclaim resources are scaled by `lifeRate`) | [3](#xxscreeps-gap-death-carried-store-rate-multiplied) |
 | `death-container-diversion` | Creep death never diverts into a same-tile container — `buryCreep` writes directly to the tombstone. Mixed-resource deaths that should sequentially fill the container (body-energy, then body-minerals, then carried store) leave the container untouched | Death resources flow into a live same-tile container before any tombstone remainder, with each resource type tried against the container's current free capacity in vanilla's deposit order | [2](#xxscreeps-gap-death-container-diversion) |
-| `factory-not-owner-precedence` | `factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-factory-not-owner-precedence) |
 | `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
-| `lab-not-owner-precedence` | Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [2](#xxscreeps-gap-lab-not-owner-precedence) |
-| `observer-not-owner-precedence` | `observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH` | Returns `ERR_NOT_OWNER` before any RCL check | [1](#xxscreeps-gap-observer-not-owner-precedence) |
 | `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
+| `safemode-same-tick-no-dedupe` | Both same-tick `activateSafeMode` intents are processed — every targeted controller enters safe mode and consumes its `safeModeAvailable` charge | Only the most recent intent is processed (vanilla last-intent-wins on same-tick activations); earlier intents are dropped so those controllers retain their `safeModeAvailable` charge | [1](#xxscreeps-gap-safemode-same-tick-no-dedupe) |
 | `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
-| `destroy-ownership-bypass` | `structure.destroy()` allowed when room controller not owned by player | Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player | [1](#xxscreeps-gap-destroy-ownership-bypass) |
 | `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [5](#xxscreeps-gap-notifywhenattacked-not-implemented) |
 | `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
 | `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
-| `controller-my-previously-owned-returns-undefined` | `StructureController.my` returns `undefined` on a previously-owned controller (after `unclaim()` or downgrade-to-zero, where xxscreeps sets `#user` to `null` and the getter maps `null` → `undefined`) | Returns `false` on a previously-owned controller (vanilla maps `user === null` → `false`, reserving `undefined` for never-owned) | [2](#xxscreeps-gap-controller-my-previously-owned-returns-undefined) |
+| `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `safemode-ignores-downgrade-threshold` | `activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` | Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold | [1](#xxscreeps-gap-safemode-ignores-downgrade-threshold) |
 | `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
@@ -73,11 +70,9 @@ xxscreeps currently declares 39 parity gaps against vanilla's canonical behavior
 | `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
 | `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
-| `shape-extra-hits-my` | Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType` | Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType` | [9](#xxscreeps-gap-shape-extra-hits-my) |
+| `shape-wall-and-ruin-residual` | `constructedWall` is missing canonical fields and `ruin` is missing `structureType` | `constructedWall` matches the canonical structure shape; `ruin` exposes `structureType` | [2](#xxscreeps-gap-shape-wall-and-ruin-residual) |
 | `shape-struct-missing-legacy-compat` | Structure missing legacy compat getter: `storage.storeCapacity` | Legacy compat getter is present on `storage` | [1](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
-| `shape-room-missing-survivalInfo` | `Room` object missing `survivalInfo` property | `Room.survivalInfo` is present (per canonical room shape) | [1](#xxscreeps-gap-shape-room-missing-survivalinfo) |
-| `shape-game-surface-mismatch` | `Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla | `Game` exposes canonical top-level fields with matching data-property surface | [1](#xxscreeps-gap-shape-game-surface-mismatch) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
@@ -111,13 +106,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `creep death CREEP-DEATH-003 death resources go into a same-tile container first`
 - `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
-
-</details>
-
-<details id="xxscreeps-gap-factory-not-owner-precedence">
-<summary><code>factory-not-owner-precedence</code> — 1 test</summary>
-
-- `Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player`
 
 </details>
 
@@ -156,21 +144,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-lab-not-owner-precedence">
-<summary><code>lab-not-owner-precedence</code> — 2 tests</summary>
-
-- `Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab`
-- `Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab`
-
-</details>
-
-<details id="xxscreeps-gap-observer-not-owner-precedence">
-<summary><code>observer-not-owner-precedence</code> — 1 test</summary>
-
-- `StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player`
-
-</details>
-
 <details id="xxscreeps-gap-safemode-concurrent-allowed">
 <summary><code>safemode-concurrent-allowed</code> — 1 test</summary>
 
@@ -178,17 +151,17 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-safemode-same-tick-no-dedupe">
+<summary><code>safemode-same-tick-no-dedupe</code> — 1 test</summary>
+
+- `Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent`
+
+</details>
+
 <details id="xxscreeps-gap-container-destroy-no-spill">
 <summary><code>container-destroy-no-spill</code> — 1 test</summary>
 
 - `Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources`
-
-</details>
-
-<details id="xxscreeps-gap-destroy-ownership-bypass">
-<summary><code>destroy-ownership-bypass</code> — 1 test</summary>
-
-- `structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player`
 
 </details>
 
@@ -236,11 +209,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-controller-my-previously-owned-returns-undefined">
-<summary><code>controller-my-previously-owned-returns-undefined</code> — 2 tests</summary>
+<details id="xxscreeps-gap-controller-my-never-owned-returns-false">
+<summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
 
-- `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
-- `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
+- `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
 
 </details>
 
@@ -293,17 +265,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-shape-extra-hits-my">
-<summary><code>shape-extra-hits-my</code> — 9 tests</summary>
+<details id="xxscreeps-gap-shape-wall-and-ruin-residual">
+<summary><code>shape-wall-and-ruin-residual</code> — 2 tests</summary>
 
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape`
 - `26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape`
 
 </details>
@@ -320,20 +285,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
 - `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
-
-</details>
-
-<details id="xxscreeps-gap-shape-room-missing-survivalinfo">
-<summary><code>shape-room-missing-survivalInfo</code> — 1 test</summary>
-
-- `26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape`
-
-</details>
-
-<details id="xxscreeps-gap-shape-game-surface-mismatch">
-<summary><code>shape-game-surface-mismatch</code> — 1 test</summary>
-
-- `26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape`
 
 </details>
 
@@ -404,7 +355,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1291 tests across 118 files</summary>
+<summary>1292 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -926,13 +877,14 @@ Click a test count above to jump to the affected test list for that gap.
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 
-**`tests/06-controller/6.8-safemode.test.ts`** (14)
+**`tests/06-controller/6.8-safemode.test.ts`** (15)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
 - Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
 - Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
 - Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
+- Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent
 - Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
 - Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
@@ -2414,7 +2366,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1047 tests across 98 files</summary>
+<summary>1062 tests across 99 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2825,7 +2777,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -2835,7 +2787,6 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
-- controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
@@ -2884,9 +2835,10 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (6)
+**`tests/06-controller/6.7-downgrade.test.ts`** (7)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
+- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
 - Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
@@ -2907,6 +2859,10 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-006:heal hostile heal returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedHeal hostile rangedHeal returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:attackController hostile attackController returns guard code under safe mode
+
+**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+
+- StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
 
 **`tests/07-combat/7.1-melee-attack.test.ts`** (24)
 
@@ -3156,7 +3112,7 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room
 - StructureLink LINK-013 transferEnergy with no amount transfers all stored energy
 
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (86)
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (88)
 
 - Lab runReaction LAB-RUN-001:H+O runReaction produces OH
 - Lab runReaction LAB-RUN-001:H+L runReaction produces LH
@@ -3201,6 +3157,7 @@ Click a count to jump to the affected test list.
 - Lab runReaction LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab
 - Lab runReaction LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown
 - Lab runReaction LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
+- Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab
 - Lab reverseReaction LAB-REVERSE-001:G reverseReaction splits into UL+ZK
 - Lab reverseReaction LAB-REVERSE-001:GH reverseReaction splits into G+H
 - Lab reverseReaction LAB-REVERSE-001:GH2O reverseReaction splits into GH+OH
@@ -3244,8 +3201,9 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab
 - Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
 - Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
+- Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (76)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (77)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -3277,6 +3235,7 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
 - Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
 - Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
+- Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player
 - Factory commodity chains FACTORY-COMMODITY-001:alloy COMMODITIES[alloy].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:battery COMMODITIES[battery].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:cell COMMODITIES[cell].level is undefined
@@ -3364,12 +3323,13 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (4)
+**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (5)
 
 - StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick
 - StructureObserver OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE
 - StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
 - StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
+- StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player
 
 **`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (6)
 
@@ -3434,8 +3394,9 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (2)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (3)
 
+- structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
 - structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
 - structure.destroy() STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store
 
@@ -3680,12 +3641,14 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (20)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (29)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-002 Game.cpu matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-003 Game.map matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-004 Game.shard matches canonical shape
@@ -3693,15 +3656,22 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-GAME-006 Game.gpl matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:spawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extension structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:rampart structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:tower structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extractor structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:lab structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:observer structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
 
 **`tests/27-undocumented/27.1-memhack.test.ts`** (6)
 

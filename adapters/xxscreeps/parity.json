@@ -15,11 +15,6 @@
 			"expected": "Death resources flow into a live same-tile container before any tombstone remainder, with each resource type tried against the container's current free capacity in vanilla's deposit order",
 			"tests": ["CREEP-DEATH-003", "CREEP-DEATH-012"]
 		},
-		"factory-not-owner-precedence": {
-			"actual": "`factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["FACTORY-PRODUCE-010"]
-		},
 		"rampart-no-protection": {
 			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
 			"expected": "Damage targeting an object on a rampart tile is redirected to the rampart",
@@ -40,30 +35,20 @@
 			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
 			"tests": ["RECYCLE-CREEP-002"]
 		},
-		"lab-not-owner-precedence": {
-			"actual": "Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["LAB-RUN-012", "LAB-REVERSE-012"]
-		},
-		"observer-not-owner-precedence": {
-			"actual": "`observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["OBSERVER-006"]
-		},
 		"safemode-concurrent-allowed": {
 			"actual": "Allows `activateSafeMode` on multiple owned controllers simultaneously",
 			"expected": "Returns `ERR_BUSY` when any owned controller already has an active safe mode",
 			"tests": ["CTRL-SAFEMODE-007"]
 		},
+		"safemode-same-tick-no-dedupe": {
+			"actual": "Both same-tick `activateSafeMode` intents are processed — every targeted controller enters safe mode and consumes its `safeModeAvailable` charge",
+			"expected": "Only the most recent intent is processed (vanilla last-intent-wins on same-tick activations); earlier intents are dropped so those controllers retain their `safeModeAvailable` charge",
+			"tests": ["CTRL-SAFEMODE-008"]
+		},
 		"container-destroy-no-spill": {
 			"actual": "Container destroyed by decay does not drop its contents as ground resources",
 			"expected": "Container contents become dropped resources on the tile when decay destroys it",
 			"tests": ["CONTAINER-002"]
-		},
-		"destroy-ownership-bypass": {
-			"actual": "`structure.destroy()` allowed when room controller not owned by player",
-			"expected": "Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player",
-			"tests": ["STRUCTURE-API-001"]
 		},
 		"notifyWhenAttacked-not-implemented": {
 			"actual": "`structure.notifyWhenAttacked()` not implemented",
@@ -90,10 +75,10 @@
 			"expected": "No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range",
 			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
 		},
-		"controller-my-previously-owned-returns-undefined": {
-			"actual": "`StructureController.my` returns `undefined` on a previously-owned controller (after `unclaim()` or downgrade-to-zero, where xxscreeps sets `#user` to `null` and the getter maps `null` → `undefined`)",
-			"expected": "Returns `false` on a previously-owned controller (vanilla maps `user === null` → `false`, reserving `undefined` for never-owned)",
-			"tests": ["CTRL-UNCLAIM-001", "CTRL-DOWNGRADE-002"]
+		"controller-my-never-owned-returns-false": {
+			"actual": "`StructureController.my` returns `false` on a never-owned controller (`#user` undefined)",
+			"expected": "Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade)",
+			"tests": ["CTRL-CLAIM-007"]
 		},
 		"safemode-ignores-downgrade-threshold": {
 			"actual": "`activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`",
@@ -130,10 +115,10 @@
 			"expected": "Structure is destroyed in the same tick once hits reach `0`",
 			"tests": ["DISMANTLE-007"]
 		},
-		"shape-extra-hits-my": {
-			"actual": "Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType`",
-			"expected": "Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType`",
-			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]
+		"shape-wall-and-ruin-residual": {
+			"actual": "`constructedWall` is missing canonical fields and `ruin` is missing `structureType`",
+			"expected": "`constructedWall` matches the canonical structure shape; `ruin` exposes `structureType`",
+			"tests": ["SHAPE-STRUCT-001:constructedWall", "SHAPE-RUIN-001"]
 		},
 		"shape-struct-missing-legacy-compat": {
 			"actual": "Structure missing legacy compat getter: `storage.storeCapacity`",
@@ -144,16 +129,6 @@
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
 			"expected": "`boost` key is only present when the part is actually boosted",
 			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
-		},
-		"shape-room-missing-survivalInfo": {
-			"actual": "`Room` object missing `survivalInfo` property",
-			"expected": "`Room.survivalInfo` is present (per canonical room shape)",
-			"tests": ["SHAPE-ROOM-001"]
-		},
-		"shape-game-surface-mismatch": {
-			"actual": "`Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla",
-			"expected": "`Game` exposes canonical top-level fields with matching data-property surface",
-			"tests": ["SHAPE-GAME-001"]
 		},
 		"shape-flag-crash": {
 			"actual": "Flag shape discovery crashes (`Cannot use 'in' operator on undefined`)",

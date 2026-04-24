@@ -110,6 +110,57 @@ describe('Safe mode mechanics', () => {
 		expect(rc2).toBe(ERR_BUSY);
 	});
 
+	// ---- CTRL-SAFEMODE-008: same-tick double activation dedupe ----
+	test('CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 },
+				{ name: 'W2N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 },
+			],
+		});
+
+		// Place a creep in W2N1 so p1 has visibility there.
+		await shard.placeCreep('W2N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+
+		// Issue both activations in the same tick. The runtime's safeMode scan
+		// sees no active safe mode yet (the processor hasn't run), so both calls
+		// return OK — the engine dedupes by dropping the earlier intent.
+		const result = await shard.runPlayer('p1', code`
+			const rc1 = Game.rooms['W1N1'].controller.activateSafeMode();
+			const rc2 = Game.rooms['W2N1'].controller.activateSafeMode();
+			({ rc1, rc2 })
+		`) as { rc1: number; rc2: number };
+		expect(result.rc1).toBe(OK);
+		expect(result.rc2).toBe(OK);
+
+		await shard.tick();
+
+		const after = await shard.runPlayer('p1', code`
+			const w1 = Game.rooms['W1N1'].controller;
+			const w2 = Game.rooms['W2N1'].controller;
+			({
+				w1SafeMode: w1.safeMode,
+				w1Available: w1.safeModeAvailable,
+				w2SafeMode: w2.safeMode,
+				w2Available: w2.safeModeAvailable,
+			})
+		`) as {
+			w1SafeMode: number | undefined;
+			w1Available: number;
+			w2SafeMode: number;
+			w2Available: number;
+		};
+
+		// First intent was dropped: W1N1 never entered safe mode and kept its charge.
+		expect(after.w1SafeMode).toBeUndefined();
+		expect(after.w1Available).toBe(1);
+
+		// Second intent processed: W2N1 consumed its charge and entered safe mode.
+		expect(after.w2Available).toBe(0);
+		expect(after.w2SafeMode).toBeGreaterThan(0);
+	});
+
 	// ---- CTRL-SAFEMODE-005: downgrade timer below threshold ----
 	downgradeTest('CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD', async ({ shard }) => {
 		// Use RCL 4 where CONTROLLER_DOWNGRADE[4]/2 - threshold = 15000.
