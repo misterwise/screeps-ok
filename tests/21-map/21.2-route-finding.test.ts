@@ -17,7 +17,7 @@ describe('Game.map route finding', () => {
 			Game.map.findRoute('W1N1', 'W1N2')
 		`) as Array<{ exit: number; room: string }>;
 		expect(Array.isArray(route)).toBe(true);
-		expect(route.length).toBeGreaterThanOrEqual(1);
+		expect(route.length).toBe(1);
 		expect(route[0]).toHaveProperty('exit');
 		expect(route[0]).toHaveProperty('room');
 	});

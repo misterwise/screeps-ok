@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -339,7 +339,7 @@ describe('adapter contract: setup', () => {
 
 			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 			const placed = creeps.filter((c: any) => c.kind === 'creep');
-			expect(placed.length).toBeGreaterThanOrEqual(1);
+			expect(placed.length).toBe(1);
 		});
 
 		test('spec.boosts tags the target body parts with the boost mineral', async ({ shard }) => {
@@ -523,7 +523,7 @@ describe('adapter contract: setup', () => {
 			const obj = await shard.expectObject(id, 'site');
 			expect(obj.structureType).toBe('road');
 			expect(obj.progress).toBe(0);
-			expect(obj.progressTotal).toBeGreaterThan(0);
+			expect(obj.progressTotal).toBe(CONSTRUCTION_COST[STRUCTURE_ROAD]);
 		});
 	});
 

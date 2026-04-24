@@ -137,7 +137,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
-			expect(creeps.length).toBeGreaterThanOrEqual(2);
+			expect(creeps.length).toBe(2);
 			expect(creeps.every((c: any) => c.kind === 'creep')).toBe(true);
 		});
 
@@ -163,7 +163,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-			expect(sites.length).toBeGreaterThanOrEqual(1);
+			expect(sites.length).toBe(1);
 			expect(sites.every((s: any) => s.kind === 'site')).toBe(true);
 		});
 
@@ -176,7 +176,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const sources = await shard.findInRoom('W1N1', FIND_SOURCES);
-			expect(sources.length).toBeGreaterThanOrEqual(1);
+			expect(sources.length).toBe(1);
 			expect(sources.every((s: any) => s.kind === 'source')).toBe(true);
 		});
 
@@ -189,7 +189,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const minerals = await shard.findInRoom('W1N1', FIND_MINERALS);
-			expect(minerals.length).toBeGreaterThanOrEqual(1);
+			expect(minerals.length).toBe(1);
 			expect(minerals.every((m: any) => m.kind === 'mineral')).toBe(true);
 		});
 

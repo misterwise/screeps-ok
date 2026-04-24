@@ -174,7 +174,7 @@ describe('creep.suicide()', () => {
 			}
 
 			const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-			expect(tombstones.length).toBeGreaterThanOrEqual(1);
+			expect(tombstones.length).toBe(1);
 			const tomb = tombstones.find(t => t.creepName === creepName);
 			expect(tomb).toBeDefined();
 			if (tomb) {

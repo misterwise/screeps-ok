@@ -47,7 +47,7 @@ describe('Tombstone', () => {
 
 		// Find the tombstone — target was at [25, 26]
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		expect(tombstones.length).toBeGreaterThanOrEqual(1);
+		expect(tombstones.length).toBe(1);
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
 		expect(tomb).toBeDefined();
 		expect(tomb!.creepName).toBe('victim');

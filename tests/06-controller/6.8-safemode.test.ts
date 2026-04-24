@@ -136,7 +136,7 @@ describe('Safe mode mechanics', () => {
 			const ctrl = Game.rooms['W1N1'].controller;
 			({ safeMode: ctrl.safeMode, safeModeAvailable: ctrl.safeModeAvailable })
 		`) as { safeMode: number | undefined; safeModeAvailable: number };
-		expect(after.safeMode).toBeFalsy();
+		expect(after.safeMode).toBeUndefined();
 		expect(after.safeModeAvailable).toBe(1);
 	});
 

@@ -307,7 +307,7 @@ describe('creep.harvest(mineral)', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(45);
-		expect((creep.store as Record<string, number>).H).toBeDefined();
+		expect((creep.store as Record<string, number>).H).toBe(5);
 
 		const mineral = await shard.expectObject(mineralId, 'mineral');
 		expect(mineral.mineralAmount).toBe(50000 - 10 * HARVEST_MINERAL_POWER);
