@@ -2277,6 +2277,32 @@ Coverage Notes
   string.
 - `ROOM-EVENTLOG-004` `behavior` `verified_vanilla`
   Room events are only exposed for the current tick.
+- `ROOM-EVENTLOG-005` `behavior` `verified_vanilla`
+  `EVENT_OBJECT_DESTROYED` is emitted when a creep dies, with `data.type ===
+  'creep'` and `objectId` referencing the destroyed creep.
+- `ROOM-EVENTLOG-006` `behavior` `verified_vanilla`
+  `EVENT_OBJECT_DESTROYED` is emitted when an attack reduces a structure's
+  `hits` to 0, with `data.type` set to the destroyed `structureType`.
+  Non-lethal damage on the same tick does not emit the event.
+- `ROOM-EVENTLOG-007` `behavior` `verified_vanilla`
+  `EVENT_TRANSFER` is emitted by creep `transfer` (`objectId=creep`,
+  `targetId=target`), creep `withdraw` (`objectId=source`, `targetId=creep`,
+  matching vanilla's role flip), and link `transferEnergy` (amount is
+  pre-loss). Each carries `data.resourceType` and `data.amount`.
+- `ROOM-EVENTLOG-008` `behavior` `verified_vanilla`
+  `EVENT_EXIT` is emitted when a creep crosses a room boundary, with
+  `data.room` set to the destination room name and `data.x`/`data.y` set to
+  the creep's position in that destination room.
+- `ROOM-EVENTLOG-009` `behavior` `verified_vanilla`
+  `EVENT_ATTACK_CONTROLLER` is emitted when a CLAIM creep attacks an enemy
+  controller. The event has no extra payload fields and the wrapper omits
+  `data` entirely (matching vanilla's JSON output).
+- `ROOM-EVENTLOG-010` `behavior` `verified_vanilla`
+  `EVENT_RESERVE_CONTROLLER` is emitted with `data.amount` equal to
+  CLAIM-parts × `CONTROLLER_RESERVE`.
+- `ROOM-EVENTLOG-011` `behavior` `verified_vanilla`
+  `EVENT_UPGRADE_CONTROLLER` is emitted with `data.amount` and
+  `data.energySpent` set to the energy applied to the controller this tick.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`

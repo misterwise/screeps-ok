@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1292%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1062%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-63-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-9%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,24 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1292](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-24 12:58 UTC |
-| 🟡 | **xxscreeps** | [1062](#xxscreeps-passing-tests) | [63](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-24 04:02 UTC |
+| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 02:50 UTC |
+| 🔴 | **xxscreeps** | [1062](#xxscreeps-passing-tests) | [61](#xxscreeps-expected-failures) | [9](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-25 02:47 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
+- `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
+- `room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"`
+- `room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType`
+- `room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction`
+- `room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y`
+- `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
+- `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
+- `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
 
 ## vanilla expected failures
 
@@ -43,7 +55,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 34 parity gaps against vanilla's canonical behavior, covering 63 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior, covering 61 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -58,7 +70,6 @@ xxscreeps currently declares 34 parity gaps against vanilla's canonical behavior
 | `safemode-same-tick-no-dedupe` | Both same-tick `activateSafeMode` intents are processed — every targeted controller enters safe mode and consumes its `safeModeAvailable` charge | Only the most recent intent is processed (vanilla last-intent-wins on same-tick activations); earlier intents are dropped so those controllers retain their `safeModeAvailable` charge | [1](#xxscreeps-gap-safemode-same-tick-no-dedupe) |
 | `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
 | `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [5](#xxscreeps-gap-notifywhenattacked-not-implemented) |
-| `eventlog-attack-missing` | `getEventLog()` missing `EVENT_ATTACK` entries for combat | `EVENT_ATTACK` entries appear in the event log for each combat hit | [2](#xxscreeps-gap-eventlog-attack-missing) |
 | `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
@@ -173,14 +184,6 @@ Click a test count above to jump to the affected test list for that gap.
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument`
 - `structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room`
 - `structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room`
-
-</details>
-
-<details id="xxscreeps-gap-eventlog-attack-missing">
-<summary><code>eventlog-attack-missing</code> — 2 tests</summary>
-
-- `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
-- `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
 
 </details>
 
@@ -355,7 +358,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1292 tests across 118 files</summary>
+<summary>1299 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1583,12 +1586,19 @@ Click a test count above to jump to the affected test list for that gap.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (4)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (11)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
 - room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
+- room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"
+- room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType
+- room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction
+- room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y
+- room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller
+- room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
+- room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
 
 **`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
 
