@@ -11,6 +11,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | Plan | PR | Title |
 |---|---|---|
 | PR-16 | [laverdet/xxscreeps#118](https://github.com/laverdet/xxscreeps/pull/118) | Fix Flag.setPosition to use parsed position id |
+| PR-9 (partial) | [laverdet/xxscreeps#145](https://github.com/laverdet/xxscreeps/pull/145) | Destroy dismantled structures, spill container contents on decay (closed 2 of 3 entries; `ruin-spill-decay-on-spill-tick` deferred) |
 
 ## Submitted (awaiting review)
 
@@ -135,10 +136,12 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **Blast radius:** Combat behavior wide; needs all COMBAT-* tests re-run. Could split rampart/TOUGH/eventlog into 3 sub-PRs if maintainer prefers — they're independent code paths.
 
 ### PR-9: Hits-zero destruction + ruin spill timing (`mods/construction/processor.ts`, `mods/resource/processor/container.ts`, `mods/structure/processor.ts`)
-- **Closes (3 entries / 3 tests):** `dismantle-no-destroy-at-zero-hits` (DISMANTLE-007), `container-destroy-no-spill` (CONTAINER-002), `ruin-spill-decay-on-spill-tick` (STRUCTURE-HITS-005)
-- **Plan:**
-  1. `construction/processor.ts:75-78`: after `target.hits -= effect`, if `target.hits <= 0` → `createRuin(target); target['#destroy']()`. Also append `EVENT_OBJECT_DESTROYED` (or appropriate constant) to event log.
-  2. `resource/processor/container.ts:10-11`: when `container.hits <= 0`, iterate `container.store` and `Resource.drop` each entry before removing the container.
+- **Status:** Parts 1 + 2 merged as [#145](https://github.com/laverdet/xxscreeps/pull/145); part 3 deferred. Net closure: 2 of 3 entries.
+- **Closed (2 entries / 2 tests):** `dismantle-no-destroy-at-zero-hits` (DISMANTLE-007), `container-destroy-no-spill` (CONTAINER-002)
+- **Still open (1 entry / 1 test):** `ruin-spill-decay-on-spill-tick` (STRUCTURE-HITS-005) — needs a separate PR.
+- **Plan (remaining work):**
+  1. ~~`construction/processor.ts:75-78`: dismantle destroy hook.~~ Landed.
+  2. ~~`resource/processor/container.ts:10-11`: spill on decay.~~ Landed.
   3. `structure/processor.ts:19-29` Ruin tick processor: change `ResourceIntent.drop(now=true)` path to deferred insertion (use `room['#insertObject'](resource, false)`) so spill piles flush after iteration and skip same-tick decay.
 - **Blast radius:** Affects structure-destruction patterns. The ruin-spill fix needs evaluation — `Resource.drop`'s `now=true` is used by other paths (harvest overflow); may need a tagged "spilled-this-tick" flag instead of changing the drop API.
 
@@ -271,7 +274,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Spawn | PR-6 | 4 |
 | Creep death | PR-7 | 3 |
 | Combat | PR-8 | 3 |
-| Hits→destroy | PR-9 | 3 |
+| Hits→destroy | PR-9 | 2 (#145; ruin-spill deferred) |
 | Creep client API | PR-10 | 5 |
 | PathFinder/Map | PR-11 | 2 |
 | Boost energy | PR-12 | 1 |

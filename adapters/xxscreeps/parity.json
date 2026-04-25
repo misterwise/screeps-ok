@@ -20,11 +20,6 @@
 			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
 			"tests": ["RECYCLE-CREEP-002"]
 		},
-		"container-destroy-no-spill": {
-			"actual": "Container destroyed by decay does not drop its contents as ground resources",
-			"expected": "Container contents become dropped resources on the tile when decay destroys it",
-			"tests": ["CONTAINER-002"]
-		},
 		"eventlog-attack-missing": {
 			"actual": "Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER",
 			"expected": "All canonical event types appear in `getEventLog()` at their triggering points",
@@ -50,15 +45,15 @@
 			"expected": "Returns `ERR_INVALID_TARGET` when the target is a spawning creep",
 			"tests": ["MOVE-PULL-007:spawning"]
 		},
+		"active-bodyparts-takewhile-front-damage": {
+			"actual": "`getActiveBodyparts(type)` returns 0 once any earlier-indexed body part is dead. New helper `iterateActiveParts` (introduced in `mods/creep/creep.ts:450` by upstream commit 301685e) does `Fn.takeWhile(body, p => p.hits > 0)`, halting at the first dead part. But `recalculateBody` (`mods/creep/processor.ts:80-86`) damages parts left-to-right, so a partially-damaged creep has dead parts at the front and live parts behind them — `takeWhile` skips the live ones.",
+			"expected": "`getActiveBodyparts(type)` counts every still-alive part of `type` regardless of dead parts at lower indices. Vanilla canonical: damage is distributed front-first, but the active-part count remains a true filter, not a prefix scan.",
+			"tests": ["MOVE-FATIGUE-007"]
+		},
 		"transfer-controller-no-upgrade-redirect": {
 			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
 			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
 			"tests": ["TRANSFER-011"]
-		},
-		"dismantle-no-destroy-at-zero-hits": {
-			"actual": "`dismantle()` reducing hits to `0` leaves the structure present with `hits=0`",
-			"expected": "Structure is destroyed in the same tick once hits reach `0`",
-			"tests": ["DISMANTLE-007"]
 		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",

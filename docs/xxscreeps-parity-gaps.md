@@ -11,10 +11,6 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 
 ## Confirmed (root cause in hand)
 
-### container-destroy-no-spill
-- Tests: CONTAINER-002
-- Cause: `buryCreep`-style resource spill on structure death is not implemented for containers. When `container.hits <= 0` the processor at `mods/resource/processor/container.ts:10-11` removes the object but does not create dropped resources for `container.store`.
-
 ### controller-my-previously-owned-returns-undefined
 - Tests: CTRL-UNCLAIM-001, CTRL-DOWNGRADE-002
 - Cause: `OwnedStructure.my` at `mods/structure/structure.ts:108-111` returns `user === null ? undefined : user === me`. xxscreeps stores `#user = null` for *both* never-owned controllers (initial state) and previously-owned controllers (after `unclaim()` or downgrade-to-zero), so the getter returns `undefined` in both cases — the engine cannot distinguish the two states. Vanilla's getter (`@screeps/engine/src/game/structures.js:139`) returns `_.isUndefined(o.user) ? undefined : o.user == me`, which leaves `user` undefined for never-owned (→ `undefined`) and sets `user = null` only on `unclaim` (→ `false`). The never-owned case happens to agree by coincidence (both return `undefined`); only the previously-owned case is observable as a parity gap. CTRL-CLAIM-007 covers the never-owned sentinel and currently passes on both engines. Fix shape: either keep `#user` undefined until first claim, or have the `my` getter distinguish initial-null from cleared-null (e.g. via a separate `#everOwned` flag).
@@ -153,6 +149,11 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 - Cause: `checkPull` at `mods/creep/creep.ts:497-502` checks the puller (via `checkCommon` which rejects spawning) and the target type/range, but never checks the target's spawning state. Vanilla rejects pulling a spawning target with `ERR_INVALID_TARGET`.
 - Fix shape: add `() => target.spawning ? C.ERR_INVALID_TARGET : C.OK` to the chain after `checkRange`. One-line addition.
 
+### active-bodyparts-takewhile-front-damage
+- Tests: MOVE-FATIGUE-007
+- Cause: Upstream commit `301685e` ("Active bodypart iteration helper") added `iterateActiveParts` at `mods/creep/creep.ts:450` as `Fn.takeWhile(body, p => p.hits > 0)`, with the comment "Parts die from right to left so you can halt iteration at the first dead part." But `recalculateBody` at `mods/creep/processor.ts:80-86` damages parts left-to-right (`for (const part of creep.body) { hits += 100; part.hits = clamp(0, 100, hits); }`). So a body like `[MOVE, MOVE, WORK, WORK]` after 100 damage becomes `[{MOVE,0}, {MOVE,100}, {WORK,100}, {WORK,100}]` — `takeWhile` halts at index 0 and yields nothing, so `getActiveBodyparts(MOVE)` returns 0. `move()` then returns `ERR_NO_BODYPART`. `getActiveBodyparts`, `calculateCarry`, `calculatePower`, and `calculateBoundedEffect` all share this regression.
+- Fix shape: either (a) replace `Fn.takeWhile(body, activePartPredicate)` with `Fn.filter(body, activePartPredicate)` so the helper truly filters; or (b) reverse the storage order in `recalculateBody` so dead parts accumulate at the end (matches the comment). Option (a) is the safe one-line fix — option (b) churns serialization and damage-distribution semantics.
+
 ### mineral-harvest-no-overflow-drop (misnamed — actually OpenStore.getFreeCapacity bug)
 - Tests: HARVEST-MINERAL-012
 - Cause: Misdiagnosed. The "no overflow drop" symptom is a downstream effect — the real bug is that `OpenStore.getFreeCapacity(specificResource)` returns wrong values for shared-capacity stores. Confirmed via instrumentation: a creep with `{ energy: 45 }` in a 50-cap store reports `getFreeCapacity('H') === 50` instead of 5. The mineral overflow check at `mods/mineral/processor.ts:14` then computes `overflow = max(10 - 50, 0) = 0`, so the harvest absorbs all 10 H into the creep (final state: `{energy: 45, H: 10}`, store at 55/50, over capacity) and never calls `Resource.drop`.
@@ -190,18 +191,6 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
   1. **`Game.cpuLimit` missing** — grep confirms `cpuLimit` is only used in `backend/endpoints/game/shards.ts:12`, never assigned to the runtime `Game` object. The CPU interface at `game/game.ts:115-137` has `Game.cpu.{bucket, limit, tickLimit, getUsed}` but no top-level `Game.cpuLimit`. Vanilla has both.
   2. **`Game.flags` / `Game.powerCreeps` own-property surface mismatch** — these are assigned as plain own data properties (e.g., `mods/flag/game.ts:74`: `Game.flags = flags`), which gives a different `Object.getOwnPropertyDescriptor` shape than vanilla's getter-on-prototype pattern. The surfaces look "the same" to user code but the data-property descriptors differ (`{ value, writable, enumerable, configurable }` vs `{ get, enumerable, configurable }`), which the SHAPE-GAME-001 test detects.
 - Fix shape: (1) Add `Game.cpuLimit` to the gameInitializer hook (mirror of `cpu.limit`). (2) Convert `Game.flags` and `Game.powerCreeps` from `Game.foo = bar` assignments to `Object.defineProperty(Game, 'foo', { get: () => bar, enumerable: true, configurable: true })` to match vanilla's prototype-getter shape.
-
-### dismantle-no-destroy-at-zero-hits
-- Tests: DISMANTLE-007
-- Cause: Literal `// TODO: dismantle event + destroy hook` at `mods/construction/processor.ts:76`. Lines 75-78:
-  ```typescript
-  target.hits -= effect;
-  // TODO: dismantle event + destroy hook
-  // saveAction(creep, 'dismantle', target.pos.x, target.pos.y);
-  context.didUpdate();
-  ```
-  When `target.hits` reaches 0 the structure stays present with `hits=0`. Vanilla destroys the structure in the same tick (and creates a ruin).
-- Fix shape: after `target.hits -= effect`, if `target.hits <= 0` call `createRuin(target)` then `target['#destroy']()` (`game/object.ts:87` already provides the base hook). Mirror the pattern used by `Creep['#applyDamage']` (`mods/creep/creep.ts:78-80`) which calls `this['#destroy']()` when hits drop. Also add the dismantle EVENT_LOG append while you're there.
 
 ### ruin-spill-decay-on-spill-tick
 - Tests: STRUCTURE-HITS-005

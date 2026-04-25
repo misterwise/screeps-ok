@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1093%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-39-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-38-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 03:56 UTC |
-| 🟡 | **xxscreeps** | [1093](#xxscreeps-passing-tests) | [39](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-25 03:54 UTC |
+| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 14:39 UTC |
+| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [38](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-25 14:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -43,7 +43,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 39 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 20 parity gaps against vanilla's canonical behavior, covering 38 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -51,14 +51,13 @@ xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
-| `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
 | `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [9](#xxscreeps-gap-eventlog-attack-missing) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
+| `active-bodyparts-takewhile-front-damage` | `getActiveBodyparts(type)` returns 0 once any earlier-indexed body part is dead. New helper `iterateActiveParts` (introduced in `mods/creep/creep.ts:450` by upstream commit 301685e) does `Fn.takeWhile(body, p => p.hits > 0)`, halting at the first dead part. But `recalculateBody` (`mods/creep/processor.ts:80-86`) damages parts left-to-right, so a partially-damaged creep has dead parts at the front and live parts behind them — `takeWhile` skips the live ones. | `getActiveBodyparts(type)` counts every still-alive part of `type` regardless of dead parts at lower indices. Vanilla canonical: damage is distributed front-first, but the active-part count remains a true filter, not a prefix scan. | [1](#xxscreeps-gap-active-bodyparts-takewhile-front-damage) |
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
-| `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
@@ -106,13 +105,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-container-destroy-no-spill">
-<summary><code>container-destroy-no-spill</code> — 1 test</summary>
-
-- `Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources`
-
-</details>
-
 <details id="xxscreeps-gap-eventlog-attack-missing">
 <summary><code>eventlog-attack-missing</code> — 9 tests</summary>
 
@@ -156,17 +148,17 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-active-bodyparts-takewhile-front-damage">
+<summary><code>active-bodyparts-takewhile-front-damage</code> — 1 test</summary>
+
+- `MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue`
+
+</details>
+
 <details id="xxscreeps-gap-transfer-controller-no-upgrade-redirect">
 <summary><code>transfer-controller-no-upgrade-redirect</code> — 1 test</summary>
 
 - `creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController`
-
-</details>
-
-<details id="xxscreeps-gap-dismantle-no-destroy-at-zero-hits">
-<summary><code>dismantle-no-destroy-at-zero-hits</code> — 1 test</summary>
-
-- `creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0`
 
 </details>
 
@@ -2258,7 +2250,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1093 tests across 100 files</summary>
+<summary>1094 tests across 100 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2432,7 +2424,7 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-017 moveTo() returns OK when already at target
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (14)
+**`tests/01-movement/1.2-fatigue.test.ts`** (13)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
@@ -2447,7 +2439,6 @@ Click a count to jump to the affected test list.
 - MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount XZHO2 (4x reduction)
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 excess MOVE capacity does not produce negative fatigue
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
-- MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
 
 **`tests/01-movement/1.2b-road-fatigue.test.ts`** (5)
 
@@ -2648,12 +2639,13 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-009 partial repair when energy is below full repair cost
 - creep.repair() REPAIR-008 a creep can repair another player's structure
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (6)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (7)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
 - creep.dismantle() DISMANTLE-003 returns ERR_NOT_IN_RANGE
 - creep.dismantle() DISMANTLE-006 dismantle() has Chebyshev range 1 — adjacent only
+- creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
@@ -3003,10 +2995,11 @@ Click a count to jump to the affected test list.
 
 - StructureContainer CONTAINER-003 a hostile creep adjacent to a container can withdraw from it
 
-**`tests/10-structures-energy/10.3b-container-decay.test.ts`** (2)
+**`tests/10-structures-energy/10.3b-container-decay.test.ts`** (3)
 
 - Container decay CONTAINER-001:unowned room container in unowned room decays by 5000 every 100 ticks
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
+- Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
 **`tests/10-structures-energy/10.4-link.test.ts`** (13)
 
