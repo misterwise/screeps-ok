@@ -40,8 +40,9 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // have produced (e.g. v2 added applyUpstreamPatches for lodash-es; v3
 // added buildNestedNativeAddons for isolated-vm + ivm-inspect; v4 added
 // @xxscreeps/lodash3 wiring after upstream extracted lodash from the
-// xxscreeps package into a sibling workspace).
-const stampSchema = 'v4';
+// xxscreeps package into a sibling workspace; v5 dereferences pnpm
+// symlinks during layOutPackages).
+const stampSchema = 'v5';
 
 function stampContent(token) {
 	return `${token}\nschema=${stampSchema}`;
@@ -155,13 +156,15 @@ function validateLocalCheckout(dir) {
 }
 
 function layOutPackages(srcDir) {
+	// `cp -RL` (not cpSync): dereferences pnpm symlinks under XXSCREEPS_LOCAL workspaces.
+	// Without it, the symlinks survive and webpack's bundle module order trips a process.arch TDZ.
 	rmSync(xxscreepsDir, { recursive: true, force: true });
 	mkdirSync(dirname(xxscreepsDir), { recursive: true });
-	cpSync(join(srcDir, 'packages/xxscreeps'), xxscreepsDir, { recursive: true });
+	execFileSync('cp', ['-RL', join(srcDir, 'packages/xxscreeps') + '/.', xxscreepsDir], { stdio: 'inherit' });
 
 	rmSync(pathfinderDir, { recursive: true, force: true });
 	mkdirSync(dirname(pathfinderDir), { recursive: true });
-	cpSync(join(srcDir, 'packages/pathfinder'), pathfinderDir, { recursive: true });
+	execFileSync('cp', ['-RL', join(srcDir, 'packages/pathfinder') + '/.', pathfinderDir], { stdio: 'inherit' });
 }
 
 function inlineTsconfigBase(srcDir) {
