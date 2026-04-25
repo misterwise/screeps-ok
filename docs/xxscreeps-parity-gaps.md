@@ -1,19 +1,15 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (39 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (21 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`.
 
-Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
+Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here.
 
 ## Confirmed (root cause in hand)
-
-### boost-energy-cost-scales
-- Tests: BOOST-BUILD-002, BOOST-UPGRADE-002
-- Cause: `calculatePower()` (boosted output) is reused as the energy charge — `mods/controller/processor.ts:173-182`, `mods/construction/processor.ts:89-94`. Energy should derive from unboosted WORK part count.
 
 ### container-destroy-no-spill
 - Tests: CONTAINER-002
@@ -22,14 +18,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 ### controller-my-previously-owned-returns-undefined
 - Tests: CTRL-UNCLAIM-001, CTRL-DOWNGRADE-002
 - Cause: `OwnedStructure.my` at `mods/structure/structure.ts:108-111` returns `user === null ? undefined : user === me`. xxscreeps stores `#user = null` for *both* never-owned controllers (initial state) and previously-owned controllers (after `unclaim()` or downgrade-to-zero), so the getter returns `undefined` in both cases — the engine cannot distinguish the two states. Vanilla's getter (`@screeps/engine/src/game/structures.js:139`) returns `_.isUndefined(o.user) ? undefined : o.user == me`, which leaves `user` undefined for never-owned (→ `undefined`) and sets `user = null` only on `unclaim` (→ `false`). The never-owned case happens to agree by coincidence (both return `undefined`); only the previously-owned case is observable as a parity gap. CTRL-CLAIM-007 covers the never-owned sentinel and currently passes on both engines. Fix shape: either keep `#user` undefined until first claim, or have the `my` getter distinguish initial-null from cleared-null (e.g. via a separate `#everOwned` flag).
-
-### safemode-ignores-downgrade-threshold
-- Tests: CTRL-SAFEMODE-005
-- Cause: `checkActivateSafeMode` at `mods/controller/controller.ts:103-115` checks `safeModeAvailable`, `safeModeCooldown`, and `safeMode`, but has no `ticksToDowngrade < CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` (15000) guard. Vanilla returns `ERR_TIRED` when the downgrade timer is below the threshold.
-
-### death-container-diversion
-- Tests: CREEP-DEATH-003
-- Cause: `buryCreep` always invokes the standard tombstone path; no same-tile container redirect — `mods/creep/processor.ts:282`.
 
 ### destroy-ownership-bypass
 - Tests: STRUCTURE-API-001
@@ -51,10 +39,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 - Tests: FACTORY-PRODUCE-010 (got `-14` ERR_RCL_NOT_ENOUGH, expected `-1` ERR_NOT_OWNER)
 - Cause: Same root as `destroy-ownership-bypass` / `lab-not-owner-precedence`. `checkMyStructure` at `mods/structure/structure.ts:206` accepts the call because `room.controller?.my` is true for p1 even though the factory is p2's. `checkProduce` then reaches `checkIsActive` which returns `ERR_RCL_NOT_ENOUGH` via `checkActiveStructures`. Fixing `checkMyStructure` to require `structure.my` for `OwnedStructure` subclasses resolves this alongside lab/observer/destroy variants.
 
-### generate-safe-mode-requires-work
-- Tests: CTRL-GENSAFE-001..004
-- Cause: `checkGenerateSafeMode` chains `checkCommon(creep, C.WORK)` and rejects bodyless creeps — `mods/controller/creep.ts:155`. Vanilla has no body-part precondition.
-
 ### link-cross-owner
 - Tests: LINK-006
 - Cause: `checkTransferEnergy` has no cross-owner test — `mods/logistics/link.ts:66-82`.
@@ -62,10 +46,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 ### link-self-transfer
 - Tests: LINK-004
 - Cause: Same `checkTransferEnergy` — no `link.id === target.id` rejection — `mods/logistics/link.ts:66-82`.
-
-### notifyWhenAttacked-not-implemented
-- Tests: STRUCTURE-API-004, STRUCTURE-API-005, STRUCTURE-API-006
-- Cause: No `notifyWhenAttacked` method registered anywhere under `mods/structure`; the API simply does not exist.
 
 ### rampart-no-protection
 - Tests: RAMPART-PROTECT-001, RAMPART-PROTECT-002, DISMANTLE-004, COMBAT-MELEE-005, COMBAT-RANGED-006, COMBAT-RMA-004
@@ -76,15 +56,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 ### renew-while-spawning
 - Tests: RENEW-CREEP-009
 - Cause: `checkRenewCreep` does not test `spawn.spawning` before returning OK — `mods/spawn/spawn.ts:270-289`.
-
-### safemode-concurrent-allowed
-- Tests: CTRL-SAFEMODE-007
-- Cause: `checkActivateSafeMode` only inspects the target controller; no per-player single-active-room guard — `mods/controller/controller.ts:103-115`.
-
-### tombstone-corpse-rate (also covers tombstone-store-missing)
-- Tests: CREEP-DEATH-008, CREEP-DEATH-009, TOMBSTONE-003
-- Cause: `buryCreep` (`mods/creep/tombstone.ts:68-86`) uniformly applies `CREEP_CORPSE_RATE` to carried resources and adds zero body-part energy reclaim. Vanilla formula: tombstone.store[energy] = `floor(sum(BODYPART_COST[part] × CREEP_CORPSE_RATE × ticksToLive / CREEP_LIFE_TIME))` (body reclaim) + carried energy (no rate multiplier on suicide; rate-multiplied on combat death). Same bug bites both the suicide path (CREEP-DEATH-008/009) and combat-kill path (TOMBSTONE-003).
-- Fix shape: in `buryCreep`, compute `lifeRate = CREEP_CORPSE_RATE × creep.ticksToLive / CREEP_LIFE_TIME`, then `bodyEnergy = floor(sum(BODYPART_COST[part.type] × lifeRate))`. Add `bodyEnergy` to `tombstone.store[RESOURCE_ENERGY]` after the carried-resource copy. The carried-resource rate handling needs a `dropRate` parameter (`1.0` for suicide, `CREEP_CORPSE_RATE` for combat) — vanilla's `_die(dropRate)` API.
 
 ### tough-boost-no-reduction
 - Tests: BOOST-TOUGH-001, BOOST-TOUGH-002
@@ -115,8 +86,8 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 - Fix: add `context.didUpdate()` after `saveAction` at line 18.
 
 ### eventlog-attack-missing
-- Tests: ROOM-EVENTLOG-001, ROOM-EVENTLOG-002 (got empty array / undefined)
-- Cause: Events ARE appended during processing, but `#eventLog` is cleared at the start of each tick (`mods/engine/processor/room.ts:97`). The loaded room state for the next player() call may not carry over the appended events if the save/load cycle doesn't persist them between the processing tick and the next player read.
+- Tests: ROOM-EVENTLOG-001, 002, 005..011 (9 tests across EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER)
+- Cause: The upstream event-log PR (#107) adds emission sites for these events but is not yet merged. Once landed, the pin-bump that includes it should close all 9 tests in one go.
 
 ### route-callback-ignored
 - Tests: MAP-ROUTE-003 (got route result, expected ERR_NO_PATH)
@@ -182,11 +153,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 - Cause: `checkPull` at `mods/creep/creep.ts:497-502` checks the puller (via `checkCommon` which rejects spawning) and the target type/range, but never checks the target's spawning state. Vanilla rejects pulling a spawning target with `ERR_INVALID_TARGET`.
 - Fix shape: add `() => target.spawning ? C.ERR_INVALID_TARGET : C.OK` to the chain after `checkRange`. One-line addition.
 
-### findpath-same-pos-not-empty
-- Tests: LEGACY-PATH-006
-- Cause: `Room#findPath` at `game/room/path.ts:127-162` runs `PathFinder.roomSearch` (which returns `result.path = []` for same-position) but then the "auto-add last position for range:1 paths" branch at lines 132-140 fires unconditionally for same-pos: `result.path.length` is 0 (falsy), so the OR falls through to `origin.isNearTo(goal)`, which is `true` for same-position (range 0 ≤ 1). The branch pushes `goal` onto the empty path, yielding a 1-step path. The downstream loop at lines 143-157 then builds a single entry with `dx = dy = 0` and `direction = origin.getDirectionTo(goal)`.
-- Fix shape: short-circuit at the top of `findPath` — `if (origin.isEqualTo(goal)) return options.serialize ? '' : [];`. Or tighten the auto-add condition at line 137 to `origin.isNearTo(goal) && !origin.isEqualTo(goal)`.
-
 ### mineral-harvest-no-overflow-drop (misnamed — actually OpenStore.getFreeCapacity bug)
 - Tests: HARVEST-MINERAL-012
 - Cause: Misdiagnosed. The "no overflow drop" symptom is a downstream effect — the real bug is that `OpenStore.getFreeCapacity(specificResource)` returns wrong values for shared-capacity stores. Confirmed via instrumentation: a creep with `{ energy: 45 }` in a 50-cap store reports `getFreeCapacity('H') === 50` instead of 5. The mineral overflow check at `mods/mineral/processor.ts:14` then computes `overflow = max(10 - 50, 0) = 0`, so the harvest absorbs all 10 H into the creep (final state: `{energy: 45, H: 10}`, store at 55/50, over capacity) and never calls `Resource.drop`.
@@ -207,11 +173,6 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
   2. **Wall missing `ticksToLive`** — `StructureWall` (`mods/defense/wall.ts:15-22`) overrides `hitsMax` and `structureType` but has no `ticksToLive` getter at all. Vanilla constructedWall exposes `ticksToLive` (returns null for permanent player walls; ticks for temporary boundary/swamp walls).
   3. **Ruin missing `structureType`** — `mods/structure/ruin.ts:60` defines `structureType` via `Object.defineProperties(structure, ...)` on the INNER `ruin.structure` sub-object, not on the Ruin itself. Vanilla exposes `structureType` directly on the ruin.
 - Fix shape: (1) move `hits`/`hitsMax`/`my` from base to per-subclass — every subclass that has those concepts gets explicit getters. Subclasses without them (Source, Mineral, Resource, etc.) inherit nothing. (2) Add `ticksToLive` getter to `StructureWall`. (3) Add a top-level `structureType` getter on `Ruin` that delegates to `this['#structure'].type`.
-
-### shape-struct-missing-legacy-compat
-- Tests: SHAPE-STRUCT-001:link, SHAPE-STRUCT-001:storage
-- Cause: Confirmed via grep — no `energy`, `energyCapacity`, or `storeCapacity` getters defined anywhere in `mods/logistics/` (link/storage live there). Vanilla provides legacy compat aliases: `link.energy` → `link.store[RESOURCE_ENERGY]`, `link.energyCapacity` → `link.store.getCapacity(RESOURCE_ENERGY)`, `storage.storeCapacity` → `storage.store.getCapacity()`.
-- Fix shape: add three getters — `StructureLink#get energy()`, `StructureLink#get energyCapacity()`, `StructureStorage#get storeCapacity()` — each delegating to the corresponding `store` method.
 
 ### shape-body-part-always-has-boost
 - Tests: SHAPE-CREEP-002, SHAPE-CREEP-003
@@ -260,13 +221,9 @@ Last refreshed: 2026-04-22 against `adapters/xxscreeps/parity.json`.
 - Cause: Adapter bug, not engine. Same shape as the 2026-04-11 `placeStructure` ticksToDecay fix. `placeTombstone` (`adapters/xxscreeps/index.ts:452`) and `placeRuin` (`adapters/xxscreeps/index.ts:483`) compute the absolute decay anchor as `(spec.deathTime ?? 0) + (spec.ticksToDecay ?? 500)` and `(spec.destroyTime ?? 0) + (spec.ticksToDecay ?? 500)` respectively. With the death/destroy time defaulted to 0, the resulting absolute `#decayTime` is just `ticksToDecay` — already in the past once `shard.time` advances. Engine processors anchor correctly: `mods/creep/tombstone.ts:83` does `Game.time + body.length × TOMBSTONE_DECAY_PER_PART`, `mods/structure/ruin.ts:84` does `Game.time + decayTimeout`.
 - Fix shape: anchor on live shard time, mirror of the `setStructureNextDecayTime` call at `index.ts:330`. Replace the `(deathTime ?? 0) + (ticksToDecay ?? 500)` argument with `this.simulation!.shard.time + (spec.ticksToDecay ?? 500)`. The `deathTime`/`destroyTime` spec fields should remain as cosmetic setters for `tombstone.deathTime` / `ruin.destroyTime` (already done at index.ts:435 / 468) but stop participating in the decay-anchor math.
 
-### foreign-segment-not-supported
-- Tests: RAWMEMORY-FOREIGN-002, RAWMEMORY-FOREIGN-003, RAWMEMORY-FOREIGN-004
-- Cause: Three holes:
-  1. **Driver fetch unimplemented** — `mods/memory/driver.ts:55-57` captures `foreignSegmentRequest` from the runtime but the refresh handler is a literal `// TODO` (never loads the foreign user's segment from the DB).
-  2. **`setDefaultPublicSegment` no-op** — `mods/memory/memory.ts:129` is `console.error('TODO: setDefaultPublicSegment')`.
-  3. **`setPublicSegments` no-op** — `mods/memory/memory.ts:136` is a silent stub (`/* console.error('TODO: setPublicSegments') */`).
-- Plus: `RawMemory.foreignSegment` is never declared on the `RawMemory` object (`mods/memory/memory.ts:56-137`) — even if the driver fetched the blob, there's no return path. Needs a new `payload.foreignSegment` field on `TickPayload` mirroring `memorySegments`, plus a `loadForeignSegment(payload.foreignSegment)` in the runtime connector that assigns onto `RawMemory.foreignSegment`.
+### foreign-segment-not-supported (residual)
+- Tests: RAWMEMORY-FOREIGN-006
+- Cause: Upstream PR #131 ("Implement foreign and public memory segments") closed the bulk of this gap (5 of 6 sub-tests now pass). The residual is `setActiveForeignSegment(null)` not clearing the pending request — `RawMemory.foreignSegment` stays populated on the next tick instead of going back to `undefined`.
 
 ### road-site-progresstotal-no-terrain-scaling
 - Tests: CONSTRUCTION-COST-003:wall, CONSTRUCTION-COST-003:swamp

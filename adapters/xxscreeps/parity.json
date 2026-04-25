@@ -1,20 +1,5 @@
 {
 	"expected_failures": {
-		"tombstone-corpse-rate": {
-			"actual": "No body energy/mineral reclaim at all on death — `mods/creep/tombstone.ts` buryCreep only multiplies carried store by rate, never iterates the body for part-cost or boost resources",
-			"expected": "On death, tombstone store includes reclaimed body resources (`BODYPART_COST[type] * lifeRate`, boost minerals at `LAB_BOOST_MINERAL * lifeRate`). CLAIM bodies use `CREEP_CLAIM_LIFE_TIME` as the life-rate denominator; other bodies use `CREEP_LIFE_TIME`",
-			"tests": ["CREEP-DEATH-009", "CREEP-DEATH-010"]
-		},
-		"death-carried-store-rate-multiplied": {
-			"actual": "`buryCreep` multiplies carried store by `rate` (`Math.floor(amount * CREEP_CORPSE_RATE)`), so a creep carrying 50 energy leaves only 10 in the tombstone",
-			"expected": "Carried resources are deposited 1:1 regardless of `dropRate` (vanilla `_die.js:75-91` iterates `object.store` without the rate multiplier — only body-reclaim resources are scaled by `lifeRate`)",
-			"tests": ["CREEP-DEATH-004", "CREEP-DEATH-008"]
-		},
-		"death-container-diversion": {
-			"actual": "Creep death never diverts into a same-tile container — `buryCreep` writes directly to the tombstone. Mixed-resource deaths that should sequentially fill the container (body-energy, then body-minerals, then carried store) leave the container untouched",
-			"expected": "Death resources flow into a live same-tile container before any tombstone remainder, with each resource type tried against the container's current free capacity in vanilla's deposit order",
-			"tests": ["CREEP-DEATH-003", "CREEP-DEATH-012"]
-		},
 		"rampart-no-protection": {
 			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
 			"expected": "Damage targeting an object on a rampart tile is redirected to the rampart",
@@ -35,60 +20,25 @@
 			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
 			"tests": ["RECYCLE-CREEP-002"]
 		},
-		"safemode-concurrent-allowed": {
-			"actual": "Allows `activateSafeMode` on multiple owned controllers simultaneously",
-			"expected": "Returns `ERR_BUSY` when any owned controller already has an active safe mode",
-			"tests": ["CTRL-SAFEMODE-007"]
-		},
-		"safemode-same-tick-no-dedupe": {
-			"actual": "Both same-tick `activateSafeMode` intents are processed — every targeted controller enters safe mode and consumes its `safeModeAvailable` charge",
-			"expected": "Only the most recent intent is processed (vanilla last-intent-wins on same-tick activations); earlier intents are dropped so those controllers retain their `safeModeAvailable` charge",
-			"tests": ["CTRL-SAFEMODE-008"]
-		},
 		"container-destroy-no-spill": {
 			"actual": "Container destroyed by decay does not drop its contents as ground resources",
 			"expected": "Container contents become dropped resources on the tile when decay destroys it",
 			"tests": ["CONTAINER-002"]
 		},
-		"notifyWhenAttacked-not-implemented": {
-			"actual": "`structure.notifyWhenAttacked()` not implemented",
-			"expected": "Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick",
-			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006", "STRUCTURE-API-007", "STRUCTURE-API-008"]
-		},
 		"eventlog-attack-missing": {
-			"actual": "`getEventLog()` missing `EVENT_ATTACK` entries for combat",
-			"expected": "`EVENT_ATTACK` entries appear in the event log for each combat hit",
-			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002"]
-		},
-		"boost-energy-cost-scales": {
-			"actual": "Energy cost scales with boost multiplier for repair/upgrade",
-			"expected": "Boosted repair/upgrade consume the same unboosted energy amount per work part",
-			"tests": ["BOOST-BUILD-002", "BOOST-UPGRADE-002"]
+			"actual": "Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER",
+			"expected": "All canonical event types appear in `getEventLog()` at their triggering points",
+			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002", "ROOM-EVENTLOG-005", "ROOM-EVENTLOG-006", "ROOM-EVENTLOG-007", "ROOM-EVENTLOG-008", "ROOM-EVENTLOG-009", "ROOM-EVENTLOG-010", "ROOM-EVENTLOG-011"]
 		},
 		"withdraw-enemy-rampart-no-protection": {
 			"actual": "`withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart",
 			"expected": "Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart",
 			"tests": ["WITHDRAW-005"]
 		},
-		"generate-safe-mode-requires-work": {
-			"actual": "`generateSafeMode()` requires a `WORK` body part (checkCommon guard)",
-			"expected": "No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range",
-			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
-		},
 		"controller-my-never-owned-returns-false": {
 			"actual": "`StructureController.my` returns `false` on a never-owned controller (`#user` undefined)",
 			"expected": "Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade)",
 			"tests": ["CTRL-CLAIM-007"]
-		},
-		"safemode-ignores-downgrade-threshold": {
-			"actual": "`activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`",
-			"expected": "Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold",
-			"tests": ["CTRL-SAFEMODE-005"]
-		},
-		"tombstone-store-missing": {
-			"actual": "Tombstone snapshot does not include store energy from combat kills",
-			"expected": "Tombstone `store` includes carried resources plus body-part corpse energy",
-			"tests": ["TOMBSTONE-003"]
 		},
 		"moveto-nopathfinding-returns-ok": {
 			"actual": "`moveTo({noPathFinding: true})` returns `OK` when no cached path exists",
@@ -100,11 +50,6 @@
 			"expected": "Returns `ERR_INVALID_TARGET` when the target is a spawning creep",
 			"tests": ["MOVE-PULL-007:spawning"]
 		},
-		"findpath-same-pos-not-empty": {
-			"actual": "`Room.findPath()` returns a 1-step path when source equals destination",
-			"expected": "Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match",
-			"tests": ["LEGACY-PATH-006"]
-		},
 		"transfer-controller-no-upgrade-redirect": {
 			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
 			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
@@ -114,16 +59,6 @@
 			"actual": "`dismantle()` reducing hits to `0` leaves the structure present with `hits=0`",
 			"expected": "Structure is destroyed in the same tick once hits reach `0`",
 			"tests": ["DISMANTLE-007"]
-		},
-		"shape-wall-and-ruin-residual": {
-			"actual": "`constructedWall` is missing canonical fields and `ruin` is missing `structureType`",
-			"expected": "`constructedWall` matches the canonical structure shape; `ruin` exposes `structureType`",
-			"tests": ["SHAPE-STRUCT-001:constructedWall", "SHAPE-RUIN-001"]
-		},
-		"shape-struct-missing-legacy-compat": {
-			"actual": "Structure missing legacy compat getter: `storage.storeCapacity`",
-			"expected": "Legacy compat getter is present on `storage`",
-			"tests": ["SHAPE-STRUCT-001:storage"]
 		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
@@ -151,9 +86,9 @@
 			"tests": ["MEMORY-002"]
 		},
 		"foreign-segment-not-supported": {
-			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
-			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
-			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004", "RAWMEMORY-FOREIGN-005", "RAWMEMORY-FOREIGN-006", "RAWMEMORY-FOREIGN-008"]
+			"actual": "`setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick",
+			"expected": "Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick",
+			"tests": ["RAWMEMORY-FOREIGN-006"]
 		},
 		"packedpos-write-ignored": {
 			"actual": "Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`)",

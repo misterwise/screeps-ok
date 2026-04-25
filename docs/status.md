@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-9%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1093%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-39-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,24 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 02:50 UTC |
-| 🔴 | **xxscreeps** | [1062](#xxscreeps-passing-tests) | [61](#xxscreeps-expected-failures) | [9](#xxscreeps-unexpected-failures) | [168](#xxscreeps-skipped-tests) | 2026-04-25 02:47 UTC |
+| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 03:56 UTC |
+| 🟡 | **xxscreeps** | [1093](#xxscreeps-passing-tests) | [39](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-25 03:54 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## xxscreeps unexpected failures
-
-- `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
-- `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
-- `room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"`
-- `room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType`
-- `room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction`
-- `room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y`
-- `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
-- `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
-- `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
 
 ## vanilla expected failures
 
@@ -55,70 +43,33 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 33 parity gaps against vanilla's canonical behavior, covering 61 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 39 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `tombstone-corpse-rate` | No body energy/mineral reclaim at all on death — `mods/creep/tombstone.ts` buryCreep only multiplies carried store by rate, never iterates the body for part-cost or boost resources | On death, tombstone store includes reclaimed body resources (`BODYPART_COST[type] * lifeRate`, boost minerals at `LAB_BOOST_MINERAL * lifeRate`). CLAIM bodies use `CREEP_CLAIM_LIFE_TIME` as the life-rate denominator; other bodies use `CREEP_LIFE_TIME` | [2](#xxscreeps-gap-tombstone-corpse-rate) |
-| `death-carried-store-rate-multiplied` | `buryCreep` multiplies carried store by `rate` (`Math.floor(amount * CREEP_CORPSE_RATE)`), so a creep carrying 50 energy leaves only 10 in the tombstone | Carried resources are deposited 1:1 regardless of `dropRate` (vanilla `_die.js:75-91` iterates `object.store` without the rate multiplier — only body-reclaim resources are scaled by `lifeRate`) | [3](#xxscreeps-gap-death-carried-store-rate-multiplied) |
-| `death-container-diversion` | Creep death never diverts into a same-tile container — `buryCreep` writes directly to the tombstone. Mixed-resource deaths that should sequentially fill the container (body-energy, then body-minerals, then carried store) leave the container untouched | Death resources flow into a live same-tile container before any tombstone remainder, with each resource type tried against the container's current free capacity in vanilla's deposit order | [2](#xxscreeps-gap-death-container-diversion) |
 | `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
-| `safemode-concurrent-allowed` | Allows `activateSafeMode` on multiple owned controllers simultaneously | Returns `ERR_BUSY` when any owned controller already has an active safe mode | [1](#xxscreeps-gap-safemode-concurrent-allowed) |
-| `safemode-same-tick-no-dedupe` | Both same-tick `activateSafeMode` intents are processed — every targeted controller enters safe mode and consumes its `safeModeAvailable` charge | Only the most recent intent is processed (vanilla last-intent-wins on same-tick activations); earlier intents are dropped so those controllers retain their `safeModeAvailable` charge | [1](#xxscreeps-gap-safemode-same-tick-no-dedupe) |
 | `container-destroy-no-spill` | Container destroyed by decay does not drop its contents as ground resources | Container contents become dropped resources on the tile when decay destroys it | [1](#xxscreeps-gap-container-destroy-no-spill) |
-| `notifyWhenAttacked-not-implemented` | `structure.notifyWhenAttacked()` not implemented | Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick | [5](#xxscreeps-gap-notifywhenattacked-not-implemented) |
-| `boost-energy-cost-scales` | Energy cost scales with boost multiplier for repair/upgrade | Boosted repair/upgrade consume the same unboosted energy amount per work part | [2](#xxscreeps-gap-boost-energy-cost-scales) |
+| `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [9](#xxscreeps-gap-eventlog-attack-missing) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
-| `generate-safe-mode-requires-work` | `generateSafeMode()` requires a `WORK` body part (checkCommon guard) | No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range | [4](#xxscreeps-gap-generate-safe-mode-requires-work) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
-| `safemode-ignores-downgrade-threshold` | `activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD` | Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold | [1](#xxscreeps-gap-safemode-ignores-downgrade-threshold) |
-| `tombstone-store-missing` | Tombstone snapshot does not include store energy from combat kills | Tombstone `store` includes carried resources plus body-part corpse energy | [1](#xxscreeps-gap-tombstone-store-missing) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
-| `findpath-same-pos-not-empty` | `Room.findPath()` returns a 1-step path when source equals destination | Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match | [1](#xxscreeps-gap-findpath-same-pos-not-empty) |
 | `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
 | `dismantle-no-destroy-at-zero-hits` | `dismantle()` reducing hits to `0` leaves the structure present with `hits=0` | Structure is destroyed in the same tick once hits reach `0` | [1](#xxscreeps-gap-dismantle-no-destroy-at-zero-hits) |
-| `shape-wall-and-ruin-residual` | `constructedWall` is missing canonical fields and `ruin` is missing `structureType` | `constructedWall` matches the canonical structure shape; `ruin` exposes `structureType` | [2](#xxscreeps-gap-shape-wall-and-ruin-residual) |
-| `shape-struct-missing-legacy-compat` | Structure missing legacy compat getter: `storage.storeCapacity` | Legacy compat getter is present on `storage` | [1](#xxscreeps-gap-shape-struct-missing-legacy-compat) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `foreign-segment-not-supported` | `RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null` | Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick | [6](#xxscreeps-gap-foreign-segment-not-supported) |
+| `foreign-segment-not-supported` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-not-supported) |
 | `packedpos-write-ignored` | Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`) | Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges) | [1](#xxscreeps-gap-packedpos-write-ignored) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [3](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-tombstone-corpse-rate">
-<summary><code>tombstone-corpse-rate</code> — 2 tests</summary>
-
-- `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
-- `creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate`
-
-</details>
-
-<details id="xxscreeps-gap-death-carried-store-rate-multiplied">
-<summary><code>death-carried-store-rate-multiplied</code> — 3 tests</summary>
-
-- `creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone`
-- `creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone`
-- `creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container`
-
-</details>
-
-<details id="xxscreeps-gap-death-container-diversion">
-<summary><code>death-container-diversion</code> — 2 tests</summary>
-
-- `creep death CREEP-DEATH-003 death resources go into a same-tile container first`
-- `creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone`
-
-</details>
 
 <details id="xxscreeps-gap-rampart-no-protection">
 <summary><code>rampart-no-protection</code> — 6 tests</summary>
@@ -155,20 +106,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-safemode-concurrent-allowed">
-<summary><code>safemode-concurrent-allowed</code> — 1 test</summary>
-
-- `Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode`
-
-</details>
-
-<details id="xxscreeps-gap-safemode-same-tick-no-dedupe">
-<summary><code>safemode-same-tick-no-dedupe</code> — 1 test</summary>
-
-- `Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent`
-
-</details>
-
 <details id="xxscreeps-gap-container-destroy-no-spill">
 <summary><code>container-destroy-no-spill</code> — 1 test</summary>
 
@@ -176,22 +113,18 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-notifywhenattacked-not-implemented">
-<summary><code>notifyWhenAttacked-not-implemented</code> — 5 tests</summary>
+<details id="xxscreeps-gap-eventlog-attack-missing">
+<summary><code>eventlog-attack-missing</code> — 9 tests</summary>
 
-- `structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure`
-- `structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean`
-- `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument`
-- `structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room`
-- `structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room`
-
-</details>
-
-<details id="xxscreeps-gap-boost-energy-cost-scales">
-<summary><code>boost-energy-cost-scales</code> — 2 tests</summary>
-
-- `BOOST-BUILD-002 build/repair boosts do not increase energy cost boosted repair costs 1 energy per REPAIR_POWER hits repaired`
-- `BOOST-UPGRADE-002 upgrade boosts do not increase energy cost boosted upgrade costs 1 energy per progress point`
+- `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
+- `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
+- `room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"`
+- `room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType`
+- `room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction`
+- `room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y`
+- `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
+- `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
+- `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
 
 </details>
 
@@ -202,34 +135,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-generate-safe-mode-requires-work">
-<summary><code>generate-safe-mode-requires-work</code> — 4 tests</summary>
-
-- `creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store`
-- `creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller`
-- `creep.generateSafeMode() CTRL-GENSAFE-003 generateSafeMode increments the controller's safeModeAvailable`
-- `creep.generateSafeMode() CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium`
-
-</details>
-
 <details id="xxscreeps-gap-controller-my-never-owned-returns-false">
 <summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
 
 - `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
-
-</details>
-
-<details id="xxscreeps-gap-safemode-ignores-downgrade-threshold">
-<summary><code>safemode-ignores-downgrade-threshold</code> — 1 test</summary>
-
-- `Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`
-
-</details>
-
-<details id="xxscreeps-gap-tombstone-store-missing">
-<summary><code>tombstone-store-missing</code> — 1 test</summary>
-
-- `Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death`
 
 </details>
 
@@ -247,13 +156,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-findpath-same-pos-not-empty">
-<summary><code>findpath-same-pos-not-empty</code> — 1 test</summary>
-
-- `Legacy Pathfinding LEGACY-PATH-006 findPath() returns empty array when source equals destination`
-
-</details>
-
 <details id="xxscreeps-gap-transfer-controller-no-upgrade-redirect">
 <summary><code>transfer-controller-no-upgrade-redirect</code> — 1 test</summary>
 
@@ -265,21 +167,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>dismantle-no-destroy-at-zero-hits</code> — 1 test</summary>
 
 - `creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0`
-
-</details>
-
-<details id="xxscreeps-gap-shape-wall-and-ruin-residual">
-<summary><code>shape-wall-and-ruin-residual</code> — 2 tests</summary>
-
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape`
-- `26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape`
-
-</details>
-
-<details id="xxscreeps-gap-shape-struct-missing-legacy-compat">
-<summary><code>shape-struct-missing-legacy-compat</code> — 1 test</summary>
-
-- `26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape`
 
 </details>
 
@@ -320,14 +207,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-foreign-segment-not-supported">
-<summary><code>foreign-segment-not-supported</code> — 6 tests</summary>
+<summary><code>foreign-segment-not-supported</code> — 1 test</summary>
 
-- `Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data`
-- `Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed`
-- `Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers`
-- `Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks`
 - `Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request`
-- `Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick`
 
 </details>
 
@@ -2376,7 +2258,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1062 tests across 99 files</summary>
+<summary>1093 tests across 100 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2639,12 +2521,13 @@ Click a count to jump to the affected test list.
 - CostMatrix COSTMATRIX-008 CostMatrix values 1–254 override terrain cost
 - CostMatrix COSTMATRIX-007 CostMatrix value 255 means the tile is unwalkable
 
-**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (8)
+**`tests/02-pathfinding/2.3-legacy-path.test.ts`** (9)
 
 - Legacy Pathfinding LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room
 - Legacy Pathfinding LEGACY-PATH-002 Room.serializePath() and Room.deserializePath() round-trip a path
 - Legacy Pathfinding LEGACY-PATH-004 findPath() returns empty array when source is not in the room
 - Legacy Pathfinding LEGACY-PATH-005 findPath() with cross-room destination returns only intra-room steps
+- Legacy Pathfinding LEGACY-PATH-006 findPath() returns empty array when source equals destination
 - Legacy Pathfinding LEGACY-PATH-007 findPath() returns a single step for adjacent positions
 - Legacy Pathfinding LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
@@ -2845,6 +2728,13 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 
+**`tests/06-controller/6.6-gensafemode.test.ts`** (4)
+
+- creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store
+- creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- creep.generateSafeMode() CTRL-GENSAFE-003 generateSafeMode increments the controller's safeModeAvailable
+- creep.generateSafeMode() CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium
+
 **`tests/06-controller/6.7-downgrade.test.ts`** (7)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
@@ -2855,12 +2745,15 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 
-**`tests/06-controller/6.8-safemode.test.ts`** (12)
+**`tests/06-controller/6.8-safemode.test.ts`** (15)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
 - Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
 - Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
+- Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
+- Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent
+- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
 - Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack returns guard code under safe mode
@@ -2981,7 +2874,7 @@ Click a count to jump to the affected test list.
 - BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 attack: 1 boosted + 1 unboosted ATTACK sums correctly
 - BOOST-AGGREGATION-001 per-part boost aggregation BOOST-AGGREGATION-001 repair: 2 boosted + 1 unboosted WORK sums correctly
 
-**`tests/08-boosts/8.4-8.13-boost-magnitudes.test.ts`** (33)
+**`tests/08-boosts/8.4-8.13-boost-magnitudes.test.ts`** (35)
 
 - BOOST-RANGED-001 rangedAttack boost magnitudes KO (2x)
 - BOOST-RANGED-001 rangedAttack boost magnitudes KHO2 (3x)
@@ -3002,9 +2895,11 @@ Click a count to jump to the affected test list.
 - BOOST-BUILD-001 build/repair boost magnitudes LH repair (1.5x)
 - BOOST-BUILD-001 build/repair boost magnitudes LH2O repair (1.8x)
 - BOOST-BUILD-001 build/repair boost magnitudes XLH2O repair (2x)
+- BOOST-BUILD-002 build/repair boosts do not increase energy cost boosted repair costs 1 energy per REPAIR_POWER hits repaired
 - BOOST-UPGRADE-001 upgrade boost magnitudes GH (1.5x)
 - BOOST-UPGRADE-001 upgrade boost magnitudes GH2O (1.8x)
 - BOOST-UPGRADE-001 upgrade boost magnitudes XGH2O (2x)
+- BOOST-UPGRADE-002 upgrade boosts do not increase energy cost boosted upgrade costs 1 energy per progress point
 - BOOST-TOUGH-001 tough damage reduction magnitudes GO (0.7x damage taken)
 - BOOST-TOUGH-001 tough damage reduction magnitudes GHO2 (0.5x damage taken)
 - BOOST-TOUGH-001 tough damage reduction magnitudes XGHO2 (0.3x damage taken)
@@ -3063,12 +2958,16 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (11)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
 - creep.suicide() CREEP-SUICIDE-003 suicide returns ERR_NOT_OWNER on another player's creep
 - creep.suicide() CREEP-SUICIDE-004 suicide returns ERR_BUSY on a spawning creep
+- creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone
+- creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate
+- creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone
+- creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone
 - creep.say() CREEP-SAY-001 say() makes the message visible to the owner for one tick
 - creep.say() CREEP-SAY-002 say(message, true) makes the message visible to all players
 - creep.say() CREEP-SAY-003 without the public flag, only the owner sees the message
@@ -3083,13 +2982,16 @@ Click a count to jump to the affected test list.
 - creep lifetime CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive
 - creep lifetime CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive
 
-**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (6)
+**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (9)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
 - creep death CREEP-DEATH-002 death creates a tombstone at the position of death
+- creep death CREEP-DEATH-003 death resources go into a same-tile container first
+- creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
 - creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
 - creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
+- creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone
 - creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
 
 **`tests/10-structures-energy/10.1-extension.test.ts`** (2)
@@ -3404,11 +3306,16 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (3)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (8)
 
 - structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
 - structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
 - structure.destroy() STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store
+- structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
+- structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
+- structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
+- structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room
+- structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
@@ -3484,10 +3391,11 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
 - mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (3)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (4)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
+- Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (5)
@@ -3637,7 +3545,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (11)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (16)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
@@ -3648,10 +3556,15 @@ Click a count to jump to the affected test list.
 - RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
 - RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
 - Foreign segments RAWMEMORY-FOREIGN-001 setActiveForeignSegment does not replace foreignSegment same tick
+- Foreign segments RAWMEMORY-FOREIGN-002 foreignSegment exposes username, id, and data
+- Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
+- Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
+- Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks
 - Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
+- Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (29)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (32)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
@@ -3667,8 +3580,10 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:spawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extension structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:constructedWall structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:rampart structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:link structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:storage structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:tower structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extractor structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:lab structure data-property surface matches canonical shape
@@ -3682,6 +3597,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 
 **`tests/27-undocumented/27.1-memhack.test.ts`** (6)
 

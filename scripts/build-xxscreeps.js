@@ -38,8 +38,10 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 
 // Bump when the build pipeline gains a step that prior stamps wouldn't
 // have produced (e.g. v2 added applyUpstreamPatches for lodash-es; v3
-// added buildNestedNativeAddons for isolated-vm + ivm-inspect).
-const stampSchema = 'v3';
+// added buildNestedNativeAddons for isolated-vm + ivm-inspect; v4 added
+// @xxscreeps/lodash3 wiring after upstream extracted lodash from the
+// xxscreeps package into a sibling workspace).
+const stampSchema = 'v4';
 
 function stampContent(token) {
 	return `${token}\nschema=${stampSchema}`;
@@ -130,6 +132,7 @@ function fetchSubtrees(sha) {
 		'/tsconfig.base.json',
 		'/packages/xxscreeps/',
 		'/packages/pathfinder/',
+		'/packages/lodash3/package.json',
 		'/patches/',
 	]);
 	git(['checkout', '--quiet', 'FETCH_HEAD']);
@@ -169,13 +172,19 @@ function inlineTsconfigBase(srcDir) {
 	cpSync(join(srcDir, 'tsconfig.base.json'), join(xxscreepsDir, 'tsconfig.base.json'));
 	const configPath = join(xxscreepsDir, 'tsconfig.json');
 	const original = readFileSync(configPath, 'utf8');
-	const patched = original.replace(
+	let patched = original.replace(
 		/"extends":\s*"[^"]*tsconfig\.base\.json"/,
 		'"extends": "./tsconfig.base.json"',
 	);
 	if (patched === original) {
 		throw new Error('Failed to rewrite extends in xxscreeps tsconfig.json');
 	}
+	// Drop the sibling-workspace lodash3 path/reference. The published
+	// `@xxscreeps/lodash3` package resolves through node_modules at runtime,
+	// and TS finds its types via package resolution — no path override needed.
+	patched = patched
+		.replace(/^\s*"@xxscreeps\/lodash3":\s*\[[^\]]*\],?\s*$\n?/m, '')
+		.replace(/^\s*\{\s*"path":\s*"\.\.\/lodash3"\s*\},?\s*$\n?/m, '');
 	writeFileSync(configPath, patched);
 }
 
@@ -189,6 +198,13 @@ function rewriteWorkspaceRefs() {
 			if (typeof spec !== 'string' || !spec.startsWith('workspace:')) continue;
 			if (name === '@xxscreeps/pathfinder') {
 				deps[name] = `file:${pathfinderDir}`;
+			} else if (name === '@xxscreeps/lodash3') {
+				// lodash3 is published on npm as a self-contained tarball
+				// (its prepublishOnly bakes lodash-es source into dist/),
+				// so we install from the registry rather than fetching the
+				// workspace source. Pin to the exact version from upstream
+				// so a sibling-package version bump propagates with the pin.
+				deps[name] = readLodash3Version();
 			} else {
 				// No other workspace sibling is actually imported by the
 				// xxscreeps subtree we use — strip to keep npm happy.
@@ -197,6 +213,18 @@ function rewriteWorkspaceRefs() {
 		}
 	}
 	writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+}
+
+function readLodash3Version() {
+	const candidates = localOverride
+		? [join(localOverride, 'packages/lodash3/package.json')]
+		: [join(cacheDir, 'packages/lodash3/package.json')];
+	for (const path of candidates) {
+		if (!existsSync(path)) continue;
+		const version = JSON.parse(readFileSync(path, 'utf8')).version;
+		if (typeof version === 'string' && version.length > 0) return version;
+	}
+	throw new Error('Could not read @xxscreeps/lodash3 version from upstream packages/lodash3/package.json');
 }
 
 function installNestedDeps() {
