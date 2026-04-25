@@ -104,6 +104,7 @@ inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
 applyUpstreamPatches(srcDir);
+patchIvmInspectPrepareScript();
 buildNestedNativeAddons();
 buildTypeScript();
 runGeneratedModsBootstrap();
@@ -250,6 +251,18 @@ function buildNestedNativeAddons() {
 		if (!existsSync(join(xxscreepsDir, 'node_modules', name, 'binding.gyp'))) continue;
 		execFileSync('npm', ['rebuild', '--prefix', xxscreepsDir, name], { stdio: 'inherit' });
 	}
+}
+
+function patchIvmInspectPrepareScript() {
+	// ivm-inspect@5.0.0's `prepare: tsc` fires during `npm rebuild` and fails on
+	// TS 6.0.x. The published tarball already ships `dist/`, so prepare is redundant.
+	const pkgPath = join(xxscreepsDir, 'node_modules/ivm-inspect/package.json');
+	if (!existsSync(pkgPath)) return;
+	const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+	if (pkg.scripts?.prepare === undefined) return;
+	delete pkg.scripts.prepare;
+	writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+	console.log('[screeps-ok] Stripped ivm-inspect prepare script (TS 6.0 incompat)');
 }
 
 function applyUpstreamPatches(srcDir) {
