@@ -60,23 +60,24 @@ describe('Spawn.recycleCreep', () => {
 		});
 		await shard.tick();
 
-		// Observe the creep's actual ticksToLive on the tick recycle runs, so
-		// the expected value reflects whatever the runner consumed. Canonical
-		// _die uses object._ticksToLive at death time.
-		const ttlAtRecycle = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).ticksToLive
-		`) as number;
-
-		const rc = await shard.runPlayer('p1', code`
+		// Capture user-tick gameTime + ttl alongside the recycle call so we
+		// can derive the intent-tick TTL via tomb.deathTime. Vanilla and
+		// xxscreeps process the recycle intent at different offsets from
+		// user code (same-tick vs +1), so observing TTL in a separate
+		// runPlayer would misalign the expected energy by one tick.
+		const result = await shard.runPlayer('p1', code`
 			const spawn = Game.getObjectById(${spawnId});
 			const creep = Game.getObjectById(${creepId});
-			spawn.recycleCreep(creep)
-		`);
-		expect(rc).toBe(OK);
+			const userTime = Game.time;
+			const userTtl = creep.ticksToLive;
+			const rc = spawn.recycleCreep(creep);
+			({ userTime, userTtl, rc })
+		`) as { userTime: number; userTtl: number; rc: number };
+		expect(result.rc).toBe(OK);
 
 		// Canonical recycle (recycle-creep.js → _die.js with dropRate=1.0):
 		// kills creep *immediately*, creates a tombstone at the creep's position,
-		// tombstone.store.energy = floor(1.0 * ttl / CREEP_LIFE_TIME * bodyCost).
+		// tombstone.store.energy = floor(1.0 * intentTtl / CREEP_LIFE_TIME * bodyCost).
 		// No multi-tick body removal, no FIND_DROPPED_RESOURCES.
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
@@ -85,8 +86,11 @@ describe('Spawn.recycleCreep', () => {
 		// Canonical _die accumulates `part_cost * lifeRate` per part into a
 		// float, then floors the total once (_die.js:44-57). That equals
 		// floor(totalBodyCost * lifeRate) with dropRate = 1.0 for recycle.
+		// intentTtl = ageTime - intentTime; userTtl = ageTime - userTime;
+		// so intentTtl = userTtl - (deathTime - userTime).
 		const bodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
-		const expectedEnergy = Math.floor(bodyCost * ttlAtRecycle / CREEP_LIFE_TIME);
+		const intentTtl = result.userTtl - (tomb!.deathTime - result.userTime);
+		const expectedEnergy = Math.floor(bodyCost * intentTtl / CREEP_LIFE_TIME);
 		expect(tomb!.store.energy).toBe(expectedEnergy);
 
 		// No dropped resource on the ground.
