@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1313%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-49-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1316%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-52-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1313](#vanilla-passing-tests) | — | — | — | 2026-04-26 00:43 UTC |
-| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [49](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 00:38 UTC |
+| 🟢 | **vanilla** | [1316](#vanilla-passing-tests) | — | — | — | 2026-04-26 03:30 UTC |
+| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [52](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 03:28 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 49 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 52 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -33,8 +33,8 @@ xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior
 | `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
-| `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [9](#xxscreeps-gap-eventlog-attack-missing) |
-| `eventlog-flat-shape-and-missing-action-events` | xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK, DISMANTLE, creep rangedHeal RANGED) | All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK/DISMANTLE/rangedHeal are emitted at their triggering points | [7](#xxscreeps-gap-eventlog-flat-shape-and-missing-action-events) |
+| `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [10](#xxscreeps-gap-eventlog-attack-missing) |
+| `eventlog-flat-shape-and-missing-action-events` | xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK, DISMANTLE, creep rangedHeal RANGED) | All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK/DISMANTLE/rangedHeal are emitted at their triggering points | [9](#xxscreeps-gap-eventlog-flat-shape-and-missing-action-events) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
@@ -89,7 +89,7 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-eventlog-attack-missing">
-<summary><code>eventlog-attack-missing</code> — 9 tests</summary>
+<summary><code>eventlog-attack-missing</code> — 10 tests</summary>
 
 - `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
 - `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
@@ -100,11 +100,12 @@ Click a test count above to jump to the affected test list for that gap.
 - `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
 - `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
 - `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
+- `room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick`
 
 </details>
 
 <details id="xxscreeps-gap-eventlog-flat-shape-and-missing-action-events">
-<summary><code>eventlog-flat-shape-and-missing-action-events</code> — 7 tests</summary>
+<summary><code>eventlog-flat-shape-and-missing-action-events</code> — 9 tests</summary>
 
 - `room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested`
 - `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
@@ -113,6 +114,8 @@ Click a test count above to jump to the affected test list for that gap.
 - `room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance`
 - `room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts`
 - `room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER`
+- `room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER`
+- `room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER`
 
 </details>
 
@@ -232,7 +235,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1313 tests across 118 files</summary>
+<summary>1316 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1460,7 +1463,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (20)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (23)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -1482,6 +1485,9 @@ Click a test count above to jump to the affected test list for that gap.
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
+- room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
+- room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
+- room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick
 
 **`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
 
