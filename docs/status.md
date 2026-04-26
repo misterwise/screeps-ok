@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1321](#vanilla-passing-tests) | — | — | — | 2026-04-26 17:22 UTC |
-| 🟡 | **xxscreeps** | [1095](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 17:19 UTC |
+| 🟢 | **vanilla** | [1321](#vanilla-passing-tests) | — | — | — | 2026-04-26 22:30 UTC |
+| 🟡 | **xxscreeps** | [1095](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 22:28 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -56,10 +56,10 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-rampart-no-protection">
 <summary><code>rampart-no-protection</code> — 6 tests</summary>
 
+- `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
 - `creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead`
 - `creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead`
 - `creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart`
-- `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
 - `StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep`
 - `StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart`
 
