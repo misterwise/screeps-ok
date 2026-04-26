@@ -85,9 +85,11 @@ import { StructureController } from 'xxscreeps/mods/controller/controller.js';
 // xxscreeps build defines `create` locally but does not export it.
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
+let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
 for (const [name, assign] of [
 	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
 	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
+	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
@@ -150,9 +152,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		nuke: false,
 		deposit: false,
 		terrain: true,
-		// xxscreeps has no portal mod — `StructurePortal` is a bare stub at
-		// game/runtime.ts:18 with no class, schema, or processor.
-		portals: false,
+		// Portal mod is optional in pinned xxscreeps. Capability tracks
+		// the dynamic import result so PORTAL-* tests skip cleanly when
+		// the mod is absent and run when it lands upstream.
+		portals: !!createPortal,
 		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
 		// bare stub at game/runtime.ts:13.
 		invaderCore: false,
@@ -582,10 +585,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		switch (type) {
 			case 'keeperLair':
 				return this.placeKeeperLair(roomName, spec);
+			case 'portal':
+				return this.placePortal(roomName, spec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair.`,
+					`Supported types: keeperLair, portal.`,
 				);
 		}
 	}
@@ -603,6 +608,34 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, nextSpawnTime);
 			}
 			insertRoomObject(room, lair);
+		});
+
+		return id;
+	}
+
+	private async placePortal(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		if (!createPortal) {
+			throw new Error(
+				`placePortal: pinned xxscreeps build has no portal mod (xxscreeps/mods/portal/portal.js missing). ` +
+				`PORTAL-* tests are registered as expected failures in parity.json until the mod lands upstream.`,
+			);
+		}
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
+		if (!dest || !dest.room) throw new Error('placePortal: destination.room is required');
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:portal`, id);
+		// Cross-shard: { shard, room }. Same-shard: { room, x, y }.
+		const destination = dest.shard !== undefined
+			? { shard: dest.shard, room: dest.room }
+			: { room: dest.room, x: dest.x ?? 0, y: dest.y ?? 0 };
+		const decayTicks = typeof spec.decayTime === 'number' ? spec.decayTime : 0;
+
+		this.queueOp(roomName, room => {
+			const decayTime = decayTicks > 0 ? this.simulation!.shard.time + decayTicks : 0;
+			const portal = createPortal!(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
+			portal.id = id;
+			insertRoomObject(room, portal);
 		});
 
 		return id;
