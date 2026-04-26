@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-25 (PR-7 noted merged as #136; PR-10 split — PR-10a submitted as #152; PR-10b submitted as #153).
+Last refreshed: 2026-04-25 (PR-7 noted merged as #136; PR-10 split — PR-10a submitted as #152; PR-10b submitted as #153; PR-6 split — PR-6a logged as #135, PR-6b submitted as #154).
 
 PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-precedence` (FACTORY-PRODUCE-010) shared the same root cause in `checkMyStructure` and cleared without a separate fix.
 
@@ -33,8 +33,10 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-13 | [laverdet/xxscreeps#132](https://github.com/laverdet/xxscreeps/pull/132) | Add notifyWhenAttacked and missing structure surface getters |
 | PR-14a | [laverdet/xxscreeps#133](https://github.com/laverdet/xxscreeps/pull/133) | Add Game.cpuLimit, Game.powerCreeps, Room.survivalInfo |
 | PR-14b | [laverdet/xxscreeps#134](https://github.com/laverdet/xxscreeps/pull/134) | Remove hits/hitsMax/my leak from RoomObject base |
+| PR-6a | [laverdet/xxscreeps#135](https://github.com/laverdet/xxscreeps/pull/135) | Fix renewCreep busy/boost guards and spawnCreep check order |
 | PR-10a | [laverdet/xxscreeps#152](https://github.com/laverdet/xxscreeps/pull/152) | Fix Creep.transfer redirect to upgradeController; reject pull on spawning |
 | PR-10b | [laverdet/xxscreeps#153](https://github.com/laverdet/xxscreeps/pull/153) | Add Creep.withdraw enemy-rampart guard; fix moveTo noPathFinding return code |
+| PR-6b | [laverdet/xxscreeps#154](https://github.com/laverdet/xxscreeps/pull/154) | Reclaim body energy on Spawn.recycleCreep |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -97,14 +99,17 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   2. `processor.ts:18` add `context.didUpdate()` after `saveAction` — link was the only state-mutating intent processor missing it, so local mutations fell through to `copyRoomFromPreviousTick` in structure-only rooms.
   3. `link.ts`: add `@deprecated` `energy` and `energyCapacity` getters delegating to store, mirroring `StructureLab`'s pair at `mods/chemistry/lab.ts:36-38`.
 
-### PR-6: Spawn intents (`mods/spawn/`)
-- **Closes (4 entries / 6 tests):** `renew-while-spawning` (RENEW-CREEP-009), `renew-rejects-boosted-creep` (RENEW-CREEP-004/005/006), `recycle-no-body-reclaim` (RECYCLE-CREEP-002), `spawn-duplicate-name-allowed` (SPAWN-CREATE-003)
-- **Plan:**
-  1. `spawn.ts:270-289` `checkRenewCreep`: add `spawn.spawning ? ERR_BUSY : OK` check; remove `bodyPart.boost !== undefined` rejection at line 282.
-  2. `processor.ts:131-141` `renewCreep`: strip boosts from body parts during renew (set each `boost = undefined`).
-  3. `processor.ts:122-129` `recycleCreep`: replace `// TODO` with energy reclaim — compute `bodyCost × ttlRemaining / CREEP_LIFE_TIME` and deposit into spawn's energy structures via `consumeEnergy`-inverse.
-  4. `spawn.ts:308-310` `checkSpawnCreep`: drop `checkIsActive(spawn)` from user-side validation (vanilla parity — only enforced at processing time).
-- **Blast radius:** Affects all spawn lifecycle tests; needs careful re-run.
+### PR-6: Spawn intents (`mods/spawn/`) — split
+- **Closes overall (4 entries / 6 tests):** `renew-while-spawning` (RENEW-CREEP-009), `renew-rejects-boosted-creep` (RENEW-CREEP-004/005/006), `recycle-no-body-reclaim` (RECYCLE-CREEP-002), `spawn-duplicate-name-allowed` (SPAWN-CREATE-003).
+- **PR-6a (#135) — submitted:** items 1, 2, 4. Closes `renew-while-spawning` (RENEW-CREEP-009), `renew-rejects-boosted-creep` (RENEW-CREEP-004/005/006), `spawn-duplicate-name-allowed` (SPAWN-CREATE-003).
+  1. `spawn.ts:273` `checkRenewCreep`: prepend `() => spawn.spawning ? C.ERR_BUSY : C.OK` so the user-side guard short-circuits before target validation, matching vanilla `structures.js` (`if (this.spawning) return C.ERR_BUSY` ahead of all target checks).
+  2. `spawn.ts:283` `checkRenewCreep`: drop the `bodyPart.boost !== undefined → ERR_NO_BODYPART` rejection. Vanilla accepts boosted creeps; the processor strips boosts.
+  3. `processor.ts:139-145` `renewCreep`: after the energy/time updates, set each `part.boost = undefined` and call the new exported `dropOverflowResources` helper to recompute capacity and drop excess. Helper extracted from the overflow-drop half of `recalculateBody` in `mods/creep/processor.ts` so both call sites share one path.
+  4. `spawn.ts:319` `checkSpawnCreep`: move `checkIsActive(spawn)` to after the name / directions / busy closure. Vanilla returns `ERR_NAME_EXISTS` ahead of `ERR_RCL_NOT_ENOUGH` (`structures.js`: name branch sits above the `data(this.id).off` branch).
+- **PR-6b (#154) — submitted:** item 5. Closes `recycle-no-body-reclaim` (RECYCLE-CREEP-002).
+  5. `processor.ts:125` `recycleCreep`: replaced `// TODO: This stuff` (was only setting `creep.hits = 0`, falling through to natural-death rate=0.2) with `buryCreep(creep, 1)` from `mods/creep/tombstone.ts`. Vanilla `recycle-creep.js:22` calls `_die(target, 1.0, false, scope)`; PR-7 already implements the body-reclaim + container-diversion path, recycle just invokes it at `rate=1`.
+- **Blast radius (PR-6a):** Low — three guards, one shared helper. Watch RENEW-CREEP-* and SPAWN-CREATE-* tests.
+- **Blast radius (PR-6b):** Low — 2-line diff, single existing helper. Required a companion test fix in this repo: `9.5-recycle.test.ts` now captures user-tick gameTime + ttl alongside the recycle invocation and derives intent-tick TTL via `tomb.deathTime`. Vanilla and xxscreeps's test simulators process intents at different gameTime offsets from user code (vanilla: same tick; xxscreeps: user time + 1); the original test observed TTL in a separate runPlayer, which placed the expected value 1-2 ticks ahead of bury's TTL. With recycle's rate=1 amplifying per-tick energy delta, vanilla passed by floor coincidence and xxscreeps failed by one. The new derivation collapses to userTtl on vanilla (deathTime == userTime) and userTtl - 1 on xxscreeps (deathTime == userTime + 1), matching each adapter's bury TTL exactly.
 
 ### PR-7: Creep death — body energy reclaim + container diversion — merged as #136
 - **Closes (3 entries / 5 tests):**
@@ -276,7 +281,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Controller safe-mode | PR-3 | 3 |
 | Cooldowns | PR-4 | 3 (inc. factory-cooldown-no-decrement) |
 | Link | PR-5 | 4 |
-| Spawn | PR-6 | 4 |
+| Spawn | PR-6 | 4 (PR-6a closes 3; PR-6b closes 1) |
 | Creep death | PR-7 | 3 |
 | Combat | PR-8 | 3 |
 | Hits→destroy | PR-9 | 2 (#145; ruin-spill deferred) |
@@ -315,7 +320,9 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 16. ~~**PR-7**~~ submitted + merged as #136 — body energy reclaim + container diversion on death
 17. ~~**PR-10a**~~ submitted as #152 — Creep.transfer→upgradeController redirect + pull-spawning guard
 18. ~~**PR-10b**~~ submitted as #153 — Creep.withdraw enemy-rampart guard + moveTo noPathFinding return code
-19. Remaining work (PR-6 residual recycle, 8, 9 residual ruin-spill, 10c body-part-shape) in any order based on capacity
+19. ~~**PR-6a**~~ submitted as #135 — renewCreep busy/boost guards + spawnCreep check order
+20. ~~**PR-6b**~~ submitted as #154 — Spawn.recycleCreep body-energy reclaim
+21. Remaining work (PR-8 combat damage, PR-9 residual ruin-spill, PR-10c body-part-shape) in any order based on capacity
 
 ## Adapter changes (do these first)
 
