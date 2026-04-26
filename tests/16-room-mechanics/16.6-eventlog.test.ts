@@ -2,16 +2,17 @@ import { describe, test, expect, code,
 	OK, RIGHT,
 	MOVE, ATTACK, RANGED_ATTACK, TOUGH, HEAL, CARRY, WORK, CLAIM,
 	EVENT_ATTACK, EVENT_ATTACK_TYPE_MELEE, EVENT_ATTACK_TYPE_RANGED,
-	EVENT_ATTACK_TYPE_RANGED_MASS, EVENT_ATTACK_TYPE_HIT_BACK, EVENT_ATTACK_TYPE_NUKE,
+	EVENT_ATTACK_TYPE_RANGED_MASS, EVENT_ATTACK_TYPE_HIT_BACK,
+	EVENT_ATTACK_TYPE_DISMANTLE, EVENT_ATTACK_TYPE_NUKE,
 	ATTACK_POWER, RANGED_ATTACK_POWER, RANGED_ATTACK_DISTANCE_RATE, BODYPART_HITS,
-	EVENT_HEAL, EVENT_HEAL_TYPE_MELEE, EVENT_HEAL_TYPE_RANGED, HEAL_POWER,
+	EVENT_HEAL, EVENT_HEAL_TYPE_MELEE, EVENT_HEAL_TYPE_RANGED, HEAL_POWER, RANGED_HEAL_POWER,
 	EVENT_HARVEST, EVENT_BUILD, EVENT_REPAIR, EVENT_POWER,
 	EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT,
 	EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER,
 	STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_WALL, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
 	TOWER_ENERGY_COST, TOWER_POWER_HEAL, TOWER_OPTIMAL_RANGE,
 	RESOURCE_ENERGY, LINK_LOSS_RATIO, CONTROLLER_RESERVE,
-	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST,
+	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST, DISMANTLE_POWER,
 	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
 } from '../../src/index.js';
 
@@ -844,5 +845,91 @@ describe('room.getEventLog()', () => {
 			e => e.event === EVENT_POWER && e.objectId === ids.pc);
 		expect(power.data.power).toBe(PWR_OPERATE_SPAWN);
 		expect(power.data.targetId).toBe(ids.spawn);
+	});
+
+	test('ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const dismantlerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, MOVE],
+		});
+		// Wall with plenty of headroom so it survives the swing.
+		const wallId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_WALL, hits: 1000,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				dismantler: Game.getObjectById(${dismantlerId}).id,
+				wall: Game.getObjectById(${wallId}).id,
+			})
+		`) as string) as { dismantler: string; wall: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${dismantlerId}).dismantle(Game.getObjectById(${wallId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const dismantle = expectExactlyOne(events,
+			e => e.event === EVENT_ATTACK && e.objectId === ids.dismantler);
+		expect(dismantle.data.targetId).toBe(ids.wall);
+		expect(dismantle.data.damage).toBe(DISMANTLE_POWER);
+		expect(dismantle.data.attackType).toBe(EVENT_ATTACK_TYPE_DISMANTLE);
+	});
+
+	test('ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 24], owner: 'p2', body: [ATTACK, MOVE],
+		});
+		const friendlyId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [TOUGH, TOUGH, MOVE, MOVE],
+		});
+		// Healer at range 3 — out of melee, in ranged-heal range.
+		const healerId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p1', body: [HEAL, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				healer: Game.getObjectById(${healerId}).id,
+				friendly: Game.getObjectById(${friendlyId}).id,
+			})
+		`) as string) as { healer: string; friendly: string };
+
+		// Damage the friendly so the heal has something to apply.
+		await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${friendlyId}))
+		`);
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${friendlyId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const heal = expectExactlyOne(events,
+			e => e.event === EVENT_HEAL && e.objectId === ids.healer);
+		expect(heal.data.targetId).toBe(ids.friendly);
+		expect(heal.data.amount).toBe(RANGED_HEAL_POWER);
+		expect(heal.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
 	});
 });

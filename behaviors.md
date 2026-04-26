@@ -2341,6 +2341,14 @@ Coverage Notes
   `EVENT_POWER` is emitted when a power creep's `usePower` succeeds, with
   `objectId` set to the power creep, `data.power` equal to the activated
   `PWR_*` constant, and `data.targetId` set to the targeted object.
+- `ROOM-EVENTLOG-021` `behavior` `verified_vanilla`
+  `EVENT_ATTACK` from creep `dismantle()` carries
+  `data.attackType === EVENT_ATTACK_TYPE_DISMANTLE` and `data.damage`
+  equal to `DISMANTLE_POWER` per WORK part.
+- `ROOM-EVENTLOG-022` `behavior` `verified_vanilla`
+  `EVENT_HEAL` from creep `rangedHeal()` carries
+  `data.healType === EVENT_HEAL_TYPE_RANGED` and `data.amount` equal to
+  `RANGED_HEAL_POWER` per HEAL part.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`
