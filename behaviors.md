@@ -3476,8 +3476,7 @@ Coverage Notes
   Resource Visibility`. When a test could be written either under an
   established section or here, prefer the established section and leave a
   pointer in this section's Notes rather than duplicating.
-- Multi-bot evidence for each facet is logged in the bot-corpus survey
-  (see conversation history / `docs/pending-tests.md` if promoted):
+- Multi-bot evidence for each facet is logged in the bot-corpus survey:
   27.1 (5 bots), 27.4 (2), 27.6 (4), 27.7 (2), 27.8 (2). Facets 27.2,
   27.3, and 27.5 are coverage-completeness entries not surfaced by the
   corpus; they remain in catalog because they describe observable engine
