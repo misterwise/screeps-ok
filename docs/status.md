@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1299%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-38-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1313%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-49-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,34 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [1299](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | — | 2026-04-25 21:03 UTC |
-| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [38](#xxscreeps-expected-failures) | — | [168](#xxscreeps-skipped-tests) | 2026-04-25 21:00 UTC |
+| 🟢 | **vanilla** | [1313](#vanilla-passing-tests) | — | — | — | 2026-04-26 00:43 UTC |
+| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [49](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 00:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## vanilla expected failures
-
-vanilla currently declares 1 parity gap against vanilla's canonical behavior, covering 1 test. Each gap is verified by a test that continues to run as a regression trap — if vanilla fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
-
-| Gap | Actual | Expected | Tests |
-| --- | --- | --- | :-: |
-| `vanilla-adapter-envelope-overrides-rawmemory-set` | The vanilla adapter's tick envelope always calls `RawMemory.set(JSON.stringify(Memory))` at tick end (`adapters/vanilla/index.ts`) to persist the `_screepsOk*` round-trip fields. When user code calls `RawMemory.set(value)` after first accessing `Memory`, `Memory` is already bound to the captured `_parsed` object; the envelope's `JSON.stringify(Memory)` re-serializes that captured object and overwrites the user's raw string. The user's `set()` is silently lost before the tick ends. | User-code `RawMemory.set(value)` persists across the tick boundary so the next tick's `Memory` reflects the parsed `value`. Vanilla `@screeps/engine` alone supports this (its tick-end auto-serialize is gated on `if (_parsed)`, and `set()` deletes `_parsed`). The bug lives in the screeps-ok adapter envelope, not the engine. | [1](#vanilla-gap-vanilla-adapter-envelope-overrides-rawmemory-set) |
-
-Click a test count above to jump to the affected test list for that gap.
-
-<details id="vanilla-gap-vanilla-adapter-envelope-overrides-rawmemory-set">
-<summary><code>vanilla-adapter-envelope-overrides-rawmemory-set</code> — 1 test</summary>
-
-- `Memory MEMORY-005 RawMemory.set after Memory access persists across ticks`
-
-</details>
-
-
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 parity gaps against vanilla's canonical behavior, covering 38 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 49 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -52,6 +34,7 @@ xxscreeps currently declares 20 parity gaps against vanilla's canonical behavior
 | `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
 | `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
 | `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [9](#xxscreeps-gap-eventlog-attack-missing) |
+| `eventlog-flat-shape-and-missing-action-events` | xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK) | All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK are emitted at their triggering points | [7](#xxscreeps-gap-eventlog-flat-shape-and-missing-action-events) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
@@ -62,7 +45,7 @@ xxscreeps currently declares 20 parity gaps against vanilla's canonical behavior
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
-| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
+| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [5](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-not-supported) |
 | `packedpos-write-ignored` | Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`) | Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges) | [1](#xxscreeps-gap-packedpos-write-ignored) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [3](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
@@ -117,6 +100,19 @@ Click a test count above to jump to the affected test list for that gap.
 - `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
 - `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
 - `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
+
+</details>
+
+<details id="xxscreeps-gap-eventlog-flat-shape-and-missing-action-events">
+<summary><code>eventlog-flat-shape-and-missing-action-events</code> — 7 tests</summary>
+
+- `room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested`
+- `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
+- `room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored`
+- `room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER`
+- `room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance`
+- `room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts`
+- `room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER`
 
 </details>
 
@@ -192,9 +188,13 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
-<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
+<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 5 tests</summary>
 
 - `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
 
 </details>
 
@@ -232,7 +232,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1299 tests across 118 files</summary>
+<summary>1313 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1460,7 +1460,7 @@ Click a test count above to jump to the affected test list for that gap.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (11)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (20)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -1473,6 +1473,15 @@ Click a test count above to jump to the affected test list for that gap.
 - room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller
 - room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
 - room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
+- room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
+- room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added
+- room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
+- room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
+- room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
+- room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
+- room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
+- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
+- room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 
 **`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
 
@@ -1759,12 +1768,13 @@ Click a test count above to jump to the affected test list for that gap.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (18)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (19)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
 - Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
+- Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002 segment limits match canonical constants
 - RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
@@ -1828,7 +1838,7 @@ Click a test count above to jump to the affected test list for that gap.
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
-**`tests/27-undocumented/27.1-memhack.test.ts`** (6)
+**`tests/27-undocumented/27.1-memhack.test.ts`** (10)
 
 - Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
 - Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
@@ -1836,6 +1846,10 @@ Click a test count above to jump to the affected test list for that gap.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-004 first Memory access populates RawMemory._parsed as a reference to Memory
 - Undocumented API Surface — memhack UNDOC-MEMHACK-005 RawMemory._parsed assignment alone does NOT short-circuit deserialization
 - Undocumented API Surface — memhack UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end
+- Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 
@@ -1891,13 +1905,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 168 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 170 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [69](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [70](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
-| capability | `nuke` | Nukes | [28](#xxscreeps-skip-capability-nuke) |
+| capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
@@ -1906,7 +1920,7 @@ xxscreeps has 168 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 69 tests across 19 files</summary>
+<summary><code>capability:powerCreeps</code> — 70 tests across 20 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -1971,6 +1985,10 @@ Click a count to jump to the affected test list.
 **`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
 
 - Construction costs CONSTRUCTION-COST-001:powerSpawn costs 100000
+
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (1)
+
+- room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 
 **`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (3)
 
@@ -2107,7 +2125,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 28 tests across 10 files</summary>
+<summary><code>capability:nuke</code> — 29 tests across 11 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -2149,6 +2167,10 @@ Click a count to jump to the affected test list.
 **`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
 
 - Construction costs CONSTRUCTION-COST-001:nuker costs 100000
+
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (1)
+
+- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
 
 **`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
 

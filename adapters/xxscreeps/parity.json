@@ -25,6 +25,11 @@
 			"expected": "All canonical event types appear in `getEventLog()` at their triggering points",
 			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002", "ROOM-EVENTLOG-005", "ROOM-EVENTLOG-006", "ROOM-EVENTLOG-007", "ROOM-EVENTLOG-008", "ROOM-EVENTLOG-009", "ROOM-EVENTLOG-010", "ROOM-EVENTLOG-011"]
 		},
+		"eventlog-flat-shape-and-missing-action-events": {
+			"actual": "xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK)",
+			"expected": "All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK are emitted at their triggering points",
+			"tests": ["ROOM-EVENTLOG-012", "ROOM-EVENTLOG-013", "ROOM-EVENTLOG-014", "ROOM-EVENTLOG-015", "ROOM-EVENTLOG-016", "ROOM-EVENTLOG-017", "ROOM-EVENTLOG-018"]
+		},
 		"withdraw-enemy-rampart-no-protection": {
 			"actual": "`withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart",
 			"expected": "Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart",

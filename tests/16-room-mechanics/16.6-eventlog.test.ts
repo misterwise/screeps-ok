@@ -1,13 +1,18 @@
 import { describe, test, expect, code,
 	OK, RIGHT,
-	MOVE, ATTACK, TOUGH, HEAL, CARRY, WORK, CLAIM,
-	EVENT_ATTACK, EVENT_ATTACK_TYPE_MELEE, ATTACK_POWER, BODYPART_HITS,
+	MOVE, ATTACK, RANGED_ATTACK, TOUGH, HEAL, CARRY, WORK, CLAIM,
+	EVENT_ATTACK, EVENT_ATTACK_TYPE_MELEE, EVENT_ATTACK_TYPE_RANGED,
+	EVENT_ATTACK_TYPE_RANGED_MASS, EVENT_ATTACK_TYPE_HIT_BACK, EVENT_ATTACK_TYPE_NUKE,
+	ATTACK_POWER, RANGED_ATTACK_POWER, RANGED_ATTACK_DISTANCE_RATE, BODYPART_HITS,
 	EVENT_HEAL, EVENT_HEAL_TYPE_MELEE, EVENT_HEAL_TYPE_RANGED, HEAL_POWER,
+	EVENT_HARVEST, EVENT_BUILD, EVENT_REPAIR, EVENT_POWER,
 	EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT,
 	EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER,
-	STRUCTURE_TOWER, STRUCTURE_WALL, STRUCTURE_LINK, STRUCTURE_CONTAINER,
+	STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_WALL, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
 	TOWER_ENERGY_COST, TOWER_POWER_HEAL, TOWER_OPTIMAL_RANGE,
 	RESOURCE_ENERGY, LINK_LOSS_RATIO, CONTROLLER_RESERVE,
+	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST,
+	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
 } from '../../src/index.js';
 
 describe('room.getEventLog()', () => {
@@ -476,5 +481,386 @@ describe('room.getEventLog()', () => {
 		// 2 WORK × UPGRADE_CONTROLLER_POWER (=1) = 2 energy applied.
 		expect(upgrade!.data.amount).toBe(2);
 		expect(upgrade!.data.energySpent).toBe(2);
+	});
+
+	test('ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, MOVE],
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				creep: Game.getObjectById(${creepId}).id,
+				source: Game.getObjectById(${srcId}).id,
+			})
+		`) as string) as { creep: string; source: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const harvest = events.find(
+			e => e.event === EVENT_HARVEST && e.objectId === ids.creep,
+		);
+		expect(harvest).toBeDefined();
+		expect(harvest!.data.targetId).toBe(ids.source);
+		expect(harvest!.data.amount).toBe(HARVEST_POWER);
+	});
+
+	test('ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const builderId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				builder: Game.getObjectById(${builderId}).id,
+				site: Game.getObjectById(${siteId}).id,
+			})
+		`) as string) as { builder: string; site: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${builderId}).build(Game.getObjectById(${siteId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const build = events.find(
+			e => e.event === EVENT_BUILD && e.objectId === ids.builder,
+		);
+		expect(build).toBeDefined();
+		expect(build!.data.targetId).toBe(ids.site);
+		expect(build!.data.amount).toBe(BUILD_POWER);
+		// One swing is far below a road's progressTotal, so the site stays incomplete.
+		expect(build!.data.incomplete).toBe(true);
+	});
+
+	test('ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const repairerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		// Damaged wall with plenty of headroom for one tick of repair.
+		const wallId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_WALL, hits: 1000,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				repairer: Game.getObjectById(${repairerId}).id,
+				wall: Game.getObjectById(${wallId}).id,
+			})
+		`) as string) as { repairer: string; wall: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${repairerId}).repair(Game.getObjectById(${wallId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const repair = events.find(
+			e => e.event === EVENT_REPAIR && e.objectId === ids.repairer,
+		);
+		expect(repair).toBeDefined();
+		expect(repair!.data.targetId).toBe(ids.wall);
+		// 1 WORK × REPAIR_POWER (=100) HP restored, costing REPAIR_POWER × REPAIR_COST (=1) energy.
+		expect(repair!.data.amount).toBe(REPAIR_POWER);
+		expect(repair!.data.energySpent).toBe(REPAIR_POWER * REPAIR_COST);
+	});
+
+	test('ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				target: Game.getObjectById(${targetId}).id,
+			})
+		`) as string) as { attacker: string; target: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${targetId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const ranged = events.find(
+			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker,
+		);
+		expect(ranged).toBeDefined();
+		expect(ranged!.data.targetId).toBe(ids.target);
+		expect(ranged!.data.damage).toBe(RANGED_ATTACK_POWER);
+		expect(ranged!.data.attackType).toBe(EVENT_ATTACK_TYPE_RANGED);
+	});
+
+	test('ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		// Target at distance 1 (full damage) and target at distance 3 (10% damage).
+		const nearId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		const farId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				near: Game.getObjectById(${nearId}).id,
+				far: Game.getObjectById(${farId}).id,
+			})
+		`) as string) as { attacker: string; near: string; far: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const massEvents = events.filter(
+			e => e.event === EVENT_ATTACK
+				&& e.objectId === ids.attacker
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS,
+		);
+		const byTarget = new Map(massEvents.map(e => [e.data.targetId, e.data.damage]));
+		// Distance 1: full damage. Distance 3: damage × distanceRate[3] (0.1), rounded.
+		expect(byTarget.get(ids.near)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
+		expect(byTarget.get(ids.far)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[3]));
+	});
+
+	test('ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		// Attacker swings; target survives the swing and hits back via its ATTACK parts.
+		// Attacker body = [TOUGH ×6, ATTACK ×4, MOVE] → 1100 hits, 4×ATTACK = 120 melee damage.
+		// Target body   = [TOUGH ×6, ATTACK ×2, MOVE] → 900 hits, 2×ATTACK = 60 hit-back damage.
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2',
+			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				target: Game.getObjectById(${targetId}).id,
+			})
+		`) as string) as { attacker: string; target: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const melee = events.find(e => e.event === EVENT_ATTACK
+			&& e.objectId === ids.attacker
+			&& e.data?.attackType === EVENT_ATTACK_TYPE_MELEE);
+		expect(melee).toBeDefined();
+		expect(melee!.data.damage).toBe(4 * ATTACK_POWER);
+
+		const hitBack = events.find(e => e.event === EVENT_ATTACK
+			&& e.objectId === ids.target
+			&& e.data?.attackType === EVENT_ATTACK_TYPE_HIT_BACK);
+		expect(hitBack).toBeDefined();
+		expect(hitBack!.data.targetId).toBe(ids.attacker);
+		expect(hitBack!.data.damage).toBe(2 * ATTACK_POWER);
+	});
+
+	test('ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 24], owner: 'p2', body: [ATTACK, MOVE],
+		});
+		const friendlyId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [TOUGH, TOUGH, MOVE, MOVE],
+		});
+		const healerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [HEAL, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				healer: Game.getObjectById(${healerId}).id,
+				friendly: Game.getObjectById(${friendlyId}).id,
+			})
+		`) as string) as { healer: string; friendly: string };
+
+		// Damage the friendly so heal has something to apply.
+		await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${friendlyId}))
+		`);
+
+		// Healer heals the wounded friendly (melee — adjacent).
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${healerId}).heal(Game.getObjectById(${friendlyId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const heal = events.find(
+			e => e.event === EVENT_HEAL && e.objectId === ids.healer,
+		);
+		expect(heal).toBeDefined();
+		expect(heal!.data.targetId).toBe(ids.friendly);
+		expect(heal!.data.amount).toBe(HEAL_POWER);
+		expect(heal!.data.healType).toBe(EVENT_HEAL_TYPE_MELEE);
+	});
+
+	test('ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands', async ({ shard }) => {
+		shard.requires('nuke');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		// Wall at impact center with hits well above NUKE_DAMAGE[0] so it survives
+		// and we can verify the event payload (a destroyed wall would also emit
+		// EVENT_OBJECT_DESTROYED, but the EVENT_ATTACK still fires regardless).
+		const wallId = await shard.placeStructure('W2N1', {
+			pos: [25, 25], structureType: STRUCTURE_WALL, hits: 20_000_000,
+		});
+		await shard.placeNuke('W2N1', {
+			pos: [25, 25], launchRoomName: 'W1N1', timeToLand: 2,
+		});
+		// Capture wall's engine id before the nuke lands and removes everything.
+		const wallRealId = await shard.runPlayer('p2', code`
+			Game.getObjectById(${wallId}).id
+		`) as string;
+		// Advance to landTime - 1 (the tick that emits the damage events).
+		await shard.tick();
+
+		const events = await shard.runPlayer('p2', code`
+			Game.rooms['W2N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const nukeAttack = events.find(
+			e => e.event === EVENT_ATTACK
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_NUKE
+				&& e.data?.targetId === wallRealId,
+		);
+		expect(nukeAttack).toBeDefined();
+		// Wall sits on the impact tile (range 0) → NUKE_DAMAGE[0].
+		expect(nukeAttack!.data.damage).toBe(NUKE_DAMAGE[0]);
+	});
+
+	test('ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 0 },
+		});
+		const pcId = await shard.placePowerCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			powers: { [PWR_OPERATE_SPAWN]: 1 },
+			store: { ops: 200 },
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			const pc = Game.getObjectById(${pcId});
+			const spawn = Game.getObjectById(${spawnId});
+			JSON.stringify({ pc: pc.id, spawn: spawn.id })
+		`) as string) as { pc: string; spawn: string };
+
+		await shard.runPlayer('p1', code`
+			const pc = Game.getObjectById(${pcId});
+			const spawn = Game.getObjectById(${spawnId});
+			pc.usePower(PWR_OPERATE_SPAWN, spawn)
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data: any }>;
+
+		const power = events.find(
+			e => e.event === EVENT_POWER && e.objectId === ids.pc,
+		);
+		expect(power).toBeDefined();
+		expect(power!.data.power).toBe(PWR_OPERATE_SPAWN);
+		expect(power!.data.targetId).toBe(ids.spawn);
 	});
 });

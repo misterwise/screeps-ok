@@ -85,6 +85,13 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 - Tests: ROOM-EVENTLOG-001, 002, 005..011 (9 tests across EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER)
 - Cause: The upstream event-log PR (#107) adds emission sites for these events but is not yet merged. Once landed, the pin-bump that includes it should close all 9 tests in one go.
 
+### eventlog-flat-shape-and-missing-action-events
+- Tests: ROOM-EVENTLOG-012, 013, 014, 015, 016, 017, 018 (7 tests across EVENT_HARVEST, EVENT_BUILD, EVENT_REPAIR, EVENT_ATTACK_TYPE_RANGED, EVENT_ATTACK_TYPE_RANGED_MASS, EVENT_ATTACK_TYPE_HIT_BACK, EVENT_HEAL_TYPE_MELEE)
+- Cause: Two related defects in xxscreeps's event-log mod:
+  1. **Flat shape vs `data` wrapper** — `mods/harvestable/processor.ts:39-44`, `mods/combat/processor.ts:27-32, 50-55, 119-125` emit events with `objectId`/`targetId`/`amount`/etc. as top-level fields, but vanilla wraps payload under `data`. `game/room/event-log.ts:11-14`'s `appendEventLog` spreads them directly. ROOM-EVENTLOG-012 (HARVEST), 015 (RANGED), 018 (HEAL MELEE) hit this.
+  2. **Missing emission sites** — `mods/construction/processor.ts` never calls `appendEventLog` for build, the repair processor doesn't emit EVENT_REPAIR, and `mods/combat/processor.ts` never emits the per-target EVENT_ATTACK_TYPE_RANGED_MASS damage entry (only the umbrella) or EVENT_ATTACK_TYPE_HIT_BACK from melee retaliation. ROOM-EVENTLOG-013 (BUILD), 014 (REPAIR), 016 (RANGED_MASS), 017 (HIT_BACK) hit this.
+- Fix shape: change `appendEventLog` (or each call site) to nest non-routing fields under `data: {...}`, and add the missing emissions to the construction/repair processors plus the rangedMassAttack inner loop and combat damage hit-back path.
+
 ### route-callback-ignored
 - Tests: MAP-ROUTE-003 (got route result, expected ERR_NO_PATH)
 - Cause: `routeCallback` is threaded to the astar call at `game/map.ts:161-163` but may not be invoked per-room during the search. The test returns Infinity for a specific room; xxscreeps finds a route through it anyway. Needs side-by-side trace of the astar callback invocation.
@@ -244,4 +251,3 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 - Tests: UNDOC-MEMJSON-005
 - Cause: `crunch(payload)` at `mods/memory/memory.ts:34-54` recurses through the Memory object tree (normalizing `undefined`) with no cycle detection. When `Memory` contains a self-reference (`obj.self = obj`), `crunch` recurses infinitely and hits `RangeError: Maximum call stack size exceeded`. The `try/catch` in `flush()` at `memory.ts:187-192` wraps only `JSON.stringify` (line 188) — the `crunch(json)` call at line 182 is one branch above and has no guard, so the stack overflow propagates out of `flush()` and crashes the player runtime. Vanilla's `JSON.stringify` throws `TypeError` on cycles which Screeps' engine catches silently (dropping the unserializable subtree without crashing the runtime).
 - Fix shape: either (a) add a `WeakSet` cycle guard to `crunch()` that short-circuits on re-entry, or (b) move the `crunch(json)` call at line 182 inside the existing try/catch. Option (a) is structurally correct; option (b) is a one-line patch.
-

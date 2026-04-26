@@ -2303,6 +2303,44 @@ Coverage Notes
 - `ROOM-EVENTLOG-011` `behavior` `verified_vanilla`
   `EVENT_UPGRADE_CONTROLLER` is emitted with `data.amount` and
   `data.energySpent` set to the energy applied to the controller this tick.
+- `ROOM-EVENTLOG-012` `behavior` `verified_vanilla`
+  `EVENT_HARVEST` is emitted when a creep harvests a source, with
+  `objectId` set to the creep, `data.targetId` set to the source, and
+  `data.amount` set to the energy harvested this tick.
+- `ROOM-EVENTLOG-013` `behavior` `verified_vanilla`
+  `EVENT_BUILD` is emitted when a creep builds a construction site, with
+  `objectId` set to the creep, `data.targetId` set to the site,
+  `data.amount` equal to the progress added this tick, and `data.incomplete`
+  reflecting whether the site still has work remaining.
+- `ROOM-EVENTLOG-014` `behavior` `verified_vanilla`
+  `EVENT_REPAIR` is emitted when a creep repairs a structure, with
+  `objectId` set to the creep, `data.targetId` set to the structure, and
+  `data.amount`/`data.energySpent` matching the hits restored this tick.
+- `ROOM-EVENTLOG-015` `behavior` `verified_vanilla`
+  `EVENT_ATTACK` from `rangedAttack` carries
+  `data.attackType === EVENT_ATTACK_TYPE_RANGED` and `data.damage` equal to
+  `RANGED_ATTACK_POWER` per RANGED_ATTACK part.
+- `ROOM-EVENTLOG-016` `behavior` `verified_vanilla`
+  `EVENT_ATTACK` from `rangedMassAttack` emits one entry per target hit,
+  each with `data.attackType === EVENT_ATTACK_TYPE_RANGED_MASS` and
+  `data.damage` scaled by `RANGED_ATTACK_DISTANCE_RATE`.
+- `ROOM-EVENTLOG-017` `behavior` `verified_vanilla`
+  When a creep with ATTACK parts is hit by a melee attack, an additional
+  `EVENT_ATTACK` is emitted from the target with
+  `data.attackType === EVENT_ATTACK_TYPE_HIT_BACK` and `data.damage` equal
+  to the ATTACK-part hit-back amount.
+- `ROOM-EVENTLOG-018` `behavior` `verified_vanilla`
+  `EVENT_HEAL` from creep `heal()` carries
+  `data.healType === EVENT_HEAL_TYPE_MELEE` and `data.amount` equal to
+  `HEAL_POWER` per HEAL part.
+- `ROOM-EVENTLOG-019` `behavior` `verified_vanilla`
+  When a nuke lands, `EVENT_ATTACK` is emitted for each damaged structure
+  with `data.attackType === EVENT_ATTACK_TYPE_NUKE` and `data.damage`
+  matching `NUKE_DAMAGE` for the structure's range from the impact tile.
+- `ROOM-EVENTLOG-020` `behavior` `verified_vanilla`
+  `EVENT_POWER` is emitted when a power creep's `usePower` succeeds, with
+  `objectId` set to the power creep, `data.power` equal to the activated
+  `PWR_*` constant, and `data.targetId` set to the targeted object.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`
