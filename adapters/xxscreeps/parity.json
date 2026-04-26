@@ -76,9 +76,9 @@
 			"tests": ["MEMORY-004"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
-			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` access re-parses from the newly-set string and loses pre-set mutations",
-			"expected": "Setting `RawMemory` after `Memory` has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack)",
-			"tests": ["MEMORY-002"]
+			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations",
+			"expected": "Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack)",
+			"tests": ["MEMORY-002", "UNDOC-MEMHACK-007", "UNDOC-MEMHACK-008", "UNDOC-MEMHACK-009", "UNDOC-MEMHACK-010"]
 		},
 		"foreign-segment-not-supported": {
 			"actual": "`setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick",

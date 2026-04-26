@@ -1,12 +1,3 @@
 {
-	"expected_failures": {
-		"vanilla-adapter-envelope-overrides-rawmemory-set": {
-			"actual": "The vanilla adapter's tick envelope always calls `RawMemory.set(JSON.stringify(Memory))` at tick end (`adapters/vanilla/index.ts`) to persist the `_screepsOk*` round-trip fields. When user code calls `RawMemory.set(value)` after first accessing `Memory`, `Memory` is already bound to the captured `_parsed` object; the envelope's `JSON.stringify(Memory)` re-serializes that captured object and overwrites the user's raw string. The user's `set()` is silently lost before the tick ends.",
-			"expected": "User-code `RawMemory.set(value)` persists across the tick boundary so the next tick's `Memory` reflects the parsed `value`. Vanilla `@screeps/engine` alone supports this (its tick-end auto-serialize is gated on `if (_parsed)`, and `set()` deletes `_parsed`). The bug lives in the screeps-ok adapter envelope, not the engine.",
-			"tests": ["MEMORY-005"]
-		}
-	},
-	"notes": {
-		"vanilla-adapter-envelope-overrides-rawmemory-set": "See `adapters/vanilla/index.ts` — the envelope's explicit `RawMemory.set(JSON.stringify(Memory))` is load-bearing for the round-trip. Fix likely requires snapshotting `RawMemory.get()` before user code and skipping the envelope-side `set()` when the raw string changed out-of-band."
-	}
+	"expected_failures": {}
 }

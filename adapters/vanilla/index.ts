@@ -4,6 +4,10 @@ import type {
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 } from '../../src/adapter.js';
+import { mkdirSync } from 'node:fs';
+import { createServer } from 'node:net';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
 import { RunPlayerError } from '../../src/errors.js';
@@ -42,6 +46,7 @@ function buildTerrainMatrix(terrain: TerrainSpec | null): any {
 }
 
 let sharedServer: any = null;
+let sharedServerCleanupRegistered = false;
 
 // @screeps/driver/lib/queue.js registers a SIGTERM handler that logs
 // "Got SIGTERM, disabling queue fetching" before calling process.exit(0).
@@ -58,12 +63,59 @@ function silenceDriverSigtermLog(): void {
 
 async function getServer(): Promise<any> {
 	if (!sharedServer) {
-		sharedServer = new ScreepsServer();
+		const port = await getStoragePort();
+		const root = path.join(tmpdir(), 'screeps-ok-vanilla', `${process.pid}-${port}`);
+		mkdirSync(path.join(root, 'server'), { recursive: true });
+		mkdirSync(path.join(root, 'logs'), { recursive: true });
+		sharedServer = new ScreepsServer({
+			path: path.join(root, 'server'),
+			logdir: path.join(root, 'logs'),
+			port,
+		});
+		registerSharedServerCleanup();
 		silenceDriverSigtermLog();
 		await sharedServer.world.reset();
 		await sharedServer.start();
 	}
 	return sharedServer;
+}
+
+async function getStoragePort(): Promise<number> {
+	const explicit = Number(process.env.SCREEPS_OK_VANILLA_STORAGE_PORT);
+	if (Number.isInteger(explicit) && explicit > 0) return explicit;
+	return findAvailablePort();
+}
+
+async function findAvailablePort(): Promise<number> {
+	return new Promise((resolve, reject) => {
+		const server = createServer();
+		server.once('error', reject);
+		server.listen(0, 'localhost', () => {
+			const address = server.address();
+			const port = typeof address === 'object' && address ? address.port : 0;
+			server.close(error => {
+				if (error) reject(error);
+				else resolve(port);
+			});
+		});
+	});
+}
+
+function registerSharedServerCleanup(): void {
+	if (sharedServerCleanupRegistered) return;
+	sharedServerCleanupRegistered = true;
+	const cleanup = () => {
+		try { sharedServer?.stop?.(); } catch {}
+	};
+	process.once('exit', cleanup);
+	process.once('SIGINT', () => {
+		cleanup();
+		process.exit(130);
+	});
+	process.once('SIGTERM', () => {
+		cleanup();
+		process.exit(143);
+	});
 }
 
 const playerSlots = ['p1_user', 'p2_user', 'p3_user', 'p4_user'];
@@ -87,6 +139,13 @@ const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
 	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
 	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
 ]);
+const RESULT_PREFIX = '__SCREEPS_OK_RESULT__:';
+const RESULT_TIMEOUT_MS = 1000;
+
+type ResultCapture = {
+	wait: () => Promise<string | undefined>;
+	dispose: () => void;
+};
 
 class VanillaAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
@@ -111,8 +170,135 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	private db: any = null;
 	private env: any = null;
 	private firstTickRun = false;
+	private runCounter = 0;
 	private nextId(): string {
 		return `sok${++this.idCounter}`;
+	}
+
+	private nextRunNonce(): string {
+		return `run${++this.runCounter}`;
+	}
+
+	private captureRunResult(handle: string, user: any, nonce: string): ResultCapture {
+		if (!user || typeof user.on !== 'function') {
+			throw new Error(
+				`vanilla adapter: player '${handle}' has no console event channel; ` +
+				`cannot capture runPlayer result without mutating Memory.`,
+			);
+		}
+
+		const marker = `${RESULT_PREFIX}${nonce}:`;
+		let resultJson: string | undefined;
+		let resolveSeen: (value: string) => void = () => {};
+		const seen = new Promise<string>(resolve => { resolveSeen = resolve; });
+		const listener = (_logs: unknown[], results: unknown[]) => {
+			for (const entry of results) {
+				const text = this.consoleEventText(entry);
+				if (!text?.startsWith(marker)) continue;
+				try {
+					resultJson = decodeURIComponent(text.slice(marker.length));
+				} catch {
+					resultJson = text.slice(marker.length);
+				}
+				resolveSeen(resultJson);
+				return;
+			}
+		};
+
+		user.on('console', listener);
+		return {
+			wait: async () => {
+				if (resultJson !== undefined) return resultJson;
+				await Promise.race([
+					seen,
+					new Promise<void>(resolve => setTimeout(resolve, RESULT_TIMEOUT_MS)),
+				]);
+				return resultJson;
+			},
+			dispose: () => {
+				if (typeof user.off === 'function') user.off('console', listener);
+				else if (typeof user.removeListener === 'function') user.removeListener('console', listener);
+			},
+		};
+	}
+
+	private consoleEventText(entry: unknown): string | null {
+		if (typeof entry === 'string') return entry;
+		if (entry && typeof entry === 'object' && 'message' in entry) {
+			const message = (entry as { message?: unknown }).message;
+			return message == null ? null : String(message);
+		}
+		return null;
+	}
+
+	private parseRunResult(source: string, handle: string, resultJson: string | undefined): PlayerReturnValue {
+		if (resultJson === undefined) {
+			throw new Error(
+				`${source}: player '${handle}' code was not executed or no result was captured. ` +
+				`The engine may have skipped this player's main loop.`,
+			);
+		}
+
+		const parsed = JSON.parse(resultJson);
+		if (!parsed.ok) {
+			const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
+				: parsed.errorType === 'SerializationError' ? 'serialization' as const
+				: 'runtime' as const;
+			throw new RunPlayerError(kind, parsed.error);
+		}
+
+		return parsed.value ?? null;
+	}
+
+	private buildConsoleCommand(userCode: string, nonce: string): string {
+		const src = JSON.stringify(userCode);
+		const prefix = JSON.stringify(`${RESULT_PREFIX}${nonce}:`);
+		return `(function() {
+			var _sokResultObj;
+			try {
+				var _sokResult = eval(${src});
+				if (_sokResult === undefined) {
+					_sokResult = null;
+				}
+				var _sokSerErr = null;
+				if (typeof _sokResult === 'function' || typeof _sokResult === 'symbol') {
+					_sokSerErr = 'Return value is a ' + typeof _sokResult + ', not a plain JSON value';
+				} else if (_sokResult !== null && typeof _sokResult === 'object'
+					&& !Array.isArray(_sokResult)) {
+					var _sokCtor = _sokResult.constructor;
+					if (_sokCtor !== Object && _sokCtor !== undefined) {
+						_sokSerErr = 'Return value is a ' + (_sokCtor.name || 'non-plain') + ' object, not a plain JSON value';
+					} else {
+						try { JSON.stringify(_sokResult); }
+						catch (e) {
+							_sokSerErr = 'Return value is not JSON-serializable: ' + (e && e.message ? e.message : 'cycle');
+						}
+					}
+				}
+				if (_sokSerErr) {
+					_sokResultObj = { ok: false, errorType: 'SerializationError', error: _sokSerErr };
+				} else {
+					_sokResultObj = { ok: true, value: _sokResult };
+				}
+			} catch (e) {
+				var _sokErrType = 'Error';
+				var _sokErrMsg = '';
+				try { _sokErrType = (e && e.constructor && e.constructor.name) || 'Error'; } catch (_) {}
+				try {
+					if (e === null) _sokErrMsg = 'null';
+					else if (e === undefined) _sokErrMsg = 'undefined';
+					else if (e && e.message != null) _sokErrMsg = String(e.message);
+					else _sokErrMsg = String(e);
+				} catch (_) { _sokErrMsg = 'Unknown error'; }
+				_sokResultObj = { ok: false, error: _sokErrMsg, errorType: _sokErrType };
+			}
+			try {
+				if (RawMemory._parsed) JSON.stringify(RawMemory._parsed);
+			} catch (_) {
+				try { RawMemory.set(RawMemory.get()); } catch (_) {}
+			}
+			return ${prefix} + encodeURIComponent(JSON.stringify(_sokResultObj));
+		})()`;
 	}
 
 	private resolvePlayer(handle: string): string {
@@ -163,98 +349,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			await this.server.world.setTerrain(preload.name, buildTerrainMatrix(preload.terrain));
 		}
 
-		// Create players manually (no addBot — avoids phantom spawns and controller overwrites)
-		// CRITICAL: the wrapper must NOT touch `Memory` before user code runs.
-		// `Memory` is a one-shot getter at @screeps/engine/dist/game/game.js:468
-		// — first access parses raw memory and replaces itself with a static
-		// value, so any later `RawMemory.set` from user code can no longer
-		// affect what `Memory` sees. MEMORY-001 (`RawMemory.set before first
-		// Memory access replaces what Memory sees`) requires that the user's
-		// expression is the first thing to touch Memory in the tick.
-		//
-		// Sequence: read the eval payload via RawMemory.get() (no Memory
-		// touch), eval user code, then write the result envelope into Memory
-		// at the very end. By that point user code has had its chance to
-		// access Memory or call RawMemory.set; the engine's tick-end
-		// auto-serialize at @screeps/driver/lib/runtime/runtime.js:246-248
-		// picks up our Memory mutation and persists it. We must NOT call
-		// RawMemory.set ourselves — that would drop any Memory mutations
-		// the user made (rawMemory._parsed wins over rawMemory.get() in
-		// the auto-serialize, but only if we don't override the raw string
-		// with a stale snapshot first).
-		const loopCode = `module.exports.loop = function() {
-			var _sokRaw = RawMemory.get();
-			var _sokParsed = null;
-			if (_sokRaw) {
-				try { _sokParsed = JSON.parse(_sokRaw); } catch (e) { _sokParsed = null; }
-			}
-			if (!_sokParsed || typeof _sokParsed !== 'object' || !_sokParsed._screepsOk) {
-				return;
-			}
-			var _sokCode = _sokParsed._screepsOk;
-			var _sokResultObj;
-			try {
-				var _sokResult = eval(_sokCode);
-				if (_sokResult === undefined) {
-					_sokResult = null;
-				}
-				var _sokSerErr = null;
-				if (typeof _sokResult === 'function' || typeof _sokResult === 'symbol') {
-					_sokSerErr = 'Return value is a ' + typeof _sokResult + ', not a plain JSON value';
-				} else if (_sokResult !== null && typeof _sokResult === 'object'
-					&& !Array.isArray(_sokResult)) {
-					var _sokCtor = _sokResult.constructor;
-					if (_sokCtor !== Object && _sokCtor !== undefined) {
-						_sokSerErr = 'Return value is a ' + (_sokCtor.name || 'non-plain') + ' object, not a plain JSON value';
-					} else {
-						try { JSON.stringify(_sokResult); }
-						catch (e) {
-							_sokSerErr = 'Return value is not JSON-serializable: ' + (e && e.message ? e.message : 'cycle');
-						}
-					}
-				}
-				if (_sokSerErr) {
-					_sokResultObj = { ok: false, errorType: 'SerializationError', error: _sokSerErr };
-				} else {
-					_sokResultObj = { ok: true, value: _sokResult };
-				}
-			} catch (e) {
-				var _sokErrType = 'Error';
-				var _sokErrMsg = '';
-				try { _sokErrType = (e && e.constructor && e.constructor.name) || 'Error'; } catch (_) {}
-				try {
-					if (e === null) _sokErrMsg = 'null';
-					else if (e === undefined) _sokErrMsg = 'undefined';
-					else if (e && e.message != null) _sokErrMsg = String(e.message);
-					else _sokErrMsg = String(e);
-				} catch (_) { _sokErrMsg = 'Unknown error'; }
-				_sokResultObj = { ok: false, error: _sokErrMsg, errorType: _sokErrType };
-			}
-			// Write result envelope into Memory and then force-serialize via
-			// RawMemory.set. The engine tick-end auto-serialize at
-			// @screeps/driver/lib/runtime/runtime.js:246-248 only overrides
-			// the raw string when rawMemory._parsed is set, but RawMemory.set
-			// deletes _parsed (runtime.bundle.js:15926-15929), so if user
-			// code called RawMemory.set their raw string would win and our
-			// Memory mutation would be lost. Calling RawMemory.set here with
-			// the composed Memory state guarantees the envelope is persisted
-			// regardless of which channel user code touched.
-			//
-			// If Memory parsed to null (user wrote a non-JSON string into raw
-			// memory, as MEMORY-004 size-limit probe does on the failing
-			// path), accessing it throws — fall back to a stub envelope.
-			try {
-				Memory._screepsOkExecuted = true;
-				Memory._screepsOkResult = JSON.stringify(_sokResultObj);
-				delete Memory._screepsOk;
-				RawMemory.set(JSON.stringify(Memory));
-			} catch (e) {
-				RawMemory.set(JSON.stringify({
-					_screepsOkExecuted: true,
-					_screepsOkResult: JSON.stringify(_sokResultObj),
-				}));
-			}
-		}`;
+		// Create players manually (no addBot — avoids phantom spawns and
+		// controller overwrites). User snippets are delivered through
+		// vanilla's built-in users.console eval queue in runPlayer(), so the
+		// installed main loop must stay inert and must not touch Memory.
+		const loopCode = 'module.exports.loop = function() {};';
 
 		for (let i = 0; i < spec.players.length; i++) {
 			const entry = spec.players[i];
@@ -852,48 +951,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		if (!user) throw new Error(`Unknown player: ${handle}`);
 
 		const codeStr = String(playerCode).trimEnd().replace(/;$/, '');
+		const nonce = this.nextRunNonce();
 		const botId = this.resolvePlayer(handle);
 
-		// Inject code into Memory for the bot's main loop to execute
-		const memRaw = await this.env.get(this.env.keys.MEMORY + botId) || '{}';
-		const mem = JSON.parse(memRaw);
-		mem._screepsOk = codeStr;
-		delete mem._screepsOkResult;
-		delete mem._screepsOkExecuted;
-		await this.env.set(this.env.keys.MEMORY + botId, JSON.stringify(mem));
-
-		// Tick to execute — the main loop evals Memory._screepsOk and stores result
-		await this.server.tick();
-		this.firstTickRun = true;
-
-		// Read result from Memory
-		const memAfter = JSON.parse(
-			await this.env.get(this.env.keys.MEMORY + botId) || '{}');
-
-		// Execution confirmation: the main loop sets this before eval
-		if (!memAfter._screepsOkExecuted) {
-			throw new Error(
-				`runPlayer: player '${handle}' code was not executed. ` +
-				`The engine may have skipped this player's main loop.`,
-			);
+		const capture = this.captureRunResult(handle, user, nonce);
+		try {
+			await this.db['users.console'].insert({
+				user: botId,
+				expression: this.buildConsoleCommand(codeStr, nonce),
+				hidden: false,
+			});
+			await this.server.tick();
+			this.firstTickRun = true;
+			return this.parseRunResult('runPlayer', handle, await capture.wait());
+		} finally {
+			capture.dispose();
 		}
-
-		const resultJson = memAfter._screepsOkResult;
-		if (!resultJson) {
-			throw new Error(
-				`runPlayer: execution confirmed but no result captured for '${handle}'.`,
-			);
-		}
-
-		const parsed = JSON.parse(resultJson);
-		if (!parsed.ok) {
-			const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
-				: parsed.errorType === 'SerializationError' ? 'serialization' as const
-				: 'runtime' as const;
-			throw new RunPlayerError(kind, parsed.error);
-		}
-
-		return parsed.value ?? null;
 	}
 
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
@@ -902,52 +975,36 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			if (!this.users.get(handle)) throw new Error(`Unknown player: ${handle}`);
 		}
 
-		for (const handle of handles) {
-			const botId = this.resolvePlayer(handle);
-			const codeStr = String(codesByUser[handle]).trimEnd().replace(/;$/, '');
-			const memRaw = await this.env.get(this.env.keys.MEMORY + botId) || '{}';
-			const mem = JSON.parse(memRaw);
-			mem._screepsOk = codeStr;
-			delete mem._screepsOkResult;
-			delete mem._screepsOkExecuted;
-			await this.env.set(this.env.keys.MEMORY + botId, JSON.stringify(mem));
+		const nonces = new Map(handles.map(handle => [handle, this.nextRunNonce()]));
+		const captures = new Map<string, ResultCapture>();
+		try {
+			for (const handle of handles) {
+				captures.set(handle, this.captureRunResult(handle, this.users.get(handle), nonces.get(handle)!));
+			}
+			for (const handle of handles) {
+				const codeStr = String(codesByUser[handle]).trimEnd().replace(/;$/, '');
+				await this.db['users.console'].insert({
+					user: this.resolvePlayer(handle),
+					expression: this.buildConsoleCommand(codeStr, nonces.get(handle)!),
+					hidden: false,
+				});
+			}
+			await this.server.tick();
+			this.firstTickRun = true;
+
+			const resultJsonByHandle = new Map<string, string | undefined>();
+			await Promise.all(handles.map(async handle => {
+				resultJsonByHandle.set(handle, await captures.get(handle)!.wait());
+			}));
+
+			const results: Record<string, PlayerReturnValue> = {};
+			for (const handle of handles) {
+				results[handle] = this.parseRunResult('runPlayers', handle, resultJsonByHandle.get(handle));
+			}
+			return results;
+		} finally {
+			for (const capture of captures.values()) capture.dispose();
 		}
-
-		await this.server.tick();
-		this.firstTickRun = true;
-
-		const results: Record<string, PlayerReturnValue> = {};
-		for (const handle of handles) {
-			const botId = this.resolvePlayer(handle);
-			const memAfter = JSON.parse(
-				await this.env.get(this.env.keys.MEMORY + botId) || '{}');
-
-			if (!memAfter._screepsOkExecuted) {
-				throw new Error(
-					`runPlayers: player '${handle}' code was not executed. ` +
-					`The engine may have skipped this player's main loop.`,
-				);
-			}
-
-			const resultJson = memAfter._screepsOkResult;
-			if (!resultJson) {
-				throw new Error(
-					`runPlayers: execution confirmed but no result captured for '${handle}'.`,
-				);
-			}
-
-			const parsed = JSON.parse(resultJson);
-			if (!parsed.ok) {
-				const kind = parsed.errorType === 'SyntaxError' ? 'syntax' as const
-					: parsed.errorType === 'SerializationError' ? 'serialization' as const
-					: 'runtime' as const;
-				throw new RunPlayerError(kind, parsed.error);
-			}
-
-			results[handle] = parsed.value ?? null;
-		}
-
-		return results;
 	}
 
 	async tick(count = 1): Promise<void> {
@@ -987,6 +1044,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		this.db = null;
 		this.env = null;
 		this.idCounter = 0;
+		this.runCounter = 0;
 		this.firstTickRun = false;
 	}
 

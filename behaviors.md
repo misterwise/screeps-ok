@@ -2948,7 +2948,7 @@ Coverage Notes
 - `MEMORY-004` `behavior` `verified_vanilla`
   `RawMemory.set()` throws when the raw memory string exceeds the `2 MB`
   limit.
-- `MEMORY-005` `behavior`
+- `MEMORY-005` `behavior` `verified_vanilla`
   `RawMemory.set(value)` called after `Memory` was accessed earlier in the
   tick still persists `value` as the new raw memory across the tick
   boundary; on the next tick `Memory` reflects the parsed `value`.
@@ -3175,6 +3175,38 @@ operates on the `Memory` global's property descriptor.
   end, tick-end auto-serialization persists `JSON.stringify(obj)` to raw
   memory — propagating mutations made to `obj` during the tick even though
   `Memory` was never JSON-parsed from raw.
+- `UNDOC-MEMHACK-007` `behavior` `verified_vanilla`
+  A first access through `creep.memory` has the same self-replacing
+  `Memory` side effect as a direct `Memory` access: a later same-tick
+  `RawMemory.set()` does not change what `creep.memory` reads for the
+  remainder of the tick, while `RawMemory.get()` reflects the string passed
+  to `set()`. Across the tick boundary, that raw string is the source of
+  truth: `creep.memory` reflects the parsed `set()` payload and same-tick
+  mutations to the stale object do not persist.
+- `UNDOC-MEMHACK-008` `behavior` `verified_vanilla`
+  A first access through `flag.memory` has the same self-replacing
+  `Memory` side effect as a direct `Memory` access: a later same-tick
+  `RawMemory.set()` does not change what `flag.memory` reads for the
+  remainder of the tick, while `RawMemory.get()` reflects the string passed
+  to `set()`. Across the tick boundary, that raw string is the source of
+  truth: `flag.memory` reflects the parsed `set()` payload and same-tick
+  mutations to the stale object do not persist.
+- `UNDOC-MEMHACK-009` `behavior` `verified_vanilla`
+  A first access through `room.memory` has the same self-replacing
+  `Memory` side effect as a direct `Memory` access: a later same-tick
+  `RawMemory.set()` does not change what `room.memory` reads for the
+  remainder of the tick, while `RawMemory.get()` reflects the string passed
+  to `set()`. Across the tick boundary, that raw string is the source of
+  truth: `room.memory` reflects the parsed `set()` payload and same-tick
+  mutations to the stale object do not persist.
+- `UNDOC-MEMHACK-010` `behavior` `verified_vanilla`
+  A first access through `spawn.memory` has the same self-replacing
+  `Memory` side effect as a direct `Memory` access: a later same-tick
+  `RawMemory.set()` does not change what `spawn.memory` reads for the
+  remainder of the tick, while `RawMemory.get()` reflects the string passed
+  to `set()`. Across the tick boundary, that raw string is the source of
+  truth: `spawn.memory` reflects the parsed `set()` payload and same-tick
+  mutations to the stale object do not persist.
 
 Notes
 - The canonical cross-tick memhack pattern is the composition of
