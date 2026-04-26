@@ -15,6 +15,18 @@ import { describe, test, expect, code,
 	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
 } from '../../src/index.js';
 
+type EventEntry = { event: number; objectId: string; data?: any };
+
+// Asserts that exactly one entry in `events` matches `predicate` and returns
+// it. Each EVENT_* should be emitted once at the action site — vanilla's
+// canonical contract — so any test searching for "the" event also rules out
+// duplicate-emission regressions.
+function expectExactlyOne(events: EventEntry[], predicate: (e: EventEntry) => boolean): EventEntry {
+	const matches = events.filter(predicate);
+	expect(matches).toHaveLength(1);
+	return matches[0]!;
+}
+
 describe('room.getEventLog()', () => {
 	test('ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array', async ({ shard }) => {
 		await shard.createShard({
@@ -52,13 +64,11 @@ describe('room.getEventLog()', () => {
 		`) as Array<{ event: number; objectId: string; data: any }>;
 		expect(Array.isArray(events)).toBe(true);
 
-		const attackEvent = events.find(
-			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker,
-		);
-		expect(attackEvent).toBeDefined();
-		expect(attackEvent!.data.targetId).toBe(ids.target);
-		expect(attackEvent!.data.damage).toBe(ATTACK_POWER);
-		expect(attackEvent!.data.attackType).toBe(EVENT_ATTACK_TYPE_MELEE);
+		const attackEvent = expectExactlyOne(events,
+			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker);
+		expect(attackEvent.data.targetId).toBe(ids.target);
+		expect(attackEvent.data.damage).toBe(ATTACK_POWER);
+		expect(attackEvent.data.attackType).toBe(EVENT_ATTACK_TYPE_MELEE);
 	});
 
 	test('ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string', async ({ shard }) => {
@@ -138,14 +148,12 @@ describe('room.getEventLog()', () => {
 		`) as Array<{ event: number; objectId: string; data: any }>;
 		expect(Array.isArray(events)).toBe(true);
 
-		const healEvent = events.find(
-			e => e.event === EVENT_HEAL && e.objectId === ids.tower,
-		);
-		expect(healEvent).toBeDefined();
-		expect(healEvent!.data.targetId).toBe(ids.friendly);
-		expect(healEvent!.data.amount).toBeGreaterThan(0);
+		const healEvent = expectExactlyOne(events,
+			e => e.event === EVENT_HEAL && e.objectId === ids.tower);
+		expect(healEvent.data.targetId).toBe(ids.friendly);
+		expect(healEvent.data.amount).toBeGreaterThan(0);
 		// Tower heal is ranged (EVENT_HEAL_TYPE_RANGED = 2), not melee.
-		expect(healEvent!.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
+		expect(healEvent.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
 	});
 
 	test('ROOM-EVENTLOG-004 room events are only exposed for the current tick', async ({ shard }) => {
@@ -214,10 +222,9 @@ describe('room.getEventLog()', () => {
 		`) as Array<{ event: number; objectId: string; data?: any }>;
 		// Identify by event type — placeCreep handle ≠ engine objectId on
 		// xxscreeps, so direct objectId comparison would mismatch.
-		const destroyed = deathEvents.find(e => e.event === EVENT_OBJECT_DESTROYED);
-		expect(destroyed).toBeDefined();
-		expect(destroyed!.data).toBeDefined();
-		expect(destroyed!.data.type).toBe('creep');
+		const destroyed = expectExactlyOne(deathEvents, e => e.event === EVENT_OBJECT_DESTROYED);
+		expect(destroyed.data).toBeDefined();
+		expect(destroyed.data.type).toBe('creep');
 	});
 
 	test('ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType', async ({ shard }) => {
@@ -249,10 +256,9 @@ describe('room.getEventLog()', () => {
 		// Identify by event type — placeStructure handle ≠ engine objectId on
 		// xxscreeps. The data.type field carries the structureType for
 		// structure destruction.
-		const destroyed = events.find(e => e.event === EVENT_OBJECT_DESTROYED);
-		expect(destroyed).toBeDefined();
-		expect(destroyed!.data).toBeDefined();
-		expect(destroyed!.data.type).toBe(STRUCTURE_WALL);
+		const destroyed = expectExactlyOne(events, e => e.event === EVENT_OBJECT_DESTROYED);
+		expect(destroyed.data).toBeDefined();
+		expect(destroyed.data.type).toBe(STRUCTURE_WALL);
 	});
 
 	test('ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction', async ({ shard }) => {
@@ -301,13 +307,11 @@ describe('room.getEventLog()', () => {
 		const transferEvents = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		const transfer = transferEvents.find(
-			e => e.event === EVENT_TRANSFER && e.objectId === ids.carrier,
-		);
-		expect(transfer).toBeDefined();
-		expect(transfer!.data.targetId).toBe(ids.container);
-		expect(transfer!.data.resourceType).toBe(RESOURCE_ENERGY);
-		expect(transfer!.data.amount).toBe(50);
+		const transfer = expectExactlyOne(transferEvents,
+			e => e.event === EVENT_TRANSFER && e.objectId === ids.carrier);
+		expect(transfer.data.targetId).toBe(ids.container);
+		expect(transfer.data.resourceType).toBe(RESOURCE_ENERGY);
+		expect(transfer.data.amount).toBe(50);
 
 		// Variant 2: creep.withdraw → objectId=container (the source), targetId=creep.
 		await shard.runPlayer('p1', code`
@@ -318,14 +322,12 @@ describe('room.getEventLog()', () => {
 		const withdrawEvents = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		const withdraw = withdrawEvents.find(
+		const withdraw = expectExactlyOne(withdrawEvents,
 			e => e.event === EVENT_TRANSFER
 				&& e.objectId === ids.container
-				&& e.data?.targetId === ids.carrier,
-		);
-		expect(withdraw).toBeDefined();
-		expect(withdraw!.data.resourceType).toBe(RESOURCE_ENERGY);
-		expect(withdraw!.data.amount).toBe(30);
+				&& e.data?.targetId === ids.carrier);
+		expect(withdraw.data.resourceType).toBe(RESOURCE_ENERGY);
+		expect(withdraw.data.amount).toBe(30);
 
 		// Variant 3: link.transferEnergy → amount is pre-loss (matches source-side debit).
 		const sentAmount = 100;
@@ -337,14 +339,12 @@ describe('room.getEventLog()', () => {
 		const linkEvents = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		const linkTransfer = linkEvents.find(
-			e => e.event === EVENT_TRANSFER && e.objectId === ids.link1,
-		);
-		expect(linkTransfer).toBeDefined();
-		expect(linkTransfer!.data.targetId).toBe(ids.link2);
-		expect(linkTransfer!.data.resourceType).toBe(RESOURCE_ENERGY);
+		const linkTransfer = expectExactlyOne(linkEvents,
+			e => e.event === EVENT_TRANSFER && e.objectId === ids.link1);
+		expect(linkTransfer.data.targetId).toBe(ids.link2);
+		expect(linkTransfer.data.resourceType).toBe(RESOURCE_ENERGY);
 		// Pre-loss amount; the destination receives less due to LINK_LOSS_RATIO.
-		expect(linkTransfer!.data.amount).toBe(sentAmount);
+		expect(linkTransfer.data.amount).toBe(sentAmount);
 		expect(sentAmount * LINK_LOSS_RATIO).toBeGreaterThan(0);
 	});
 
@@ -380,11 +380,10 @@ describe('room.getEventLog()', () => {
 
 		// Identify by event type — placeCreep handle ≠ engine objectId on
 		// xxscreeps. The destination room/x/y are the meaningful payload.
-		const exit = events.find(e => e.event === EVENT_EXIT);
-		expect(exit).toBeDefined();
-		expect(exit!.data.room).toBe('W0N1');
-		expect(exit!.data.x).toBe(0);
-		expect(exit!.data.y).toBe(25);
+		const exit = expectExactlyOne(events, e => e.event === EVENT_EXIT);
+		expect(exit.data.room).toBe('W0N1');
+		expect(exit.data.x).toBe(0);
+		expect(exit.data.y).toBe(25);
 	});
 
 	test('ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller', async ({ shard }) => {
@@ -412,11 +411,10 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W2N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
 		// Identify by event type — placeCreep handle ≠ engine objectId on xxscreeps.
-		const attackCtrl = events.find(e => e.event === EVENT_ATTACK_CONTROLLER);
-		expect(attackCtrl).toBeDefined();
+		const attackCtrl = expectExactlyOne(events, e => e.event === EVENT_ATTACK_CONTROLLER);
 		// Vanilla emits this event with no extra fields; the read-side wrapper
 		// must omit `data` entirely (not return `{data: {}}`).
-		expect(attackCtrl!.data).toBeUndefined();
+		expect(attackCtrl.data).toBeUndefined();
 	});
 
 	test('ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE', async ({ shard }) => {
@@ -445,10 +443,9 @@ describe('room.getEventLog()', () => {
 		const events = await shard.runPlayer('p1', code`
 			Game.rooms['W2N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		const reserve = events.find(e => e.event === EVENT_RESERVE_CONTROLLER);
-		expect(reserve).toBeDefined();
-		expect(reserve!.data).toBeDefined();
-		expect(reserve!.data.amount).toBe(claimParts * CONTROLLER_RESERVE);
+		const reserve = expectExactlyOne(events, e => e.event === EVENT_RESERVE_CONTROLLER);
+		expect(reserve.data).toBeDefined();
+		expect(reserve.data.amount).toBe(claimParts * CONTROLLER_RESERVE);
 	});
 
 	test('ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied', async ({ shard }) => {
@@ -475,12 +472,11 @@ describe('room.getEventLog()', () => {
 		const events = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		const upgrade = events.find(e => e.event === EVENT_UPGRADE_CONTROLLER);
-		expect(upgrade).toBeDefined();
-		expect(upgrade!.data).toBeDefined();
+		const upgrade = expectExactlyOne(events, e => e.event === EVENT_UPGRADE_CONTROLLER);
+		expect(upgrade.data).toBeDefined();
 		// 2 WORK × UPGRADE_CONTROLLER_POWER (=1) = 2 energy applied.
-		expect(upgrade!.data.amount).toBe(2);
-		expect(upgrade!.data.energySpent).toBe(2);
+		expect(upgrade.data.amount).toBe(2);
+		expect(upgrade.data.energySpent).toBe(2);
 	});
 
 	test('ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested', async ({ shard }) => {
@@ -509,12 +505,10 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const harvest = events.find(
-			e => e.event === EVENT_HARVEST && e.objectId === ids.creep,
-		);
-		expect(harvest).toBeDefined();
-		expect(harvest!.data.targetId).toBe(ids.source);
-		expect(harvest!.data.amount).toBe(HARVEST_POWER);
+		const harvest = expectExactlyOne(events,
+			e => e.event === EVENT_HARVEST && e.objectId === ids.creep);
+		expect(harvest.data.targetId).toBe(ids.source);
+		expect(harvest.data.amount).toBe(HARVEST_POWER);
 	});
 
 	test('ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added', async ({ shard }) => {
@@ -547,14 +541,12 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const build = events.find(
-			e => e.event === EVENT_BUILD && e.objectId === ids.builder,
-		);
-		expect(build).toBeDefined();
-		expect(build!.data.targetId).toBe(ids.site);
-		expect(build!.data.amount).toBe(BUILD_POWER);
+		const build = expectExactlyOne(events,
+			e => e.event === EVENT_BUILD && e.objectId === ids.builder);
+		expect(build.data.targetId).toBe(ids.site);
+		expect(build.data.amount).toBe(BUILD_POWER);
 		// One swing is far below a road's progressTotal, so the site stays incomplete.
-		expect(build!.data.incomplete).toBe(true);
+		expect(build.data.incomplete).toBe(true);
 	});
 
 	test('ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored', async ({ shard }) => {
@@ -588,14 +580,12 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const repair = events.find(
-			e => e.event === EVENT_REPAIR && e.objectId === ids.repairer,
-		);
-		expect(repair).toBeDefined();
-		expect(repair!.data.targetId).toBe(ids.wall);
+		const repair = expectExactlyOne(events,
+			e => e.event === EVENT_REPAIR && e.objectId === ids.repairer);
+		expect(repair.data.targetId).toBe(ids.wall);
 		// 1 WORK × REPAIR_POWER (=100) HP restored, costing REPAIR_POWER × REPAIR_COST (=1) energy.
-		expect(repair!.data.amount).toBe(REPAIR_POWER);
-		expect(repair!.data.energySpent).toBe(REPAIR_POWER * REPAIR_COST);
+		expect(repair.data.amount).toBe(REPAIR_POWER);
+		expect(repair.data.energySpent).toBe(REPAIR_POWER * REPAIR_COST);
 	});
 
 	test('ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER', async ({ shard }) => {
@@ -629,13 +619,11 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const ranged = events.find(
-			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker,
-		);
-		expect(ranged).toBeDefined();
-		expect(ranged!.data.targetId).toBe(ids.target);
-		expect(ranged!.data.damage).toBe(RANGED_ATTACK_POWER);
-		expect(ranged!.data.attackType).toBe(EVENT_ATTACK_TYPE_RANGED);
+		const ranged = expectExactlyOne(events,
+			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker);
+		expect(ranged.data.targetId).toBe(ids.target);
+		expect(ranged.data.damage).toBe(RANGED_ATTACK_POWER);
+		expect(ranged.data.attackType).toBe(EVENT_ATTACK_TYPE_RANGED);
 	});
 
 	test('ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
@@ -679,6 +667,8 @@ describe('room.getEventLog()', () => {
 				&& e.objectId === ids.attacker
 				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS,
 		);
+		// Exactly one event per damaged target — duplicate emission would inflate this.
+		expect(massEvents).toHaveLength(2);
 		const byTarget = new Map(massEvents.map(e => [e.data.targetId, e.data.damage]));
 		// Distance 1: full damage. Distance 3: damage × distanceRate[3] (0.1), rounded.
 		expect(byTarget.get(ids.near)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
@@ -721,18 +711,16 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const melee = events.find(e => e.event === EVENT_ATTACK
+		const melee = expectExactlyOne(events, e => e.event === EVENT_ATTACK
 			&& e.objectId === ids.attacker
 			&& e.data?.attackType === EVENT_ATTACK_TYPE_MELEE);
-		expect(melee).toBeDefined();
-		expect(melee!.data.damage).toBe(4 * ATTACK_POWER);
+		expect(melee.data.damage).toBe(4 * ATTACK_POWER);
 
-		const hitBack = events.find(e => e.event === EVENT_ATTACK
+		const hitBack = expectExactlyOne(events, e => e.event === EVENT_ATTACK
 			&& e.objectId === ids.target
 			&& e.data?.attackType === EVENT_ATTACK_TYPE_HIT_BACK);
-		expect(hitBack).toBeDefined();
-		expect(hitBack!.data.targetId).toBe(ids.attacker);
-		expect(hitBack!.data.damage).toBe(2 * ATTACK_POWER);
+		expect(hitBack.data.targetId).toBe(ids.attacker);
+		expect(hitBack.data.damage).toBe(2 * ATTACK_POWER);
 	});
 
 	test('ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER', async ({ shard }) => {
@@ -775,13 +763,11 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const heal = events.find(
-			e => e.event === EVENT_HEAL && e.objectId === ids.healer,
-		);
-		expect(heal).toBeDefined();
-		expect(heal!.data.targetId).toBe(ids.friendly);
-		expect(heal!.data.amount).toBe(HEAL_POWER);
-		expect(heal!.data.healType).toBe(EVENT_HEAL_TYPE_MELEE);
+		const heal = expectExactlyOne(events,
+			e => e.event === EVENT_HEAL && e.objectId === ids.healer);
+		expect(heal.data.targetId).toBe(ids.friendly);
+		expect(heal.data.amount).toBe(HEAL_POWER);
+		expect(heal.data.healType).toBe(EVENT_HEAL_TYPE_MELEE);
 	});
 
 	test('ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands', async ({ shard }) => {
@@ -813,14 +799,12 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W2N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const nukeAttack = events.find(
+		const nukeAttack = expectExactlyOne(events,
 			e => e.event === EVENT_ATTACK
 				&& e.data?.attackType === EVENT_ATTACK_TYPE_NUKE
-				&& e.data?.targetId === wallRealId,
-		);
-		expect(nukeAttack).toBeDefined();
+				&& e.data?.targetId === wallRealId);
 		// Wall sits on the impact tile (range 0) → NUKE_DAMAGE[0].
-		expect(nukeAttack!.data.damage).toBe(NUKE_DAMAGE[0]);
+		expect(nukeAttack.data.damage).toBe(NUKE_DAMAGE[0]);
 	});
 
 	test('ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds', async ({ shard }) => {
@@ -856,11 +840,9 @@ describe('room.getEventLog()', () => {
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data: any }>;
 
-		const power = events.find(
-			e => e.event === EVENT_POWER && e.objectId === ids.pc,
-		);
-		expect(power).toBeDefined();
-		expect(power!.data.power).toBe(PWR_OPERATE_SPAWN);
-		expect(power!.data.targetId).toBe(ids.spawn);
+		const power = expectExactlyOne(events,
+			e => e.event === EVENT_POWER && e.objectId === ids.pc);
+		expect(power.data.power).toBe(PWR_OPERATE_SPAWN);
+		expect(power.data.targetId).toBe(ids.spawn);
 	});
 });
