@@ -2353,6 +2353,14 @@ Coverage Notes
   When a structure is destroyed on a tick where multiple attackers landed
   damage on it, `EVENT_OBJECT_DESTROYED` is emitted exactly once for that
   structure.
+- `ROOM-EVENTLOG-024` `behavior` `verified_vanilla`
+  On a kill-shot, `EVENT_OBJECT_DESTROYED` for the destroyed target precedes
+  the originating `EVENT_ATTACK` in `Room.getEventLog()`'s array order.
+- `ROOM-EVENTLOG-025` `behavior` `verified_vanilla`
+  When a melee attack triggers a counter from a target with `ATTACK` parts,
+  the `EVENT_ATTACK` entry with `attackType === EVENT_ATTACK_TYPE_HIT_BACK`
+  precedes the originating `EVENT_ATTACK` entry in `Room.getEventLog()`'s
+  array order.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`

@@ -969,4 +969,78 @@ describe('room.getEventLog()', () => {
 		// exactly one destroyed-event.
 		expectExactlyOne(events, e => e.event === EVENT_OBJECT_DESTROYED);
 	});
+
+	test('ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		// One swing of 4 ATTACK = 120 dmg destroys the 60-hit wall.
+		const wallId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_WALL, hits: 60,
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${wallId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data?: any }>;
+
+		const destroyedIdx = events.findIndex(e => e.event === EVENT_OBJECT_DESTROYED);
+		const attackIdx = events.findIndex(e =>
+			e.event === EVENT_ATTACK && e.data?.attackType === EVENT_ATTACK_TYPE_MELEE);
+		// Vanilla `_damage.js` pushes EVENT_OBJECT_DESTROYED before EVENT_ATTACK
+		// for the same damage event. Player code that reads the log in order
+		// (e.g. an "I just got killed → log who" reaction) depends on this.
+		expect(destroyedIdx).toBeGreaterThanOrEqual(0);
+		expect(attackIdx).toBeGreaterThanOrEqual(0);
+		expect(destroyedIdx).toBeLessThan(attackIdx);
+	});
+
+	test('ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		// Both creeps survive the swing — no death events to mix in.
+		// Attacker: 6 TOUGH + 4 ATTACK + MOVE → 1100 hits, 120 dmg/swing.
+		// Target:   6 TOUGH + 2 ATTACK + MOVE → 900 hits, 60 hit-back dmg.
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2',
+			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data?: any }>;
+
+		const hitBackIdx = events.findIndex(e =>
+			e.event === EVENT_ATTACK && e.data?.attackType === EVENT_ATTACK_TYPE_HIT_BACK);
+		const attackIdx = events.findIndex(e =>
+			e.event === EVENT_ATTACK && e.data?.attackType === EVENT_ATTACK_TYPE_MELEE);
+		// Vanilla `_damage.js` pushes the HIT_BACK ATTACK before the original
+		// ATTACK for the damage call that triggered the counter.
+		expect(hitBackIdx).toBeGreaterThanOrEqual(0);
+		expect(attackIdx).toBeGreaterThanOrEqual(0);
+		expect(hitBackIdx).toBeLessThan(attackIdx);
+	});
 });
