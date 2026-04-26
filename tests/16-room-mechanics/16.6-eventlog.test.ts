@@ -932,4 +932,41 @@ describe('room.getEventLog()', () => {
 		expect(heal.data.amount).toBe(RANGED_HEAL_POWER);
 		expect(heal.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
 	});
+
+	test('ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		// Wall sandwiched between two attackers; either swing alone destroys
+		// it, so the second swing exercises the alive→dead transition gate.
+		// Vanilla emits OBJECT_DESTROYED at end of tick once per death;
+		// duplicate emission would double the count.
+		const wallId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_WALL, hits: 60,
+		});
+		const attackerAId = await shard.placeCreep('W1N1', {
+			pos: [24, 25], owner: 'p1',
+			body: [ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		const attackerBId = await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p1',
+			body: [ATTACK, ATTACK, ATTACK, ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerAId}).attack(Game.getObjectById(${wallId}));
+			Game.getObjectById(${attackerBId}).attack(Game.getObjectById(${wallId}));
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number; objectId: string; data?: any }>;
+
+		// Identify by event type — placeStructure handle ≠ engine objectId on
+		// xxscreeps. Multi-attacker single-tick destruction must still produce
+		// exactly one destroyed-event.
+		expectExactlyOne(events, e => e.event === EVENT_OBJECT_DESTROYED);
+	});
 });

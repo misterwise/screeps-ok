@@ -2349,6 +2349,10 @@ Coverage Notes
   `EVENT_HEAL` from creep `rangedHeal()` carries
   `data.healType === EVENT_HEAL_TYPE_RANGED` and `data.amount` equal to
   `RANGED_HEAL_POWER` per HEAL part.
+- `ROOM-EVENTLOG-023` `behavior` `verified_vanilla`
+  When a structure is destroyed on a tick where multiple attackers landed
+  damage on it, `EVENT_OBJECT_DESTROYED` is emitted exactly once for that
+  structure.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`
