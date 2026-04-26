@@ -41,8 +41,9 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // added buildNestedNativeAddons for isolated-vm + ivm-inspect; v4 added
 // @xxscreeps/lodash3 wiring after upstream extracted lodash from the
 // xxscreeps package into a sibling workspace; v5 dereferences pnpm
-// symlinks during layOutPackages).
-const stampSchema = 'v5';
+// symlinks during layOutPackages; v6 wipes carried-over node_modules so
+// nested install fetches lodash3's `dist/` tarball from the registry).
+const stampSchema = 'v6';
 
 function stampContent(token) {
 	return `${token}\nschema=${stampSchema}`;
@@ -161,6 +162,12 @@ function layOutPackages(srcDir) {
 	rmSync(xxscreepsDir, { recursive: true, force: true });
 	mkdirSync(dirname(xxscreepsDir), { recursive: true });
 	execFileSync('cp', ['-RL', join(srcDir, 'packages/xxscreeps') + '/.', xxscreepsDir], { stdio: 'inherit' });
+	// Drop any node_modules carried over from the source workspace. pnpm symlinks
+	// dereference into source-only sibling packages (e.g. @xxscreeps/lodash3 has
+	// `lodash.ts` but no compiled `dist/`); leaving them in place fools the
+	// nested `npm install` into thinking the version is satisfied. Wipe so
+	// installNestedDeps fetches fresh registry tarballs that include `dist/`.
+	rmSync(join(xxscreepsDir, 'node_modules'), { recursive: true, force: true });
 
 	rmSync(pathfinderDir, { recursive: true, force: true });
 	mkdirSync(dirname(pathfinderDir), { recursive: true });
