@@ -3010,6 +3010,12 @@ Coverage Notes
   `RawMemory.set(value)` called after `Memory` was accessed earlier in the
   tick still persists `value` as the new raw memory across the tick
   boundary; on the next tick `Memory` reflects the parsed `value`.
+- `MEMORY-006` `behavior` `verified_vanilla`
+  `RawMemory.set(value)` followed in the same tick by a `Memory` access and
+  a mutation persists the *mutated parsed* object across the tick boundary,
+  not `value` verbatim. Vanilla parses `value` on first access, sets
+  `RawMemory._parsed = parsed`, and end-of-tick serialization stringifies
+  `_parsed` (which carries the post-access mutation), overriding `value`.
 
 ### 25.2 RawMemory
 - `RAWMEMORY-001` `behavior` `verified_vanilla`
@@ -3265,6 +3271,21 @@ operates on the `Memory` global's property descriptor.
   to `set()`. Across the tick boundary, that raw string is the source of
   truth: `spawn.memory` reflects the parsed `set()` payload and same-tick
   mutations to the stale object do not persist.
+- `UNDOC-MEMHACK-011` `behavior` `verified_vanilla`
+  After `Memory` has been accessed (populating `RawMemory._parsed`),
+  `delete RawMemory._parsed` (or `RawMemory._parsed = undefined`) before
+  tick end skips end-of-tick serialization: `RawMemory.get()` on the next
+  tick still reflects the previous tick's saved value, and same-tick
+  mutations to `Memory` are not persisted. (This is the legitimate
+  skip-save memhack pattern; distinct from `UNDOC-MEMHACK-006` which
+  *replaces* the saved value.)
+- `UNDOC-MEMHACK-012` `behavior` `verified_vanilla`
+  After the first `Memory` access in a tick, the `Memory` property
+  descriptor is a value descriptor (`value` set, no `get`/`set`) with
+  `configurable: true` and `enumerable: true`. The accessor descriptor
+  from `UNDOC-MEMHACK-001` redefines itself to a value pointing at the
+  parsed object — this self-replace is what pins the in-tick reference
+  for `MEMORY-002` and `UNDOC-MEMHACK-007`/`008`/`009`/`010`.
 
 Notes
 - The canonical cross-tick memhack pattern is the composition of

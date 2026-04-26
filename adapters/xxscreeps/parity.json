@@ -81,9 +81,9 @@
 			"tests": ["MEMORY-004"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
-			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations",
-			"expected": "Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack)",
-			"tests": ["MEMORY-002", "UNDOC-MEMHACK-007", "UNDOC-MEMHACK-008", "UNDOC-MEMHACK-009", "UNDOC-MEMHACK-010"]
+			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`).",
+			"expected": "Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access.",
+			"tests": ["MEMORY-002", "UNDOC-MEMHACK-007", "UNDOC-MEMHACK-008", "UNDOC-MEMHACK-009", "UNDOC-MEMHACK-010", "UNDOC-MEMHACK-012"]
 		},
 		"foreign-segment-not-supported": {
 			"actual": "`setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick",
@@ -96,9 +96,9 @@
 			"tests": ["UNDOC-PACKEDPOS-003"]
 		},
 		"memory-parsed-json-not-refreshed-across-ticks": {
-			"actual": "xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string.",
+			"actual": "xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse.",
 			"expected": "`Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics.",
-			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004"]
+			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004", "UNDOC-MEMHACK-011"]
 		},
 		"memory-circular-ref-crash": {
 			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",

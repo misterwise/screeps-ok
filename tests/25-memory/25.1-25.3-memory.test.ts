@@ -64,6 +64,26 @@ describe('Memory', () => {
 		expect(result).toBe('threw');
 	});
 
+	test('MEMORY-006 set → access → mutate persists the mutated parse across ticks', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// Tick 1: set + access + mutate. Vanilla parses the set string on first
+		// access (populating _parsed), so the post-set mutation lands on the same
+		// object that gets serialized at tick end.
+		await shard.runPlayer('p1', code`
+			RawMemory.set('{"fromSet":1}');
+			Memory.fromSet;
+			Memory.added = 'after-set';
+			'ok'
+		`);
+
+		// Tick 2: both the set string's content and the mutation should be in raw.
+		const raw = await shard.runPlayer('p1', code`RawMemory.get()`) as string;
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		expect(parsed.fromSet).toBe(1);
+		expect(parsed.added).toBe('after-set');
+	});
+
 	test('MEMORY-005 RawMemory.set after Memory access persists across ticks', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 

@@ -329,6 +329,75 @@ describe('Undocumented API Surface — memhack', () => {
 		expect(nextTick.raw).toBe('{"rooms":{"W1N1":{"fromRaw":true}}}');
 	});
 
+	test('UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// Tick 1: seed a baseline value to observe across the skip.
+		await shard.runPlayer('p1', code`
+			Memory.seed = 'baseline';
+			'ok'
+		`);
+
+		// Tick 2: read Memory (populates _parsed), mutate, then delete _parsed.
+		// Tick-end serialization checks `if (_parsed)` — falsy means no save,
+		// so the mutation is dropped and tick 1's raw is preserved.
+		await shard.runPlayer('p1', code`
+			Memory.seed;
+			Memory.mutated = 'should-not-persist';
+			delete RawMemory._parsed;
+			'ok'
+		`);
+
+		// Tick 3: raw still reflects tick 1's saved value, AND `Memory` reflects
+		// a fresh parse of that raw — the mutation never persisted. The
+		// `Memory.x` assertions implicitly require cross-tick re-parse, which
+		// vanilla guarantees; xxscreeps's parsed-`json` cache violates it (see
+		// `memory-parsed-json-not-refreshed-across-ticks`).
+		const result = await shard.runPlayer('p1', code`
+			({ raw: RawMemory.get(), seed: Memory.seed, mutated: Memory.mutated })
+		`) as { raw: string; seed: unknown; mutated: unknown };
+
+		expect(result.seed).toBe('baseline');
+		expect(result.mutated).toBeUndefined();
+		const parsed = JSON.parse(result.raw) as Record<string, unknown>;
+		expect(parsed.seed).toBe('baseline');
+		expect(parsed.mutated).toBeUndefined();
+	});
+
+	test('UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			Memory;
+			const desc = Object.getOwnPropertyDescriptor(global, 'Memory');
+			({
+				hasDesc: desc !== undefined,
+				hasValue: desc && 'value' in desc,
+				hasGetter: desc && typeof desc.get === 'function',
+				hasSetter: desc && typeof desc.set === 'function',
+				configurable: desc && desc.configurable === true,
+				enumerable: desc && desc.enumerable === true,
+				valueIsObject: desc && typeof desc.value === 'object' && desc.value !== null,
+			})
+		`) as {
+			hasDesc: boolean;
+			hasValue: boolean;
+			hasGetter: boolean;
+			hasSetter: boolean;
+			configurable: boolean;
+			enumerable: boolean;
+			valueIsObject: boolean;
+		};
+
+		expect(result.hasDesc).toBe(true);
+		expect(result.hasValue).toBe(true);
+		expect(result.hasGetter).toBe(false);
+		expect(result.hasSetter).toBe(false);
+		expect(result.configurable).toBe(true);
+		expect(result.enumerable).toBe(true);
+		expect(result.valueIsObject).toBe(true);
+	});
+
 	test('UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeStructure('W1N1', {

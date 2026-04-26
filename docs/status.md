@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1318%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1094%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1321%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1095%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-56-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1318](#vanilla-passing-tests) | — | — | — | 2026-04-26 04:54 UTC |
-| 🟡 | **xxscreeps** | [1094](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 04:51 UTC |
+| 🟢 | **vanilla** | [1321](#vanilla-passing-tests) | — | — | — | 2026-04-26 17:22 UTC |
+| 🟡 | **xxscreeps** | [1095](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 17:19 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 54 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 56 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -45,10 +45,10 @@ xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
-| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack) | [5](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
+| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-not-supported) |
 | `packedpos-write-ignored` | Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`) | Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges) | [1](#xxscreeps-gap-packedpos-write-ignored) |
-| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [3](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
+| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -56,10 +56,10 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-rampart-no-protection">
 <summary><code>rampart-no-protection</code> — 6 tests</summary>
 
-- `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
 - `creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead`
 - `creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead`
 - `creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart`
+- `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
 - `StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep`
 - `StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart`
 
@@ -193,12 +193,13 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
-<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 5 tests</summary>
+<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 6 tests</summary>
 
 - `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
 
 </details>
@@ -218,8 +219,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks">
-<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 3 tests</summary>
+<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 4 tests</summary>
 
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick`
@@ -237,7 +239,7 @@ Click a test count above to jump to the affected test list for that gap.
 ## vanilla passing tests
 
 <details>
-<summary>1318 tests across 118 files</summary>
+<summary>1321 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1778,12 +1780,13 @@ Click a test count above to jump to the affected test list for that gap.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (19)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (20)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
 - Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
+- Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002 segment limits match canonical constants
@@ -1848,7 +1851,7 @@ Click a test count above to jump to the affected test list for that gap.
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
-**`tests/27-undocumented/27.1-memhack.test.ts`** (10)
+**`tests/27-undocumented/27.1-memhack.test.ts`** (12)
 
 - Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
 - Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
@@ -1859,6 +1862,8 @@ Click a test count above to jump to the affected test list for that gap.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick
 - Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick
 - Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save
+- Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value
 - Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
@@ -2282,7 +2287,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1094 tests across 100 files</summary>
+<summary>1095 tests across 100 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3570,10 +3575,11 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (16)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (17)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
+- Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002 segment limits match canonical constants
