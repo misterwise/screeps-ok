@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-25 (PR-7 noted merged as #136; PR-10 split — PR-10a submitted as #152).
+Last refreshed: 2026-04-25 (PR-7 noted merged as #136; PR-10 split — PR-10a submitted as #152; PR-10b submitted as #153).
 
 PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-precedence` (FACTORY-PRODUCE-010) shared the same root cause in `checkMyStructure` and cleared without a separate fix.
 
@@ -34,6 +34,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-14a | [laverdet/xxscreeps#133](https://github.com/laverdet/xxscreeps/pull/133) | Add Game.cpuLimit, Game.powerCreeps, Room.survivalInfo |
 | PR-14b | [laverdet/xxscreeps#134](https://github.com/laverdet/xxscreeps/pull/134) | Remove hits/hitsMax/my leak from RoomObject base |
 | PR-10a | [laverdet/xxscreeps#152](https://github.com/laverdet/xxscreeps/pull/152) | Fix Creep.transfer redirect to upgradeController; reject pull on spawning |
+| PR-10b | [laverdet/xxscreeps#153](https://github.com/laverdet/xxscreeps/pull/153) | Add Creep.withdraw enemy-rampart guard; fix moveTo noPathFinding return code |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -152,11 +153,12 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 - **PR-10a (#152) — submitted:** items 1 and 4. Closes `transfer-controller-no-upgrade-redirect` (TRANSFER-011) and `pull-spawning-no-guard` (MOVE-PULL-007:spawning).
   1. `creep.ts:388` `transfer`: prepend `if (target instanceof StructureController && resourceType === C.RESOURCE_ENERGY) return this.upgradeController(target);`. Imports `StructureController` from `mods/controller/controller.js` — no cycle (controller.ts pulls only from structure/schema; the controller-mod's edge into mods/creep is via `mods/controller/creep.ts`, not `controller.ts`).
   2. `creep.ts:512` `checkPull`: append `() => target!.spawning ? C.ERR_INVALID_TARGET : C.OK` to the existing chain — preserves target/range error precedence.
-- **Still open (3 entries):**
-  3. `checkWithdraw`: add enemy-rampart ownership check (look for hostile rampart at `target.pos`; reject with `ERR_NOT_OWNER` unless rampart is public).
-  4. `searchOrFetchPath` / `moveTo`: distinguish noPathFinding-no-cache from path-not-found. Either return a sentinel or hoist the check — `ERR_NOT_FOUND` when noPathFinding and no cache; `ERR_NO_PATH` otherwise.
+- **PR-10b (#153) — submitted:** items 3 and 4. Closes `withdraw-enemy-rampart-no-protection` (WITHDRAW-005) and `moveto-nopathfinding-returns-ok` (MOVE-BASIC-019).
+  3. `checkWithdraw`: added a `checkEnemyRampart(target)` step in the chain after `checkTarget` and before `checkRange`. Gated on `target instanceof OwnedStructure && !target.my` so neutral structures, tombstones, and ruins are unaffected; uses `lookForStructureAt(target.room, target.pos, STRUCTURE_RAMPART)` (one rampart per tile is enforced at construction in `mods/defense/rampart.ts:71-76`); rejects with `ERR_NOT_OWNER` when `rampart && !rampart.my && !rampart.isPublic`. Public ramparts allow withdraw, matching vanilla `creeps.js:525-527`.
+  4. `moveTo`: changed the `if (!path) return C.ERR_NO_PATH` branch at the searchOrFetchPath caller to `return C.ERR_NOT_FOUND`. `searchOrFetchPath` only returns `null` from the `noPathFinding && !cachedPath` branch (`findPathTo` always returns an array, cache hits return arrays), so the `null` sentinel uniquely identifies the noPathFinding-no-cache case. Empty-path fallback still returns `ERR_NO_PATH` for genuinely unreachable targets.
+- **Still open (1 entry):**
   5. `shape-body-part-always-has-boost` is **not** the one-line `create()` literal change the plan originally suggested. The body schema declares `boost: optionalResourceEnumFormat`, which makes `boost` a required own property on every deserialized body part — even when undefined. Removing the literal `boost: undefined` from `create()` is masked by the next tick's blob round-trip. Closing this needs schema-level work: either a custom struct reader that skips writing properties when the optional resolves to `undefined`, or a `compose()` overlay class with a getter that conditionally exposes `boost`. Track separately as PR-10c (or fold into a future schema-shape PR).
-- **Blast radius (PR-10a):** Low — two narrow guards, one new import. Full xxscreeps parity confirmed clean: 2 intended unexpected passes, 0 regressions.
+- **Blast radius (PR-10a, PR-10b):** Low — narrow guards and one error-code change. Full xxscreeps parity confirmed clean for both: 2 intended unexpected passes each, 0 regressions.
 
 ### PR-11: PathFinder + Map — split and submitted as #120 + #121
 - **Closed (2 entries / 2 tests):** `findpath-same-pos-not-empty` (LEGACY-PATH-006) via #120; `route-callback-ignored` (MAP-ROUTE-003) via #121.
@@ -278,7 +280,7 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
 | Creep death | PR-7 | 3 |
 | Combat | PR-8 | 3 |
 | Hits→destroy | PR-9 | 2 (#145; ruin-spill deferred) |
-| Creep client API | PR-10 | 5 (PR-10a closes 2; 3 open) |
+| Creep client API | PR-10 | 5 (PR-10a closes 2; PR-10b closes 2; 1 open) |
 | PathFinder/Map | PR-11 | 2 |
 | Boost energy | PR-12 | 1 |
 | Structure API surface | PR-13 | 6 tests (+2 joint with PR-14) |
@@ -312,7 +314,8 @@ Lowest blast radius first, builds reviewer trust before submitting wider changes
 15. ~~**PR-14**~~ split + submitted as #133 (Game/Room surface) + #134 (RoomObject base cleanup)
 16. ~~**PR-7**~~ submitted + merged as #136 — body energy reclaim + container diversion on death
 17. ~~**PR-10a**~~ submitted as #152 — Creep.transfer→upgradeController redirect + pull-spawning guard
-18. Remaining work (PR-6 residual recycle, 8, 9 residual ruin-spill, 10b withdraw-enemy-rampart + moveTo-noPathFinding, 10c body-part-shape) in any order based on capacity
+18. ~~**PR-10b**~~ submitted as #153 — Creep.withdraw enemy-rampart guard + moveTo noPathFinding return code
+19. Remaining work (PR-6 residual recycle, 8, 9 residual ruin-spill, 10c body-part-shape) in any order based on capacity
 
 ## Adapter changes (do these first)
 
