@@ -58,11 +58,11 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">877</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">866</div><div class="label">tested</div></div>
-  <div class="stat-card"><div class="num yellow">8</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">3</div><div class="label">blocked</div></div>
-  <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">896</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">878</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num yellow">13</div><div class="label">feasible untested</div></div>
+  <div class="stat-card"><div class="num">5</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">98%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">of feasible</div></div>
 </div>
 
@@ -263,13 +263,20 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
     <span class="bar-text">0/7</span>
   </div>
 </div>
+<div class="bar-row">
+  <span class="bar-label" title="29. Multi-Shard">29. Multi-Shard</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:63%;background:var(--yellow)"></div>
+    <span class="bar-text">12/19</span>
+  </div>
+</div>
 
 <h2>Untested by blocker</h2>
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
-<tr><td><span class="badge badge-yellow">feasible</span></td><td>8</td><td><code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code></td></tr>
-<tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>3</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code></td></tr>
+<tr><td><span class="badge badge-yellow">feasible</span></td><td>13</td><td><code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>5</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code> <code>SHARD-PCREEP-001</code> <code>SHARD-PCREEP-002</code></td></tr>
 </tbody>
 </table>
 
@@ -7593,7 +7600,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
+  <td><small>tests/26-object-shapes/26.0-discovery.test.ts, tests/29-multi-shard/29.1-shard-identity.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SHAPE-GAME-005</code></td>
@@ -8169,6 +8176,177 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>needs_vanilla_verification</td>
   <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SHARD-IDENT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/29-multi-shard/29.1-shard-identity.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SHARD-IDENT-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/29-multi-shard/29.1-shard-identity.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SHARD-IDENT-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small>tests/29-multi-shard/29.1-shard-identity.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>INTERSHARD-PORTAL-001</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>portals</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>INTERSHARD-PORTAL-002</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>portals</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ISM-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ISM-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ISM-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>ISM-004</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ISM-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>ISM-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>interShardMemory</td>
+  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-SHARD-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>cpuShardLimits</td>
+  <td><small>tests/29-multi-shard/29.4-cpu-shard-limits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-SHARD-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>cpuShardLimits</td>
+  <td><small>tests/29-multi-shard/29.4-cpu-shard-limits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-SHARD-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>cpuShardLimits</td>
+  <td><small>tests/29-multi-shard/29.4-cpu-shard-limits.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-SHARD-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>cpuShardLimits</td>
+  <td><small>tests/29-multi-shard/29.4-cpu-shard-limits.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>SHARD-MEMORY-001</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>multiShard</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>SHARD-MEMORY-002</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>multiShard</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>SHARD-PCREEP-001</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: powerCreeps">
+  <td><code>SHARD-PCREEP-002</code></td>
+  <td><span class="badge badge-muted">capability: powerCreeps</span></td>
+  <td>29. Multi-Shard</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>powerCreeps</td>
   <td><small></small></td>
 </tr>
 </tbody>

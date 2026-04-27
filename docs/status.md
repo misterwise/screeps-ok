@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1321%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1095%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-56-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1325%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1321](#vanilla-passing-tests) | — | — | — | 2026-04-26 22:30 UTC |
-| 🟡 | **xxscreeps** | [1095](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [170](#xxscreeps-skipped-tests) | 2026-04-26 22:28 UTC |
+| 🟢 | **vanilla** | [1325](#vanilla-passing-tests) | — | — | [6](#vanilla-skipped-tests) | 2026-04-27 04:47 UTC |
+| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [177](#xxscreeps-skipped-tests) | 2026-04-27 04:44 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,25 +25,17 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior, covering 56 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 13 parity gaps against vanilla's canonical behavior, covering 41 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `rampart-no-protection` | Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors) | Damage targeting an object on a rampart tile is redirected to the rampart | [6](#xxscreeps-gap-rampart-no-protection) |
-| `renew-while-spawning` | `Spawn.renewCreep` returns `OK` while spawn is actively spawning | Returns `ERR_BUSY` while spawn is actively spawning | [1](#xxscreeps-gap-renew-while-spawning) |
-| `renew-rejects-boosted-creep` | `Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART` | Accepts boosted creeps and strips the boosts during renew | [3](#xxscreeps-gap-renew-rejects-boosted-creep) |
-| `recycle-no-body-reclaim` | `Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited | Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0` | [1](#xxscreeps-gap-recycle-no-body-reclaim) |
 | `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [11](#xxscreeps-gap-eventlog-attack-missing) |
 | `eventlog-flat-shape-and-missing-action-events` | xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK, DISMANTLE, creep rangedHeal RANGED) | All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK/DISMANTLE/rangedHeal are emitted at their triggering points | [10](#xxscreeps-gap-eventlog-flat-shape-and-missing-action-events) |
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
-| `pull-spawning-no-guard` | `pull()` on a spawning creep returns `OK` (no spawning check in pull intent) | Returns `ERR_INVALID_TARGET` when the target is a spawning creep | [1](#xxscreeps-gap-pull-spawning-no-guard) |
-| `active-bodyparts-takewhile-front-damage` | `getActiveBodyparts(type)` returns 0 once any earlier-indexed body part is dead. New helper `iterateActiveParts` (introduced in `mods/creep/creep.ts:450` by upstream commit 301685e) does `Fn.takeWhile(body, p => p.hits > 0)`, halting at the first dead part. But `recalculateBody` (`mods/creep/processor.ts:80-86`) damages parts left-to-right, so a partially-damaged creep has dead parts at the front and live parts behind them — `takeWhile` skips the live ones. | `getActiveBodyparts(type)` counts every still-alive part of `type` regardless of dead parts at lower indices. Vanilla canonical: damage is distributed front-first, but the active-part count remains a true filter, not a prefix scan. | [1](#xxscreeps-gap-active-bodyparts-takewhile-front-damage) |
-| `transfer-controller-no-upgrade-redirect` | `transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect | Redirects to `upgradeController` behavior (or equivalent successful upgrade intent) | [1](#xxscreeps-gap-transfer-controller-no-upgrade-redirect) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
-| `spawn-duplicate-name-allowed` | `spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`) | Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep | [1](#xxscreeps-gap-spawn-duplicate-name-allowed) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-not-supported` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-not-supported) |
@@ -52,41 +44,6 @@ xxscreeps currently declares 21 parity gaps against vanilla's canonical behavior
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-rampart-no-protection">
-<summary><code>rampart-no-protection</code> — 6 tests</summary>
-
-- `creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile`
-- `creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead`
-- `creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead`
-- `creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart`
-- `StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep`
-- `StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart`
-
-</details>
-
-<details id="xxscreeps-gap-renew-while-spawning">
-<summary><code>renew-while-spawning</code> — 1 test</summary>
-
-- `Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning`
-
-</details>
-
-<details id="xxscreeps-gap-renew-rejects-boosted-creep">
-<summary><code>renew-rejects-boosted-creep</code> — 3 tests</summary>
-
-- `Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep`
-- `Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy`
-- `Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources`
-
-</details>
-
-<details id="xxscreeps-gap-recycle-no-body-reclaim">
-<summary><code>recycle-no-body-reclaim</code> — 1 test</summary>
-
-- `Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position`
-
-</details>
 
 <details id="xxscreeps-gap-eventlog-attack-missing">
 <summary><code>eventlog-attack-missing</code> — 11 tests</summary>
@@ -142,27 +99,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-pull-spawning-no-guard">
-<summary><code>pull-spawning-no-guard</code> — 1 test</summary>
-
-- `creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep`
-
-</details>
-
-<details id="xxscreeps-gap-active-bodyparts-takewhile-front-damage">
-<summary><code>active-bodyparts-takewhile-front-damage</code> — 1 test</summary>
-
-- `MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue`
-
-</details>
-
-<details id="xxscreeps-gap-transfer-controller-no-upgrade-redirect">
-<summary><code>transfer-controller-no-upgrade-redirect</code> — 1 test</summary>
-
-- `creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController`
-
-</details>
-
 <details id="xxscreeps-gap-shape-body-part-always-has-boost">
 <summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
 
@@ -175,13 +111,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>shape-flag-crash</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
-
-</details>
-
-<details id="xxscreeps-gap-spawn-duplicate-name-allowed">
-<summary><code>spawn-duplicate-name-allowed</code> — 1 test</summary>
-
-- `StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep`
 
 </details>
 
@@ -236,10 +165,44 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 
+## vanilla skipped tests
+
+vanilla has 6 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+
+| Category | Cause | What it means | Tests |
+| --- | --- | --- | :-: |
+| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#vanilla-skip-capability-intershardmemory) |
+| capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#vanilla-skip-capability-cpushardlimits) |
+
+Click a count to jump to the affected test list.
+
+<details id="vanilla-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 3 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
+
+- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
+- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
+
+</details>
+
+<details id="vanilla-skip-capability-cpushardlimits">
+<summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`** (3)
+
+- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits maps shard names to non-negative integers
+- CPU shard limits CPU-SHARD-002 sum of shardLimits values equals the daily allowance
+- CPU shard limits CPU-SHARD-003 setShardLimits sync error branches
+
+</details>
+
+
 ## vanilla passing tests
 
 <details>
-<summary>1321 tests across 118 files</summary>
+<summary>1325 tests across 119 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1339,12 +1302,13 @@ Click a test count above to jump to the affected test list for that gap.
 - StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
 - StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
 
-**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (5)
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
 
 - Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
 - Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
 - Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
@@ -1916,11 +1880,17 @@ Click a test count above to jump to the affected test list for that gap.
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
 
+**`tests/29-multi-shard/29.1-shard-identity.test.ts`** (3)
+
+- Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
+- Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
+- Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
+
 </details>
 
 ## xxscreeps skipped tests
 
-xxscreeps has 170 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 177 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -1928,8 +1898,10 @@ xxscreeps has 170 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
 | capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
-| capability | `portals` | Portal structures and teleport mechanics | [7](#xxscreeps-skip-capability-portals) |
+| capability | `portals` | Portal structures and teleport mechanics | [8](#xxscreeps-skip-capability-portals) |
 | capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
+| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
+| capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
 Click a count to jump to the affected test list.
@@ -2238,18 +2210,19 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-portals">
-<summary><code>capability:portals</code> — 7 tests across 3 files</summary>
+<summary><code>capability:portals</code> — 8 tests across 3 files</summary>
 
 **`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
 
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 
-**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (5)
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
 
 - Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
 - Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
 - Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
@@ -2274,6 +2247,28 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 3 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
+
+- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
+- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
+
+</details>
+
+<details id="xxscreeps-skip-capability-cpushardlimits">
+<summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`** (3)
+
+- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits maps shard names to non-negative integers
+- CPU shard limits CPU-SHARD-002 sum of shardLimits values equals the daily allowance
+- CPU shard limits CPU-SHARD-003 setShardLimits sync error branches
+
+</details>
+
 <details id="xxscreeps-skip-limitation-pullselfhang">
 <summary><code>limitation:pullSelfHang</code> — 1 test across 1 file</summary>
 
@@ -2287,7 +2282,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1095 tests across 100 files</summary>
+<summary>1113 tests across 101 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2461,7 +2456,7 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-017 moveTo() returns OK when already at target
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (13)
+**`tests/01-movement/1.2-fatigue.test.ts`** (14)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
@@ -2476,6 +2471,7 @@ Click a count to jump to the affected test list.
 - MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount XZHO2 (4x reduction)
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 excess MOVE capacity does not produce negative fatigue
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
+- MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
 
 **`tests/01-movement/1.2b-road-fatigue.test.ts`** (5)
 
@@ -2492,7 +2488,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (10)
+**`tests/01-movement/1.5-pulling.test.ts`** (11)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -2501,6 +2497,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
 - creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
+- creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
 - creep.pull() MOVE-PULL-009 pulled creep moving away from puller breaks the pull
 - creep.pull() MOVE-PULL-010 pull() returns OK but does not resolve when puller is fatigued
@@ -2595,7 +2592,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity
 - creep.harvest(mineral) HARVEST-MINERAL-013 partial harvest when mineral amount < full amount
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (13)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (14)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -2607,6 +2604,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET
 - creep.transfer() TRANSFER-009 transfer returns ERR_NOT_OWNER on unowned creep
 - creep.transfer() TRANSFER-010 transfer returns ERR_BUSY while spawning
+- creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController
 - creep.transfer() TRANSFER-012 transferring mineral into empty lab initializes mineral slot
 - creep.transfer() TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity
 - creep.transfer() TRANSFER-014 transfer to another creep follows same store mechanics
@@ -2676,11 +2674,12 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-009 partial repair when energy is below full repair cost
 - creep.repair() REPAIR-008 a creep can repair another player's structure
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (7)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (8)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
 - creep.dismantle() DISMANTLE-003 returns ERR_NOT_IN_RANGE
+- creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile
 - creep.dismantle() DISMANTLE-006 dismantle() has Chebyshev range 1 — adjacent only
 - creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
@@ -2796,13 +2795,14 @@ Click a count to jump to the affected test list.
 
 - StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (24)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (26)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
 - creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
 - creep.attack() COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent
 - creep.attack() COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts
 - creep.attack() COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2
+- creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead
 - creep.attack() COMBAT-MELEE-006 target ATTACK parts deal counter-damage back to a melee attacker
 - creep.attack() COMBAT-MELEE-008 counter-damage scales at ATTACK_POWER per target ATTACK part
 - creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures (non-attackable target → ERR_INVALID_TARGET)
@@ -2810,6 +2810,7 @@ Click a count to jump to the affected test list.
 - creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
 - creep.rangedAttack() COMBAT-RANGED-004 returns ERR_NO_BODYPART without RANGED_ATTACK parts
+- creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead
 - creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures (non-attackable → ERR_INVALID_TARGET)
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
@@ -2843,13 +2844,14 @@ Click a count to jump to the affected test list.
 - creep body part damage COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)
 - creep body part damage COMBAT-BODYPART-004 a damaged body part with HP > 0 functions at full effectiveness
 
-**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (5)
+**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (6)
 
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
 - creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures
+- creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart
 
 **`tests/07-combat/7.7-simultaneous.test.ts`** (5)
 
@@ -2941,13 +2943,14 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (18)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (19)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
 - StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
 - StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
+- StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep
 - StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
 - StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
 - StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
@@ -2971,7 +2974,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (7)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (11)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -2980,11 +2983,16 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-010 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME
 - Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part
 - Spawn.renewCreep RENEW-CREEP-003 renewCreep spends the correct energy cost
+- Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep
+- Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
+- Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources
+- Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (3)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (4)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
+- Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 
 **`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
@@ -3225,7 +3233,7 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (15)
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (17)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
@@ -3234,6 +3242,8 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-DECAY-003 [rcl=6] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=7] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=8] owned rampart hitsMax matches the canonical table
+- StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep
+- StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart
 - StructureRampart RAMPART-PROTECT-003 a non-public hostile rampart blocks hostile creep movement
 - StructureRampart RAMPART-PROTECT-004 hostile creep can move onto a public rampart
 - StructureRampart RAMPART-PROTECT-005 setPublic(true) sets isPublic to true
@@ -3683,6 +3693,12 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-001 moveTo with reusePath > 0 writes _move with path/dest/time/room keys
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
+
+**`tests/29-multi-shard/29.1-shard-identity.test.ts`** (3)
+
+- Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
+- Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
+- Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
 </details>
 

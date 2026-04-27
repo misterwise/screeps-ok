@@ -1,25 +1,5 @@
 {
 	"expected_failures": {
-		"rampart-no-protection": {
-			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
-			"expected": "Damage targeting an object on a rampart tile is redirected to the rampart",
-			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005", "COMBAT-RANGED-006", "COMBAT-RMA-004"]
-		},
-		"renew-while-spawning": {
-			"actual": "`Spawn.renewCreep` returns `OK` while spawn is actively spawning",
-			"expected": "Returns `ERR_BUSY` while spawn is actively spawning",
-			"tests": ["RENEW-CREEP-009"]
-		},
-		"renew-rejects-boosted-creep": {
-			"actual": "`Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART`",
-			"expected": "Accepts boosted creeps and strips the boosts during renew",
-			"tests": ["RENEW-CREEP-004", "RENEW-CREEP-005", "RENEW-CREEP-006"]
-		},
-		"recycle-no-body-reclaim": {
-			"actual": "`Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited",
-			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
-			"tests": ["RECYCLE-CREEP-002"]
-		},
 		"eventlog-attack-missing": {
 			"actual": "Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER",
 			"expected": "All canonical event types appear in `getEventLog()` at their triggering points",
@@ -45,21 +25,6 @@
 			"expected": "Returns `ERR_NOT_FOUND` when no reusable path is available",
 			"tests": ["MOVE-BASIC-019"]
 		},
-		"pull-spawning-no-guard": {
-			"actual": "`pull()` on a spawning creep returns `OK` (no spawning check in pull intent)",
-			"expected": "Returns `ERR_INVALID_TARGET` when the target is a spawning creep",
-			"tests": ["MOVE-PULL-007:spawning"]
-		},
-		"active-bodyparts-takewhile-front-damage": {
-			"actual": "`getActiveBodyparts(type)` returns 0 once any earlier-indexed body part is dead. New helper `iterateActiveParts` (introduced in `mods/creep/creep.ts:450` by upstream commit 301685e) does `Fn.takeWhile(body, p => p.hits > 0)`, halting at the first dead part. But `recalculateBody` (`mods/creep/processor.ts:80-86`) damages parts left-to-right, so a partially-damaged creep has dead parts at the front and live parts behind them — `takeWhile` skips the live ones.",
-			"expected": "`getActiveBodyparts(type)` counts every still-alive part of `type` regardless of dead parts at lower indices. Vanilla canonical: damage is distributed front-first, but the active-part count remains a true filter, not a prefix scan.",
-			"tests": ["MOVE-FATIGUE-007"]
-		},
-		"transfer-controller-no-upgrade-redirect": {
-			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
-			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
-			"tests": ["TRANSFER-011"]
-		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
 			"expected": "`boost` key is only present when the part is actually boosted",
@@ -69,11 +34,6 @@
 			"actual": "Flag shape discovery crashes (`Cannot use 'in' operator on undefined`)",
 			"expected": "Flag objects expose the documented shape without crashing",
 			"tests": ["SHAPE-FLAG-001"]
-		},
-		"spawn-duplicate-name-allowed": {
-			"actual": "`spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`)",
-			"expected": "Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep",
-			"tests": ["SPAWN-CREATE-003"]
 		},
 		"rawmemory-set-no-eager-limit-check": {
 			"actual": "`RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception",

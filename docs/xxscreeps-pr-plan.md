@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Groups the 49 confirmed entries (50 parity.json keys + 1 won't-fix) into PR-sized batches by mod/code area, ordered for low-blast-radius-first submission.
 
-Last refreshed: 2026-04-25 (PR-7 noted merged as #136; PR-10 split — PR-10a submitted as #152; PR-10b submitted as #153; PR-6 split — PR-6a logged as #135, PR-6b submitted as #154).
+Last refreshed: 2026-04-26 (pin bumped to `113800b7`, sweeping in PR-6a #135, PR-10a #152, PR-6b #154, PR-8 #147, plus upstream `f5469e2c` "Fix active body part iterator" closing `active-bodyparts-takewhile-front-damage` independently).
 
 PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-precedence` (FACTORY-PRODUCE-010) shared the same root cause in `checkMyStructure` and cleared without a separate fix.
 
@@ -13,6 +13,10 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-16 | [laverdet/xxscreeps#118](https://github.com/laverdet/xxscreeps/pull/118) | Fix Flag.setPosition to use parsed position id |
 | PR-7 | [laverdet/xxscreeps#136](https://github.com/laverdet/xxscreeps/pull/136) | Reclaim body energy and divert into containers on creep death |
 | PR-9 (partial) | [laverdet/xxscreeps#145](https://github.com/laverdet/xxscreeps/pull/145) | Destroy dismantled structures, spill container contents on decay (closed 2 of 3 entries; `ruin-spill-decay-on-spill-tick` deferred) |
+| PR-8 | [laverdet/xxscreeps#147](https://github.com/laverdet/xxscreeps/pull/147) | Redirect attack and dismantle damage to ramparts |
+| PR-6a | [laverdet/xxscreeps#135](https://github.com/laverdet/xxscreeps/pull/135) | Fix renewCreep busy/boost guards and spawnCreep check order |
+| PR-10a | [laverdet/xxscreeps#152](https://github.com/laverdet/xxscreeps/pull/152) | Fix Creep.transfer redirect to upgradeController; reject pull on spawning |
+| PR-6b | [laverdet/xxscreeps#154](https://github.com/laverdet/xxscreeps/pull/154) | Reclaim body energy on Spawn.recycleCreep |
 
 ## Submitted (awaiting review)
 
@@ -33,10 +37,7 @@ PR-1 was submitted as #128 and landed one bonus gap closure: `factory-not-owner-
 | PR-13 | [laverdet/xxscreeps#132](https://github.com/laverdet/xxscreeps/pull/132) | Add notifyWhenAttacked and missing structure surface getters |
 | PR-14a | [laverdet/xxscreeps#133](https://github.com/laverdet/xxscreeps/pull/133) | Add Game.cpuLimit, Game.powerCreeps, Room.survivalInfo |
 | PR-14b | [laverdet/xxscreeps#134](https://github.com/laverdet/xxscreeps/pull/134) | Remove hits/hitsMax/my leak from RoomObject base |
-| PR-6a | [laverdet/xxscreeps#135](https://github.com/laverdet/xxscreeps/pull/135) | Fix renewCreep busy/boost guards and spawnCreep check order |
-| PR-10a | [laverdet/xxscreeps#152](https://github.com/laverdet/xxscreeps/pull/152) | Fix Creep.transfer redirect to upgradeController; reject pull on spawning |
 | PR-10b | [laverdet/xxscreeps#153](https://github.com/laverdet/xxscreeps/pull/153) | Add Creep.withdraw enemy-rampart guard; fix moveTo noPathFinding return code |
-| PR-6b | [laverdet/xxscreeps#154](https://github.com/laverdet/xxscreeps/pull/154) | Reclaim body energy on Spawn.recycleCreep |
 
 PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg order + a latent `describeExits`-returns-null crash exposed by the arg-order fix). The original plan's "needs side-by-side debug" note on route-callback-ignored is stale — the real cause was a single swapped-arg line at `map.ts:162`, not an un-invoked callback.
 
@@ -134,14 +135,10 @@ PR-11 was split into two PRs (`11a` same-pos findPath; `11b` routeCallback arg o
   - Nuke-skips-tombstone branch (`_die.js:20`) — no nuke mod yet.
 - **Blast radius:** Low. One file, no signature change, no new cross-mod imports beyond `mods/structure/structure.js` (already imported transitively elsewhere). Expected unexpected passes: 5. Watch CREEP-DEATH-004 / CREEP-DEATH-005 / CREEP-DEATH-007 — their assertions (`tomb.store` defined, amount-stability across ticks, decay-to-drop) are preserved by the new path; confirm on the PR test run before submit.
 
-### PR-8: Combat damage (`mods/combat/`, `mods/defense/rampart.ts`, `mods/creep/creep.ts`, `mods/engine/processor/room.ts`)
-- **Closes (3 entries / 7 tests):** `rampart-no-protection` (RAMPART-PROTECT-001/002, DISMANTLE-004, COMBAT-MELEE-005, COMBAT-RANGED-006, COMBAT-RMA-004), `tough-boost-no-reduction` (BOOST-TOUGH-001/002), `eventlog-attack-missing` (ROOM-EVENTLOG-001/002)
-- **Plan:**
-  1. `combat/creep.ts:196`: fix typo — `target['#captureDamage']` → `object['#captureDamage']`.
-  2. `defense/rampart.ts`: add `#layer` getter returning higher value than 0.5; add `#captureDamage` override that absorbs damage into rampart hits.
-  3. `creep/creep.ts:116` `#applyDamage`: iterate body parts for TOUGH boosts; multiply incoming damage by the boost's damage-reduction factor before subtracting.
-  4. `engine/processor/room.ts:97` `#eventLog` clear: ensure event-log persists across save/load cycle (verify save path includes appended events).
-- **Blast radius:** Combat behavior wide; needs all COMBAT-* tests re-run. Could split rampart/TOUGH/eventlog into 3 sub-PRs if maintainer prefers — they're independent code paths.
+### PR-8: Combat damage — merged as #147 (rampart only)
+- **Closed (1 entry / 6 tests):** `rampart-no-protection` (RAMPART-PROTECT-001/002, DISMANTLE-004, COMBAT-MELEE-005, COMBAT-RANGED-006, COMBAT-RMA-004) via #147 ("fix: Redirect attack and dismantle damage to ramparts").
+- **Fix:** `mods/combat/creep.ts` `captureDamage` typo + type-param fix and `walkLayers` extraction; `mods/defense/rampart.ts` `#layer = 1` and pure `#captureDamage` override; `mods/construction/processor.ts` dismantle routed through `captureDamage`; `mods/combat/processor.ts` rangedMassAttack `#applyDamage` only fires when nothing was absorbed at the layer.
+- **Original plan rescoped:** `tough-boost-no-reduction` was already implemented upstream as `5820147c` (#109) before this plan was written and was never in `parity.json` — the gap-doc entry was stale. `eventlog-attack-missing` is blocked on upstream PR #107 and now tracked solely under that gap.
 
 ### PR-9: Hits-zero destruction + ruin spill timing (`mods/construction/processor.ts`, `mods/resource/processor/container.ts`, `mods/structure/processor.ts`)
 - **Status:** Parts 1 + 2 merged as [#145](https://github.com/laverdet/xxscreeps/pull/145); part 3 deferred. Net closure: 2 of 3 entries.

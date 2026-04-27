@@ -1,11 +1,11 @@
 # xxscreeps parity gaps — working document
 
-Tracks every parity gap in `adapters/xxscreeps/parity.json` (21 entries). For each gap:
+Tracks every parity gap in `adapters/xxscreeps/parity.json` (13 entries). For each gap:
 
 - **Status** — `CONFIRMED` (root cause located in xxscreeps source) or `UNCONFIRMED` (cause not yet investigated).
 - **Cause** — one-line mechanism with the smoking-gun `file:line` in xxscreeps source under `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`.
 
-Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
+Last refreshed: 2026-04-26 against `adapters/xxscreeps/parity.json` (pin bumped to `113800b7`).
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here.
 
@@ -42,20 +42,6 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 ### link-self-transfer
 - Tests: LINK-004
 - Cause: Same `checkTransferEnergy` — no `link.id === target.id` rejection — `mods/logistics/link.ts:66-82`.
-
-### rampart-no-protection
-- Tests: RAMPART-PROTECT-001, RAMPART-PROTECT-002, DISMANTLE-004, COMBAT-MELEE-005, COMBAT-RANGED-006, COMBAT-RMA-004
-- Cause: Two co-dependent bugs, both must be fixed:
-  1. **Typo in `captureDamage`** — `mods/combat/creep.ts:196` calls `target['#captureDamage']` instead of `object['#captureDamage']`, so non-target objects on the same tile (ramparts) never get their capture method called. The correct pattern exists in `mods/combat/processor.ts:95` (rangedMassAttack) which uses `object['#captureDamage']`.
-  2. **Rampart missing overrides** — `StructureRampart` (`mods/defense/rampart.ts`) inherits base `RoomObject` defaults: `#layer` returns 0.5 (same as all objects, so no priority sorting) and `#captureDamage` returns `power` unchanged (no absorption). Ramparts need a higher `#layer` to sort before the target and a `#captureDamage` override that absorbs damage into rampart hits and returns 0.
-
-### renew-while-spawning
-- Tests: RENEW-CREEP-009
-- Cause: `checkRenewCreep` does not test `spawn.spawning` before returning OK — `mods/spawn/spawn.ts:270-289`.
-
-### tough-boost-no-reduction
-- Tests: BOOST-TOUGH-001, BOOST-TOUGH-002
-- Cause: No TOUGH boost damage reduction exists anywhere in the combat mod. `Creep['#applyDamage']` (`mods/creep/creep.ts:116`) subtracts full power from `tickHitsDelta` without consulting body part boosts. No `#captureDamage` override on Creep either. Grep for `TOUGH` in `src/mods/combat/` returns zero hits. Separate mechanism from rampart-no-protection — ramparts use `#captureDamage`/`#layer`, TOUGH reduction belongs in `#applyDamage`.
 
 ### transfer-wrong-resource-err-full
 - Tests: TRANSFER-007, TRANSFER-008
@@ -118,29 +104,6 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 - The two sibling gaps were misdiagnosed as missing intent-layer guards. They're not: `checkClaimController` (`mods/controller/creep.ts:144-148`) DOES check `roomOwner !== creep['#user']` and return `ERR_INVALID_TARGET`; `checkUpgradeController` (`mods/controller/creep.ts:190-191`) DOES check `target.upgradeBlocked` and return `ERR_INVALID_TARGET`. Both guards work — the tests just crash before reaching the call site.
 - Fix shape: in the adapter's finalize-extras loop, either (a) catch `loadRoom` errors and skip the room (simplest, drops cross-room finalize work for unmodelled rooms), or (b) eagerly create stub rooms for all 8 neighbors of every placed room (heavier, but lets the engine's neighbor-routing code run). Once fixed, all three parity.json entries should collapse into "fixed by adapter" and be removed.
 
-### renew-rejects-boosted-creep
-- Tests: RENEW-CREEP-004, RENEW-CREEP-005, RENEW-CREEP-006
-- Cause: Explicit boost rejection in `checkRenewCreep` at `mods/spawn/spawn.ts:280-284` — `creep.body.some(bodyPart => bodyPart.boost !== undefined)` returns `ERR_NO_BODYPART`. Vanilla accepts boosted creeps and strips the boosts during renew (no rejection at the check layer).
-- Fix shape: drop the boost-presence test from `checkRenewCreep`. Add boost-stripping to the renewCreep processor (`mods/spawn/processor.ts:131-141`), which currently only consumes energy and bumps `#ageTime`. Strip-on-renew should iterate `creep.body`, set each `boost = undefined`, and free the boost minerals back to the room/spawn (or per vanilla, just discard them).
-
-### recycle-no-body-reclaim
-- Tests: RECYCLE-CREEP-002
-- Cause: Literal `// TODO: This stuff` at `mods/spawn/processor.ts:125`. The recycleCreep processor only sets `creep.hits = 0` (line 126) and calls `context.didUpdate()` — no energy reclaim. Vanilla deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` of the body's energy cost into the spawn (or surrounding extensions) via `_die` with `dropRate=1.0`.
-- Fix shape: replace the TODO with the deposit math. Compute `bodyCost = sum(BODYPART_COST[part] for part in body)`, `reclaimRatio = (creep.ticksToLive ?? 0) / CREEP_LIFE_TIME`, `reclaimed = floor(bodyCost × reclaimRatio)`. Deposit into the spawn's energy structures (mirror of `consumeEnergy` at lines 45-60 but in reverse) before calling `buryCreep` instead of bare `creep.hits = 0`.
-
-### spawn-duplicate-name-allowed (misdiagnosed)
-- Tests: SPAWN-CREATE-003
-- Cause: Misdiagnosed in `parity.json`. Actual return is `ERR_RCL_NOT_ENOUGH` (-14), not "spawnCreep allows name". Two interlocking issues:
-  1. **Check order** — `checkSpawnCreep` (`mods/spawn/spawn.ts:308-310`) runs `checkMyStructure` and `checkIsActive` BEFORE the name check at line 312. The test places 2 spawns at RCL 2 (limit is 1), so spawn2 is over-the-limit and `checkIsActive` returns `ERR_RCL_NOT_ENOUGH` before the name check ever runs.
-  2. **isActive in user-side validation** — Vanilla's user-facing `spawnCreep` doesn't enforce active-structure status; that's only checked at processing time. xxscreeps validates it eagerly which masks the name-collision case.
-- The parity.json claim "no check against currently spawning creeps" is incorrect: `runPlayer` advances a tick after each call (`adapters/xxscreeps/index.ts:717`), so by the time spawn2's check runs, spawn1's intent has been processed and `Game.creeps['UniqueTest']` IS populated via `#addToMyGame` (`mods/creep/creep.ts:113`). The name check at spawn.ts:312 would catch the collision if it ran first.
-- Fix shape: either (a) remove `checkIsActive(spawn)` from the user-side `checkSpawnCreep` and rely on processor-time enforcement (vanilla parity), or (b) reorder so the name/string checks run before `checkIsActive`. Option (a) is correct semantically; option (b) is the smaller diff but leaves a vanilla-parity drift in place.
-
-### transfer-controller-no-upgrade-redirect
-- Tests: TRANSFER-011
-- Cause: `Creep.transfer` (`mods/creep/creep.ts:384-392`) has no controller-specific dispatch. It falls through to `checkTransfer` (line 513) which requires range 1 (`checkRange(creep, target, 1)`). Vanilla detects `target instanceof StructureController && resourceType === RESOURCE_ENERGY` and redirects to `upgradeController`, which has range 3. Tests placing the creep at range 2-3 from the controller pass on vanilla (via the redirect) and fail on xxscreeps with `ERR_NOT_IN_RANGE` because the redirect is absent.
-- Fix shape: at the top of `Creep.transfer`, branch on `target instanceof StructureController && resourceType === C.RESOURCE_ENERGY` and call `this.upgradeController(target)` (returning its result). Mirror the vanilla wrapper. The intent path can stay as-is for non-controller targets.
-
 ### withdraw-wrong-resource-not-enough-energy
 - Tests: WITHDRAW-014
 - Cause: Same shape as the existing `transfer-wrong-resource-err-full` gap. `checkWithdraw` (`mods/creep/creep.ts:532`) calls `checkHasResource(target, resourceType, amount)` which at `mods/resource/store.ts:344-348` does `target.store[resourceType] >= Math.max(1, amount)` — for a wrong resource type, `target.store[resourceType]` is `undefined`, `undefined >= 1` is false, returns `ERR_NOT_ENOUGH_RESOURCES` (= ERR_NOT_ENOUGH_ENERGY = -6). The check reports the symptom ("no resource of that type") instead of the cause ("target can't hold that type at all"). Vanilla returns `ERR_INVALID_TARGET`.
@@ -150,16 +113,6 @@ Last refreshed: 2026-04-24 against `adapters/xxscreeps/parity.json`.
 - Tests: MOVE-BASIC-019
 - Cause: Wrong error code, not "returns OK". `searchOrFetchPath` at `mods/creep/creep.ts:258-260` returns `null` when `extra?.noPathFinding && !cachedPath`. The caller at `mods/creep/creep.ts:312-313` then returns `C.ERR_NO_PATH` (-2) for any `null` path. Vanilla returns `ERR_NOT_FOUND` (-5) specifically for the noPathFinding-no-cache case (different from "no path exists between these points").
 - Fix shape: distinguish the two failure modes. Either return a special sentinel from `searchOrFetchPath` for the noPathFinding miss and translate it to `ERR_NOT_FOUND` at the caller, or hoist the check into `moveTo` directly: after the cached-path lookup, if `extra?.noPathFinding` and no cache hit, return `ERR_NOT_FOUND` before computing a fresh path.
-
-### pull-spawning-no-guard
-- Tests: MOVE-PULL-007:spawning
-- Cause: `checkPull` at `mods/creep/creep.ts:497-502` checks the puller (via `checkCommon` which rejects spawning) and the target type/range, but never checks the target's spawning state. Vanilla rejects pulling a spawning target with `ERR_INVALID_TARGET`.
-- Fix shape: add `() => target.spawning ? C.ERR_INVALID_TARGET : C.OK` to the chain after `checkRange`. One-line addition.
-
-### active-bodyparts-takewhile-front-damage
-- Tests: MOVE-FATIGUE-007
-- Cause: Upstream commit `301685e` ("Active bodypart iteration helper") added `iterateActiveParts` at `mods/creep/creep.ts:450` as `Fn.takeWhile(body, p => p.hits > 0)`, with the comment "Parts die from right to left so you can halt iteration at the first dead part." But `recalculateBody` at `mods/creep/processor.ts:80-86` damages parts left-to-right (`for (const part of creep.body) { hits += 100; part.hits = clamp(0, 100, hits); }`). So a body like `[MOVE, MOVE, WORK, WORK]` after 100 damage becomes `[{MOVE,0}, {MOVE,100}, {WORK,100}, {WORK,100}]` — `takeWhile` halts at index 0 and yields nothing, so `getActiveBodyparts(MOVE)` returns 0. `move()` then returns `ERR_NO_BODYPART`. `getActiveBodyparts`, `calculateCarry`, `calculatePower`, and `calculateBoundedEffect` all share this regression.
-- Fix shape: either (a) replace `Fn.takeWhile(body, activePartPredicate)` with `Fn.filter(body, activePartPredicate)` so the helper truly filters; or (b) reverse the storage order in `recalculateBody` so dead parts accumulate at the end (matches the comment). Option (a) is the safe one-line fix — option (b) churns serialization and damage-distribution semantics.
 
 ### mineral-harvest-no-overflow-drop (misnamed — actually OpenStore.getFreeCapacity bug)
 - Tests: HARVEST-MINERAL-012
