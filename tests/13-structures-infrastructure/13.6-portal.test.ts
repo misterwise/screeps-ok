@@ -53,18 +53,27 @@ describe('Portal mechanics', () => {
 
 		const result = await shard.runPlayer('p1', code`
 			const p = Game.getObjectById(${portalId});
+			const d = p?.destination;
 			p ? ({
-				hasDestination: !!p.destination,
-				room: p.destination?.roomName,
-				x: p.destination?.x,
-				y: p.destination?.y,
+				hasDestination: !!d,
+				isRoomPosition: d instanceof RoomPosition,
+				room: d?.roomName,
+				x: d?.x,
+				y: d?.y,
+				// Calling a RoomPosition method proves it's a real instance,
+				// not a POJO with matching {x, y, roomName} keys.
+				isEqualToSelf: typeof d?.isEqualTo === 'function' ? d.isEqualTo(d) : null,
+				inRangeToSelf: typeof d?.inRangeTo === 'function' ? d.inRangeTo(d, 0) : null,
 			}) : null
 		`) as any;
 		expect(result).not.toBeNull();
 		expect(result.hasDestination).toBe(true);
+		expect(result.isRoomPosition).toBe(true);
 		expect(result.room).toBe('W2N1');
 		expect(result.x).toBe(30);
 		expect(result.y).toBe(30);
+		expect(result.isEqualToSelf).toBe(true);
+		expect(result.inRangeToSelf).toBe(true);
 	});
 
 	test('PORTAL-004 permanent portal has undefined ticksToDecay', async ({ shard }) => {

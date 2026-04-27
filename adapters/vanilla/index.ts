@@ -874,6 +874,13 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const destination = dest.shard
 				? { shard: dest.shard, room: dest.room }
 				: { room: dest.room, x: dest.x, y: dest.y };
+			// spec.decayTime is relative ticks (consistent with deposit/powerBank
+			// below). Vanilla persists `decayTime` as the absolute tick of expiry;
+			// null means a permanent portal.
+			const gameTime = await this.server.world.gameTime;
+			const decayTime = (spec.decayTime as number)
+				? gameTime + (spec.decayTime as number)
+				: null;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'portal',
@@ -881,7 +888,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				y: pos[1],
 				destination,
 				unstableDate: spec.unstableDate ?? null,
-				decayTime: spec.decayTime ?? null,
+				decayTime,
 			});
 			return result._id;
 		}
