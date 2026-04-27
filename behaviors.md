@@ -3784,15 +3784,15 @@ Framework Notes
   All entries in 29.3, 29.4, and 29.6 ship gated on capabilities the
   xxscreeps adapter currently reports as `false`. See
   `docs/xxscreeps-parity-gaps.md` for the upstream tracking.
-- The screeps-ok vanilla adapter does not currently expose
-  `InterShardMemory`, `Game.cpu.shardLimits`, or `setShardLimits` to
-  player code, even though real vanilla does — the player VM is set up
-  for a single-shard server with no `shards` collection seeded.
-  Flipping `interShardMemory` / `cpuShardLimits` to `true` on vanilla
-  is gated on a small adapter-wiring change (expose the
-  `InterShardMemory` module to the sandbox, seed
-  `Game.cpu.shardLimits`); 29.3 and 29.4 tests are written against
-  that future state.
+- The open-source `@screeps/engine` and `screeps-server-mockup` do not
+  ship an `InterShardMemory` module or seed `Game.cpu.shardLimits`
+  (the closed-source MMO server provides both). The vanilla adapter
+  polyfills the local half of `InterShardMemory` in the player's
+  `main` module so the sandbox global is populated before any user
+  expression runs; `interShardMemory` is therefore `true` on vanilla
+  and 29.3 ISM-001/002/003 run there. `cpuShardLimits` remains `false`
+  on both adapters until the analogous shim for `Game.cpu.shardLimits`
+  / `setShardLimits` lands.
 
 ---
 

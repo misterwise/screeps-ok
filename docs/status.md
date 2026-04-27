@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1325%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1328%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1325](#vanilla-passing-tests) | — | — | [6](#vanilla-skipped-tests) | 2026-04-27 04:53 UTC |
-| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [177](#xxscreeps-skipped-tests) | 2026-04-27 04:50 UTC |
+| 🟢 | **vanilla** | [1328](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-27 12:49 UTC |
+| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [177](#xxscreeps-skipped-tests) | 2026-04-27 12:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -167,25 +167,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## vanilla skipped tests
 
-vanilla has 6 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+vanilla has 3 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#vanilla-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#vanilla-skip-capability-cpushardlimits) |
 
 Click a count to jump to the affected test list.
-
-<details id="vanilla-skip-capability-intershardmemory">
-<summary><code>capability:interShardMemory</code> — 3 tests across 1 file</summary>
-
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
-
-- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
-- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
-- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
-
-</details>
 
 <details id="vanilla-skip-capability-cpushardlimits">
 <summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
@@ -202,7 +190,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1325 tests across 119 files</summary>
+<summary>1328 tests across 120 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1885,6 +1873,12 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
+
+- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
+- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
 
 </details>
 
