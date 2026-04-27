@@ -2043,6 +2043,12 @@ Coverage Notes
   (`HARVEST-MINERAL-*`), not this section.
 
 ### 13.6 Portal
+
+Cross-reference: inter-shard traversal and `Memory`/`InterShardMemory`
+behavior across portals lives in section 29.2. Entries below cover the
+same-shard portal mechanics and the shape of both same-shard and
+cross-shard `destination` values.
+
 - `PORTAL-001` `behavior` `verified_vanilla`
   A creep or power creep standing on a same-shard portal tile appears at the
   portal destination on the next tick.
@@ -3635,6 +3641,161 @@ Framework Notes
 
 ---
 
+## 29. Multi-Shard
+
+The Screeps shard model has two halves. The first is single-shard observable:
+shard identity (`Game.shard.*`), the local half of `InterShardMemory`, the
+shape of cross-shard portal destinations, and `Game.cpu.shardLimits` /
+`Game.cpu.setShardLimits`. These entries can be asserted on a single-shard
+harness and gate on `interShardMemory` or `cpuShardLimits` capabilities.
+
+The second half only manifests with two or more shards in play: cross-shard
+creep traversal, `InterShardMemory.getRemote`, per-shard `Memory` and
+`RawMemory.segments` isolation, and the post-traversal value of
+`PowerCreep.shard`. The current adapter contract creates one isolated world
+per test, so these entries are gated on a future `multiShard` capability and
+remain `needs_vanilla_verification` until a multi-shard harness lands.
+
+Cross-references:
+- Same-shard portal mechanics and the shape of `portal.destination` (both
+  same-shard and cross-shard forms) are owned by section 13.6 (`PORTAL-001`
+  through `PORTAL-006`).
+- The exact public property surface of `Game.shard` is pinned by
+  `SHAPE-GAME-004` in section 26.4.
+
+### 29.1 Shard Identity
+- `SHARD-IDENT-001` `behavior` `needs_vanilla_verification`
+  `Game.shard.name` is a non-empty string for every tick the player code
+  runs, on every shard.
+- `SHARD-IDENT-002` `behavior` `needs_vanilla_verification`
+  `Game.shard.type` is one of the strings `"normal"`, `"ptr"`, `"season"`.
+- `SHARD-IDENT-003` `behavior` `needs_vanilla_verification`
+  `Game.shard.ptr === true` iff `Game.shard.type === "ptr"`; otherwise
+  `Game.shard.ptr === false`.
+
+### 29.2 Inter-Shard Portals `capability: portals`
+
+Cross-reference: the *shape* of an inter-shard portal's `destination`
+object (`{shard, room}`, no `x`/`y`) is `PORTAL-003` in section 13.6. The
+entries below cover only the cross-shard *consequences* of stepping onto
+such a portal — none of which are testable on a single-shard harness.
+
+- `INTERSHARD-PORTAL-001` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  A creep standing on an inter-shard portal disappears from the source
+  shard on the next tick and re-materializes at `destination.room` on
+  `destination.shard`, retaining `name`, `body`, `hits`, and store
+  contents.
+- `INTERSHARD-PORTAL-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  A creep migrated by `INTERSHARD-PORTAL-001` retains its
+  `Memory.creeps[name]` entry as visible on the destination shard's
+  `Memory` (memory crosses with the creep, separate from the per-shard
+  `Memory` isolation in 29.5).
+
+### 29.3 InterShardMemory `capability: interShardMemory`
+- `ISM-001` `behavior` `needs_vanilla_verification`
+  `InterShardMemory.getLocal()` returns `null` on every tick before the
+  first successful `setLocal` on the same shard.
+- `ISM-002` `behavior` `needs_vanilla_verification`
+  After `InterShardMemory.setLocal(s)` with string `s`, a subsequent
+  `InterShardMemory.getLocal()` on the same tick returns exactly `s`.
+- `ISM-003` `matrix` `needs_vanilla_verification`
+  `InterShardMemory.setLocal` argument-type matrix: a `string` value is
+  accepted; `number`, `object`, `null`, and `undefined` are rejected. The
+  exact rejection mode (TypeError vs. silent no-op) is to be pinned
+  during verification.
+- `ISM-004` `behavior` `needs_vanilla_verification`
+  `InterShardMemory.setLocal(s)` with `s.length > 102400` (100 KiB)
+  rejects without updating the local segment; a subsequent `getLocal()`
+  returns the prior value (or `null` if none was set).
+- `ISM-005` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  `InterShardMemory.getRemote(shardName)` returns the string most
+  recently passed to `setLocal` on shard `shardName`, or `null` if that
+  shard has never set a local value.
+- `ISM-006` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  `InterShardMemory.getRemote(otherShard)` reflects writes made on
+  `otherShard` only after the cross-shard sync interval elapses; the
+  exact interval is to be pinned during verification.
+
+### 29.4 CPU Shard Limits `capability: cpuShardLimits`
+- `CPU-SHARD-001` `behavior` `needs_vanilla_verification`
+  `Game.cpu.shardLimits` is a plain object whose keys are shard names
+  (strings) and whose values are non-negative integers.
+- `CPU-SHARD-002` `behavior` `needs_vanilla_verification`
+  The sum of `Object.values(Game.cpu.shardLimits)` equals the player's
+  daily CPU allowance (the cap reported by `Game.cpu.limit` summed
+  across all shards).
+- `CPU-SHARD-003` `matrix` `needs_vanilla_verification`
+  `Game.cpu.setShardLimits(map)` return-code matrix:
+  - sum of values equals the daily allowance and every key is a known
+    shard name → `OK`
+  - sum of values does not equal the daily allowance → `ERR_INVALID_ARGS`
+  - any key is not a known shard name → `ERR_INVALID_ARGS`
+  - any value is negative or not an integer → `ERR_INVALID_ARGS`
+- `CPU-SHARD-004` `behavior` `needs_vanilla_verification`
+  A successful `Game.cpu.setShardLimits` call within 12 hours of the
+  previous successful call returns `ERR_BUSY` and leaves
+  `Game.cpu.shardLimits` unchanged. Wall-clock dependent; deferred until
+  the harness exposes a time-skip hook.
+
+### 29.5 Per-Shard Memory Isolation `capability: multiShard`
+- `SHARD-MEMORY-001` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  `Memory` is per-shard: a write to `Memory.foo` on shard A is not
+  visible via `Memory.foo` on shard B on the same or any later tick.
+  The cross-shard channel is `InterShardMemory` only.
+- `SHARD-MEMORY-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  `RawMemory.segments` and segments published via
+  `RawMemory.setPublicSegments` / readable via
+  `RawMemory.setActiveForeignSegment` are scoped to the shard on which
+  they were written; foreign-segment reads from another shard return no
+  data even when the writing user matches.
+
+### 29.6 PowerCreep Shard Home `capability: powerCreeps`
+- `SHARD-PCREEP-001` `behavior` `needs_vanilla_verification`
+  An unspawned `PowerCreep` (created via `Game.gpl` allocation but not
+  yet spawned at a power spawn) exposes `pc.shard === null`.
+- `SHARD-PCREEP-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+  A spawned `PowerCreep` exposes `pc.shard` as the string name of the
+  shard where it currently resides; the value updates to the destination
+  shard's name after the creep traverses an inter-shard portal.
+
+Coverage Notes
+- The shape of `Game.shard` (`{name, type, ptr}`, exact key set) is
+  asserted by `SHAPE-GAME-004` in section 26.4. Section 29.1 owns only
+  the *value semantics* — that the fields are populated and consistent
+  with each other on every tick.
+- The shape of `portal.destination` for both same-shard
+  (`{room, x, y}` as `RoomPosition`) and cross-shard (`{shard, room}`)
+  forms is owned by section 13.6 (`PORTAL-002`, `PORTAL-003`). Section
+  29.2 owns only the cross-shard *consequences* of portal traversal.
+- `InterShardMemory` operates on JSON strings. Anything richer than a
+  string round-trip is the player's responsibility; entries above do not
+  assert serialization fidelity beyond the byte-for-byte string contract
+  in `ISM-002`.
+
+Framework Notes
+- The current adapter contract (`src/adapter.ts`) creates one isolated
+  shard world per test. Entries gated on `multiShard` therefore cannot
+  be self-verified today and ship as `needs_vanilla_verification` with
+  the capability flag `false` on both adapters until a multi-shard
+  harness lands. Tracking the harness work and the remaining deferred
+  entries is out of scope here; revisit when the work is queued.
+- xxscreeps has no `InterShardMemory` module, no
+  `Game.cpu.shardLimits` / `setShardLimits`, and no `PowerCreep` class.
+  All entries in 29.3, 29.4, and 29.6 ship gated on capabilities the
+  xxscreeps adapter currently reports as `false`. See
+  `docs/xxscreeps-parity-gaps.md` for the upstream tracking.
+- The screeps-ok vanilla adapter does not currently expose
+  `InterShardMemory`, `Game.cpu.shardLimits`, or `setShardLimits` to
+  player code, even though real vanilla does — the player VM is set up
+  for a single-shard server with no `shards` collection seeded.
+  Flipping `interShardMemory` / `cpuShardLimits` to `true` on vanilla
+  is gated on a small adapter-wiring change (expose the
+  `InterShardMemory` module to the sandbox, seed
+  `Game.cpu.shardLimits`); 29.3 and 29.4 tests are written against
+  that future state.
+
+---
+
 ## Summary
 
 Coverage counts are temporarily omitted. The facet and behavior totals need to
@@ -3642,7 +3803,6 @@ be recomputed after the current normalization pass is complete.
 
 ### Deliberately excluded (per spec.md non-goals):
 - CPU/heap metrics (engine-specific values)
-- Multi-shard mechanics (InterShardMemory)
 - Seasonal/event-specific scoring
 - Server administration (auth, scaling)
 - Visual APIs (RoomVisual, MapVisual) — no gameplay effect

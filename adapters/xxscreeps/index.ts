@@ -159,6 +159,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
 		// bare stub at game/runtime.ts:13.
 		invaderCore: false,
+		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
+		// and no Game.cpu.shardLimits / setShardLimits. See
+		// docs/xxscreeps-parity-gaps.md.
+		multiShard: false,
+		interShardMemory: false,
+		cpuShardLimits: false,
 	};
 
 	readonly limitations = {

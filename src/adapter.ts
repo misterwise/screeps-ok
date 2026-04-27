@@ -176,6 +176,14 @@ export interface AdapterCapabilities {
 	portals: boolean;
 	/** Invader core structures (level, deploy timer, collapse lifecycle). */
 	invaderCore: boolean;
+	/** Two or more shards orchestrated within a single test (createShard with
+	 *  multiple shards, cross-shard creep traversal, per-shard Memory). */
+	multiShard: boolean;
+	/** InterShardMemory.{getLocal,setLocal,getRemote} APIs. The local half
+	 *  is single-shard testable; getRemote requires multiShard. */
+	interShardMemory: boolean;
+	/** Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. */
+	cpuShardLimits: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;

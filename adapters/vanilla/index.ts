@@ -159,6 +159,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		terrain: true,
 		portals: true,
 		invaderCore: true,
+		// Real vanilla exposes all three to player code, but the
+		// screeps-ok vanilla harness doesn't currently wire them into
+		// the player runtime sandbox: `InterShardMemory` is undefined,
+		// `Game.cpu.shardLimits` is null, and `setShardLimits` is not a
+		// function. Flip these as the adapter learns to expose them.
+		multiShard: false,
+		interShardMemory: false,
+		cpuShardLimits: false,
 	};
 
 	private server: any = null;
