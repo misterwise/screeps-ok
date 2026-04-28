@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1112%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-42-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-28 01:14 UTC |
-| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [188](#xxscreeps-skipped-tests) | 2026-04-28 01:11 UTC |
+| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-28 04:19 UTC |
+| 🟡 | **xxscreeps** | [1112](#xxscreeps-passing-tests) | [42](#xxscreeps-expected-failures) | — | [188](#xxscreeps-skipped-tests) | 2026-04-28 04:17 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -1611,7 +1611,7 @@ Click a count to jump to the affected test list.
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
-- Game.map room queries MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge
+- Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
 
@@ -3736,3 +3736,4 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
 </details>
+
