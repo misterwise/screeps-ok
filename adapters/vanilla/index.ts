@@ -1008,17 +1008,24 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const deployTime = (spec.deployTime as number)
 				? gameTime + (spec.deployTime as number)
 				: null;
-			const result = await this.db['rooms.objects'].insert({
+			const C = this.server.constants;
+			const insert: Record<string, unknown> = {
 				room: roomName,
 				type: 'invaderCore',
 				x: pos[0],
 				y: pos[1],
 				level,
-				hits: 100000,
-				hitsMax: 100000,
+				user: (spec.user as string) ?? '2',
+				hits: (spec.hits as number) ?? (C.INVADER_CORE_HITS ?? 100000),
+				hitsMax: (spec.hitsMax as number) ?? (C.INVADER_CORE_HITS ?? 100000),
 				deployTime,
 				effects: spec.effects ?? [],
-			});
+			};
+			if (spec.templateName !== undefined) insert.templateName = spec.templateName;
+			if (spec.strongholdId !== undefined) insert.strongholdId = spec.strongholdId;
+			const result = await this.db['rooms.objects'].insert(insert);
+			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
+			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
 			return result._id;
 		}
 

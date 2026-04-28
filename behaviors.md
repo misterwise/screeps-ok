@@ -2098,8 +2098,9 @@ cross-shard `destination` values.
   mode, power enablement, and controller effects are cleared.
 
 Coverage Notes
-- Stronghold orchestration across multiple rooms is too broad for one catalog
-- item and should be split into concrete observable behaviors later.
+- Stronghold orchestration began splitting into concrete observable behaviors
+  in `14.5`; further family entries (rampart hits, effect propagation, reward
+  contents) are still pending.
 
 ### 14.3 Power Bank `capability: powerCreeps`
 - `POWER-BANK-001` `behavior` `verified_vanilla`
@@ -2129,6 +2130,25 @@ Coverage Notes
 Coverage Notes
 - This family is limited to public ownership query properties, not owner-gated
   API behavior.
+
+### 14.5 Stronghold Layout `capability: invaderCore`
+- `STRONGHOLD-LAYOUT-001` `matrix` `verified_vanilla`
+  When a deploying invader core's deploy timer reaches its trigger
+  (`core.deployTime <= gameTime + 1`), the engine places the canonical
+  stronghold structure layout for `core.templateName` relative to the core
+  position. For each canonical bunker template (`bunker1`–`bunker5`) listed
+  in `docs/behavior-matrices.md` under `STRONGHOLD-LAYOUT`, every non-core
+  template entry produces a structure of the listed `type` at the listed
+  `(dx, dy)` offset from the core; the invader core itself remains in place
+  with its `deployTime` cleared and no extra invader-core structure is
+  created.
+
+Coverage Notes
+- Coverage of stronghold orchestration that previously sat in `14.2` has
+  begun here as a layout matrix. Per-rampart hits scaling
+  (`STRONGHOLD_RAMPART_HITS`), per-tile effect propagation
+  (`EFFECT_COLLAPSE_TIMER`), and stronghold container reward contents are
+  separate observables not covered by `STRONGHOLD-LAYOUT-001`.
 
 
 ---

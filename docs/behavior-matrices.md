@@ -183,6 +183,28 @@ Each definition should include:
   `user`. The executable case list lives in
   `src/matrices/npc-ownership.ts`.
 
+### STRONGHOLD-LAYOUT
+
+- `Catalog Entries`
+  `STRONGHOLD-LAYOUT-001`
+- `Canonical Source`
+  `@screeps/common/lib/strongholds.js` (template definitions) and
+  `@screeps/engine/src/processor/intents/invader-core/stronghold/stronghold.js`
+  (`deployStronghold` placement logic).
+- `Dimensions`
+  template name (`bunker1`..`bunker5`), structure type, dx, dy
+- `Applicability`
+  Each of the five canonical bunker templates. For every non-core entry in a
+  template's `structures` list, a structure of the listed `type` is placed at
+  `(core.x + dx, core.y + dy)` in the deployment tick.
+- `Exclusions`
+  Per-template stronghold rampart hits scaling (`STRONGHOLD_RAMPART_HITS`),
+  per-structure `EFFECT_COLLAPSE_TIMER` propagation, container reward
+  contents (random per `containerRewards`), tower energy seeding amount, and
+  rampart/tower user attribution. These are separate observables.
+- `Verification Notes`
+  The executable case list lives in `src/matrices/stronghold-layout.ts`.
+
 ### INTENT-CREEP-PRIORITY
 
 - `Catalog Entries`

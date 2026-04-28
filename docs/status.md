@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1328%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1112%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-42-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1328](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-27 12:49 UTC |
-| 🟡 | **xxscreeps** | [1112](#xxscreeps-passing-tests) | [42](#xxscreeps-expected-failures) | — | [183](#xxscreeps-skipped-tests) | 2026-04-28 02:13 UTC |
+| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-28 01:14 UTC |
+| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [188](#xxscreeps-skipped-tests) | 2026-04-28 01:11 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -198,7 +198,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1328 tests across 120 files</summary>
+<summary>1339 tests across 122 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1325,6 +1325,14 @@ Click a count to jump to the affected test list.
 - Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
 - Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile
 
+**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
+
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
+
 **`tests/15-structure-common/15.1-hits.test.ts`** (20)
 
 - Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
@@ -1388,6 +1396,14 @@ Click a count to jump to the affected test list.
 - structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
 - structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room
 - structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
+
+**`tests/15-structure-common/15.5-effects-substrate.test.ts`** (5)
+
+- 15.5 Effects Substrate EFFECT-DECAY-001 entry ticksRemaining decrements by exactly 1 per tick
+- 15.5 Effects Substrate EFFECT-DECAY-002 entry is removed the tick its remaining duration reaches zero
+- 15.5 Effects Substrate EFFECT-APPLY-001 re-applying an active power refreshes the entry without stacking
+- 15.5 Effects Substrate EFFECT-APPLY-002 distinct powers coexist on a target with independent timers
+- 15.5 Effects Substrate EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
@@ -1763,7 +1779,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (45)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (46)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
@@ -1810,6 +1826,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
 
 **`tests/27-undocumented/27.1-memhack.test.ts`** (12)
 
@@ -1892,7 +1909,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 183 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 188 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -1900,8 +1917,8 @@ xxscreeps has 183 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
 | capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
+| capability | `invaderCore` | Invader core structures | [10](#xxscreeps-skip-capability-invadercore) |
 | capability | `portals` | Portal structures and teleport mechanics | [8](#xxscreeps-skip-capability-portals) |
-| capability | `invaderCore` | Invader core structures | [5](#xxscreeps-skip-capability-invadercore) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -2220,6 +2237,30 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-invadercore">
+<summary><code>capability:invaderCore</code> — 10 tests across 3 files</summary>
+
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
+
+- Invader core INVADER-CORE-001 ticksToDeploy counts down
+- Invader core INVADER-CORE-002 invader core exposes its level
+- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+
+**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
+
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
+
+- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
+
+</details>
+
 <details id="xxscreeps-skip-capability-portals">
 <summary><code>capability:portals</code> — 8 tests across 3 files</summary>
 
@@ -2239,22 +2280,6 @@ Click a count to jump to the affected test list.
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
 
 - 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
-
-</details>
-
-<details id="xxscreeps-skip-capability-invadercore">
-<summary><code>capability:invaderCore</code> — 5 tests across 2 files</summary>
-
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
-
-- Invader core INVADER-CORE-001 ticksToDeploy counts down
-- Invader core INVADER-CORE-002 invader core exposes its level
-- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
-
-- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
 
 </details>
 
@@ -3711,4 +3736,3 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
 </details>
-
