@@ -48,6 +48,7 @@ export const ROOM_POSITION_SHAPE = shape('roomName', 'x', 'y');
 export const SPAWNING_SHAPE = shape('directions', 'name', 'needTime', 'remainingTime', 'spawn');
 export const RESERVATION_SHAPE = shape('ticksToEnd', 'username');
 export const SIGN_SHAPE = shape('datetime', 'text', 'time', 'username');
+export const EFFECT_SHAPE = shape('effect', 'level', 'power', 'ticksRemaining');
 
 // ── Room & controller ────────────────────────────────────────────────
 

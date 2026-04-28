@@ -2203,6 +2203,43 @@ Coverage Notes
   A successful `notifyWhenAttacked(enabled)` returns `OK` and updates the
   structure's attack notification setting on the next tick.
 
+### 15.5 Effects Substrate `capability: powerCreeps`
+- `EFFECT-DECAY-001` `behavior` `verified_vanilla`
+  An entry's `ticksRemaining` decrements by exactly 1 each subsequent tick
+  while the host RoomObject remains alive.
+- `EFFECT-DECAY-002` `behavior` `verified_vanilla`
+  An entry is removed from the `effects` array on the tick its remaining
+  duration would reach 0; the last tick it is observable, its
+  `ticksRemaining` is 1.
+- `EFFECT-APPLY-001` `behavior` `verified_vanilla`
+  Re-applying a power that is already active on the same target replaces
+  the existing entry rather than adding a second one. After
+  re-application, exactly one entry for that power remains and its
+  `ticksRemaining` reflects the new full duration, regardless of how much
+  time the prior entry had left.
+- `EFFECT-APPLY-002` `behavior` `verified_vanilla`
+  Effects keyed on different powers coexist on the same target as
+  independent entries with independent timers; expiry of one entry does
+  not affect any other.
+- `EFFECT-DESTROY-001` `behavior` `verified_vanilla`
+  When a host RoomObject is destroyed, its active effects do not migrate
+  to any successor object (e.g. ruin, dropped resources) on the same
+  tile.
+
+Coverage Notes
+- The substrate tested here is the universal `RoomObject.effects`
+  surface, not the per-power magnitudes — those remain in §7.12, §17.2,
+  §17.4, §19.4–§19.7.
+- Vanilla writes effects with both `power` and `effect` carrying the same
+  numeric ID for power-applied entries, with only `power` set for
+  PWR_SHIELD's auto-spawned rampart, and with only `effect` set for
+  invader-core EFFECT_INVULNERABILITY. Player code should match against
+  whichever field the producing path populates rather than assuming
+  disjointness.
+- The runtime view of an entry exposes `ticksRemaining`, derived per tick
+  from a server-side `endTime`. The server-side field is not surfaced to
+  player code and is not part of the spec.
+
 ---
 
 ## 16. Room Mechanics
@@ -2756,8 +2793,9 @@ Notes
   `Game.map.getRoomStatus(roomName)` returns the canonical status and timestamp
   mapping for normal, novice, respawn, and closed rooms.
 - `MAP-ROOM-005` `behavior` `verified_vanilla`
-  `Game.map.getWorldSize()` returns the world size as the number of rooms along
-  one edge of the world map.
+  `Game.map.getWorldSize()` returns the inclusive count of rooms along the
+  longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`
+  over the rooms that exist in the engine.
 
 ### 21.2 Route Finding
 - `MAP-ROUTE-001` `behavior` `verified_vanilla`
@@ -3178,6 +3216,13 @@ Coverage Notes
 - `SHAPE-NUKE-001` `behavior` `verified_vanilla`
   An in-flight nuke's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.8 Effects Substrate Shape `capability: powerCreeps`
+- `SHAPE-EFFECT-001` `behavior` `verified_vanilla`
+  Each entry of a RoomObject's `effects` array exposes exactly `effect`,
+  `level`, `power`, and `ticksRemaining` — no missing and no extra
+  properties. Server-side fields such as `endTime` are not present on the
+  runtime view.
 
 Coverage Notes
 - "Public data-property surface" means prototype getters and non-function

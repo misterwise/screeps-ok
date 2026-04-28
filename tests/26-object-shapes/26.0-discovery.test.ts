@@ -15,9 +15,10 @@
  */
 import { describe, test, expect, code,
 	MOVE, CARRY, WORK, CLAIM,
-	STRUCTURE_ROAD, STRUCTURE_CONTAINER,
+	STRUCTURE_ROAD, STRUCTURE_CONTAINER, STRUCTURE_TOWER,
 	RESOURCE_ENERGY, RESOURCE_SILICON,
 	COLOR_RED, COLOR_BLUE,
+	PWR_DISRUPT_TOWER,
 } from '../../src/index.js';
 import type { PlayerCode } from '../../src/index.js';
 import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
@@ -33,7 +34,7 @@ import {
 	SOURCE_SHAPE, MINERAL_SHAPE, CONSTRUCTION_SITE_SHAPE,
 	FLAG_SHAPE, DROPPED_RESOURCE_SHAPE,
 	TOMBSTONE_SHAPE, RUIN_SHAPE, NUKE_SHAPE,
-	DEPOSIT_SHAPE,
+	DEPOSIT_SHAPE, EFFECT_SHAPE,
 	structureShapes, npcShapes,
 } from '../../src/matrices/object-shapes.js';
 
@@ -579,5 +580,35 @@ describe('26.0 Object Shape Conformance', () => {
 		`) as string[] | null;
 
 		expect(keys).toEqual([...NUKE_SHAPE]);
+	});
+
+	// ── 26.8 Effects Substrate Shape ─────────────────────────────────
+
+	test('SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.ownedRoom('p1', 'W1N1', 8);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		await shard.placePowerCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			powers: { [PWR_DISRUPT_TOWER]: 1 },
+			store: { ops: 200 },
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			const pc = Object.values(Game.powerCreeps)[0];
+			pc.usePower(PWR_DISRUPT_TOWER, Game.getObjectById(${towerId}))
+		`);
+		await shard.tick();
+
+		const keys = await shard.runPlayer('p1', shapeCode`
+			const t = Game.getObjectById(${towerId});
+			(t && t.effects && t.effects.length) ? dataProps(t.effects[0]) : null
+		`) as string[] | null;
+
+		expect(keys).toEqual([...EFFECT_SHAPE]);
 	});
 });
