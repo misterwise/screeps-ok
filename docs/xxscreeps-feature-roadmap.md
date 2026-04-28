@@ -71,11 +71,25 @@ Market is mostly HTTP plumbing on top of the existing terminal `send`. Bigger th
 
 Depends on Tier 1's `RoomObject.effects` (Strongholds apply effects to nearby rooms).
 
-- **InvaderCore** — fixed NPC base structure; deploy phase, decay timer, tower/rampart child structures
+- **InvaderCore** — fixed NPC base structure; deploy phase, decay timer, tower/rampart child structures. Deploy-layout parity is pinned by §14.5 `STRONGHOLD-LAYOUT-001`.
 - **Strongholds** — composite of InvaderCore + auto-built ramparts/towers + loot terminal-equivalent. Stress-tests every prior tier; do last among NPCs.
 - **Caravans** — moving NPC convoy, optional polish
 
 (Plain "Invaders" — the wandering hostile creep AI — already exists per the audit.)
+
+### Service jobs (cronjob parity) — scope split
+
+screeps-ok pins only those cronjob outputs that an engine produces from a
+*tick-driven* path. Cronjob *cadence* and *registration* are server-mod
+concerns that belong in xxscreeps' own framework tests, not here.
+
+| Cronjob | screeps-ok coverage | Where |
+|---|---|---|
+| `genStrongholds`/`expandStrongholds` deploy layout | yes — engine-driven via `deployStronghold` | §14.5 `STRONGHOLD-LAYOUT-001` |
+| `genInvaders`, `genPowerBanks`, `genDeposits` (entity bodies/contents) | no — written directly by cronjob, no tick-driven engine analog | xxscreeps repo |
+| `recreateNpcOrders`, `purgeTransactions`, `calcMarketStats` | no — pure cronjob writes to `db['market.*']` | xxscreeps repo |
+| `deletePowerCreeps` removal-after-cooldown | no — cronjob; the `delete()` API surface is already in `POWERCREEP-DELETE-001..003` | xxscreeps repo |
+| `roomsForceUpdate`, `sendNotifications` | n/a — operator-internal, not player-observable | xxscreeps repo |
 
 ## Tier 5 — Power system
 
