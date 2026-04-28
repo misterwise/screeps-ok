@@ -184,6 +184,12 @@ export interface AdapterCapabilities {
 	interShardMemory: boolean;
 	/** Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. */
 	cpuShardLimits: boolean;
+	/** `Game.map.getWorldSize()` reflects the current shard's room set rather
+	 *  than a value cached at engine boot. Vanilla computes worldSize from
+	 *  `db.rooms` when the engine_runner subprocess connects via
+	 *  `@screeps/driver`, and exposes no refresh path; tests that assert the
+	 *  inclusive-span semantic must require this capability. */
+	liveWorldSize: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;

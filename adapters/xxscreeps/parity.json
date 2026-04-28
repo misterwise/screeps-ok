@@ -25,6 +25,11 @@
 			"expected": "Returns `ERR_NOT_FOUND` when no reusable path is available",
 			"tests": ["MOVE-BASIC-019"]
 		},
+		"world-size-exclusive-span": {
+			"actual": "`Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13`",
+			"expected": "`Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph",
+			"tests": ["MAP-ROOM-005"]
+		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
 			"expected": "`boost` key is only present when the part is actually boosted",

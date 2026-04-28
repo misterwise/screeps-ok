@@ -57,14 +57,40 @@ describe('Game.map room queries', () => {
 		expect(result.timestamp).toBeNull();
 	});
 
-	test('MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge', async ({ shard }) => {
+	test('MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span', async ({ shard }) => {
+		shard.requires('liveWorldSize');
 		await shard.ownedRoom('p1');
 
-		const size = await shard.runPlayer('p1', code`
-			Game.map.getWorldSize()
-		`);
-		// Must be a positive integer.
-		expect(typeof size).toBe('number');
-		expect(size).toBeGreaterThan(0);
+		const result = await shard.runPlayer('p1', code`
+			// BFS the map graph from the owned room, then assert getWorldSize
+			// equals the inclusive rx/ry span. Off-by-one in width/height
+			// arithmetic surfaces as size === span - 1.
+			const visited = new Set();
+			const queue = ['W1N1'];
+			while (queue.length) {
+				const name = queue.shift();
+				if (visited.has(name)) continue;
+				visited.add(name);
+				const exits = Game.map.describeExits(name);
+				if (exits) for (const k in exits) queue.push(exits[k]);
+			}
+			const xs = [], ys = [];
+			for (const name of visited) {
+				const match = /^([WE])(\\d+)([NS])(\\d+)$/.exec(name);
+				if (!match) continue;
+				const [, h, x, v, y] = match;
+				xs.push(h === 'W' ? -1 - +x : +x);
+				ys.push(v === 'N' ? -1 - +y : +y);
+			}
+			({
+				size: Game.map.getWorldSize(),
+				span: Math.max(
+					Math.max(...xs) - Math.min(...xs) + 1,
+					Math.max(...ys) - Math.min(...ys) + 1,
+				),
+			})
+		`) as { size: number; span: number };
+
+		expect(result.size).toBe(result.span);
 	});
 });

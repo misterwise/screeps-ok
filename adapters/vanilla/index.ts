@@ -4,7 +4,8 @@ import type {
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 } from '../../src/adapter.js';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -15,21 +16,17 @@ import { selectorFromFindConstant } from '../../src/find.js';
 import { snapshotObject, snapshotRoomObjects } from './snapshots.js';
 import { TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC, withCornerWalls } from '../../src/terrain-fixture.js';
 
+const nodeRequire = createRequire(import.meta.url);
+
 // @ts-expect-error -- screeps-server-mockup has no type declarations
 import { ScreepsServer, TerrainMatrix } from 'screeps-server-mockup';
 
-// Room auto-added to every vanilla createShard that doesn't already reference
-// it. @screeps/driver/lib/runtime/make.js only reads env.TERRAIN_DATA on the
-// first makeRuntime call and never refreshes it, so tests that need to
-// observe non-plains terrain through player APIs (Room.getTerrain,
-// PathFinder, moveTo pathfinding) must reference this pre-crafted fixture
-// room instead of trying to mutate a per-test room's terrain. See
-// src/terrain-fixture.ts for the landmark coordinates tests should use.
+// Terrain records written to every vanilla createShard when the spec does not
+// already include them. They are intentionally not added to db.rooms, because
+// vanilla's worldSize is computed from db.rooms and hidden fixture rooms should
+// not change map span.
 const PRELOAD_ROOMS: { name: string; terrain: TerrainSpec | null }[] = [
 	{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
-	// Blank-terrain neighbor of the fixture room so cross-room PathFinder
-	// tests (e.g. maxRooms) have an adjacent room the runner's static cache
-	// already knows about.
 	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
 ];
 
@@ -47,6 +44,10 @@ function buildTerrainMatrix(terrain: TerrainSpec | null): any {
 
 let sharedServer: any = null;
 let sharedServerCleanupRegistered = false;
+let sharedUserCodeTimestamp = Date.now();
+
+const VANILLA_WORLD_SIZE_ENV_KEY = 'screeps-ok:worldSize';
+const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
 
 // @screeps/driver/lib/queue.js registers a SIGTERM handler that logs
 // "Got SIGTERM, disabling queue fetching" before calling process.exit(0).
@@ -61,17 +62,73 @@ function silenceDriverSigtermLog(): void {
 	}
 }
 
+function writeRunnerSandboxPatch(root: string): string {
+	const patchPath = path.join(root, RUNNER_SANDBOX_PATCH_FILE);
+	const userVmPath = nodeRequire.resolve('@screeps/driver/lib/runtime/user-vm.js');
+	const patchSource = `'use strict';
+const Module = require('module');
+const fs = require('fs');
+
+const target = ${JSON.stringify(userVmPath)};
+const key = ${JSON.stringify(VANILLA_WORLD_SIZE_ENV_KEY)};
+const originalJs = Module._extensions['.js'];
+
+Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filename) {
+	if (filename !== target) return originalJs(module, filename);
+	Module._extensions['.js'] = originalJs;
+
+	const needle = "context.global.setIgnored('_worldSize', index.getWorldSize());";
+	const replacement = "context.global.setIgnored('_worldSize', await (async function() {\\n" +
+		"                try {\\n" +
+		"                    const value = await common.storage.env.get(" + JSON.stringify(key) + ");\\n" +
+		"                    const parsed = Number(value);\\n" +
+		"                    if (Number.isFinite(parsed) && parsed > 0) return parsed;\\n" +
+		"                } catch (_) {}\\n" +
+		"                return index.getWorldSize();\\n" +
+		"            })());";
+	let source = fs.readFileSync(filename, 'utf8');
+	if (!source.includes(needle)) {
+		throw new Error('screeps-ok vanilla sandbox patch: user-vm worldSize injection point not found');
+	}
+	source = source.replace(needle, replacement);
+	module._compile(source, filename);
+};
+`;
+	writeFileSync(patchPath, patchSource);
+	return patchPath;
+}
+
+function installRunnerSandboxPatch(server: any, patchPath: string): void {
+	const originalStartProcess = server.startProcess.bind(server);
+	server.startProcess = (name: string, execPath: string, env: Record<string, string>) => {
+		if (name !== 'engine_runner') return originalStartProcess(name, execPath, env);
+		return originalStartProcess(name, execPath, {
+			...env,
+			NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, patchPath),
+		});
+	};
+}
+
+function appendNodeRequire(existing: string | undefined, patchPath: string): string {
+	const option = `--require=${patchPath}`;
+	if (!existing) return option;
+	if (existing.split(/\s+/).includes(option)) return existing;
+	return `${existing} ${option}`;
+}
+
 async function getServer(): Promise<any> {
 	if (!sharedServer) {
 		const port = await getStoragePort();
 		const root = path.join(tmpdir(), 'screeps-ok-vanilla', `${process.pid}-${port}`);
 		mkdirSync(path.join(root, 'server'), { recursive: true });
 		mkdirSync(path.join(root, 'logs'), { recursive: true });
+		const runnerSandboxPatch = writeRunnerSandboxPatch(root);
 		sharedServer = new ScreepsServer({
 			path: path.join(root, 'server'),
 			logdir: path.join(root, 'logs'),
 			port,
 		});
+		installRunnerSandboxPatch(sharedServer, runnerSandboxPatch);
 		registerSharedServerCleanup();
 		silenceDriverSigtermLog();
 		await sharedServer.world.reset();
@@ -205,6 +262,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		multiShard: false,
 		interShardMemory: true,
 		cpuShardLimits: false,
+		// The adapter supplies the current shard span to the vanilla runner
+		// before each player VM initializes, without changing @screeps/engine.
+		liveWorldSize: true,
 	};
 
 	private server: any = null;
@@ -347,6 +407,15 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		})()`;
 	}
 
+	private async publishSandboxWorldSize(): Promise<void> {
+		const common = nodeRequire('@screeps/common') as {
+			calcWorldSize: (rooms: Array<{ _id: string }>) => number;
+		};
+		const rooms = (await this.db.rooms.find()).map((room: { _id: string }) => ({ _id: room._id }));
+		const worldSize = rooms.length > 0 ? common.calcWorldSize(rooms) : 0;
+		await this.env.set(VANILLA_WORLD_SIZE_ENV_KEY, String(worldSize));
+	}
+
 	private resolvePlayer(handle: string): string {
 		const id = this.playerMap.get(handle);
 		if (!id) throw new Error(`Unknown player handle: ${handle}`);
@@ -360,6 +429,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	async createShard(spec: ShardSpec): Promise<void> {
 		this.server = await getServer();
 		await this.server.world.reset();
+		this.firstTickRun = false;
 		const storage = this.server.common.storage;
 		this.db = storage.db;
 		this.env = storage.env;
@@ -381,19 +451,16 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			});
 		}
 
-		// Auto-add the preload rooms that aren't already in the test's spec.
-		// The runner's engine_runner subprocess snapshots terrain once on its
-		// first makeRuntime call and never re-reads env.TERRAIN_DATA afterward
-		// (see @screeps/driver/lib/runtime/make.js). By ensuring every test
-		// writes the full preload set to env.TERRAIN_DATA before the warmup
-		// tick below, whichever test runs first locks the runner's cache with
-		// a superset that subsequent tests can freely reference.
+		// Preload fixture terrain that is not part of this shard's room set.
+		// world.setTerrain writes rooms.terrain and refreshes env.TERRAIN_DATA
+		// without requiring a db.rooms row, keeping getWorldSize tied to only
+		// the rooms the test declared.
 		const specRoomNames = new Set(spec.rooms.map(r => r.name));
 		for (const preload of PRELOAD_ROOMS) {
 			if (specRoomNames.has(preload.name)) continue;
-			await this.server.world.addRoom(preload.name);
 			await this.server.world.setTerrain(preload.name, buildTerrainMatrix(preload.terrain));
 		}
+		await this.publishSandboxWorldSize();
 
 		// Create players manually (no addBot — avoids phantom spawns and
 		// controller overwrites). User snippets are delivered through
@@ -403,6 +470,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// the first time `require('main')` runs (warmup tick), so console
 		// expressions in subsequent runPlayer calls observe the API.
 		const loopCode = `${INTER_SHARD_MEMORY_POLYFILL}\nmodule.exports.loop = function () {};`;
+		const shardCodeTimestamp = ++sharedUserCodeTimestamp;
 
 		for (let i = 0; i < spec.players.length; i++) {
 			const entry = spec.players[i];
@@ -435,6 +503,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					branch: 'default',
 					modules: { main: loopCode },
 					activeWorld: true,
+					timestamp: shardCodeTimestamp,
 				}),
 			]);
 

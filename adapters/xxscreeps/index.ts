@@ -165,6 +165,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		multiShard: false,
 		interShardMemory: false,
 		cpuShardLimits: false,
+		// xxscreeps's GameMap is constructed from the World schema each time
+		// it's read, so getWorldSize always reflects the current room set.
+		liveWorldSize: true,
 	};
 
 	readonly limitations = {

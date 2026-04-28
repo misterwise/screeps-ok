@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1328%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1113%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-41-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1328%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1112%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-42-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟢 | **vanilla** | [1328](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-27 12:49 UTC |
-| 🟡 | **xxscreeps** | [1113](#xxscreeps-passing-tests) | [41](#xxscreeps-expected-failures) | — | [177](#xxscreeps-skipped-tests) | 2026-04-27 12:46 UTC |
+| 🟡 | **xxscreeps** | [1112](#xxscreeps-passing-tests) | [42](#xxscreeps-expected-failures) | — | [183](#xxscreeps-skipped-tests) | 2026-04-28 02:13 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 13 parity gaps against vanilla's canonical behavior, covering 41 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 14 parity gaps against vanilla's canonical behavior, covering 42 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
@@ -34,6 +34,7 @@ xxscreeps currently declares 13 parity gaps against vanilla's canonical behavior
 | `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
+| `world-size-exclusive-span` | `Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13` | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
@@ -96,6 +97,13 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-nopathfinding-returns-ok</code> — 1 test</summary>
 
 - `creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path`
+
+</details>
+
+<details id="xxscreeps-gap-world-size-exclusive-span">
+<summary><code>world-size-exclusive-span</code> — 1 test</summary>
+
+- `Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span`
 
 </details>
 
@@ -1884,11 +1892,11 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 177 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 183 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [70](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [76](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
 | capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
@@ -1901,7 +1909,7 @@ xxscreeps has 177 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 70 tests across 20 files</summary>
+<summary><code>capability:powerCreeps</code> — 76 tests across 21 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -1967,6 +1975,14 @@ Click a count to jump to the affected test list.
 
 - Construction costs CONSTRUCTION-COST-001:powerSpawn costs 100000
 
+**`tests/15-structure-common/15.5-effects-substrate.test.ts`** (5)
+
+- 15.5 Effects Substrate EFFECT-DECAY-001 entry ticksRemaining decrements by exactly 1 per tick
+- 15.5 Effects Substrate EFFECT-DECAY-002 entry is removed the tick its remaining duration reaches zero
+- 15.5 Effects Substrate EFFECT-APPLY-001 re-applying an active power refreshes the entry without stacking
+- 15.5 Effects Substrate EFFECT-APPLY-002 distinct powers coexist on a target with independent timers
+- 15.5 Effects Substrate EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed
+
 **`tests/16-room-mechanics/16.6-eventlog.test.ts`** (1)
 
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
@@ -2027,11 +2043,12 @@ Click a count to jump to the affected test list.
 - Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-004:powerSpawn restricted store returns null for disallowed resources
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (3)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (4)
 
 - 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:powerSpawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
 
 </details>
 
@@ -2276,7 +2293,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1113 tests across 101 files</summary>
+<summary>1112 tests across 101 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3440,13 +3457,12 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 
-**`tests/21-map/21.1-room-queries.test.ts`** (5)
+**`tests/21-map/21.1-room-queries.test.ts`** (4)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
-- Game.map room queries MAP-ROOM-005 getWorldSize returns the number of rooms along one world edge
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
 
