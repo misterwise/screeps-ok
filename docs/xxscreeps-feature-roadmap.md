@@ -77,19 +77,34 @@ Depends on Tier 1's `RoomObject.effects` (Strongholds apply effects to nearby ro
 
 (Plain "Invaders" — the wandering hostile creep AI — already exists per the audit.)
 
-### Service jobs (cronjob parity) — scope split
+### Service jobs PRD — what does and doesn't belong in screeps-ok
 
-screeps-ok pins only those cronjob outputs that an engine produces from a
-*tick-driven* path. Cronjob *cadence* and *registration* are server-mod
-concerns that belong in xxscreeps' own framework tests, not here.
+screeps-ok tests engine-side, tick-driven, player-observable behavior.
+The vanilla service-jobs PRD lists 11 backend cronjobs; an audit of
+those against this scope concluded:
 
-| Cronjob | screeps-ok coverage | Where |
-|---|---|---|
-| `genStrongholds`/`expandStrongholds` deploy layout | yes — engine-driven via `deployStronghold` | §14.5 `STRONGHOLD-LAYOUT-001` |
-| `genInvaders`, `genPowerBanks`, `genDeposits` (entity bodies/contents) | no — written directly by cronjob, no tick-driven engine analog | xxscreeps repo |
-| `recreateNpcOrders`, `purgeTransactions`, `calcMarketStats` | no — pure cronjob writes to `db['market.*']` | xxscreeps repo |
-| `deletePowerCreeps` removal-after-cooldown | no — cronjob; the `delete()` API surface is already in `POWERCREEP-DELETE-001..003` | xxscreeps repo |
-| `roomsForceUpdate`, `sendNotifications` | n/a — operator-internal, not player-observable | xxscreeps repo |
+- The framework concerns (registration, cadence, persistence, runCronjob
+  CLI, error isolation) are operator-facing and live in xxscreeps' own
+  repo.
+- Most cronjob *outputs* (invader bodies, power-bank/deposit/stronghold
+  spawn timing and placement, NPC market orders, transaction caps,
+  market-history aggregation, power-creep removal-after-cooldown) are
+  written directly to the database from the cronjob — no tick-driven
+  engine path to invoke or observe in screeps-ok.
+- The one exception is **stronghold deployment**: when a level-0
+  invader core's `deployTime` elapses, the engine processor's
+  invader-core pretick calls `deployStronghold`, which places the
+  canonical bunker layout. That's tick-driven and player-observable, so
+  it's pinned by §14.5 `STRONGHOLD-LAYOUT-001`. The vanilla cronjob
+  (`expandStrongholds`/`genStrongholds`) is what creates the deploying
+  core in production, but screeps-ok seeds the core directly via
+  `placeObject` and does not exercise the cronjob.
+
+Other entity-shape behaviors a cronjob might create are already pinned
+elsewhere by entity (e.g. `POWERCREEP-DELETE-001..003`,
+`STRUCTURE-HITS-001`, `INVADER-CORE-*`, `DEPOSIT-*`, `POWER-BANK-*`).
+No SERVICE-JOB-* axis or `runServiceJob` adapter affordance —
+implementation-coupled framing the catalog rejects.
 
 ## Tier 5 — Power system
 
