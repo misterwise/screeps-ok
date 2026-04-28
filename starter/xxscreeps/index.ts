@@ -1000,7 +1000,8 @@ async function createSimulation(
 	roomInits: Record<string, (room: any) => void>,
 	terrainOverrides?: Record<string, TerrainSpec>,
 ) {
-	const { db, shard } = await instantiateTestShard();
+	const testShard = await instantiateTestShard();
+	const { db, shard } = testShard;
 
 	// Mutable terrain map — always maintained so updateTerrain can modify
 	// individual rooms and rebuild the world.
@@ -1197,15 +1198,23 @@ async function createSimulation(
 					try { sandbox.dispose(); } catch {}
 				}
 				userSandboxes.clear();
-				shard.disconnect();
-				db.disconnect();
+				disposeTestShard(testShard);
 			},
 		};
 	} catch (err) {
-		shard.disconnect();
-		db.disconnect();
+		disposeTestShard(testShard);
 		throw err;
 	}
+}
+
+function disposeTestShard(testShard: any): void {
+	const dispose = testShard[(Symbol as any).dispose];
+	if (typeof dispose === 'function') {
+		dispose.call(testShard);
+		return;
+	}
+	testShard.shard?.disconnect?.();
+	testShard.db?.disconnect?.();
 }
 
 export async function createAdapter(): Promise<ScreepsOkAdapter> {

@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs and queues remaining parity work.
 
-Last refreshed: 2026-04-26 (pin `113800b7`).
+Last refreshed: 2026-04-27 (pin `113800b7`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/src`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
@@ -27,17 +27,14 @@ Last refreshed: 2026-04-26 (pin `113800b7`).
 | [#134](https://github.com/laverdet/xxscreeps/pull/134) | PR-14b | Remove hits/hitsMax/my leak from RoomObject base | shape-extra-hits-my (Flag id residual queued as Q6) |
 | [#152](https://github.com/laverdet/xxscreeps/pull/152) | PR-10a | Fix Creep.transfer redirect to upgradeController; reject pull on spawning | transfer-controller-no-upgrade-redirect + pull-spawning-no-guard |
 | [#153](https://github.com/laverdet/xxscreeps/pull/153) | PR-10b | Add Creep.withdraw enemy-rampart guard; fix moveTo noPathFinding return code | withdraw-enemy-rampart-no-protection + moveto-nopathfinding-returns-ok |
+| [#160](https://github.com/laverdet/xxscreeps/pull/160) | Q1 | Reject Creep.pull(self) with ERR_INVALID_TARGET | pullSelfHang limitation (MOVE-PULL-007:self) |
 
 ## Queued PRs (ordered by complexity, simplest first)
 
-After every in-flight PR merges, ten gap entries in `parity.json` remain plus the `pullSelfHang` limitation (`src/limitations.ts`), which gates one test outside `parity.json` because the bug hangs the runner instead of failing cleanly. `eventlog-attack-missing` is also remaining but is blocked on upstream PR #107 and resolves on a pin bump. The PRs below close those eleven entries in eight submissions.
-
-### Q1: Pull(self) guard
-- **Closes (1 entry / 1 test):** `pullSelfHang` limitation (MOVE-PULL-007:self).
-- **Fix:** `mods/creep/creep.ts:499` `checkPull`: prepend `() => target === creep ? C.ERR_INVALID_TARGET : C.OK` to the chain. Vanilla rejects self-pull at the user-side guard (`creeps.js`); xxscreeps falls through to the processor's circular-pull resolver which recurses forever. Mirrors PR-10a's `transfer`-self pattern.
-- **Blast radius:** single guard, one chained check.
+After every in-flight PR merges, ten gap entries in `parity.json` remain. `eventlog-attack-missing` is also remaining but is blocked on upstream PR #107 and resolves on a pin bump. The PRs below close those entries in seven submissions.
 
 ### Q2: Memory mod cleanups (3 small fixes bundled)
+- **Blocked on:** upstream PR [#140](https://github.com/laverdet/xxscreeps/pull/140) (`fix/raw-memory-set-guards`) landing. #140 already touches `mods/memory/memory.ts` (eager 2 MB throw + preserve in-tick mutations + cross-tick re-parse) and overlaps Q2.2's `json = undefined` reset. Stacking would conflict in the same `crunch`/`flush` neighborhood. Re-evaluate Q2 scope after #140 merges — Q2.2 may already be closed by it, and Q2.1 + Q2.3 should split into separate focused PRs (laverdet prefers clean diffs; bundling them wins nothing once Q2.2 is gone).
 - **Closes (3 entries / 6 tests):**
   - `memory-circular-ref-crash` (UNDOC-MEMJSON-005)
   - `memory-parsed-json-not-refreshed-across-ticks` (UNDOC-MEMJSON-001/003/004 + UNDOC-MEMHACK-011)
@@ -71,6 +68,7 @@ After every in-flight PR merges, ten gap entries in `parity.json` remain plus th
 - **Blast radius:** Flag schema only if scoped narrowly. Prior burn means double-check ConstructionSite + any other subclass that inherits the base struct's `id` field.
 
 ### Q7: Object memory accessor unification (memhack)
+- **Blocked on:** upstream PR [#140](https://github.com/laverdet/xxscreeps/pull/140) landing — same overlap with `mods/memory/memory.ts` as Q2. Re-evaluate fix shape after #140; #140 may shift the `_parsed` invalidation surface that this PR routes around.
 - **Closes (1 entry / 6 tests):** `rawmemory-set-invalidates-parsed-memhack` (MEMORY-002, UNDOC-MEMHACK-007/008/009/010/012).
 - **Fix:** xxscreeps's object memory accessors (`mods/creep/creep.ts`, `mods/flag/flag.ts`, `mods/memory/game.ts`, `mods/spawn/spawn.ts`) call the exported `Memory.get()` directly, bypassing any self-replaced global `Memory` binding. After `RawMemory.set()` clears `_parsed`, the next object `.memory` access re-parses the just-set string and drops in-tick mutations. Vanilla binds `Memory` as a self-replacing lazy getter — first access redefines it as a value descriptor — and its object accessors route through `globals.Memory`, so they trigger the same self-replacement. Two fix shapes:
   1. **Route object accessors through the global `Memory` binding** so they participate in the self-replacement contract.
@@ -96,6 +94,6 @@ AD-1 (`placeTombstone`/`placeRuin` decay anchoring) and AD-2 (finalize-extras er
 
 | Stage | Count | Tests |
 |---|---|---|
-| In flight | 17 PRs | ~85 tests |
-| Queued (Q1–Q8) | 8 PRs | 20 tests |
+| In flight | 18 PRs | ~86 tests |
+| Queued (Q2–Q8) | 7 PRs | 19 tests |
 | Blocked on upstream #107 | — | 11 tests (eventlog-attack-missing) |
