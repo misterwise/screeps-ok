@@ -25,6 +25,12 @@ export interface PlayerSpec {
 	 * to a low number to honestly trigger ERR_GCL_NOT_ENOUGH on extra claims.
 	 */
 	gcl?: number;
+	/**
+	 * Override the player's processed account power at user creation. Vanilla
+	 * derives Game.gpl from this value. Defaults high enough to allow existing
+	 * power creep tests to create and upgrade power creeps.
+	 */
+	power?: number;
 }
 
 export interface RoomSpec {

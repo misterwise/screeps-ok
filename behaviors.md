@@ -1833,15 +1833,16 @@ Coverage Notes
 ### 11.6 Power Spawn `capability: powerCreeps`
 - `POWER-SPAWN-001` `behavior` `verified_vanilla`
   A successful `processPower()` returns `OK`, consumes 1 power and
-  `POWER_SPAWN_ENERGY_RATIO` energy and adds 1 GPL progress.
+  `POWER_SPAWN_ENERGY_RATIO` energy and adds exactly 1 GPL progress.
 - `POWER-SPAWN-002` `behavior` `verified_vanilla`
   While `PWR_OPERATE_POWER` is active, a successful `processPower()` returns
   `OK`, consumes and converts
   `1 + POWER_INFO[PWR_OPERATE_POWER].effect[level-1]` power, capped by the
-  power currently stored.
+  power currently stored, and adds exactly that amount of GPL progress.
 - `POWER-SPAWN-003` `behavior` `verified_vanilla`
   `processPower()` returns `ERR_NOT_ENOUGH_RESOURCES` when the power spawn lacks
-  enough power or energy for the amount that would be processed this tick.
+  enough power or energy for the amount that would be processed this tick, and
+  leaves GPL progress unchanged.
 - `POWER-SPAWN-004` `behavior` `verified_vanilla`
   `processPower()` returns `ERR_RCL_NOT_ENOUGH` while the power spawn is
   inactive.
@@ -2574,6 +2575,27 @@ Coverage Notes
 ---
 
 ## 19. Power Creeps `capability: powerCreeps`
+
+### 19.0 Game.gpl
+- `GPL-001` `behavior` `verified_vanilla`
+  With zero processed account power, `Game.gpl` reports level `0`, progress `0`,
+  and `POWER_LEVEL_MULTIPLY` progress required for the next level.
+- `GPL-002` `matrix` `verified_vanilla`
+  `Game.gpl.level`, `progress`, and `progressTotal` follow the vanilla account
+  power formula at threshold edges:
+  `level = floor((power / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW))`,
+  `progress = power - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`, and
+  `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`.
+- `GPL-003` `behavior` `verified_vanilla`
+  `PowerCreep.create(name, POWER_CLASS.OPERATOR)` returns
+  `ERR_NOT_ENOUGH_RESOURCES` when GPL level is `0`.
+- `GPL-004` `behavior` `verified_vanilla`
+  One GPL level allows exactly one allocated power creep level; after creating
+  one power creep at GPL level `1`, another `PowerCreep.create()` returns
+  `ERR_NOT_ENOUGH_RESOURCES`.
+- `GPL-005` `behavior` `verified_vanilla`
+  Creating or upgrading power creeps consumes free allocated power levels but
+  does not change `Game.gpl`, which reflects total processed account power.
 
 ### 19.1 Lifecycle
 - `POWERCREEP-CREATE-001` `behavior` `verified_vanilla`

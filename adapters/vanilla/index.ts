@@ -483,6 +483,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			// Default to a high GCL so multi-room claim tests aren't blocked
 			// by the cap; tests that need ERR_GCL_NOT_ENOUGH set this low.
 			const gcl = playerSpec.gcl ?? 10000000;
+			// Default to high processed account power so existing power creep
+			// tests can create and upgrade power creeps. GPL-specific tests set
+			// this explicitly to exercise vanilla's Game.gpl formula.
+			const power = playerSpec.power ?? 10000000;
 
 			// Insert user directly
 			const user = await this.db.users.insert({
@@ -490,7 +494,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				cpu: 100,
 				cpuAvailable: 10000,
 				gcl,
-				power: 10000000, // High GPL to allow creating power creeps
+				power,
 				active: 10000,
 				money: 10000000000, // 10M credits (stored as milli-credits internally)
 				badge: { type: 1, color1: '#000', color2: '#000', color3: '#000', flip: false, param: 0 },

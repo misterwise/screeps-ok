@@ -21,6 +21,10 @@ describe('StructurePowerSpawn processPower', () => {
 		});
 		await shard.tick();
 
+		const beforeGpl = await shard.runPlayer('p1', code`
+			Game.gpl.progress
+		`) as number;
+
 		// Submit the processPower intent.
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${psId}).processPower()
@@ -40,8 +44,7 @@ describe('StructurePowerSpawn processPower', () => {
 		// Should consume 1 power and POWER_SPAWN_ENERGY_RATIO (50) energy.
 		expect(after.power).toBe(startPower - 1);
 		expect(after.energy).toBe(startEnergy - POWER_SPAWN_ENERGY_RATIO);
-		// GPL progress should increase by 1.
-		expect(after.gpl).toBeGreaterThanOrEqual(1);
+		expect(after.gpl - beforeGpl).toBe(1);
 	});
 
 	// ---- POWER-SPAWN-002: PWR_OPERATE_POWER increases power consumed ----
@@ -79,6 +82,10 @@ describe('StructurePowerSpawn processPower', () => {
 			pc.usePower(PWR_OPERATE_POWER, ps)
 		`);
 
+		const beforeGpl = await shard.runPlayer('p1', code`
+			Game.gpl.progress
+		`) as number;
+
 		// Power effect applies next tick. Now processPower.
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${psId}).processPower()
@@ -91,14 +98,16 @@ describe('StructurePowerSpawn processPower', () => {
 			({
 				energy: ps.store.energy,
 				power: ps.store[RESOURCE_POWER] ?? 0,
+				gpl: Game.gpl.progress,
 			})
-		`) as { energy: number; power: number };
+		`) as { energy: number; power: number; gpl: number };
 
 		// Should consume (1 + effect[level-1]) power per processPower.
 		expect(after.power).toBe(startPower - expectedPowerConsumed);
 		// Energy consumed is still POWER_SPAWN_ENERGY_RATIO per 1 base power.
 		// With boosted power, energy consumed = expectedPowerConsumed * POWER_SPAWN_ENERGY_RATIO.
 		expect(after.energy).toBe(startEnergy - expectedPowerConsumed * POWER_SPAWN_ENERGY_RATIO);
+		expect(after.gpl - beforeGpl).toBe(expectedPowerConsumed);
 	});
 
 	// ---- POWER-SPAWN-003: ERR_NOT_ENOUGH_RESOURCES when lacking power or energy ----
@@ -116,10 +125,19 @@ describe('StructurePowerSpawn processPower', () => {
 		});
 		await shard.tick();
 
+		const beforeGpl = await shard.runPlayer('p1', code`
+			Game.gpl.progress
+		`) as number;
+
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${psId}).processPower()
 		`);
 		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
+
+		const afterGpl = await shard.runPlayer('p1', code`
+			Game.gpl.progress
+		`) as number;
+		expect(afterGpl).toBe(beforeGpl);
 	});
 
 	test('POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking energy', async ({ shard }) => {
