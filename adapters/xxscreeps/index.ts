@@ -637,7 +637,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Cross-shard: { shard, room }. Same-shard: { room, x, y }.
 		const destination = dest.shard !== undefined
 			? { shard: dest.shard, room: dest.room }
-			: { room: dest.room, x: dest.x ?? 0, y: dest.y ?? 0 };
+			: new RoomPosition(dest.x ?? 0, dest.y ?? 0, dest.room);
 		const decayTicks = typeof spec.decayTime === 'number' ? spec.decayTime : 0;
 
 		this.queueOp(roomName, room => {

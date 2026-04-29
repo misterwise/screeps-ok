@@ -11,6 +11,7 @@ import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
 import { RunPlayerError } from 'screeps-ok';
 import { selectorFromFindConstant } from 'screeps-ok';
+import { withCornerWalls } from 'screeps-ok';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
@@ -51,6 +52,7 @@ import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/cree
 import { create as createSpawn } from 'xxscreeps/mods/spawn/spawn.js';
 import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
 import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
+import { structureFactories } from 'xxscreeps/mods/construction/symbols.js';
 import { Source } from 'xxscreeps/mods/source/source.js';
 import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
 import { create as createLab } from 'xxscreeps/mods/chemistry/lab.js';
@@ -68,6 +70,7 @@ import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
 import { Flag } from 'xxscreeps/mods/flag/flag.js';
 import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/flag/model.js';
+import { activateNPC } from 'xxscreeps/mods/npc/processor.js';
 import { instantiate } from 'xxscreeps/utility/utility.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
@@ -82,9 +85,11 @@ import { StructureController } from 'xxscreeps/mods/controller/controller.js';
 // xxscreeps build defines `create` locally but does not export it.
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
+let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
 for (const [name, assign] of [
 	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
 	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
+	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
@@ -117,6 +122,17 @@ function gclLevelToProgress(desiredLevel: number): number {
 // Player handle → xxscreeps user ID
 const playerSlots = ['100', '101', '102', '103'];
 
+// Reserved NPC handles that resolve to short engine user IDs independent of
+// spec.players. The rate=0 path in `mods/creep/processor.ts` fires when the
+// creep's engine user id has length <= 2 — seeding these handles lets tests
+// hit the rate=0 tombstone path (CREEP-DEATH-011) through placeCreep's
+// existing `owner: string` contract. Placing a creep with an NPC handle also
+// `activateNPC`s the room so the matching NPC loop runs (e.g. the Invader
+// AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
+const NPC_HANDLES: Record<string, string> = {
+	sk: '2',
+};
+
 // Structure types the engine always attributes to a user. Omitting `owner`
 // in placeStructure for these produces a cryptic engine-internal crash
 // (e.g. null-destructure in createSpawn), so reject at the boundary.
@@ -136,12 +152,22 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		nuke: false,
 		deposit: false,
 		terrain: true,
-		// xxscreeps has no portal mod — `StructurePortal` is a bare stub at
-		// game/runtime.ts:18 with no class, schema, or processor.
-		portals: false,
+		// Portal mod is optional in pinned xxscreeps. Capability tracks
+		// the dynamic import result so PORTAL-* tests skip cleanly when
+		// the mod is absent and run when it lands upstream.
+		portals: !!createPortal,
 		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
 		// bare stub at game/runtime.ts:13.
 		invaderCore: false,
+		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
+		// and no Game.cpu.shardLimits / setShardLimits. See
+		// docs/xxscreeps-parity-gaps.md.
+		multiShard: false,
+		interShardMemory: false,
+		cpuShardLimits: false,
+		// xxscreeps's GameMap is constructed from the World schema each time
+		// it's read, so getWorldSize always reflects the current room set.
+		liveWorldSize: true,
 	};
 
 	readonly limitations = {
@@ -248,6 +274,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
 
+		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
+			this.playerMap.set(handle, engineId);
+			this.reversePlayerMap.set(engineId, handle);
+		}
+
 		for (let i = 0; i < spec.players.length; i++) {
 			if (i >= playerSlots.length) throw new Error(`Max ${playerSlots.length} players`);
 			const entry = spec.players[i];
@@ -300,6 +331,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const userId = this.resolvePlayer(spec.owner);
 		const name = spec.name ?? `creep-${id}`;
 		this.nameToSyntheticId.set(name, id);
+		// NPC-owned creeps (short engine user ids like '2') need their room
+		// to be flagged active in `#npcData` so the NPC processor runs the
+		// registered loop for that user on subsequent ticks. Without this,
+		// an Invader-owned creep just sits idle and never triggers its
+		// built-in suicide/attack intents.
+		const isNpc = userId.length <= 2;
 
 		this.queueOp(roomName, room => {
 			const creep = createCreep(
@@ -325,6 +362,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			insertRoomObject(room, creep);
+			if (isNpc) activateNPC(room, userId);
 		});
 
 		return id;
@@ -366,11 +404,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:constructionSite`, id);
 
 		this.queueOp(roomName, room => {
-			const site = createSite(
-				new RoomPosition(spec.pos[0], spec.pos[1], roomName),
-				spec.structureType as any,
-				userId,
-			);
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const progressTotal = structureFactories.get(spec.structureType)?.checkPlacement(room, pos)
+				?? C.CONSTRUCTION_COST[spec.structureType as keyof typeof C.CONSTRUCTION_COST]
+				?? 0;
+			const site = createSite(pos, spec.structureType as any, userId, progressTotal);
 			site.id = id;
 			if (spec.progress !== undefined) {
 				site.progress = spec.progress;
@@ -556,10 +594,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		switch (type) {
 			case 'keeperLair':
 				return this.placeKeeperLair(roomName, spec);
+			case 'portal':
+				return this.placePortal(roomName, spec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair.`,
+					`Supported types: keeperLair, portal.`,
 				);
 		}
 	}
@@ -577,6 +617,34 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, nextSpawnTime);
 			}
 			insertRoomObject(room, lair);
+		});
+
+		return id;
+	}
+
+	private async placePortal(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		if (!createPortal) {
+			throw new Error(
+				`placePortal: pinned xxscreeps build has no portal mod (xxscreeps/mods/portal/portal.js missing). ` +
+				`PORTAL-* tests are registered as expected failures in parity.json until the mod lands upstream.`,
+			);
+		}
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
+		if (!dest || !dest.room) throw new Error('placePortal: destination.room is required');
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:portal`, id);
+		// Cross-shard: { shard, room }. Same-shard: { room, x, y }.
+		const destination = dest.shard !== undefined
+			? { shard: dest.shard, room: dest.room }
+			: new RoomPosition(dest.x ?? 0, dest.y ?? 0, dest.room);
+		const decayTicks = typeof spec.decayTime === 'number' ? spec.decayTime : 0;
+
+		this.queueOp(roomName, room => {
+			const decayTime = decayTicks > 0 ? this.simulation!.shard.time + decayTicks : 0;
+			const portal = createPortal!(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
+			portal.id = id;
+			insertRoomObject(room, portal);
 		});
 
 		return id;
@@ -600,7 +668,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			);
 		}
 		await this.ensureSimulation();
-		await this.simulation!.updateTerrain(roomName, terrain);
+		await this.simulation!.updateTerrain(roomName, withCornerWalls(terrain));
 	}
 
 	// Map our synthetic IDs → engine-generated IDs (populated during setup flush)
@@ -613,11 +681,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const idMap = this.idMap;
 
 		// Compute terrain for each room: explicit from spec, or all-plain
-		// (matching vanilla's TerrainMatrix() default).
+		// (matching vanilla's TerrainMatrix() default). Corners are always
+		// walled to match canonical map-generator semantics.
 		const terrainOverrides: Record<string, TerrainSpec> = {};
 		const allPlain = new Array(2500).fill(0) as TerrainSpec;
 		for (const roomSpec of this.shardSpec.rooms) {
-			terrainOverrides[roomSpec.name] = roomSpec.terrain ?? allPlain;
+			terrainOverrides[roomSpec.name] = withCornerWalls(roomSpec.terrain ?? allPlain);
 		}
 
 		// Create simulation with bare rooms (no test objects) and terrain

@@ -1,224 +1,24 @@
 {
 	"expected_failures": {
-		"tombstone-corpse-rate": {
-			"actual": "Tombstone store always reduced by `CREEP_CORPSE_RATE`; no body energy reclaim on `suicide()`",
-			"expected": "On `suicide()`, tombstone store includes full reclaimed body energy plus carried resources",
-			"tests": ["CREEP-DEATH-008", "CREEP-DEATH-009"]
+		"controller-my-never-owned-returns-false": {
+			"actual": "`StructureController.my` returns `false` on a never-owned controller (`#user` undefined)",
+			"expected": "Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade)",
+			"tests": ["CTRL-CLAIM-007"]
 		},
-		"link-self-transfer": {
-			"actual": "`StructureLink.transferEnergy` to self returns `OK`",
-			"expected": "Returns `ERR_INVALID_TARGET` when target is the source link itself",
-			"tests": ["LINK-004"]
-		},
-		"link-cross-owner": {
-			"actual": "`StructureLink.transferEnergy` allows transfer to another player's link",
-			"expected": "Returns `ERR_NOT_OWNER` when target link is owned by another player",
-			"tests": ["LINK-006"]
-		},
-		"death-container-diversion": {
-			"actual": "Creep death does not divert resources into same-tile container",
-			"expected": "Death resources flow into a live same-tile container before any tombstone remainder",
-			"tests": ["CREEP-DEATH-003"]
-		},
-		"extractor-cooldown-off-by-one": {
-			"actual": "Extractor cooldown reports `EXTRACTOR_COOLDOWN - 1` after harvest",
-			"expected": "Extractor cooldown reports full `EXTRACTOR_COOLDOWN` after harvest",
-			"tests": ["HARVEST-MINERAL-003", "EXTRACTOR-006"]
-		},
-		"factory-cooldown-no-decrement": {
-			"actual": "Factory cooldown reports full `COMMODITIES[resource].cooldown` on the tick after `produce()`",
-			"expected": "Factory cooldown reports `COMMODITIES[resource].cooldown - 1` on the tick after `produce()`",
-			"tests": ["FACTORY-PRODUCE-002"]
-		},
-		"factory-not-owner-precedence": {
-			"actual": "`factory.produce` on unowned factory returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["FACTORY-PRODUCE-010"]
-		},
-		"link-cooldown-not-persisted": {
-			"actual": "`link.transferEnergy` cooldown not persisted in structure-only rooms (processor missing `context.didUpdate`)",
-			"expected": "Link cooldown persists across ticks regardless of creep presence",
-			"tests": ["LINK-002"]
-		},
-		"lab-bound-getfreecapacity-returns-zero": {
-			"actual": "Bound lab's `store.getFreeCapacity(otherMineral)` returns `0`",
-			"expected": "Returns `null` for a mineral the lab cannot hold",
-			"tests": ["STORE-BIND-002:H", "STORE-BIND-002:O", "STORE-BIND-002:G"]
-		},
-		"rampart-no-protection": {
-			"actual": "Ramparts do not absorb damage for objects on their tile (no rampart redirect in combat/dismantle processors)",
-			"expected": "Damage targeting an object on a rampart tile is redirected to the rampart",
-			"tests": ["RAMPART-PROTECT-001", "RAMPART-PROTECT-002", "DISMANTLE-004", "COMBAT-MELEE-005", "COMBAT-RANGED-006", "COMBAT-RMA-004"]
-		},
-		"renew-while-spawning": {
-			"actual": "`Spawn.renewCreep` returns `OK` while spawn is actively spawning",
-			"expected": "Returns `ERR_BUSY` while spawn is actively spawning",
-			"tests": ["RENEW-CREEP-009"]
-		},
-		"renew-rejects-boosted-creep": {
-			"actual": "`Spawn.renewCreep` rejects boosted creeps with `ERR_NO_BODYPART`",
-			"expected": "Accepts boosted creeps and strips the boosts during renew",
-			"tests": ["RENEW-CREEP-004", "RENEW-CREEP-005", "RENEW-CREEP-006"]
-		},
-		"recycle-no-body-reclaim": {
-			"actual": "`Spawn.recycleCreep` only kills the creep (processor marked TODO); no energy deposited",
-			"expected": "Deposits `floor(bodyCost × ttlRemaining / CREEP_LIFE_TIME)` energy into the tombstone via `_die` with `dropRate=1.0`",
-			"tests": ["RECYCLE-CREEP-002"]
-		},
-		"lab-cooldown-no-decrement": {
-			"actual": "Lab cooldown reports full `REACTION_TIME` after reaction/unboost",
-			"expected": "Lab cooldown reports `REACTION_TIME - 1` on the tick after the action",
-			"tests": ["LAB-RUN-004", "LAB-REVERSE-004", "UNBOOST-005"]
-		},
-		"lab-not-owner-precedence": {
-			"actual": "Lab action on unowned lab returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["LAB-RUN-012", "LAB-REVERSE-012"]
-		},
-		"observer-not-owner-precedence": {
-			"actual": "`observeRoom` on unowned observer returns `ERR_RCL_NOT_ENOUGH`",
-			"expected": "Returns `ERR_NOT_OWNER` before any RCL check",
-			"tests": ["OBSERVER-006"]
-		},
-		"safemode-concurrent-allowed": {
-			"actual": "Allows `activateSafeMode` on multiple owned controllers simultaneously",
-			"expected": "Returns `ERR_BUSY` when any owned controller already has an active safe mode",
-			"tests": ["CTRL-SAFEMODE-007"]
-		},
-		"container-destroy-no-spill": {
-			"actual": "Container destroyed by decay does not drop its contents as ground resources",
-			"expected": "Container contents become dropped resources on the tile when decay destroys it",
-			"tests": ["CONTAINER-002"]
-		},
-		"destroy-ownership-bypass": {
-			"actual": "`structure.destroy()` allowed when room controller not owned by player",
-			"expected": "Returns `ERR_NOT_OWNER` when the room controller is missing or not owned by the player",
-			"tests": ["STRUCTURE-API-001"]
-		},
-		"notifyWhenAttacked-not-implemented": {
-			"actual": "`structure.notifyWhenAttacked()` not implemented",
-			"expected": "Enforces `ERR_NOT_OWNER`/`ERR_INVALID_ARGS`, returns `OK` on success, and persists the setting next tick",
-			"tests": ["STRUCTURE-API-004", "STRUCTURE-API-005", "STRUCTURE-API-006"]
-		},
-		"eventlog-attack-missing": {
-			"actual": "`getEventLog()` missing `EVENT_ATTACK` entries for combat",
-			"expected": "`EVENT_ATTACK` entries appear in the event log for each combat hit",
-			"tests": ["ROOM-EVENTLOG-001", "ROOM-EVENTLOG-002"]
-		},
-		"tough-boost-no-reduction": {
-			"actual": "Boosted TOUGH parts do not reduce incoming damage",
-			"expected": "Boosted TOUGH parts reduce incoming damage by the boost's damage-multiplier",
-			"tests": ["BOOST-TOUGH-001", "BOOST-TOUGH-002"]
-		},
-		"boost-energy-cost-scales": {
-			"actual": "Energy cost scales with boost multiplier for repair/upgrade",
-			"expected": "Boosted repair/upgrade consume the same unboosted energy amount per work part",
-			"tests": ["BOOST-BUILD-002", "BOOST-UPGRADE-002"]
-		},
-		"route-callback-ignored": {
-			"actual": "`Game.map.findRoute` ignores `routeCallback` option",
-			"expected": "`routeCallback` return values influence route selection (Infinity blocks, numbers weight)",
-			"tests": ["MAP-ROUTE-003"]
-		},
-		"transfer-wrong-resource-err-full": {
-			"actual": "`transfer()` of a wrong resource to a structure returns `ERR_FULL` (`checkHasCapacity` runs before capacity-for-resource dispatch)",
-			"expected": "Returns `ERR_INVALID_TARGET` when the structure cannot hold that resource",
-			"tests": ["TRANSFER-007", "TRANSFER-008"]
-		},
-		"withdraw-enemy-rampart-no-protection": {
-			"actual": "`withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart",
-			"expected": "Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart",
-			"tests": ["WITHDRAW-005"]
-		},
-		"generate-safe-mode-requires-work": {
-			"actual": "`generateSafeMode()` requires a `WORK` body part (checkCommon guard)",
-			"expected": "No body-part requirement; needs only `SAFE_MODE_COST` ghodium and range",
-			"tests": ["CTRL-GENSAFE-001", "CTRL-GENSAFE-002", "CTRL-GENSAFE-003", "CTRL-GENSAFE-004"]
-		},
-		"controller-my-undefined-on-unowned": {
-			"actual": "`StructureController.my` returns `undefined` on an unowned/neutral controller (strict match against absent `#user` field)",
-			"expected": "Returns `false` on an unowned/neutral controller",
-			"tests": ["CTRL-UNCLAIM-001", "CTRL-DOWNGRADE-002"]
-		},
-		"safemode-ignores-downgrade-threshold": {
-			"actual": "`activateSafeMode` returns OK when `ticksToDowngrade` is below `CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`",
-			"expected": "Returns `ERR_TIRED` when the downgrade timer is below the safe-mode threshold",
-			"tests": ["CTRL-SAFEMODE-005"]
-		},
-		"tombstone-store-missing": {
-			"actual": "Tombstone snapshot does not include store energy from combat kills",
-			"expected": "Tombstone `store` includes carried resources plus body-part corpse energy",
-			"tests": ["TOMBSTONE-003"]
-		},
-		"moveto-nopathfinding-returns-ok": {
-			"actual": "`moveTo({noPathFinding: true})` returns `OK` when no cached path exists",
-			"expected": "Returns `ERR_NOT_FOUND` when no reusable path is available",
-			"tests": ["MOVE-BASIC-019"]
-		},
-		"pull-spawning-no-guard": {
-			"actual": "`pull()` on a spawning creep returns `OK` (no spawning check in pull intent)",
-			"expected": "Returns `ERR_INVALID_TARGET` when the target is a spawning creep",
-			"tests": ["MOVE-PULL-007:spawning"]
-		},
-		"findpath-same-pos-not-empty": {
-			"actual": "`Room.findPath()` returns a 1-step path when source equals destination",
-			"expected": "Returns an empty result (`[]` or `''` with `serialize: true`) when source and destination match",
-			"tests": ["LEGACY-PATH-006"]
-		},
-		"mineral-harvest-no-overflow-drop": {
-			"actual": "`harvest(mineral)` overflow does not create a dropped resource pile",
-			"expected": "Overflow amount drops as a resource pile on the harvester's tile",
-			"tests": ["HARVEST-MINERAL-012"]
-		},
-		"transfer-controller-no-upgrade-redirect": {
-			"actual": "`transfer(controller, RESOURCE_ENERGY)` returns `ERR_NOT_IN_RANGE` and does not redirect",
-			"expected": "Redirects to `upgradeController` behavior (or equivalent successful upgrade intent)",
-			"tests": ["TRANSFER-011"]
-		},
-		"withdraw-wrong-resource-not-enough-energy": {
-			"actual": "`withdraw()` with a resource the target cannot hold returns `ERR_NOT_ENOUGH_ENERGY`",
-			"expected": "Returns `ERR_INVALID_TARGET` when the target cannot hold that resource",
-			"tests": ["WITHDRAW-014"]
-		},
-		"dismantle-no-destroy-at-zero-hits": {
-			"actual": "`dismantle()` reducing hits to `0` leaves the structure present with `hits=0`",
-			"expected": "Structure is destroyed in the same tick once hits reach `0`",
-			"tests": ["DISMANTLE-007"]
-		},
-"shape-extra-hits-my": {
-			"actual": "Base RoomObject exposes `hits`/`hitsMax`/`my` on non-structure objects and leaks `my` onto unowned structures; wall missing `ticksToLive`; ruin missing `structureType`",
-			"expected": "Non-structure objects omit `hits`/`hitsMax`/`my`; unowned structures omit `my`; wall exposes `ticksToLive`; ruin exposes `structureType`",
-			"tests": ["SHAPE-SOURCE-001", "SHAPE-MINERAL-001", "SHAPE-SITE-001", "SHAPE-RESOURCE-001", "SHAPE-TOMBSTONE-001", "SHAPE-RUIN-001", "SHAPE-STRUCT-001:road", "SHAPE-STRUCT-001:constructedWall", "SHAPE-STRUCT-001:container"]
-		},
-		"shape-struct-missing-legacy-compat": {
-			"actual": "Structures missing legacy compat getters: `link.energy`/`energyCapacity`, `storage.storeCapacity`",
-			"expected": "Legacy compat getters are present on `link` and `storage`",
-			"tests": ["SHAPE-STRUCT-001:link", "SHAPE-STRUCT-001:storage"]
+		"world-size-exclusive-span": {
+			"actual": "`Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13`",
+			"expected": "`Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph",
+			"tests": ["MAP-ROOM-005"]
 		},
 		"shape-body-part-always-has-boost": {
 			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
 			"expected": "`boost` key is only present when the part is actually boosted",
 			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
 		},
-		"shape-room-missing-survivalInfo": {
-			"actual": "`Room` object missing `survivalInfo` property",
-			"expected": "`Room.survivalInfo` is present (per canonical room shape)",
-			"tests": ["SHAPE-ROOM-001"]
-		},
-		"shape-game-surface-mismatch": {
-			"actual": "`Game` missing `cpuLimit`; `Game.flags` and `Game.powerCreeps` present but with different own-property surfaces than vanilla",
-			"expected": "`Game` exposes canonical top-level fields with matching data-property surface",
-			"tests": ["SHAPE-GAME-001"]
-		},
-		"shape-flag-crash": {
-			"actual": "Flag shape discovery crashes (`Cannot use 'in' operator on undefined`)",
-			"expected": "Flag objects expose the documented shape without crashing",
+		"shape-flag-extra-id": {
+			"actual": "Flag objects expose an own `id` data property",
+			"expected": "Flag objects omit `id`; vanilla flags are named objects without object IDs",
 			"tests": ["SHAPE-FLAG-001"]
-		},
-"spawn-duplicate-name-allowed": {
-			"actual": "`spawnCreep` allows a name that collides with a currently spawning creep (no check against spawning creeps in `checkSpawn`)",
-			"expected": "Returns `ERR_NAME_EXISTS` when the name collides with a spawning creep",
-			"tests": ["SPAWN-CREATE-003"]
 		},
 		"rawmemory-set-no-eager-limit-check": {
 			"actual": "`RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception",
@@ -226,19 +26,24 @@
 			"tests": ["MEMORY-004"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
-			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations",
-			"expected": "Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack)",
-			"tests": ["MEMORY-002", "UNDOC-MEMHACK-007", "UNDOC-MEMHACK-008", "UNDOC-MEMHACK-009", "UNDOC-MEMHACK-010"]
+			"actual": "`RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`).",
+			"expected": "Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access.",
+			"tests": ["MEMORY-002", "UNDOC-MEMHACK-007", "UNDOC-MEMHACK-008", "UNDOC-MEMHACK-009", "UNDOC-MEMHACK-010", "UNDOC-MEMHACK-012"]
 		},
-		"foreign-segment-not-supported": {
-			"actual": "`RawMemory.foreignSegment` is unpopulated; `setDefaultPublicSegment` is a no-op console.error; cross-user segment reads return `null`",
-			"expected": "Foreign segment requests populate `RawMemory.foreignSegment` with `{ username, id, data }` on the following tick",
-			"tests": ["RAWMEMORY-FOREIGN-002", "RAWMEMORY-FOREIGN-003", "RAWMEMORY-FOREIGN-004"]
+		"foreign-segment-clear-request": {
+			"actual": "`setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick",
+			"expected": "Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick",
+			"tests": ["RAWMEMORY-FOREIGN-006"]
 		},
-		"getrawbuffer-uint8-truncation": {
-			"actual": "`terrain.getRawBuffer(new Uint8Array(2500))` writes a packed 32-bit value per source byte at `game/terrain.ts:77-81`, which truncates to the low byte when the destination is `Uint8Array`. Only one of every four tile masks survives; the remaining 1875 bytes stay zero.",
-			"expected": "Fills the 2500-byte destination with one mask per tile so `buf[y*50 + x] === terrain.get(x, y)` for every (x, y).",
-			"tests": ["MAP-TERRAIN-003"]
+		"memory-parsed-json-not-refreshed-across-ticks": {
+			"actual": "xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse.",
+			"expected": "`Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics.",
+			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004", "UNDOC-MEMHACK-011"]
+		},
+		"memory-circular-ref-crash": {
+			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",
+			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
+			"tests": ["UNDOC-MEMJSON-005"]
 		}
 	}
 }

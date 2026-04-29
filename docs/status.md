@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1112%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-42-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1144%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-28 04:19 UTC |
-| 🟡 | **xxscreeps** | [1112](#xxscreeps-passing-tests) | [42](#xxscreeps-expected-failures) | — | [188](#xxscreeps-skipped-tests) | 2026-04-28 04:17 UTC |
+| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-29 00:55 UTC |
+| 🟡 | **xxscreeps** | [1144](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [180](#xxscreeps-skipped-tests) | 2026-04-29 00:59 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,78 +25,26 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 14 parity gaps against vanilla's canonical behavior, covering 42 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 9 parity gaps against vanilla's canonical behavior, covering 18 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `eventlog-attack-missing` | Several upstream event-log emission sites (PR #107) are not yet in the pin: EVENT_ATTACK, EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT, EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER | All canonical event types appear in `getEventLog()` at their triggering points | [11](#xxscreeps-gap-eventlog-attack-missing) |
-| `eventlog-flat-shape-and-missing-action-events` | xxscreeps's event-log emission either uses a flat shape (HARVEST, ATTACK_RANGED, HEAL_MELEE put fields directly on the event instead of nested under `data`) or omits the event entirely (BUILD, REPAIR, RANGED_MASS damage entries, HIT_BACK, DISMANTLE, creep rangedHeal RANGED) | All event-log entries match vanilla shape (`{event, objectId, data: {...}}`) and BUILD/REPAIR/RANGED_MASS/HIT_BACK/DISMANTLE/rangedHeal are emitted at their triggering points | [10](#xxscreeps-gap-eventlog-flat-shape-and-missing-action-events) |
-| `withdraw-enemy-rampart-no-protection` | `withdraw()` does not enforce `ERR_NOT_OWNER` for hostile structures under a non-public enemy rampart | Returns `ERR_NOT_OWNER` when the target sits under a non-public hostile rampart | [1](#xxscreeps-gap-withdraw-enemy-rampart-no-protection) |
 | `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
-| `moveto-nopathfinding-returns-ok` | `moveTo({noPathFinding: true})` returns `OK` when no cached path exists | Returns `ERR_NOT_FOUND` when no reusable path is available | [1](#xxscreeps-gap-moveto-nopathfinding-returns-ok) |
 | `world-size-exclusive-span` | `Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13` | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
-| `shape-flag-crash` | Flag shape discovery crashes (`Cannot use 'in' operator on undefined`) | Flag objects expose the documented shape without crashing | [1](#xxscreeps-gap-shape-flag-crash) |
+| `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `foreign-segment-not-supported` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-not-supported) |
-| `packedpos-write-ignored` | Writing to `RoomPosition.__packedPos` does not update the position's `x`, `y`, or `roomName` getters (likely stored separately from `__packedPos`) | Assigning `__packedPos` updates `x`, `y`, `roomName` to the decoded values — bots use this to construct positions cheaply (including from WASM bridges) | [1](#xxscreeps-gap-packedpos-write-ignored) |
+| `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 
 Click a test count above to jump to the affected test list for that gap.
 
-<details id="xxscreeps-gap-eventlog-attack-missing">
-<summary><code>eventlog-attack-missing</code> — 11 tests</summary>
-
-- `room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array`
-- `room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping`
-- `room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"`
-- `room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType`
-- `room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction`
-- `room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y`
-- `room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller`
-- `room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE`
-- `room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied`
-- `room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick`
-- `room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot`
-
-</details>
-
-<details id="xxscreeps-gap-eventlog-flat-shape-and-missing-action-events">
-<summary><code>eventlog-flat-shape-and-missing-action-events</code> — 10 tests</summary>
-
-- `room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested`
-- `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
-- `room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored`
-- `room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER`
-- `room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance`
-- `room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts`
-- `room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER`
-- `room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER`
-- `room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER`
-- `room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-enemy-rampart-no-protection">
-<summary><code>withdraw-enemy-rampart-no-protection</code> — 1 test</summary>
-
-- `creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target`
-
-</details>
-
 <details id="xxscreeps-gap-controller-my-never-owned-returns-false">
 <summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
 
 - `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
-
-</details>
-
-<details id="xxscreeps-gap-moveto-nopathfinding-returns-ok">
-<summary><code>moveto-nopathfinding-returns-ok</code> — 1 test</summary>
-
-- `creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path`
 
 </details>
 
@@ -115,8 +63,8 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-shape-flag-crash">
-<summary><code>shape-flag-crash</code> — 1 test</summary>
+<details id="xxscreeps-gap-shape-flag-extra-id">
+<summary><code>shape-flag-extra-id</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
 
@@ -141,17 +89,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-foreign-segment-not-supported">
-<summary><code>foreign-segment-not-supported</code> — 1 test</summary>
+<details id="xxscreeps-gap-foreign-segment-clear-request">
+<summary><code>foreign-segment-clear-request</code> — 1 test</summary>
 
 - `Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request`
-
-</details>
-
-<details id="xxscreeps-gap-packedpos-write-ignored">
-<summary><code>packedpos-write-ignored</code> — 1 test</summary>
-
-- `Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters`
 
 </details>
 
@@ -1909,7 +1850,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 188 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 180 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -1918,7 +1859,6 @@ xxscreeps has 188 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderCore` | Invader core structures | [10](#xxscreeps-skip-capability-invadercore) |
-| capability | `portals` | Portal structures and teleport mechanics | [8](#xxscreeps-skip-capability-portals) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -2261,28 +2201,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-portals">
-<summary><code>capability:portals</code> — 8 tests across 3 files</summary>
-
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (1)
-
-- adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
-
-**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
-
-- Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
-- Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
-- Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
-- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
-- Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
-- Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
-
-- 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
-
-</details>
-
 <details id="xxscreeps-skip-capability-intershardmemory">
 <summary><code>capability:interShardMemory</code> — 3 tests across 1 file</summary>
 
@@ -2318,7 +2236,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1112 tests across 101 files</summary>
+<summary>1144 tests across 102 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2382,10 +2300,11 @@ Click a count to jump to the affected test list.
 - adapter contract: execution tick advances game time by 1
 - adapter contract: execution tick tick(N) advances game time by N
 
-**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (3)
+**`tests/00-adapter-contract/hard-prerequisites.test.ts`** (4)
 
 - adapter contract: hard family prerequisites controller ticksToDowngrade RoomSpec.ticksToDowngrade sets the controller downgrade timer
 - adapter contract: hard family prerequisites controller ticksToDowngrade controller downgrades when ticksToDowngrade reaches 0
+- adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
 **`tests/00-adapter-contract/inspection.test.ts`** (18)
@@ -2458,7 +2377,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
-**`tests/01-movement/1.1-basic-movement.test.ts`** (31)
+**`tests/01-movement/1.1-basic-movement.test.ts`** (32)
 
 - creep.move() MOVE-BASIC-001 [TOP] move(direction) moves one tile toward the direction constant
 - creep.move() MOVE-BASIC-001 [TOP_RIGHT] move(direction) moves one tile toward the direction constant
@@ -2490,6 +2409,7 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-020 moveTo() returns ERR_TIRED when the creep has fatigue > 0
 - creep.moveTo() MOVE-BASIC-021 moveTo() returns ERR_NO_BODYPART when the creep has no MOVE parts
 - creep.moveTo() MOVE-BASIC-017 moveTo() returns OK when already at target
+- creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
 **`tests/01-movement/1.2-fatigue.test.ts`** (14)
@@ -2645,12 +2565,13 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity
 - creep.transfer() TRANSFER-014 transfer to another creep follows same store mechanics
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (38)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (39)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
 - creep.withdraw() WITHDRAW-003 returns ERR_NOT_IN_RANGE
 - creep.withdraw() WITHDRAW-004 returns ERR_NOT_ENOUGH_RESOURCES from empty container
+- creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target
 - creep.withdraw() WITHDRAW-006 withdraw() works on tombstones and ruins
 - creep.withdraw() WITHDRAW-007 returns ERR_FULL when the creep has no free capacity
 - creep.withdraw() WITHDRAW-009 withdraw returns ERR_NOT_OWNER on unowned creep
@@ -3328,6 +3249,15 @@ Click a count to jump to the affected test list.
 - StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
 - StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
 
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
+
+- Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
+- Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
+- Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
+- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
+- Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
+
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
@@ -3431,10 +3361,31 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (2)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (23)
 
+- room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
+- room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
+- room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"
+- room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType
+- room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction
+- room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y
+- room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller
+- room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
+- room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
+- room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
+- room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added
+- room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
+- room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
+- room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
+- room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
+- room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
+- room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
+- room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
+- room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick
+- room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
+- room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
 **`tests/16-room-mechanics/16.7-flags.test.ts`** (8)
 
@@ -3640,7 +3591,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (32)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (33)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
@@ -3668,6 +3619,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape
@@ -3713,10 +3665,11 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
 
-**`tests/27-undocumented/27.7-packedpos.test.ts`** (3)
+**`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-004 positions in the same room share the upper 16 bits of __packedPos
 
 **`tests/27-undocumented/27.8-system-username.test.ts`** (1)

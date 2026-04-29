@@ -30,9 +30,11 @@ import { Fn } from 'xxscreeps/functional/fn.js';
 import { RunPlayerError } from 'screeps-ok';
 import type { PlayerReturnValue } from 'screeps-ok';
 
-// NodejsSandbox (vm.createContext) rather than IsolatedSandbox
-// (requires the native isolated-vm binding).
-config.runner.unsafeSandbox = true;
+// IsolatedSandbox via isolated-vm. Upstream's `unsafe` mode now uses
+// vm modules (9d7ab77) and would require `--experimental-vm-modules`
+// on the runner; isolated mode is self-contained once the native
+// binding is built (handled in scripts/build-xxscreeps.js).
+config.runner.sandbox = 'isolated';
 
 // Shared main.js: empty loop. Per-call test code is delivered via
 // `TickPayload.eval` and returned via `evalAck`.
