@@ -414,6 +414,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const rooms = (await this.db.rooms.find()).map((room: { _id: string }) => ({ _id: room._id }));
 		const worldSize = rooms.length > 0 ? common.calcWorldSize(rooms) : 0;
 		await this.env.set(VANILLA_WORLD_SIZE_ENV_KEY, String(worldSize));
+		const driver = nodeRequire('@screeps/driver') as { getWorldSize?: () => number };
+		driver.getWorldSize = () => worldSize;
 	}
 
 	private resolvePlayer(handle: string): string {
