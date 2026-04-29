@@ -236,6 +236,16 @@ function gapBehaviorFields(gap) {
 	return { actual, expected };
 }
 
+function isIntentionalGap(gap) {
+	return gap.intentional === true || gap.status === 'intentional';
+}
+
+function gapWhy(gap) {
+	if (gap.why) return gap.why;
+	if (isIntentionalGap(gap)) return 'Marked as an intentional divergence in parity.json.';
+	return '';
+}
+
 function renderGapTestList(adapterName, gapId, tests) {
 	const lines = [];
 	const anchor = gapAnchor(adapterName, gapId);
@@ -247,6 +257,44 @@ function renderGapTestList(adapterName, gapId, tests) {
 	}
 	lines.push('');
 	lines.push('</details>');
+	return lines.join('\n');
+}
+
+function renderGapSummaryTable(adapterName, gaps, summary, gapIds, { includeWhy = false } = {}) {
+	const lines = [];
+	if (includeWhy) {
+		lines.push('| Gap | Why | Actual | Vanilla behavior | Tests |');
+		lines.push('| --- | --- | --- | --- | :-: |');
+	} else {
+		lines.push('| Gap | Actual | Expected | Tests |');
+		lines.push('| --- | --- | --- | :-: |');
+	}
+
+	for (const gapId of gapIds) {
+		const gap = gaps[gapId];
+		const { actual, expected } = gapBehaviorFields(gap);
+		const testCount = (summary.expectedFailureByGap?.[gapId] ?? []).length;
+		const anchor = gapAnchor(adapterName, gapId);
+		const countCell = testCount > 0 ? `[${testCount}](#${anchor})` : `${testCount}`;
+		if (includeWhy) {
+			lines.push(`| \`${gapId}\` | ${gapWhy(gap)} | ${actual} | ${expected} | ${countCell} |`);
+		} else {
+			lines.push(`| \`${gapId}\` | ${actual} | ${expected} | ${countCell} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function renderGapDetails(adapterName, summary, gapIds) {
+	const lines = [];
+	lines.push('Click a test count above to jump to the affected test list for that gap.');
+	lines.push('');
+	for (const gapId of gapIds) {
+		const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
+		lines.push(renderGapTestList(adapterName, gapId, tests));
+		lines.push('');
+	}
 	return lines.join('\n');
 }
 
@@ -356,33 +404,46 @@ function renderPerAdapterExpectedFailures(adapterName, data) {
 	const gaps = parity.expected_failures ?? {};
 	const gapIds = Object.keys(gaps);
 	if (gapIds.length === 0) return '';
+	const intentionalGapIds = gapIds.filter(gapId => isIntentionalGap(gaps[gapId]));
+	const openGapIds = gapIds.filter(gapId => !isIntentionalGap(gaps[gapId]));
 
 	const totalTests = gapIds.reduce(
+		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
+		0,
+	);
+	const intentionalTests = intentionalGapIds.reduce(
+		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
+		0,
+	);
+	const openTests = openGapIds.reduce(
 		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
 		0,
 	);
 
 	lines.push(`## ${adapterName} expected failures`);
 	lines.push('');
-	lines.push(`${adapterName} currently declares ${gapIds.length} parity gap${gapIds.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. Each gap is verified by a test that continues to run as a regression trap — if ${adapterName} fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.`);
+	lines.push(`${adapterName} currently declares ${gapIds.length} expected-failure classification${gapIds.length === 1 ? '' : 's'} against vanilla's canonical behavior, covering ${totalTests} test${totalTests === 1 ? '' : 's'}. That includes ${openGapIds.length} open parity gap${openGapIds.length === 1 ? '' : 's'} covering ${openTests} test${openTests === 1 ? '' : 's'} and ${intentionalGapIds.length} intentional divergence${intentionalGapIds.length === 1 ? '' : 's'} covering ${intentionalTests} test${intentionalTests === 1 ? '' : 's'}. Each classification is verified by a test that continues to run as a regression trap.`);
 	lines.push('');
-	lines.push('| Gap | Actual | Expected | Tests |');
-	lines.push('| --- | --- | --- | :-: |');
 
-	for (const gapId of gapIds) {
-		const { actual, expected } = gapBehaviorFields(gaps[gapId]);
-		const testCount = (summary.expectedFailureByGap?.[gapId] ?? []).length;
-		const anchor = gapAnchor(adapterName, gapId);
-		const countCell = testCount > 0 ? `[${testCount}](#${anchor})` : `${testCount}`;
-		lines.push(`| \`${gapId}\` | ${actual} | ${expected} | ${countCell} |`);
+	if (openGapIds.length > 0) {
+		lines.push(`### Open parity gaps`);
+		lines.push('');
+		lines.push('These are known differences that may still be fixed upstream or in the adapter. If the behavior changes, the corresponding test flips from expected-failure to unexpected-pass.');
+		lines.push('');
+		lines.push(renderGapSummaryTable(adapterName, gaps, summary, openGapIds));
+		lines.push('');
+		lines.push(renderGapDetails(adapterName, summary, openGapIds));
+		lines.push('');
 	}
 
-	lines.push('');
-	lines.push('Click a test count above to jump to the affected test list for that gap.');
-	lines.push('');
-	for (const gapId of gapIds) {
-		const tests = (summary.expectedFailureByGap?.[gapId] ?? []).map(t => t.fullName);
-		lines.push(renderGapTestList(adapterName, gapId, tests));
+	if (intentionalGapIds.length > 0) {
+		lines.push(`## ${adapterName} intentional divergences`);
+		lines.push('');
+		lines.push('These are known vanilla differences that the engine maintainers have decided not to implement, or that this adapter deliberately preserves. The tests stay registered as expected failures so consumers can see the divergence and so any future behavior change is visible.');
+		lines.push('');
+		lines.push(renderGapSummaryTable(adapterName, gaps, summary, intentionalGapIds, { includeWhy: true }));
+		lines.push('');
+		lines.push(renderGapDetails(adapterName, summary, intentionalGapIds));
 		lines.push('');
 	}
 

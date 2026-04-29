@@ -520,6 +520,12 @@ Each `expected_failures` entry:
   (handy for narrowing `tests` rather than fully suppressing).
 - **actual** — short phrase describing the engine's observed behavior.
 - **expected** — short phrase describing the canonical (vanilla) behavior.
+- **intentional** — optional boolean. Set to `true` when the adapter or
+  upstream engine has explicitly chosen not to match vanilla. The test still
+  counts as an expected failure, but `docs/status.md` renders it under
+  intentional divergences instead of open parity gaps.
+- **why** — optional short explanation used by `docs/status.md` for intentional
+  divergences. Link the upstream issue/PR or decision record when available.
 - **tests** — catalog IDs of tests expected to fail due to this gap. When a
   single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
   list either the base ID (gates all variants) or specific suffixed IDs

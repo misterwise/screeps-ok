@@ -38,6 +38,8 @@ import type { Reporter, TestCase, TestModule } from 'vitest/node';
 interface ParityGap {
 	actual?: string;
 	expected?: string;
+	intentional?: boolean;
+	why?: string;
 	tests: string[];
 }
 

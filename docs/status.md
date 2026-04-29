@@ -25,13 +25,15 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 9 parity gaps against vanilla's canonical behavior, covering 18 tests. Each gap is verified by a test that continues to run as a regression trap — if xxscreeps fixes the behavior upstream the test will flip from expected-failure to unexpected-pass.
+xxscreeps currently declares 9 expected-failure classifications against vanilla's canonical behavior, covering 18 tests. That includes 7 open parity gaps covering 15 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
+
+### Open parity gaps
+
+These are known differences that may still be fixed upstream or in the adapter. If the behavior changes, the corresponding test flips from expected-failure to unexpected-pass.
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `controller-my-never-owned-returns-false` | `StructureController.my` returns `false` on a never-owned controller (`#user` undefined) | Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade) | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `world-size-exclusive-span` | `Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13` | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph | [1](#xxscreeps-gap-world-size-exclusive-span) |
-| `shape-body-part-always-has-boost` | Unboosted body parts expose `boost` key (with `undefined` value) | `boost` key is only present when the part is actually boosted | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
@@ -41,25 +43,10 @@ xxscreeps currently declares 9 parity gaps against vanilla's canonical behavior,
 
 Click a test count above to jump to the affected test list for that gap.
 
-<details id="xxscreeps-gap-controller-my-never-owned-returns-false">
-<summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
-
-- `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
-
-</details>
-
 <details id="xxscreeps-gap-world-size-exclusive-span">
 <summary><code>world-size-exclusive-span</code> — 1 test</summary>
 
 - `Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span`
-
-</details>
-
-<details id="xxscreeps-gap-shape-body-part-always-has-boost">
-<summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
-
-- `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
-- `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
 
 </details>
 
@@ -112,6 +99,34 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
 
 </details>
+
+
+## xxscreeps intentional divergences
+
+These are known vanilla differences that the engine maintainers have decided not to implement, or that this adapter deliberately preserves. The tests stay registered as expected failures so consumers can see the divergence and so any future behavior change is visible.
+
+| Gap | Why | Actual | Vanilla behavior | Tests |
+| --- | --- | --- | --- | :-: |
+| `controller-my-never-owned-returns-false` | PR #128 intentionally keeps `controller.my === false` for never-claimed controllers: xxscreeps has no serialized absent-user sentinel, and upstream decided vanilla's `undefined` sentinel is a quirk worth dropping. | Intentional xxscreeps behavior ([laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128)): `StructureController.my` returns `false` on a never-owned controller | Vanilla returns `undefined` on a never-owned controller; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
+| `shape-body-part-always-has-boost` | PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference. | Intentional xxscreeps behavior ([laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163)): unboosted body parts expose a `boost` own property with value `undefined` | Vanilla exposes `boost` as an own property only when the part is actually boosted; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
+
+Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-controller-my-never-owned-returns-false">
+<summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
+
+- `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
+
+</details>
+
+<details id="xxscreeps-gap-shape-body-part-always-has-boost">
+<summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
+
+- `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
+- `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
+
+</details>
+
 
 
 ## vanilla skipped tests

@@ -1,8 +1,10 @@
 {
 	"expected_failures": {
 		"controller-my-never-owned-returns-false": {
-			"actual": "`StructureController.my` returns `false` on a never-owned controller (`#user` undefined)",
-			"expected": "Returns `undefined` on a never-owned controller (vanilla `OwnedStructure.my` maps `_.isUndefined(o.user) ? undefined : ...`, reserving `false` for `user === null` after unclaim/downgrade)",
+			"intentional": true,
+			"why": "PR #128 intentionally keeps `controller.my === false` for never-claimed controllers: xxscreeps has no serialized absent-user sentinel, and upstream decided vanilla's `undefined` sentinel is a quirk worth dropping.",
+			"actual": "Intentional xxscreeps behavior ([laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128)): `StructureController.my` returns `false` on a never-owned controller",
+			"expected": "Vanilla returns `undefined` on a never-owned controller; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix",
 			"tests": ["CTRL-CLAIM-007"]
 		},
 		"world-size-exclusive-span": {
@@ -11,8 +13,10 @@
 			"tests": ["MAP-ROOM-005"]
 		},
 		"shape-body-part-always-has-boost": {
-			"actual": "Unboosted body parts expose `boost` key (with `undefined` value)",
-			"expected": "`boost` key is only present when the part is actually boosted",
+			"intentional": true,
+			"why": "PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference.",
+			"actual": "Intentional xxscreeps behavior ([laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163)): unboosted body parts expose a `boost` own property with value `undefined`",
+			"expected": "Vanilla exposes `boost` as an own property only when the part is actually boosted; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix",
 			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
 		},
 		"shape-flag-extra-id": {

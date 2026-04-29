@@ -11,9 +11,11 @@ Last refreshed: 2026-04-26 against `adapters/xxscreeps/parity.json` (pin bumped 
 
 ## Confirmed (root cause in hand)
 
-### controller-my-previously-owned-returns-undefined
-- Tests: CTRL-UNCLAIM-001, CTRL-DOWNGRADE-002
-- Cause: `OwnedStructure.my` at `mods/structure/structure.ts:108-111` returns `user === null ? undefined : user === me`. xxscreeps stores `#user = null` for *both* never-owned controllers (initial state) and previously-owned controllers (after `unclaim()` or downgrade-to-zero), so the getter returns `undefined` in both cases — the engine cannot distinguish the two states. Vanilla's getter (`@screeps/engine/src/game/structures.js:139`) returns `_.isUndefined(o.user) ? undefined : o.user == me`, which leaves `user` undefined for never-owned (→ `undefined`) and sets `user = null` only on `unclaim` (→ `false`). The never-owned case happens to agree by coincidence (both return `undefined`); only the previously-owned case is observable as a parity gap. CTRL-CLAIM-007 covers the never-owned sentinel and currently passes on both engines. Fix shape: either keep `#user` undefined until first claim, or have the `my` getter distinguish initial-null from cleared-null (e.g. via a separate `#everOwned` flag).
+### controller-my-never-owned-returns-false
+- Tests: CTRL-CLAIM-007
+- Status: INTENTIONAL. PR [laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128) deliberately kept `StructureController.my === false` for never-claimed controllers; the maintainer called vanilla's `undefined` sentinel a quirk worth dropping.
+- Cause: vanilla distinguishes never-claimed controllers (`user` absent -> `my === undefined`) from post-unclaim controllers (`user === null` -> `my === false`). xxscreeps serializes controller ownership as `string | null` and simplifies `OwnedStructure.my` to `this['#user'] === me`, so the never-claimed case returns `false`.
+- Decision: Keep CTRL-CLAIM-007 as an expected failure for xxscreeps so consumers can see the vanilla divergence, but do not treat it as an upstream bug pending a fix unless the upstream decision changes.
 
 ### destroy-ownership-bypass
 - Tests: STRUCTURE-API-001
@@ -137,8 +139,9 @@ Last refreshed: 2026-04-26 against `adapters/xxscreeps/parity.json` (pin bumped 
 
 ### shape-body-part-always-has-boost
 - Tests: SHAPE-CREEP-002, SHAPE-CREEP-003
+- Status: INTENTIONAL. PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed matching vanilla's own-property shape and was closed by the maintainer as not desired.
 - Cause: `mods/creep/creep.ts:414` constructs body parts as `parts.map(type => ({ type, hits: 100, boost: undefined }))`. The explicit `boost: undefined` makes it an own enumerable property on every part. `Object.getOwnPropertyNames(part)` includes `boost` even when unboosted. Vanilla only sets `boost` when the part has actually been boosted (via `applyBoost` or similar).
-- Fix shape: drop `boost: undefined` from the literal: `parts.map(type => ({ type, hits: 100 }))`. Add `boost` later only when `applyBoost` runs. Test suite already expects this — no other changes.
+- Decision: Keep the screeps-ok tests as expected failures for xxscreeps so consumers can see the vanilla divergence, but do not treat this gap as an upstream bug pending a fix unless the upstream decision changes.
 
 ### shape-room-missing-survivalInfo
 - Tests: SHAPE-ROOM-001
