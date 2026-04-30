@@ -26,6 +26,7 @@ Per the April 2026 audit, these were on earlier roadmap drafts but no longer app
 - **Terminal** (`send`, transaction log, cooldown)
 - **Factory** (#114; produce intent + commodity recipes)
 - **Mineral / Extractor** lifecycle
+- **Portal** (#159; same-shard mechanics plus cross-shard destination shape)
 - **TOUGH boost damage reduction** (#109)
 - **Rampart damage redirection** (#147)
 - **Tombstone / Ruin** mechanics (#136, #145)
@@ -39,13 +40,12 @@ Treat the above as preconditions; surface bugs in any of them are parity-gap-sha
 
 No dependencies; can land in any order. Each closes a discrete item from the audit.
 
-- **Portal** — one-tile teleporter, self-contained game object, no NPC tie-in
 - **Construction site stomping** (#99) — movement destroys hostile sites on entry
 - **Spawn stomping** (#100) — new creep destroys hostile creeps on the spawn tile
-- **`Game.notify`** — currently logs `TODO: notify`; needs a notification queue + delivery hook
+- **`Game.notify`** — queueing and delivery are in flight upstream as #161/#165; do not duplicate while those are open
 - **`Game.gpl`** — currently hardcoded zeros; mirror `Game.gcl` plumbing on the user record
 - **`RoomObject.effects`** — surface getter; precondition for Power and InvaderCore effects (start with `[]` default)
-- **`notifyWhenAttacked` damage-side consumer** — surface landed in #132; damage processors still need to read `'#noAttackNotify'` and emit notifications
+- **`notifyWhenAttacked` damage-side consumer** — surface landed in #132; after #161/#165, damage processors still need to read `'#noAttackNotify'` and emit notifications
 
 ## Tier 2 — medium standalone features
 
@@ -120,7 +120,7 @@ Tracked upstream as #53 (draft). Self-contained subsystem; can slot in any time 
 Per audit: shard infrastructure exists, only the cross-shard API is missing.
 
 - `InterShardMemory.getLocal` / `setLocal` / `getRemote`
-- Cross-shard portals (depends on Tier 1 Portal)
+- Cross-shard portal traversal (Portal object and destination shape landed in #159; full traversal depends on multi-shard runtime)
 
 ## Tier 7 — Server admin / tooling
 
@@ -144,6 +144,6 @@ Independent of game systems; largely client/backend work.
 
 ## Suggested next step
 
-Tier 1 is the obvious next batch — six small items, each ~a day, none blocking each other. **Portal** and **`RoomObject.effects`** are the two with downstream leverage (Portal → Tier 6 cross-shard portals; effects → Tier 4 strongholds + Tier 5 power). The other four are pure standalone closures.
+Tier 1 is still the right batch, but Portal landed in #159 and `Game.notify` is already in flight upstream. The next clean new feature branch should be **`RoomObject.effects`** because it unlocks Tier 4 strongholds and Tier 5 power without colliding with current PRs. After that, the remaining small standalone Tier 1 choices are construction-site stomping, spawn stomping, and `Game.gpl`.
 
-If picking one Tier 2 item to start in parallel: **Nuker** is the cleanest (well-scoped delayed-impact intent, no NPC entanglement) and closes the last RCL 8 row in the audit.
+If picking one Tier 2 item to start in parallel later: **Nuker** is the cleanest (well-scoped delayed-impact intent, no NPC entanglement) and closes the last RCL 8 row in the audit.
