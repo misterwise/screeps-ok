@@ -274,6 +274,8 @@ export const NUKE_DAMAGE: Record<number, number> = C.NUKE_DAMAGE;
 
 // Power constants
 export const PWR_OPERATE_TOWER: number = C.PWR_OPERATE_TOWER;
+export const PWR_OPERATE_STORAGE: number = C.PWR_OPERATE_STORAGE;
+export const PWR_DISRUPT_SPAWN: number = C.PWR_DISRUPT_SPAWN;
 export const PWR_DISRUPT_TOWER: number = C.PWR_DISRUPT_TOWER;
 export const PWR_OPERATE_LAB: number = C.PWR_OPERATE_LAB;
 export const PWR_OPERATE_OBSERVER: number = C.PWR_OPERATE_OBSERVER;
@@ -283,6 +285,7 @@ export const PWR_REGEN_SOURCE: number = C.PWR_REGEN_SOURCE;
 export const PWR_REGEN_MINERAL: number = C.PWR_REGEN_MINERAL;
 export const PWR_OPERATE_SPAWN: number = C.PWR_OPERATE_SPAWN;
 export const PWR_OPERATE_POWER: number = C.PWR_OPERATE_POWER;
+export const PWR_OPERATE_CONTROLLER: number = C.PWR_OPERATE_CONTROLLER;
 export const PWR_SHIELD: number = C.PWR_SHIELD;
 export const PWR_FORTIFY: number = C.PWR_FORTIFY;
 export const PWR_DISRUPT_SOURCE: number = C.PWR_DISRUPT_SOURCE;

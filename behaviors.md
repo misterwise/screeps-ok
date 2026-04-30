@@ -2246,6 +2246,11 @@ Coverage Notes
   When a host RoomObject is destroyed, its active effects do not migrate
   to any successor object (e.g. ruin, dropped resources) on the same
   tile.
+- `EFFECT-HOST-001` `matrix` `verified_vanilla`
+  For each producer/target pair in the active effect-host matrix, a successful
+  producer action exposes an active entry in the target RoomObject's `effects`
+  array with the expected `power` and/or `effect` id, applicable `level`,
+  exact effect-entry property shape, and positive `ticksRemaining`.
 
 Coverage Notes
 - The substrate tested here is the universal `RoomObject.effects`
@@ -2257,6 +2262,10 @@ Coverage Notes
   invader-core EFFECT_INVULNERABILITY. Player code should match against
   whichever field the producing path populates rather than assuming
   disjointness.
+- The active effect-host matrix currently covers player-code power producers
+  that are feasible through public setup helpers. Invader-core natural effects
+  are deferred until the harness can create those active effects without direct
+  effect injection.
 - The runtime view of an entry exposes `ticksRemaining`, derived per tick
   from a server-side `endTime`. The server-side field is not surfaced to
   player code and is not part of the spec.

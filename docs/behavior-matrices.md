@@ -751,6 +751,30 @@ Each definition should include:
   This family remains `needs_vanilla_verification` until the per-power target
   inventories are written explicitly.
 
+### EFFECT-HOST
+
+- `Catalog Entries`
+  `EFFECT-HOST-001`
+- `Canonical Source`
+  Vanilla Screeps active `RoomObject.effects` entries produced by successful
+  power-creep `usePower()` calls.
+- `Dimensions`
+  power producer, target RoomObject class, effect id field (`power` and/or
+  `effect`), applied power level
+- `Applicability`
+  Active power effects currently feasible through public screeps-ok setup
+  helpers: tower, storage, spawn, source, mineral, observer, factory,
+  terminal, lab, power spawn, controller, rampart, and temporary shield
+  rampart hosts.
+- `Exclusions`
+  Effect magnitudes and gameplay side effects owned by the power-specific
+  sections; invalid target matrices; direct setup injection of preexisting
+  `effects` arrays; instant powers that do not create active host entries.
+- `Verification Notes`
+  The executable case list lives in `src/matrices/effect-hosts.ts`.
+  Invader-core natural effects are excluded until they can be produced through
+  setup without directly injecting the `effects` array.
+
 ### MARKET-ORDER
 
 - `Catalog Entries`
