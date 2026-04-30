@@ -682,6 +682,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const gameTime = await this.server.world.gameTime;
 			attrs.nextDecayTime = gameTime + spec.ticksToDecay;
 		}
+		if (spec.cooldown !== undefined) {
+			const gameTime = await this.server.world.gameTime;
+			attrs.cooldownTime = gameTime + spec.cooldown;
+			attrs.cooldown = spec.cooldown;
+		}
 
 		const result = await this.server.world.addRoomObject(
 			roomName, spec.structureType, spec.pos[0], spec.pos[1], attrs);

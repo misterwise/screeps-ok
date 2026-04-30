@@ -392,6 +392,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.ticksToDecay !== undefined) {
 				setStructureNextDecayTime(structure, this.simulation!.shard.time, spec.ticksToDecay);
 			}
+			if (spec.cooldown !== undefined) {
+				(structure as { cooldown?: number }).cooldown = spec.cooldown;
+			}
 			insertRoomObject(room, structure);
 		});
 

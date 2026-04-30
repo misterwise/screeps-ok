@@ -91,6 +91,8 @@ Examples:
 - `placeStructure(..., { store: { energy: 50 } })` means the structure starts
   with exactly `50` energy. Adapters must not add this on top of engine
   defaults.
+- `placeStructure(..., { cooldown: 10 })` means a structure with a public
+  cooldown starts with `10` ticks remaining.
 - `placeSource(..., { energy: 0, energyCapacity: 3000 })` means a depleted
   source with known capacity.
 

@@ -76,6 +76,8 @@ export interface StructureSpec {
 	hits?: number;
 	store?: Record<string, number>;
 	ticksToDecay?: number;
+	/** Pre-set a relative cooldown timer in ticks for structures that expose one. */
+	cooldown?: number;
 }
 
 export interface SiteSpec {

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1339%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1144%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1408%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1144%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1339](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-29 00:55 UTC |
-| 🟡 | **xxscreeps** | [1144](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [180](#xxscreeps-skipped-tests) | 2026-04-29 00:59 UTC |
+| 🟢 | **vanilla** | [1408](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-30 03:15 UTC |
+| 🟡 | **xxscreeps** | [1144](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [249](#xxscreeps-skipped-tests) | 2026-04-30 03:12 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -154,7 +154,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1339 tests across 122 files</summary>
+<summary>1408 tests across 124 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -735,7 +735,7 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (13)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (47)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -744,12 +744,46 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
 - Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
 - Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
+- Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
+- Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
+- Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
+- Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
 - Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
 - Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
 - Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
+- Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
+- Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
+- Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
 
 **`tests/07-combat/7.15-safemode-combat.test.ts`** (2)
 
@@ -1173,7 +1207,7 @@ Click a count to jump to the affected test list.
 - StructurePowerSpawn processPower POWER-SPAWN-004 processPower returns ERR_RCL_NOT_ENOUGH when RCL < 8
 - StructurePowerSpawn processPower POWER-SPAWN-005 processPower returns ERR_NOT_OWNER when not owned by the player
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (18)
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (19)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
@@ -1192,6 +1226,7 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval
 - StructureRampart RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0
 - StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
+- StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
 - StructureRampart RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile
 
 **`tests/12-structures-military/12.3-wall.test.ts`** (2)
@@ -1361,6 +1396,26 @@ Click a count to jump to the affected test list.
 - 15.5 Effects Substrate EFFECT-APPLY-002 distinct powers coexist on a target with independent timers
 - 15.5 Effects Substrate EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed
 
+**`tests/15-structure-common/15.6-effects-hosts.test.ts`** (17)
+
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_TOWER->StructureTower] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_STORAGE->StructureStorage] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_SPAWN->StructureSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_TOWER->StructureTower] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_SPAWN->StructureSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_REGEN_SOURCE->Source] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_SOURCE->Source] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_REGEN_MINERAL->Mineral] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_OBSERVER->StructureObserver] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_FACTORY->StructureFactory] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_TERMINAL->StructureTerminal] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_TERMINAL->StructureTerminal] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_LAB->StructureLab] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_POWER->StructurePowerSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_CONTROLLER->StructureController] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_FORTIFY->StructureRampart] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_SHIELD->temporary StructureRampart] target exposes active effects entry
+
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
 - Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side
@@ -1399,7 +1454,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (25)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (28)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -1420,6 +1475,9 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
+- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 - room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
 - room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
@@ -1488,11 +1546,27 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
 
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
 - Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
+- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
+
+**`tests/19-power/19.0-gpl.test.ts`** (9)
+
+- Game.gpl GPL-001 Game.gpl starts at level 0 with 1000 progressTotal when account power is 0
+- Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power
+- Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power
+- Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power
+- Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
+- Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
+- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
+- Game.gpl GPL-004 one GPL level allows one allocated power creep level
+- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
 **`tests/19-power/19.1-lifecycle.test.ts`** (16)
 
@@ -1539,27 +1613,28 @@ Click a count to jump to the affected test list.
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
 
-**`tests/20-market/20.2-20.4-market.test.ts`** (19)
+**`tests/20-market/20.2-20.4-market.test.ts`** (20)
 
-- Market orders MARKET-ORDER-001 createOrder creates an order with the requested parameters
-- Market orders MARKET-ORDER-002 createOrder fails with appropriate error codes
-- Market orders MARKET-ORDER-003 cancelOrder returns OK and removes the order
-- Market orders MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for non-existent order
-- Market orders MARKET-ORDER-005 changeOrderPrice updates the order price
-- Market orders MARKET-ORDER-006 changeOrderPrice fails with appropriate error codes
-- Market orders MARKET-ORDER-007 extendOrder increases the remaining amount
-- Market orders MARKET-ORDER-008 extendOrder fails with appropriate error codes
-- Market deal MARKET-DEAL-001 successful deal returns OK and executes a trade
+- Market orders MARKET-ORDER-001 createOrder creates orders with requested parameters and public credit units
+- Market orders MARKET-ORDER-002 createOrder fails with exact validation codes
+- Market orders MARKET-ORDER-002 createOrder returns ERR_FULL at the per-player order cap
+- Market orders MARKET-ORDER-003 cancelOrder returns OK and removes the order from owner and public queries
+- Market orders MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for a non-owned or missing order
+- Market orders MARKET-ORDER-005 changeOrderPrice updates the order price and charges only the additional fee
+- Market orders MARKET-ORDER-006 changeOrderPrice fails with exact validation codes
+- Market orders MARKET-ORDER-007 extendOrder increases remaining and total amounts and charges the extension fee
+- Market orders MARKET-ORDER-008 extendOrder fails with exact validation codes
+- Market orders MARKET-ORDER-009 order expiry uses wall-clock createdTimestamp and removes expired orders deterministically
+- Market deal MARKET-DEAL-001 successful deal returns OK and executes the trade, credits, and transaction ledger
 - Market deal MARKET-DEAL-002 deal energy cost is paid by the caller terminal
-- Market deal MARKET-DEAL-004 partial deal reduces the order remaining amount
-- Market deal MARKET-DEAL-005 deal that fills the order completely removes it
-- Market deal MARKET-DEAL-003 deal fails with appropriate error codes
+- Market deal MARKET-DEAL-004 partial deal reduces the target order remaining amount and public amount
+- Market deal MARKET-DEAL-005 deal that fills the order sets remainingAmount to 0 and removes it from public queries
+- Market deal MARKET-DEAL-003 deal fails with exact validation codes
 - Market queries MARKET-QUERY-001 calcTransactionCost returns the formula-based cost
-- Market queries MARKET-QUERY-002 getAllOrders returns matching orders
-- Market queries MARKET-QUERY-003 getOrderById returns the order or null
-- Market queries MARKET-QUERY-004 getHistory returns market history
-- Market queries MARKET-QUERY-005 order prices use public credit units not internal milli-credits
-- Market queries MARKET-ORDER-009 order expires after MARKET_ORDER_LIFE_TIME ms of wall-clock time
+- Market queries MARKET-QUERY-002 getAllOrders returns only active orders matching the supplied filter
+- Market queries MARKET-QUERY-003 getOrderById returns public active orders, owner orders, or null
+- Market queries MARKET-QUERY-004 getHistory returns scoped history containers deterministically
+- Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
 
@@ -1865,13 +1940,13 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 180 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 249 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [76](#xxscreeps-skip-capability-powercreeps) |
-| capability | `market` | Market and terminal | [41](#xxscreeps-skip-capability-market) |
-| capability | `nuke` | Nukes | [29](#xxscreeps-skip-capability-nuke) |
+| capability | `powerCreeps` | Power creeps and powers | [102](#xxscreeps-skip-capability-powercreeps) |
+| capability | `nuke` | Nukes | [71](#xxscreeps-skip-capability-nuke) |
+| capability | `market` | Market and terminal | [42](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderCore` | Invader core structures | [10](#xxscreeps-skip-capability-invadercore) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
@@ -1881,7 +1956,7 @@ xxscreeps has 180 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 76 tests across 21 files</summary>
+<summary><code>capability:powerCreeps</code> — 102 tests across 23 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -1955,6 +2030,26 @@ Click a count to jump to the affected test list.
 - 15.5 Effects Substrate EFFECT-APPLY-002 distinct powers coexist on a target with independent timers
 - 15.5 Effects Substrate EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed
 
+**`tests/15-structure-common/15.6-effects-hosts.test.ts`** (17)
+
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_TOWER->StructureTower] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_STORAGE->StructureStorage] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_SPAWN->StructureSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_TOWER->StructureTower] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_SPAWN->StructureSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_REGEN_SOURCE->Source] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_SOURCE->Source] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_REGEN_MINERAL->Mineral] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_OBSERVER->StructureObserver] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_FACTORY->StructureFactory] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_TERMINAL->StructureTerminal] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_DISRUPT_TERMINAL->StructureTerminal] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_LAB->StructureLab] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_POWER->StructurePowerSpawn] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_OPERATE_CONTROLLER->StructureController] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_FORTIFY->StructureRampart] target exposes active effects entry
+- 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_SHIELD->temporary StructureRampart] target exposes active effects entry
+
 **`tests/16-room-mechanics/16.6-eventlog.test.ts`** (1)
 
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
@@ -1964,6 +2059,18 @@ Click a count to jump to the affected test list.
 - Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
 - Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
 - Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
+
+**`tests/19-power/19.0-gpl.test.ts`** (9)
+
+- Game.gpl GPL-001 Game.gpl starts at level 0 with 1000 progressTotal when account power is 0
+- Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power
+- Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power
+- Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power
+- Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
+- Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
+- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
+- Game.gpl GPL-004 one GPL level allows one allocated power creep level
+- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
 **`tests/19-power/19.1-lifecycle.test.ts`** (16)
 
@@ -2024,8 +2131,117 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-nuke">
+<summary><code>capability:nuke</code> — 71 tests across 11 files</summary>
+
+**`tests/00-adapter-contract/setup.test.ts`** (2)
+
+- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
+- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
+
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
+
+- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
+
+**`tests/06-controller/6.4-upgrade.test.ts`** (1)
+
+- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (47)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
+- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
+- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
+- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
+- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
+- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
+- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
+- Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
+- Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
+- Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
+- Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
+- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
+- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
+- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
+- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
+- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
+- Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
+- Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
+- Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
+
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (2)
+
+- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
+- StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
+
+**`tests/15-structure-common/15.1-hits.test.ts`** (1)
+
+- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
+
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
+
+- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
+
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (4)
+
+- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
+- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
+
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
+
+- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
+- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
+- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
+- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
+
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (3)
+
+- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
+- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
+
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
+
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
+
+</details>
+
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 41 tests across 8 files</summary>
+<summary><code>capability:market</code> — 42 tests across 8 files</summary>
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (2)
 
@@ -2055,27 +2271,28 @@ Click a count to jump to the affected test list.
 
 - Construction costs CONSTRUCTION-COST-001:terminal costs 100000
 
-**`tests/20-market/20.2-20.4-market.test.ts`** (19)
+**`tests/20-market/20.2-20.4-market.test.ts`** (20)
 
-- Market orders MARKET-ORDER-001 createOrder creates an order with the requested parameters
-- Market orders MARKET-ORDER-002 createOrder fails with appropriate error codes
-- Market orders MARKET-ORDER-003 cancelOrder returns OK and removes the order
-- Market orders MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for non-existent order
-- Market orders MARKET-ORDER-005 changeOrderPrice updates the order price
-- Market orders MARKET-ORDER-006 changeOrderPrice fails with appropriate error codes
-- Market orders MARKET-ORDER-007 extendOrder increases the remaining amount
-- Market orders MARKET-ORDER-008 extendOrder fails with appropriate error codes
-- Market deal MARKET-DEAL-001 successful deal returns OK and executes a trade
+- Market orders MARKET-ORDER-001 createOrder creates orders with requested parameters and public credit units
+- Market orders MARKET-ORDER-002 createOrder fails with exact validation codes
+- Market orders MARKET-ORDER-002 createOrder returns ERR_FULL at the per-player order cap
+- Market orders MARKET-ORDER-003 cancelOrder returns OK and removes the order from owner and public queries
+- Market orders MARKET-ORDER-004 cancelOrder returns ERR_INVALID_ARGS for a non-owned or missing order
+- Market orders MARKET-ORDER-005 changeOrderPrice updates the order price and charges only the additional fee
+- Market orders MARKET-ORDER-006 changeOrderPrice fails with exact validation codes
+- Market orders MARKET-ORDER-007 extendOrder increases remaining and total amounts and charges the extension fee
+- Market orders MARKET-ORDER-008 extendOrder fails with exact validation codes
+- Market orders MARKET-ORDER-009 order expiry uses wall-clock createdTimestamp and removes expired orders deterministically
+- Market deal MARKET-DEAL-001 successful deal returns OK and executes the trade, credits, and transaction ledger
 - Market deal MARKET-DEAL-002 deal energy cost is paid by the caller terminal
-- Market deal MARKET-DEAL-004 partial deal reduces the order remaining amount
-- Market deal MARKET-DEAL-005 deal that fills the order completely removes it
-- Market deal MARKET-DEAL-003 deal fails with appropriate error codes
+- Market deal MARKET-DEAL-004 partial deal reduces the target order remaining amount and public amount
+- Market deal MARKET-DEAL-005 deal that fills the order sets remainingAmount to 0 and removes it from public queries
+- Market deal MARKET-DEAL-003 deal fails with exact validation codes
 - Market queries MARKET-QUERY-001 calcTransactionCost returns the formula-based cost
-- Market queries MARKET-QUERY-002 getAllOrders returns matching orders
-- Market queries MARKET-QUERY-003 getOrderById returns the order or null
-- Market queries MARKET-QUERY-004 getHistory returns market history
-- Market queries MARKET-QUERY-005 order prices use public credit units not internal milli-credits
-- Market queries MARKET-ORDER-009 order expires after MARKET_ORDER_LIFE_TIME ms of wall-clock time
+- Market queries MARKET-QUERY-002 getAllOrders returns only active orders matching the supplied filter
+- Market queries MARKET-QUERY-003 getOrderById returns public active orders, owner orders, or null
+- Market queries MARKET-QUERY-004 getHistory returns scoped history containers deterministically
+- Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
 **`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
 
@@ -2091,73 +2308,6 @@ Click a count to jump to the affected test list.
 
 - 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
-
-</details>
-
-<details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 29 tests across 11 files</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (2)
-
-- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
-- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
-
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
-
-- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
-
-**`tests/06-controller/6.4-upgrade.test.ts`** (1)
-
-- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (13)
-
-- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
-- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
-- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
-- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
-- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
-- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
-- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
-- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
-- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
-- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
-- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
-- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (1)
-
-- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
-
-**`tests/15-structure-common/15.1-hits.test.ts`** (1)
-
-- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
-
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
-
-- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
-
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (1)
-
-- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
-
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (3)
-
-- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
-- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
-- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
-
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (3)
-
-- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
-
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
 </details>
 

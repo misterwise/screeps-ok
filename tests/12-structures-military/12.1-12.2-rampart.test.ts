@@ -313,6 +313,50 @@ describe('StructureRampart', () => {
 		expect(spawnAfter.hits).toBe(spawnHitsBefore);
 	});
 
+	test('RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile', async ({ shard }) => {
+		shard.requires('nuke');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+			],
+		});
+
+		const remainingDamage = 1000;
+		const rampartHits = NUKE_DAMAGE[0] - remainingDamage;
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_RAMPART,
+			owner: 'p1',
+			hits: rampartHits,
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_SPAWN,
+			owner: 'p1',
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_TOWER,
+			owner: 'p1',
+			store: { energy: 0 },
+		});
+		const spawnBefore = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		const towerBefore = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+
+		await shard.placeNuke('W1N1', {
+			pos: [25, 25],
+			launchRoomName: 'W2N1',
+			timeToLand: 1,
+		});
+		await shard.tick(2);
+
+		const spawnAfter = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		const towerAfter = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+		expect(spawnBefore.hits - spawnAfter.hits).toBe(remainingDamage);
+		expect(towerBefore.hits - towerAfter.hits).toBe(remainingDamage);
+	});
+
 	test('RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		await shard.placeStructure('W1N1', {

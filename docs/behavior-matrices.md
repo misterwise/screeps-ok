@@ -357,6 +357,8 @@ Each definition should include:
   This family should include both single-blocker rows and selected precedence
   rows: cooldown before inactive/range/resources, inactive before
   range/resources, and range before resource availability.
+  The executable case list lives in
+  `src/matrices/nuke-launch-validation.ts`.
 
 ### NUKER-PROPS
 
@@ -375,6 +377,7 @@ Each definition should include:
 - `Verification Notes`
   This family is about value aliases only; it should not duplicate store
   method behavior.
+  The executable case list lives in `src/matrices/nuker-props.ts`.
 
 ### NUKE-FLIGHT-VISIBILITY
 
@@ -393,6 +396,7 @@ Each definition should include:
   Include target-room visibility, launch-room absence, and the no-target-room
   visibility case. `NUKE-FLIGHT-003` owns the simpler positive visibility
   behavior.
+  The executable case list lives in `src/matrices/nuke-flight-visibility.ts`.
 
 ### NUKE-IMPACT-OBJECTS
 
@@ -412,6 +416,7 @@ Each definition should include:
 - `Verification Notes`
   Capability-gated object types should be skipped only when the adapter cannot
   place or expose that type.
+  The executable case list lives in `src/matrices/nuke-impact-objects.ts`.
 
 ### COMBAT-RMA
 
@@ -694,6 +699,7 @@ Each definition should include:
   absence of `EVENT_ATTACK` entries for room-wide creep kills, and ordering
   when rampart absorption produces both rampart and covered-structure damage
   events.
+  The executable case list lives in `src/matrices/eventlog-nuke.ts`.
 
 ### SOURCE-REGEN
 

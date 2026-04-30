@@ -1,0 +1,168 @@
+import type { CapabilityName } from '../adapter.js';
+import {
+	ERR_INVALID_ARGS, ERR_NOT_ENOUGH_RESOURCES, ERR_NOT_IN_RANGE,
+	ERR_NOT_OWNER, ERR_RCL_NOT_ENOUGH, ERR_TIRED,
+} from '../constants.js';
+
+export type NukeLaunchValidationCase = {
+	catalogId: 'NUKE-LAUNCH-008';
+	label: string;
+	capability: CapabilityName;
+	caller: 'owner' | 'other';
+	arg: 'roomPosition' | 'plainObject';
+	roomRcl: 7 | 8;
+	cooldown?: number;
+	store: 'full' | 'empty' | 'energyOnly' | 'ghodiumOnly';
+	targetRoomName: string;
+	expectedRc: number;
+};
+
+export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'not-owner',
+		capability: 'nuke',
+		caller: 'other',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_NOT_OWNER,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'invalid-argument-shape',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'plainObject',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_INVALID_ARGS,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'cooldown',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		cooldown: 50,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_TIRED,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'inactive-rcl',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 7,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_RCL_NOT_ENOUGH,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'out-of-range',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W12N1',
+		expectedRc: ERR_NOT_IN_RANGE,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'missing-energy',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'ghodiumOnly',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_NOT_ENOUGH_RESOURCES,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'missing-ghodium',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'energyOnly',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_NOT_ENOUGH_RESOURCES,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'cooldown-before-inactive',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 7,
+		cooldown: 50,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_TIRED,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'cooldown-before-range',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		cooldown: 50,
+		store: 'full',
+		targetRoomName: 'W12N1',
+		expectedRc: ERR_TIRED,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'cooldown-before-resources',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		cooldown: 50,
+		store: 'empty',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_TIRED,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'inactive-before-range',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 7,
+		store: 'full',
+		targetRoomName: 'W12N1',
+		expectedRc: ERR_RCL_NOT_ENOUGH,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'inactive-before-resources',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 7,
+		store: 'empty',
+		targetRoomName: 'W2N1',
+		expectedRc: ERR_RCL_NOT_ENOUGH,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'range-before-resources',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'empty',
+		targetRoomName: 'W12N1',
+		expectedRc: ERR_NOT_IN_RANGE,
+	},
+];

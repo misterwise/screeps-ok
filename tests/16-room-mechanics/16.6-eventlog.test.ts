@@ -9,12 +9,13 @@ import { describe, test, expect, code,
 	EVENT_HARVEST, EVENT_BUILD, EVENT_REPAIR, EVENT_POWER,
 	EVENT_OBJECT_DESTROYED, EVENT_TRANSFER, EVENT_EXIT,
 	EVENT_ATTACK_CONTROLLER, EVENT_RESERVE_CONTROLLER, EVENT_UPGRADE_CONTROLLER,
-	STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_WALL, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
+	STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_WALL, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART,
 	TOWER_ENERGY_COST, TOWER_POWER_HEAL, TOWER_OPTIMAL_RANGE,
 	RESOURCE_ENERGY, LINK_LOSS_RATIO, CONTROLLER_RESERVE,
 	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST, DISMANTLE_POWER,
 	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
 } from '../../src/index.js';
+import { nukeEventLogCases } from '../../src/matrices/eventlog-nuke.js';
 
 type EventEntry = { event: number; objectId: string; data?: any };
 
@@ -807,6 +808,120 @@ describe('room.getEventLog()', () => {
 		// Wall sits on the impact tile (range 0) → NUKE_DAMAGE[0].
 		expect(nukeAttack.data.damage).toBe(NUKE_DAMAGE[0]);
 	});
+
+	for (const row of nukeEventLogCases) {
+		test(`ROOM-EVENTLOG-026:${row.label} nuke event-log detail matches the matrix`, async ({ shard }) => {
+			shard.requires('nuke');
+
+			if (row.scenario === 'attackIdDirection') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [
+						{ name: 'W1N1', rcl: 1, owner: 'p1' },
+						{ name: 'W2N1', rcl: 1, owner: 'p2' },
+					],
+				});
+				const wallId = await shard.placeStructure('W2N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_WALL,
+					hits: 20_000_000,
+				});
+				await shard.placeNuke('W2N1', {
+					pos: [25, 25],
+					launchRoomName: 'W1N1',
+					timeToLand: 2,
+				});
+				const ids = JSON.parse(await shard.runPlayer('p2', code`
+					const wall = Game.getObjectById(${wallId});
+					const nuke = Game.rooms['W2N1'].find(FIND_NUKES)[0];
+					JSON.stringify({ wall: wall.id, nuke: nuke.id })
+				`) as string) as { wall: string; nuke: string };
+				await shard.tick();
+
+				const events = await shard.runPlayer('p2', code`
+					Game.rooms['W2N1'].getEventLog()
+				`) as EventEntry[];
+				const attack = expectExactlyOne(events,
+					e => e.event === EVENT_ATTACK
+						&& e.objectId === ids.nuke
+						&& e.data?.targetId === ids.wall
+						&& e.data?.attackType === EVENT_ATTACK_TYPE_NUKE);
+				expect(attack.data.targetId).toBe(ids.wall);
+			} else if (row.scenario === 'noCreepAttackEvents') {
+				await shard.createShard({
+					players: ['p1'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+				});
+				const creepId = await shard.placeCreep('W1N1', {
+					pos: [10, 10],
+					owner: 'p1',
+					body: [TOUGH, MOVE],
+				});
+				await shard.placeNuke('W1N1', {
+					pos: [25, 25],
+					launchRoomName: 'W2N1',
+					timeToLand: 2,
+				});
+				const realCreepId = await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).id
+				`) as string;
+				await shard.tick();
+
+				const events = await shard.runPlayer('p1', code`
+					Game.rooms['W1N1'].getEventLog()
+				`) as EventEntry[];
+				const creepAttackEvents = events.filter(e =>
+					e.event === EVENT_ATTACK &&
+					(e.objectId === realCreepId || e.data?.targetId === realCreepId));
+				expect(creepAttackEvents).toEqual([]);
+				expectExactlyOne(events,
+					e => e.event === EVENT_OBJECT_DESTROYED && e.objectId === realCreepId);
+			} else {
+				await shard.createShard({
+					players: ['p1'],
+					rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+				});
+				const remainingDamage = 1000;
+				const rampartId = await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_RAMPART,
+					owner: 'p1',
+					hits: NUKE_DAMAGE[0] - remainingDamage,
+				});
+				const spawnId = await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_SPAWN,
+					owner: 'p1',
+				});
+				await shard.placeNuke('W1N1', {
+					pos: [25, 25],
+					launchRoomName: 'W2N1',
+					timeToLand: 2,
+				});
+				const ids = JSON.parse(await shard.runPlayer('p1', code`
+					const rampart = Game.getObjectById(${rampartId});
+					const spawn = Game.getObjectById(${spawnId});
+					JSON.stringify({ rampart: rampart.id, spawn: spawn.id })
+				`) as string) as { rampart: string; spawn: string };
+				await shard.tick();
+
+				const events = await shard.runPlayer('p1', code`
+					Game.rooms['W1N1'].getEventLog()
+				`) as EventEntry[];
+				const rampartAttackIndex = events.findIndex(e =>
+					e.event === EVENT_ATTACK
+					&& e.data?.attackType === EVENT_ATTACK_TYPE_NUKE
+					&& e.data?.targetId === ids.rampart);
+				const spawnAttackIndex = events.findIndex(e =>
+					e.event === EVENT_ATTACK
+					&& e.data?.attackType === EVENT_ATTACK_TYPE_NUKE
+					&& e.data?.targetId === ids.spawn);
+				expect(rampartAttackIndex).toBeGreaterThanOrEqual(0);
+				expect(spawnAttackIndex).toBeGreaterThanOrEqual(0);
+				expect(rampartAttackIndex).toBeLessThan(spawnAttackIndex);
+			}
+		});
+	}
 
 	test('ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds', async ({ shard }) => {
 		shard.requires('powerCreeps');

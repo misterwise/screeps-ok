@@ -271,6 +271,7 @@ export const MAX_SEGMENT_SIZE: number = C.MAX_SEGMENT_SIZE;
 export const NUKE_RANGE: number = C.NUKE_RANGE;
 export const NUKE_LAND_TIME: number = C.NUKE_LAND_TIME;
 export const NUKE_DAMAGE: Record<number, number> = C.NUKE_DAMAGE;
+export const NUKER_COOLDOWN: number = C.NUKER_COOLDOWN;
 
 // Power constants
 export const PWR_OPERATE_TOWER: number = C.PWR_OPERATE_TOWER;
