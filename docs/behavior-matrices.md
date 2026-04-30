@@ -338,6 +338,81 @@ Each definition should include:
   Coexistence is owned by `TOWER-POWER-002`. The executable case list lives in
   `src/matrices/tower-power.ts`.
 
+### NUKE-LAUNCH-VALIDATION
+
+- `Catalog Entries`
+  `NUKE-LAUNCH-008`
+- `Canonical Source`
+  Official `StructureNuker.launchNuke()` API guard and launch-nuke processor.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `launchNuke()` ownership, argument type, cooldown, active-structure state,
+  target range, and energy/ghodium availability.
+- `Exclusions`
+  Room-status restrictions such as novice and respawn areas until the adapter
+  contract exposes canonical room-status setup.
+- `Verification Notes`
+  This family should include both single-blocker rows and selected precedence
+  rows: cooldown before inactive/range/resources, inactive before
+  range/resources, and range before resource availability.
+
+### NUKER-PROPS
+
+- `Catalog Entries`
+  `NUKER-PROPS-001`
+- `Canonical Source`
+  Official `StructureNuker` property getters and nuker capacity constants.
+- `Dimensions`
+  public property, backing store or capacity value
+- `Applicability`
+  `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity` on
+  `StructureNuker`.
+- `Exclusions`
+  Public data-property shape, which is owned by `SHAPE-STRUCT-001`, and Store
+  API capacity semantics, which are owned by `STORE-RESTRICTED-*`.
+- `Verification Notes`
+  This family is about value aliases only; it should not duplicate store
+  method behavior.
+
+### NUKE-FLIGHT-VISIBILITY
+
+- `Catalog Entries`
+  `NUKE-FLIGHT-004`
+- `Canonical Source`
+  Official nuke room registration and `Room.find(FIND_NUKES)` behavior.
+- `Dimensions`
+  observing player perspective, room queried, expected visibility
+- `Applicability`
+  In-flight nukes before the landing tick.
+- `Exclusions`
+  Object property shape and `timeToLand` countdown, which are owned by
+  `SHAPE-NUKE-001` and `NUKE-FLIGHT-002`.
+- `Verification Notes`
+  Include target-room visibility, launch-room absence, and the no-target-room
+  visibility case. `NUKE-FLIGHT-003` owns the simpler positive visibility
+  behavior.
+
+### NUKE-IMPACT-OBJECTS
+
+- `Catalog Entries`
+  `NUKE-IMPACT-008`
+- `Canonical Source`
+  Official nuke impact processor.
+- `Dimensions`
+  room object type, location relative to blast, expected post-impact state
+- `Applicability`
+  Object-type outcomes not already owned by `NUKE-IMPACT-005`,
+  `NUKE-IMPACT-006`, or `NUKE-IMPACT-007`: power creeps, actively-spawning
+  spawns, controllers, sources, minerals, deposits, flags, and portals.
+- `Exclusions`
+  Ordinary creep death, ephemeral object cleanup, tombstone/ruin suppression,
+  structure damage amounts, and rampart absorption.
+- `Verification Notes`
+  Capability-gated object types should be skipped only when the adapter cannot
+  place or expose that type.
+
 ### COMBAT-RMA
 
 - `Catalog Entries`
@@ -599,6 +674,26 @@ Each definition should include:
 - `Verification Notes`
   The event-type inventory should remain explicit here rather than inline in
   `behaviors.md`.
+
+### ROOM-EVENTLOG-NUKE
+
+- `Catalog Entries`
+  `ROOM-EVENTLOG-026`
+- `Canonical Source`
+  Official nuke impact processor and shared damage/event-log helper.
+- `Dimensions`
+  nuke event scenario, expected event type, object id, target id, and ordering
+- `Applicability`
+  Nuke-generated room events during the landing tick.
+- `Exclusions`
+  Generic nuke attack type and damage amount, owned by `ROOM-EVENTLOG-019`,
+  and generic destroyed-object event shape, owned by `ROOM-EVENTLOG-005` and
+  `ROOM-EVENTLOG-006`.
+- `Verification Notes`
+  This family should cover nuke `EVENT_ATTACK` object/target id direction, the
+  absence of `EVENT_ATTACK` entries for room-wide creep kills, and ordering
+  when rampart absorption produces both rampart and covered-structure damage
+  events.
 
 ### SOURCE-REGEN
 

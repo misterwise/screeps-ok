@@ -58,12 +58,12 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">909</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num">925</div><div class="label">catalog IDs</div></div>
   <div class="stat-card"><div class="num green">891</div><div class="label">tested</div></div>
-  <div class="stat-card"><div class="num yellow">13</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">5</div><div class="label">blocked</div></div>
-  <div class="stat-card"><div class="num">98%</div><div class="label">overall</div></div>
-  <div class="stat-card"><div class="num">99%</div><div class="label">of feasible</div></div>
+  <div class="stat-card"><div class="num yellow">17</div><div class="label">feasible untested</div></div>
+  <div class="stat-card"><div class="num">17</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">96%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">98%</div><div class="label">of feasible</div></div>
 </div>
 
 <h2>Coverage by section</h2>
@@ -112,8 +112,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="7. Combat">7. Combat</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">70/70</span>
+    <div class="bar-fill" style="width:85%;background:var(--yellow)"></div>
+    <span class="bar-text">70/82</span>
   </div>
 </div>
 <div class="bar-row">
@@ -147,8 +147,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="12. Structures — Military">12. Structures — Military</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">16/16</span>
+    <div class="bar-fill" style="width:94%;background:var(--yellow)"></div>
+    <span class="bar-text">16/17</span>
   </div>
 </div>
 <div class="bar-row">
@@ -175,8 +175,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="16. Room Mechanics">16. Room Mechanics</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">52/52</span>
+    <div class="bar-fill" style="width:98%;background:var(--yellow)"></div>
+    <span class="bar-text">52/53</span>
   </div>
 </div>
 <div class="bar-row">
@@ -189,8 +189,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="18. Game Objects">18. Game Objects</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">12/12</span>
+    <div class="bar-fill" style="width:86%;background:var(--yellow)"></div>
+    <span class="bar-text">12/14</span>
   </div>
 </div>
 <div class="bar-row">
@@ -275,7 +275,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
-<tr><td><span class="badge badge-yellow">feasible</span></td><td>13</td><td><code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
+<tr><td><span class="badge badge-yellow">feasible</span></td><td>17</td><td><code>RAMPART-PROTECT-010</code> <code>ROOM-EVENTLOG-026</code> <code>NUKE-FLIGHT-004</code> <code>NUKE-FLIGHT-005</code> <code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: nuke</span></td><td>12</td><td><code>NUKE-LAUNCH-008</code> <code>NUKE-LAUNCH-009</code> <code>NUKE-LAUNCH-010</code> <code>NUKE-LAUNCH-011</code> <code>NUKE-LAUNCH-012</code> <code>NUKE-LAUNCH-013</code> <code>NUKER-PROPS-001</code> <code>NUKE-IMPACT-008</code> <code>NUKE-IMPACT-009</code> <code>NUKE-IMPACT-010</code> <code>NUKE-IMPACT-011</code> <code>NUKE-IMPACT-012</code></td></tr>
 <tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>5</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code> <code>SHARD-PCREEP-001</code> <code>SHARD-PCREEP-002</code></td></tr>
 </tbody>
 </table>
@@ -3318,6 +3319,69 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>nuke</td>
   <td><small>tests/07-combat/7.13-7.14-nukes.test.ts</small></td>
 </tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-008</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-009</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-010</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-011</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-012</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-LAUNCH-013</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKER-PROPS-001</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
 <tr data-status="tested" data-blocker="">
   <td><code>NUKE-IMPACT-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
@@ -3371,6 +3435,51 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td>nuke</td>
   <td><small>tests/07-combat/7.13-7.14-nukes.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-IMPACT-008</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-IMPACT-009</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-IMPACT-010</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-IMPACT-011</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: nuke">
+  <td><code>NUKE-IMPACT-012</code></td>
+  <td><span class="badge badge-muted">capability: nuke</span></td>
+  <td>7. Combat</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>nuke</td>
+  <td><small></small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SAFEMODE-COMBAT-001</code></td>
@@ -4866,6 +4975,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/12-structures-military/12.1-12.2-rampart.test.ts</small></td>
 </tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>RAMPART-PROTECT-010</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>12. Structures — Military</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
 <tr data-status="tested" data-blocker="">
   <td><code>RAMPART-DECAY-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
@@ -5964,6 +6082,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/16-room-mechanics/16.6-eventlog.test.ts</small></td>
 </tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>ROOM-EVENTLOG-026</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>16. Room Mechanics</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
 <tr data-status="tested" data-blocker="">
   <td><code>FLAG-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
@@ -6323,6 +6450,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/18-game-objects/18.3-nuke-flight.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>NUKE-FLIGHT-004</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>18. Game Objects</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="feasible">
+  <td><code>NUKE-FLIGHT-005</code></td>
+  <td><span class="badge badge-yellow">feasible</span></td>
+  <td>18. Game Objects</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>GPL-001</code></td>

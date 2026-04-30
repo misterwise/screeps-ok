@@ -1216,6 +1216,28 @@ Coverage Notes
 - `NUKE-LAUNCH-005` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is insufficient.
 - `NUKE-LAUNCH-006` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
 - `NUKE-LAUNCH-007` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond `NUKE_RANGE`.
+- `NUKE-LAUNCH-008` `matrix` `needs_vanilla_verification`
+  `launchNuke()` failure return codes and precedence match the canonical
+  validation matrix for ownership, argument type, cooldown, active-structure
+  state, range, and resource availability.
+- `NUKE-LAUNCH-009` `behavior` `needs_vanilla_verification`
+  `launchNuke()` can target a valid position in the nuker's own room.
+- `NUKE-LAUNCH-010` `behavior` `needs_vanilla_verification`
+  `launchNuke()` can target a valid in-range room that is not visible to the
+  launching player.
+- `NUKE-LAUNCH-011` `behavior` `needs_vanilla_verification`
+  A successful `launchNuke()` queues an intent; in the same player tick that
+  returns `OK`, the nuker's store and cooldown are unchanged and the target
+  room does not yet expose the new nuke via `FIND_NUKES`.
+- `NUKE-LAUNCH-012` `behavior` `needs_vanilla_verification`
+  On the first player tick after a launch intent has processed,
+  `nuker.cooldown === NUKER_COOLDOWN - 1`.
+- `NUKE-LAUNCH-013` `behavior` `needs_vanilla_verification`
+  After launch, `nuker.cooldown` decreases by exactly `1` on each subsequent
+  tick until it reaches `0`.
+- `NUKER-PROPS-001` `matrix` `needs_vanilla_verification`
+  `StructureNuker` legacy resource properties mirror the store and capacity
+  constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.
 
 ### 7.14 Nukes — Impact `capability: nuke`
 - `NUKE-IMPACT-001` `behavior` `verified_vanilla` Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on launch.
@@ -1224,6 +1246,22 @@ Coverage Notes
 - `NUKE-IMPACT-005` `behavior` `verified_vanilla` Ramparts do not protect creeps from nuke damage; every creep in the room dies.
 - `NUKE-IMPACT-006` `behavior` `verified_vanilla` All dropped resources, construction sites, tombstones, and ruins in the entire room are removed when the nuke lands (room-wide cleanup, not just the blast area).
 - `NUKE-IMPACT-007` `behavior` `verified_vanilla` Nukes do not create tombstones or ruins from what they destroy.
+- `NUKE-IMPACT-008` `matrix` `needs_vanilla_verification`
+  Additional object-type outcomes at nuke impact match the canonical matrix:
+  power creeps, actively-spawning spawns, controllers, sources, minerals,
+  deposits, flags, and portals.
+- `NUKE-IMPACT-009` `behavior` `needs_vanilla_verification`
+  A nuke landing in a room with active controller safe mode ends that safe mode
+  in the landing tick.
+- `NUKE-IMPACT-010` `behavior` `needs_vanilla_verification`
+  Active controller safe mode does not prevent nuke structure damage, room-wide
+  creep kills, or room-wide cleanup.
+- `NUKE-IMPACT-011` `behavior` `needs_vanilla_verification`
+  A nuke landing while the controller's `upgradeBlocked` window is still active
+  does not refresh or extend that existing block window.
+- `NUKE-IMPACT-012` `behavior` `needs_vanilla_verification`
+  Multiple nukes landing in the same room on the same tick apply cumulative
+  damage to structures that survive each prior nuke's damage.
 
 Coverage Notes
 - `NUKE-IMPACT-004` (rampart absorbs nuke damage for structures underneath)
@@ -1881,6 +1919,10 @@ Coverage Notes
 - `RAMPART-PROTECT-009` `behavior` `verified_vanilla`
   The rampart owner's creeps can always move onto the rampart tile regardless
   of the `isPublic` setting.
+- `RAMPART-PROTECT-010` `behavior` `needs_vanilla_verification`
+  When remaining nuke damage passes through a rampart to multiple non-rampart
+  structures on the same tile, each covered structure receives the same
+  remaining damage amount.
 
 Coverage Notes
 - Ranged attack and ranged mass attack damage redirects are owned by
@@ -2437,6 +2479,10 @@ Coverage Notes
   the `EVENT_ATTACK` entry with `attackType === EVENT_ATTACK_TYPE_HIT_BACK`
   precedes the originating `EVENT_ATTACK` entry in `Room.getEventLog()`'s
   array order.
+- `ROOM-EVENTLOG-026` `matrix` `needs_vanilla_verification`
+  Nuke-specific event-log details match the canonical matrix for `EVENT_ATTACK`
+  object/target ids, absence of creep attack events from room-wide nuke kills,
+  and rampart-before-covered-structure ordering.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`
@@ -2580,6 +2626,13 @@ Coverage Notes
   `nuke.timeToLand` decreases by `1` each tick until the landing tick.
 - `NUKE-FLIGHT-003` `behavior` `verified_vanilla`
   An in-flight nuke is visible in the target room before it lands.
+- `NUKE-FLIGHT-004` `matrix` `needs_vanilla_verification`
+  In-flight nuke visibility matches the canonical player-perspective matrix,
+  including target-room visibility, launch-room absence, and no target-room
+  visibility.
+- `NUKE-FLIGHT-005` `behavior` `needs_vanilla_verification`
+  After a nuke lands, the in-flight `Nuke` object is removed from the target
+  room and no longer appears in `FIND_NUKES`.
 
 ---
 
