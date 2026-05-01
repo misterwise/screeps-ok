@@ -630,6 +630,28 @@ Each definition should include:
   This family covers base construction cost only. The executable case list lives
   in `src/matrices/construction-cost.ts`.
 
+### CONSTRUCTION-SITE-OVER-RUIN
+
+- `Catalog Entries`
+  `CONSTRUCTION-SITE-009`
+- `Canonical Source`
+  Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:128-189`)
+  filters on same-type structures and existing construction sites but never
+  inspects ruins.
+- `Dimensions`
+  ruin's destroyed structure type, construction-site structure type
+- `Applicability`
+  Player-buildable structure types as the placed type, structure types that can
+  exist as ruins for the destroyed type
+- `Exclusions`
+  Extractor placement (requires a mineral tile), border/wall placement
+  restrictions, RCL availability, and `MAX_CONSTRUCTION_SITES`. The matrix
+  asserts the ruin alone does not contribute to placement rejection.
+- `Verification Notes`
+  The executable case list lives in `src/matrices/construction-site-over-ruin.ts`
+  and covers a representative `{ spawn, extension, tower, container, road }`
+  cross-product (25 cases).
+
 ### ROOM-FIND
 
 - `Catalog Entries`

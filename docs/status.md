@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1429%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1160%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1453%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1180%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-23-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1429](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-01 03:39 UTC |
-| 🟡 | **xxscreeps** | [1160](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-01 03:36 UTC |
+| 🟢 | **vanilla** | [1453](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-01 03:55 UTC |
+| 🟡 | **xxscreeps** | [1180](#xxscreeps-passing-tests) | [23](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-01 03:52 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 9 expected-failure classifications against vanilla's canonical behavior, covering 18 tests. That includes 7 open parity gaps covering 15 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 10 expected-failure classifications against vanilla's canonical behavior, covering 23 tests. That includes 8 open parity gaps covering 20 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -40,6 +40,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
+| `construction-site-blocked-by-same-type-ruin` | `room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly. | Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there. | [5](#xxscreeps-gap-construction-site-blocked-by-same-type-ruin) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -100,6 +101,17 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-construction-site-blocked-by-same-type-ruin">
+<summary><code>construction-site-blocked-by-same-type-ruin</code> — 5 tests</summary>
+
+- `room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile`
+- `room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-extension] a ruin does not block placing a construction site on its tile`
+- `room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-tower] a ruin does not block placing a construction site on its tile`
+- `room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-container] a ruin does not block placing a construction site on its tile`
+- `room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -154,7 +166,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1429 tests across 124 files</summary>
+<summary>1453 tests across 124 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -601,7 +613,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (11)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (35)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -613,7 +625,31 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
-- room.createConstructionSite() CONSTRUCTION-SITE-009 a ruin does not block placing a same-type construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
 
@@ -2435,7 +2471,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1160 tests across 102 files</summary>
+<summary>1180 tests across 102 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2854,7 +2890,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (10)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (30)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -2866,6 +2902,26 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
 

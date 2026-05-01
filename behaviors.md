@@ -793,10 +793,10 @@ Coverage Notes
   caches `staticTerrainData` at runner startup so player-side wall checks
   ignore custom DB terrain (driver/runtime/make.js:18-51), and xxscreeps
   has terrain capability false.
-- `CONSTRUCTION-SITE-009` `behavior` `verified_vanilla`
-  A ruin does not block construction-site placement at its tile, even
-  when the ruin's destroyed structure has the same `structureType` as
-  the structure being placed. Engine `utils.checkConstructionSite`
+- `CONSTRUCTION-SITE-009` `matrix` `verified_vanilla`
+  A ruin does not block construction-site placement at its tile, for
+  any pairing of the ruin's destroyed `structureType` and the placed
+  `structureType`. Engine `utils.checkConstructionSite`
   (utils.js:172-184) filters on same-type structures and existing
   construction sites but never inspects ruins, which are walkable.
 

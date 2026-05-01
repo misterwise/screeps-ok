@@ -83,6 +83,19 @@ function summarizeReport(report, parity) {
 	const genuineFailures = [];
 	const skippedTests = [];
 
+	// First pass: per gap-tagged catalog ID, classify the entire ID by
+	// whether *any* of its cases failed. Mirrors parity-reporter's logic so
+	// matrix entries (one ID, many cases) don't generate false regression
+	// traps when their non-bug cases pass.
+	const idHasFailure = new Map();
+	for (const a of all) {
+		if (a.status !== 'passed' && a.status !== 'failed') continue;
+		const catalogId = extractCatalogId(a.fullName);
+		if (!catalogId || !idToGap.has(catalogId)) continue;
+		if (a.status === 'failed') idHasFailure.set(catalogId, true);
+		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
+	}
+
 	for (const a of all) {
 		if (a.status === 'skipped' || a.status === 'pending' || a.status === 'todo') {
 			skippedTests.push(a);
@@ -90,10 +103,17 @@ function summarizeReport(report, parity) {
 		}
 		const catalogId = extractCatalogId(a.fullName);
 		const gapId = catalogId ? idToGap.get(catalogId) : null;
-		if (a.status === 'failed' && gapId) {
-			expectedFailure.push(a);
-		} else if (a.status === 'passed' && gapId) {
-			unexpectedPasses.push(a);
+		if (gapId) {
+			// Gap is "still active" if *any* case for this catalog ID failed.
+			const gapActive = idHasFailure.get(catalogId) === true;
+			if (gapActive) {
+				if (a.status === 'failed') expectedFailure.push(a);
+				else genuinePasses.push(a);
+			} else if (a.status === 'passed') {
+				unexpectedPasses.push(a);
+			} else {
+				genuineFailures.push(a);
+			}
 		} else if (a.status === 'passed') {
 			genuinePasses.push(a);
 		} else if (a.status === 'failed') {

@@ -5,6 +5,7 @@ import { describe, test, expect, code, body,
 	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, TERRAIN_WALL,
 	MAX_CONSTRUCTION_SITES,
 } from '../../src/index.js';
+import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
 import {
 	TERRAIN_FIXTURE_ROOM,
 	TERRAIN_FIXTURE_SPEC,
@@ -239,30 +240,33 @@ describe('room.createConstructionSite()', () => {
 		expect(result.extension).toBe(ERR_INVALID_TARGET);
 	});
 
-	test('CONSTRUCTION-SITE-009 a ruin does not block placing a same-type construction site on its tile', async ({ shard }) => {
-		// Engine utils.js:172-184 — checkConstructionSite filters on same-type
-		// structures and existing constructionSites, but never on ruins. Ruins
-		// are walkable, and a same-type ruin must not block re-placement.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		await shard.placeRuin('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_EXTENSION,
-			ticksToDecay: 500,
-		});
-		await shard.tick();
+	for (const { label, ruinType, placedType } of constructionSiteOverRuinCases) {
+		test(`CONSTRUCTION-SITE-009 [${label}] a ruin does not block placing a construction site on its tile`, async ({ shard }) => {
+			// Engine utils.js:172-184 — checkConstructionSite filters on
+			// same-type structures and existing constructionSites but never on
+			// ruins. The matrix asserts the ruin alone never contributes to
+			// placement rejection, regardless of (ruinType, placedType).
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			});
+			await shard.placeRuin('W1N1', {
+				pos: [25, 25],
+				structureType: ruinType,
+				ticksToDecay: 500,
+			});
+			await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createConstructionSite(25, 25, STRUCTURE_EXTENSION)
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
+			const rc = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].createConstructionSite(25, 25, ${placedType})
+			`);
+			expect(rc).toBe(OK);
+			await shard.tick();
 
-		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-		const site = sites.find(s => s.pos.x === 25 && s.pos.y === 25);
-		expect(site).toBeDefined();
-		expect(site!.structureType).toBe(STRUCTURE_EXTENSION);
-	});
+			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
+			const site = sites.find(s => s.pos.x === 25 && s.pos.y === 25);
+			expect(site).toBeDefined();
+			expect(site!.structureType).toBe(placedType);
+		});
+	}
 });

@@ -48,6 +48,11 @@
 			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",
 			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
 			"tests": ["UNDOC-MEMJSON-005"]
+		},
+		"construction-site-blocked-by-same-type-ruin": {
+			"actual": "`room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly.",
+			"expected": "Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there.",
+			"tests": ["CONSTRUCTION-SITE-009"]
 		}
 	}
 }
