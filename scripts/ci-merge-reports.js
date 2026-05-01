@@ -97,15 +97,44 @@ function summarize(report, parity) {
 		for (const id of gap.tests ?? []) idToGap.set(id, gapId);
 	}
 	let passed = 0, expectedFail = 0, unexpectedFail = 0, unexpectedPass = 0, skipped = 0;
+
+	const all = [];
 	for (const file of report.testResults ?? []) {
 		for (const a of file.assertionResults ?? []) {
-			if (['skipped', 'pending', 'todo'].includes(a.status)) { skipped++; continue; }
-			const catalogId = extractCatalogId(a.fullName);
-			const gap = catalogId ? idToGap.get(catalogId) : null;
-			if (a.status === 'failed' && gap) expectedFail++;
-			else if (a.status === 'passed' && gap) unexpectedPass++;
-			else if (a.status === 'passed') passed++;
-			else if (a.status === 'failed') unexpectedFail++;
+			all.push(a);
+		}
+	}
+
+	// Matrix tests can have one catalog ID with both passing and failing cases.
+	// Classify the ID as an active gap if any case failed; only all-pass IDs are
+	// unexpected passes.
+	const idHasFailure = new Map();
+	for (const a of all) {
+		if (a.status !== 'passed' && a.status !== 'failed') continue;
+		const catalogId = extractCatalogId(a.fullName);
+		if (!catalogId || !idToGap.has(catalogId)) continue;
+		if (a.status === 'failed') idHasFailure.set(catalogId, true);
+		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
+	}
+
+	for (const a of all) {
+		if (['skipped', 'pending', 'todo'].includes(a.status)) { skipped++; continue; }
+		const catalogId = extractCatalogId(a.fullName);
+		const gap = catalogId ? idToGap.get(catalogId) : null;
+		if (gap) {
+			const gapActive = idHasFailure.get(catalogId) === true;
+			if (gapActive) {
+				if (a.status === 'failed') expectedFail++;
+				else if (a.status === 'passed') passed++;
+			} else if (a.status === 'passed') {
+				unexpectedPass++;
+			} else if (a.status === 'failed') {
+				unexpectedFail++;
+			}
+		} else if (a.status === 'passed') {
+			passed++;
+		} else if (a.status === 'failed') {
+			unexpectedFail++;
 		}
 	}
 	return { passed, expectedFail, unexpectedFail, unexpectedPass, skipped };
