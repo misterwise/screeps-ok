@@ -174,6 +174,50 @@ export interface PowerSpawnSnapshot extends StructureSnapshotBase {
 	storeCapacity: number;
 }
 
+export interface ObserverSnapshot extends StructureSnapshotBase {
+	structureType: 'observer';
+	hits: number;
+	hitsMax: number;
+	cooldown: number;
+}
+
+export interface KeeperLairSnapshot extends StructureSnapshotBase {
+	structureType: 'keeperLair';
+	ticksToSpawn: number | null;
+}
+
+export interface InvaderCoreSnapshot extends StructureSnapshotBase {
+	structureType: 'invaderCore';
+	level: number;
+	spawning: {
+		name: string;
+		needTime: number;
+		remainingTime: number;
+	} | null;
+	ticksToDeploy: number | null;
+	effects: Record<string, unknown>[];
+	templateName?: unknown;
+	strongholdId?: unknown;
+}
+
+export interface PowerBankSnapshot extends StructureSnapshotBase {
+	structureType: 'powerBank';
+	hits: number;
+	hitsMax: number;
+	power: number;
+	ticksToDecay: number | null;
+}
+
+export type PortalDestinationSnapshot =
+	| PosSnapshot
+	| { shard: string; room: string };
+
+export interface PortalSnapshot extends StructureSnapshotBase {
+	structureType: 'portal';
+	destination: PortalDestinationSnapshot;
+	ticksToDecay: number | null;
+}
+
 export interface WallSnapshot extends StructureSnapshotBase {
 	structureType: 'constructedWall';
 	hits: number;
@@ -196,6 +240,11 @@ export type StructureSnapshot =
 	| RoadSnapshot
 	| NukerSnapshot
 	| PowerSpawnSnapshot
+	| ObserverSnapshot
+	| KeeperLairSnapshot
+	| InvaderCoreSnapshot
+	| PowerBankSnapshot
+	| PortalSnapshot
 	| WallSnapshot
 	| StructureSnapshotBase;
 
@@ -229,6 +278,16 @@ export interface MineralSnapshot {
 	mineralType: string;
 	mineralAmount: number;
 	ticksToRegeneration: number;
+}
+
+export interface DepositSnapshot {
+	kind: 'deposit';
+	id: string;
+	pos: PosSnapshot;
+	depositType: string;
+	lastCooldown: number;
+	cooldown: number;
+	ticksToDecay: number | null;
 }
 
 // ── Decay objects ────────────────────────────────────────────
@@ -269,6 +328,7 @@ export type ObjectSnapshot =
 	| SiteSnapshot
 	| SourceSnapshot
 	| MineralSnapshot
+	| DepositSnapshot
 	| TombstoneSnapshot
 	| RuinSnapshot
 	| DroppedResourceSnapshot;

@@ -6,12 +6,14 @@ import { RunPlayerError } from './errors.js';
 import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
-	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
+	DepositSnapshot, TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	ControllerSnapshot, SpawnSnapshot, LabSnapshot, TowerSnapshot,
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
-	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot,
+	PortalSnapshot, WallSnapshot,
 } from './snapshots/common.js';
 
 type AdapterFactory = { createAdapter(): Promise<ScreepsOkAdapter> };
@@ -42,6 +44,7 @@ type KindMap = {
 	site: SiteSnapshot;
 	source: SourceSnapshot;
 	mineral: MineralSnapshot;
+	deposit: DepositSnapshot;
 	tombstone: TombstoneSnapshot;
 	ruin: RuinSnapshot;
 	resource: DroppedResourceSnapshot;
@@ -63,6 +66,11 @@ type StructureTypeMap = {
 	road: RoadSnapshot;
 	nuker: NukerSnapshot;
 	powerSpawn: PowerSpawnSnapshot;
+	observer: ObserverSnapshot;
+	keeperLair: KeeperLairSnapshot;
+	invaderCore: InvaderCoreSnapshot;
+	powerBank: PowerBankSnapshot;
+	portal: PortalSnapshot;
 	constructedWall: WallSnapshot;
 };
 

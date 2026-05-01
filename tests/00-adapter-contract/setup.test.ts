@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -61,6 +61,20 @@ describe('adapter contract: setup', () => {
 			expect((result as any).my).toBe(true);
 		});
 
+		test('owned controller snapshot exposes default downgrade timer and progressTotal', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+
+			const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+			const controller = structures.find(s => s.structureType === STRUCTURE_CONTROLLER);
+			expect(controller).toMatchObject({
+				ticksToDowngrade: CONTROLLER_DOWNGRADE[1],
+				progressTotal: CONTROLLER_LEVELS[1],
+			});
+		});
+
 		test('default room layout is canonical and sparse', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],
@@ -81,6 +95,15 @@ describe('adapter contract: setup', () => {
 			});
 			expect(sources).toEqual([]);
 			expect(minerals).toEqual([]);
+		});
+
+		test('getControllerPos returns null for rooms without a controller', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1' }],
+			});
+
+			await expect(shard.getControllerPos('W9N9')).resolves.toBeNull();
 		});
 
 		test('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
@@ -342,6 +365,24 @@ describe('adapter contract: setup', () => {
 			expect(placed.length).toBe(1);
 		});
 
+		test('srcKeeper NPC owner handle resolves without ShardSpec.players entry', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1' }],
+			});
+			await shard.placeCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'srcKeeper',
+				body: [MOVE],
+				name: 'SourceKeeperProbe',
+			});
+			await shard.tick();
+
+			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
+			const creep = creeps.find(c => c.name === 'SourceKeeperProbe');
+			expect(creep).toMatchObject({ owner: 'srcKeeper' });
+		});
+
 		test('spec.boosts tags the target body parts with the boost mineral', async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1');
@@ -504,6 +545,55 @@ describe('adapter contract: setup', () => {
 				expect((obj as { ticksToDecay: number }).ticksToDecay).toBeGreaterThanOrEqual(3);
 			});
 		}
+
+		const defaultDecayCases = [
+			{ label: 'owned room container', room: 'W1N1', type: STRUCTURE_CONTAINER, pos: [25, 25] as [number, number], expected: CONTAINER_DECAY_TIME_OWNED },
+			{ label: 'unowned room container', room: 'W2N1', type: STRUCTURE_CONTAINER, pos: [26, 25] as [number, number], expected: CONTAINER_DECAY_TIME },
+			{ label: 'road', room: 'W1N1', type: STRUCTURE_ROAD, pos: [27, 25] as [number, number], expected: ROAD_DECAY_TIME },
+			{ label: 'rampart', room: 'W1N1', type: STRUCTURE_RAMPART, pos: [28, 25] as [number, number], owner: 'p1', expected: RAMPART_DECAY_TIME },
+		];
+		for (const { label, room, type, pos, owner, expected } of defaultDecayCases) {
+			test(`default ticksToDecay is canonical for ${label}`, async ({ shard }) => {
+				await shard.createShard({
+					players: ['p1'],
+					rooms: [
+						{ name: 'W1N1', rcl: 1, owner: 'p1' },
+						{ name: 'W2N1' },
+					],
+				});
+
+				const id = await shard.placeStructure(room, {
+					pos,
+					structureType: type,
+					...(owner ? { owner } : {}),
+				});
+
+				const obj = await shard.expectStructure(id, type);
+				expect(obj).toMatchObject({ ticksToDecay: expected });
+			});
+		}
+
+		test('default decay schedule does not immediately destroy low-hit placements', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const specs = [
+				{ type: STRUCTURE_CONTAINER, pos: [25, 25] as [number, number] },
+				{ type: STRUCTURE_ROAD, pos: [26, 25] as [number, number] },
+				{ type: STRUCTURE_RAMPART, pos: [27, 25] as [number, number], owner: 'p1' },
+			];
+			const ids = await Promise.all(specs.map(spec => shard.placeStructure('W1N1', {
+				pos: spec.pos,
+				structureType: spec.type,
+				hits: 1,
+				...(spec.owner ? { owner: spec.owner } : {}),
+			})));
+
+			await shard.tick();
+
+			for (let i = 0; i < ids.length; i++) {
+				const obj = await shard.expectStructure(ids[i], specs[i].type);
+				expect(obj).toMatchObject({ hits: 1 });
+			}
+		});
 	});
 
 	// Per-player room visibility is a canonical Game API invariant, not an
@@ -639,6 +729,24 @@ describe('adapter contract: setup', () => {
 			expect((result as any).x).toBe(25);
 			expect((result as any).y).toBe(25);
 		});
+
+		test('rejects flag names containing engine data delimiters', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			for (const name of ['Bad|Flag', 'Bad~Flag']) {
+				let err: Error | null = null;
+				try {
+					await shard.placeFlag('W1N1', {
+						pos: [25, 25],
+						owner: 'p1',
+						name,
+					});
+				} catch (e) {
+					err = e as Error;
+				}
+				expect(err).not.toBeNull();
+				expect(err!.message).toMatch(/[|~]/);
+			}
+		});
 	});
 
 	describe('placeDroppedResource', () => {
@@ -688,6 +796,34 @@ describe('adapter contract: setup', () => {
 			expect(result!.y).toBe(25);
 			expect(result!.hasPower).toBe(true);
 			expect(result!.powerLevel).toBe(1);
+		});
+
+		test('default power creep names are deterministic and collision-free', async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const originalNow = Date.now;
+			Date.now = () => 1234567890;
+			try {
+				await shard.placePowerCreep('W1N1', {
+					pos: [25, 25],
+					owner: 'p1',
+					powers: {},
+				});
+				await shard.placePowerCreep('W1N1', {
+					pos: [26, 25],
+					owner: 'p1',
+					powers: {},
+				});
+			} finally {
+				Date.now = originalNow;
+			}
+			await shard.tick();
+
+			const names = await shard.runPlayer('p1', code`
+				Object.keys(Game.powerCreeps).sort()
+			`) as string[];
+			expect(names).toHaveLength(2);
+			expect(new Set(names).size).toBe(2);
 		});
 	});
 
@@ -847,6 +983,32 @@ describe('adapter contract: setup', () => {
 			}
 			expect(err).not.toBeNull();
 			expect(err!.message).toMatch(/owner/i);
+		});
+
+		test('placeStructure rejects public object-only types with a placeObject hint', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const objectOnlyTypes = [
+				STRUCTURE_INVADER_CORE,
+				STRUCTURE_KEEPER_LAIR,
+				STRUCTURE_POWER_BANK,
+				'portal',
+				'deposit',
+			];
+			const accepted: string[] = [];
+			for (const structureType of objectOnlyTypes) {
+				let err: Error | null = null;
+				try {
+					await shard.placeStructure('W1N1', {
+						pos: [25, 25],
+						structureType,
+					});
+				} catch (e) {
+					err = e as Error;
+				}
+				if (!err) accepted.push(structureType);
+				else expect(err.message).toMatch(/placeObject/);
+			}
+			expect(accepted).toEqual([]);
 		});
 	});
 

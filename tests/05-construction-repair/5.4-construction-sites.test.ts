@@ -238,4 +238,31 @@ describe('room.createConstructionSite()', () => {
 		expect(result.road).toBe(OK);
 		expect(result.extension).toBe(ERR_INVALID_TARGET);
 	});
+
+	test('CONSTRUCTION-SITE-009 a ruin does not block placing a same-type construction site on its tile', async ({ shard }) => {
+		// Engine utils.js:172-184 — checkConstructionSite filters on same-type
+		// structures and existing constructionSites, but never on ruins. Ruins
+		// are walkable, and a same-type ruin must not block re-placement.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		await shard.placeRuin('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_EXTENSION,
+			ticksToDecay: 500,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].createConstructionSite(25, 25, STRUCTURE_EXTENSION)
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
+		const site = sites.find(s => s.pos.x === 25 && s.pos.y === 25);
+		expect(site).toBeDefined();
+		expect(site!.structureType).toBe(STRUCTURE_EXTENSION);
+	});
 });

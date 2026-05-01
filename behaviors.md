@@ -793,6 +793,12 @@ Coverage Notes
   caches `staticTerrainData` at runner startup so player-side wall checks
   ignore custom DB terrain (driver/runtime/make.js:18-51), and xxscreeps
   has terrain capability false.
+- `CONSTRUCTION-SITE-009` `behavior` `verified_vanilla`
+  A ruin does not block construction-site placement at its tile, even
+  when the ruin's destroyed structure has the same `structureType` as
+  the structure being placed. Engine `utils.checkConstructionSite`
+  (utils.js:172-184) filters on same-type structures and existing
+  construction sites but never inspects ruins, which are walkable.
 
 ---
 
@@ -2597,6 +2603,9 @@ Coverage Notes
   remaining TTL fraction, and each part's `BODYPART_COST`.
 - `TOMBSTONE-004` `behavior` `verified_vanilla`
   A tombstone is removed from the room when its `ticksToDecay` reaches `0`.
+- `TOMBSTONE-005` `behavior` `verified_vanilla`
+  A tombstone's `ticksToDecay` strictly decreases by one each subsequent
+  tick until removal.
 
 Coverage Notes
 - Power creep tombstone decay dropped: requires `capability: powerCreeps`,
@@ -2617,6 +2626,9 @@ Coverage Notes
   same tick.
 - `RUIN-005` `behavior` `verified_vanilla`
   A ruin is removed from the room when its `ticksToDecay` reaches `0`.
+- `RUIN-006` `behavior` `verified_vanilla`
+  A ruin's `ticksToDecay` strictly decreases by one each subsequent tick
+  until removal.
 
 ### 18.3 Nuke (In-Flight)
 - `NUKE-FLIGHT-001` `behavior` `verified_vanilla`

@@ -86,11 +86,9 @@ describe('Tombstone', () => {
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
 		expect(tomb).toBeDefined();
-		// Initial decay = bodyParts.length * TOMBSTONE_DECAY_PER_PART
-		// We observe 1-2 ticks after creation, so allow for decrement.
+		const gameTime = await shard.getGameTime();
 		const expectedInitial = bodyParts.length * TOMBSTONE_DECAY_PER_PART;
-		expect(tomb!.ticksToDecay).toBeGreaterThanOrEqual(expectedInitial - 2);
-		expect(tomb!.ticksToDecay).toBeLessThanOrEqual(expectedInitial);
+		expect(tomb!.ticksToDecay).toBe(expectedInitial - (gameTime - tomb!.deathTime));
 	});
 
 	test('TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death', async ({ shard }) => {
@@ -161,5 +159,24 @@ describe('Tombstone', () => {
 
 		const gone = await shard.getObject(tombId);
 		expect(gone).toBeNull();
+	});
+
+	test('TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const tombId = await shard.placeTombstone('W1N1', {
+			pos: [25, 25],
+			creepName: 'fading',
+			ticksToDecay: 50,
+		});
+		await shard.tick();
+
+		const t0 = await shard.expectObject(tombId, 'tombstone');
+		await shard.tick();
+		const t1 = await shard.expectObject(tombId, 'tombstone');
+		await shard.tick();
+		const t2 = await shard.expectObject(tombId, 'tombstone');
+
+		expect(t1.ticksToDecay).toBeLessThan(t0.ticksToDecay);
+		expect(t2.ticksToDecay).toBeLessThan(t1.ticksToDecay);
 	});
 });

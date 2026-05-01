@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1408%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1144%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1429%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1160%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-18-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1408](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-04-30 03:15 UTC |
-| 🟡 | **xxscreeps** | [1144](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [249](#xxscreeps-skipped-tests) | 2026-04-30 03:12 UTC |
+| 🟢 | **vanilla** | [1429](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-01 03:39 UTC |
+| 🟡 | **xxscreeps** | [1160](#xxscreeps-passing-tests) | [18](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-01 03:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -154,7 +154,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1408 tests across 124 files</summary>
+<summary>1429 tests across 124 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -225,7 +225,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (18)
+**`tests/00-adapter-contract/inspection.test.ts`** (24)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -242,17 +242,25 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection findInRoom returns empty array for empty room type
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
+- adapter contract: inspection special object snapshots observer snapshot includes cooldown
+- adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
+- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
+- adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
+- adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (50)
+**`tests/00-adapter-contract/setup.test.ts`** (61)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
 - adapter contract: setup createShard sets room ownership and RCL
+- adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
+- adapter contract: setup createShard getControllerPos returns null for rooms without a controller
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
@@ -265,6 +273,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeCreep creep ticksToLive is honored
 - adapter contract: setup placeCreep creep is visible to bot code via Game.getObjectById
 - adapter contract: setup placeCreep creep appears in findInRoom
+- adapter contract: setup placeCreep srcKeeper NPC owner handle resolves without ShardSpec.players entry
 - adapter contract: setup placeCreep spec.boosts tags the target body parts with the boost mineral
 - adapter contract: setup placeCreep spec.boosts on a CARRY part extends the creep storeCapacity
 - adapter contract: setup placeCreep spec.boosts keys target specific body indexes (no shift or reorder)
@@ -275,6 +284,11 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure ticksToDecay override is honored for container
 - adapter contract: setup placeStructure ticksToDecay override is honored for road
 - adapter contract: setup placeStructure ticksToDecay override is honored for rampart
+- adapter contract: setup placeStructure default ticksToDecay is canonical for owned room container
+- adapter contract: setup placeStructure default ticksToDecay is canonical for unowned room container
+- adapter contract: setup placeStructure default ticksToDecay is canonical for road
+- adapter contract: setup placeStructure default ticksToDecay is canonical for rampart
+- adapter contract: setup placeStructure default decay schedule does not immediately destroy low-hit placements
 - adapter contract: setup placeSite places a construction site
 - adapter contract: setup placeSource places a source with default energy
 - adapter contract: setup placeSource places a depleted source
@@ -282,8 +296,10 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
 - adapter contract: setup placeFlag places a flag retrievable by name in player code
+- adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
@@ -297,6 +313,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
+- adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (32)
@@ -584,7 +601,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (10)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (11)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -596,6 +613,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 a ruin does not block placing a same-type construction site on its tile
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
 
@@ -901,7 +919,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (19)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (20)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -918,6 +936,7 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
+- StructureSpawn SPAWN-TIMING-005 spawn snapshot exposes public spawning remainingTime
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
@@ -1531,20 +1550,22 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (4)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (5)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
+- Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (5)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (6)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
 - Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
 - Ruin RUIN-003 ruin resources can be withdrawn
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
+- Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 
 **`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
 
@@ -1940,15 +1961,15 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 249 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 253 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [102](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [104](#xxscreeps-skip-capability-powercreeps) |
 | capability | `nuke` | Nukes | [71](#xxscreeps-skip-capability-nuke) |
 | capability | `market` | Market and terminal | [42](#xxscreeps-skip-capability-market) |
-| capability | `deposit` | Deposits (highway) | [17](#xxscreeps-skip-capability-deposit) |
-| capability | `invaderCore` | Invader core structures | [10](#xxscreeps-skip-capability-invadercore) |
+| capability | `deposit` | Deposits (highway) | [18](#xxscreeps-skip-capability-deposit) |
+| capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -1956,11 +1977,16 @@ xxscreeps has 249 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 102 tests across 23 files</summary>
+<summary><code>capability:powerCreeps</code> — 104 tests across 24 files</summary>
 
-**`tests/00-adapter-contract/setup.test.ts`** (2)
+**`tests/00-adapter-contract/inspection.test.ts`** (1)
+
+- adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
+
+**`tests/00-adapter-contract/setup.test.ts`** (3)
 
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
 
 **`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
@@ -2312,7 +2338,11 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-deposit">
-<summary><code>capability:deposit</code> — 17 tests across 3 files</summary>
+<summary><code>capability:deposit</code> — 18 tests across 4 files</summary>
+
+**`tests/00-adapter-contract/inspection.test.ts`** (1)
+
+- adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 
 **`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (10)
 
@@ -2343,7 +2373,11 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-invadercore">
-<summary><code>capability:invaderCore</code> — 10 tests across 3 files</summary>
+<summary><code>capability:invaderCore</code> — 11 tests across 4 files</summary>
+
+**`tests/00-adapter-contract/inspection.test.ts`** (1)
+
+- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
 
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
 
@@ -2401,7 +2435,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1144 tests across 102 files</summary>
+<summary>1160 tests across 102 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2472,7 +2506,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (18)
+**`tests/00-adapter-contract/inspection.test.ts`** (21)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -2489,17 +2523,22 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection findInRoom returns empty array for empty room type
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection special object snapshots observer snapshot includes cooldown
+- adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
+- adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (46)
+**`tests/00-adapter-contract/setup.test.ts`** (56)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
 - adapter contract: setup createShard sets room ownership and RCL
+- adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
+- adapter contract: setup createShard getControllerPos returns null for rooms without a controller
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
@@ -2512,6 +2551,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeCreep creep ticksToLive is honored
 - adapter contract: setup placeCreep creep is visible to bot code via Game.getObjectById
 - adapter contract: setup placeCreep creep appears in findInRoom
+- adapter contract: setup placeCreep srcKeeper NPC owner handle resolves without ShardSpec.players entry
 - adapter contract: setup placeCreep spec.boosts tags the target body parts with the boost mineral
 - adapter contract: setup placeCreep spec.boosts on a CARRY part extends the creep storeCapacity
 - adapter contract: setup placeCreep spec.boosts keys target specific body indexes (no shift or reorder)
@@ -2522,6 +2562,11 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure ticksToDecay override is honored for container
 - adapter contract: setup placeStructure ticksToDecay override is honored for road
 - adapter contract: setup placeStructure ticksToDecay override is honored for rampart
+- adapter contract: setup placeStructure default ticksToDecay is canonical for owned room container
+- adapter contract: setup placeStructure default ticksToDecay is canonical for unowned room container
+- adapter contract: setup placeStructure default ticksToDecay is canonical for road
+- adapter contract: setup placeStructure default ticksToDecay is canonical for rampart
+- adapter contract: setup placeStructure default decay schedule does not immediately destroy low-hit placements
 - adapter contract: setup placeSite places a construction site
 - adapter contract: setup placeSource places a source with default energy
 - adapter contract: setup placeSource places a depleted source
@@ -2529,6 +2574,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeTombstone places a tombstone with creepName, store, and decay
 - adapter contract: setup placeRuin places a ruin with structureType, store, and decay
 - adapter contract: setup placeFlag places a flag retrievable by name in player code
+- adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
@@ -2540,6 +2586,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
+- adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (32)
@@ -3065,7 +3112,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (19)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (20)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -3082,6 +3129,7 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
+- StructureSpawn SPAWN-TIMING-005 spawn snapshot exposes public spawning remainingTime
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
@@ -3583,20 +3631,22 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
 - mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (4)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (5)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
+- Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (5)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (6)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
 - Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
 - Ruin RUIN-003 ruin resources can be withdrawn
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
+- Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 
 **`tests/21-map/21.1-room-queries.test.ts`** (4)
 

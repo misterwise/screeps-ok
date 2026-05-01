@@ -1,13 +1,13 @@
 import type { PlayerCode } from './code.js';
 import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot, SiteSnapshot,
-	SourceSnapshot, MineralSnapshot, TombstoneSnapshot, RuinSnapshot,
+	SourceSnapshot, MineralSnapshot, DepositSnapshot, TombstoneSnapshot, RuinSnapshot,
 	DroppedResourceSnapshot,
 } from './snapshots/common.js';
 import type { SupportedFindConstant } from './find.js';
 import {
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
-	FIND_MINERALS, FIND_TOMBSTONES, FIND_RUINS, FIND_DROPPED_RESOURCES,
+	FIND_MINERALS, FIND_TOMBSTONES, FIND_DEPOSITS, FIND_RUINS, FIND_DROPPED_RESOURCES,
 } from './constants.js';
 
 // ── Setup types ──────────────────────────────────────────────
@@ -279,6 +279,7 @@ export interface ScreepsOkAdapter {
 	findInRoom(room: string, type: typeof FIND_SOURCES): Promise<SourceSnapshot[]>;
 	findInRoom(room: string, type: typeof FIND_MINERALS): Promise<MineralSnapshot[]>;
 	findInRoom(room: string, type: typeof FIND_TOMBSTONES): Promise<TombstoneSnapshot[]>;
+	findInRoom(room: string, type: typeof FIND_DEPOSITS): Promise<DepositSnapshot[]>;
 	findInRoom(room: string, type: typeof FIND_RUINS): Promise<RuinSnapshot[]>;
 	findInRoom(room: string, type: typeof FIND_DROPPED_RESOURCES): Promise<DroppedResourceSnapshot[]>;
 	findInRoom(room: string, type: SupportedFindConstant): Promise<ObjectSnapshot[]>;

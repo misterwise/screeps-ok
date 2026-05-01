@@ -358,6 +358,26 @@ describe('StructureSpawn', () => {
 		expect(spawn.spawning!.needTime).toBe(CREEP_SPAWN_TIME * 3);
 	});
 
+	test('SPAWN-TIMING-005 spawn snapshot exposes public spawning remainingTime', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SnapshotRemaining')
+		`);
+		expect(rc).toBe(OK);
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		expect(spawn.spawning).toEqual({
+			name: 'SnapshotRemaining',
+			needTime: CREEP_SPAWN_TIME,
+			remainingTime: CREEP_SPAWN_TIME - 1,
+		});
+	});
+
 	test('SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {

@@ -2,7 +2,10 @@ import {
 	describe, test, expect, code, WORK, CARRY, MOVE,
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
 	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
-	STRUCTURE_LAB, OK, REACTION_TIME,
+	STRUCTURE_LAB, STRUCTURE_OBSERVER, STRUCTURE_KEEPER_LAIR,
+	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
+	FIND_DEPOSITS, OK, REACTION_TIME,
+	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
 } from '../../src/index.js';
 
 describe('adapter contract: inspection', () => {
@@ -249,6 +252,138 @@ describe('adapter contract: inspection', () => {
 			expect(lab.mineralType).toBe('OH');
 		});
 
+	});
+
+	describe('special object snapshots', () => {
+		test('deposit snapshot round-trips placement fields and findInRoom filters deposits', async ({ shard }) => {
+			shard.requires('deposit');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', 'deposit', {
+				pos: [20, 20],
+				depositType: RESOURCE_METAL,
+				lastCooldown: 7,
+				cooldownTime: 25,
+				decayTime: 100,
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('deposit');
+			expect(obj.id).toBe(id);
+			expect(obj.depositType).toBe(RESOURCE_METAL);
+			expect(obj.lastCooldown).toBe(7);
+			expect(obj.cooldown).toBeGreaterThan(0);
+			expect(obj.ticksToDecay).toBeGreaterThan(0);
+
+			const deposits = await shard.findInRoom('W1N1', FIND_DEPOSITS) as any[];
+			expect(deposits).toHaveLength(1);
+			expect(deposits[0].id).toBe(id);
+			expect(deposits[0].kind).toBe('deposit');
+		});
+
+		test('observer snapshot includes cooldown', async ({ shard }) => {
+			shard.requires('observer');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_OBSERVER,
+				owner: 'p1',
+				cooldown: 12,
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('structure');
+			expect(obj.structureType).toBe(STRUCTURE_OBSERVER);
+			expect(obj.cooldown).toBeGreaterThan(0);
+			expect(obj.cooldown).toBeLessThanOrEqual(12);
+		});
+
+		test('keeper lair snapshot includes ticksToSpawn', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', STRUCTURE_KEEPER_LAIR, {
+				pos: [25, 25],
+				nextSpawnTime: 100,
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('structure');
+			expect(obj.structureType).toBe(STRUCTURE_KEEPER_LAIR);
+			expect(obj.ticksToSpawn).toBeGreaterThan(0);
+			expect(obj.ticksToSpawn).toBeLessThanOrEqual(100);
+		});
+
+		test('invader core snapshot includes deploy and stronghold fields', async ({ shard }) => {
+			shard.requires('invaderCore');
+			await shard.ownedRoom('p1');
+			const effects = [{ effect: 1001, level: 1, ticksRemaining: 50 }];
+			const id = await shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, {
+				pos: [25, 25],
+				level: 2,
+				deployTime: 75,
+				effects,
+				templateName: 'testTemplate',
+				strongholdId: 'testStronghold',
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('structure');
+			expect(obj.structureType).toBe(STRUCTURE_INVADER_CORE);
+			expect(obj.level).toBe(2);
+			expect(obj.ticksToDeploy).toBeGreaterThan(0);
+			expect(obj.ticksToDeploy).toBeLessThanOrEqual(75);
+			expect(obj.effects).toEqual(effects);
+			expect(obj.templateName).toBe('testTemplate');
+			expect(obj.strongholdId).toBe('testStronghold');
+		});
+
+		test('power bank snapshot includes power and decay fields', async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', STRUCTURE_POWER_BANK, {
+				pos: [25, 25],
+				store: { [RESOURCE_POWER]: 2500 },
+				hits: 1000000,
+				hitsMax: 2000000,
+				decayTime: 500,
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('structure');
+			expect(obj.structureType).toBe(STRUCTURE_POWER_BANK);
+			expect(obj.power).toBe(2500);
+			expect(obj.hits).toBe(1000000);
+			expect(obj.hitsMax).toBe(2000000);
+			expect(obj.ticksToDecay).toBeGreaterThan(0);
+			expect(obj.ticksToDecay).toBeLessThanOrEqual(500);
+		});
+
+		test('portal snapshot includes destination and decay fields', async ({ shard }) => {
+			shard.requires('portals');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1' },
+				],
+			});
+			const id = await shard.placeObject('W1N1', 'portal', {
+				pos: [25, 25],
+				destination: { room: 'W2N1', x: 30, y: 31 },
+				decayTime: 200,
+			});
+			await shard.tick();
+
+			const obj = await shard.getObject(id) as any;
+			expect(obj?.kind).toBe('structure');
+			expect(obj.structureType).toBe('portal');
+			expect(obj.destination).toEqual({ x: 30, y: 31, roomName: 'W2N1' });
+			expect(obj.ticksToDecay).toBeGreaterThan(0);
+			expect(obj.ticksToDecay).toBeLessThanOrEqual(200);
+		});
 	});
 
 	describe('snapshot timer relativity', () => {

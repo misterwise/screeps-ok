@@ -131,6 +131,7 @@ const playerSlots = ['100', '101', '102', '103'];
 // AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
 const NPC_HANDLES: Record<string, string> = {
 	sk: '2',
+	srcKeeper: '3',
 };
 
 // Structure types the engine always attributes to a user. Omitting `owner`
@@ -140,6 +141,9 @@ const STRUCTURE_TYPES_UNOWNED = new Set(['container', 'road', 'constructedWall']
 const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
 	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
 	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
+]);
+const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
+	'invaderCore', 'keeperLair', 'portal', 'deposit', 'powerBank',
 ]);
 
 class XxscreepsAdapter implements ScreepsOkAdapter {
@@ -190,6 +194,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private shardSpec: ShardSpec | null = null;
 	private idCounter = 0;
 	private firstTickRun = false;
+	private snapshotCooldownUntil = new Map<string, number>();
 
 	private nextId(): string {
 		return (++this.idCounter).toString(16).padStart(24, '0');
@@ -203,6 +208,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	resolvePlayerReverse(userId: string): string {
 		return this.reversePlayerMap.get(userId) ?? userId;
+	}
+
+	resolveSnapshotCooldown(id: string): number | undefined {
+		const until = this.snapshotCooldownUntil.get(id);
+		if (until === undefined || !this.simulation) return undefined;
+		return Math.max(0, until - this.simulation.shard.time);
 	}
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
@@ -273,6 +284,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async createShard(spec: ShardSpec): Promise<void> {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
+		this.snapshotCooldownUntil.clear();
 
 		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
 			this.playerMap.set(handle, engineId);
@@ -296,7 +308,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
 				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
 				const safeModeRemaining = roomSpec.safeMode ?? 0;
-				const ticksToDowngrade = roomSpec.ticksToDowngrade ?? 0;
+				const ticksToDowngrade = roomSpec.ticksToDowngrade
+					?? (owner && rcl > 0 ? (C.CONTROLLER_DOWNGRADE[rcl] ?? 0) : 0);
 				const rName = roomSpec.name;
 				this.queueOp(rName, room => {
 					if (rcl > 0 && owner) {
@@ -369,6 +382,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
+		if (STRUCTURE_TYPES_PLACE_OBJECT_ONLY.has(spec.structureType)) {
+			throw new Error(
+				`placeStructure: structureType '${spec.structureType}' must be placed with placeObject().`,
+			);
+		}
 		if (!spec.owner && STRUCTURE_TYPES_REQUIRING_OWNER.has(spec.structureType)) {
 			throw new Error(
 				`placeStructure: owner is required for structureType '${spec.structureType}'. ` +
@@ -391,9 +409,15 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			if (spec.ticksToDecay !== undefined) {
 				setStructureNextDecayTime(structure, this.simulation!.shard.time, spec.ticksToDecay);
+			} else {
+				const defaultDecayTime = getDefaultDecayTime(spec.structureType, getRoomLevel(room));
+				if (defaultDecayTime !== undefined) {
+					setStructureNextDecayTime(structure, this.simulation!.shard.time, defaultDecayTime);
+				}
 			}
 			if (spec.cooldown !== undefined) {
 				(structure as { cooldown?: number }).cooldown = spec.cooldown;
+				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
 			}
 			insertRoomObject(room, structure);
 		});
@@ -467,6 +491,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeFlag(roomName: string, spec: FlagSpec): Promise<string> {
 		const name = spec.name;
+		if (/[|~]/.test(name)) {
+			throw new Error(`placeFlag: flag name cannot contain '|' or '~': ${name}`);
+		}
 		this.nameToSyntheticId.set(name, name); // flags use name as ID
 
 		// Flags live in a per-user blob keyed `user/<id>/flags`. The blob is
@@ -986,6 +1013,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
+		if (!this.rooms.includes(roomName)) return null;
 		return this.simulation!.peekRoom(roomName, (room: any) => {
 			for (const obj of iterateRoomObjects(room)) {
 				try {
@@ -1038,6 +1066,19 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 			return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
 		default: throw new Error(`Unsupported structure type: ${structureType}`);
+	}
+}
+
+function getDefaultDecayTime(structureType: string, rcl: number): number | undefined {
+	switch (structureType) {
+		case 'container':
+			return rcl > 0 ? C.CONTAINER_DECAY_TIME_OWNED : C.CONTAINER_DECAY_TIME;
+		case 'road':
+			return C.ROAD_DECAY_TIME;
+		case 'rampart':
+			return C.RAMPART_DECAY_TIME;
+		default:
+			return undefined;
 	}
 }
 

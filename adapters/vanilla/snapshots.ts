@@ -4,13 +4,20 @@ import type {
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
-	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot,
+	PortalSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
-	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
+	DepositSnapshot, TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
+	PortalDestinationSnapshot,
 } from '../../src/snapshots/common.js';
 
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
+}
+
+interface VanillaConstants {
+	CONTROLLER_LEVELS?: Record<number, number>;
 }
 
 function snapPos(obj: any) {
@@ -77,6 +84,33 @@ function snapCooldown(obj: any, gameTime?: number): number {
 	return obj.cooldown ?? 0;
 }
 
+function snapSpawning(spawning: any, gameTime?: number): SpawnSnapshot['spawning'] {
+	if (!spawning) return null;
+	return {
+		name: spawning.name,
+		needTime: spawning.needTime,
+		remainingTime: typeof spawning.spawnTime === 'number' && gameTime !== undefined
+			? Math.max(0, spawning.spawnTime - gameTime)
+			: (spawning.remainingTime ?? 0),
+	};
+}
+
+function snapRemaining(abs: unknown, gameTime?: number): number | null {
+	if (typeof abs !== 'number') return null;
+	return gameTime !== undefined ? Math.max(0, abs - gameTime) : abs;
+}
+
+function snapPortalDestination(dest: any): PortalDestinationSnapshot {
+	if (dest?.shard) {
+		return { shard: dest.shard, room: dest.room ?? '' };
+	}
+	return {
+		x: dest?.x ?? 0,
+		y: dest?.y ?? 0,
+		roomName: dest?.roomName ?? dest?.room ?? '',
+	};
+}
+
 /** Derive mineralType from the lab store (first non-energy key with amount > 0). */
 function snapLabMineralType(obj: any): string | null {
 	if (obj.store && typeof obj.store === 'object') {
@@ -89,7 +123,12 @@ function snapLabMineralType(obj: any): string | null {
 	return null;
 }
 
-export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?: number): StructureSnapshot {
+export function snapshotStructure(
+	obj: any,
+	resolver: PlayerResolver,
+	gameTime?: number,
+	constants?: VanillaConstants,
+): StructureSnapshot {
 	const base: StructureSnapshotBase = {
 		kind: 'structure',
 		id: obj._id,
@@ -111,12 +150,15 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?:
 				return Math.max(0, abs - gameTime);
 			};
 			const safeModeRel = absToRel(obj.safeMode);
+			const level = obj.level ?? 0;
 			return {
 				...base,
 				structureType: 'controller',
-				level: obj.level ?? 0,
+				level,
 				progress: obj.progress ?? 0,
-				progressTotal: obj.level >= 8 ? null : (obj.progressTotal ?? 0),
+				progressTotal: level > 0 && level < 8
+					? (constants?.CONTROLLER_LEVELS?.[level] ?? obj.progressTotal ?? 0)
+					: null,
 				ticksToDowngrade: absToRel(obj.downgradeTime) ?? 0,
 				safeMode: safeModeRel && safeModeRel > 0 ? safeModeRel : undefined,
 				safeModeAvailable: obj.safeModeAvailable ?? 0,
@@ -147,7 +189,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?:
 				name: obj.name ?? 'Spawn1',
 				store: snapStore(obj),
 				storeCapacity: obj.storeCapacity ?? 300,
-				spawning: obj.spawning ?? null,
+				spawning: snapSpawning(obj.spawning, gameTime),
 			} satisfies SpawnSnapshot;
 
 		case 'lab': {
@@ -294,6 +336,54 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver, gameTime?:
 				storeCapacity: obj.storeCapacity ?? 5100,
 			} satisfies PowerSpawnSnapshot;
 
+		case 'observer':
+			return {
+				...base,
+				structureType: 'observer',
+				hits: obj.hits ?? 500,
+				hitsMax: obj.hitsMax ?? 500,
+				cooldown: snapCooldown(obj, gameTime),
+			} satisfies ObserverSnapshot;
+
+		case 'keeperLair':
+			return {
+				...base,
+				structureType: 'keeperLair',
+				ticksToSpawn: snapRemaining(obj.nextSpawnTime, gameTime),
+			} satisfies KeeperLairSnapshot;
+
+		case 'invaderCore':
+			return {
+				...base,
+				structureType: 'invaderCore',
+				hits: obj.hits ?? 100000,
+				hitsMax: obj.hitsMax ?? 100000,
+				level: obj.level ?? 0,
+				spawning: obj.spawning ?? null,
+				ticksToDeploy: snapRemaining(obj.deployTime, gameTime),
+				effects: obj.effects ?? [],
+				...(obj.templateName !== undefined ? { templateName: obj.templateName } : {}),
+				...(obj.strongholdId !== undefined ? { strongholdId: obj.strongholdId } : {}),
+			} satisfies InvaderCoreSnapshot;
+
+		case 'powerBank':
+			return {
+				...base,
+				structureType: 'powerBank',
+				hits: obj.hits ?? 2000000,
+				hitsMax: obj.hitsMax ?? 2000000,
+				power: obj.store?.power ?? obj.power ?? 0,
+				ticksToDecay: snapRemaining(obj.decayTime ?? obj.nextDecayTime, gameTime),
+			} satisfies PowerBankSnapshot;
+
+		case 'portal':
+			return {
+				...base,
+				structureType: 'portal',
+				destination: snapPortalDestination(obj.destination),
+				ticksToDecay: snapRemaining(obj.decayTime, gameTime),
+			} satisfies PortalSnapshot;
+
 		case 'constructedWall':
 			return {
 				...base,
@@ -353,11 +443,29 @@ export function snapshotMineral(obj: any, gameTime?: number): MineralSnapshot {
 	};
 }
 
-function snapshotRuin(obj: any): RuinSnapshot {
+function snapshotDeposit(obj: any, gameTime?: number): DepositSnapshot {
+	return {
+		kind: 'deposit',
+		id: obj._id,
+		pos: snapPos(obj),
+		depositType: obj.depositType,
+		lastCooldown: obj.lastCooldown ?? 0,
+		cooldown: snapCooldown(obj, gameTime),
+		ticksToDecay: snapRemaining(obj.decayTime, gameTime),
+	};
+}
+
+function snapshotRuin(obj: any, gameTime?: number): RuinSnapshot {
 	// Engine-created ruins (from _destroy processor) store the structure type
 	// inside obj.structure.type. Adapter-placed ruins (placeRuin) store it
 	// as obj.structureType. Handle both.
 	const structureType: string = obj.structureType ?? obj.structure?.type ?? '';
+	let ticksToDecay = 0;
+	if (typeof obj.decayTime === 'number') {
+		ticksToDecay = gameTime !== undefined
+			? Math.max(0, obj.decayTime - gameTime)
+			: obj.decayTime - (obj.destroyTime ?? 0);
+	}
 	return {
 		kind: 'ruin',
 		id: obj._id,
@@ -365,16 +473,22 @@ function snapshotRuin(obj: any): RuinSnapshot {
 		structureType,
 		destroyTime: obj.destroyTime ?? 0,
 		store: snapStore(obj),
-		ticksToDecay: obj.decayTime ? obj.decayTime - (obj.destroyTime ?? 0) : 0,
+		ticksToDecay,
 	};
 }
 
-export function snapshotObject(obj: any, resolver: PlayerResolver, gameTime?: number): ObjectSnapshot | null {
+export function snapshotObject(
+	obj: any,
+	resolver: PlayerResolver,
+	gameTime?: number,
+	constants?: VanillaConstants,
+): ObjectSnapshot | null {
 	switch (obj.type) {
 		case 'creep': return snapshotCreep(obj, resolver, gameTime);
 		case 'constructionSite': return snapshotSite(obj, resolver);
 		case 'source': return snapshotSource(obj, gameTime);
 		case 'mineral': return snapshotMineral(obj, gameTime);
+		case 'deposit': return snapshotDeposit(obj, gameTime);
 		case 'controller':
 		case 'spawn':
 		case 'extension':
@@ -394,22 +508,29 @@ export function snapshotObject(obj: any, resolver: PlayerResolver, gameTime?: nu
 		case 'rampart':
 		case 'keeperLair':
 		case 'invaderCore':
+		case 'powerBank':
 		case 'portal':
-			return snapshotStructure(obj, resolver, gameTime);
+			return snapshotStructure(obj, resolver, gameTime, constants);
 		case 'energy':
 		case 'power':
 		case 'resource':
 			return snapshotDroppedResource(obj);
 		case 'tombstone':
-			return snapshotTombstone(obj);
+			return snapshotTombstone(obj, gameTime);
 		case 'ruin':
-			return snapshotRuin(obj);
+			return snapshotRuin(obj, gameTime);
 		default:
 			return null;
 	}
 }
 
-function snapshotTombstone(obj: any): TombstoneSnapshot {
+function snapshotTombstone(obj: any, gameTime?: number): TombstoneSnapshot {
+	let ticksToDecay = 0;
+	if (typeof obj.decayTime === 'number') {
+		ticksToDecay = gameTime !== undefined
+			? Math.max(0, obj.decayTime - gameTime)
+			: obj.decayTime - (obj.deathTime ?? 0);
+	}
 	return {
 		kind: 'tombstone',
 		id: obj._id,
@@ -417,7 +538,7 @@ function snapshotTombstone(obj: any): TombstoneSnapshot {
 		creepName: obj.creepName ?? '',
 		deathTime: obj.deathTime ?? 0,
 		store: snapStore(obj),
-		ticksToDecay: obj.decayTime ? obj.decayTime - (obj.deathTime ?? 0) : 0,
+		ticksToDecay,
 	};
 }
 
@@ -442,11 +563,12 @@ const findTypeMap: Record<string, string[]> = {
 		'controller', 'spawn', 'extension', 'tower', 'storage', 'terminal',
 		'lab', 'link', 'observer', 'powerSpawn', 'extractor', 'nuker', 'factory',
 		'container', 'road', 'constructedWall', 'rampart', 'keeperLair',
-		'invaderCore', 'portal',
+		'invaderCore', 'powerBank', 'portal',
 	],
 	constructionSites: ['constructionSite'],
 	sources: ['source'],
 	minerals: ['mineral'],
+	deposits: ['deposit'],
 	tombstones: ['tombstone'],
 	ruins: ['ruin'],
 	droppedResources: ['energy', 'power', 'resource'],
@@ -457,12 +579,13 @@ export function snapshotRoomObjects(
 	findType: string,
 	resolver: PlayerResolver,
 	gameTime?: number,
+	constants?: VanillaConstants,
 ): ObjectSnapshot[] {
 	const allowedTypes = findTypeMap[findType];
 	const results: ObjectSnapshot[] = [];
 	for (const obj of objects) {
 		if (allowedTypes && !allowedTypes.includes(obj.type)) continue;
-		const snapshot = snapshotObject(obj, resolver, gameTime);
+		const snapshot = snapshotObject(obj, resolver, gameTime, constants);
 		if (snapshot) results.push(snapshot);
 	}
 	return results;

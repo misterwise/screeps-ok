@@ -25,8 +25,10 @@ export type {
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
-	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
-	SiteSnapshot, SourceSnapshot, MineralSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot,
+	PortalSnapshot, PortalDestinationSnapshot, WallSnapshot,
+	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 } from './snapshots/common.js';
 

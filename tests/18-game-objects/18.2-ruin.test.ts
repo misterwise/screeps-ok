@@ -126,4 +126,23 @@ describe('Ruin', () => {
 		const gone = await shard.getObject(ruinId);
 		expect(gone).toBeNull();
 	});
+
+	test('RUIN-006 ruin ticksToDecay strictly decreases each tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const ruinId = await shard.placeRuin('W1N1', {
+			pos: [25, 25],
+			structureType: 'container',
+			ticksToDecay: 50,
+		});
+		await shard.tick();
+
+		const r0 = await shard.expectObject(ruinId, 'ruin');
+		await shard.tick();
+		const r1 = await shard.expectObject(ruinId, 'ruin');
+		await shard.tick();
+		const r2 = await shard.expectObject(ruinId, 'ruin');
+
+		expect(r1.ticksToDecay).toBeLessThan(r0.ticksToDecay);
+		expect(r2.ticksToDecay).toBeLessThan(r1.ticksToDecay);
+	});
 });

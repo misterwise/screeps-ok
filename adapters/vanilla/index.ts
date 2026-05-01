@@ -30,7 +30,7 @@ const PRELOAD_ROOMS: { name: string; terrain: TerrainSpec | null }[] = [
 	{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
 ];
 
-function buildTerrainMatrix(terrain: TerrainSpec | null): any {
+function buildTerrain(terrain: TerrainSpec | null): any {
 	const matrix = new TerrainMatrix();
 	if (!terrain) return matrix;
 	for (let i = 0; i < terrain.length && i < 2500; i++) {
@@ -186,6 +186,7 @@ const playerSlots = ['p1_user', 'p2_user', 'p3_user', 'p4_user'];
 // so no additional user record is needed.
 const NPC_HANDLES: Record<string, string> = {
 	sk: '2',
+	srcKeeper: '3',
 };
 
 // Structure types the engine always attributes to a user. Omitting `owner`
@@ -195,6 +196,9 @@ const STRUCTURE_TYPES_UNOWNED = new Set(['container', 'road', 'constructedWall']
 const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
 	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
 	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
+]);
+const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
+	'deposit', 'invaderCore', 'keeperLair', 'portal', 'powerBank',
 ]);
 const RESULT_PREFIX = '__SCREEPS_OK_RESULT__:';
 const RESULT_TIMEOUT_MS = 1000;
@@ -447,7 +451,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		for (const roomSpec of spec.rooms) {
 			await this.server.world.addRoom(roomSpec.name);
 			await this.server.world.setTerrain(roomSpec.name,
-				this.buildTerrain(withCornerWalls(roomSpec.terrain ?? new Array(2500).fill(0))));
+				buildTerrain(withCornerWalls(roomSpec.terrain ?? new Array(2500).fill(0))));
 			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
 				level: roomSpec.rcl ?? 0,
 			});
@@ -460,7 +464,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const specRoomNames = new Set(spec.rooms.map(r => r.name));
 		for (const preload of PRELOAD_ROOMS) {
 			if (specRoomNames.has(preload.name)) continue;
-			await this.server.world.setTerrain(preload.name, buildTerrainMatrix(preload.terrain));
+			await this.server.world.setTerrain(preload.name, buildTerrain(preload.terrain));
 		}
 		await this.publishSandboxWorldSize();
 
@@ -516,9 +520,13 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			// Set controller ownership for all rooms this player owns
 			for (const ownedRoom of ownedRooms) {
 				const gameTime = await this.server.world.gameTime;
+				const rcl = ownedRoom.rcl ?? 1;
+				const C = this.server.constants;
 				const downgradeTime = ownedRoom.ticksToDowngrade != null
-					? gameTime + ownedRoom.ticksToDowngrade
-					: null;
+					? gameTime + ownedRoom.ticksToDowngrade + 1
+					: rcl > 0
+						? gameTime + (C.CONTROLLER_DOWNGRADE?.[rcl] ?? 0) + 1
+						: null;
 				// Engine stores active safe mode as the absolute tick the
 				// timer expires; the player-facing getter at
 				// `@screeps/engine/dist/game/structures.js:187` reports
@@ -531,7 +539,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					{ $and: [{ room: ownedRoom.name }, { type: 'controller' }] },
 					{ $set: {
 						user: user._id,
-						level: ownedRoom.rcl ?? 1,
+						level: rcl,
 						progress: 0,
 						downgradeTime,
 						safeMode,
@@ -649,6 +657,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
+		if (STRUCTURE_TYPES_PLACE_OBJECT_ONLY.has(spec.structureType)) {
+			throw new Error(
+				`placeStructure: structureType '${spec.structureType}' must be placed with placeObject().`,
+			);
+		}
 		if (!spec.owner && STRUCTURE_TYPES_REQUIRING_OWNER.has(spec.structureType)) {
 			throw new Error(
 				`placeStructure: owner is required for structureType '${spec.structureType}'. ` +
@@ -678,14 +691,19 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 		}
 
+		let gameTime: number | undefined;
+		const currentGameTime = async () => gameTime ??= await this.server.world.gameTime;
 		if (spec.ticksToDecay !== undefined) {
-			const gameTime = await this.server.world.gameTime;
-			attrs.nextDecayTime = gameTime + spec.ticksToDecay;
+			attrs.nextDecayTime = await currentGameTime() + spec.ticksToDecay;
+		} else {
+			const defaultDecayTime = this.getDefaultDecayTime(spec.structureType, rcl);
+			if (defaultDecayTime !== null) {
+				attrs.nextDecayTime = await currentGameTime() + defaultDecayTime;
+			}
 		}
 		if (spec.cooldown !== undefined) {
-			const gameTime = await this.server.world.gameTime;
+			const gameTime = await currentGameTime();
 			attrs.cooldownTime = gameTime + spec.cooldown;
-			attrs.cooldown = spec.cooldown;
 		}
 
 		const result = await this.server.world.addRoomObject(
@@ -756,10 +774,12 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// the same room must append to the existing `data` string rather than
 		// inserting a new document.
 		const userId = this.resolvePlayer(spec.owner);
-		const safeName = spec.name.replace(/\|/g, '$VLINE$').replace(/~/g, '$TILDE$');
+		if (/[|~]/.test(spec.name)) {
+			throw new Error(`placeFlag: flag name cannot contain '|' or '~': ${spec.name}`);
+		}
 		const color = spec.color ?? 1;
 		const secondaryColor = spec.secondaryColor ?? color;
-		const entry = `${safeName}~${color}~${secondaryColor}~${spec.pos[0]}~${spec.pos[1]}`;
+		const entry = `${spec.name}~${color}~${secondaryColor}~${spec.pos[0]}~${spec.pos[1]}`;
 
 		const existing = await this.db['rooms.flags'].findOne({
 			$and: [{ user: userId }, { room: roomName }],
@@ -846,7 +866,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
 		const userId = this.resolvePlayer(spec.owner);
 		const gameTime = await this.server.world.gameTime;
-		const name = spec.name ?? `PowerCreep_${Date.now()}`;
+		const name = spec.name ?? `PowerCreep_${this.nextId()}`;
 
 		// Build the powers map in the engine's format: { [PWR]: { level, cooldown } }
 		const powers: Record<string, { level: number; cooldown: number }> = {};
@@ -1085,11 +1105,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				`at createShard time, or call setTerrain before the first runPlayer/tick.`,
 			);
 		}
-		await this.server.world.setTerrain(room, this.buildTerrain(withCornerWalls(terrain)));
+		await this.server.world.setTerrain(room, buildTerrain(withCornerWalls(terrain)));
 	}
 
-	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
-		const handle = userId;
+	async runPlayer(handle: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		const user = this.users.get(handle);
 		if (!user) throw new Error(`Unknown player: ${handle}`);
 
@@ -1161,22 +1180,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const obj = await this.db['rooms.objects'].findOne({ _id: id });
 		if (!obj) return null;
 		const gameTime = await this.server.world.gameTime;
-		return snapshotObject(obj, this, gameTime);
+		return snapshotObject(obj, this, gameTime, this.server.constants);
 	}
 
 	async findInRoom(roomName: string, type: number): Promise<any[]> {
 		const objects = await this.server.world.roomObjects(roomName);
 		const gameTime = await this.server.world.gameTime;
-		return snapshotRoomObjects(objects, selectorFromFindConstant(type), this, gameTime);
+		return snapshotRoomObjects(objects, selectorFromFindConstant(type), this, gameTime, this.server.constants);
 	}
 
 	async getGameTime(): Promise<number> {
 		return this.server.world.gameTime;
 	}
 
-	async getControllerPos(_room: string): Promise<{ x: number; y: number } | null> {
-		// Vanilla always places controllers at (1, 1) in createShard
-		return { x: 1, y: 1 };
+	async getControllerPos(room: string): Promise<{ x: number; y: number } | null> {
+		const controller = await this.db['rooms.objects'].findOne({ room, type: 'controller' });
+		return controller ? { x: controller.x, y: controller.y } : null;
 	}
 
 	async teardown(): Promise<void> {
@@ -1191,17 +1210,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		this.firstTickRun = false;
 	}
 
-	private buildTerrain(terrain: TerrainSpec): any {
-		const matrix = new TerrainMatrix();
-		for (let i = 0; i < terrain.length && i < 2500; i++) {
-			const x = i % 50;
-			const y = Math.floor(i / 50);
-			if (terrain[i] === 1) matrix.set(x, y, 'wall');
-			else if (terrain[i] === 2) matrix.set(x, y, 'swamp');
-		}
-		return matrix;
-	}
-
 	private getProgressTotal(structureType: string): number {
 		const C = this.server.constants;
 		return C?.CONSTRUCTION_COST?.[structureType] ?? 300;
@@ -1212,6 +1220,20 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			$and: [{ room: roomName }, { type: 'controller' }],
 		});
 		return ctrl?.level ?? 0;
+	}
+
+	private getDefaultDecayTime(structureType: string, rcl: number): number | null {
+		const C = this.server.constants;
+		switch (structureType) {
+			case 'container':
+				return rcl > 0 ? C.CONTAINER_DECAY_TIME_OWNED : C.CONTAINER_DECAY_TIME;
+			case 'road':
+				return C.ROAD_DECAY_TIME;
+			case 'rampart':
+				return C.RAMPART_DECAY_TIME;
+			default:
+				return null;
+		}
 	}
 
 	private getStructureDefaults(structureType: string, rcl = 8): Record<string, any> {
@@ -1254,28 +1276,16 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				hits: C.CONTAINER_HITS, hitsMax: C.CONTAINER_HITS,
 				store: {},
 				storeCapacity: C.CONTAINER_CAPACITY ?? 2000,
-				// Default to a far-future decay so containers don't tick down
-				// on the first engine tick. The container processor at
-				// `@screeps/engine/src/processor/intents/containers/tick.js:10`
-				// triggers decay when `nextDecayTime` is undefined, which
-				// reduces hits by CONTAINER_DECAY (5000) immediately. With the
-				// default CONTAINER_HITS (250000) the container survives, but
-				// custom-hits placements (e.g. STRUCTURE-HITS-001 with hits=1000)
-				// drop below zero and get removed before the test can observe
-				// them. Tests that need a real decay schedule set ticksToDecay
-				// on the StructureSpec, which placeStructure honours below.
-				nextDecayTime: 9999999,
 			};
 			case 'road': return {
 				hits: C.ROAD_HITS, hitsMax: C.ROAD_HITS,
-				nextDecayTime: 9999999,
 			};
 			case 'constructedWall': return {
 				hits: 1, hitsMax: C.WALL_HITS_MAX,
 			};
 			case 'rampart': return {
 				hits: 1, hitsMax: C.RAMPART_HITS_MAX?.[8] ?? 300000000,
-				isPublic: false, nextDecayTime: 9999999,
+				isPublic: false,
 			};
 			case 'lab': return {
 				hits: C.LAB_HITS ?? 500, hitsMax: C.LAB_HITS ?? 500,
