@@ -799,6 +799,12 @@ Coverage Notes
   `structureType`. Engine `utils.checkConstructionSite`
   (utils.js:172-184) filters on same-type structures and existing
   construction sites but never inspects ruins, which are walkable.
+- `CONSTRUCTION-SITE-010` `behavior` `verified_vanilla`
+  Unknown construction-site structure types return `ERR_INVALID_ARGS` for
+  both `Room.createConstructionSite()` and
+  `RoomPosition.createConstructionSite()`. Engine `rooms.js`
+  `createConstructionSite` rejects types absent from `CONSTRUCTION_COST`;
+  `RoomPosition.createConstructionSite` delegates to the room method.
 
 ---
 
@@ -2379,6 +2385,11 @@ Coverage Notes
   output shapes while restricting results to the requested `LOOK_*` type.
 - `ROOM-LOOK-005` `behavior` `verified_vanilla`
   `lookForAtArea()` returns only objects within the specified bounding box.
+- `ROOM-LOOK-006` `behavior` `verified_vanilla`
+  `lookForAt(type, x, y)` returns `ERR_INVALID_ARGS` when `type` is not
+  `LOOK_TERRAIN` and is not registered in the room's look-type spatial
+  registers. Engine `rooms.js` performs this validation before reading the
+  tile.
 
 ### 16.5 Terrain
 - `ROOM-TERRAIN-001` `matrix` `verified_vanilla`

@@ -1,4 +1,5 @@
 import { describe, test, expect, code,
+	ERR_INVALID_ARGS,
 	MOVE, CARRY,
 	STRUCTURE_SPAWN, STRUCTURE_ROAD,
 	LOOK_STRUCTURES, LOOK_CREEPS, LOOK_TERRAIN,
@@ -92,5 +93,15 @@ describe('Room look API', () => {
 		const names = result as string[];
 		expect(names).toContain('InArea');
 		expect(names).not.toContain('OutOfArea');
+	});
+
+	test('ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const invalidLookType = LOOK_CREEPS.toUpperCase();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].lookForAt(${invalidLookType}, 25, 25)
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 });

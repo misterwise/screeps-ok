@@ -1,5 +1,5 @@
 import { describe, test, expect, code, body,
-	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET,
+	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS,
 	WORK, CARRY, MOVE,
 	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES,
 	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, TERRAIN_WALL,
@@ -269,4 +269,21 @@ describe('room.createConstructionSite()', () => {
 			expect(site!.structureType).toBe(placedType);
 		});
 	}
+
+	test('CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		const invalidStructureType = STRUCTURE_ROAD.toUpperCase();
+
+		const result = await shard.runPlayer('p1', code`({
+			room: Game.rooms['W1N1'].createConstructionSite(25, 25, ${invalidStructureType}),
+			roomPosition: new RoomPosition(26, 25, 'W1N1').createConstructionSite(${invalidStructureType}),
+		})`) as { room: number; roomPosition: number };
+		expect(result).toEqual({
+			room: ERR_INVALID_ARGS,
+			roomPosition: ERR_INVALID_ARGS,
+		});
+	});
 });
