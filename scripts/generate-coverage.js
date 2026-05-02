@@ -138,6 +138,7 @@ const SIMULATE_FAMILIES = ['FLAG', 'RAWMEMORY', 'RAWMEMORY-FOREIGN'];
 // Capabilities that neither adapter currently supports
 const BLOCKED_CAPABILITIES = new Set([
 	'powerCreeps', 'factory', 'market', 'nuke', 'deposit',
+	'actionLogCapture',
 ]);
 // Power-effect IDs that need powerCreeps even though their section isn't tagged
 const POWER_EFFECT_RE = /^(TOWER-POWER|RAMPART-DECAY-00[45]|SOURCE-POWER|MINERAL-POWER|SPAWN-TIMING-005)/;

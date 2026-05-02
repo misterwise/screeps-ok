@@ -198,6 +198,8 @@ export interface AdapterCapabilities {
 	 *  `@screeps/driver`, and exposes no refresh path; tests that assert the
 	 *  inclusive-span semantic must require this capability. */
 	liveWorldSize: boolean;
+	/** Normalized capture of the room-history/client action-log payload. */
+	actionLogCapture: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;

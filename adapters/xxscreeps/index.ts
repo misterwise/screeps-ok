@@ -172,6 +172,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps's GameMap is constructed from the World schema each time
 		// it's read, so getWorldSize always reflects the current room set.
 		liveWorldSize: true,
+		// Room-history/client action-log capture needs a normalized adapter
+		// surface; raw #actionLog vectors are not the contract.
+		actionLogCapture: false,
 	};
 
 	readonly limitations = {

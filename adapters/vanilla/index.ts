@@ -269,6 +269,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// The adapter supplies the current shard span to the vanilla runner
 		// before each player VM initializes, without changing @screeps/engine.
 		liveWorldSize: true,
+		// Room-history/client action-log capture needs a normalized adapter
+		// surface; raw rooms.objects.actionLog storage is not the contract.
+		actionLogCapture: false,
 	};
 
 	private server: any = null;

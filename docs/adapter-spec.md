@@ -270,7 +270,8 @@ needed.
 
 ## Capabilities And Skip Policy
 
-`capabilities` declares whether an adapter supports a public feature area.
+`capabilities` declares whether an adapter supports a public feature area or
+framework-observable surface.
 
 Current capability flags are:
 
@@ -280,9 +281,15 @@ Current capability flags are:
 - `market`
 - `observer`
 - `nuke`
+- `deposit`
 - `terrain`
 - `portals`
 - `invaderCore`
+- `multiShard`
+- `interShardMemory`
+- `cpuShardLimits`
+- `liveWorldSize`
+- `actionLogCapture`
 
 Rules:
 

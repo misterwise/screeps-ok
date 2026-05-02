@@ -58,11 +58,11 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">928</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num">934</div><div class="label">catalog IDs</div></div>
   <div class="stat-card"><div class="num green">910</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">13</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">5</div><div class="label">blocked</div></div>
-  <div class="stat-card"><div class="num">98%</div><div class="label">overall</div></div>
+  <div class="stat-card"><div class="num">11</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">97%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">of feasible</div></div>
 </div>
 
@@ -252,8 +252,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="27. Undocumented API Surface">27. Undocumented API Surface</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:97%;background:var(--yellow)"></div>
-    <span class="bar-text">38/39</span>
+    <div class="bar-fill" style="width:84%;background:var(--yellow)"></div>
+    <span class="bar-text">38/45</span>
   </div>
 </div>
 <div class="bar-row">
@@ -276,6 +276,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
 <tr><td><span class="badge badge-yellow">feasible</span></td><td>13</td><td><code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: actionLogCapture</span></td><td>6</td><td><code>ACTIONLOG-CREEP-001</code> <code>ACTIONLOG-TARGET-001</code> <code>ACTIONLOG-STRUCT-001</code> <code>ACTIONLOG-SAY-001</code> <code>ACTIONLOG-TICK-001</code> <code>ACTIONLOG-DEDUP-001</code></td></tr>
 <tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>5</td><td><code>POWER-GENERATE-OPS-001</code> <code>POWER-GENERATE-OPS-002</code> <code>POWER-GENERATE-OPS-003</code> <code>SHARD-PCREEP-001</code> <code>SHARD-PCREEP-002</code></td></tr>
 </tbody>
 </table>
@@ -8402,6 +8403,60 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/27-undocumented/27.9-move-cache.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-CREEP-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-TARGET-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-STRUCT-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>matrix</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-SAY-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-TICK-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
+</tr>
+<tr data-status="untested" data-blocker="capability: actionLogCapture">
+  <td><code>ACTIONLOG-DEDUP-001</code></td>
+  <td><span class="badge badge-muted">capability: actionLogCapture</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td>actionLogCapture</td>
+  <td><small></small></td>
 </tr>
 <tr data-status="untested" data-blocker="feasible">
   <td><code>DEPRECATED-MAP-001</code></td>

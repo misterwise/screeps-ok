@@ -723,6 +723,75 @@ Each definition should include:
   events.
   The executable case list lives in `src/matrices/eventlog-nuke.ts`.
 
+### ACTIONLOG-CREEP
+
+- `Catalog Entries`
+  `ACTIONLOG-CREEP-001`
+- `Canonical Source`
+  Official creep action processors and the room-history/client action-log
+  renderer.
+- `Dimensions`
+  creep method, rendered action-log type, coordinate payload shape
+- `Applicability`
+  Successful source-side creep actions that render client/history action-log
+  markers on the acting creep.
+- `Exclusions`
+  Target-side `attacked` / `healed` markers, `say()` message markers, gameplay
+  return codes, resulting world state, and `Room.getEventLog()` payloads.
+- `Verification Notes`
+  This family remains `needs_vanilla_verification` until the adapter exposes
+  normalized action-log capture and the executable case list is pinned. The
+  first case list should prioritize common actions with stable target
+  coordinates: `attack`, `harvest`, `build`, `repair`, `heal`, `rangedHeal`,
+  `upgradeController`, and `reserveController`.
+
+### ACTIONLOG-TARGET
+
+- `Catalog Entries`
+  `ACTIONLOG-TARGET-001`
+- `Canonical Source`
+  Official damage/healing processors and the room-history/client action-log
+  renderer.
+- `Dimensions`
+  incoming effect family, target object type, rendered action-log type,
+  coordinate payload shape
+- `Applicability`
+  Successful damage and healing actions that render `attacked` or `healed`
+  markers on the affected target object.
+- `Exclusions`
+  Source-side action markers, hit point/resource changes, death handling, and
+  `Room.getEventLog()` payloads.
+- `Verification Notes`
+  This family remains `needs_vanilla_verification` until target-side marker
+  support is captured through a normalized adapter API. The initial matrix
+  should distinguish creep and structure targets only where the rendered
+  client/history payload differs. Power creep target rows should wait until
+  capability composition is explicit.
+
+### ACTIONLOG-STRUCT
+
+- `Catalog Entries`
+  `ACTIONLOG-STRUCT-001`
+- `Canonical Source`
+  Official structure action processors and the room-history/client action-log
+  renderer.
+- `Dimensions`
+  structure type, structure method, rendered action-log type, coordinate
+  payload shape
+- `Applicability`
+  Successful source-side structure actions that render client/history
+  action-log markers on the acting structure.
+- `Exclusions`
+  Creep source-side markers, target-side markers, gameplay return codes,
+  resulting world state, and `Room.getEventLog()` payloads.
+- `Verification Notes`
+  This family remains `needs_vanilla_verification` until the adapter exposes
+  normalized action-log capture and the executable case list is pinned. The
+  first case list should cover tower `attack` / `heal` / `repair`, link
+  `transferEnergy`, and lab `runReaction` / `reverseReaction`; optional
+  feature rows such as factory production should wait until capability
+  composition is explicit.
+
 ### SOURCE-REGEN
 
 - `Catalog Entries`
