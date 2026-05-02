@@ -187,3 +187,11 @@ export function setStoreCapacity(store: any, capacity: number): void {
 export function readRawOwnerId(obj: any): string | undefined {
 	return obj['#user'] ?? obj.owner?.username;
 }
+
+/** SNAPSHOT — game/room/room.ts:44 `#initialize` materializes RoomObject
+ *  instances and builds the FIND/LOOK indices. peekRoom callbacks that
+ *  iterate `#objects` and call render hooks need indices populated first;
+ *  the call is idempotent (guarded by `#didInitialize`). */
+export function initializeRoomIndices(room: any): void {
+	room['#initialize']?.();
+}

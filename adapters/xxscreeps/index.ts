@@ -3,6 +3,7 @@ import { UserSandbox } from './sandbox-runner.js';
 import { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
+	RoomActionLogCapture, ActionLogPayloadValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
@@ -13,6 +14,7 @@ import { RunPlayerError } from '../../src/errors.js';
 import { selectorFromFindConstant } from '../../src/find.js';
 import { withCornerWalls } from '../../src/terrain-fixture.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
+import { Render } from 'xxscreeps/backend/symbols.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
 
@@ -45,6 +47,7 @@ import {
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	initializeRoomIndices,
 } from './engine-internals.js';
 
 // Object creation imports
@@ -77,6 +80,7 @@ import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 import { create as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import { asUnion } from 'xxscreeps/utility/utility.js';
 
 // Optional mods — not all xxscreeps builds include these exports.
 // Use variable-named dynamic imports so TS doesn't statically require the
@@ -104,6 +108,7 @@ import 'xxscreeps/config/mods/import/game.js';
 // controller). These must be imported before `createSimulation` runs so the
 // sandbox wiring in `UserSandbox.create` can iterate them.
 await importMods('driver');
+await importMods('backend');
 await importMods('processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
@@ -117,6 +122,20 @@ initializeIntentConstraints();
 function gclLevelToProgress(desiredLevel: number): number {
 	const floor = Math.max(0, desiredLevel - 1);
 	return Math.floor(floor ** 2.4 * 1_000_000);
+}
+
+function normalizeActionLog(actionLog: unknown): Record<string, ActionLogPayloadValue> {
+	const normalized: Record<string, ActionLogPayloadValue> = {};
+	if (!actionLog || typeof actionLog !== 'object') return normalized;
+	for (const [type, payload] of Object.entries(actionLog)) {
+		if (payload == null) continue;
+		normalized[type] = JSON.parse(JSON.stringify(payload)) as ActionLogPayloadValue;
+	}
+	return normalized;
+}
+
+function sortedActionLogObjects(objects: RoomActionLogCapture['objects']): RoomActionLogCapture['objects'] {
+	return objects.sort((left, right) => left.id.localeCompare(right.id));
 }
 
 // Player handle → xxscreeps user ID
@@ -172,9 +191,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps's GameMap is constructed from the World schema each time
 		// it's read, so getWorldSize always reflects the current room set.
 		liveWorldSize: true,
-		// Room-history/client action-log capture needs a normalized adapter
-		// surface; raw #actionLog vectors are not the contract.
-		actionLogCapture: false,
+		// Captured through the backend/client renderer for the current tick,
+		// then normalized to the shared adapter shape.
+		actionLogCapture: true,
 	};
 
 	readonly limitations = {
@@ -1011,6 +1030,41 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async getGameTime(): Promise<number> {
 		await this.ensureSimulation();
 		return this.simulation!.shard.time;
+	}
+
+	async captureActionLog(roomName: string): Promise<RoomActionLogCapture> {
+		await this.ensureSimulation();
+		await this.flushPokeQueue();
+		const tick = this.simulation!.shard.time;
+		const previousTime = tick - 1;
+		const objects = await this.simulation!.peekRoom(roomName, (room: any) => {
+			initializeRoomIndices(room);
+			const result: RoomActionLogCapture['objects'] = [];
+			for (const object of iterateRoomObjects(room)) {
+				asUnion(object);
+				const render = object[Render];
+				if (typeof render !== 'function') continue;
+				const value = render.call(object, previousTime);
+				const actionLog = normalizeActionLog(value?.actionLog);
+				if (Object.keys(actionLog).length === 0) continue;
+				result.push({
+					room: roomName,
+					tick,
+					id: String(value._id),
+					type: String(value.type),
+					...(object.structureType ? { structureType: String(object.structureType) } : {}),
+					...(value.name ? { name: String(value.name) } : {}),
+					pos: {
+						x: Number(value.x),
+						y: Number(value.y),
+						roomName,
+					},
+					actionLog,
+				});
+			}
+			return sortedActionLogObjects(result);
+		});
+		return { room: roomName, tick, objects };
 	}
 
 	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {

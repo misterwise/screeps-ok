@@ -57,6 +57,7 @@ That includes:
 - `getObject`
 - `findInRoom`
 - `getGameTime`
+- `captureActionLog`
 - `getControllerPos`
 - `teardown`
 
@@ -267,6 +268,22 @@ needed.
 - snapshot IDs are opaque
 - snapshots must be stable enough for assertions, but tests must not infer
   engine internals from ID shape
+
+### `captureActionLog`
+
+`captureActionLog(room)` returns the current tick's normalized client/history
+action-log payload:
+
+- `room` and `tick`
+- one entry per rendered room object with a non-empty `actionLog`
+- object `id`, rendered `type`, optional `structureType` / `name`, and `pos`
+- `actionLog`, keyed by rendered action name
+
+This method is separate from `Room.getEventLog()`. It must represent the
+room-history/client action-log artifact, not raw engine storage. For example,
+vanilla adapters should normalize the persisted room-history object payload,
+while xxscreeps adapters should normalize backend/client renderer output
+rather than exposing raw `#actionLog` vectors.
 
 ## Capabilities And Skip Policy
 

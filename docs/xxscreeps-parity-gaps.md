@@ -2,18 +2,11 @@
 
 Tracks every expected-failure classification in `adapters/xxscreeps/parity.json`.
 
-Last refreshed: 2026-04-29 against pin `579213e`.
+Last refreshed: 2026-05-02 against pin `579213e`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 8 open parity gaps covering 16 tests, plus 2 accepted divergences covering 3 tests.
 
 ## Open parity gaps
-
-### world-size-exclusive-span
-
-- Tests: MAP-ROOM-005
-- Status: OPEN PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164).
-- Cause: `Game.map.getWorldSize()` reports the exclusive distance between extreme room coordinates instead of the inclusive room-coordinate span that vanilla exposes.
-- Plan: wait for #164, bump `.xxscreeps-pin`, then remove this gap if the test passes.
 
 ### shape-flag-extra-id
 
@@ -63,6 +56,13 @@ Last refreshed: 2026-04-29 against pin `579213e`.
 - Status: CONFIRMED.
 - Cause: `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) treats `Ruin.structureType` (the destroyed type) as if it were a live structure's type. The same-type rejection at `object.structureType === structureType` matches a ruin even though `Ruin` is a walkable `RoomObject`, not a `Structure`. Cross-type ruins are correctly ignored because the obstacle checker filters on `instanceof Structure`.
 - Plan: filter `Ruin` (or anything whose `#lookType` is `LOOK_RUINS`) out of the placement-collision loop before the structure-type comparison. Surfaces in the wild on respawn — see place-spawn flow at `mods/spawn/backend.ts:128-139`, which inherits the same check via `checkCreateConstructionSite`.
+
+### actionlog-lab-renderer-missing-combined-actions
+
+- Tests: ACTIONLOG-STRUCT-001:lab (lab `runReaction` / `reverseReaction` rows)
+- Status: CONFIRMED.
+- Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
+- Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
 
 ## Accepted divergences
 

@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -111,6 +112,54 @@ async function checkVanilla() {
 			],
 		);
 	}
+
+	checkDriverSnapshot(driverRoot, isolatedVmRoot);
+}
+
+function checkDriverSnapshot(driverRoot, isolatedVmRoot) {
+	// V8 startup snapshots embed the embedder version string. When node is
+	// upgraded but the cached @screeps/driver snapshot was built against a
+	// different node, V8 aborts the runner subprocess on isolate creation
+	// with "Version mismatch between V8 binary and snapshot" and the parent
+	// driver waits for a tick result that never arrives.
+	const snapshotPath = path.join(driverRoot, 'build/runtime.snapshot.bin');
+	const generatorPath = path.join(driverRoot, 'make-runtime-snapshot.js');
+	checkFile(snapshotPath, '@screeps/driver runtime snapshot is missing.', 'Run npm run setup:vanilla');
+	checkFile(generatorPath, '@screeps/driver snapshot generator is missing.', 'Run npm run setup:vanilla');
+
+	if (probeSnapshot(snapshotPath, isolatedVmRoot)) return;
+
+	console.error('[screeps-ok] @screeps/driver snapshot is incompatible with the current node V8 — regenerating.');
+	const regen = spawnSync(process.execPath, [generatorPath], { stdio: ['ignore', 'pipe', 'pipe'] });
+	if (regen.status !== 0) {
+		fail(
+			'Failed to regenerate the @screeps/driver runtime snapshot.',
+			[
+				regen.stderr?.toString().trim() || regen.stdout?.toString().trim() || `exit ${regen.status}`,
+				`Run manually: node ${generatorPath}`,
+			],
+		);
+	}
+	if (!probeSnapshot(snapshotPath, isolatedVmRoot)) {
+		fail(
+			'Snapshot regeneration completed but the new snapshot still fails to load.',
+			[`Inspect manually: node ${generatorPath} and re-run preflight.`],
+		);
+	}
+	console.error('[screeps-ok] @screeps/driver snapshot regenerated successfully.');
+}
+
+function probeSnapshot(snapshotPath, isolatedVmRoot) {
+	const isolatedVmEntry = path.join(isolatedVmRoot, 'isolated-vm.js');
+	const probe = `
+		const fs = require('fs');
+		const ivm = require(${JSON.stringify(isolatedVmEntry)});
+		const blob = new ivm.ExternalCopy(fs.readFileSync(${JSON.stringify(snapshotPath)}).buffer);
+		const iso = new ivm.Isolate({ snapshot: blob, memoryLimit: 8 });
+		iso.dispose();
+	`;
+	const result = spawnSync(process.execPath, ['-e', probe], { stdio: ['ignore', 'pipe', 'pipe'] });
+	return result.status === 0;
 }
 
 function resolvePackageRoot(packageName) {

@@ -739,11 +739,10 @@ Each definition should include:
   Target-side `attacked` / `healed` markers, `say()` message markers, gameplay
   return codes, resulting world state, and `Room.getEventLog()` payloads.
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the adapter exposes
-  normalized action-log capture and the executable case list is pinned. The
-  first case list should prioritize common actions with stable target
-  coordinates: `attack`, `harvest`, `build`, `repair`, `heal`, `rangedHeal`,
-  `upgradeController`, and `reserveController`.
+  The executable case list lives in `src/matrices/actionlog-creep.ts` and
+  covers common actions with stable target coordinates: `attack`, `harvest`,
+  `build`, `repair`, `heal`, `rangedHeal`, `upgradeController`, and
+  `reserveController`.
 
 ### ACTIONLOG-TARGET
 
@@ -762,11 +761,11 @@ Each definition should include:
   Source-side action markers, hit point/resource changes, death handling, and
   `Room.getEventLog()` payloads.
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until target-side marker
-  support is captured through a normalized adapter API. The initial matrix
-  should distinguish creep and structure targets only where the rendered
-  client/history payload differs. Power creep target rows should wait until
-  capability composition is explicit.
+  The executable case list lives in `src/matrices/actionlog-target.ts` and
+  covers creep targets damaged or healed by creep and tower actions. Structure
+  target rows and power-creep target rows should be added only where the
+  rendered client/history payload differs and capability composition is
+  explicit.
 
 ### ACTIONLOG-STRUCT
 
@@ -785,12 +784,10 @@ Each definition should include:
   Creep source-side markers, target-side markers, gameplay return codes,
   resulting world state, and `Room.getEventLog()` payloads.
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the adapter exposes
-  normalized action-log capture and the executable case list is pinned. The
-  first case list should cover tower `attack` / `heal` / `repair`, link
-  `transferEnergy`, and lab `runReaction` / `reverseReaction`; optional
-  feature rows such as factory production should wait until capability
-  composition is explicit.
+  The executable case list lives in `src/matrices/actionlog-struct.ts` and
+  covers tower `attack` / `heal` / `repair`, link `transferEnergy`, and lab
+  `runReaction` / `reverseReaction`. Optional feature rows such as factory
+  production should wait until capability composition is explicit.
 
 ### SOURCE-REGEN
 

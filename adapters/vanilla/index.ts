@@ -1,10 +1,12 @@
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerSpec, PlayerReturnValue,
+	RoomActionLogCapture, ActionLogPayloadValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 } from '../../src/adapter.js';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { EventEmitter } from 'node:events';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -45,9 +47,20 @@ function buildTerrain(terrain: TerrainSpec | null): any {
 let sharedServer: any = null;
 let sharedServerCleanupRegistered = false;
 let sharedUserCodeTimestamp = Date.now();
+let runnerLogPath: string | null = null;
+let runnerFatal: Error | null = null;
+const runnerFatalBus = new EventEmitter();
+runnerFatalBus.setMaxListeners(0);
 
 const VANILLA_WORLD_SIZE_ENV_KEY = 'screeps-ok:worldSize';
 const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
+// Hard ceiling on a single server.tick() call. The driver waits for the
+// engine_runner subprocess to send back a tick reply over IPC; if the runner
+// crashes (e.g. V8 snapshot mismatch), server-mockup auto-restarts it in a
+// loop and the parent waits forever. Failing fast within the test budget
+// surfaces the real cause instead of hanging until the vitest timeout.
+const TICK_DEADLINE_MS = 30_000;
+const RUNNER_LOG_TAIL_LINES = 80;
 
 // @screeps/driver/lib/queue.js registers a SIGTERM handler that logs
 // "Got SIGTERM, disabling queue fetching" before calling process.exit(0).
@@ -100,13 +113,84 @@ Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filena
 
 function installRunnerSandboxPatch(server: any, patchPath: string): void {
 	const originalStartProcess = server.startProcess.bind(server);
-	server.startProcess = (name: string, execPath: string, env: Record<string, string>) => {
-		if (name !== 'engine_runner') return originalStartProcess(name, execPath, env);
-		return originalStartProcess(name, execPath, {
-			...env,
-			NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, patchPath),
-		});
+	server.startProcess = async (name: string, execPath: string, env: Record<string, string>) => {
+		const childEnv = name === 'engine_runner'
+			? { ...env, NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, patchPath) }
+			: env;
+		const result = await originalStartProcess(name, execPath, childEnv);
+		attachCrashWatcher(server, name);
+		return result;
 	};
+}
+
+function attachCrashWatcher(server: any, name: string): void {
+	const proc = server.processes?.[name];
+	if (!proc || typeof proc.once !== 'function') return;
+	proc.once('exit', (code: number | null, signal: string | null) => {
+		if (code == null || code === 0) return;
+		const tail = readLogTail(runnerLogPath, RUNNER_LOG_TAIL_LINES);
+		const hint = tail.includes('Version mismatch between V8 binary and snapshot')
+			? '\nHint: stale @screeps/driver snapshot for the active node version. ' +
+			  'Run `npm run preflight` (vanilla) to auto-regenerate, or:\n' +
+			  `  node ${nodeRequire.resolve('@screeps/driver/make-runtime-snapshot.js')}\n`
+			: '';
+		const fatal = new Error(
+			`vanilla adapter: ${name} subprocess exited with code ${code}` +
+			(signal ? ` (signal ${signal})` : '') + '. ' +
+			'screeps-server-mockup will auto-restart it, but tick replies will keep failing.' +
+			(tail ? `\nLast ${RUNNER_LOG_TAIL_LINES} lines of ${runnerLogPath}:\n${tail}` : '') +
+			hint,
+		);
+		runnerFatal = fatal;
+		runnerFatalBus.emit('fatal', fatal);
+		// Drop the broken shared server so the next test in this worker starts
+		// fresh instead of inheriting the restart-loop. server.stop() kills the
+		// processes; `if (code && code !== 0)` in server-mockup's exit handler
+		// won't restart on the SIGTERM (signal exit, code === null).
+		try { server.stop?.(); } catch {}
+		if (sharedServer === server) sharedServer = null;
+	});
+}
+
+function readLogTail(filePath: string | null, lines: number): string {
+	if (!filePath) return '';
+	try {
+		const data = readFileSync(filePath, 'utf8');
+		const split = data.split('\n');
+		return split.slice(Math.max(0, split.length - lines)).join('\n');
+	} catch {
+		return '';
+	}
+}
+
+async function guardedTick(server: any): Promise<void> {
+	if (runnerFatal) throw runnerFatal;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let onFatal: ((err: Error) => void) | undefined;
+	try {
+		await Promise.race([
+			server.tick(),
+			new Promise<never>((_, reject) => {
+				onFatal = reject;
+				runnerFatalBus.once('fatal', reject);
+			}),
+			new Promise<never>((_, reject) => {
+				timer = setTimeout(() => {
+					if (runnerFatal) return reject(runnerFatal);
+					const tail = readLogTail(runnerLogPath, RUNNER_LOG_TAIL_LINES);
+					reject(new Error(
+						`vanilla adapter: server.tick() did not complete within ${TICK_DEADLINE_MS}ms. ` +
+						'engine_runner is stuck or has crashed without exiting.' +
+						(tail ? `\nLast ${RUNNER_LOG_TAIL_LINES} lines of ${runnerLogPath}:\n${tail}` : ''),
+					));
+				}, TICK_DEADLINE_MS);
+			}),
+		]);
+	} finally {
+		if (timer) clearTimeout(timer);
+		if (onFatal) runnerFatalBus.removeListener('fatal', onFatal);
+	}
+	if (runnerFatal) throw runnerFatal;
 }
 
 function appendNodeRequire(existing: string | undefined, patchPath: string): string {
@@ -116,18 +200,41 @@ function appendNodeRequire(existing: string | undefined, patchPath: string): str
 	return `${existing} ${option}`;
 }
 
+function normalizeActionLog(actionLog: unknown): Record<string, ActionLogPayloadValue> {
+	const normalized: Record<string, ActionLogPayloadValue> = {};
+	if (!actionLog || typeof actionLog !== 'object') return normalized;
+	for (const [type, payload] of Object.entries(actionLog)) {
+		if (payload == null) continue;
+		normalized[type] = JSON.parse(JSON.stringify(payload)) as ActionLogPayloadValue;
+	}
+	return normalized;
+}
+
+function sortedActionLogObjects(objects: RoomActionLogCapture['objects']): RoomActionLogCapture['objects'] {
+	return objects.sort((left, right) => left.id.localeCompare(right.id));
+}
+
 async function getServer(): Promise<any> {
 	if (!sharedServer) {
 		const port = await getStoragePort();
 		const root = path.join(tmpdir(), 'screeps-ok-vanilla', `${process.pid}-${port}`);
+		const logdir = path.join(root, 'logs');
 		mkdirSync(path.join(root, 'server'), { recursive: true });
-		mkdirSync(path.join(root, 'logs'), { recursive: true });
+		mkdirSync(logdir, { recursive: true });
 		const runnerSandboxPatch = writeRunnerSandboxPatch(root);
+		runnerLogPath = path.join(logdir, 'engine_runner.log');
+		runnerFatal = null;
 		sharedServer = new ScreepsServer({
 			path: path.join(root, 'server'),
-			logdir: path.join(root, 'logs'),
+			logdir,
 			port,
 		});
+		// screeps-server-mockup emits 'error' for runner restart events. Without
+		// a listener, EventEmitter promotes them to unhandled exceptions and
+		// vitest reports them on top of our captured runnerFatal, masking the
+		// actual cause. The exit watcher in attachCrashWatcher captures the
+		// real crash; this listener exists solely to absorb the noisy emit.
+		sharedServer.on('error', () => {});
 		installRunnerSandboxPatch(sharedServer, runnerSandboxPatch);
 		registerSharedServerCleanup();
 		silenceDriverSigtermLog();
@@ -269,9 +376,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// The adapter supplies the current shard span to the vanilla runner
 		// before each player VM initializes, without changing @screeps/engine.
 		liveWorldSize: true,
-		// Room-history/client action-log capture needs a normalized adapter
-		// surface; raw rooms.objects.actionLog storage is not the contract.
-		actionLogCapture: false,
+		// Captured from vanilla's persisted room-history payload for the
+		// current tick, then normalized to the shared adapter shape.
+		actionLogCapture: true,
 	};
 
 	private server: any = null;
@@ -607,7 +714,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// user-facing tick (runPlayer/runPlayers/tick), so post-warmup
 		// setTerrain is still observable to player code as long as no
 		// user tick has run yet.
-		await this.server.tick();
+		await guardedTick(this.server);
 	}
 
 	async placeCreep(roomName: string, spec: CreepSpec): Promise<string> {
@@ -1126,7 +1233,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				expression: this.buildConsoleCommand(codeStr, nonce),
 				hidden: false,
 			});
-			await this.server.tick();
+			await guardedTick(this.server);
 			this.firstTickRun = true;
 			return this.parseRunResult('runPlayer', handle, await capture.wait());
 		} finally {
@@ -1154,7 +1261,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					hidden: false,
 				});
 			}
-			await this.server.tick();
+			await guardedTick(this.server);
 			this.firstTickRun = true;
 
 			const resultJsonByHandle = new Map<string, string | undefined>();
@@ -1174,7 +1281,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 	async tick(count = 1): Promise<void> {
 		for (let i = 0; i < count; i++) {
-			await this.server.tick();
+			await guardedTick(this.server);
 		}
 		if (count > 0) this.firstTickRun = true;
 	}
@@ -1194,6 +1301,44 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 	async getGameTime(): Promise<number> {
 		return this.server.world.gameTime;
+	}
+
+	async captureActionLog(roomName: string): Promise<RoomActionLogCapture> {
+		// `gameTime` is post-increment after the tick that ran the action,
+		// matching xxscreeps's `shard.time` convention. The history hash field
+		// for the just-processed tick is `gameTime - 1` (driver/history.js
+		// `saveTick(roomId, gameTime, data)` writes the field with the gameTime
+		// value the processor saw, which is incremented in the global stage).
+		const tick = await this.server.world.gameTime;
+		const previousTime = tick - 1;
+		const historyKey = this.env.keys.ROOM_HISTORY + roomName;
+		const history = await this.env.get(historyKey);
+		const serialized = history?.[String(previousTime)] ?? history?.[previousTime];
+		const rawObjects = typeof serialized === 'string'
+			? JSON.parse(serialized) as Record<string, any>
+			: {};
+
+		const objects: RoomActionLogCapture['objects'] = [];
+		for (const object of Object.values(rawObjects)) {
+			const actionLog = normalizeActionLog(object.actionLog);
+			if (Object.keys(actionLog).length === 0) continue;
+			objects.push({
+				room: roomName,
+				tick,
+				id: String(object._id),
+				type: String(object.type),
+				...(object.structureType ? { structureType: String(object.structureType) } : {}),
+				...(object.name ? { name: String(object.name) } : {}),
+				pos: {
+					x: Number(object.x),
+					y: Number(object.y),
+					roomName: String(object.room ?? roomName),
+				},
+				actionLog,
+			});
+		}
+
+		return { room: roomName, tick, objects: sortedActionLogObjects(objects) };
 	}
 
 	async getControllerPos(room: string): Promise<{ x: number; y: number } | null> {

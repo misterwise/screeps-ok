@@ -214,6 +214,31 @@ export type PlayerReturnValue =
 	| { [key: string]: PlayerReturnValue }
 	| PlayerReturnValue[];
 
+export type ActionLogPayloadValue =
+	| number
+	| string
+	| boolean
+	| null
+	| { [key: string]: ActionLogPayloadValue }
+	| ActionLogPayloadValue[];
+
+export interface ActionLogObjectSnapshot {
+	room: string;
+	tick: number;
+	id: string;
+	type: string;
+	structureType?: string;
+	name?: string;
+	pos: { x: number; y: number; roomName: string };
+	actionLog: Record<string, ActionLogPayloadValue>;
+}
+
+export interface RoomActionLogCapture {
+	room: string;
+	tick: number;
+	objects: ActionLogObjectSnapshot[];
+}
+
 // ── Core adapter interface ───────────────────────────────────
 
 export interface ScreepsOkAdapter {
@@ -288,6 +313,13 @@ export interface ScreepsOkAdapter {
 
 	/** Current game time / tick number. */
 	getGameTime(): Promise<number>;
+
+	/**
+	 * Capture the room-history/client action-log payload rendered for the
+	 * current tick. This is not Room.getEventLog(); it is the per-object
+	 * visual/history action marker surface exposed to clients and replays.
+	 */
+	captureActionLog(room: string): Promise<RoomActionLogCapture>;
 
 	/** Get the controller position for a room. Returns null if no controller. */
 	getControllerPos(room: string): Promise<{ x: number; y: number } | null>;

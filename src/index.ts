@@ -9,6 +9,7 @@ export type { AdapterLimitation, AdapterLimitations } from './limitations.js';
 // Adapter contract
 export type {
 	ScreepsOkAdapter, AdapterCapabilities, CapabilityName, PlayerReturnValue,
+	ActionLogPayloadValue, ActionLogObjectSnapshot, RoomActionLogCapture,
 	ShardSpec, RoomSpec, PlayerSpec, TerrainSpec,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1453%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1180%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-23-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1476%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1202%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-24-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1453](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-01 03:55 UTC |
-| 🟡 | **xxscreeps** | [1180](#xxscreeps-passing-tests) | [23](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-01 03:52 UTC |
+| 🟢 | **vanilla** | [1476](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-02 03:49 UTC |
+| 🟡 | **xxscreeps** | [1202](#xxscreeps-passing-tests) | [24](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-02 03:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 10 expected-failure classifications against vanilla's canonical behavior, covering 23 tests. That includes 8 open parity gaps covering 20 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 10 expected-failure classifications against vanilla's canonical behavior, covering 24 tests. That includes 8 open parity gaps covering 21 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,7 +33,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `world-size-exclusive-span` | `Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13` | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
@@ -41,15 +40,9 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `construction-site-blocked-by-same-type-ruin` | `room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly. | Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there. | [5](#xxscreeps-gap-construction-site-blocked-by-same-type-ruin) |
+| `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-world-size-exclusive-span">
-<summary><code>world-size-exclusive-span</code> — 1 test</summary>
-
-- `Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span`
-
-</details>
 
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
@@ -112,6 +105,14 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions">
+<summary><code>actionlog-lab-renderer-missing-combined-actions</code> — 2 tests</summary>
+
+- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers`
+- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -166,7 +167,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1453 tests across 124 files</summary>
+<summary>1476 tests across 125 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -613,7 +614,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (35)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (36)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -650,6 +651,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (23)
 
@@ -1493,13 +1495,14 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
 - Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (5)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (6)
 
 - Room look API ROOM-LOOK-001 lookAt returns all objects on the specified tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
 - Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
 - Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
 - Room look API ROOM-LOOK-005 lookForAtArea returns objects within the bounding box
+- Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type
 
 **`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
 
@@ -1930,6 +1933,30 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save
 - Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value
 - Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
+
+**`tests/27-undocumented/27.10-actionlog.test.ts`** (21)
+
+- Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
+- Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
+- Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 
@@ -2471,7 +2498,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1180 tests across 102 files</summary>
+<summary>1202 tests across 103 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2890,7 +2917,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
 - creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (30)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (31)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -2922,6 +2949,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (22)
 
@@ -3614,13 +3642,14 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
 - Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (5)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (6)
 
 - Room look API ROOM-LOOK-001 lookAt returns all objects on the specified tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
 - Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
 - Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
 - Room look API ROOM-LOOK-005 lookForAtArea returns objects within the bounding box
+- Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type
 
 **`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
 
@@ -3704,12 +3733,13 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 
-**`tests/21-map/21.1-room-queries.test.ts`** (4)
+**`tests/21-map/21.1-room-queries.test.ts`** (5)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
+- Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
 
@@ -3906,6 +3936,28 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-004 first Memory access populates RawMemory._parsed as a reference to Memory
 - Undocumented API Surface — memhack UNDOC-MEMHACK-005 RawMemory._parsed assignment alone does NOT short-circuit deserialization
 - Undocumented API Surface — memhack UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end
+
+**`tests/27-undocumented/27.10-actionlog.test.ts`** (19)
+
+- Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
+- Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
+- Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 
