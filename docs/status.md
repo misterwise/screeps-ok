@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1480%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1204%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-26-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1480%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1201%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-29-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1480](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-02 04:10 UTC |
-| 🟡 | **xxscreeps** | [1204](#xxscreeps-passing-tests) | [26](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-02 04:07 UTC |
+| 🟢 | **vanilla** | [1480](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-02 15:38 UTC |
+| 🟡 | **xxscreeps** | [1201](#xxscreeps-passing-tests) | [29](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-02 15:35 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 12 expected-failure classifications against vanilla's canonical behavior, covering 26 tests. That includes 10 open parity gaps covering 23 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 11 open parity gaps covering 26 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,6 +33,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `world-size-exclusive-span` | `Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`), one short of the inclusive span. For the test fixture the BFS-derived inclusive span is `13` but `getWorldSize()` reports `12`. | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph. PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164) fixes this but has not landed in upstream `main`. | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
@@ -41,10 +42,17 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `construction-site-blocked-by-same-type-ruin` | `room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly. | Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there. | [5](#xxscreeps-gap-construction-site-blocked-by-same-type-ruin) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
-| `look-at-omits-energy-alias-entry` | `Room.lookAt(x, y)` on a tile with a dropped resource emits a single entry `{ type: 'resource', resource: <Resource> }`. xxscreeps's `lookAt` (`game/room/look.ts`) builds entries from each object's `'#lookType'`, which for `Resource` is `LOOK_RESOURCES`, so the legacy `LOOK_ENERGY` alias never produces a second entry. | Vanilla `Room.lookAt` (`@screeps/engine/src/game/rooms.js:768-796`) explicitly walks both `LOOK_ENERGY` and `LOOK_RESOURCES` against the same dropped-resource backing register, so a dropped resource yields two entries on the tile — `{ type: 'energy', energy: <Resource> }` and `{ type: 'resource', resource: <Resource> }`. | [1](#xxscreeps-gap-look-at-omits-energy-alias-entry) |
-| `look-for-at-deposit-not-registered` | `Room.lookForAt(LOOK_DEPOSITS, x, y)` returns `ERR_INVALID_ARGS` because no xxscreeps mod calls `registerLook(C.LOOK_DEPOSITS)`. The `'deposit'` constant is exported from `game/constants/find.ts` but absent from the `lookConstants` set, so `lookForAt`'s validity check rejects it before reading the tile. | Vanilla registers `deposit` in `lookTypeSpatialRegisters` (`@screeps/engine/src/game/rooms.js:506`), so `lookForAt(LOOK_DEPOSITS, x, y)` on an empty tile returns `[]` rather than `ERR_INVALID_ARGS`. The validity gate is independent of whether any deposit is present. | [1](#xxscreeps-gap-look-for-at-deposit-not-registered) |
+| `look-energy-alias-not-registered` | `LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no xxscreeps mod aliases it onto `Resource`. Surfaces three ways: `lookAt(x, y)` (`game/room/look.ts`) emits each object using its `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `{ type: 'energy', energy: ... }` entry; `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants`; `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined. | Vanilla wires `LOOK_ENERGY` as a legacy alias to the `Resource` register (`@screeps/engine/src/game/rooms.js:768-796`): `lookAt` yields two entries per dropped resource (`type: 'energy'` and `type: 'resource'`), and `lookForAt`/`lookForAtArea(LOOK_ENERGY, ...)` return the same `Resource` collection as `LOOK_RESOURCES`. | [3](#xxscreeps-gap-look-energy-alias-not-registered) |
+| `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-world-size-exclusive-span">
+<summary><code>world-size-exclusive-span</code> — 1 test</summary>
+
+- `Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span`
+
+</details>
 
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
@@ -115,17 +123,19 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-look-at-omits-energy-alias-entry">
-<summary><code>look-at-omits-energy-alias-entry</code> — 1 test</summary>
+<details id="xxscreeps-gap-look-energy-alias-not-registered">
+<summary><code>look-energy-alias-not-registered</code> — 3 tests</summary>
 
+- `Room look API ROOM-LOOK-007 lookForAt(LOOK_ENERGY) returns the same Resource as LOOK_RESOURCES`
+- `Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key`
 - `Room look API ROOM-LOOK-009 lookAt yields both energy and resource entries on a dropped-resource tile`
 
 </details>
 
-<details id="xxscreeps-gap-look-for-at-deposit-not-registered">
-<summary><code>look-for-at-deposit-not-registered</code> — 1 test</summary>
+<details id="xxscreeps-gap-look-for-at-unknown-returns-empty">
+<summary><code>look-for-at-unknown-returns-empty</code> — 1 test</summary>
 
-- `Room look API ROOM-LOOK-010 lookForAt returns [] for valid LOOK_* constants whose register is empty`
+- `Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type`
 
 </details>
 
@@ -2518,7 +2528,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1204 tests across 103 files</summary>
+<summary>1201 tests across 103 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3662,16 +3672,14 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
 - Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (8)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (6)
 
 - Room look API ROOM-LOOK-001 lookAt returns terrain plus creeps and structures on the tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
 - Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
 - Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
 - Room look API ROOM-LOOK-005 lookForAtArea filters to objects inside the bounding box
-- Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type
-- Room look API ROOM-LOOK-007 lookForAt(LOOK_ENERGY) returns the same Resource as LOOK_RESOURCES
-- Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key
+- Room look API ROOM-LOOK-010 lookForAt returns [] for valid LOOK_* constants whose register is empty
 
 **`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
 
@@ -3755,13 +3763,12 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 
-**`tests/21-map/21.1-room-queries.test.ts`** (5)
+**`tests/21-map/21.1-room-queries.test.ts`** (4)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
-- Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
 

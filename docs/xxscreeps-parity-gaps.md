@@ -4,9 +4,16 @@ Tracks every expected-failure classification in `adapters/xxscreeps/parity.json`
 
 Last refreshed: 2026-05-02 against pin `579213e`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 10 open parity gaps covering 18 tests, plus 2 accepted divergences covering 3 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 11 open parity gaps covering 21 tests, plus 2 accepted divergences covering 3 tests.
 
 ## Open parity gaps
+
+### world-size-exclusive-span
+
+- Tests: MAP-ROOM-005
+- Status: OPEN PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164).
+- Cause: `Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`) — one short of the inclusive coordinate span. Vanilla's `getWorldSize` reports the inclusive span, so the test BFS-derived span and `getWorldSize()` differ by one.
+- Plan: wait for #164 to merge upstream, bump the pin, then remove this gap if MAP-ROOM-005 passes.
 
 ### shape-flag-extra-id
 
@@ -64,19 +71,19 @@ Last refreshed: 2026-05-02 against pin `579213e`.
 - Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
 - Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
 
-### look-at-omits-energy-alias-entry
+### look-energy-alias-not-registered
 
-- Tests: ROOM-LOOK-009
+- Tests: ROOM-LOOK-007, ROOM-LOOK-008, ROOM-LOOK-009
 - Status: CONFIRMED.
-- Cause: xxscreeps's `Room.lookAt` (`game/room/look.ts`) emits one entry per object using its `'#lookType'`, which for `Resource` is `LOOK_RESOURCES`. Vanilla `Room.lookAt` (`@screeps/engine/src/game/rooms.js:768-796`) explicitly walks both `LOOK_ENERGY` and `LOOK_RESOURCES` against the same backing register, so a dropped resource appears twice — once with `type: "energy"` and once with `type: "resource"`.
-- Plan: emit an extra `{ type: 'energy', energy: <Resource> }` entry for each `Resource` returned by `#lookAt`, or generalize via the look-alias registry so the alias's own type tag is included in `lookAt` output.
+- Cause: `LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no mod aliases it onto the `Resource` register. Three observable surfaces share the same root cause. `lookAt(x, y)` builds entries from each object's `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `type: "energy"` entry. `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants` (`game/room/look.ts:148-152`). `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined. Vanilla wires `LOOK_ENERGY` as a legacy alias to the same backing register as `LOOK_RESOURCES` (`@screeps/engine/src/game/rooms.js:768-796`).
+- Plan: register `LOOK_ENERGY` as an alias for `Resource` so `#lookFor('energy')` shares the resource register, and have `lookAt` emit a second `{ type: 'energy', energy: ... }` entry for each `Resource` (or generalize via the look-alias registry).
 
-### look-for-at-deposit-not-registered
+### look-for-at-unknown-returns-empty
 
-- Tests: ROOM-LOOK-010
+- Tests: ROOM-LOOK-006
 - Status: CONFIRMED.
-- Cause: `LOOK_DEPOSITS` is exported from `game/constants/find.ts` but no xxscreeps mod calls `registerLook(C.LOOK_DEPOSITS)`, so it is absent from the `lookConstants` set. `lookForAt`'s validity check rejects it, returning `ERR_INVALID_ARGS` instead of an empty array. Vanilla registers `deposit` in `lookTypeSpatialRegisters` (`@screeps/engine/src/game/rooms.js:506`), so the empty case correctly returns `[]`.
-- Plan: add `registerLook<never>()(C.LOOK_DEPOSITS)` alongside `LOOK_NUKES` / `LOOK_POWER_CREEPS` in `game/room/unimplemented-look.ts` until a real deposit mod lands.
+- Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
+- Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
 
 ## Accepted divergences
 

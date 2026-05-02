@@ -7,6 +7,11 @@
 			"expected": "Vanilla returns `undefined` on a never-owned controller; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix",
 			"tests": ["CTRL-CLAIM-007"]
 		},
+		"world-size-exclusive-span": {
+			"actual": "`Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`), one short of the inclusive span. For the test fixture the BFS-derived inclusive span is `13` but `getWorldSize()` reports `12`.",
+			"expected": "`Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph. PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164) fixes this but has not landed in upstream `main`.",
+			"tests": ["MAP-ROOM-005"]
+		},
 		"shape-body-part-always-has-boost": {
 			"intentional": true,
 			"why": "PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference.",
@@ -54,15 +59,15 @@
 			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",
 			"tests": ["ACTIONLOG-STRUCT-001:lab"]
 		},
-		"look-at-omits-energy-alias-entry": {
-			"actual": "`Room.lookAt(x, y)` on a tile with a dropped resource emits a single entry `{ type: 'resource', resource: <Resource> }`. xxscreeps's `lookAt` (`game/room/look.ts`) builds entries from each object's `'#lookType'`, which for `Resource` is `LOOK_RESOURCES`, so the legacy `LOOK_ENERGY` alias never produces a second entry.",
-			"expected": "Vanilla `Room.lookAt` (`@screeps/engine/src/game/rooms.js:768-796`) explicitly walks both `LOOK_ENERGY` and `LOOK_RESOURCES` against the same dropped-resource backing register, so a dropped resource yields two entries on the tile — `{ type: 'energy', energy: <Resource> }` and `{ type: 'resource', resource: <Resource> }`.",
-			"tests": ["ROOM-LOOK-009"]
+		"look-energy-alias-not-registered": {
+			"actual": "`LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no xxscreeps mod aliases it onto `Resource`. Surfaces three ways: `lookAt(x, y)` (`game/room/look.ts`) emits each object using its `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `{ type: 'energy', energy: ... }` entry; `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants`; `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined.",
+			"expected": "Vanilla wires `LOOK_ENERGY` as a legacy alias to the `Resource` register (`@screeps/engine/src/game/rooms.js:768-796`): `lookAt` yields two entries per dropped resource (`type: 'energy'` and `type: 'resource'`), and `lookForAt`/`lookForAtArea(LOOK_ENERGY, ...)` return the same `Resource` collection as `LOOK_RESOURCES`.",
+			"tests": ["ROOM-LOOK-007", "ROOM-LOOK-008", "ROOM-LOOK-009"]
 		},
-		"look-for-at-deposit-not-registered": {
-			"actual": "`Room.lookForAt(LOOK_DEPOSITS, x, y)` returns `ERR_INVALID_ARGS` because no xxscreeps mod calls `registerLook(C.LOOK_DEPOSITS)`. The `'deposit'` constant is exported from `game/constants/find.ts` but absent from the `lookConstants` set, so `lookForAt`'s validity check rejects it before reading the tile.",
-			"expected": "Vanilla registers `deposit` in `lookTypeSpatialRegisters` (`@screeps/engine/src/game/rooms.js:506`), so `lookForAt(LOOK_DEPOSITS, x, y)` on an empty tile returns `[]` rather than `ERR_INVALID_ARGS`. The validity gate is independent of whether any deposit is present.",
-			"tests": ["ROOM-LOOK-010"]
+		"look-for-at-unknown-returns-empty": {
+			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
+			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
+			"tests": ["ROOM-LOOK-006"]
 		}
 	}
 }
