@@ -4,7 +4,7 @@ Tracks every expected-failure classification in `adapters/xxscreeps/parity.json`
 
 Last refreshed: 2026-05-02 against pin `579213e`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 8 open parity gaps covering 16 tests, plus 2 accepted divergences covering 3 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 10 open parity gaps covering 18 tests, plus 2 accepted divergences covering 3 tests.
 
 ## Open parity gaps
 
@@ -63,6 +63,20 @@ Last refreshed: 2026-05-02 against pin `579213e`.
 - Status: CONFIRMED.
 - Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
 - Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
+
+### look-at-omits-energy-alias-entry
+
+- Tests: ROOM-LOOK-009
+- Status: CONFIRMED.
+- Cause: xxscreeps's `Room.lookAt` (`game/room/look.ts`) emits one entry per object using its `'#lookType'`, which for `Resource` is `LOOK_RESOURCES`. Vanilla `Room.lookAt` (`@screeps/engine/src/game/rooms.js:768-796`) explicitly walks both `LOOK_ENERGY` and `LOOK_RESOURCES` against the same backing register, so a dropped resource appears twice — once with `type: "energy"` and once with `type: "resource"`.
+- Plan: emit an extra `{ type: 'energy', energy: <Resource> }` entry for each `Resource` returned by `#lookAt`, or generalize via the look-alias registry so the alias's own type tag is included in `lookAt` output.
+
+### look-for-at-deposit-not-registered
+
+- Tests: ROOM-LOOK-010
+- Status: CONFIRMED.
+- Cause: `LOOK_DEPOSITS` is exported from `game/constants/find.ts` but no xxscreeps mod calls `registerLook(C.LOOK_DEPOSITS)`, so it is absent from the `lookConstants` set. `lookForAt`'s validity check rejects it, returning `ERR_INVALID_ARGS` instead of an empty array. Vanilla registers `deposit` in `lookTypeSpatialRegisters` (`@screeps/engine/src/game/rooms.js:506`), so the empty case correctly returns `[]`.
+- Plan: add `registerLook<never>()(C.LOOK_DEPOSITS)` alongside `LOOK_NUKES` / `LOOK_POWER_CREEPS` in `game/room/unimplemented-look.ts` until a real deposit mod lands.
 
 ## Accepted divergences
 

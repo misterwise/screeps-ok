@@ -114,11 +114,14 @@ export const LOOK_ENERGY: 'energy' = C.LOOK_ENERGY;
 export const LOOK_RESOURCES: 'resource' = C.LOOK_RESOURCES;
 export const LOOK_SOURCES: 'source' = C.LOOK_SOURCES;
 export const LOOK_MINERALS: 'mineral' = C.LOOK_MINERALS;
+export const LOOK_DEPOSITS: 'deposit' = C.LOOK_DEPOSITS;
 export const LOOK_STRUCTURES: 'structure' = C.LOOK_STRUCTURES;
 export const LOOK_FLAGS: 'flag' = C.LOOK_FLAGS;
 export const LOOK_CONSTRUCTION_SITES: 'constructionSite' = C.LOOK_CONSTRUCTION_SITES;
+export const LOOK_NUKES: 'nuke' = C.LOOK_NUKES;
 export const LOOK_TERRAIN: 'terrain' = C.LOOK_TERRAIN;
 export const LOOK_TOMBSTONES: 'tombstone' = C.LOOK_TOMBSTONES;
+export const LOOK_POWER_CREEPS: 'powerCreep' = C.LOOK_POWER_CREEPS;
 export const LOOK_RUINS: 'ruin' = C.LOOK_RUINS;
 
 // Structure types

@@ -2372,24 +2372,45 @@ Coverage Notes
 
 ### 16.4 Look
 - `ROOM-LOOK-001` `behavior` `verified_vanilla`
-  `lookAt(x, y)` returns all public look entries at that position.
+  `lookAt(x, y)` returns the public look entries on that tile, including a
+  `terrain` entry alongside any creeps and structures occupying the tile.
 - `ROOM-LOOK-002` `behavior` `verified_vanilla`
-  `lookForAt(type, x, y)` returns only entries of the requested `LOOK_*` type
-  at that position.
+  `lookForAt(LOOK_STRUCTURES, x, y)` returns only the structures on that
+  tile, omitting non-structure objects sharing the position.
 - `ROOM-LOOK-003` `behavior` `verified_vanilla`
-  `lookAtArea(top, left, bottom, right)` returns a y-then-x keyed object by
-  default and returns an array of `{x, y, type, ...}` records when `asArray`
-  is true.
+  `lookForAt(LOOK_CREEPS, x, y)` returns only the creeps on that tile,
+  omitting non-creep objects sharing the position.
 - `ROOM-LOOK-004` `behavior` `verified_vanilla`
-  `lookForAtArea(type, top, left, bottom, right)` mirrors `lookAtArea()`
-  output shapes while restricting results to the requested `LOOK_*` type.
+  `lookForAt(LOOK_TERRAIN, x, y)` returns a single-element array containing
+  the terrain string (`"plain"`, `"swamp"`, or `"wall"`) at that tile.
 - `ROOM-LOOK-005` `behavior` `verified_vanilla`
-  `lookForAtArea()` returns only objects within the specified bounding box.
+  `lookForAtArea(type, top, left, bottom, right, true)` filters to objects
+  whose position lies inside the bounding box, exposing each match under the
+  requested look-type key in the entry.
 - `ROOM-LOOK-006` `behavior` `verified_vanilla`
-  `lookForAt(type, x, y)` returns `ERR_INVALID_ARGS` when `type` is not
-  `LOOK_TERRAIN` and is not registered in the room's look-type spatial
-  registers. Engine `rooms.js` performs this validation before reading the
-  tile.
+  `lookForAt(type, x, y)` returns `ERR_INVALID_ARGS` when `type` is neither
+  `LOOK_TERRAIN` nor a registered `LOOK_*` constant. Engine `rooms.js`
+  performs this validation before reading the tile.
+- `ROOM-LOOK-007` `behavior` `verified_vanilla`
+  `lookForAt(LOOK_ENERGY, x, y)` returns the same dropped `Resource` objects
+  as `lookForAt(LOOK_RESOURCES, x, y)` because both look constants resolve
+  to the room's dropped-resource backing register.
+- `ROOM-LOOK-008` `behavior` `verified_vanilla`
+  `lookForAtArea(LOOK_ENERGY, top, left, bottom, right, true)` returns the
+  same dropped `Resource` objects as the equivalent call with
+  `LOOK_RESOURCES`, exposed under the requested `"energy"` look-type key in
+  each entry.
+- `ROOM-LOOK-009` `behavior` `verified_vanilla`
+  `lookAt(x, y)` on a tile holding a dropped resource yields two entries
+  for the same resource — one with `type: "energy"` and one with
+  `type: "resource"` — because `lookAt` walks both look constants against
+  the dropped-resource backing register.
+- `ROOM-LOOK-010` `behavior` `verified_vanilla`
+  `lookForAt(type, x, y)` returns `[]` (not `ERR_INVALID_ARGS`) for a valid
+  built-in `LOOK_*` constant whose register is empty at the queried tile —
+  including `LOOK_NUKES`, `LOOK_POWER_CREEPS`, and `LOOK_DEPOSITS`. The
+  validity check on `type` is independent of whether any object of that
+  type is present.
 
 ### 16.5 Terrain
 - `ROOM-TERRAIN-001` `matrix` `verified_vanilla`

@@ -53,6 +53,16 @@
 			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
 			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",
 			"tests": ["ACTIONLOG-STRUCT-001:lab"]
+		},
+		"look-at-omits-energy-alias-entry": {
+			"actual": "`Room.lookAt(x, y)` on a tile with a dropped resource emits a single entry `{ type: 'resource', resource: <Resource> }`. xxscreeps's `lookAt` (`game/room/look.ts`) builds entries from each object's `'#lookType'`, which for `Resource` is `LOOK_RESOURCES`, so the legacy `LOOK_ENERGY` alias never produces a second entry.",
+			"expected": "Vanilla `Room.lookAt` (`@screeps/engine/src/game/rooms.js:768-796`) explicitly walks both `LOOK_ENERGY` and `LOOK_RESOURCES` against the same dropped-resource backing register, so a dropped resource yields two entries on the tile — `{ type: 'energy', energy: <Resource> }` and `{ type: 'resource', resource: <Resource> }`.",
+			"tests": ["ROOM-LOOK-009"]
+		},
+		"look-for-at-deposit-not-registered": {
+			"actual": "`Room.lookForAt(LOOK_DEPOSITS, x, y)` returns `ERR_INVALID_ARGS` because no xxscreeps mod calls `registerLook(C.LOOK_DEPOSITS)`. The `'deposit'` constant is exported from `game/constants/find.ts` but absent from the `lookConstants` set, so `lookForAt`'s validity check rejects it before reading the tile.",
+			"expected": "Vanilla registers `deposit` in `lookTypeSpatialRegisters` (`@screeps/engine/src/game/rooms.js:506`), so `lookForAt(LOOK_DEPOSITS, x, y)` on an empty tile returns `[]` rather than `ERR_INVALID_ARGS`. The validity gate is independent of whether any deposit is present.",
+			"tests": ["ROOM-LOOK-010"]
 		}
 	}
 }
