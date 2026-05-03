@@ -68,6 +68,16 @@
 			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
 			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
 			"tests": ["ROOM-LOOK-006"]
+		},
+		"commonjs-main-exports-alias-missing": {
+			"actual": "The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record.",
+			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick.",
+			"tests": ["UNDOC-GLOBAL-003"]
+		},
+		"constructor-by-id-missing-for-noncreep-objects": {
+			"actual": "Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position.",
+			"expected": "Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick.",
+			"tests": ["UNDOC-CTOR-002", "UNDOC-CTOR-003", "UNDOC-CTOR-004", "UNDOC-CTOR-006", "UNDOC-CTOR-007", "UNDOC-CTOR-008"]
 		}
 	}
 }

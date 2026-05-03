@@ -4,7 +4,7 @@ Tracks every expected-failure classification in `adapters/xxscreeps/parity.json`
 
 Last refreshed: 2026-05-02 against pin `579213e`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 11 open parity gaps covering 21 tests, plus 2 accepted divergences covering 3 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 13 open parity gaps covering 28 tests, plus 2 accepted divergences covering 3 tests.
 
 ## Open parity gaps
 
@@ -84,6 +84,20 @@ Last refreshed: 2026-05-02 against pin `579213e`.
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
 - Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
+
+### commonjs-main-exports-alias-missing
+
+- Tests: UNDOC-GLOBAL-003
+- Status: CONFIRMED.
+- Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
+- Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
+
+### constructor-by-id-missing-for-noncreep-objects
+
+- Tests: UNDOC-CTOR-002, UNDOC-CTOR-003, UNDOC-CTOR-004, UNDOC-CTOR-006, UNDOC-CTOR-007, UNDOC-CTOR-008
+- Status: CONFIRMED.
+- Cause: xxscreeps implements constructor-by-id for some public classes, but several non-creep object constructors either cannot reconstruct from id-backed state or reconstruct into a base object whose public getters are not usable. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` hits the base `Structure.structureType` throwing getter; `new Ruin(id)` does not expose a readable position.
+- Plan: if upstream wants vanilla-compatible undocumented constructors, route these constructors through the same live object registry path as `Game.getObjectById(id)` or copy enough public backing fields onto the constructed object for same-tick public access.
 
 ## Accepted divergences
 
