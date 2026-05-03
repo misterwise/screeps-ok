@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1480%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1201%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-29-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1491%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1201%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-40-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1480](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-02 15:38 UTC |
-| 🟡 | **xxscreeps** | [1201](#xxscreeps-passing-tests) | [29](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-02 15:35 UTC |
+| 🟢 | **vanilla** | [1491](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-03 02:51 UTC |
+| 🟡 | **xxscreeps** | [1201](#xxscreeps-passing-tests) | [40](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-03 02:49 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 11 open parity gaps covering 26 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 14 expected-failure classifications against vanilla's canonical behavior, covering 40 tests. That includes 12 open parity gaps covering 37 tests and 2 intentional divergences covering 3 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -35,6 +35,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `world-size-exclusive-span` | `Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`), one short of the inclusive span. For the test fixture the BFS-derived inclusive span is `13` but `getWorldSize()` reports `12`. | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph. PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164) fixes this but has not landed in upstream `main`. | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
+| `id-constructor-overlay-copy` | `new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy. | Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored. | [11](#xxscreeps-gap-id-constructor-overlay-copy) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
@@ -58,6 +59,23 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
+
+</details>
+
+<details id="xxscreeps-gap-id-constructor-overlay-copy">
+<summary><code>id-constructor-overlay-copy</code> — 11 tests</summary>
+
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Creep(id) reconstructs a Creep view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Structure(id) reconstructs a Structure view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new ConstructionSite(id) reconstructs a ConstructionSite view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Resource(id) reconstructs a Resource view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Tombstone(id) reconstructs a Tombstone view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Ruin(id) reconstructs a Ruin view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new Creep(structureId) returns a Creep view and does not validate the target type`
+- `Undocumented API Surface — id constructors UNDOC-IDCTOR-004 writes to a constructed Creep view do not mutate the canonical live object`
 
 </details>
 
@@ -193,7 +211,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1480 tests across 125 files</summary>
+<summary>1491 tests across 126 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1987,6 +2005,20 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
+
+**`tests/27-undocumented/27.11-id-constructors.test.ts`** (11)
+
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Creep(id) reconstructs a Creep view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Structure(id) reconstructs a Structure view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new ConstructionSite(id) reconstructs a ConstructionSite view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Resource(id) reconstructs a Resource view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Tombstone(id) reconstructs a Tombstone view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Ruin(id) reconstructs a Ruin view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new Creep(structureId) returns a Creep view and does not validate the target type
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-004 writes to a constructed Creep view do not mutate the canonical live object
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 

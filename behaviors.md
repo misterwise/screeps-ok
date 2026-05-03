@@ -3734,6 +3734,45 @@ Framework Notes
   the resulting rendered marker, and assert the action name, source/target
   object, coordinates, timing, or privacy field named by the catalog entry.
 
+### 27.11 ID Constructors
+
+Vanilla exposes undocumented game-object constructors that accept an object id,
+for example `new Creep(id)`. Bots use this to store ids in `Memory` and
+reconstitute game-object views later without routing every read through
+`Game.getObjectById`.
+
+- `UNDOC-IDCTOR-001` `matrix` `verified_vanilla`
+  Calling `new Constructor(id)` for id-having `RoomObject` classes returns an
+  instance of the requested constructor whose id, room, position, and
+  representative public fields match the live object for that id.
+- `UNDOC-IDCTOR-002` `behavior` `verified_vanilla`
+  A creep id stored in `Memory` in one tick can be passed to
+  `new Creep(Memory.targetId)` in a later tick, and the constructed view
+  exposes live creep overlay fields such as `hits`, `fatigue`, and
+  `ticksToLive` with the same values as the live creep object.
+- `UNDOC-IDCTOR-003` `behavior` `verified_vanilla`
+  `new Creep(structureId)` does not validate that the id belongs to a creep:
+  it returns a `Creep` instance view over the structure id, exposing fields
+  present on the structure such as `name`, `hits`, and `hitsMax`, while
+  creep-only fields such as `fatigue` and `ticksToLive` are `undefined`.
+- `UNDOC-IDCTOR-004` `behavior` `verified_vanilla`
+  A constructed creep view is a distinct wrapper from the canonical live
+  object: ad-hoc property writes are readable on that constructed wrapper only,
+  and assignments to primitive overlay fields such as `fatigue` and `hits` are
+  ignored rather than mutating the live object.
+
+Coverage Notes
+- The constructor matrix covers `Creep`, `Structure`, `ConstructionSite`,
+  `Resource`, `Tombstone`, `Ruin`, `Mineral`, and `Source`. `Flag` is excluded
+  because flags are id-less by design, and `ObserverSpy` is excluded because it
+  is an internal implementation object rather than player API surface.
+- Wrong-type id coverage is representative rather than exhaustive; the
+  catalog pins vanilla's absence of type validation through `new
+  Creep(structureId)`.
+- Write behavior is representative for `new Creep(id)`, the motivating
+  player-code pattern. Other constructor classes can be cataloged later if
+  vanilla demonstrates a distinct observable write rule.
+
 Coverage Notes
 - Entries in this section interact with `§25 Memory` and `§24.2 Same-Tick
   Resource Visibility`. When a test could be written either under an

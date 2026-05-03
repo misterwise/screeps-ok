@@ -24,6 +24,11 @@
 			"expected": "Flag objects omit `id`; vanilla flags are named objects without object IDs",
 			"tests": ["SHAPE-FLAG-001"]
 		},
+		"id-constructor-overlay-copy": {
+			"actual": "`new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy.",
+			"expected": "Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored.",
+			"tests": ["UNDOC-IDCTOR-001", "UNDOC-IDCTOR-002", "UNDOC-IDCTOR-003", "UNDOC-IDCTOR-004"]
+		},
 		"rawmemory-set-no-eager-limit-check": {
 			"actual": "`RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception",
 			"expected": "`RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw",

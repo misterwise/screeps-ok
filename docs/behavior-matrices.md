@@ -30,6 +30,27 @@ Each definition should include:
 
 ## Definitions
 
+### ID-CONSTRUCTOR
+
+- `Catalog Entries`
+  `UNDOC-IDCTOR-001`
+- `Canonical Source`
+  Vanilla runtime behavior for undocumented id-accepting game-object
+  constructors, cross-checked against the live object surfaced by
+  `Game.getObjectById(id)` in the same tick.
+- `Dimensions`
+  constructor class, representative public fields copied from the canonical
+  object overlay
+- `Applicability`
+  `Creep`, `Structure`, `ConstructionSite`, `Resource`, `Tombstone`, `Ruin`,
+  `Mineral`, and `Source`.
+- `Exclusions`
+  `Flag` because flags are named objects without ids; `ObserverSpy` because it
+  is an internal object and not player API surface; wrong-type id behavior and
+  write behavior, which have separate representative catalog entries.
+- `Verification Notes`
+  The executable case list lives in `src/matrices/id-constructors.ts`.
+
 ### STORE-OPEN
 
 - `Catalog Entries`
