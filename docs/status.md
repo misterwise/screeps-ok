@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1480%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1201%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-29-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1489%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-7%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,22 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1480](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-02 15:38 UTC |
-| 🟡 | **xxscreeps** | [1201](#xxscreeps-passing-tests) | [29](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-02 15:35 UTC |
+| 🟢 | **vanilla** | [1489](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-03 01:20 UTC |
+| 🔴 | **xxscreeps** | [1203](#xxscreeps-passing-tests) | [29](#xxscreeps-expected-failures) | [7](#xxscreeps-unexpected-failures) | [253](#xxscreeps-skipped-tests) | 2026-05-03 01:17 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-002 new Source(id) exposes the same public fields as Game.getObjectById(id)`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-003 new Structure(id) exposes the same public fields as Game.getObjectById(id)`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-004 new Resource(id) exposes the same public fields as Game.getObjectById(id)`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-006 new Mineral(id) exposes the same public fields as Game.getObjectById(id)`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-007 new Tombstone(id) exposes the same public fields as Game.getObjectById(id)`
+- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)`
 
 ## xxscreeps expected failures
 
@@ -193,7 +203,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1480 tests across 125 files</summary>
+<summary>1489 tests across 125 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -513,7 +523,7 @@ Click a count to jump to the affected test list.
 - creep.harvest() HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player
 - creep.harvest() HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep
 - creep.harvest() HARVEST-012 harvest returns ERR_BUSY while the creep is spawning
-- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for a non-source target
+- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets
 
 **`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (13)
 
@@ -1988,10 +1998,11 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
-**`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
+**`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module
 
 **`tests/27-undocumented/27.3-memjson.test.ts`** (5)
 
@@ -2013,13 +2024,21 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
 
-**`tests/27-undocumented/27.6-identity.test.ts`** (5)
+**`tests/27-undocumented/27.6-identity.test.ts`** (13)
 
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-001 new Creep(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-002 new Source(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-003 new Structure(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-004 new Resource(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-005 new ConstructionSite(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-006 new Mineral(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-007 new Tombstone(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
@@ -2528,7 +2547,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1201 tests across 103 files</summary>
+<summary>1203 tests across 103 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2835,7 +2854,7 @@ Click a count to jump to the affected test list.
 - creep.harvest() HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player
 - creep.harvest() HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep
 - creep.harvest() HARVEST-012 harvest returns ERR_BUSY while the creep is spawning
-- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for a non-source target
+- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets
 
 **`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (13)
 
@@ -4009,13 +4028,15 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
 
-**`tests/27-undocumented/27.6-identity.test.ts`** (5)
+**`tests/27-undocumented/27.6-identity.test.ts`** (7)
 
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-001 new Creep(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-005 new ConstructionSite(id) exposes the same public fields as Game.getObjectById(id)
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 

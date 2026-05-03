@@ -447,8 +447,8 @@ Coverage Notes
 - `HARVEST-012` `behavior` `verified_vanilla`
   `harvest()` returns `ERR_BUSY` while the creep is spawning.
 - `HARVEST-013` `behavior` `verified_vanilla`
-  `harvest()` returns `ERR_INVALID_TARGET` for a target that is not a source,
-  mineral, or deposit.
+  `harvest()` returns `ERR_INVALID_TARGET` when the target is omitted, `null`,
+  `undefined`, or not a source, mineral, or deposit.
 - `HARVEST-014` `behavior` `verified_vanilla`
   When the source's remaining energy is less than the full harvest amount
   (2 × WORK parts), the creep harvests only the remaining energy.
@@ -3510,6 +3510,10 @@ Notes
   across ticks within a single VM instance. (Observable consequence of the
   engine caching parsed modules so top-level code does not re-execute per
   tick.)
+- `UNDOC-GLOBAL-003` `behavior` `verified_vanilla`
+  In an executing CommonJS user module, bare `exports` aliases
+  `module.exports`: properties written through either object are observable
+  through the other during that tick.
 
 Notes
 - VM reset *timing* (when a global reset occurs) is engine-scheduler
@@ -3604,6 +3608,38 @@ objects for the same entity within a tick.
   the object returned by a lookup in a subsequent tick (cross-tick object
   discard). (Documents the expected reset so bots know heap-only caches
   reset per tick.)
+- `UNDOC-CTOR-001` `behavior` `verified_vanilla`
+  `new Creep(id)` produces an object whose public `id`, `name`, `pos`, and
+  `owner` fields match `Game.getObjectById(id)` for the same creep within
+  the tick.
+- `UNDOC-CTOR-002` `behavior` `verified_vanilla`
+  `new Source(id)` produces an object whose public `id`, `pos`, `energy`, and
+  `energyCapacity` fields match `Game.getObjectById(id)` for the same source
+  within the tick.
+- `UNDOC-CTOR-003` `behavior` `verified_vanilla`
+  `new Structure(id)` produces an object whose public `id`, `pos`,
+  and `structureType` fields match `Game.getObjectById(id)` for the same
+  structure within the tick.
+- `UNDOC-CTOR-004` `behavior` `verified_vanilla`
+  `new Resource(id)` produces an object whose public `id`, `pos`,
+  `resourceType`, and `amount` fields match `Game.getObjectById(id)` for the
+  same dropped resource within the tick.
+- `UNDOC-CTOR-005` `behavior` `verified_vanilla`
+  `new ConstructionSite(id)` produces an object whose public `id`, `pos`, and
+  `structureType` fields match `Game.getObjectById(id)` for the same
+  construction site within the tick.
+- `UNDOC-CTOR-006` `behavior` `verified_vanilla`
+  `new Mineral(id)` produces an object whose public `id`, `pos`,
+  `mineralType`, and `mineralAmount` fields match `Game.getObjectById(id)`
+  for the same mineral within the tick.
+- `UNDOC-CTOR-007` `behavior` `verified_vanilla`
+  `new Tombstone(id)` produces an object whose public `id`, `pos`,
+  `deathTime`, `ticksToDecay`, and energy store amount fields match
+  `Game.getObjectById(id)` for the same tombstone within the tick.
+- `UNDOC-CTOR-008` `behavior` `verified_vanilla`
+  `new Ruin(id)` produces an object whose public `id`, `pos`,
+  `structureType`, `destroyTime`, `ticksToDecay`, and energy store amount
+  fields match `Game.getObjectById(id)` for the same ruin within the tick.
 
 Notes
 - `room.find()`'s own per-tick result caching is covered by `ROOM-FIND-*`

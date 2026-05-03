@@ -317,7 +317,7 @@ describe('creep.harvest()', () => {
 		expect(rc).toBe(ERR_BUSY);
 	});
 
-	test('HARVEST-013 harvest returns ERR_INVALID_TARGET for a non-source target', async ({ shard }) => {
+	test('HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -328,9 +328,20 @@ describe('creep.harvest()', () => {
 		});
 		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${containerId}))
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
+		const result = await shard.runPlayer('p1', code`
+			const creep = Game.getObjectById(${creepId});
+			({
+				omitted: creep.harvest(),
+				undefinedArg: creep.harvest(undefined),
+				nullArg: creep.harvest(null),
+				plainObject: creep.harvest({}),
+				container: creep.harvest(Game.getObjectById(${containerId})),
+			})
+		`) as Record<string, number>;
+		expect(result.omitted).toBe(ERR_INVALID_TARGET);
+		expect(result.undefinedArg).toBe(ERR_INVALID_TARGET);
+		expect(result.nullArg).toBe(ERR_INVALID_TARGET);
+		expect(result.plainObject).toBe(ERR_INVALID_TARGET);
+		expect(result.container).toBe(ERR_INVALID_TARGET);
 	});
 });
