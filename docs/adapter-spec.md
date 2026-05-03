@@ -58,6 +58,9 @@ That includes:
 - `findInRoom`
 - `getGameTime`
 - `captureActionLog`
+- `setInvaderRaidState`
+- `runInvaderRaidSpawner`
+- `clearInvaderRaidCreeps`
 - `getControllerPos`
 - `teardown`
 
@@ -106,6 +109,30 @@ must not become the primary path for common gameplay setup.
 `setTerrain()` is part of the contract, but adapters may reject it when the
 engine cannot mutate terrain after shard creation. If so, the failure must be
 explicit and actionable.
+
+### Invader Raid Spawner Setup
+
+`setInvaderRaidState(room, spec)` is a narrow setup helper for the backend
+inactive-room Invader raid spawner. It may seed backend-only fields required to
+make raid eligibility deterministic, including:
+
+- aggregate harvested-energy budget for the room's sources
+- room-specific raid threshold
+- backend room active/inactive membership
+- backend room status
+- controller reservation on the given room, for adjacent-exit qualification
+
+Tests must still assert only public outcomes such as spawned creeps, body
+parts, boosts, owner, TTL, and positions.
+
+`runInvaderRaidSpawner(options?)` runs exactly one raid-spawner pass without
+waiting for the server cron cadence. If `options.random` is supplied, adapters
+must consume those numbers in order for spawner-side randomness and fail if the
+sequence is exhausted.
+
+`clearInvaderRaidCreeps(room)` removes Invader-owned raid creeps as test setup
+for follow-up spawner passes. It must not expose or assert hidden storage
+fields.
 
 ## Execution Semantics
 
@@ -302,6 +329,7 @@ Current capability flags are:
 - `terrain`
 - `portals`
 - `invaderCore`
+- `invaderRaidSpawner`
 - `multiShard`
 - `interShardMemory`
 - `cpuShardLimits`

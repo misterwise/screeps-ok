@@ -14,6 +14,7 @@ export type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
 } from './adapter.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';
@@ -99,6 +100,7 @@ export {
 	CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
 	// Source energy
 	SOURCE_ENERGY_CAPACITY, SOURCE_ENERGY_NEUTRAL_CAPACITY, SOURCE_ENERGY_KEEPER_CAPACITY,
+	INVADERS_ENERGY_GOAL,
 	// Ruin decay
 	RUIN_DECAY, RUIN_DECAY_STRUCTURES,
 	// Controller structure limits

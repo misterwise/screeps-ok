@@ -161,6 +161,37 @@ export interface MarketOrderSpec {
 	created?: number;
 }
 
+export interface InvaderRaidRoomStateSpec {
+	/**
+	 * Seed the room's aggregate source-harvest raid budget. Adapters translate
+	 * this to their internal source-side accounting; snapshots must not expose
+	 * the backing field.
+	 */
+	harvestedEnergy?: number;
+	/**
+	 * Seed the effective room raid threshold. `null` clears the room-specific
+	 * override so the engine falls back to its default threshold.
+	 */
+	raidGoal?: number | null;
+	/** Whether the room is present in the backend active-room set. */
+	active?: boolean;
+	/** Seed the backend room status used by the inactive-room raid spawner. */
+	status?: string;
+	/**
+	 * Seed or clear the room controller reservation. Used for adjacent-room exit
+	 * qualification tests.
+	 */
+	controllerReservation?: { owner: string; ticksToEnd?: number } | null;
+}
+
+export interface InvaderRaidSpawnerOptions {
+	/**
+	 * Deterministic values consumed in order by the raid spawner's Math.random()
+	 * calls. Adapters should fail the helper if the sequence is exhausted.
+	 */
+	random?: readonly number[];
+}
+
 // ── Capabilities ─────────────────────────────────────────────
 
 export interface AdapterCapabilities {
@@ -184,6 +215,8 @@ export interface AdapterCapabilities {
 	portals: boolean;
 	/** Invader core structures (level, deploy timer, collapse lifecycle). */
 	invaderCore: boolean;
+	/** Per-room inactive Invader raid spawning orchestration. */
+	invaderRaidSpawner: boolean;
 	/** Two or more shards orchestrated within a single test (createShard with
 	 *  multiple shards, cross-shard creep traversal, per-shard Memory). */
 	multiShard: boolean;
@@ -320,6 +353,13 @@ export interface ScreepsOkAdapter {
 	 * visual/history action marker surface exposed to clients and replays.
 	 */
 	captureActionLog(room: string): Promise<RoomActionLogCapture>;
+
+	/** Seed backend-only raid-spawner state through a typed test setup surface. */
+	setInvaderRaidState(room: string, spec: InvaderRaidRoomStateSpec): Promise<void>;
+	/** Execute one inactive-room Invader raid spawner pass, without cron timing. */
+	runInvaderRaidSpawner(options?: InvaderRaidSpawnerOptions): Promise<void>;
+	/** Remove Invader-owned raid creeps from the room for follow-up setup. */
+	clearInvaderRaidCreeps(room: string): Promise<void>;
 
 	/** Get the controller position for a room. Returns null if no controller. */
 	getControllerPos(room: string): Promise<{ x: number; y: number } | null>;

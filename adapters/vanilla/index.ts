@@ -4,6 +4,7 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
 } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -363,6 +364,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		terrain: true,
 		portals: true,
 		invaderCore: true,
+		invaderRaidSpawner: true,
 		// The open-source `@screeps/engine` ships no InterShardMemory
 		// module (the MMO server provides it closed-source) and does
 		// not seed `Game.cpu.shardLimits`. `interShardMemory` is true
@@ -1341,6 +1343,103 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return { room: roomName, tick, objects: sortedActionLogObjects(objects) };
 	}
 
+	async setInvaderRaidState(roomName: string, spec: InvaderRaidRoomStateSpec): Promise<void> {
+		if (!this.db || !this.env || !this.server) {
+			throw new Error('setInvaderRaidState: createShard() must be called first');
+		}
+		const room = await this.db.rooms.findOne({ _id: roomName });
+		if (!room) throw new Error(`setInvaderRaidState: unknown room '${roomName}'`);
+
+		const roomSet: Record<string, unknown> = {};
+		if (spec.raidGoal !== undefined) roomSet.invaderGoal = spec.raidGoal;
+		if (spec.status !== undefined) roomSet.status = spec.status;
+		if (Object.keys(roomSet).length > 0) {
+			await this.db.rooms.update({ _id: roomName }, { $set: roomSet });
+		}
+
+		if (spec.harvestedEnergy !== undefined) {
+			if (!Number.isFinite(spec.harvestedEnergy) || spec.harvestedEnergy < 0) {
+				throw new Error(`setInvaderRaidState: harvestedEnergy must be non-negative, got ${spec.harvestedEnergy}`);
+			}
+			const sources = await this.db['rooms.objects'].find({ room: roomName, type: 'source' });
+			if (sources.length === 0 && spec.harvestedEnergy > 0) {
+				throw new Error(`setInvaderRaidState: cannot seed harvestedEnergy for '${roomName}' without a source`);
+			}
+			if (sources.length > 0) {
+				await this.db['rooms.objects'].update(
+					{ room: roomName, type: 'source' },
+					{ $set: { invaderHarvested: 0 } },
+				);
+				await this.db['rooms.objects'].update(
+					{ _id: sources[0]._id },
+					{ $set: { invaderHarvested: spec.harvestedEnergy } },
+				);
+			}
+		}
+
+		if (spec.controllerReservation !== undefined) {
+			const controller = await this.db['rooms.objects'].findOne({ room: roomName, type: 'controller' });
+			if (!controller && spec.controllerReservation) {
+				throw new Error(`setInvaderRaidState: room '${roomName}' has no controller to reserve`);
+			}
+			if (controller) {
+				const reservation = spec.controllerReservation
+					? {
+						user: this.resolvePlayer(spec.controllerReservation.owner),
+						endTime: await this.server.world.gameTime + (spec.controllerReservation.ticksToEnd ?? 5000),
+					}
+					: null;
+				await this.db['rooms.objects'].update(
+					{ _id: controller._id },
+					{ $set: { reservation } },
+				);
+			}
+		}
+
+		if (spec.active !== undefined) {
+			await this.setRoomActive(roomName, spec.active);
+		}
+	}
+
+	async runInvaderRaidSpawner(options: InvaderRaidSpawnerOptions = {}): Promise<void> {
+		if (!this.db || !this.env || !this.server) {
+			throw new Error('runInvaderRaidSpawner: createShard() must be called first');
+		}
+		const common = nodeRequire('@screeps/common') as {
+			configManager: { config: { cronjobs?: Record<string, unknown[]> } };
+		};
+		nodeRequire('@screeps/backend/lib/cronjobs.js');
+		const job = common.configManager.config.cronjobs?.genInvaders?.[1];
+		if (typeof job !== 'function') {
+			throw new Error('runInvaderRaidSpawner: vanilla genInvaders cronjob is not registered');
+		}
+
+		const originalRandom = Math.random;
+		let randomIndex = 0;
+		if (options.random) {
+			Math.random = () => {
+				if (!options.random || randomIndex >= options.random.length) {
+					throw new Error('runInvaderRaidSpawner: deterministic random sequence exhausted');
+				}
+				const value = options.random[randomIndex++];
+				if (!Number.isFinite(value) || value < 0 || value >= 1) {
+					throw new Error(`runInvaderRaidSpawner: random[${randomIndex - 1}] must be in [0, 1), got ${value}`);
+				}
+				return value;
+			};
+		}
+		try {
+			await job();
+		} finally {
+			Math.random = originalRandom;
+		}
+	}
+
+	async clearInvaderRaidCreeps(roomName: string): Promise<void> {
+		if (!this.db) throw new Error('clearInvaderRaidCreeps: createShard() must be called first');
+		await this.db['rooms.objects'].removeWhere({ room: roomName, type: 'creep', user: '2' });
+	}
+
 	async getControllerPos(room: string): Promise<{ x: number; y: number } | null> {
 		const controller = await this.db['rooms.objects'].findOne({ room, type: 'controller' });
 		return controller ? { x: controller.x, y: controller.y } : null;
@@ -1361,6 +1460,18 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	private getProgressTotal(structureType: string): number {
 		const C = this.server.constants;
 		return C?.CONSTRUCTION_COST?.[structureType] ?? 300;
+	}
+
+	private async setRoomActive(roomName: string, active: boolean): Promise<void> {
+		await this.db.rooms.update({ _id: roomName }, { $set: { active } });
+		const key = this.env.keys.ACTIVE_ROOMS;
+		const activeRooms = new Set<string>(await this.env.smembers(key));
+		if (active) activeRooms.add(roomName);
+		else activeRooms.delete(roomName);
+		await this.env.del(key);
+		for (const activeRoom of activeRooms) {
+			await this.env.sadd(key, activeRoom);
+		}
 	}
 
 	private async getRoomRcl(roomName: string): Promise<number> {

@@ -6,6 +6,7 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
 } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
@@ -159,6 +160,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
 		// bare stub at game/runtime.ts:13.
 		invaderCore: false,
+		invaderRaidSpawner: false,
 		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
 		// and no Game.cpu.shardLimits / setShardLimits. See
 		// docs/xxscreeps-parity-gaps.md.
@@ -981,6 +983,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async getGameTime(): Promise<number> {
 		await this.ensureSimulation();
 		return this.simulation!.shard.time;
+	}
+
+	async setInvaderRaidState(_room: string, _spec: InvaderRaidRoomStateSpec): Promise<void> {
+		throw new Error('xxscreeps adapter does not support invaderRaidSpawner');
+	}
+
+	async runInvaderRaidSpawner(_options: InvaderRaidSpawnerOptions = {}): Promise<void> {
+		throw new Error('xxscreeps adapter does not support invaderRaidSpawner');
+	}
+
+	async clearInvaderRaidCreeps(_room: string): Promise<void> {
+		throw new Error('xxscreeps adapter does not support invaderRaidSpawner');
 	}
 
 	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {

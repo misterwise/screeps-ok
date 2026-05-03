@@ -463,6 +463,11 @@ Coverage Notes
 - Shared `harvest()` API gates (`ERR_NOT_OWNER` on the acting creep,
   `ERR_BUSY`, `ERR_INVALID_TARGET`) are temporarily owned here even though they
   also apply to mineral and deposit harvest calls.
+- Vanilla source harvesting also contributes to the server-side raid budget for
+  the harvested source by the successful harvest amount. That field is not part
+  of the public `Source` shape, so this catalog keeps it non-normative here;
+  the player-observable aggregate effect is owned by `INVADER-RAID-*` entries
+  in section 14.6.
 
 ### 3.2 Mineral Harvest
 - `HARVEST-MINERAL-001` `behavior` `verified_vanilla`
@@ -2204,6 +2209,61 @@ Coverage Notes
   (`STRONGHOLD_RAMPART_HITS`), per-tile effect propagation
   (`EFFECT_COLLAPSE_TIMER`), and stronghold container reward contents are
   separate observables not covered by `STRONGHOLD-LAYOUT-001`.
+
+### 14.6 Invader Raid Spawning `capability: invaderRaidSpawner`
+- `INVADER-RAID-001` `behavior` `verified_vanilla`
+  A room does not spawn Invader raid creeps from the per-room raid spawner
+  unless its 10x10 sector contains at least one `StructureInvaderCore` whose
+  public `level` is greater than 0.
+- `INVADER-RAID-002` `behavior` `verified_vanilla`
+  For ordinary raid thresholds, a room becomes eligible for an Invader raid
+  only after the energy harvested from all of its sources since the previous
+  raid reaches the room's effective raid threshold, using
+  `INVADERS_ENERGY_GOAL` as the default.
+- `INVADER-RAID-003` `behavior` `verified_vanilla`
+  When a server-forced room raid threshold is exactly 1, the harvested-energy
+  threshold is bypassed and the room can spawn an Invader raid if the other
+  raid gates pass.
+- `INVADER-RAID-004` `behavior` `verified_vanilla`
+  A room that already contains an Invader-owned creep does not receive a new
+  Invader raid from the per-room raid spawner.
+- `INVADER-RAID-005` `behavior` `verified_vanilla`
+  A room whose public room status is not `normal` does not receive an Invader
+  raid from the per-room raid spawner.
+- `INVADER-RAID-006` `behavior` `verified_vanilla`
+  A room that is already active in the server's room-processing set does not
+  receive an Invader raid from the inactive-room raid spawner.
+- `INVADER-RAID-007` `behavior` `verified_vanilla`
+  A raid can spawn only through an exit direction whose room edge has at least
+  one non-wall tile and whose adjacent room's controller is absent or has
+  neither an owner nor a reservation.
+- `INVADER-RAID-008` `behavior` `verified_vanilla`
+  If no exit direction qualifies for a raid, no raid spawns; otherwise all
+  creeps in that raid spawn on non-wall edge tiles from one qualifying exit
+  direction.
+- `INVADER-RAID-009` `matrix` `verified_vanilla`
+  Raid creep size class, count caps, subtype assignment, ordered body
+  templates, and boost compounds follow the canonical Invader raid composition
+  matrix in `docs/behavior-matrices.md`.
+- `INVADER-RAID-010` `behavior` `verified_vanilla`
+  After an Invader raid spawns, energy harvested before that raid no longer
+  contributes to future raid eligibility: every source in the room starts a
+  fresh raid budget, and the room receives a new future raid threshold.
+
+Coverage Notes
+- The cron interval for checking raid eligibility is implementation timing, not
+  a cataloged gameplay rule.
+- The source field used to accumulate raid budget is not part of the public
+  `Source` shape. Entries in this facet phrase the rule as the observable
+  aggregate: energy harvested from the room's sources since the previous raid.
+- Exact random distributions for exit choice, raid-size escalation, subtype
+  rolls, boost rolls, and the next-threshold roll are intentionally not
+  cataloged as deterministic single-run behavior.
+- The unpacked vanilla source rolls the next room-specific raid threshold as
+  `floor(INVADERS_ENERGY_GOAL * r)` where `0.7 <= r < 1.3`; on its rare
+  multiplier branch it stores either double that value or `0` because the low
+  branch uses `Math.floor(0.5)`. A stored `0` falls back to
+  `INVADERS_ENERGY_GOAL` on the next eligibility check.
 
 
 ---

@@ -329,6 +329,7 @@ const CAPABILITY_DESCRIPTIONS = {
 	terrain: 'Custom terrain specs',
 	portals: 'Portal structures and teleport mechanics',
 	invaderCore: 'Invader core structures',
+	invaderRaidSpawner: 'Inactive-room Invader raid spawning',
 };
 
 const LIMITATION_DESCRIPTIONS = {

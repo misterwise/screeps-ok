@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1500%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1203%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-47-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1521%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1203%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-47-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [1500](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-03 02:59 UTC |
-| 🟡 | **xxscreeps** | [1203](#xxscreeps-passing-tests) | [47](#xxscreeps-expected-failures) | — | [253](#xxscreeps-skipped-tests) | 2026-05-03 02:57 UTC |
+| 🟢 | **vanilla** | [1521](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-03 18:26 UTC |
+| 🟡 | **xxscreeps** | [1203](#xxscreeps-passing-tests) | [47](#xxscreeps-expected-failures) | — | [274](#xxscreeps-skipped-tests) | 2026-05-03 18:23 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -232,7 +232,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>1500 tests across 126 files</summary>
+<summary>1521 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1446,6 +1446,30 @@ Click a count to jump to the affected test list.
 - Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
 - Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
 
+**`tests/14-structures-npc/14.6-invader-raid-spawning.test.ts`** (21)
+
+- Invader raid spawning INVADER-RAID-001 no level > 0 invader core in sector prevents raid spawn
+- Invader raid spawning INVADER-RAID-001 level > 0 invader core in sector permits raid spawn
+- Invader raid spawning INVADER-RAID-001 level 0 invader core does not satisfy sector prerequisite
+- Invader raid spawning INVADER-RAID-002 below the default harvested-energy threshold does not spawn a raid
+- Invader raid spawning INVADER-RAID-002 reaching the default harvested-energy threshold spawns a raid
+- Invader raid spawning INVADER-RAID-003 raid goal 1 bypasses harvested-energy threshold
+- Invader raid spawning INVADER-RAID-004 existing Invader-owned creep suppresses a new raid
+- Invader raid spawning INVADER-RAID-005 non-normal room status suppresses raid spawning
+- Invader raid spawning INVADER-RAID-006 active room suppresses inactive-room raid spawning
+- Invader raid spawning INVADER-RAID-007 all-wall room edges provide no qualifying exit
+- Invader raid spawning INVADER-RAID-007 adjacent owned controller blocks that exit
+- Invader raid spawning INVADER-RAID-007 adjacent reserved controller blocks that exit
+- Invader raid spawning INVADER-RAID-008 one qualifying one-tile exit places the raid exactly on that edge tile
+- Invader raid spawning INVADER-RAID-009 non-center neutral no escalation spawns a boosted small Melee
+- Invader raid spawning INVADER-RAID-009 owned RCL 3 still uses the small body class
+- Invader raid spawning INVADER-RAID-009 non-center nested small raid assigns index 1 Ranged and index 2 Healer
+- Invader raid spawning INVADER-RAID-009 non-center count five lets deterministic RNG choose index 2 Ranged
+- Invader raid spawning INVADER-RAID-009 center small raid starts Ranged and caps count to selected exit tiles
+- Invader raid spawning INVADER-RAID-009 non-center owned RCL 4 first escalation uses big bodies without boosts
+- Invader raid spawning INVADER-RAID-009 center owned RCL 4 can assign a big Healer and still has zero boost chance
+- Invader raid spawning INVADER-RAID-010 successful raid resets harvested budget for the next spawner pass
+
 **`tests/15-structure-common/15.1-hits.test.ts`** (20)
 
 - Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
@@ -2116,13 +2140,14 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 253 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 274 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerCreeps` | Power creeps and powers | [104](#xxscreeps-skip-capability-powercreeps) |
 | capability | `nuke` | Nukes | [71](#xxscreeps-skip-capability-nuke) |
 | capability | `market` | Market and terminal | [42](#xxscreeps-skip-capability-market) |
+| capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `deposit` | Deposits (highway) | [18](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
@@ -2489,6 +2514,35 @@ Click a count to jump to the affected test list.
 
 - 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
+
+</details>
+
+<details id="xxscreeps-skip-capability-invaderraidspawner">
+<summary><code>capability:invaderRaidSpawner</code> — 21 tests across 1 file</summary>
+
+**`tests/14-structures-npc/14.6-invader-raid-spawning.test.ts`** (21)
+
+- Invader raid spawning INVADER-RAID-001 no level > 0 invader core in sector prevents raid spawn
+- Invader raid spawning INVADER-RAID-001 level > 0 invader core in sector permits raid spawn
+- Invader raid spawning INVADER-RAID-001 level 0 invader core does not satisfy sector prerequisite
+- Invader raid spawning INVADER-RAID-002 below the default harvested-energy threshold does not spawn a raid
+- Invader raid spawning INVADER-RAID-002 reaching the default harvested-energy threshold spawns a raid
+- Invader raid spawning INVADER-RAID-003 raid goal 1 bypasses harvested-energy threshold
+- Invader raid spawning INVADER-RAID-004 existing Invader-owned creep suppresses a new raid
+- Invader raid spawning INVADER-RAID-005 non-normal room status suppresses raid spawning
+- Invader raid spawning INVADER-RAID-006 active room suppresses inactive-room raid spawning
+- Invader raid spawning INVADER-RAID-007 all-wall room edges provide no qualifying exit
+- Invader raid spawning INVADER-RAID-007 adjacent owned controller blocks that exit
+- Invader raid spawning INVADER-RAID-007 adjacent reserved controller blocks that exit
+- Invader raid spawning INVADER-RAID-008 one qualifying one-tile exit places the raid exactly on that edge tile
+- Invader raid spawning INVADER-RAID-009 non-center neutral no escalation spawns a boosted small Melee
+- Invader raid spawning INVADER-RAID-009 owned RCL 3 still uses the small body class
+- Invader raid spawning INVADER-RAID-009 non-center nested small raid assigns index 1 Ranged and index 2 Healer
+- Invader raid spawning INVADER-RAID-009 non-center count five lets deterministic RNG choose index 2 Ranged
+- Invader raid spawning INVADER-RAID-009 center small raid starts Ranged and caps count to selected exit tiles
+- Invader raid spawning INVADER-RAID-009 non-center owned RCL 4 first escalation uses big bodies without boosts
+- Invader raid spawning INVADER-RAID-009 center owned RCL 4 can assign a big Healer and still has zero boost chance
+- Invader raid spawning INVADER-RAID-010 successful raid resets harvested budget for the next spawner pass
 
 </details>
 

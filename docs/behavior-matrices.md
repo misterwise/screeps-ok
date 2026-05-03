@@ -226,6 +226,78 @@ Each definition should include:
 - `Verification Notes`
   The executable case list lives in `src/matrices/stronghold-layout.ts`.
 
+### INVADER-RAID-COMPOSITION
+
+- `Catalog Entries`
+  `INVADER-RAID-009`
+- `Canonical Source`
+  Unpacked vanilla `@screeps/backend/lib/cronjobs.js`, `genInvaders()`
+  helpers `createRaid()` and `createCreep()`.
+- `Dimensions`
+  room center class, owned controller level bucket, raid-size branch, selected
+  exit-tile count cap, creep index within the raid, body subtype, boost-roll
+  state, and boostable body part type.
+- `Applicability`
+  Invader-owned creeps spawned by the per-room Invader raid spawner after the
+  eligibility and exit gates in `INVADER-RAID-001` through
+  `INVADER-RAID-008` pass.
+- `Exclusions`
+  Exact probabilities for raid-size escalation, subtype random rolls, boost
+  rolls, exit-direction choice, first spawn-tile choice, and next raid-threshold
+  randomization. Stronghold creep spawning from an invader core's own
+  `spawning` state is owned by `INVADER-CORE-003`.
+- `Verification Notes`
+  Size class is `small` unless the room has an owned controller with level >= 4;
+  owned controller levels 4 through 8 use `big`.
+
+  Raid count before the selected exit-tile cap:
+
+  | Branch | Size / RCL bucket | Count | Boost chance |
+  | --- | --- | --- | --- |
+  | non-center, no escalation | any | 1 | 0.5 |
+  | non-center, first escalation only | small | 2 | 0.5 |
+  | non-center, first escalation only | big, RCL 4-8 | 2 | 0 |
+  | nested escalation, or any center room | small | 2-5 | 0.5 |
+  | nested escalation, or any center room | big, RCL 4-5 | 2 | 0 |
+  | nested escalation, or any center room | big, RCL 6 | 2-3 | 0 |
+  | nested escalation, or any center room | big, RCL 7 | 2-3 | 0.4 |
+  | nested escalation, or any center room | big, RCL 8 | 2-5 | 0.4 |
+
+  The first escalation branch corresponds to `Math.random() > 0.9` in
+  non-center rooms and is always taken in center rooms. The nested escalation
+  branch corresponds to `Math.random() > 0.8` after first escalation and is
+  always taken in center rooms. The final count is capped to the number of
+  available edge spawn tiles on the selected exit.
+
+  Subtype assignment by creep index:
+
+  | Index condition | Non-center subtype | Center subtype |
+  | --- | --- | --- |
+  | index 0 | Melee | Ranged |
+  | index 1 | Ranged or Healer | Ranged or Healer |
+  | index 2 and count == 5 | Ranged or Healer | Ranged or Healer |
+  | index 2 and count != 5 | Healer | Healer |
+  | index >= 3 | Healer | Healer |
+
+  Body templates are the exact ordered `smallMelee`, `smallRanged`,
+  `smallHealer`, `bigMelee`, `bigRanged`, and `bigHealer` arrays in
+  `createCreep()`. Generated cases should preserve body part order, not only
+  part counts.
+
+  Boost chance is rolled once per spawned creep. If the roll succeeds, all
+  boostable parts in that creep receive the center or non-center compound below;
+  MOVE parts are never boosted.
+
+  | Body part | Non-center boost | Center boost |
+  | --- | --- | --- |
+  | `heal` | `LO` | `XLHO2` |
+  | `ranged_attack` | `KO` | `XKHO2` |
+  | `work` | `ZH` | `XZH2O` |
+  | `attack` | `UH` | `XUH2O` |
+  | `tough` | `GO` | `XGHO2` |
+
+  The executable case list lives in `src/matrices/invader-raid-composition.ts`.
+
 ### INTENT-CREEP-PRIORITY
 
 - `Catalog Entries`
