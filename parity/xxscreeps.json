@@ -8,8 +8,8 @@
 			"tests": ["CTRL-CLAIM-007"]
 		},
 		"world-size-exclusive-span": {
-			"actual": "`Game.map.getWorldSize()` reports `12` for the current W1N1 graph, while `describeExits()` reaches an inclusive coordinate span of `13`",
-			"expected": "`Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph",
+			"actual": "`Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`), one short of the inclusive span. For the test fixture the BFS-derived inclusive span is `13` but `getWorldSize()` reports `12`.",
+			"expected": "`Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph. PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164) fixes this but has not landed in upstream `main`.",
 			"tests": ["MAP-ROOM-005"]
 		},
 		"shape-body-part-always-has-boost": {
@@ -48,6 +48,36 @@
 			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",
 			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
 			"tests": ["UNDOC-MEMJSON-005"]
+		},
+		"construction-site-blocked-by-same-type-ruin": {
+			"actual": "`room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly.",
+			"expected": "Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there.",
+			"tests": ["CONSTRUCTION-SITE-009"]
+		},
+		"actionlog-lab-renderer-missing-combined-actions": {
+			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
+			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",
+			"tests": ["ACTIONLOG-STRUCT-001:lab"]
+		},
+		"look-energy-alias-not-registered": {
+			"actual": "`LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no xxscreeps mod aliases it onto `Resource`. Surfaces three ways: `lookAt(x, y)` (`game/room/look.ts`) emits each object using its `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `{ type: 'energy', energy: ... }` entry; `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants`; `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined.",
+			"expected": "Vanilla wires `LOOK_ENERGY` as a legacy alias to the `Resource` register (`@screeps/engine/src/game/rooms.js:768-796`): `lookAt` yields two entries per dropped resource (`type: 'energy'` and `type: 'resource'`), and `lookForAt`/`lookForAtArea(LOOK_ENERGY, ...)` return the same `Resource` collection as `LOOK_RESOURCES`.",
+			"tests": ["ROOM-LOOK-007", "ROOM-LOOK-008", "ROOM-LOOK-009"]
+		},
+		"look-for-at-unknown-returns-empty": {
+			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
+			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
+			"tests": ["ROOM-LOOK-006"]
+		},
+		"commonjs-main-exports-alias-missing": {
+			"actual": "The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record.",
+			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick.",
+			"tests": ["UNDOC-GLOBAL-003"]
+		},
+		"constructor-by-id-missing-for-noncreep-objects": {
+			"actual": "Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position.",
+			"expected": "Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick.",
+			"tests": ["UNDOC-CTOR-002", "UNDOC-CTOR-003", "UNDOC-CTOR-004", "UNDOC-CTOR-006", "UNDOC-CTOR-007", "UNDOC-CTOR-008"]
 		}
 	}
 }

@@ -39,4 +39,22 @@ describe('Undocumented API Surface — global / VM persistence', () => {
 		expect(result.bothDefined).toBe(true);
 		expect(result.sameReference).toBe(true);
 	});
+
+	test('UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			exports.screepsOkViaExports = 'exports-value';
+			module.exports.screepsOkViaModule = 'module-value';
+			({
+				sameReference: exports === module.exports,
+				viaExportsOnModule: module.exports.screepsOkViaExports,
+				viaModuleOnExports: exports.screepsOkViaModule,
+			})
+		`) as { sameReference: boolean; viaExportsOnModule: unknown; viaModuleOnExports: unknown };
+
+		expect(result.sameReference).toBe(true);
+		expect(result.viaExportsOnModule).toBe('exports-value');
+		expect(result.viaModuleOnExports).toBe('module-value');
+	});
 });
