@@ -1240,3 +1240,910 @@ Each definition should include:
   `spawning` on spawn, `isPublic` on rampart). Capability-gated types
   (terminal, factory, nuker, powerSpawn, observer) are skipped when the
   adapter lacks the capability.
+
+### LAB-RUN-VALIDATION
+
+- `Catalog Entries`
+  `LAB-RUN-013`
+- `Canonical Source`
+  Official `StructureLab.runReaction()` API guard in
+  `@screeps/engine/src/game/structures.js` and the lab-run processor in
+  `@screeps/engine/src/processor/intents/labs/run-reaction.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `runReaction(lab1, lab2)` ownership, active-structure state, argument
+  validity (compound mismatch, mineral type already held), target validity
+  (lab1/lab2 are labs), range (≤ 2 from caller), store capacity (caller
+  full), reagent availability, and cooldown.
+- `Exclusions`
+  Successful product mapping, owned by `LAB-RUN-001`. Reverse-reaction
+  failure ordering is owned by `LAB-REVERSE-VALIDATION`.
+- `Verification Notes`
+  Single-branch rows are owned by `LAB-RUN-005..012`. This family adds
+  selected precedence rows; canonical order should be lifted from the API
+  guard's check sequence and confirmed against the live vanilla server.
+  The executable case list lives in `src/matrices/lab-run-validation.ts`.
+
+### LAB-REVERSE-VALIDATION
+
+- `Catalog Entries`
+  `LAB-REVERSE-013`
+- `Canonical Source`
+  Official `StructureLab.reverseReaction()` API guard in
+  `@screeps/engine/src/game/structures.js` and the lab reverse-reaction
+  processor in
+  `@screeps/engine/src/processor/intents/labs/reverse-reaction.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `reverseReaction(lab1, lab2)` ownership, active-structure state, argument
+  validity (no reverse pair, same lab passed twice), target validity
+  (lab1/lab2 are labs), range, store capacity (lab1/lab2 cannot hold
+  outputs), compound availability, and cooldown.
+- `Exclusions`
+  Successful split mapping, owned by `LAB-REVERSE-001`.
+- `Verification Notes`
+  Single-branch rows are owned by `LAB-REVERSE-005..012`. Canonical order
+  must be lifted from the API guard. The executable case list lives in
+  `src/matrices/lab-reverse-validation.ts`.
+
+### FACTORY-PRODUCE-VALIDATION
+
+- `Catalog Entries`
+  `FACTORY-PRODUCE-011`
+- `Canonical Source`
+  Official `StructureFactory.produce()` API guard in
+  `@screeps/engine/src/game/structures.js` and the factory-produce processor
+  in `@screeps/engine/src/processor/intents/factory/produce.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `produce(resourceType)` ownership, active-structure state, argument
+  validity (resourceType not a commodity), target validity (commodity level
+  vs. factory level), `PWR_OPERATE_FACTORY` requirement, store capacity,
+  recipe-component availability, and cooldown.
+- `Exclusions`
+  Successful production amounts and chain membership, owned by
+  `FACTORY-PRODUCE-001` and `FACTORY-COMMODITY-*`.
+- `Verification Notes`
+  This is the gold-standard family for issue 117 — the ordering was
+  established by xxscreeps PR #114. Vanilla order in the API guard:
+  ownership → active-structure → argument validity → target validity
+  (level mismatch) → power effect → store capacity → resources → cooldown.
+  The executable case list lives in `src/matrices/factory-produce-validation.ts`.
+
+### BOOST-CREEP-VALIDATION
+
+- `Catalog Entries`
+  `BOOST-CREEP-010`
+- `Canonical Source`
+  Official `StructureLab.boostCreep()` API guard in
+  `@screeps/engine/src/game/structures.js` and the boost-creep processor in
+  `@screeps/engine/src/processor/intents/labs/boost.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `boostCreep(creep, bodyPartsCount?)` ownership, active-structure state,
+  target validity (creep not yours, hostile, or no matching unboosted
+  parts), range, and resource availability (mineral and energy).
+- `Exclusions`
+  Successful body-part selection and boost type mapping, owned by
+  `BOOST-CREEP-001..009`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/boost-creep-validation.ts`.
+
+### UNBOOST-VALIDATION
+
+- `Catalog Entries`
+  `UNBOOST-006`
+- `Canonical Source`
+  Official `StructureLab.unboostCreep()` API guard in
+  `@screeps/engine/src/game/structures.js` and the unboost processor in
+  `@screeps/engine/src/processor/intents/labs/unboost.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `unboostCreep(creep)` ownership, target validity (no boosted parts or
+  hostile creep), range, energy availability, and cooldown.
+- `Exclusions`
+  Boost-mineral spillback amount, owned by `UNBOOST-004`.
+- `Verification Notes`
+  No `ERR_FULL` branch — surplus minerals spill onto the creep tile (see
+  Coverage Notes in `8.2 Unboost`). Canonical order must be lifted from
+  the API guard. The executable case list lives in
+  `src/matrices/unboost-validation.ts`.
+
+### TERMINAL-SEND-VALIDATION
+
+- `Catalog Entries`
+  `TERMINAL-SEND-013`
+- `Canonical Source`
+  Official `StructureTerminal.send()` API guard in
+  `@screeps/engine/src/game/structures.js` and the terminal-send processor
+  in `@screeps/engine/src/processor/intents/terminal/send.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `send(resourceType, amount, destination, description?)` ownership,
+  active-structure state, argument validity (amount, destination room
+  name, description length), resource availability, and cooldown.
+- `Exclusions`
+  Energy-cost and range-fee math, owned by separate `TERMINAL-SEND-*`
+  behavior entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/terminal-send-validation.ts`.
+
+### LINK-VALIDATION
+
+- `Catalog Entries`
+  `LINK-014`
+- `Canonical Source`
+  Official `StructureLink.transferEnergy()` API guard in
+  `@screeps/engine/src/game/structures.js` and the link-transfer processor
+  in `@screeps/engine/src/processor/intents/link/transfer-energy.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `transferEnergy(target, amount?)` ownership, active-structure state,
+  argument validity, target validity (target not a link or hostile),
+  resource availability, store capacity, and cooldown.
+- `Exclusions`
+  Same-room loss-free transfer and cross-room loss math, owned by
+  separate `LINK-*` behavior entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/link-validation.ts`.
+
+### TOWER-ATTACK-VALIDATION
+
+- `Catalog Entries`
+  `TOWER-ATTACK-005`
+- `Canonical Source`
+  Official `StructureTower.attack()` API guard in
+  `@screeps/engine/src/game/structures.js` and the tower-attack processor
+  in `@screeps/engine/src/processor/intents/tower/attack.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `tower.attack(target)` ownership, active-structure state, target
+  validity (target not a creep/PC/structure or owned by self), and energy
+  availability.
+- `Exclusions`
+  Range-attenuated damage curve, owned by `TOWER-ATTACK-002..003`.
+- `Verification Notes`
+  Towers do not have an `ERR_NOT_IN_RANGE` branch — full room is in
+  effective range. Canonical order must be lifted from the API guard.
+  The executable case list lives in `src/matrices/tower-attack-validation.ts`.
+
+### TOWER-HEAL-VALIDATION
+
+- `Catalog Entries`
+  `TOWER-HEAL-005`
+- `Canonical Source`
+  Official `StructureTower.heal()` API guard in
+  `@screeps/engine/src/game/structures.js` and the tower-heal processor in
+  `@screeps/engine/src/processor/intents/tower/heal.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `tower.heal(target)` ownership, active-structure state, target validity
+  (target not a creep or power creep), and energy availability.
+- `Exclusions`
+  Range-attenuated heal curve, owned by `TOWER-HEAL-002..003`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/tower-heal-validation.ts`.
+
+### TOWER-REPAIR-VALIDATION
+
+- `Catalog Entries`
+  `TOWER-REPAIR-005`
+- `Canonical Source`
+  Official `StructureTower.repair()` API guard in
+  `@screeps/engine/src/game/structures.js` and the tower-repair processor
+  in `@screeps/engine/src/processor/intents/tower/repair.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `tower.repair(target)` ownership, active-structure state, target
+  validity (target not a structure), and energy availability.
+- `Exclusions`
+  Range-attenuated repair curve, owned by `TOWER-REPAIR-002..003`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/tower-repair-validation.ts`.
+
+### OBSERVER-VALIDATION
+
+- `Catalog Entries`
+  `OBSERVER-007`
+- `Canonical Source`
+  Official `StructureObserver.observeRoom()` API guard in
+  `@screeps/engine/src/game/structures.js` and the observe processor in
+  `@screeps/engine/src/processor/intents/observer/observe-room.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `observeRoom(roomName)` ownership, active-structure state, argument
+  validity (malformed room name), and target range (> `OBSERVER_RANGE`
+  rooms).
+- `Exclusions`
+  Visibility delivery latency, owned by separate `OBSERVER-*` behavior
+  entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/observer-validation.ts`.
+
+### SPAWN-CREATE-VALIDATION
+
+- `Catalog Entries`
+  `SPAWN-CREATE-014`
+- `Canonical Source`
+  Official `StructureSpawn.spawnCreep()` API guard in
+  `@screeps/engine/src/game/structures.js` and the spawn-create processor
+  in `@screeps/engine/src/processor/intents/spawn/create-creep.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `spawnCreep(body, name, opts?)` ownership, active-structure state, caller
+  busy state (already spawning), argument validity (body, opts.directions,
+  opts.energyStructures), name uniqueness, and energy availability.
+- `Exclusions`
+  Successful directions/dryRun/memory semantics, owned by
+  `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/spawn-create-validation.ts`.
+
+### RENEW-CREEP-VALIDATION
+
+- `Catalog Entries`
+  `RENEW-CREEP-011`
+- `Canonical Source`
+  Official `StructureSpawn.renewCreep()` API guard in
+  `@screeps/engine/src/game/structures.js` and the renew-creep processor
+  in `@screeps/engine/src/processor/intents/spawn/renew-creep.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `renewCreep(creep)` ownership (spawn and creep), caller busy state
+  (spawning), target validity (creep has CLAIM part or not yours), range,
+  store capacity (`ticksToLive` already at max), and energy availability.
+- `Exclusions`
+  Renew amount math, owned by `RENEW-CREEP-002..009`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/renew-creep-validation.ts`.
+
+### RECYCLE-CREEP-VALIDATION
+
+- `Catalog Entries`
+  `RECYCLE-CREEP-005`
+- `Canonical Source`
+  Official `StructureSpawn.recycleCreep()` API guard in
+  `@screeps/engine/src/game/structures.js` and the recycle-creep processor
+  in `@screeps/engine/src/processor/intents/spawn/recycle-creep.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `recycleCreep(creep)` ownership, caller busy state, target validity, and
+  range.
+- `Exclusions`
+  Recycled-resource placement (container vs. tombstone), tracked as a
+  Coverage Note in `9.5 Recycle Creep`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/recycle-creep-validation.ts`.
+
+### CTRL-SAFEMODE-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-SAFEMODE-009`
+- `Canonical Source`
+  Official `StructureController.activateSafeMode()` API guard in
+  `@screeps/engine/src/game/structures.js` and the activate-safe-mode
+  processor in
+  `@screeps/engine/src/processor/intents/controller/activate-safe-mode.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `activateSafeMode()` ownership, controller-busy state (safe mode already
+  active or per-tick activation limit), resource availability
+  (`safeModeAvailable === 0`), and cooldown (`safeModeCooldown`).
+- `Exclusions`
+  Cross-shard safe mode propagation; same-tick double-activation race,
+  owned by `CTRL-SAFEMODE-008`.
+- `Verification Notes`
+  Distinct from `CTRL-SAFEMODE-BLOCKED`, which describes how active safe
+  mode blocks hostile actions. Canonical order must be lifted from the API
+  guard. The executable case list lives in
+  `src/matrices/ctrl-safemode-validation.ts`.
+
+### STRUCTURE-DESTROY-VALIDATION
+
+- `Catalog Entries`
+  `STRUCTURE-API-007`
+- `Canonical Source`
+  Official `Structure.destroy()` API guard in
+  `@screeps/engine/src/game/structures.js` and the destroy-structure
+  processor in
+  `@screeps/engine/src/processor/intents/structures/destroy-structure.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `Structure.destroy()` ownership (structure or controller) and room-busy
+  state (hostile creeps in the room).
+- `Exclusions`
+  Ruin creation outcome, owned by separate `RUIN-*` entries.
+- `Verification Notes`
+  `ConstructionSite.remove()` is single-branch (`ERR_NOT_OWNER`) and
+  intentionally not part of this family. Canonical order must be lifted
+  from the API guard. The executable case list lives in
+  `src/matrices/structure-destroy-validation.ts`.
+
+### COMBAT-MELEE-VALIDATION
+
+- `Catalog Entries`
+  `COMBAT-MELEE-009`
+- `Canonical Source`
+  Official `Creep.attack()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the melee-attack processor in
+  `@screeps/engine/src/processor/intents/creeps/attack.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.attack(target)` ownership, caller busy state (spawning),
+  body-part requirements (`ATTACK`), target validity (not a hostile
+  creep/PC/structure), and range.
+- `Exclusions`
+  Counter-damage rules, owned by `COMBAT-MELEE-008`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/combat-melee-validation.ts`.
+
+### COMBAT-RANGED-VALIDATION
+
+- `Catalog Entries`
+  `COMBAT-RANGED-007`
+- `Canonical Source`
+  Official `Creep.rangedAttack()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the ranged-attack processor in
+  `@screeps/engine/src/processor/intents/creeps/ranged-attack.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.rangedAttack(target)` ownership, caller busy state, body-part
+  requirements (`RANGED_ATTACK`), target validity, and range (≤ 3).
+- `Exclusions`
+  Rampart redirection, owned by `COMBAT-RANGED-006`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/combat-ranged-validation.ts`.
+
+### COMBAT-RMA-VALIDATION
+
+- `Catalog Entries`
+  `COMBAT-RMA-005`
+- `Canonical Source`
+  Official `Creep.rangedMassAttack()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the mass-attack processor in
+  `@screeps/engine/src/processor/intents/creeps/ranged-mass-attack.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.rangedMassAttack()` ownership, caller busy state, and body-part
+  requirements (`RANGED_ATTACK`).
+- `Exclusions`
+  Damage falloff and rampart redirection, owned by
+  `COMBAT-RMA-001..004` and the existing `COMBAT-RMA` matrix.
+- `Verification Notes`
+  No target argument means no target-validity or range branches.
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/combat-rma-validation.ts`.
+
+### COMBAT-HEAL-VALIDATION
+
+- `Catalog Entries`
+  `COMBAT-HEAL-007`
+- `Canonical Source`
+  Official `Creep.heal()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the heal processor in
+  `@screeps/engine/src/processor/intents/creeps/heal.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.heal(target)` ownership, caller busy state, body-part
+  requirements (`HEAL`), target validity (target not a creep/PC), and
+  range.
+- `Exclusions`
+  Heal-amount math and self-heal mechanics, owned by separate
+  `COMBAT-HEAL-*` entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/combat-heal-validation.ts`.
+
+### COMBAT-RANGEDHEAL-VALIDATION
+
+- `Catalog Entries`
+  `COMBAT-RANGEDHEAL-006`
+- `Canonical Source`
+  Official `Creep.rangedHeal()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the ranged-heal processor in
+  `@screeps/engine/src/processor/intents/creeps/ranged-heal.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.rangedHeal(target)` ownership, caller busy state, body-part
+  requirements (`HEAL`), target validity, and range (≤ 3).
+- `Exclusions`
+  Heal amount falloff, owned by separate `COMBAT-RANGEDHEAL-*` entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/combat-rangedheal-validation.ts`.
+
+### BUILD-VALIDATION
+
+- `Catalog Entries`
+  `BUILD-011`
+- `Canonical Source`
+  Official `Creep.build()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the build processor in
+  `@screeps/engine/src/processor/intents/creeps/build.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.build(target)` ownership, caller busy state, body-part
+  requirements (`WORK`), resource availability (energy), target validity
+  (not a construction site or blocked tile), and range.
+- `Exclusions`
+  Progress-per-tick math, owned by `BUILD-001..010`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/build-validation.ts`.
+
+### REPAIR-VALIDATION
+
+- `Catalog Entries`
+  `REPAIR-010`
+- `Canonical Source`
+  Official `Creep.repair()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the repair processor in
+  `@screeps/engine/src/processor/intents/creeps/repair.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.repair(target)` ownership, caller busy state, body-part
+  requirements (`WORK`), resource availability (energy), target validity
+  (not a structure), and range.
+- `Exclusions`
+  Hits-per-tick math, owned by `REPAIR-001..009`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/repair-validation.ts`.
+
+### DISMANTLE-VALIDATION
+
+- `Catalog Entries`
+  `DISMANTLE-009`
+- `Canonical Source`
+  Official `Creep.dismantle()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the dismantle processor in
+  `@screeps/engine/src/processor/intents/creeps/dismantle.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.dismantle(target)` ownership, caller busy state, body-part
+  requirements (`WORK`), target validity (not a dismantleable structure),
+  and range.
+- `Exclusions`
+  Dismantle yield math, owned by `DISMANTLE-001..008`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/dismantle-validation.ts`.
+
+### CTRL-ATTACK-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-ATTACK-007`
+- `Canonical Source`
+  Official `Creep.attackController()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the attack-controller processor
+  in `@screeps/engine/src/processor/intents/creeps/attackController.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.attackController(target)` ownership, caller busy state, body-part
+  requirements (`CLAIM`), target validity (no controller, own controller,
+  unowned), range, and cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`).
+- `Exclusions`
+  Reservation-reduction math, owned by `CTRL-RESERVE-007`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/ctrl-attack-validation.ts`.
+
+### CTRL-CLAIM-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-CLAIM-008`
+- `Canonical Source`
+  Official `Creep.claimController()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the claim-controller processor
+  in `@screeps/engine/src/processor/intents/creeps/claimController.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.claimController(target)` ownership, caller busy state, body-part
+  requirements (`CLAIM`), GCL availability (`ERR_GCL_NOT_ENOUGH` and
+  `ERR_FULL` for room cap), target validity (already owned/reserved/no
+  controller), and range.
+- `Exclusions`
+  Successful claim side-effects (`safeModeAvailable`, downgrade timer
+  reset) — owned by separate `CTRL-CLAIM-*` entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/ctrl-claim-validation.ts`.
+
+### CTRL-RESERVE-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-RESERVE-008`
+- `Canonical Source`
+  Official `Creep.reserveController()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the reserve-controller
+  processor in
+  `@screeps/engine/src/processor/intents/creeps/reserveController.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.reserveController(target)` ownership, caller busy state, body-part
+  requirements (`CLAIM`), target validity (owned, hostile reservation, no
+  controller), and range.
+- `Exclusions`
+  Reservation-reduction (handled via `attackController`), owned by
+  `CTRL-RESERVE-007`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/ctrl-reserve-validation.ts`.
+
+### CTRL-UPGRADE-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-UPGRADE-013`
+- `Canonical Source`
+  Official `Creep.upgradeController()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the upgrade-controller
+  processor in
+  `@screeps/engine/src/processor/intents/creeps/upgradeController.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.upgradeController(target)` ownership, caller busy state, body-part
+  requirements (`WORK`), resource availability (energy), target validity
+  (not yours, blocked by another player's safe mode), and range.
+- `Exclusions`
+  Progress math and level-advance side effects, owned by
+  `CTRL-UPGRADE-001..012`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/ctrl-upgrade-validation.ts`.
+
+### CTRL-GENSAFE-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-GENSAFE-005`
+- `Canonical Source`
+  Official `Creep.generateSafeMode()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the generate-safe-mode processor
+  in
+  `@screeps/engine/src/processor/intents/creeps/generateSafeMode.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.generateSafeMode(target)` ownership, caller busy state, resource
+  availability (Ghodium), target validity (not yours or no controller),
+  and range.
+- `Exclusions`
+  `safeModeAvailable` increment side-effect, owned by `CTRL-GENSAFE-003`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/ctrl-gensafe-validation.ts`.
+
+### CTRL-SIGN-VALIDATION
+
+- `Catalog Entries`
+  `CTRL-SIGN-004`
+- `Canonical Source`
+  Official `Creep.signController()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the sign-controller processor
+  in `@screeps/engine/src/processor/intents/creeps/signController.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.signController(target, sign)` caller busy state, target validity
+  (no controller), argument validity (sign exceeds maximum length), and
+  range.
+- `Exclusions`
+  Persisted-sign visibility, owned by `CTRL-SIGN-001..003`.
+- `Verification Notes`
+  No `ERR_NOT_OWNER` branch — any creep may sign any controller. Canonical
+  order must be lifted from the API guard. The executable case list lives
+  in `src/matrices/ctrl-sign-validation.ts`.
+
+### HARVEST-VALIDATION
+
+- `Catalog Entries`
+  `HARVEST-015`
+- `Canonical Source`
+  Official `Creep.harvest()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the harvest processor in
+  `@screeps/engine/src/processor/intents/creeps/harvest.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.harvest(source)` ownership, caller busy state, body-part
+  requirements (`WORK`), target validity (target is a `Source`), range,
+  and resource availability (depleted source).
+- `Exclusions`
+  Harvest yield math, owned by `HARVEST-001..014`. Mineral and deposit
+  variants are owned by `HARVEST-MINERAL-VALIDATION` and
+  `DEPOSIT-HARVEST-VALIDATION`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/harvest-validation.ts`.
+
+### HARVEST-MINERAL-VALIDATION
+
+- `Catalog Entries`
+  `HARVEST-MINERAL-014`
+- `Canonical Source`
+  Official `Creep.harvest()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the mineral-harvest path in
+  `@screeps/engine/src/processor/intents/creeps/harvest.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.harvest(mineral)` ownership, caller busy state, body-part
+  requirements (`WORK`), target validity (target is a `Mineral`),
+  extractor presence (`StructureExtractor` co-located and active), range,
+  resource availability (mineral amount), and cooldown (extractor
+  cooldown).
+- `Exclusions`
+  Harvest yield math, owned by `HARVEST-MINERAL-001..013`.
+- `Verification Notes`
+  Extractor activity is part of this family because it gates the mineral
+  branch in vanilla. Canonical order must be lifted from the API guard.
+  The executable case list lives in
+  `src/matrices/harvest-mineral-validation.ts`.
+
+### DEPOSIT-HARVEST-VALIDATION
+
+- `Catalog Entries`
+  `DEPOSIT-HARVEST-006`
+- `Canonical Source`
+  Official `Creep.harvest()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the deposit-harvest path in
+  `@screeps/engine/src/processor/intents/creeps/harvest.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.harvest(deposit)` ownership, caller busy state, body-part
+  requirements (`WORK`), target validity (target is a `Deposit`), range,
+  and cooldown (`Deposit.cooldown`).
+- `Exclusions`
+  Harvest yield math, owned by `DEPOSIT-HARVEST-001..005`. Deposit decay
+  on overharvest is owned by `DEPOSIT-*` lifecycle entries.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/deposit-harvest-validation.ts`.
+
+### DROP-VALIDATION
+
+- `Catalog Entries`
+  `DROP-011`
+- `Canonical Source`
+  Official `Creep.drop()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the drop processor in
+  `@screeps/engine/src/processor/intents/creeps/drop.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.drop(resourceType, amount?)` ownership, caller busy state,
+  argument validity (resourceType, amount), and resource availability.
+- `Exclusions`
+  Resource-pile merge/separate semantics, owned by `DROP-001..010`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/drop-validation.ts`.
+
+### MOVE-BASIC-VALIDATION
+
+- `Catalog Entries`
+  `MOVE-BASIC-027`
+- `Canonical Source`
+  Official `Creep.move()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the move processor in
+  `@screeps/engine/src/processor/intents/creeps/move.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.move(direction)` ownership, caller busy state, body-part
+  requirements (`MOVE`), fatigue, and argument validity (direction
+  constant).
+- `Exclusions`
+  Collision resolution, owned by `MOVE-COLLISION-*`. Pulling/`move(creep)`
+  overload, owned by `MOVE-PULL-VALIDATION`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/move-basic-validation.ts`.
+
+### MOVE-PULL-VALIDATION
+
+- `Catalog Entries`
+  `MOVE-PULL-011`
+- `Canonical Source`
+  Official `Creep.pull()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the pull processor in
+  `@screeps/engine/src/processor/intents/creeps/pull.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.pull(target)` ownership, caller busy state, target validity
+  (target not a creep, or target is self), and range.
+- `Exclusions`
+  Pull-pact resolution and fatigue propagation, owned by
+  `MOVE-PULL-001..010`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/move-pull-validation.ts`.
+
+### PICKUP-VALIDATION
+
+- `Catalog Entries`
+  `PICKUP-010`
+- `Canonical Source`
+  Official `Creep.pickup()` API guard in `@screeps/engine/src/game/creeps.js`
+  and the pickup processor in
+  `@screeps/engine/src/processor/intents/creeps/pickup.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.pickup(target)` ownership, caller busy state, target validity
+  (target not a `Resource`), store capacity (creep full), and range.
+- `Exclusions`
+  Resource-pile decrement math, owned by `PICKUP-001..009`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/pickup-validation.ts`.
+
+### TRANSFER-VALIDATION
+
+- `Catalog Entries`
+  `TRANSFER-015`
+- `Canonical Source`
+  Official `Creep.transfer()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the transfer processor in
+  `@screeps/engine/src/processor/intents/creeps/transfer.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.transfer(target, resourceType, amount?)` ownership, caller busy
+  state, argument validity (resourceType, amount), resource availability
+  (creep store), target validity (target not a transfer destination,
+  hostile, wrong store kind), store capacity (target full), and range.
+- `Exclusions`
+  Successful transfer side effects (link cooldown, factory store),
+  owned by `TRANSFER-001..014`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/transfer-validation.ts`.
+
+### WITHDRAW-VALIDATION
+
+- `Catalog Entries`
+  `WITHDRAW-017`
+- `Canonical Source`
+  Official `Creep.withdraw()` API guard in
+  `@screeps/engine/src/game/creeps.js` and the withdraw processor in
+  `@screeps/engine/src/processor/intents/creeps/withdraw.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `creep.withdraw(target, resourceType, amount?)` ownership, caller busy
+  state, argument validity, target validity (target not a withdrawable
+  store or hostile), resource availability (target store), store capacity
+  (creep full), and range.
+- `Exclusions`
+  Successful withdraw side effects, owned by `WITHDRAW-001..016`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/withdraw-validation.ts`.
+
+### CONSTRUCTION-SITE-CREATE-VALIDATION
+
+- `Catalog Entries`
+  `CONSTRUCTION-SITE-011`
+- `Canonical Source`
+  Official `Room.createConstructionSite()` API guard in
+  `@screeps/engine/src/game/rooms.js` and the create-construction-site
+  processor in
+  `@screeps/engine/src/processor/intents/global/create-construction-site.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `Room.createConstructionSite(x, y, structureType, name?)` argument
+  validity (coords, structureType, name), ownership (room not owned by
+  another player), active-structure state (RCL gate for the requested
+  type), target validity (terrain wall, blocking structure on tile), and
+  structure-cap state (`CONTROLLER_STRUCTURES` cap and per-player
+  `MAX_CONSTRUCTION_SITES` cap).
+- `Exclusions`
+  `RoomPosition.createConstructionSite()` delegates to the room method —
+  owned by `CONSTRUCTION-SITE-010`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in
+  `src/matrices/construction-site-create-validation.ts`.
+
+### FLAG-CREATE-VALIDATION
+
+- `Catalog Entries`
+  `FLAG-009`
+- `Canonical Source`
+  Official `Room.createFlag()` API guard in
+  `@screeps/engine/src/game/rooms.js` and the create-flag processor in
+  `@screeps/engine/src/processor/intents/global/create-flag.js`.
+- `Dimensions`
+  failure condition, expected return code, precedence when multiple blockers
+  are present
+- `Applicability`
+  `Room.createFlag(x, y, name?, color?, secondaryColor?)` argument
+  validity (coords, name length, color constants), name uniqueness
+  (`ERR_NAME_EXISTS`), and flag cap (`FLAGS_LIMIT`).
+- `Exclusions`
+  `RoomPosition.createFlag()` is owned by `ROOMPOS-ACTION-002`.
+- `Verification Notes`
+  Canonical order must be lifted from the API guard. The executable case
+  list lives in `src/matrices/flag-create-validation.ts`.
