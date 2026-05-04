@@ -179,6 +179,11 @@
 			"expected": "Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET.",
 			"tests": ["BUILD-011:rangeBeforeBlockedTarget"]
 		},
+		"dismantle-indestructible-not-rejected": {
+			"actual": "`checkDismantle` (`packages/xxscreeps/mods/construction/creep.ts`) only runs `checkTarget(target, Structure)` — controllers (and other structures with `hits === undefined`) pass that check, so dismantling a controller returns OK and the precedence chain returns ERR_NOT_IN_RANGE when range also blocks.",
+			"expected": "Vanilla rejects targets without a finite `hits` value (controllers, indestructible walls) with ERR_INVALID_TARGET ahead of range checks.",
+			"tests": ["DISMANTLE-009:invalidTarget", "DISMANTLE-009:invalidTargetBeforeRange"]
+		},
 		"ctrl-claim-gcl-too-late": {
 			"actual": "`checkClaimController` (`packages/xxscreeps/mods/controller/creep.ts:131-151`) puts the GCL check at step 4 (inside the final lambda), after `checkCommon(creep, C.CLAIM)`, `checkTarget(target, StructureController)`, and `checkRange`.",
 			"expected": "Vanilla returns ERR_GCL_NOT_ENOUGH before ERR_NO_BODYPART, ERR_INVALID_TARGET, and ERR_NOT_IN_RANGE.",

@@ -449,17 +449,24 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			if (spec.cooldown !== undefined) {
-				const ok = setStructureCooldownRemaining(
+				// Most cooldown-bearing mods (link/lab/extractor/factory) store it
+				// in #cooldownTime. Observer is the exception: no schema field, so
+				// the snapshot path reads the side-table via resolveSnapshotCooldown.
+				const cooldownStored = setStructureCooldownRemaining(
 					structure, this.simulation!.shard.time, spec.cooldown,
 				);
-				if (!ok) {
+				if (!cooldownStored && spec.structureType !== 'observer') {
 					throw new Error(
 						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build (mod likely not loaded).`,
 					);
 				}
 				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
 			}
+			// Inserting a controller assigns room.controller to the new one; preserve
+			// the room's primary controller so a fixture controller doesn't replace it.
+			const previousController = spec.structureType === 'controller' ? room.controller : undefined;
 			insertRoomObject(room, structure);
+			if (previousController) room.controller = previousController;
 		});
 
 		return id;
@@ -1152,6 +1159,16 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
 			return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
+		case 'controller': {
+			// xxscreeps' controller mod has no public create() — a freestanding
+			// controller fixture (used by intent-precedence tests as a canonical
+			// indestructible target) has to be constructed by hand.
+			const controller = new StructureController();
+			bindObjectPos(controller, pos);
+			controller.safeModeAvailable = 0;
+			resetControllerTimers(controller);
+			return controller;
+		}
 		default: throw new Error(`Unsupported structure type: ${structureType}`);
 	}
 }

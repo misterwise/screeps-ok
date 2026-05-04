@@ -398,6 +398,7 @@ describe('creep.withdraw()', () => {
 	for (const row of withdrawValidationCases) {
 		test(`WITHDRAW-017:${row.label} withdraw() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
+			if (blockers.has('invalid-nuker')) shard.requires('nuke');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const needsSecondPlayer = owner === 'p2' || blockers.has('target-not-owner') || blockers.has('safemode-not-owner');
 			const roomOwner = blockers.has('safemode-not-owner') || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
