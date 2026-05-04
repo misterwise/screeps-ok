@@ -4,10 +4,13 @@ import type {
 	StorageSnapshot, LinkSnapshot, RampartSnapshot,
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
-	NukerSnapshot, PowerSpawnSnapshot, WallSnapshot,
+	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
+	KeeperLairSnapshot, PortalSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
+	PortalDestinationSnapshot,
 } from 'screeps-ok';
+import * as C from 'xxscreeps/game/constants/index.js';
 import { Creep } from 'xxscreeps/mods/creep/creep.js';
 import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.js';
 import { Resource } from 'xxscreeps/mods/resource/resource.js';
@@ -19,6 +22,7 @@ import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
+	resolveSnapshotCooldown?(id: string): number | undefined;
 }
 
 function snapPos(obj: any) {
@@ -40,6 +44,17 @@ function snapStore(obj: any): Record<string, number> {
 		}
 	}
 	return store;
+}
+
+function snapPortalDestination(dest: any): PortalDestinationSnapshot {
+	if (dest?.shard) {
+		return { shard: dest.shard, room: dest.room ?? '' };
+	}
+	return {
+		x: dest?.x ?? 0,
+		y: dest?.y ?? 0,
+		roomName: dest?.roomName ?? dest?.room ?? '',
+	};
 }
 
 export function snapshotCreep(obj: any, resolver: PlayerResolver): CreepSnapshot {
@@ -81,7 +96,9 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'controller',
 				level: obj.level,
 				progress: obj.progress ?? 0,
-				progressTotal: obj.level >= 8 ? null : (obj.progressTotal ?? 0),
+				progressTotal: obj.level > 0 && obj.level < 8
+					? (C.CONTROLLER_LEVELS[obj.level] ?? obj.progressTotal ?? 0)
+					: null,
 				ticksToDowngrade: obj.ticksToDowngrade ?? 0,
 				safeMode: obj.safeMode,
 				safeModeAvailable: obj.safeModeAvailable ?? 0,
@@ -256,6 +273,30 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				store: snapStore(obj),
 				storeCapacity: obj.store?.getCapacity?.() ?? 0,
 			} satisfies PowerSpawnSnapshot;
+
+		case 'observer':
+			return {
+				...base,
+				structureType: 'observer',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				cooldown: resolver.resolveSnapshotCooldown?.(obj.id) ?? obj.cooldown ?? 0,
+			} satisfies ObserverSnapshot;
+
+		case 'keeperLair':
+			return {
+				...base,
+				structureType: 'keeperLair',
+				ticksToSpawn: obj.ticksToSpawn ?? null,
+			} satisfies KeeperLairSnapshot;
+
+		case 'portal':
+			return {
+				...base,
+				structureType: 'portal',
+				destination: snapPortalDestination(obj.destination),
+				ticksToDecay: obj.ticksToDecay ?? null,
+			} satisfies PortalSnapshot;
 
 		case 'constructedWall':
 			return {

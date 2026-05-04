@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2458%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1986%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-132-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2458%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1992%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-126-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2458](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-04 04:05 UTC |
-| 🟡 | **xxscreeps** | [1986](#xxscreeps-passing-tests) | [132](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-04 04:02 UTC |
+| 🟢 | **vanilla** | [2458](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-04 04:32 UTC |
+| 🟡 | **xxscreeps** | [1992](#xxscreeps-passing-tests) | [126](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-04 04:29 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 48 expected-failure classifications against vanilla's canonical behavior, covering 132 tests. That includes 45 open parity gaps covering 127 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 46 expected-failure classifications against vanilla's canonical behavior, covering 126 tests. That includes 43 open parity gaps covering 121 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,7 +33,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `world-size-exclusive-span` | `Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`), one short of the inclusive span. For the test fixture the BFS-derived inclusive span is `13` but `getWorldSize()` reports `12`. | `Game.map.getWorldSize()` equals the inclusive room-coordinate span of the reachable world graph. PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164) fixes this but has not landed in upstream `main`. | [1](#xxscreeps-gap-world-size-exclusive-span) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `id-constructor-overlay-copy` | `new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy. | Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored. | [11](#xxscreeps-gap-id-constructor-overlay-copy) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
@@ -41,7 +40,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
-| `construction-site-blocked-by-same-type-ruin` | `room.createConstructionSite(x, y, type)` returns `ERR_INVALID_TARGET` when a ruin of the same `structureType` occupies the tile. `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) iterates `room['#lookAt'](pos)` and rejects on `object.structureType === structureType`. `Ruin.structureType` is the destroyed structure's type (`mods/structure/ruin.ts:42`), so a ruin slips into a check intended only for live same-type structures. Cross-type ruins are correctly ignored — the obstacle checker filters on `instanceof Structure` and `Ruin` extends `RoomObject` directly. | Vanilla `utils.checkConstructionSite` (`@screeps/engine/src/utils.js:172-184`) filters only on same-type structures and existing construction sites and never inspects ruins (which are documented as walkable). Construction-site placement succeeds at any (ruinType, placedType) pair, including same-type. Surfaces in the place-spawn flow on respawn: a respawned player whose previous spawn left a ruin at the original tile cannot place the new spawn there. | [5](#xxscreeps-gap-construction-site-blocked-by-same-type-ruin) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-energy-alias-not-registered` | `LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no xxscreeps mod aliases it onto `Resource`. Surfaces three ways: `lookAt(x, y)` (`game/room/look.ts`) emits each object using its `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `{ type: 'energy', energy: ... }` entry; `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants`; `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined. | Vanilla wires `LOOK_ENERGY` as a legacy alias to the `Resource` register (`@screeps/engine/src/game/rooms.js:768-796`): `lookAt` yields two entries per dropped resource (`type: 'energy'` and `type: 'resource'`), and `lookForAt`/`lookForAtArea(LOOK_ENERGY, ...)` return the same `Resource` collection as `LOOK_RESOURCES`. | [3](#xxscreeps-gap-look-energy-alias-not-registered) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
@@ -80,13 +78,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-world-size-exclusive-span">
-<summary><code>world-size-exclusive-span</code> — 1 test</summary>
-
-- `Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span`
-
-</details>
 
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
@@ -152,17 +143,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>memory-circular-ref-crash</code> — 1 test</summary>
 
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
-
-</details>
-
-<details id="xxscreeps-gap-construction-site-blocked-by-same-type-ruin">
-<summary><code>construction-site-blocked-by-same-type-ruin</code> — 5 tests</summary>
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile`
-- `room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-extension] a ruin does not block placing a construction site on its tile`
-- `room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-tower] a ruin does not block placing a construction site on its tile`
-- `room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-container] a ruin does not block placing a construction site on its tile`
-- `room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile`
 
 </details>
 
@@ -3959,7 +3939,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>1986 tests across 103 files</summary>
+<summary>1992 tests across 103 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4658,7 +4638,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (35)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (40)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4670,26 +4650,31 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-road] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-spawn] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [extension-ruin-place-road] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-extension] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [tower-ruin-place-road] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-tower] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [container-ruin-place-road] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
@@ -5977,12 +5962,13 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 
-**`tests/21-map/21.1-room-queries.test.ts`** (4)
+**`tests/21-map/21.1-room-queries.test.ts`** (5)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms
+- Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
 

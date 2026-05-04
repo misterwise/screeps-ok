@@ -6,7 +6,7 @@ This doc is **feature-shaped**: missing major systems that don't exist in xxscre
 
 | Doc | Scope | Shape |
 | --- | --- | --- |
-| `xxscreeps-parity-gaps.md` | The 49 confirmed bugs in shipped code, with file:line root cause | Bug |
+| `xxscreeps-parity-gaps.md` | Narrative notes for selected confirmed bugs in shipped code, with `docs/status.md` carrying the generated full list | Bug |
 | `xxscreeps-pr-plan.md` | PR-by-PR submission plan for those bugs | PR |
 | **this doc** | **Major missing features** from upstream Issue 52 (Apr 2026 audit) | **Feature** |
 
@@ -42,10 +42,10 @@ No dependencies; can land in any order. Each closes a discrete item from the aud
 
 - **Construction site stomping** (#99) — movement destroys hostile sites on entry
 - **Spawn stomping** (#100) — new creep destroys hostile creeps on the spawn tile
-- **`Game.notify`** — queueing and delivery are in flight upstream as #161/#165; do not duplicate while those are open
+- **`Game.notify`** — queueing landed in #161; delivery is still in flight upstream as #165, so do not duplicate that branch
 - **`Game.gpl`** — currently hardcoded zeros; mirror `Game.gcl` plumbing on the user record
 - **`RoomObject.effects`** — surface getter; precondition for Power and InvaderCore effects (start with `[]` default)
-- **`notifyWhenAttacked` damage-side consumer** — surface landed in #132; after #161/#165, damage processors still need to read `'#noAttackNotify'` and emit notifications
+- **`notifyWhenAttacked` damage-side consumer** — surface landed in #132; after #165, damage processors still need to read `'#noAttackNotify'` and emit notifications
 
 ## Tier 2 — medium standalone features
 
@@ -144,6 +144,6 @@ Independent of game systems; largely client/backend work.
 
 ## Suggested next step
 
-Tier 1 is still the right batch, but Portal landed in #159 and `Game.notify` is already in flight upstream. The next clean new feature branch should be **`RoomObject.effects`** because it unlocks Tier 4 strongholds and Tier 5 power without colliding with current PRs. After that, the remaining small standalone Tier 1 choices are construction-site stomping, spawn stomping, and `Game.gpl`.
+Tier 1 is still the right batch, but Portal landed in #159 and the remaining `Game.notify` delivery work is already in flight upstream as #165. The next clean new feature branch should be **`RoomObject.effects`** because it unlocks Tier 4 strongholds and Tier 5 power without colliding with current PRs. After that, the remaining small standalone Tier 1 choices are construction-site stomping, spawn stomping, and `Game.gpl`.
 
 If picking one Tier 2 item to start in parallel later: **Nuker** is the cleanest (well-scoped delayed-impact intent, no NPC entanglement) and closes the last RCL 8 row in the audit.

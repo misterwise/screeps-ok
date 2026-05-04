@@ -1,19 +1,13 @@
-# xxscreeps parity gaps
+# xxscreeps parity gap notes
 
-Tracks every expected-failure classification in `adapters/xxscreeps/parity.json`.
+Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
+For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-02 against pin `579213e`.
+Last refreshed: 2026-05-04 against pin `3f011d0a`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current status: 13 open parity gaps covering 28 tests, plus 2 accepted divergences covering 3 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 43 open parity gaps covering 121 tests, plus 3 accepted divergences covering 5 tests.
 
 ## Open parity gaps
-
-### world-size-exclusive-span
-
-- Tests: MAP-ROOM-005
-- Status: OPEN PR [laverdet/xxscreeps#164](https://github.com/laverdet/xxscreeps/pull/164).
-- Cause: `Game.map.getWorldSize()` is `Math.max(#height, #width)` where `#width = maxX - minX` (`packages/xxscreeps/game/map.ts`) — one short of the inclusive coordinate span. Vanilla's `getWorldSize` reports the inclusive span, so the test BFS-derived span and `getWorldSize()` differ by one.
-- Plan: wait for #164 to merge upstream, bump the pin, then remove this gap if MAP-ROOM-005 passes.
 
 ### shape-flag-extra-id
 
@@ -56,13 +50,6 @@ Last refreshed: 2026-05-02 against pin `579213e`.
 - Status: CONFIRMED, but wait for #140 before editing nearby memory code.
 - Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
 - Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
-
-### construction-site-blocked-by-same-type-ruin
-
-- Tests: CONSTRUCTION-SITE-009 (5 of 25 matrix cells: same-type pairs spawn/spawn, extension/extension, tower/tower, container/container, road/road)
-- Status: CONFIRMED.
-- Cause: `checkCreateConstructionSite` (`mods/construction/room.ts:128-137`) treats `Ruin.structureType` (the destroyed type) as if it were a live structure's type. The same-type rejection at `object.structureType === structureType` matches a ruin even though `Ruin` is a walkable `RoomObject`, not a `Structure`. Cross-type ruins are correctly ignored because the obstacle checker filters on `instanceof Structure`.
-- Plan: filter `Ruin` (or anything whose `#lookType` is `LOOK_RUINS`) out of the placement-collision loop before the structure-type comparison. Surfaces in the wild on respawn — see place-spawn flow at `mods/spawn/backend.ts:128-139`, which inherits the same check via `checkCreateConstructionSite`.
 
 ### actionlog-lab-renderer-missing-combined-actions
 
@@ -112,3 +99,9 @@ Last refreshed: 2026-05-02 against pin `579213e`.
 - Tests: SHAPE-CREEP-002, SHAPE-CREEP-003
 - Status: INTENTIONAL.
 - Decision: PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed stripping the `boost` property from unboosted body parts to match vanilla and was closed as not desired. screeps-ok keeps the vanilla assertion as an expected failure.
+
+### factory-power-effect-not-implemented
+
+- Tests: FACTORY-PRODUCE-011:powerEffect, FACTORY-PRODUCE-011:powerEffectBeforeNotEnough
+- Status: INTENTIONAL.
+- Decision: `mods/factory/factory.ts` documents the `PWR_OPERATE_FACTORY` branch as blocked until power creeps/effects exist upstream. screeps-ok keeps those rows as expected failures until that substrate lands.

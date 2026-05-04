@@ -3,6 +3,7 @@ import { UserSandbox } from './sandbox-runner.js';
 import { Room } from 'xxscreeps/game/room/index.js';
 import type {
 	ScreepsOkAdapter, AdapterCapabilities, ShardSpec, PlayerReturnValue,
+	RoomActionLogCapture, ActionLogPayloadValue,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
@@ -14,6 +15,7 @@ import { RunPlayerError } from 'screeps-ok';
 import { selectorFromFindConstant } from 'screeps-ok';
 import { withCornerWalls } from 'screeps-ok';
 import { RoomPosition } from 'xxscreeps/game/position.js';
+import { Render } from 'xxscreeps/backend/symbols.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
 import * as C from 'xxscreeps/game/constants/index.js';
 
@@ -43,9 +45,11 @@ import {
 	bindObjectPos, setCreepAgeTime,
 	setSourceNextRegenerationTime, setMineralNextRegenerationTime,
 	setStructureNextDecayTime,
+	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	initializeRoomIndices,
 } from './engine-internals.js';
 
 // Object creation imports
@@ -78,6 +82,7 @@ import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 import { create as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import { asUnion } from 'xxscreeps/utility/utility.js';
 
 // Optional mods — not all xxscreeps builds include these exports.
 // Use variable-named dynamic imports so TS doesn't statically require the
@@ -105,6 +110,7 @@ import 'xxscreeps/config/mods/import/game.js';
 // controller). These must be imported before `createSimulation` runs so the
 // sandbox wiring in `UserSandbox.create` can iterate them.
 await importMods('driver');
+await importMods('backend');
 await importMods('processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
@@ -120,6 +126,20 @@ function gclLevelToProgress(desiredLevel: number): number {
 	return Math.floor(floor ** 2.4 * 1_000_000);
 }
 
+function normalizeActionLog(actionLog: unknown): Record<string, ActionLogPayloadValue> {
+	const normalized: Record<string, ActionLogPayloadValue> = {};
+	if (!actionLog || typeof actionLog !== 'object') return normalized;
+	for (const [type, payload] of Object.entries(actionLog)) {
+		if (payload == null) continue;
+		normalized[type] = JSON.parse(JSON.stringify(payload)) as ActionLogPayloadValue;
+	}
+	return normalized;
+}
+
+function sortedActionLogObjects(objects: RoomActionLogCapture['objects']): RoomActionLogCapture['objects'] {
+	return objects.sort((left, right) => left.id.localeCompare(right.id));
+}
+
 // Player handle → xxscreeps user ID
 const playerSlots = ['100', '101', '102', '103'];
 
@@ -132,6 +152,7 @@ const playerSlots = ['100', '101', '102', '103'];
 // AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
 const NPC_HANDLES: Record<string, string> = {
 	sk: '2',
+	srcKeeper: '3',
 };
 
 // Structure types the engine always attributes to a user. Omitting `owner`
@@ -141,6 +162,9 @@ const STRUCTURE_TYPES_UNOWNED = new Set(['container', 'road', 'constructedWall']
 const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
 	'spawn', 'extension', 'tower', 'lab', 'link', 'storage', 'terminal',
 	'factory', 'observer', 'rampart', 'extractor', 'nuker', 'powerSpawn',
+]);
+const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
+	'invaderCore', 'keeperLair', 'portal', 'deposit', 'powerBank',
 ]);
 
 class XxscreepsAdapter implements ScreepsOkAdapter {
@@ -170,9 +194,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps's GameMap is constructed from the World schema each time
 		// it's read, so getWorldSize always reflects the current room set.
 		liveWorldSize: true,
-		// Room-history/client action-log capture needs a normalized adapter
-		// surface; raw #actionLog vectors are not the contract.
-		actionLogCapture: false,
+		// Captured through the backend/client renderer for the current tick,
+		// then normalized to the shared adapter shape.
+		actionLogCapture: true,
 	};
 
 	readonly limitations = {
@@ -195,6 +219,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private shardSpec: ShardSpec | null = null;
 	private idCounter = 0;
 	private firstTickRun = false;
+	private snapshotCooldownUntil = new Map<string, number>();
 
 	private nextId(): string {
 		return (++this.idCounter).toString(16).padStart(24, '0');
@@ -208,6 +233,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	resolvePlayerReverse(userId: string): string {
 		return this.reversePlayerMap.get(userId) ?? userId;
+	}
+
+	resolveSnapshotCooldown(id: string): number | undefined {
+		const until = this.snapshotCooldownUntil.get(id);
+		if (until === undefined || !this.simulation) return undefined;
+		return Math.max(0, until - this.simulation.shard.time);
 	}
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
@@ -278,6 +309,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async createShard(spec: ShardSpec): Promise<void> {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
+		this.snapshotCooldownUntil.clear();
 
 		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
 			this.playerMap.set(handle, engineId);
@@ -301,7 +333,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
 				const safeModeAvail = roomSpec.safeModeAvailable ?? 0;
 				const safeModeRemaining = roomSpec.safeMode ?? 0;
-				const ticksToDowngrade = roomSpec.ticksToDowngrade ?? 0;
+				const ticksToDowngrade = roomSpec.ticksToDowngrade
+					?? (owner && rcl > 0 ? (C.CONTROLLER_DOWNGRADE[rcl] ?? 0) : 0);
 				const rName = roomSpec.name;
 				this.queueOp(rName, room => {
 					if (rcl > 0 && owner) {
@@ -374,6 +407,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeStructure(roomName: string, spec: StructureSpec): Promise<string> {
+		if (STRUCTURE_TYPES_PLACE_OBJECT_ONLY.has(spec.structureType)) {
+			throw new Error(
+				`placeStructure: structureType '${spec.structureType}' must be placed with placeObject().`,
+			);
+		}
 		if (!spec.owner && STRUCTURE_TYPES_REQUIRING_OWNER.has(spec.structureType)) {
 			throw new Error(
 				`placeStructure: owner is required for structureType '${spec.structureType}'. ` +
@@ -391,13 +429,44 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.hits !== undefined) {
 				structure.hits = spec.hits;
 			}
+			if (spec.level !== undefined) {
+				if (spec.structureType !== 'factory') {
+					throw new Error(
+						`placeStructure: spec.level is only supported for structureType 'factory', got '${spec.structureType}'.`,
+					);
+				}
+				setFactoryLevel(structure, spec.level);
+			}
 			if (spec.store) {
 				setStoreContentsExact(structure.store, spec.store);
 			}
 			if (spec.ticksToDecay !== undefined) {
 				setStructureNextDecayTime(structure, this.simulation!.shard.time, spec.ticksToDecay);
+			} else {
+				const defaultDecayTime = getDefaultDecayTime(spec.structureType, getRoomLevel(room));
+				if (defaultDecayTime !== undefined) {
+					setStructureNextDecayTime(structure, this.simulation!.shard.time, defaultDecayTime);
+				}
 			}
+			if (spec.cooldown !== undefined) {
+				// Most cooldown-bearing mods (link/lab/extractor/factory) store it
+				// in #cooldownTime. Observer is the exception: no schema field, so
+				// the snapshot path reads the side-table via resolveSnapshotCooldown.
+				const cooldownStored = setStructureCooldownRemaining(
+					structure, this.simulation!.shard.time, spec.cooldown,
+				);
+				if (!cooldownStored && spec.structureType !== 'observer') {
+					throw new Error(
+						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build (mod likely not loaded).`,
+					);
+				}
+				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
+			}
+			// Inserting a controller assigns room.controller to the new one; preserve
+			// the room's primary controller so a fixture controller doesn't replace it.
+			const previousController = spec.structureType === 'controller' ? room.controller : undefined;
 			insertRoomObject(room, structure);
+			if (previousController) room.controller = previousController;
 		});
 
 		return id;
@@ -469,6 +538,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeFlag(roomName: string, spec: FlagSpec): Promise<string> {
 		const name = spec.name;
+		if (/[|~]/.test(name)) {
+			throw new Error(`placeFlag: flag name cannot contain '|' or '~': ${name}`);
+		}
 		this.nameToSyntheticId.set(name, name); // flags use name as ID
 
 		// Flags live in a per-user blob keyed `user/<id>/flags`. The blob is
@@ -985,6 +1057,41 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return this.simulation!.shard.time;
 	}
 
+	async captureActionLog(roomName: string): Promise<RoomActionLogCapture> {
+		await this.ensureSimulation();
+		await this.flushPokeQueue();
+		const tick = this.simulation!.shard.time;
+		const previousTime = tick - 1;
+		const objects = await this.simulation!.peekRoom(roomName, (room: any) => {
+			initializeRoomIndices(room);
+			const result: RoomActionLogCapture['objects'] = [];
+			for (const object of iterateRoomObjects(room)) {
+				asUnion(object);
+				const render = object[Render];
+				if (typeof render !== 'function') continue;
+				const value = render.call(object, previousTime);
+				const actionLog = normalizeActionLog(value?.actionLog);
+				if (Object.keys(actionLog).length === 0) continue;
+				result.push({
+					room: roomName,
+					tick,
+					id: String(value._id),
+					type: String(value.type),
+					...(object.structureType ? { structureType: String(object.structureType) } : {}),
+					...(value.name ? { name: String(value.name) } : {}),
+					pos: {
+						x: Number(value.x),
+						y: Number(value.y),
+						roomName,
+					},
+					actionLog,
+				});
+			}
+			return sortedActionLogObjects(result);
+		});
+		return { room: roomName, tick, objects };
+	}
+
 	async setInvaderRaidState(_room: string, _spec: InvaderRaidRoomStateSpec): Promise<void> {
 		throw new Error('xxscreeps adapter does not support invaderRaidSpawner');
 	}
@@ -1000,6 +1107,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async getControllerPos(roomName: string): Promise<{ x: number; y: number } | null> {
 		await this.ensureSimulation();
 		await this.flushPokeQueue();
+		if (!this.rooms.includes(roomName)) return null;
 		return this.simulation!.peekRoom(roomName, (room: any) => {
 			for (const obj of iterateRoomObjects(room)) {
 				try {
@@ -1051,7 +1159,30 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
 			return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
+		case 'controller': {
+			// xxscreeps' controller mod has no public create() — a freestanding
+			// controller fixture (used by intent-precedence tests as a canonical
+			// indestructible target) has to be constructed by hand.
+			const controller = new StructureController();
+			bindObjectPos(controller, pos);
+			controller.safeModeAvailable = 0;
+			resetControllerTimers(controller);
+			return controller;
+		}
 		default: throw new Error(`Unsupported structure type: ${structureType}`);
+	}
+}
+
+function getDefaultDecayTime(structureType: string, rcl: number): number | undefined {
+	switch (structureType) {
+		case 'container':
+			return rcl > 0 ? C.CONTAINER_DECAY_TIME_OWNED : C.CONTAINER_DECAY_TIME;
+		case 'road':
+			return C.ROAD_DECAY_TIME;
+		case 'rampart':
+			return C.RAMPART_DECAY_TIME;
+		default:
+			return undefined;
 	}
 }
 
