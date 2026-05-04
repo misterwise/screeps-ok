@@ -2,9 +2,10 @@ import { describe, test, expect, code, body,
 	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS,
 	WORK, CARRY, MOVE,
 	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES,
-	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, TERRAIN_WALL,
+	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, TERRAIN_WALL,
 	MAX_CONSTRUCTION_SITES,
 } from '../../src/index.js';
+import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
 import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
 import {
 	TERRAIN_FIXTURE_ROOM,
@@ -286,4 +287,52 @@ describe('room.createConstructionSite()', () => {
 			roomPosition: ERR_INVALID_ARGS,
 		});
 	});
+
+	for (const row of constructionSiteCreateValidationCases) {
+		test(`CONSTRUCTION-SITE-011:${row.label} createConstructionSite() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl-or-structure-cap') ? 1 : 8, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			if (blockers.has('site-cap-full')) {
+				for (let i = 0; i < MAX_CONSTRUCTION_SITES; i++) {
+					await shard.placeSite('W1N1', {
+						pos: [10 + (i % 10), 10 + Math.floor(i / 10)],
+						owner: 'p1',
+						structureType: STRUCTURE_ROAD,
+					});
+				}
+			}
+			if (blockers.has('invalid-target')) {
+				await shard.placeSite('W1N1', {
+					pos: [25, 25],
+					owner: 'p1',
+					structureType: STRUCTURE_ROAD,
+				});
+			}
+			if (blockers.has('invalid-args') && blockers.has('rcl-or-structure-cap')) {
+				await shard.placeStructure('W1N1', {
+					pos: [24, 25],
+					structureType: STRUCTURE_SPAWN,
+					owner,
+				});
+			}
+			const structureType = blockers.has('invalid-args')
+				? STRUCTURE_SPAWN
+				: blockers.has('rcl-or-structure-cap')
+					? STRUCTURE_TOWER
+					: STRUCTURE_ROAD;
+			const name = blockers.has('invalid-args') ? 'x'.repeat(101) : undefined;
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].createConstructionSite(25, 25, ${structureType}, ${name})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

@@ -1,5 +1,7 @@
 import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
-	WORK, CARRY, MOVE, STRUCTURE_ROAD, BUILD_POWER } from '../../src/index.js';
+	WORK, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_SPAWN, BUILD_POWER } from '../../src/index.js';
+import { buildValidationCases } from '../../src/matrices/build-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.build()', () => {
 	test('BUILD-001 increases site progress by BUILD_POWER per WORK part', async ({ shard }) => {
@@ -233,4 +235,62 @@ describe('creep.build()', () => {
 		const site = await shard.expectObject(siteId, 'site');
 		expect(site.progress).toBe(BUILD_POWER);
 	});
+
+	for (const row of buildValidationCases) {
+		test(`BUILD-011:${row.label} build() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 2, owner: blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (!blockers.has('busy')) {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			} else {
+				await shard.createShard({
+					players: ['p1'],
+					rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+				});
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+					store: blockers.has('not-enough') ? {} : { energy: 50 },
+				});
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_CONTAINER,
+					store: { energy: 50 },
+				})
+				: await shard.placeSite('W1N1', {
+					pos: targetPos,
+					owner: 'p1',
+					structureType: blockers.has('blocked-target') ? STRUCTURE_SPAWN : STRUCTURE_ROAD,
+				});
+			if (blockers.has('blocked-target')) {
+				await shard.placeCreep('W1N1', {
+					pos: targetPos,
+					owner: 'p1',
+					body: [MOVE],
+				});
+			}
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).build(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

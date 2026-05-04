@@ -6,6 +6,7 @@ import { describe, test, expect, code,
 	CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, CREEP_SPAWN_TIME, SPAWN_RENEW_RATIO,
 	BOOSTS, FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
+import { renewCreepValidationCases } from '../../src/matrices/renew-creep-validation.js';
 
 describe('Spawn.renewCreep', () => {
 	test('RENEW-CREEP-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
@@ -329,4 +330,44 @@ describe('Spawn.renewCreep', () => {
 		`);
 		expect(rc).toBe(ERR_BUSY);
 	});
+
+	for (const row of renewCreepValidationCases) {
+		test(`RENEW-CREEP-011:${row.label} renewCreep() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 2, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const spawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_SPAWN,
+				owner,
+				store: blockers.has('not-enough') && !blockers.has('busy') ? { energy: 0 } : { energy: 300 },
+			});
+			const creepId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					owner: 'p1',
+					body: blockers.has('full') ? [MOVE] : blockers.has('not-enough') ? Array.from({ length: 20 }, () => WORK) : [WORK, CARRY, MOVE],
+					ticksToLive: blockers.has('full') ? CREEP_LIFE_TIME : 100,
+				});
+			if (blockers.has('busy')) {
+				const busyRc = await shard.runPlayer(owner, code`
+					Game.getObjectById(${spawnId}).spawnCreep([MOVE, MOVE, MOVE], 'BusyRenew')
+				`);
+				expect(busyRc).toBe(OK);
+				await shard.tick();
+			}
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${spawnId}).renewCreep(Game.getObjectById(${creepId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

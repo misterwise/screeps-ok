@@ -787,6 +787,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		if (userId) attrs.user = userId;
 		if (spec.hits !== undefined) attrs.hits = spec.hits;
+		if (spec.level !== undefined) attrs.level = spec.level;
 		if (spec.store) {
 			attrs.store = spec.store;
 			// Lab: if the spec store contains a mineral, register it in
@@ -815,7 +816,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 		if (spec.cooldown !== undefined) {
 			const gameTime = await currentGameTime();
-			attrs.cooldownTime = gameTime + spec.cooldown;
+			if (spec.structureType === 'link') {
+				attrs.cooldown = spec.cooldown;
+			} else {
+				attrs.cooldownTime = gameTime + spec.cooldown;
+			}
 		}
 
 		const result = await this.server.world.addRoomObject(

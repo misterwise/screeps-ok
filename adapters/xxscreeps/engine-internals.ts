@@ -132,6 +132,28 @@ export function setStructureNextDecayTime(
 	(structure as any)['#nextDecayTime'] = gameTime + ticksToDecay;
 }
 
+/** SETUP — mods/{logistics/link,chemistry/lab,mineral/extractor,factory/factory}.ts:
+ *  cooldown getter returns `Math.max(0, #cooldownTime - Game.time)`. The xxscreeps
+ *  processors set this via `structure['#cooldownTime'] = Game.time + ticks`. The
+ *  public `cooldown` property is getter-only — direct assignment throws.
+ *  Returns true when the structure type stores a `#cooldownTime`, false when the
+ *  caller asked to set cooldown on a structure that has no cooldown field
+ *  (e.g. a mod stub like StructureNuker on a build without the nuke mod). */
+export function setStructureCooldownRemaining(
+	structure: any, gameTime: number, ticksRemaining: number,
+): boolean {
+	if (!('#cooldownTime' in structure)) return false;
+	(structure as any)['#cooldownTime'] = gameTime + ticksRemaining;
+	return true;
+}
+
+/** SETUP — mods/factory/factory.ts: `#level` is the permanent factory level set
+ *  by an OPERATE_FACTORY power; level getter returns `#level === 0 ? undefined : #level`.
+ *  Public `level` property is getter-only. */
+export function setFactoryLevel(factory: any, level: number): void {
+	factory['#level'] = level;
+}
+
 /** SETUP — mods/creep/tombstone.ts: `#creep` holds the post-death summary the
  *  tombstone exposes; `#decayTime` is the absolute expiry tick. */
 export function primeTombstoneCorpse(tombstone: any, creepSummary: any, decayTime: number): void {

@@ -4,6 +4,7 @@ import { describe, test, expect, code,
 	STRUCTURE_TERMINAL, PWR_OPERATE_TERMINAL, POWER_INFO,
 	TERMINAL_COOLDOWN,
 } from '../../src/index.js';
+import { terminalSendValidationCases } from '../../src/matrices/terminal-send-validation.js';
 
 describe('Terminal send', () => {
 	test('TERMINAL-SEND-001 successful send returns OK and sets cooldown', async ({ shard }) => {
@@ -411,4 +412,44 @@ describe('Terminal send', () => {
 		const dst = await shard.expectStructure(dstId, STRUCTURE_TERMINAL);
 		expect(dst.store.energy ?? 0).toBe(100);
 	});
+
+	for (const row of terminalSendValidationCases) {
+		test(`TERMINAL-SEND-013:${row.label} send() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('market');
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' },
+					{ name: 'W5N1', rcl: 6, owner: 'p1' },
+				],
+			});
+			const resourceType = blockers.has('invalid-resource') ? 'not_a_resource' : blockers.has('not-enough-energy-cost') ? 'H' : 'energy';
+			const amount = 100;
+			const store: Record<string, number> = resourceType === 'H'
+				? { H: blockers.has('not-enough-amount') ? 50 : 100, energy: blockers.has('not-enough-energy-cost') ? 0 : 100000 }
+				: { energy: blockers.has('not-enough-amount') ? 50 : 100000 };
+			const termId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_TERMINAL,
+				owner,
+				store,
+				...(blockers.has('cooldown') ? { cooldown: TERMINAL_COOLDOWN } : {}),
+			});
+			await shard.placeStructure('W5N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_TERMINAL,
+				owner: 'p1',
+				store: {},
+			});
+			const targetRoomName = blockers.has('invalid-room') ? 'INVALID' : 'W5N1';
+			const description = blockers.has('invalid-description') ? 'x'.repeat(101) : undefined;
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${termId}).send(${resourceType}, ${amount}, ${targetRoomName}, ${description})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

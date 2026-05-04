@@ -1,4 +1,5 @@
-import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
+import { linkValidationCases } from '../../src/matrices/link-validation.js';
 
 describe('StructureLink', () => {
 	test('LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss', async ({ shard }) => {
@@ -309,4 +310,52 @@ describe('StructureLink', () => {
 		expect(src.store.energy ?? 0).toBe(0);
 		expect(dst.store.energy).toBe(400 - Math.ceil(400 * LINK_LOSS_RATIO));
 	});
+
+	for (const row of linkValidationCases) {
+		test(`LINK-014:${row.label} transferEnergy() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const sourceOwner = blockers.has('source-not-owner') ? 'p2' : 'p1';
+			const targetOwner = blockers.has('target-not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: blockers.has('rcl') ? 4 : 5, owner: 'p1' },
+					{ name: 'W2N1', rcl: 5, owner: 'p1' },
+				],
+			});
+			const sourceId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_LINK,
+				owner: sourceOwner,
+				store: blockers.has('not-enough') && !blockers.has('invalid-args') ? { energy: 0 } : { energy: 100 },
+				...(blockers.has('cooldown') ? { cooldown: 10 } : {}),
+			});
+			if (blockers.has('source-not-owner')) {
+				await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_RAMPART,
+					owner: 'p1',
+				});
+			}
+			const targetRoom = blockers.has('range') ? 'W2N1' : 'W1N1';
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure(targetRoom, {
+					pos: [26, 25],
+					structureType: STRUCTURE_STORAGE,
+					owner: targetOwner,
+				})
+				: await shard.placeStructure(targetRoom, {
+					pos: [26, 25],
+					structureType: STRUCTURE_LINK,
+					owner: targetOwner,
+					store: blockers.has('full') ? { energy: LINK_CAPACITY } : { energy: 0 },
+				});
+			const amount = blockers.has('invalid-args') ? -1 : 50;
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${sourceId}).transferEnergy(Game.getObjectById(${targetId}), ${amount})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

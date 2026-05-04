@@ -1,4 +1,7 @@
 import { describe, test, expect, code, OK, ERR_NOT_ENOUGH_ENERGY, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD } from '../../src/index.js';
+import { towerAttackValidationCases } from '../../src/matrices/tower-attack-validation.js';
+import { towerHealValidationCases } from '../../src/matrices/tower-heal-validation.js';
+import { towerRepairValidationCases } from '../../src/matrices/tower-repair-validation.js';
 import { towerAttackRangeCases, towerHealRangeCases, towerRepairRangeCases } from '../../src/matrices/tower-range.js';
 
 describe('StructureTower', () => {
@@ -238,4 +241,100 @@ describe('StructureTower', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
+
+	for (const row of towerAttackValidationCases) {
+		test(`TOWER-ATTACK-005:${row.label} tower.attack() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 2 : 3, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const towerId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_TOWER,
+				owner,
+				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+			});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: [25, 28] })
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 28],
+					owner: owner === 'p1' ? 'p2' : 'p1',
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${towerId}).attack(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
+
+	for (const row of towerHealValidationCases) {
+		test(`TOWER-HEAL-005:${row.label} tower.heal() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 2 : 3, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const towerId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_TOWER,
+				owner,
+				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+			});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: [25, 28] })
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 28],
+					owner,
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${towerId}).heal(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
+
+	for (const row of towerRepairValidationCases) {
+		test(`TOWER-REPAIR-005:${row.label} tower.repair() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 2 : 3, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const towerId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_TOWER,
+				owner,
+				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+			});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: [25, 28] })
+				: await shard.placeStructure('W1N1', {
+					pos: [25, 28],
+					structureType: STRUCTURE_ROAD,
+					hits: 100,
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${towerId}).repair(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

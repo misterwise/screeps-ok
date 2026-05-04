@@ -141,7 +141,7 @@ conformance test or one generated test family.
 - `MOVE-BASIC-026` `behavior` `verified_vanilla`
   `moveByPath()` returns `ERR_TIRED` when the creep's fatigue is greater than
   zero.
-- `MOVE-BASIC-027` `matrix` `needs_vanilla_verification`
+- `MOVE-BASIC-027` `matrix` `verified_vanilla`
   `creep.move(direction)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, fatigue, and argument validity.
@@ -265,7 +265,7 @@ Coverage Notes
 - `MOVE-PULL-010` `behavior` `verified_vanilla`
   `pull()` returns `OK` when the puller has fatigue > 0, but the pull does not
   resolve because the puller cannot move.
-- `MOVE-PULL-011` `matrix` `needs_vanilla_verification`
+- `MOVE-PULL-011` `matrix` `verified_vanilla`
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
@@ -460,7 +460,7 @@ Coverage Notes
 - `HARVEST-014` `behavior` `verified_vanilla`
   When the source's remaining energy is less than the full harvest amount
   (2 × WORK parts), the creep harvests only the remaining energy.
-- `HARVEST-015` `matrix` `needs_vanilla_verification`
+- `HARVEST-015` `matrix` `verified_vanilla`
   `creep.harvest(source)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, range, and resource availability.
@@ -519,7 +519,7 @@ Coverage Notes
 - `HARVEST-MINERAL-013` `behavior` `verified_vanilla`
   When the mineral's remaining amount is less than the full harvest amount
   (WORK part count), the creep harvests only the remaining amount.
-- `HARVEST-MINERAL-014` `matrix` `needs_vanilla_verification`
+- `HARVEST-MINERAL-014` `matrix` `verified_vanilla`
   `creep.harvest(mineral)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, extractor presence, range, resource
@@ -547,7 +547,7 @@ Coverage Notes
 - `DEPOSIT-HARVEST-005` `behavior` `verified_vanilla`
   Successful `harvest(deposit)` can exceed free carry capacity and drops the
   overflow resource after processing.
-- `DEPOSIT-HARVEST-006` `matrix` `needs_vanilla_verification`
+- `DEPOSIT-HARVEST-006` `matrix` `verified_vanilla`
   `creep.harvest(deposit)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, range, and cooldown.
@@ -598,7 +598,7 @@ Coverage Notes
 - `TRANSFER-014` `behavior` `verified_vanilla`
   `transfer()` to another creep is valid and follows the same store mechanics
   as transfer to a structure.
-- `TRANSFER-015` `matrix` `needs_vanilla_verification`
+- `TRANSFER-015` `matrix` `verified_vanilla`
   `creep.transfer(target, resourceType, amount?)` failure return codes and
   precedence match the canonical validation matrix for ownership, caller busy
   state, argument validity, resource availability, target validity, store
@@ -644,7 +644,7 @@ Coverage Notes
 - `WITHDRAW-016` `behavior` `verified_vanilla`
   `withdraw()` returns `ERR_FULL` when the specified `amount` exceeds the
   creep's free capacity, even if the creep has some capacity remaining.
-- `WITHDRAW-017` `matrix` `needs_vanilla_verification`
+- `WITHDRAW-017` `matrix` `verified_vanilla`
   `creep.withdraw(target, resourceType, amount?)` failure return codes and
   precedence match the canonical validation matrix for ownership, caller busy
   state, argument validity, target validity, resource availability, store
@@ -672,7 +672,7 @@ Coverage Notes
 - `PICKUP-009` `behavior` `verified_vanilla`
   Successful `pickup()` reduces the resource pile's amount by the picked-up
   quantity.
-- `PICKUP-010` `matrix` `needs_vanilla_verification`
+- `PICKUP-010` `matrix` `verified_vanilla`
   `creep.pickup(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, store capacity, and range.
@@ -703,7 +703,7 @@ Coverage Notes
 - `DROP-010` `behavior` `verified_vanilla`
   Dropping a different resource type onto a tile with an existing resource pile
   creates a separate `Resource` object for that type.
-- `DROP-011` `matrix` `needs_vanilla_verification`
+- `DROP-011` `matrix` `verified_vanilla`
   `creep.drop(resourceType, amount?)` failure return codes and precedence
   match the canonical validation matrix for ownership, caller busy state,
   argument validity, and resource availability.
@@ -754,7 +754,7 @@ Coverage Notes
 - `BUILD-010` `behavior` `verified_vanilla`
   When the creep has less energy than the full build amount (5 × WORK parts),
   `build()` contributes progress equal to the available energy.
-- `BUILD-011` `matrix` `needs_vanilla_verification`
+- `BUILD-011` `matrix` `verified_vanilla`
   `creep.build(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, resource availability, target validity, and range.
@@ -786,7 +786,7 @@ Coverage Notes
 - `REPAIR-009` `behavior` `verified_vanilla`
   When the creep has less energy than the full repair cost (WORK part count),
   `repair()` restores fewer hits proportional to the available energy.
-- `REPAIR-010` `matrix` `needs_vanilla_verification`
+- `REPAIR-010` `matrix` `verified_vanilla`
   `creep.repair(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, resource availability, target validity, and range.
@@ -815,7 +815,7 @@ Coverage Notes
 - `DISMANTLE-008` `behavior` `verified_vanilla`
   When the energy returned from dismantling exceeds the creep's free carry
   capacity, the overflow is dropped as a resource.
-- `DISMANTLE-009` `matrix` `needs_vanilla_verification`
+- `DISMANTLE-009` `matrix` `verified_vanilla`
   `creep.dismantle(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -861,7 +861,7 @@ Coverage Notes
   `RoomPosition.createConstructionSite()`. Engine `rooms.js`
   `createConstructionSite` rejects types absent from `CONSTRUCTION_COST`;
   `RoomPosition.createConstructionSite` delegates to the room method.
-- `CONSTRUCTION-SITE-011` `matrix` `needs_vanilla_verification`
+- `CONSTRUCTION-SITE-011` `matrix` `verified_vanilla`
   `Room.createConstructionSite(x, y, structureType, name?)` failure return
   codes and precedence match the canonical validation matrix for argument
   validity, ownership, active-structure state, target validity (terrain or
@@ -892,7 +892,7 @@ Coverage Notes
   sentinel produced by `unclaim()` (CTRL-UNCLAIM-001) or downgrade-to-zero
   (CTRL-DOWNGRADE-002), where the engine sets `user` to `null` rather than
   clearing it.
-- `CTRL-CLAIM-008` `matrix` `needs_vanilla_verification`
+- `CTRL-CLAIM-008` `matrix` `verified_vanilla`
   `creep.claimController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, GCL availability, target validity, and range.
@@ -919,7 +919,7 @@ Coverage Notes
   hostile reservation, but the engine API blocks that path with
   `ERR_INVALID_TARGET`; the actual reduction mechanism is attackController —
   engine `processor/intents/creeps/attackController.js:33-40`.)
-- `CTRL-RESERVE-008` `matrix` `needs_vanilla_verification`
+- `CTRL-RESERVE-008` `matrix` `verified_vanilla`
   `creep.reserveController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -942,7 +942,7 @@ Coverage Notes
 - `CTRL-ATTACK-006` `behavior` `verified_vanilla`
   `attackController()` returns `ERR_INVALID_TARGET` when the controller is
   unowned.
-- `CTRL-ATTACK-007` `matrix` `needs_vanilla_verification`
+- `CTRL-ATTACK-007` `matrix` `verified_vanilla`
   `creep.attackController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, range, and cooldown.
@@ -979,7 +979,7 @@ Coverage Notes
 - `CTRL-UPGRADE-012` `behavior` `verified_vanilla`
   When controller progress reaches the level threshold, the controller
   advances to the next level and progress resets to zero.
-- `CTRL-UPGRADE-013` `matrix` `needs_vanilla_verification`
+- `CTRL-UPGRADE-013` `matrix` `verified_vanilla`
   `creep.upgradeController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, resource availability, target validity, and range.
@@ -997,17 +997,19 @@ Coverage Notes
   Range is 1 (adjacent).
 - `CTRL-SIGN-003` `behavior` `verified_vanilla`
   Any player can sign any controller (including hostile).
-- `CTRL-SIGN-004` `matrix` `needs_vanilla_verification`
+- `CTRL-SIGN-004` `matrix` `verified_vanilla`
   `creep.signController(target, sign)` failure return codes and precedence
-  match the canonical validation matrix for caller busy state, target
-  validity, argument validity, and range.
+  match the canonical validation matrix for caller busy state, registered
+  target validity, target-is-controller validity, and range. Vanilla does
+  not validate the `sign` argument's length or type at the API layer, so
+  no argument-validity branch is exercised.
 
 ### 6.6 Generate Safe Mode
 - `CTRL-GENSAFE-001` `behavior` `verified_vanilla` `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's store.
 - `CTRL-GENSAFE-002` `behavior` `verified_vanilla` Range is 1 (adjacent).
 - `CTRL-GENSAFE-003` `behavior` `verified_vanilla` On success, increments the controller's safeModeAvailable count.
 - `CTRL-GENSAFE-004` `behavior` `verified_vanilla` Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
-- `CTRL-GENSAFE-005` `matrix` `needs_vanilla_verification`
+- `CTRL-GENSAFE-005` `matrix` `verified_vanilla`
   `creep.generateSafeMode(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, resource
   availability, target validity, and range.
@@ -1069,7 +1071,7 @@ Coverage Notes
   same tick, both calls return `OK` but only the most recent call's intent is
   processed; the earlier intent is dropped so its controller keeps its
   `safeModeAvailable` charge and does not enter safe mode.
-- `CTRL-SAFEMODE-009` `matrix` `needs_vanilla_verification`
+- `CTRL-SAFEMODE-009` `matrix` `verified_vanilla`
   `controller.activateSafeMode()` failure return codes and precedence match
   the canonical validation matrix for ownership, controller-busy state,
   resource availability, and cooldown.
@@ -1134,7 +1136,7 @@ Coverage Notes
 - `COMBAT-MELEE-008` `behavior` `verified_vanilla`
   Counter-damage per ATTACK part on the target is `ATTACK_POWER` (30), the
   same rate as a regular melee attack.
-- `COMBAT-MELEE-009` `matrix` `needs_vanilla_verification`
+- `COMBAT-MELEE-009` `matrix` `verified_vanilla`
   `creep.attack(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -1159,7 +1161,7 @@ Coverage Notes
 - `COMBAT-RANGED-006` `behavior` `verified_vanilla`
   `rangedAttack()` on a target standing on a hostile rampart hits the rampart
   instead of the target.
-- `COMBAT-RANGED-007` `matrix` `needs_vanilla_verification`
+- `COMBAT-RANGED-007` `matrix` `verified_vanilla`
   `creep.rangedAttack(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -1181,7 +1183,7 @@ Coverage Notes
 - `COMBAT-RMA-004` `behavior` `verified_vanilla`
   `rangedMassAttack()` damage to a target standing on a hostile rampart is
   redirected to the rampart.
-- `COMBAT-RMA-005` `matrix` `needs_vanilla_verification`
+- `COMBAT-RMA-005` `matrix` `verified_vanilla`
   `creep.rangedMassAttack()` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, and body-part
   requirements.
@@ -1201,7 +1203,7 @@ Coverage Notes
   `heal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 1.
 - `COMBAT-HEAL-006` `behavior` `verified_vanilla`
   `heal()` returns `ERR_NO_BODYPART` when the creep has no HEAL parts.
-- `COMBAT-HEAL-007` `matrix` `needs_vanilla_verification`
+- `COMBAT-HEAL-007` `matrix` `verified_vanilla`
   `creep.heal(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -1223,7 +1225,7 @@ Coverage Notes
   `rangedHeal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 3.
 - `COMBAT-RANGEDHEAL-005` `behavior` `verified_vanilla`
   `rangedHeal()` returns `ERR_NO_BODYPART` when the creep has no HEAL parts.
-- `COMBAT-RANGEDHEAL-006` `matrix` `needs_vanilla_verification`
+- `COMBAT-RANGEDHEAL-006` `matrix` `verified_vanilla`
   `creep.rangedHeal(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
@@ -1280,7 +1282,7 @@ Coverage Notes
 - `TOWER-ATTACK-004` `behavior` `verified_vanilla`
   `tower.attack()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
-- `TOWER-ATTACK-005` `matrix` `needs_vanilla_verification`
+- `TOWER-ATTACK-005` `matrix` `verified_vanilla`
   `tower.attack(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state, target
   validity, and resource availability.
@@ -1299,7 +1301,7 @@ Coverage Notes
 - `TOWER-HEAL-004` `behavior` `verified_vanilla`
   `tower.heal()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
-- `TOWER-HEAL-005` `matrix` `needs_vanilla_verification`
+- `TOWER-HEAL-005` `matrix` `verified_vanilla`
   `tower.heal(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state, target
   validity, and resource availability.
@@ -1318,7 +1320,7 @@ Coverage Notes
 - `TOWER-REPAIR-004` `behavior` `verified_vanilla`
   `tower.repair()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
-- `TOWER-REPAIR-005` `matrix` `needs_vanilla_verification`
+- `TOWER-REPAIR-005` `matrix` `verified_vanilla`
   `tower.repair(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state, target
   validity, and resource availability.
@@ -1444,7 +1446,7 @@ Coverage Notes
   The lab's stored mineral compound determines which body part type is
   boosted; `boostCreep()` affects only unboosted parts of the type associated
   with the compound in the `BOOSTS` table.
-- `BOOST-CREEP-010` `matrix` `needs_vanilla_verification`
+- `BOOST-CREEP-010` `matrix` `verified_vanilla`
   `Lab.boostCreep(creep, bodyPartsCount?)` failure return codes and
   precedence match the canonical validation matrix for ownership,
   active-structure state, target validity, range, and resource availability.
@@ -1466,7 +1468,7 @@ Coverage Notes
   `sum_over_compounds(parts * calcTotalReactionsTime(compound)
   * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT)` ticks. For a tier-1 boost like
   `UH` this reduces to `parts * REACTION_TIME[UH] * 3`.
-- `UNBOOST-006` `matrix` `needs_vanilla_verification`
+- `UNBOOST-006` `matrix` `verified_vanilla`
   `Lab.unboostCreep(creep)` failure return codes and precedence match the
   canonical validation matrix for ownership, target validity, range,
   resource availability, and cooldown.
@@ -1594,7 +1596,7 @@ Coverage Notes
 - `SPAWN-CREATE-013` `behavior` `verified_vanilla`
   On success, `spawnCreep()` deducts the spawn cost from the spawn and
   contributing extensions.
-- `SPAWN-CREATE-014` `matrix` `needs_vanilla_verification`
+- `SPAWN-CREATE-014` `matrix` `verified_vanilla`
   `spawnCreep(body, name, opts?)` failure return codes and precedence match
   the canonical validation matrix for ownership, active-structure state,
   caller busy state, argument validity, name uniqueness, and resource
@@ -1677,7 +1679,7 @@ Coverage Notes
 - `RENEW-CREEP-010` `behavior` `verified_vanilla`
   `renewCreep()` returns `ERR_FULL` when the renewal would push the creep's
   `ticksToLive` beyond `CREEP_LIFE_TIME`.
-- `RENEW-CREEP-011` `matrix` `needs_vanilla_verification`
+- `RENEW-CREEP-011` `matrix` `verified_vanilla`
   `renewCreep(creep)` failure return codes and precedence match the canonical
   validation matrix for ownership, caller busy state, target validity, range,
   store capacity, and resource availability.
@@ -1695,10 +1697,10 @@ Coverage Notes
 - `RECYCLE-CREEP-004` `behavior` `verified_vanilla`
   `recycleCreep()` returns `ERR_NOT_IN_RANGE` when the target creep is not
   adjacent to the spawn.
-- `RECYCLE-CREEP-005` `matrix` `needs_vanilla_verification`
+- `RECYCLE-CREEP-005` `matrix` `verified_vanilla`
   `recycleCreep(creep)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, target
-  validity, and range.
+  canonical validation matrix for spawn ownership, target validity,
+  target-creep ownership, and range.
 
 Coverage Notes
 - Container-vs-tombstone placement of recycled resources should be kept as a
@@ -1867,7 +1869,7 @@ Coverage Notes
 - `LINK-013` `behavior` `verified_vanilla`
   When `amount` is omitted, `transferEnergy()` transfers all of the source
   link's stored energy.
-- `LINK-014` `matrix` `needs_vanilla_verification`
+- `LINK-014` `matrix` `verified_vanilla`
   `transferEnergy(target, amount?)` failure return codes and precedence match
   the canonical validation matrix for ownership, active-structure state,
   argument validity, target validity, resource availability, store capacity,
@@ -1924,7 +1926,7 @@ Coverage Notes
 - `LAB-RUN-012` `behavior` `verified_vanilla`
   `runReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
   `runReaction()` is not owned by the player.
-- `LAB-RUN-013` `matrix` `needs_vanilla_verification`
+- `LAB-RUN-013` `matrix` `verified_vanilla`
   `runReaction(lab1, lab2)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state,
   argument validity, target validity, range, store capacity, resource
@@ -1974,7 +1976,7 @@ Coverage Notes
 - `LAB-REVERSE-012` `behavior` `verified_vanilla`
   `reverseReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
   `reverseReaction()` is not owned by the player.
-- `LAB-REVERSE-013` `matrix` `needs_vanilla_verification`
+- `LAB-REVERSE-013` `matrix` `verified_vanilla`
   `reverseReaction(lab1, lab2)` failure return codes and precedence match
   the canonical validation matrix for ownership, active-structure state,
   argument validity, target validity, range, store capacity, resource
@@ -2219,7 +2221,7 @@ Coverage Notes
 - `TERMINAL-SEND-012` `behavior` `verified_vanilla`
   When a terminal send resolves successfully, the target terminal receives the
   sent resource amount.
-- `TERMINAL-SEND-013` `matrix` `needs_vanilla_verification`
+- `TERMINAL-SEND-013` `matrix` `verified_vanilla`
   `send(resourceType, amount, destination, description?)` failure return
   codes and precedence match the canonical validation matrix for ownership,
   active-structure state, argument validity, resource availability, and
@@ -2250,7 +2252,7 @@ Coverage Notes
 - `OBSERVER-006` `behavior` `verified_vanilla`
   `observeRoom(roomName)` returns `ERR_NOT_OWNER` when the observer is not owned
   by the player.
-- `OBSERVER-007` `matrix` `needs_vanilla_verification`
+- `OBSERVER-007` `matrix` `verified_vanilla`
   `observeRoom(roomName)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state,
   argument validity, and target range.
@@ -2503,7 +2505,7 @@ Coverage Notes
 - `STRUCTURE-API-006` `behavior` `verified_vanilla`
   A successful `notifyWhenAttacked(enabled)` returns `OK` and updates the
   structure's attack notification setting on the next tick.
-- `STRUCTURE-API-007` `matrix` `needs_vanilla_verification`
+- `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `Structure.destroy()` failure return codes and precedence match the
   canonical validation matrix for ownership and room-busy state.
 
@@ -2771,7 +2773,7 @@ Coverage Notes
   in use by the player.
 - `FLAG-008` `behavior` `verified_vanilla`
   `createFlag()` returns `ERR_FULL` when the player has reached `FLAGS_LIMIT`.
-- `FLAG-009` `matrix` `needs_vanilla_verification`
+- `FLAG-009` `matrix` `verified_vanilla`
   `Room.createFlag(x, y, name?, color?, secondaryColor?)` failure return
   codes and precedence match the canonical validation matrix for argument
   validity, name uniqueness, and flag cap.

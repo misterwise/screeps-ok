@@ -4,6 +4,7 @@ import { describe, test, expect, code,
 	OBSERVER_RANGE,
 	PWR_OPERATE_OBSERVER,
 } from '../../src/index.js';
+import { observerValidationCases } from '../../src/matrices/observer-validation.js';
 
 describe('StructureObserver', () => {
 	test('OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick', async ({ shard }) => {
@@ -144,4 +145,27 @@ describe('StructureObserver', () => {
 		`);
 		expect(visible).toBe(true);
 	});
+
+	for (const row of observerValidationCases) {
+		test(`OBSERVER-007:${row.label} observeRoom() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('observer');
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 7 : 8, owner: 'p1' }],
+			});
+			const obsId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_OBSERVER,
+				owner,
+			});
+			const roomName = blockers.has('invalid-args') ? 'not_a_room' : blockers.has('range') ? 'W12N1' : 'W2N1';
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${obsId}).observeRoom(${roomName})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

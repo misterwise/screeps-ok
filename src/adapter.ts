@@ -78,6 +78,8 @@ export interface StructureSpec {
 	ticksToDecay?: number;
 	/** Pre-set a relative cooldown timer in ticks for structures that expose one. */
 	cooldown?: number;
+	/** Pre-set factory level for tests that need exact factory validation state. */
+	level?: number;
 }
 
 export interface SiteSpec {

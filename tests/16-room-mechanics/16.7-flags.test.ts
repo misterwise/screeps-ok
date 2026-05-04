@@ -2,6 +2,7 @@ import { describe, test, expect, code,
 	COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
 	ERR_NAME_EXISTS, ERR_FULL, FLAGS_LIMIT,
 } from '../../src/index.js';
+import { flagCreateValidationCases } from '../../src/matrices/flag-create-validation.js';
 
 describe('Flags', () => {
 	test('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player', async ({ shard }) => {
@@ -160,4 +161,33 @@ describe('Flags', () => {
 		expect(result.x).toBe(30);
 		expect(result.y).toBe(35);
 	});
+
+	for (const row of flagCreateValidationCases) {
+		test(`FLAG-009:${row.label} createFlag() validation returns the canonical code`, async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const blockers = new Set(row.blockers);
+			const name = blockers.has('invalid-name-length')
+				? 'x'.repeat(101)
+				: blockers.has('name-exists')
+					? 'dup'
+					: 'flag';
+			if (blockers.has('name-exists')) {
+				await shard.placeFlag('W1N1', {
+					pos: [10, 10],
+					owner: 'p1',
+					name,
+				});
+			}
+			const x = blockers.has('invalid-coords') ? -1 : 25;
+			const color = blockers.has('invalid-color') ? 99 : COLOR_RED;
+
+			const rc = await shard.runPlayer('p1', code`
+				if (${blockers.has('flag-cap-full')}) {
+					for (let i = 0; i < ${FLAGS_LIMIT}; i++) Game.flags['stub' + i] = {};
+				}
+				Game.rooms['W1N1'].createFlag(${x}, 25, ${name}, ${color}, COLOR_BLUE)
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

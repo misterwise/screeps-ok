@@ -98,6 +98,8 @@ Examples:
   defaults.
 - `placeStructure(..., { cooldown: 10 })` means a structure with a public
   cooldown starts with `10` ticks remaining.
+- `placeStructure(..., { structureType: STRUCTURE_FACTORY, level: 1 })` means
+  the factory starts with exact public factory level `1`.
 - `placeSource(..., { energy: 0, energyCapacity: 3000 })` means a depleted
   source with known capacity.
 

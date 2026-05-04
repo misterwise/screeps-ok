@@ -6,6 +6,7 @@ import { describe, test, expect, code,
 	limitationGated,
 } from '../../src/index.js';
 import { safeModeBlockedActionCases } from '../../src/matrices/ctrl-safemode-blocked.js';
+import { ctrlSafemodeValidationCases } from '../../src/matrices/ctrl-safemode-validation.js';
 
 const downgradeTest = limitationGated('controllerDowngrade');
 
@@ -294,6 +295,48 @@ describe('Safe mode mechanics', () => {
 			}
 
 			expect(rc).toBe(expectedRc);
+		});
+	}
+
+	for (const row of ctrlSafemodeValidationCases) {
+		test(`CTRL-SAFEMODE-009:${row.label} activateSafeMode() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{
+						name: 'W1N1',
+						rcl: 1,
+						owner: 'p1',
+						safeModeAvailable: blockers.has('not-enough') ? blockers.has('cooldown') ? 1 : 0 : 2,
+					},
+					...(blockers.has('busy') ? [{ name: 'W2N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 }] : []),
+				],
+			});
+			if (blockers.has('not-owner')) {
+				await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p2', body: [MOVE] });
+			}
+			if (blockers.has('busy')) {
+				await shard.placeCreep('W2N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+				const busyRc = await shard.runPlayer('p1', code`
+					Game.rooms['W2N1'].controller.activateSafeMode()
+				`);
+				expect(busyRc).toBe(OK);
+				await shard.tick();
+			}
+			if (blockers.has('cooldown')) {
+				const cooldownRc = await shard.runPlayer('p1', code`
+					Game.rooms['W1N1'].controller.activateSafeMode()
+				`);
+				expect(cooldownRc).toBe(OK);
+				await shard.tick();
+			}
+
+			const caller = blockers.has('not-owner') ? 'p2' : 'p1';
+			const rc = await shard.runPlayer(caller, code`
+				Game.rooms['W1N1'].controller.activateSafeMode()
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
 	}
 });

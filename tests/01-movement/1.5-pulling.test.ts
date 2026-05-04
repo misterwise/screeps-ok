@@ -2,6 +2,8 @@ import { describe, test, expect, code, limitationGated,
 	OK, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
+import { movePullValidationCases } from '../../src/matrices/move-pull-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.pull()', () => {
 	test('MOVE-PULL-001 pull() on an adjacent friendly creep returns OK', async ({ shard }) => {
@@ -325,4 +327,57 @@ describe('creep.pull()', () => {
 		expect(target.pos.x).toBe(26);
 		expect(target.pos.y).toBe(25);
 	});
+
+	for (const row of movePullValidationCases) {
+		test(`MOVE-PULL-011:${row.label} pull() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: 'p2' }],
+				});
+				if (!blockers.has('busy')) {
+					await shard.placeCreep('W1N1', {
+						pos: [20, 20],
+						owner: 'p1',
+						body: [MOVE],
+					});
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			const pullerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					name: 'PullerBusy',
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: [MOVE],
+					name: 'puller-validation',
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					structureType: STRUCTURE_SPAWN,
+					owner,
+					store: { energy: 300 },
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					owner,
+					body: [WORK],
+					name: 'pulled-validation',
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${pullerId}).pull(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

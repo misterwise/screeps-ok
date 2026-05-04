@@ -2,8 +2,10 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_TIRED,
 	WORK, CARRY, MOVE, body,
 	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
-	RESOURCE_SILICON, RESOURCE_METAL,
+	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER,
 } from '../../src/index.js';
+import { depositHarvestValidationCases } from '../../src/matrices/deposit-harvest-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 // Deposit lifecycle tests (DEPOSIT-001 through DEPOSIT-006) that were previously
 // mislabeled as DEPOSIT-HARVEST-* have been relabeled to their correct section 17.5
@@ -266,4 +268,51 @@ describe('creep.harvest(deposit)', () => {
 		const overflow = 10 - 5;
 		expect(pile!.amount).toBe(overflow - Math.ceil(overflow / ENERGY_DECAY));
 	});
+
+	for (const row of depositHarvestValidationCases) {
+		test(`DEPOSIT-HARVEST-006:${row.label} harvest(deposit) validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('deposit');
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (!blockers.has('busy')) {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					structureType: STRUCTURE_CONTAINER,
+					store: { energy: 50 },
+				})
+				: await shard.placeObject('W1N1', 'deposit', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					depositType: RESOURCE_SILICON,
+					...(blockers.has('cooldown') ? { cooldownTime: 10 } : {}),
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

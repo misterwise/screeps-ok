@@ -4,6 +4,7 @@ import { describe, test, expect, code,
 	STRUCTURE_SPAWN, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
 	CREEP_CORPSE_RATE, CREEP_LIFE_TIME,
 } from '../../src/index.js';
+import { recycleCreepValidationCases } from '../../src/matrices/recycle-creep-validation.js';
 
 describe('Spawn.recycleCreep', () => {
 	test('RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
@@ -125,4 +126,37 @@ describe('Spawn.recycleCreep', () => {
 		// The recycle process drops energy at the spawn tile.
 		// Just verify the intent was accepted — full lifecycle tested below.
 	});
+
+	for (const row of recycleCreepValidationCases) {
+		test(`RECYCLE-CREEP-005:${row.label} recycleCreep() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const spawnOwner = blockers.has('not-owner-spawn') ? 'p2' : 'p1';
+			const creepOwner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 2, owner: spawnOwner }],
+			});
+			if (spawnOwner === 'p2' || creepOwner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const spawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_SPAWN,
+				owner: spawnOwner,
+				store: { energy: 300 },
+			});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					owner: creepOwner,
+					body: [WORK, CARRY, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${spawnId}).recycleCreep(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

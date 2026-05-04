@@ -1,5 +1,7 @@
 import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, STRUCTURE_RAMPART, STRUCTURE_ROAD, BODYPART_HITS, body } from '../../src/index.js';
+import { combatRmaValidationCases } from '../../src/matrices/combat-rma-validation.js';
 import { rangedMassAttackRangeCases } from '../../src/matrices/ranged-mass-attack.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.rangedMassAttack()', () => {
 	for (const { range, expectedDamage } of rangedMassAttackRangeCases) {
@@ -139,4 +141,33 @@ describe('creep.rangedMassAttack()', () => {
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(target.hits).toBe(6 * BODYPART_HITS);
 	});
+
+	for (const row of combatRmaValidationCases) {
+		test(`COMBAT-RMA-005:${row.label} rangedMassAttack() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+			});
+
+			const attackerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [MOVE] : [RANGED_ATTACK, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [MOVE] : [RANGED_ATTACK, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${attackerId}).rangedMassAttack()
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

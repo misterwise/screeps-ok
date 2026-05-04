@@ -1261,9 +1261,10 @@ Each definition should include:
   Successful product mapping, owned by `LAB-RUN-001`. Reverse-reaction
   failure ordering is owned by `LAB-REVERSE-VALIDATION`.
 - `Verification Notes`
-  Single-branch rows are owned by `LAB-RUN-005..012`. This family adds
-  selected precedence rows; canonical order should be lifted from the API
-  guard's check sequence and confirmed against the live vanilla server.
+  Single-branch rows are owned by `LAB-RUN-005..012`. Verified vanilla
+  API-guard order is: ownership → cooldown → active RCL → target validity
+  → range → caller capacity → reagent availability → argument/reaction
+  validity.
   The executable case list lives in `src/matrices/lab-run-validation.ts`.
 
 ### LAB-REVERSE-VALIDATION
@@ -1286,8 +1287,10 @@ Each definition should include:
 - `Exclusions`
   Successful split mapping, owned by `LAB-REVERSE-001`.
 - `Verification Notes`
-  Single-branch rows are owned by `LAB-REVERSE-005..012`. Canonical order
-  must be lifted from the API guard. The executable case list lives in
+  Single-branch rows are owned by `LAB-REVERSE-005..012`. Verified vanilla
+  API-guard order is: ownership → cooldown → active RCL → target validity
+  → range → same-output-lab argument validity → compound availability →
+  reverse-pair validity → output capacity. The executable case list lives in
   `src/matrices/lab-reverse-validation.ts`.
 
 ### FACTORY-PRODUCE-VALIDATION
@@ -1297,7 +1300,7 @@ Each definition should include:
 - `Canonical Source`
   Official `StructureFactory.produce()` API guard in
   `@screeps/engine/src/game/structures.js` and the factory-produce processor
-  in `@screeps/engine/src/processor/intents/factory/produce.js`.
+  in `@screeps/engine/src/processor/intents/factories/produce.js`.
 - `Dimensions`
   failure condition, expected return code, precedence when multiple blockers
   are present
@@ -1308,12 +1311,16 @@ Each definition should include:
   recipe-component availability, and cooldown.
 - `Exclusions`
   Successful production amounts and chain membership, owned by
-  `FACTORY-PRODUCE-001` and `FACTORY-COMMODITY-*`.
+  `FACTORY-PRODUCE-001` and `FACTORY-COMMODITY-*`. Level-mismatch/full and
+  power-effect/full pairs are excluded from the executable matrix because
+  leveled commodities reduce total stored resources before adding output, so
+  they cannot also exercise the factory full branch.
 - `Verification Notes`
-  This is the gold-standard family for issue 117 — the ordering was
-  established by xxscreeps PR #114. Vanilla order in the API guard:
-  ownership → active-structure → argument validity → target validity
-  (level mismatch) → power effect → store capacity → resources → cooldown.
+  Verified vanilla API-guard order is: ownership → cooldown → argument
+  validity → target validity (level mismatch) → active RCL → missing
+  `PWR_OPERATE_FACTORY` effect → resources → capacity. This differs from
+  the original PR #114 recollection, which placed cooldown last and RCL
+  before target validity.
   The executable case list lives in `src/matrices/factory-produce-validation.ts`.
 
 ### BOOST-CREEP-VALIDATION
@@ -1329,14 +1336,17 @@ Each definition should include:
   are present
 - `Applicability`
   `boostCreep(creep, bodyPartsCount?)` ownership, active-structure state,
-  target validity (creep not yours, hostile, or no matching unboosted
-  parts), range, and resource availability (mineral and energy).
+  target validity (target is a non-spawning creep), range, resource
+  availability (energy then mineral), and matching unboosted body-part
+  availability.
 - `Exclusions`
   Successful body-part selection and boost type mapping, owned by
   `BOOST-CREEP-001..009`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/boost-creep-validation.ts`.
+  Verified vanilla API-guard order is: ownership → active RCL → target
+  validity → range → energy availability → mineral availability → matching
+  unboosted body parts. The executable case list lives in
+  `src/matrices/boost-creep-validation.ts`.
 
 ### UNBOOST-VALIDATION
 
@@ -1350,14 +1360,17 @@ Each definition should include:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `unboostCreep(creep)` ownership, target validity (no boosted parts or
-  hostile creep), range, energy availability, and cooldown.
+  `unboostCreep(creep)` target validity, ownership (lab and creep), active
+  RCL, cooldown, boosted-part availability, and range.
 - `Exclusions`
-  Boost-mineral spillback amount, owned by `UNBOOST-004`.
+  Boost-mineral spillback amount, owned by `UNBOOST-004`. The
+  invalid-target/not-found pair is excluded because a non-creep target cannot
+  also have boosted body-part state.
 - `Verification Notes`
   No `ERR_FULL` branch — surplus minerals spill onto the creep tile (see
-  Coverage Notes in `8.2 Unboost`). Canonical order must be lifted from
-  the API guard. The executable case list lives in
+  Coverage Notes in `8.2 Unboost`). Verified vanilla API-guard order is:
+  target validity → ownership → active RCL → cooldown → boosted-part
+  availability → range. The executable case list lives in
   `src/matrices/unboost-validation.ts`.
 
 ### TERMINAL-SEND-VALIDATION
@@ -1373,14 +1386,17 @@ Each definition should include:
   are present
 - `Applicability`
   `send(resourceType, amount, destination, description?)` ownership,
-  active-structure state, argument validity (amount, destination room
-  name, description length), resource availability, and cooldown.
+  active-structure state, argument validity (destination room name,
+  resource type, description length), resource availability for the sent
+  amount, cooldown, and energy-cost availability.
 - `Exclusions`
   Energy-cost and range-fee math, owned by separate `TERMINAL-SEND-*`
   behavior entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/terminal-send-validation.ts`.
+  Verified vanilla API-guard order is: ownership → active RCL → destination
+  room-name validity → resource-type validity → sent-resource availability
+  → cooldown → terminal energy-cost availability → description validity.
+  The executable case list lives in `src/matrices/terminal-send-validation.ts`.
 
 ### LINK-VALIDATION
 
@@ -1396,13 +1412,17 @@ Each definition should include:
 - `Applicability`
   `transferEnergy(target, amount?)` ownership, active-structure state,
   argument validity, target validity (target not a link or hostile),
-  resource availability, store capacity, and cooldown.
+  source/target ownership, resource availability, target capacity, same-room
+  range, and cooldown.
 - `Exclusions`
   Same-room loss-free transfer and cross-room loss math, owned by
   separate `LINK-*` behavior entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/link-validation.ts`.
+  Verified vanilla API-guard order is: amount argument validity → target
+  validity → target ownership → source ownership under rampart visibility →
+  cooldown → active RCL → source energy availability → target capacity →
+  same-room range. The executable case list lives in
+  `src/matrices/link-validation.ts`.
 
 ### TOWER-ATTACK-VALIDATION
 
@@ -1423,7 +1443,8 @@ Each definition should include:
   Range-attenuated damage curve, owned by `TOWER-ATTACK-002..003`.
 - `Verification Notes`
   Towers do not have an `ERR_NOT_IN_RANGE` branch — full room is in
-  effective range. Canonical order must be lifted from the API guard.
+  effective range. Verified vanilla API-guard order is: ownership → target
+  validity → energy availability → active RCL.
   The executable case list lives in `src/matrices/tower-attack-validation.ts`.
 
 ### TOWER-HEAL-VALIDATION
@@ -1443,8 +1464,9 @@ Each definition should include:
 - `Exclusions`
   Range-attenuated heal curve, owned by `TOWER-HEAL-002..003`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/tower-heal-validation.ts`.
+  Verified vanilla API-guard order is: ownership → target validity → energy
+  availability → active RCL. The executable case list lives in
+  `src/matrices/tower-heal-validation.ts`.
 
 ### TOWER-REPAIR-VALIDATION
 
@@ -1463,8 +1485,9 @@ Each definition should include:
 - `Exclusions`
   Range-attenuated repair curve, owned by `TOWER-REPAIR-002..003`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/tower-repair-validation.ts`.
+  Verified vanilla API-guard order is: ownership → target validity → energy
+  availability → active RCL. The executable case list lives in
+  `src/matrices/tower-repair-validation.ts`.
 
 ### OBSERVER-VALIDATION
 
@@ -1485,8 +1508,9 @@ Each definition should include:
   Visibility delivery latency, owned by separate `OBSERVER-*` behavior
   entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/observer-validation.ts`.
+  Verified vanilla API-guard order is: ownership → room-name argument
+  validity → active RCL → observer room range. The executable case list
+  lives in `src/matrices/observer-validation.ts`.
 
 ### SPAWN-CREATE-VALIDATION
 
@@ -1500,15 +1524,20 @@ Each definition should include:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `spawnCreep(body, name, opts?)` ownership, active-structure state, caller
-  busy state (already spawning), argument validity (body, opts.directions,
-  opts.energyStructures), name uniqueness, and energy availability.
+  `spawnCreep(body, name, opts?)` ownership, caller busy state (already
+  spawning), argument validity (name/options, opts.directions, body), name
+  uniqueness, and energy availability.
 - `Exclusions`
   Successful directions/dryRun/memory semantics, owned by
-  `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`.
+  `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`. The inactive-spawn RCL
+  branch is not in the executable precedence matrix because the public
+  fixture API cannot honestly create a player-visible spawn that is inactive
+  for `spawnCreep()` without adapter internals.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/spawn-create-validation.ts`.
+  Verified vanilla API-guard order for the covered branches is:
+  name/options validity → name existence → directions validity → ownership
+  → busy → body validity → energy availability. The executable case list
+  lives in `src/matrices/spawn-create-validation.ts`.
 
 ### RENEW-CREEP-VALIDATION
 
@@ -1526,10 +1555,14 @@ Each definition should include:
   (spawning), target validity (creep has CLAIM part or not yours), range,
   store capacity (`ticksToLive` already at max), and energy availability.
 - `Exclusions`
-  Renew amount math, owned by `RENEW-CREEP-002..009`.
+  Renew amount math, owned by `RENEW-CREEP-002..009`. The inactive-spawn RCL
+  branch is not in the executable precedence matrix because the public
+  fixture API cannot honestly create a player-visible inactive spawn for
+  `renewCreep()` without adapter internals.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/renew-creep-validation.ts`.
+  Verified vanilla API-guard order for the covered branches is: busy →
+  target validity → ownership → range → energy availability → TTL-full.
+  The executable case list lives in `src/matrices/renew-creep-validation.ts`.
 
 ### RECYCLE-CREEP-VALIDATION
 
@@ -1543,14 +1576,18 @@ Each definition should include:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `recycleCreep(creep)` ownership, caller busy state, target validity, and
-  range.
+  `recycleCreep(creep)` spawn ownership, target validity, target-creep
+  ownership, and range.
 - `Exclusions`
   Recycled-resource placement (container vs. tombstone), tracked as a
-  Coverage Note in `9.5 Recycle Creep`.
+  Coverage Note in `9.5 Recycle Creep`. The inactive-spawn RCL branch is not
+  in the executable precedence matrix because the public fixture API cannot
+  honestly create a player-visible inactive spawn for `recycleCreep()`
+  without adapter internals.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/recycle-creep-validation.ts`.
+  Verified vanilla API-guard order for the covered branches is:
+  spawn ownership → target validity → target ownership → range. The
+  executable case list lives in `src/matrices/recycle-creep-validation.ts`.
 
 ### CTRL-SAFEMODE-VALIDATION
 
@@ -1570,11 +1607,14 @@ Each definition should include:
   (`safeModeAvailable === 0`), and cooldown (`safeModeCooldown`).
 - `Exclusions`
   Cross-shard safe mode propagation; same-tick double-activation race,
-  owned by `CTRL-SAFEMODE-008`.
+  owned by `CTRL-SAFEMODE-008`. The cooldown/busy pair is excluded because
+  public API state cannot establish both active safe mode and a separate
+  safe-mode cooldown on the same controller.
 - `Verification Notes`
   Distinct from `CTRL-SAFEMODE-BLOCKED`, which describes how active safe
-  mode blocks hostile actions. Canonical order must be lifted from the API
-  guard. The executable case list lives in
+  mode blocks hostile actions. Verified vanilla API-guard order is:
+  ownership → safe-mode availability → safe-mode cooldown → already-active
+  busy. The executable case list lives in
   `src/matrices/ctrl-safemode-validation.ts`.
 
 ### STRUCTURE-DESTROY-VALIDATION
@@ -1596,8 +1636,8 @@ Each definition should include:
   Ruin creation outcome, owned by separate `RUIN-*` entries.
 - `Verification Notes`
   `ConstructionSite.remove()` is single-branch (`ERR_NOT_OWNER`) and
-  intentionally not part of this family. Canonical order must be lifted
-  from the API guard. The executable case list lives in
+  intentionally not part of this family. Verified vanilla API-guard order is:
+  room/controller ownership → hostile-room busy. The executable case list lives in
   `src/matrices/structure-destroy-validation.ts`.
 
 ### COMBAT-MELEE-VALIDATION
@@ -1618,8 +1658,9 @@ Each definition should include:
 - `Exclusions`
   Counter-damage rules, owned by `COMBAT-MELEE-008`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/combat-melee-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/combat-melee-validation.ts`.
 
 ### COMBAT-RANGED-VALIDATION
 
@@ -1638,8 +1679,9 @@ Each definition should include:
 - `Exclusions`
   Rampart redirection, owned by `COMBAT-RANGED-006`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/combat-ranged-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/combat-ranged-validation.ts`.
 
 ### COMBAT-RMA-VALIDATION
 
@@ -1660,8 +1702,9 @@ Each definition should include:
   `COMBAT-RMA-001..004` and the existing `COMBAT-RMA` matrix.
 - `Verification Notes`
   No target argument means no target-validity or range branches.
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/combat-rma-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability. The executable case list lives in
+  `src/matrices/combat-rma-validation.ts`.
 
 ### COMBAT-HEAL-VALIDATION
 
@@ -1682,8 +1725,9 @@ Each definition should include:
   Heal-amount math and self-heal mechanics, owned by separate
   `COMBAT-HEAL-*` entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/combat-heal-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/combat-heal-validation.ts`.
 
 ### COMBAT-RANGEDHEAL-VALIDATION
 
@@ -1702,8 +1746,9 @@ Each definition should include:
 - `Exclusions`
   Heal amount falloff, owned by separate `COMBAT-RANGEDHEAL-*` entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/combat-rangedheal-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/combat-rangedheal-validation.ts`.
 
 ### BUILD-VALIDATION
 
@@ -1723,8 +1768,10 @@ Each definition should include:
 - `Exclusions`
   Progress-per-tick math, owned by `BUILD-001..010`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/build-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → energy availability → target validity → range → blocked
+  build tile. The executable case list lives in
+  `src/matrices/build-validation.ts`.
 
 ### REPAIR-VALIDATION
 
@@ -1744,8 +1791,9 @@ Each definition should include:
 - `Exclusions`
   Hits-per-tick math, owned by `REPAIR-001..009`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/repair-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → energy availability → target validity → range. The
+  executable case list lives in `src/matrices/repair-validation.ts`.
 
 ### DISMANTLE-VALIDATION
 
@@ -1765,8 +1813,9 @@ Each definition should include:
 - `Exclusions`
   Dismantle yield math, owned by `DISMANTLE-001..008`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/dismantle-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → body-part
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/dismantle-validation.ts`.
 
 ### CTRL-ATTACK-VALIDATION
 
@@ -1784,10 +1833,15 @@ Each definition should include:
   requirements (`CLAIM`), target validity (no controller, own controller,
   unowned), range, and cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`).
 - `Exclusions`
-  Reservation-reduction math, owned by `CTRL-RESERVE-007`.
+  Reservation-reduction math, owned by `CTRL-RESERVE-007`. The
+  invalid-controller-state/cooldown pair is excluded because attack cooldown
+  is only established by successfully attacking a controller, which makes the
+  later invalid-controller-state setup unavailable through public API state.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/ctrl-attack-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → target shape
+  validity → body-part availability → range → controller-state validity →
+  attack cooldown. The executable case list lives in
+  `src/matrices/ctrl-attack-validation.ts`.
 
 ### CTRL-CLAIM-VALIDATION
 
@@ -1802,15 +1856,18 @@ Each definition should include:
   are present
 - `Applicability`
   `creep.claimController(target)` ownership, caller busy state, body-part
-  requirements (`CLAIM`), GCL availability (`ERR_GCL_NOT_ENOUGH` and
-  `ERR_FULL` for room cap), target validity (already owned/reserved/no
-  controller), and range.
+  requirements (`CLAIM`), GCL availability (`ERR_GCL_NOT_ENOUGH`), target
+  validity (already owned/reserved/no controller), and range.
 - `Exclusions`
   Successful claim side-effects (`safeModeAvailable`, downgrade timer
-  reset) — owned by separate `CTRL-CLAIM-*` entries.
+  reset) — owned by separate `CTRL-CLAIM-*` entries. The novice-room
+  `ERR_FULL` branch is not in the executable matrix because that room status
+  is not exposed by the public fixture API.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/ctrl-claim-validation.ts`.
+  Verified vanilla API-guard order for the covered branches is: ownership
+  → busy → GCL availability → target validity → body-part availability →
+  range → controller-state validity. The executable case list lives in
+  `src/matrices/ctrl-claim-validation.ts`.
 
 ### CTRL-RESERVE-VALIDATION
 
@@ -1832,8 +1889,9 @@ Each definition should include:
   Reservation-reduction (handled via `attackController`), owned by
   `CTRL-RESERVE-007`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/ctrl-reserve-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → target validity →
+  range → controller-state validity → body-part availability. The executable
+  case list lives in `src/matrices/ctrl-reserve-validation.ts`.
 
 ### CTRL-UPGRADE-VALIDATION
 
@@ -1850,13 +1908,18 @@ Each definition should include:
 - `Applicability`
   `creep.upgradeController(target)` ownership, caller busy state, body-part
   requirements (`WORK`), resource availability (energy), target validity
-  (not yours, blocked by another player's safe mode), and range.
+  (not yours, blocked by another player's safe mode), range, and controller
+  ownership.
 - `Exclusions`
   Progress math and level-advance side effects, owned by
   `CTRL-UPGRADE-001..012`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/ctrl-upgrade-validation.ts`.
+  Verified vanilla API-guard order is: creep ownership → busy → body-part
+  availability → energy availability → target validity → upgrade-blocked
+  validity → range → controller ownership. A final invalid-controller-state
+  guard exists in source but is not player-observable through public
+  controller state. The executable case list lives in
+  `src/matrices/ctrl-upgrade-validation.ts`.
 
 ### CTRL-GENSAFE-VALIDATION
 
@@ -1877,8 +1940,9 @@ Each definition should include:
 - `Exclusions`
   `safeModeAvailable` increment side-effect, owned by `CTRL-GENSAFE-003`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/ctrl-gensafe-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → Ghodium
+  availability → target validity → range. The executable case list lives in
+  `src/matrices/ctrl-gensafe-validation.ts`.
 
 ### CTRL-SIGN-VALIDATION
 
@@ -1893,14 +1957,16 @@ Each definition should include:
   are present
 - `Applicability`
   `creep.signController(target, sign)` caller busy state, target validity
-  (no controller), argument validity (sign exceeds maximum length), and
-  range.
+  (target is a registered object), range, and target-is-controller validity.
 - `Exclusions`
-  Persisted-sign visibility, owned by `CTRL-SIGN-001..003`.
+  Persisted-sign visibility, owned by `CTRL-SIGN-001..003`. Invalid-target
+  cannot be paired with range or not-controller because an invalid target has
+  no meaningful range or non-controller object state.
 - `Verification Notes`
-  No `ERR_NOT_OWNER` branch — any creep may sign any controller. Canonical
-  order must be lifted from the API guard. The executable case list lives
-  in `src/matrices/ctrl-sign-validation.ts`.
+  No `ERR_NOT_OWNER` branch — any creep may sign any controller. Vanilla has
+  no sign-length API guard. Verified API-guard order is: busy → target
+  validity → range → target-is-controller validity. The executable case list
+  lives in `src/matrices/ctrl-sign-validation.ts`.
 
 ### HARVEST-VALIDATION
 
@@ -1920,10 +1986,14 @@ Each definition should include:
 - `Exclusions`
   Harvest yield math, owned by `HARVEST-001..014`. Mineral and deposit
   variants are owned by `HARVEST-MINERAL-VALIDATION` and
-  `DEPOSIT-HARVEST-VALIDATION`.
+  `DEPOSIT-HARVEST-VALIDATION`. The busy/hostile-room pair is excluded
+  because a spawning creep cannot be placed in a hostile-controlled room
+  through the public fixture API.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/harvest-validation.ts`.
+  Verified vanilla API-guard order for sources is: ownership → busy →
+  body-part availability → target validity → source energy availability →
+  range → hostile-room ownership. The executable case list lives in
+  `src/matrices/harvest-validation.ts`.
 
 ### HARVEST-MINERAL-VALIDATION
 
@@ -1946,7 +2016,10 @@ Each definition should include:
   Harvest yield math, owned by `HARVEST-MINERAL-001..013`.
 - `Verification Notes`
   Extractor activity is part of this family because it gates the mineral
-  branch in vanilla. Canonical order must be lifted from the API guard.
+  branch in vanilla. Verified vanilla API-guard order for minerals is:
+  ownership → busy → body-part availability → target validity → mineral
+  availability → range → extractor presence → extractor ownership →
+  extractor active RCL → extractor cooldown.
   The executable case list lives in
   `src/matrices/harvest-mineral-validation.ts`.
 
@@ -1969,8 +2042,10 @@ Each definition should include:
   Harvest yield math, owned by `DEPOSIT-HARVEST-001..005`. Deposit decay
   on overharvest is owned by `DEPOSIT-*` lifecycle entries.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/deposit-harvest-validation.ts`.
+  Verified vanilla API-guard order for deposits is: ownership → busy →
+  body-part availability → target validity → range → deposit cooldown.
+  The executable case list lives in
+  `src/matrices/deposit-harvest-validation.ts`.
 
 ### DROP-VALIDATION
 
@@ -1989,8 +2064,9 @@ Each definition should include:
 - `Exclusions`
   Resource-pile merge/separate semantics, owned by `DROP-001..010`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/drop-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → resource-type
+  argument validity → resource availability. The executable case list lives
+  in `src/matrices/drop-validation.ts`.
 
 ### MOVE-BASIC-VALIDATION
 
@@ -2009,9 +2085,13 @@ Each definition should include:
   constant).
 - `Exclusions`
   Collision resolution, owned by `MOVE-COLLISION-*`. Pulling/`move(creep)`
-  overload, owned by `MOVE-PULL-VALIDATION`.
+  overload, owned by `MOVE-PULL-VALIDATION`. Busy/fatigue and
+  fatigue/no-bodypart are excluded because spawning creeps do not accrue
+  fatigue and fatigue cannot be generated without MOVE parts through public
+  movement state.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
+  Verified vanilla API-guard order is: ownership → busy → fatigue →
+  body-part availability → direction argument validity. The executable case
   list lives in `src/matrices/move-basic-validation.ts`.
 
 ### MOVE-PULL-VALIDATION
@@ -2032,8 +2112,9 @@ Each definition should include:
   Pull-pact resolution and fatigue propagation, owned by
   `MOVE-PULL-001..010`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/move-pull-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → target validity
+  → range. The executable case list lives in
+  `src/matrices/move-pull-validation.ts`.
 
 ### PICKUP-VALIDATION
 
@@ -2052,8 +2133,9 @@ Each definition should include:
 - `Exclusions`
   Resource-pile decrement math, owned by `PICKUP-001..009`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/pickup-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → target validity
+  → creep capacity → range. The executable case list lives in
+  `src/matrices/pickup-validation.ts`.
 
 ### TRANSFER-VALIDATION
 
@@ -2075,8 +2157,11 @@ Each definition should include:
   Successful transfer side effects (link cooldown, factory store),
   owned by `TRANSFER-001..014`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/transfer-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → argument
+  validity → target validity → target capacity-model validity → range →
+  generic resource availability → target full → amount-specific resource
+  availability → amount-specific target full. The executable case list
+  lives in `src/matrices/transfer-validation.ts`.
 
 ### WITHDRAW-VALIDATION
 
@@ -2095,10 +2180,15 @@ Each definition should include:
   store or hostile), resource availability (target store), store capacity
   (creep full), and range.
 - `Exclusions`
-  Successful withdraw side effects, owned by `WITHDRAW-001..016`.
+  Successful withdraw side effects, owned by `WITHDRAW-001..016`. The
+  busy/safemode-not-owner pair is excluded because a spawning creep cannot be
+  placed in a hostile safe-mode room through public fixture state.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/withdraw-validation.ts`.
+  Verified vanilla API-guard order is: ownership → busy → argument
+  validity → target validity → target ownership/safe-mode ownership →
+  invalid nuker/resource capacity → invalid capacity-model → range → creep
+  full → amount-specific creep full → target resource availability. The
+  executable case list lives in `src/matrices/withdraw-validation.ts`.
 
 ### CONSTRUCTION-SITE-CREATE-VALIDATION
 
@@ -2123,8 +2213,9 @@ Each definition should include:
   `RoomPosition.createConstructionSite()` delegates to the room method —
   owned by `CONSTRUCTION-SITE-010`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in
+  Verified vanilla API-guard order is: argument validity → room ownership →
+  RCL/structure-count availability → target validity → player site cap. The
+  executable case list lives in
   `src/matrices/construction-site-create-validation.ts`.
 
 ### FLAG-CREATE-VALIDATION
@@ -2145,5 +2236,6 @@ Each definition should include:
 - `Exclusions`
   `RoomPosition.createFlag()` is owned by `ROOMPOS-ACTION-002`.
 - `Verification Notes`
-  Canonical order must be lifted from the API guard. The executable case
-  list lives in `src/matrices/flag-create-validation.ts`.
+  Verified vanilla API-guard order is: coordinate validity → flag cap →
+  color validity → name uniqueness → name length. The executable case list
+  lives in `src/matrices/flag-create-validation.ts`.

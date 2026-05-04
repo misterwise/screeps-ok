@@ -5,6 +5,7 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { factoryProduceCases } from '../../src/matrices/factory-produce.js';
 import { factoryCommodityCases } from '../../src/matrices/factory-commodity.js';
+import { factoryProduceValidationCases } from '../../src/matrices/factory-produce-validation.js';
 
 describe('Factory production', () => {
 	// ---- FACTORY-PRODUCE-001 (matrix): produce() consumes components and produces output ----
@@ -276,6 +277,56 @@ describe('Factory production', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);
 	});
+
+	for (const row of factoryProduceValidationCases) {
+		test(`FACTORY-PRODUCE-011:${row.label} produce() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('factory');
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 6 : 7, owner: 'p1' }],
+			});
+
+			let resourceType = 'battery';
+			let level = 0;
+			let store: Record<string, number> = { energy: blockers.has('not-enough') ? 100 : 600 };
+			if (blockers.has('full')) {
+				resourceType = 'energy';
+				store = {
+					battery: blockers.has('not-enough') ? 0 : 50,
+					energy: FACTORY_CAPACITY - 449,
+				};
+			}
+			if (blockers.has('level-mismatch') || blockers.has('power-effect')) {
+				resourceType = 'composite';
+				level = blockers.has('level-mismatch') && blockers.has('power-effect') ? 2 : blockers.has('power-effect') ? 1 : 0;
+				store = {
+					utrium_bar: blockers.has('not-enough') ? 0 : 20,
+					zynthium_bar: 20,
+					energy: 20,
+				};
+			}
+			if (blockers.has('invalid-args')) {
+				resourceType = 'power';
+			}
+
+			const factoryId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_FACTORY,
+				owner,
+				store,
+				level,
+				...(blockers.has('cooldown') ? { cooldown: COMMODITIES.battery.cooldown } : {}),
+			});
+			await shard.tick();
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${factoryId}).produce(${resourceType})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });
 
 describe('Factory commodity chains', () => {

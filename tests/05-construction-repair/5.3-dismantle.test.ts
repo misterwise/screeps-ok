@@ -1,8 +1,10 @@
 import { describe, test, expect, code, body,
 	OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART,
-	WORK, CARRY, MOVE, STRUCTURE_WALL, STRUCTURE_RAMPART,
+	WORK, CARRY, MOVE, STRUCTURE_CONTROLLER, STRUCTURE_WALL, STRUCTURE_RAMPART,
 	FIND_DROPPED_RESOURCES, RESOURCE_ENERGY,
 	DISMANTLE_POWER, DISMANTLE_COST, ENERGY_DECAY } from '../../src/index.js';
+import { dismantleValidationCases } from '../../src/matrices/dismantle-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.dismantle()', () => {
 	test('DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure', async ({ shard }) => {
@@ -208,4 +210,44 @@ describe('creep.dismantle()', () => {
 		`);
 		expect(rc).toBe(ERR_NO_BODYPART);
 	});
+
+	for (const row of dismantleValidationCases) {
+		test(`DISMANTLE-009:${row.label} dismantle() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 2, owner: blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (!blockers.has('busy')) {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				});
+			const targetId = await shard.placeStructure('W1N1', {
+				pos: blockers.has('range') ? [30, 30] : [25, 26],
+				structureType: blockers.has('invalid-target') ? STRUCTURE_CONTROLLER : STRUCTURE_WALL,
+				...(blockers.has('invalid-target') ? {} : { hits: 1000 }),
+			});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).dismantle(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

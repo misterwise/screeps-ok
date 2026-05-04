@@ -45,6 +45,7 @@ import {
 	bindObjectPos, setCreepAgeTime,
 	setSourceNextRegenerationTime, setMineralNextRegenerationTime,
 	setStructureNextDecayTime,
+	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
@@ -428,6 +429,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.hits !== undefined) {
 				structure.hits = spec.hits;
 			}
+			if (spec.level !== undefined) {
+				if (spec.structureType !== 'factory') {
+					throw new Error(
+						`placeStructure: spec.level is only supported for structureType 'factory', got '${spec.structureType}'.`,
+					);
+				}
+				setFactoryLevel(structure, spec.level);
+			}
 			if (spec.store) {
 				setStoreContentsExact(structure.store, spec.store);
 			}
@@ -440,7 +449,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			if (spec.cooldown !== undefined) {
-				(structure as { cooldown?: number }).cooldown = spec.cooldown;
+				const ok = setStructureCooldownRemaining(
+					structure, this.simulation!.shard.time, spec.cooldown,
+				);
+				if (!ok) {
+					throw new Error(
+						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build (mod likely not loaded).`,
+					);
+				}
 				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
 			}
 			insertRoomObject(room, structure);

@@ -1,10 +1,11 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_FOUND, ERR_NOT_ENOUGH_RESOURCES,
-	STRUCTURE_LAB,
+	STRUCTURE_LAB, STRUCTURE_SPAWN,
 	ATTACK, MOVE, CARRY, WORK, TOUGH, HEAL, RANGED_ATTACK,
 	LAB_BOOST_MINERAL, LAB_BOOST_ENERGY, LAB_MINERAL_CAPACITY, LAB_ENERGY_CAPACITY,
 	ATTACK_POWER, HEAL_POWER,
 } from '../../src/index.js';
+import { boostCreepValidationCases } from '../../src/matrices/boost-creep-validation.js';
 
 describe('Lab boostCreep', () => {
 	test('BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted', async ({ shard }) => {
@@ -300,4 +301,57 @@ describe('Lab boostCreep', () => {
 		expect(lab.store.LH).toBe(LAB_MINERAL_CAPACITY - LAB_BOOST_MINERAL);
 		expect(lab.store.energy).toBe(LAB_ENERGY_CAPACITY - LAB_BOOST_ENERGY);
 	});
+
+	for (const row of boostCreepValidationCases) {
+		test(`BOOST-CREEP-010:${row.label} boostCreep() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('chemistry');
+			const blockers = new Set(row.blockers);
+			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
+			});
+			const labStore = blockers.has('not-enough-energy')
+				? { energy: 0, UH: LAB_BOOST_MINERAL }
+				: blockers.has('not-enough-mineral')
+					? { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL - 1 }
+					: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL };
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_LAB,
+				owner: labOwner,
+				store: labStore,
+			});
+			let targetId: string;
+			const targetPos: [number, number] = blockers.has('range') ? [25, 28] : [25, 26];
+			if (blockers.has('invalid-target')) {
+				await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_SPAWN,
+					owner: 'p1',
+					store: { energy: 300 },
+				});
+				await shard.tick();
+				const spawnRc = await shard.runPlayer('p1', code`
+					Object.values(Game.spawns)[0].spawnCreep([${blockers.has('not-found') ? CARRY : ATTACK}, MOVE], 'BoostTarget')
+				`);
+				expect(spawnRc).toBe(OK);
+				targetId = await shard.runPlayer('p1', code`
+					Game.creeps['BoostTarget'].id
+				`) as string;
+			} else {
+				targetId = await shard.placeCreep('W1N1', {
+					pos: targetPos,
+					owner: 'p1',
+					body: blockers.has('not-found') ? [CARRY, MOVE] : [ATTACK, MOVE],
+				});
+				await shard.tick();
+			}
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${labId}).boostCreep(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

@@ -5,6 +5,8 @@ import { describe, test, expect, code, body,
 	HARVEST_POWER, CARRY_CAPACITY, ENERGY_DECAY, FIND_DROPPED_RESOURCES,
 	RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
 } from '../../src/index.js';
+import { harvestValidationCases } from '../../src/matrices/harvest-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.harvest()', () => {
 	test('HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store', async ({ shard }) => {
@@ -344,4 +346,55 @@ describe('creep.harvest()', () => {
 		expect(result.plainObject).toBe(ERR_INVALID_TARGET);
 		expect(result.container).toBe(ERR_INVALID_TARGET);
 	});
+
+	for (const row of harvestValidationCases) {
+		test(`HARVEST-015:${row.label} harvest(source) validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const hostileRoom = blockers.has('hostile-room');
+			if (owner === 'p2' || hostileRoom) {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: hostileRoom || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (hostileRoom || owner === 'p2' && !blockers.has('busy')) {
+					await shard.placeCreep('W1N1', {
+						pos: [20, 20],
+						owner: 'p1',
+						body: [MOVE],
+					});
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					structureType: STRUCTURE_CONTAINER,
+					store: { energy: 50 },
+				})
+				: await shard.placeSource('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					energy: blockers.has('depleted') ? 0 : 3000,
+					energyCapacity: 3000,
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

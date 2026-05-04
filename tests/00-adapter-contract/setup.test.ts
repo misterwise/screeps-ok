@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -572,6 +572,55 @@ describe('adapter contract: setup', () => {
 				expect(obj).toMatchObject({ ticksToDecay: expected });
 			});
 		}
+
+		// StructureSpec.cooldown must round-trip through the engine's
+		// `cooldown` getter on every structure type that exposes one.
+		// Regression guard: an earlier xxscreeps adapter implemented this with
+		// `(structure as { cooldown?: number }).cooldown = spec.cooldown`,
+		// which silently failed on every structure where `cooldown` is a
+		// read-only getter (Link, Lab, Extractor, Factory) — surfacing as
+		// `TypeError: Cannot set property cooldown of #<X> which has only a
+		// getter` inside the player sandbox at intent-validation time.
+		const cooldownStructures = [
+			{ type: STRUCTURE_LINK, capability: undefined, rcl: 5 },
+			{ type: STRUCTURE_LAB, capability: 'chemistry' as const, rcl: 6 },
+			{ type: STRUCTURE_FACTORY, capability: 'factory' as const, rcl: 7 },
+		];
+		for (const { type, capability, rcl } of cooldownStructures) {
+			test(`cooldown spec is honored for ${type}`, async ({ shard }) => {
+				if (capability) shard.requires(capability);
+				await shard.ownedRoom('p1', 'W1N1', rcl);
+				const id = await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: type,
+					owner: 'p1',
+					cooldown: 5,
+				});
+				await shard.tick();
+				const result = await shard.runPlayer('p1', code`
+					Game.getObjectById(${id}).cooldown
+				`);
+				expect(typeof result).toBe('number');
+				expect(result as number).toBeGreaterThanOrEqual(3);
+				expect(result as number).toBeLessThanOrEqual(5);
+			});
+		}
+
+		test('factory level spec is honored', async ({ shard }) => {
+			shard.requires('factory');
+			await shard.ownedRoom('p1', 'W1N1', 7);
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_FACTORY,
+				owner: 'p1',
+				level: 3,
+			});
+			await shard.tick();
+			const result = await shard.runPlayer('p1', code`
+				Game.getObjectById(${id}).level
+			`);
+			expect(result).toBe(3);
+		});
 
 		test('default decay schedule does not immediately destroy low-hit placements', async ({ shard }) => {
 			await shard.ownedRoom('p1');

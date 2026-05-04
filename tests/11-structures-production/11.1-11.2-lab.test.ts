@@ -7,6 +7,8 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { labRunCases } from '../../src/matrices/lab-run.js';
 import { labReverseCases } from '../../src/matrices/lab-reverse.js';
+import { labRunValidationCases } from '../../src/matrices/lab-run-validation.js';
+import { labReverseValidationCases } from '../../src/matrices/lab-reverse-validation.js';
 
 describe('Lab runReaction', () => {
 	// ---- Matrix: product mapping (LAB-RUN-001) ----
@@ -373,6 +375,52 @@ describe('Lab runReaction', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);
 	});
+
+	for (const row of labRunValidationCases) {
+		test(`LAB-RUN-013:${row.label} runReaction() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('chemistry');
+			const blockers = new Set(row.blockers);
+			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
+			});
+			const labStore: Record<string, number> = blockers.has('full')
+				? blockers.has('invalid-args')
+					? { energy: 2000, Z: LAB_MINERAL_CAPACITY }
+					: { energy: 2000, OH: LAB_MINERAL_CAPACITY }
+				: blockers.has('invalid-args')
+					? { energy: 2000, Z: 1 }
+					: { energy: 2000 };
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_LAB,
+				owner: labOwner,
+				store: labStore,
+				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
+			});
+			const lab1 = await shard.placeStructure('W1N1', {
+				pos: [25, 27],
+				structureType: STRUCTURE_LAB,
+				owner: 'p1',
+				store: { energy: 2000, H: 100 },
+			});
+			const lab2 = blockers.has('invalid-target')
+				? null
+				: await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [28, 25] : [27, 25],
+					structureType: STRUCTURE_LAB,
+					owner: 'p1',
+					store: { energy: 2000, O: blockers.has('not-enough') ? LAB_REACTION_AMOUNT - 1 : 100 },
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				const lab2 = ${lab2};
+				Game.getObjectById(${labId}).runReaction(Game.getObjectById(${lab1}), lab2 && Game.getObjectById(lab2))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });
 
 describe('Lab reverseReaction', () => {
@@ -752,4 +800,49 @@ describe('Lab reverseReaction', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);
 	});
+
+	for (const row of labReverseValidationCases) {
+		test(`LAB-REVERSE-013:${row.label} reverseReaction() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('chemistry');
+			const blockers = new Set(row.blockers);
+			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
+			});
+			const compound = blockers.has('invalid-reverse-pair') ? 'H' : 'OH';
+			const compoundAmount = blockers.has('not-enough') ? LAB_REACTION_AMOUNT - 1 : 100;
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_LAB,
+				owner: labOwner,
+				store: { energy: 2000, [compound]: compoundAmount },
+				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
+			});
+			const lab1Id = blockers.has('invalid-target') && blockers.has('same-lab')
+				? labId
+				: await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [28, 25] : [25, 27],
+					structureType: STRUCTURE_LAB,
+					owner: 'p1',
+					store: blockers.has('full') ? { energy: 2000, H: LAB_MINERAL_CAPACITY } : { energy: 2000 },
+				});
+			const lab2Id = blockers.has('same-lab')
+				? lab1Id
+				: blockers.has('invalid-target')
+					? null
+					: await shard.placeStructure('W1N1', {
+						pos: blockers.has('range') ? [28, 25] : [27, 25],
+						structureType: STRUCTURE_LAB,
+						owner: 'p1',
+						store: { energy: 2000 },
+					});
+
+			const rc = await shard.runPlayer('p1', code`
+				const lab2 = ${lab2Id};
+				Game.getObjectById(${labId}).reverseReaction(Game.getObjectById(${lab1Id}), lab2 && Game.getObjectById(lab2))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

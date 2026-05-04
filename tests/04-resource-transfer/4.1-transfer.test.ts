@@ -7,6 +7,8 @@ import { describe, test, expect, code, body,
 	SPAWN_ENERGY_CAPACITY, LAB_MINERAL_CAPACITY, CARRY_CAPACITY,
 	UPGRADE_CONTROLLER_POWER,
 } from '../../src/index.js';
+import { transferValidationCases } from '../../src/matrices/transfer-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.transfer()', () => {
 	test('TRANSFER-001 transfers energy from the creep store to the target store', async ({ shard }) => {
@@ -319,4 +321,78 @@ describe('creep.transfer()', () => {
 		const receiver = await shard.expectObject(receiverId, 'creep');
 		expect(receiver.store.energy).toBe(20);
 	});
+
+	for (const row of transferValidationCases) {
+		test(`TRANSFER-015:${row.label} transfer() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (!blockers.has('busy')) {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			const resource = blockers.has('invalid-args')
+				? 'not_a_resource'
+				: blockers.has('invalid-capacity')
+					? 'H'
+					: RESOURCE_ENERGY;
+			const store: Record<string, number> = blockers.has('not-enough')
+				? {}
+				: blockers.has('not-enough-amount')
+					? { energy: 10 }
+					: resource === 'H'
+						? { H: 50 }
+						: { energy: 50 };
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: [CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: [CARRY, MOVE],
+					store,
+				});
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: targetPos })
+				: blockers.has('invalid-capacity')
+					? await shard.placeStructure('W1N1', {
+						pos: targetPos,
+						structureType: STRUCTURE_SPAWN,
+						owner: 'p1',
+						store: { energy: 0 },
+					})
+					: await shard.placeStructure('W1N1', {
+						pos: targetPos,
+						structureType: STRUCTURE_SPAWN,
+						owner: 'p1',
+						store: blockers.has('full')
+							? { energy: SPAWN_ENERGY_CAPACITY }
+							: blockers.has('full-amount')
+								? { energy: SPAWN_ENERGY_CAPACITY - 10 }
+								: { energy: 0 },
+					});
+			const amount = blockers.has('invalid-args') ? -1
+				: blockers.has('not-enough-amount') || blockers.has('full-amount') ? 20
+					: undefined;
+			const rc = amount === undefined
+				? await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).transfer(Game.getObjectById(${targetId}), ${resource})
+				`)
+				: await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).transfer(Game.getObjectById(${targetId}), ${resource}, ${amount})
+				`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

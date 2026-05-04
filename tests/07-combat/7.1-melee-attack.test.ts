@@ -1,4 +1,9 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_INVALID_TARGET, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, CARRY, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN } from '../../src/index.js';
+import { combatHealValidationCases } from '../../src/matrices/combat-heal-validation.js';
+import { combatMeleeValidationCases } from '../../src/matrices/combat-melee-validation.js';
+import { combatRangedValidationCases } from '../../src/matrices/combat-ranged-validation.js';
+import { combatRangedHealValidationCases } from '../../src/matrices/combat-rangedheal-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.attack()', () => {
 	test('COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part', async ({ shard }) => {
@@ -275,6 +280,42 @@ describe('creep.attack()', () => {
 		expect(invalidRc).toBe(ERR_INVALID_TARGET);
 	});
 
+	for (const row of combatMeleeValidationCases) {
+		test(`COMBAT-MELEE-009:${row.label} attack() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+			});
+
+			const attackerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [MOVE] : [ATTACK, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [MOVE] : [ATTACK, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					owner: owner === 'p1' ? 'p2' : 'p1',
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
+
 });
 
 describe('creep.rangedAttack()', () => {
@@ -458,6 +499,42 @@ describe('creep.rangedAttack()', () => {
 		`);
 		expect(invalidRc).toBe(ERR_INVALID_TARGET);
 	});
+
+	for (const row of combatRangedValidationCases) {
+		test(`COMBAT-RANGED-007:${row.label} rangedAttack() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+			});
+
+			const attackerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [MOVE] : [RANGED_ATTACK, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [MOVE] : [RANGED_ATTACK, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 27] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 27],
+					owner: owner === 'p1' ? 'p2' : 'p1',
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });
 
 describe('creep.heal()', () => {
@@ -603,6 +680,42 @@ describe('creep.heal()', () => {
 		`);
 		expect(rc).toBe(ERR_NO_BODYPART);
 	});
+
+	for (const row of combatHealValidationCases) {
+		test(`COMBAT-HEAL-007:${row.label} heal() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+			});
+
+			const healerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [MOVE] : [HEAL, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [MOVE] : [HEAL, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					owner,
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 
 	test('COMBAT-HEAL-004 heal on a creep at full HP returns OK with no effect', async ({ shard }) => {
 		// Engine: @screeps/engine/src/processor/intents/creeps/tick.js:130-132 — hits is
@@ -817,4 +930,40 @@ describe('creep.heal()', () => {
 		`);
 		expect(rc).toBe(ERR_NO_BODYPART);
 	});
+
+	for (const row of combatRangedHealValidationCases) {
+		test(`COMBAT-RANGEDHEAL-006:${row.label} rangedHeal() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+			});
+
+			const healerId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [MOVE] : [HEAL, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [MOVE] : [HEAL, MOVE],
+				});
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 28] })
+				: await shard.placeCreep('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 28],
+					owner,
+					body: [TOUGH, MOVE],
+				});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

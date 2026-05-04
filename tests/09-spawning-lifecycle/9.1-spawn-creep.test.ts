@@ -7,6 +7,7 @@ import {
 	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
 	FIND_CREEPS, TERRAIN_WALL,
 } from '../../src/index.js';
+import { spawnCreateValidationCases } from '../../src/matrices/spawn-create-validation.js';
 
 describe('StructureSpawn', () => {
 	const workerBodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
@@ -495,4 +496,45 @@ describe('StructureSpawn', () => {
 		const onSpawn = c!.pos.x === 25 && c!.pos.y === 25;
 		expect(onSpawn).toBe(false);
 	});
+
+	for (const row of spawnCreateValidationCases) {
+		test(`SPAWN-CREATE-014:${row.label} spawnCreep() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 2, owner }],
+			});
+			if (owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			const spawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_SPAWN,
+				owner,
+				store: blockers.has('not-enough') && !blockers.has('busy') ? { energy: 0 } : { energy: 300 },
+			});
+			if (blockers.has('name-exists')) {
+				await shard.placeCreep('W1N1', { pos: [20, 21], owner: 'p1', body: [MOVE], name: 'NewCreep' });
+			}
+			if (blockers.has('busy')) {
+				const busyRc = await shard.runPlayer(owner, code`
+					Game.getObjectById(${spawnId}).spawnCreep([MOVE, MOVE, MOVE], 'BusySpawn')
+				`);
+				expect(busyRc).toBe(OK);
+				await shard.tick();
+			}
+
+			const name = blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
+			const body = blockers.has('invalid-body') ? [] : blockers.has('not-enough') ? [WORK, WORK, WORK, WORK] : [MOVE];
+			const rc = blockers.has('invalid-directions')
+				? await shard.runPlayer('p1', code`
+					Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name}, { directions: [99] })
+				`)
+				: await shard.runPlayer('p1', code`
+					Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name})
+				`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

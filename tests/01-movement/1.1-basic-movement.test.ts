@@ -7,6 +7,8 @@ import { moveDirectionCases } from '../../src/matrices/move-directions.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
+import { moveBasicValidationCases } from '../../src/matrices/move-basic-validation.js';
+import { placeFatiguedCreep, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.move()', () => {
 	for (const { label, direction, dx, dy } of moveDirectionCases) {
@@ -171,6 +173,54 @@ describe('creep.move()', () => {
 		expect(mover.pos.x).toBe(25);
 		expect(mover.pos.y).toBe(24);
 	});
+
+	for (const row of moveBasicValidationCases) {
+		test(`MOVE-BASIC-027:${row.label} move(direction) validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (owner === 'p2') {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: 'p2' }],
+				});
+				if (!blockers.has('busy') && !blockers.has('fatigue')) {
+					await shard.placeCreep('W1N1', {
+						pos: [20, 20],
+						owner: 'p1',
+						body: [MOVE],
+					});
+				}
+			} else {
+				await shard.ownedRoom('p1');
+			}
+
+			let creepId: string;
+			if (blockers.has('busy')) {
+				creepId = await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [WORK] : [MOVE],
+				});
+			} else if (blockers.has('fatigue')) {
+				creepId = await placeFatiguedCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+				});
+			} else {
+				creepId = await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [WORK] : [MOVE],
+				});
+			}
+
+			const direction = blockers.has('invalid-args') ? 99 : TOP;
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).move(${direction})
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });
 
 describe('creep.moveByPath()', () => {

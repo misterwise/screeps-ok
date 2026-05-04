@@ -7,6 +7,7 @@ import { describe, test, expect, code,
 	REACTION_TIME, ENERGY_DECAY,
 	FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
+import { unboostValidationCases } from '../../src/matrices/unboost-validation.js';
 
 describe('lab.unboostCreep()', () => {
 	test('UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab', async ({ shard }) => {
@@ -179,4 +180,44 @@ describe('lab.unboostCreep()', () => {
 		`);
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
+
+	for (const row of unboostValidationCases) {
+		test(`UNBOOST-006:${row.label} unboostCreep() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('chemistry');
+			const blockers = new Set(row.blockers);
+			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const creepOwner = blockers.has('not-owner') && !blockers.has('invalid-target') ? 'p2' : 'p1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
+			});
+			const labId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_LAB,
+				owner: labOwner,
+				store: { energy: LAB_ENERGY_CAPACITY },
+				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['UH'] } : {}),
+			});
+			const targetPos: [number, number] = blockers.has('range') ? [25, 28] : [25, 26];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_LAB,
+					owner: 'p1',
+					store: { energy: LAB_ENERGY_CAPACITY },
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: targetPos,
+					owner: creepOwner,
+					body: [ATTACK, MOVE],
+					boosts: blockers.has('not-found') ? {} : { 0: 'UH' },
+				});
+			await shard.tick();
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${labId}).unboostCreep(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

@@ -5,6 +5,8 @@ import { describe, test, expect, code,
 	CONTROLLER_NUKE_BLOCKED_UPGRADE,
 } from '../../src/index.js';
 import { body } from '../../src/helpers/body.js';
+import { ctrlUpgradeValidationCases } from '../../src/matrices/ctrl-upgrade-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.upgradeController()', () => {
 	test('CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy', async ({ shard }) => {
@@ -339,4 +341,64 @@ describe('creep.upgradeController()', () => {
 		expect(result.progress).toBeGreaterThanOrEqual(0);
 		expect(result.progress).toBeLessThan(CONTROLLER_LEVELS[1]);
 	});
+
+	for (const row of ctrlUpgradeValidationCases) {
+		test(`CTRL-UPGRADE-013:${row.label} upgradeController() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
+			const targetRoom = blockers.has('not-owner-controller') ? 'W2N1' : 'W1N1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 2, owner: owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1' },
+					...(targetRoom === 'W2N1' ? [{ name: 'W2N1', rcl: 2, owner: 'p2' }] : []),
+				],
+			});
+			const ctrlPos = await shard.getControllerPos(targetRoom);
+			if (targetRoom === 'W2N1' && blockers.has('busy')) {
+				await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			if (targetRoom === 'W2N1' && owner === 'p2' && !blockers.has('busy')) {
+				await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			if (blockers.has('upgrade-blocked')) {
+				const attackerId = await shard.placeCreep(targetRoom, {
+					pos: [ctrlPos!.x, ctrlPos!.y + 1],
+					owner: targetRoom === 'W1N1' ? 'p2' : 'p1',
+					body: [CLAIM, MOVE],
+				});
+				const attackRc = await shard.runPlayer(targetRoom === 'W1N1' ? 'p2' : 'p1', code`
+					Game.getObjectById(${attackerId}).attackController(Game.rooms[${targetRoom}].controller)
+				`);
+				expect(attackRc).toBe(OK);
+				await shard.tick();
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					roomName: 'W1N1',
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: [MOVE, MOVE, MOVE],
+				})
+				: await shard.placeCreep(targetRoom, {
+					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+					store: blockers.has('not-enough') ? {} : { energy: 50 },
+				});
+			const sourceId = blockers.has('invalid-target')
+				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
+				: null;
+
+			const rc = blockers.has('invalid-target')
+				? await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).upgradeController(Game.getObjectById(${sourceId}))
+				`)
+				: await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).upgradeController(Game.rooms[${targetRoom}].controller)
+				`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });

@@ -2,9 +2,11 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NOT_FOUND, ERR_NOT_ENOUGH_RESOURCES,
 	ERR_TIRED, ERR_RCL_NOT_ENOUGH,
 	WORK, CARRY, MOVE, body,
-	STRUCTURE_EXTRACTOR, HARVEST_MINERAL_POWER, EXTRACTOR_COOLDOWN,
+	STRUCTURE_CONTAINER, STRUCTURE_EXTRACTOR, HARVEST_MINERAL_POWER, EXTRACTOR_COOLDOWN,
 	CARRY_CAPACITY, ENERGY_DECAY, FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
+import { harvestMineralValidationCases } from '../../src/matrices/harvest-mineral-validation.js';
+import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.harvest(mineral)', () => {
 	test('HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part', async ({ shard }) => {
@@ -345,4 +347,70 @@ describe('creep.harvest(mineral)', () => {
 		const mineral = await shard.expectObject(mineralId, 'mineral');
 		expect(mineral.mineralAmount).toBe(0);
 	});
+
+	for (const row of harvestMineralValidationCases) {
+		test(`HARVEST-MINERAL-014:${row.label} harvest(mineral) validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const rcl = blockers.has('inactive-extractor') ? 5 : 6;
+			if (owner === 'p2' || blockers.has('extractor-not-owner')) {
+				await shard.createShard({
+					players: ['p1', 'p2'],
+					rooms: [{ name: 'W1N1', rcl, owner: owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1' }],
+				});
+				if (owner === 'p2' && !blockers.has('busy')) {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			} else {
+				await shard.ownedRoom('p1', 'W1N1', rcl);
+			}
+
+			const creepId = blockers.has('busy')
+				? await spawnBusyCreep(shard, {
+					owner,
+					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				})
+				: await shard.placeCreep('W1N1', {
+					pos: [25, 25],
+					owner,
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
+				});
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_CONTAINER,
+					store: { energy: 50 },
+				})
+				: await shard.placeMineral('W1N1', {
+					pos: targetPos,
+					mineralType: 'H',
+					mineralAmount: blockers.has('depleted') ? 0 : 50000,
+				});
+			if (!blockers.has('invalid-target') && !blockers.has('no-extractor')) {
+				await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_EXTRACTOR,
+					owner: blockers.has('extractor-not-owner') ? 'p2' : 'p1',
+					...(blockers.has('cooldown') ? { cooldown: 10 } : {}),
+				});
+			}
+			if (blockers.has('cooldown') && !blockers.has('busy')) {
+				await shard.tick();
+			}
+			if (row.label === 'cooldown') {
+				const first = await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
+				`);
+				expect(first).toBe(OK);
+				await shard.tick();
+			}
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
+		});
+	}
 });
