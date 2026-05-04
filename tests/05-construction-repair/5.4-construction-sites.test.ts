@@ -1,8 +1,9 @@
 import { describe, test, expect, code, body,
-	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS,
-	WORK, CARRY, MOVE,
+	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS, ERR_NOT_OWNER,
+	WORK, CARRY, MOVE, CLAIM,
 	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES,
-	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, TERRAIN_WALL,
+	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
+	STRUCTURE_CONTAINER, STRUCTURE_WALL, TERRAIN_WALL,
 	MAX_CONSTRUCTION_SITES,
 } from '../../src/index.js';
 import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
@@ -285,6 +286,140 @@ describe('room.createConstructionSite()', () => {
 		expect(result).toEqual({
 			room: ERR_INVALID_ARGS,
 			roomPosition: ERR_INVALID_ARGS,
+		});
+	});
+
+	test('CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH', async ({ shard }) => {
+		// Engine utils.checkControllerAvailability (utils.js:338-353):
+		// rcl resolves to 0 when controller has no user/owner. At rcl 0,
+		// CONTROLLER_STRUCTURES.road = 2500 and .container = 5; every other
+		// type is undefined or 0 → ERR_RCL_NOT_ENOUGH.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		// A creep in W2N1 grants p1 vision so Game.rooms['W2N1'] is populated.
+		await shard.placeCreep('W2N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE],
+		});
+
+		const result = await shard.runPlayer('p1', code`({
+			road: Game.rooms['W2N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
+			container: Game.rooms['W2N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
+			wall: Game.rooms['W2N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
+			extension: Game.rooms['W2N1'].createConstructionSite(23, 20, STRUCTURE_EXTENSION),
+			tower: Game.rooms['W2N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
+			spawn: Game.rooms['W2N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
+		})`) as Record<string, number>;
+		expect(result).toEqual({
+			road: OK,
+			container: OK,
+			wall: ERR_RCL_NOT_ENOUGH,
+			extension: ERR_RCL_NOT_ENOUGH,
+			tower: ERR_RCL_NOT_ENOUGH,
+			spawn: ERR_RCL_NOT_ENOUGH,
+		});
+	});
+
+	test('CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only', async ({ shard }) => {
+		// Engine rooms.js:1055-1061 only triggers ERR_NOT_OWNER for hostile
+		// reservations. Self-reservations fall through to
+		// checkControllerAvailability, which only credits a controller's
+		// level when it has user/owner (utils.js:341), not a reservation.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [CLAIM, CLAIM, MOVE],
+			name: 'reserver',
+		});
+		await shard.tick();
+		const reserveRc = await shard.runPlayer('p1', code`
+			Game.creeps['reserver'].reserveController(Game.rooms['W2N1'].controller)
+		`);
+		expect(reserveRc).toBe(OK);
+		await shard.tick();
+
+		// Pre-touch the controller proxy before the placement calls — vanilla
+		// lazily materializes controller.reservation on first proxy access
+		// in a tick, and without the warm-up the first createConstructionSite
+		// in the snippet can slip past the reservation gate.
+		const result = await shard.runPlayer('p1', code`
+			void Game.rooms['W2N1'].controller.reservation;
+			({
+				road: Game.rooms['W2N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
+				container: Game.rooms['W2N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
+				wall: Game.rooms['W2N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
+				tower: Game.rooms['W2N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
+				spawn: Game.rooms['W2N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
+			})
+		`) as Record<string, number>;
+		expect(result).toEqual({
+			road: OK,
+			container: OK,
+			wall: ERR_RCL_NOT_ENOUGH,
+			tower: ERR_RCL_NOT_ENOUGH,
+			spawn: ERR_RCL_NOT_ENOUGH,
+		});
+	});
+
+	test('CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type', async ({ shard }) => {
+		// Engine rooms.js:1055-1061 returns ERR_NOT_OWNER when
+		// controller.reservation.user differs from the caller's user, before
+		// the rcl check runs. Even road/container — which would be allowed
+		// in a fully unowned room — are rejected.
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				{ name: 'W3N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W3N1');
+		await shard.placeCreep('W3N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p2',
+			body: [CLAIM, CLAIM, MOVE],
+			name: 'p2reserver',
+		});
+		await shard.placeCreep('W3N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE],
+		});
+		await shard.tick();
+		const reserveRc = await shard.runPlayer('p2', code`
+			Game.creeps['p2reserver'].reserveController(Game.rooms['W3N1'].controller)
+		`);
+		expect(reserveRc).toBe(OK);
+		await shard.tick();
+
+		// See CONSTRUCTION-SITE-013 for the pre-touch rationale.
+		const result = await shard.runPlayer('p1', code`
+			void Game.rooms['W3N1'].controller.reservation;
+			({
+				road: Game.rooms['W3N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
+				container: Game.rooms['W3N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
+				wall: Game.rooms['W3N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
+				tower: Game.rooms['W3N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
+				spawn: Game.rooms['W3N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
+			})
+		`) as Record<string, number>;
+		expect(result).toEqual({
+			road: ERR_NOT_OWNER,
+			container: ERR_NOT_OWNER,
+			wall: ERR_NOT_OWNER,
+			tower: ERR_NOT_OWNER,
+			spawn: ERR_NOT_OWNER,
 		});
 	});
 

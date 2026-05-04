@@ -130,9 +130,9 @@
 			"tests": ["OBSERVER-007:invalidArgsBeforeRcl"]
 		},
 		"construction-site-foreign-room-wrong-error": {
-			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` when `!room.controller?.my`.",
-			"expected": "Vanilla returns ERR_NOT_OWNER for a room owned by another player; ERR_RCL_NOT_ENOUGH is reserved for your-room/insufficient-RCL.",
-			"tests": ["CONSTRUCTION-SITE-011:notOwner", "CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget", "CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull"]
+			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` whenever `!room.controller?.my`. This single check conflates four canonical cases: hostile-owned, hostile-reserved, unowned, and self-reserved. Regression introduced in upstream commit `afba4b3a` (\"Fix spawn placement\"), which changed `controller?.my === false` to `!controller?.my` while auditing `.my ===` patterns.",
+			"expected": "Vanilla `rooms.js:1052-1064` separates the cases: hostile-owned (`level > 0 && !my`) → ERR_NOT_OWNER; hostile reservation → ERR_NOT_OWNER; otherwise the controller's effective rcl falls to `checkControllerAvailability`, which credits a level only when the controller has a `user`/`owner` (utils.js:341). Unowned and self-reserved rooms therefore use rcl 0, where `STRUCTURE_ROAD` (cap 2500) and `STRUCTURE_CONTAINER` (cap 5) are placeable and other types return ERR_RCL_NOT_ENOUGH.",
+			"tests": ["CONSTRUCTION-SITE-011:notOwner", "CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget", "CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull", "CONSTRUCTION-SITE-012", "CONSTRUCTION-SITE-013", "CONSTRUCTION-SITE-014"]
 		},
 		"construction-site-cap-too-early": {
 			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation.",

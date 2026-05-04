@@ -866,6 +866,26 @@ Coverage Notes
   codes and precedence match the canonical validation matrix for argument
   validity, ownership, active-structure state, target validity (terrain or
   position), and structure-cap state.
+- `CONSTRUCTION-SITE-012` `behavior` `verified_vanilla`
+  In a room with an unowned controller (no `level`/`user`, no reservation),
+  `STRUCTURE_ROAD` and `STRUCTURE_CONTAINER` placement returns `OK`; every
+  other structure type returns `ERR_RCL_NOT_ENOUGH`. Engine
+  `utils.checkControllerAvailability` (utils.js:338-353) computes `rcl = 0`
+  whenever the controller has no `user`/`owner`, and at rcl 0 only
+  `CONTROLLER_STRUCTURES.road` (2500) and `CONTROLLER_STRUCTURES.container`
+  (5) have non-zero caps.
+- `CONSTRUCTION-SITE-013` `behavior` `verified_vanilla`
+  A controller reserved by the caller does not lift the effective rcl above
+  0 — the allowed set matches the unowned case (road and container only).
+  Engine `rooms.js:1055-1061` only short-circuits to `ERR_NOT_OWNER` when
+  the reservation belongs to *another* user; self-reservations fall through
+  to `utils.checkControllerAvailability`, which credits a level only when
+  the controller has a `user`/`owner` (utils.js:341), not a reservation.
+- `CONSTRUCTION-SITE-014` `behavior` `verified_vanilla`
+  A controller reserved by another player returns `ERR_NOT_OWNER` for every
+  structure type, including road and container. Engine `rooms.js:1055-1061`
+  rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
+  from the caller's user, before the rcl check runs.
 
 ---
 
