@@ -48,12 +48,14 @@ function buildTerrain(terrain: TerrainSpec | null): any {
 let sharedServer: any = null;
 let sharedServerCleanupRegistered = false;
 let sharedUserCodeTimestamp = Date.now();
+let sharedTerrainRevision = 0;
 let runnerLogPath: string | null = null;
 let runnerFatal: Error | null = null;
 const runnerFatalBus = new EventEmitter();
 runnerFatalBus.setMaxListeners(0);
 
 const VANILLA_WORLD_SIZE_ENV_KEY = 'screeps-ok:worldSize';
+const VANILLA_TERRAIN_REVISION_ENV_KEY = 'screeps-ok:terrainRevision';
 const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
 // Hard ceiling on a single server.tick() call. The driver waits for the
 // engine_runner subprocess to send back a tick reply over IPC; if the runner
@@ -79,22 +81,42 @@ function silenceDriverSigtermLog(): void {
 function writeRunnerSandboxPatch(root: string): string {
 	const patchPath = path.join(root, RUNNER_SANDBOX_PATCH_FILE);
 	const userVmPath = nodeRequire.resolve('@screeps/driver/lib/runtime/user-vm.js');
+	const makePath = nodeRequire.resolve('@screeps/driver/lib/runtime/make.js');
 	const patchSource = `'use strict';
 const Module = require('module');
 const fs = require('fs');
 
-const target = ${JSON.stringify(userVmPath)};
-const key = ${JSON.stringify(VANILLA_WORLD_SIZE_ENV_KEY)};
+const userVmTarget = ${JSON.stringify(userVmPath)};
+const makeTarget = ${JSON.stringify(makePath)};
+const worldSizeKey = ${JSON.stringify(VANILLA_WORLD_SIZE_ENV_KEY)};
+const terrainRevisionKey = ${JSON.stringify(VANILLA_TERRAIN_REVISION_ENV_KEY)};
 const originalJs = Module._extensions['.js'];
+let patchedUserVm = false;
+let patchedMake = false;
 
 Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filename) {
-	if (filename !== target) return originalJs(module, filename);
-	Module._extensions['.js'] = originalJs;
+	if (filename === userVmTarget) {
+		patchUserVm(module, filename);
+		return;
+	}
+	if (filename === makeTarget) {
+		patchMake(module, filename);
+		return;
+	}
+	return originalJs(module, filename);
+};
 
+function maybeRestore() {
+	if (patchedUserVm && patchedMake) {
+		Module._extensions['.js'] = originalJs;
+	}
+}
+
+function patchUserVm(module, filename) {
 	const needle = "context.global.setIgnored('_worldSize', index.getWorldSize());";
 	const replacement = "context.global.setIgnored('_worldSize', await (async function() {\\n" +
 		"                try {\\n" +
-		"                    const value = await common.storage.env.get(" + JSON.stringify(key) + ");\\n" +
+		"                    const value = await common.storage.env.get(" + JSON.stringify(worldSizeKey) + ");\\n" +
 		"                    const parsed = Number(value);\\n" +
 		"                    if (Number.isFinite(parsed) && parsed > 0) return parsed;\\n" +
 		"                } catch (_) {}\\n" +
@@ -106,7 +128,62 @@ Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filena
 	}
 	source = source.replace(needle, replacement);
 	module._compile(source, filename);
-};
+	patchedUserVm = true;
+	maybeRestore();
+}
+
+function patchMake(module, filename) {
+	let source = fs.readFileSync(filename, 'utf8');
+	const start = source.indexOf('function getAllTerrainData() {');
+	const end = source.indexOf('\\n\\n\\nfunction getUserData', start);
+	if (start === -1 || end === -1) {
+		throw new Error('screeps-ok vanilla sandbox patch: make.js terrain cache block not found');
+	}
+	const replacement = "function getAllTerrainData() {\\n" +
+		"    return env.get(" + JSON.stringify(terrainRevisionKey) + ")\\n" +
+		"        .catch(() => null)\\n" +
+		"        .then((revision) => {\\n" +
+		"            if(staticTerrainData && staticTerrainRevision === revision) {\\n" +
+		"                return;\\n" +
+		"            }\\n" +
+		"            return driver.getAllTerrainData()\\n" +
+		"                .then((result) => {\\n" +
+		"                    if(staticTerrainData && staticTerrainRevision === revision) {\\n" +
+		"                        return;\\n" +
+		"                    }\\n" +
+		"                    pathfinderFactory.init(native, result);\\n" +
+		"                    staticTerrainRevision = revision;\\n" +
+		"                    staticTerrainDataSize = result.length * 2500;\\n" +
+		"                    let bufferConstructor = typeof SharedArrayBuffer === 'undefined' ? ArrayBuffer : SharedArrayBuffer;\\n" +
+		"                    let view = new Uint8Array(new bufferConstructor(staticTerrainDataSize));\\n" +
+		"                    staticTerrainData = {\\n" +
+		"                        buffer: view.buffer,\\n" +
+		"                        roomOffsets: {},\\n" +
+		"                    };\\n" +
+		"                    result.forEach((room, roomIndex) => {\\n" +
+		"                        var offset = roomIndex * 2500;\\n" +
+		"                        for (var i = 0; i < 2500; i++) {\\n" +
+		"                            view[i + offset] = Number(room.terrain.charAt(i));\\n" +
+		"                        }\\n" +
+		"                        staticTerrainData.roomOffsets[room.room] = offset;\\n" +
+		"                    });\\n" +
+		"                    console.log('Terrain shared buffer size:', staticTerrainDataSize);\\n" +
+		"                });\\n" +
+		"        });\\n" +
+		"}";
+	const declarationNeedle = "let staticTerrainData, staticTerrainDataSize = 0;";
+	if (!source.includes(declarationNeedle)) {
+		throw new Error('screeps-ok vanilla sandbox patch: make.js terrain declaration not found');
+	}
+	source = source.slice(0, start) + replacement + source.slice(end);
+	source = source.replace(
+		declarationNeedle,
+		"let staticTerrainData, staticTerrainDataSize = 0, staticTerrainRevision;",
+	);
+	module._compile(source, filename);
+	patchedMake = true;
+	maybeRestore();
+}
 `;
 	writeFileSync(patchPath, patchSource);
 	return patchPath;
@@ -534,6 +611,20 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		driver.getWorldSize = () => worldSize;
 	}
 
+	private async publishTerrainRevision(): Promise<void> {
+		await this.env.set(VANILLA_TERRAIN_REVISION_ENV_KEY, String(++sharedTerrainRevision));
+	}
+
+	private async bumpUserCodeTimestamps(): Promise<void> {
+		const timestamp = ++sharedUserCodeTimestamp;
+		await Promise.all([...this.users.keys()].map(handle =>
+			this.db['users.code'].update(
+				{ user: this.resolvePlayer(handle), activeWorld: true },
+				{ $set: { timestamp } },
+			),
+		));
+	}
+
 	private resolvePlayer(handle: string): string {
 		const id = this.playerMap.get(handle);
 		if (!id) throw new Error(`Unknown player handle: ${handle}`);
@@ -578,6 +669,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			if (specRoomNames.has(preload.name)) continue;
 			await this.server.world.setTerrain(preload.name, buildTerrain(preload.terrain));
 		}
+		await this.publishTerrainRevision();
 		await this.publishSandboxWorldSize();
 
 		// Create players manually (no addBot — avoids phantom spawns and
@@ -711,11 +803,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		// Warm-up tick: the engine needs one tick to load user code into
 		// isolated-vm and initialize the runtime. Without this, the first
-		// runPlayer call may fail silently. The runtime's terrain cache is
-		// not yet armed at this point — that happens on the first
-		// user-facing tick (runPlayer/runPlayers/tick), so post-warmup
-		// setTerrain is still observable to player code as long as no
-		// user tick has run yet.
+		// runPlayer call may fail silently. The runner patch above watches
+		// the terrain revision. createShard and pre-tick setTerrain also
+		// bump user code timestamps so warmed VMs restart with that terrain.
 		await guardedTick(this.server);
 	}
 
@@ -1206,23 +1296,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async setTerrain(room: string, terrain: TerrainSpec): Promise<void> {
-		// `@screeps/driver/lib/runtime/make.js` snapshots `env.TERRAIN_DATA`
-		// once the runtime cache is armed and never refreshes it. The
-		// runtime is armed on the first user-facing tick (runPlayer /
-		// runPlayers / shard.tick), so post-arm setTerrain leaves
-		// player-visible `Room.getTerrain` and `PathFinder` reading the
-		// cached blob — a silent divergence. Spec §Terrain requires
-		// explicit failure when the engine cannot honor the mutation.
+		// The vanilla runner can refresh terrain before the first
+		// user-facing tick by observing our terrain revision key. After a
+		// user tick, refreshing would reset player VMs and pathfinder state
+		// mid-shard, so the adapter rejects the mutation explicitly.
 		if (this.firstTickRun) {
 			throw new Error(
 				`vanilla adapter: setTerrain('${room}') called after a user-facing tick. ` +
-				`The driver caches terrain on its first runtime fetch and never ` +
-				`refreshes it, so post-tick terrain mutations are invisible to ` +
-				`Room.getTerrain and PathFinder. Pass terrain via RoomSpec.terrain ` +
-				`at createShard time, or call setTerrain before the first runPlayer/tick.`,
+				`Refreshing terrain after player code has run would require resetting ` +
+				`the vanilla runtime's player VMs and pathfinder state mid-shard. ` +
+				`Pass terrain via RoomSpec.terrain at createShard time, or call ` +
+				`setTerrain before the first runPlayer/tick.`,
 			);
 		}
 		await this.server.world.setTerrain(room, buildTerrain(withCornerWalls(terrain)));
+		await this.publishTerrainRevision();
+		await this.bumpUserCodeTimestamps();
 	}
 
 	async runPlayer(handle: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {

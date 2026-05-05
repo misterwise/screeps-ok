@@ -22,7 +22,7 @@
 		"id-constructor-overlay-copy": {
 			"actual": "`new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy.",
 			"expected": "Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored.",
-			"tests": ["UNDOC-IDCTOR-001", "UNDOC-IDCTOR-002", "UNDOC-IDCTOR-003", "UNDOC-IDCTOR-004"]
+			"tests": ["UNDOC-IDCTOR-001", "UNDOC-IDCTOR-003", "UNDOC-IDCTOR-004"]
 		},
 		"rawmemory-set-no-eager-limit-check": {
 			"actual": "`RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception",
@@ -72,7 +72,7 @@
 		"constructor-by-id-missing-for-noncreep-objects": {
 			"actual": "Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position.",
 			"expected": "Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick.",
-			"tests": ["UNDOC-CTOR-002", "UNDOC-CTOR-003", "UNDOC-CTOR-004", "UNDOC-CTOR-006", "UNDOC-CTOR-007", "UNDOC-CTOR-008"]
+			"tests": ["UNDOC-CTOR-008"]
 		},
 		"withdraw-args-validation-too-late": {
 			"actual": "`checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:536-545`) calls `checkHasResource` (the gate that rejects an unknown resource type with ERR_INVALID_ARGS) at chain step 5, after `checkTarget`, `checkInteractionBlocked`, and `checkRange`.",
@@ -124,15 +124,10 @@
 			"expected": "Vanilla validates the amount argument before any target check.",
 			"tests": ["LINK-014:invalidArgsBeforeInvalidTarget", "LINK-014:invalidArgsBeforeTargetNotOwner"]
 		},
-		"observer-args-validation-too-late": {
-			"actual": "`StructureObserver.observeRoom` (`packages/xxscreeps/mods/observer/observer.ts:21-27`) runs `checkIsActive(this)` at step 2 (ERR_RCL_NOT_ENOUGH) before `checkObserveRoom` validates the `roomName` argument.",
-			"expected": "Vanilla returns ERR_INVALID_ARGS for a malformed room name before ERR_RCL_NOT_ENOUGH.",
-			"tests": ["OBSERVER-007:invalidArgsBeforeRcl"]
-		},
 		"construction-site-foreign-room-wrong-error": {
-			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` when `!room.controller?.my`.",
-			"expected": "Vanilla returns ERR_NOT_OWNER for a room owned by another player; ERR_RCL_NOT_ENOUGH is reserved for your-room/insufficient-RCL.",
-			"tests": ["CONSTRUCTION-SITE-011:notOwner", "CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget", "CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull"]
+			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` for hostile-owned rooms and does not reject hostile reservations with `ERR_NOT_OWNER` ahead of the rcl check.",
+			"expected": "Vanilla returns ERR_NOT_OWNER for hostile-owned rooms and hostile-reserved rooms before RCL or structure-cap checks.",
+			"tests": ["CONSTRUCTION-SITE-011:notOwner", "CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget", "CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull", "CONSTRUCTION-SITE-014"]
 		},
 		"construction-site-cap-too-early": {
 			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation.",
@@ -184,16 +179,6 @@
 			"expected": "Vanilla returns ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the controller-state ERR_INVALID_TARGET before ERR_NO_BODYPART for the controller intents.",
 			"tests": ["CTRL-CLAIM-008:invalidTargetBeforeNoBodypart", "CTRL-RESERVE-008:invalidTargetBeforeNoBodypart", "CTRL-RESERVE-008:rangeBeforeNoBodypart", "CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart", "CTRL-ATTACK-007:invalidTargetBeforeNoBodypart"]
 		},
-		"ctrl-sign-target-vs-range-inverted": {
-			"actual": "`checkSignController` (`packages/xxscreeps/mods/controller/creep.ts:175-181`) calls `checkTarget(target, StructureController)` before `checkRange`, so a non-controller far away returns ERR_INVALID_TARGET.",
-			"expected": "When the target is non-null but wrong type, vanilla returns ERR_NOT_IN_RANGE first; only the null-target case returns ERR_INVALID_TARGET ahead of range.",
-			"tests": ["CTRL-SIGN-004:rangeBeforeNotController"]
-		},
-		"ctrl-upgrade-blocked-vs-range-inverted": {
-			"actual": "`checkUpgradeController` (`packages/xxscreeps/mods/controller/creep.ts:183-196`) evaluates `target.upgradeBlocked` in the final lambda, after `checkRange`.",
-			"expected": "Vanilla returns ERR_INVALID_TARGET (upgrade-blocked) before ERR_NOT_IN_RANGE.",
-			"tests": ["CTRL-UPGRADE-013:upgradeBlockedBeforeRange"]
-		},
 		"spawn-not-owner-too-early": {
 			"actual": "`checkSpawnCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:300-345`) calls `checkMyStructure(spawn, StructureSpawn)` first, returning ERR_NOT_OWNER before name string, NAME_EXISTS, or directions array validation.",
 			"expected": "Vanilla validates the name argument, name uniqueness, and directions array before ERR_NOT_OWNER on the spawn.",
@@ -203,26 +188,6 @@
 			"actual": "`checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first.",
 			"expected": "Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn.",
 			"tests": ["RENEW-CREEP-011:busyBeforeNotOwner", "RENEW-CREEP-011:invalidTargetBeforeNotOwner"]
-		},
-		"pickup-full-too-late": {
-			"actual": "`checkPickup` (`packages/xxscreeps/mods/creep/creep.ts:513-520`) runs `checkRange` at step 3 then the FULL branch at step 4.",
-			"expected": "Vanilla returns ERR_FULL before ERR_NOT_IN_RANGE.",
-			"tests": ["PICKUP-010:fullBeforeRange"]
-		},
-		"factory-rcl-too-early": {
-			"actual": "`checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) calls `checkIsActive(factory)` at step 3, before recipe-validity (ERR_INVALID_ARGS) and recipe-level (ERR_INVALID_TARGET) inside the final lambda.",
-			"expected": "Vanilla returns ERR_INVALID_ARGS and ERR_INVALID_TARGET before ERR_RCL_NOT_ENOUGH for `factory.produce`.",
-			"tests": ["FACTORY-PRODUCE-011:invalidArgsBeforeRcl", "FACTORY-PRODUCE-011:levelMismatchBeforeRcl"]
-		},
-		"flag-cap-too-late": {
-			"actual": "`checkCreateFlag` (`packages/xxscreeps/mods/flag/flag.ts:122-142`) checks `flags.length >= FLAGS_LIMIT` at the end of the third lambda, after color and name validation.",
-			"expected": "Vanilla returns ERR_FULL right after ERR_INVALID_ARGS for invalid coords, before color and name validation.",
-			"tests": ["FLAG-009:flagCapFullBeforeInvalidColor", "FLAG-009:flagCapFullBeforeNameExists", "FLAG-009:flagCapFullBeforeInvalidNameLength"]
-		},
-		"flag-name-length-vs-name-exists-inverted": {
-			"actual": "`checkCreateFlag` runs `checkString(name, 100, true)` before the `name in flags` check.",
-			"expected": "Vanilla returns ERR_NAME_EXISTS before ERR_INVALID_ARGS for an oversized colliding name.",
-			"tests": ["FLAG-009:nameExistsBeforeInvalidNameLength"]
 		},
 		"lab-self-as-reagent-not-rejected": {
 			"actual": "`checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug.",

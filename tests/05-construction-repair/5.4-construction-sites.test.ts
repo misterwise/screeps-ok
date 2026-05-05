@@ -8,11 +8,6 @@ import { describe, test, expect, code, body,
 } from '../../src/index.js';
 import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
 import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
-import {
-	TERRAIN_FIXTURE_ROOM,
-	TERRAIN_FIXTURE_SPEC,
-	TERRAIN_FIXTURE_LANDMARKS,
-} from '../../src/terrain-fixture.js';
 
 describe('room.createConstructionSite()', () => {
 	test('CONSTRUCTION-SITE-001 creates a construction site via player code', async ({ shard }) => {
@@ -217,26 +212,23 @@ describe('room.createConstructionSite()', () => {
 		// Engine utils.js:145-148 / 162-165 — checkConstructionSite returns
 		// false if the tile is a wall, except for roads. Place a road on a
 		// wall tile (allowed) and a non-road on the same tile (rejected).
-		// Uses the adapter's pre-loaded terrain fixture room so the vanilla
-		// runner's cached staticTerrainData already contains the wall tile
-		// (see adapters/vanilla/index.ts PRELOAD_ROOMS and
-		// src/terrain-fixture.ts isolatedWallTile). xxscreeps still skips
-		// via the terrain capability gate.
 		shard.requires('terrain', 'custom terrain required for wall placement check');
-		const [wx, wy] = TERRAIN_FIXTURE_LANDMARKS.isolatedWallTile;
+		const wx = 20, wy = 20;
+		const terrain = new Array<0 | 1 | 2>(2500).fill(0);
+		terrain[wy * 50 + wx] = TERRAIN_WALL;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{
-				name: TERRAIN_FIXTURE_ROOM,
+				name: 'W1N1',
 				rcl: 2,
 				owner: 'p1',
-				terrain: TERRAIN_FIXTURE_SPEC,
+				terrain,
 			}],
 		});
 
 		const result = await shard.runPlayer('p1', code`({
-			road: Game.rooms[${TERRAIN_FIXTURE_ROOM}].createConstructionSite(${wx}, ${wy}, STRUCTURE_ROAD),
-			extension: Game.rooms[${TERRAIN_FIXTURE_ROOM}].createConstructionSite(${wx}, ${wy}, STRUCTURE_EXTENSION),
+			road: Game.rooms['W1N1'].createConstructionSite(${wx}, ${wy}, STRUCTURE_ROAD),
+			extension: Game.rooms['W1N1'].createConstructionSite(${wx}, ${wy}, STRUCTURE_EXTENSION),
 		})`) as { road: number; extension: number };
 		expect(result.road).toBe(OK);
 		expect(result.extension).toBe(ERR_INVALID_TARGET);
@@ -307,12 +299,12 @@ describe('room.createConstructionSite()', () => {
 		});
 
 		const result = await shard.runPlayer('p1', code`({
-			road: Game.rooms['W2N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
-			container: Game.rooms['W2N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
-			wall: Game.rooms['W2N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
-			extension: Game.rooms['W2N1'].createConstructionSite(23, 20, STRUCTURE_EXTENSION),
-			tower: Game.rooms['W2N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
-			spawn: Game.rooms['W2N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
+			road: Game.rooms['W2N1'].createConstructionSite(30, 30, STRUCTURE_ROAD),
+			container: Game.rooms['W2N1'].createConstructionSite(31, 30, STRUCTURE_CONTAINER),
+			wall: Game.rooms['W2N1'].createConstructionSite(32, 30, STRUCTURE_WALL),
+			extension: Game.rooms['W2N1'].createConstructionSite(33, 30, STRUCTURE_EXTENSION),
+			tower: Game.rooms['W2N1'].createConstructionSite(34, 30, STRUCTURE_TOWER),
+			spawn: Game.rooms['W2N1'].createConstructionSite(35, 30, STRUCTURE_SPAWN),
 		})`) as Record<string, number>;
 		expect(result).toEqual({
 			road: OK,
@@ -357,11 +349,11 @@ describe('room.createConstructionSite()', () => {
 		const result = await shard.runPlayer('p1', code`
 			void Game.rooms['W2N1'].controller.reservation;
 			({
-				road: Game.rooms['W2N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
-				container: Game.rooms['W2N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
-				wall: Game.rooms['W2N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
-				tower: Game.rooms['W2N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
-				spawn: Game.rooms['W2N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
+				road: Game.rooms['W2N1'].createConstructionSite(30, 30, STRUCTURE_ROAD),
+				container: Game.rooms['W2N1'].createConstructionSite(31, 30, STRUCTURE_CONTAINER),
+				wall: Game.rooms['W2N1'].createConstructionSite(32, 30, STRUCTURE_WALL),
+				tower: Game.rooms['W2N1'].createConstructionSite(34, 30, STRUCTURE_TOWER),
+				spawn: Game.rooms['W2N1'].createConstructionSite(35, 30, STRUCTURE_SPAWN),
 			})
 		`) as Record<string, number>;
 		expect(result).toEqual({

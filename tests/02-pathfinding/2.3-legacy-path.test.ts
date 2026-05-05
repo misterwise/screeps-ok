@@ -1,10 +1,17 @@
 import { describe, test, expect, code, limitationGated } from '../../src/index.js';
-import {
-	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC,
-	TERRAIN_FIXTURE_NEIGHBOR, TERRAIN_FIXTURE_NEIGHBOR_SPEC,
-} from '../../src/terrain-fixture.js';
-
 const pathFinderUseTest = limitationGated('xxscreepsPathFinderUseMissing');
+
+function singleExitTerrain(openEdge: 'top' | 'bottom'): Array<0 | 1 | 2> {
+	const terrain = new Array<0 | 1 | 2>(2500).fill(0);
+	const idx = (x: number, y: number) => y * 50 + x;
+	for (let i = 0; i < 50; i++) {
+		if (openEdge !== 'top') terrain[idx(i, 0)] = 1;
+		if (openEdge !== 'bottom') terrain[idx(i, 49)] = 1;
+		terrain[idx(0, i)] = 1;
+		terrain[idx(49, i)] = 1;
+	}
+	return terrain;
+}
 
 describe('Legacy Pathfinding', () => {
 	test('LEGACY-PATH-001 Room.findPath() finds a path between two positions within a room', async ({ shard }) => {
@@ -112,20 +119,19 @@ describe('Legacy Pathfinding', () => {
 	});
 
 	test('LEGACY-PATH-005 findPath() with cross-room destination returns only intra-room steps', async ({ shard }) => {
-		shard.requires('terrain', 'cross-room findPath needs terrain fixture pair');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
-				{ name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1', terrain: TERRAIN_FIXTURE_SPEC },
-				{ name: TERRAIN_FIXTURE_NEIGHBOR, terrain: TERRAIN_FIXTURE_NEIGHBOR_SPEC },
+				{ name: 'W0N0', rcl: 1, owner: 'p1', terrain: singleExitTerrain('top') },
+				{ name: 'W0N1', terrain: singleExitTerrain('bottom') },
 			],
 		});
 
 		const result = await shard.runPlayer('p1', code`
-			const room = Game.rooms[${TERRAIN_FIXTURE_ROOM}];
+			const room = Game.rooms['W0N0'];
 			const path = room.findPath(
-				new RoomPosition(25, 25, ${TERRAIN_FIXTURE_ROOM}),
-				new RoomPosition(25, 25, ${TERRAIN_FIXTURE_NEIGHBOR}),
+				new RoomPosition(25, 25, 'W0N0'),
+				new RoomPosition(25, 25, 'W0N1'),
 				{}
 			);
 			({

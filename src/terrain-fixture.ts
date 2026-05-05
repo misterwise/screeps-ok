@@ -4,25 +4,22 @@ import type { TerrainSpec } from './adapter.js';
 // observe specific terrain features through player-facing APIs
 // (Room.getTerrain, PathFinder, moveTo pathfinding, findPath).
 //
-// The vanilla adapter pre-loads this room into the engine_runner subprocess's
-// one-shot terrain cache at startup, so tests that reference it see the same
-// terrain the player APIs see without any cache-invalidation dance. Tests that
-// need fresh player-facing terrain should use THIS fixture room rather than
-// crafting their own RoomSpec.terrain — crafting new terrain at test time
-// writes to storage but is silently ignored by the runner's cached copy.
+// The vanilla adapter pre-loads this room and publishes terrain revisions to
+// its runner patch, so tests that reference it see the same terrain through DB
+// helpers and player-facing APIs. Tests that only need stable terrain
+// landmarks should use this fixture instead of open-coded coordinate layouts.
 
 /**
  * The room that holds the crafted terrain fixture. Pre-loaded into the
- * engine_runner cache by the vanilla adapter. Pick a name far from W1N1 so
- * it doesn't collide with cross-room neighbor tests.
+ * vanilla adapter. Pick a name far from W1N1 so it doesn't collide with
+ * cross-room neighbor tests.
  */
 export const TERRAIN_FIXTURE_ROOM = 'W5N5';
 
 /**
  * A blank-terrain neighbor of TERRAIN_FIXTURE_ROOM, also pre-loaded into the
- * vanilla engine_runner cache. Exists so tests that need cross-room
- * PathFinder behavior (e.g. maxRooms) have a pair of adjacent rooms both
- * visible to the runner's static terrain cache.
+ * vanilla adapter. Exists so tests that need cross-room PathFinder behavior
+ * (e.g. maxRooms) have a pair of adjacent rooms with known terrain.
  */
 export const TERRAIN_FIXTURE_NEIGHBOR = 'W5N6';
 
@@ -98,8 +95,7 @@ function buildFixtureSpec(): TerrainSpec {
 	t[idx(20, 20)] = 1;
 
 	// Wall off borders that don't connect to TERRAIN_FIXTURE_NEIGHBOR (W5N6,
-	// which is north). This prevents PathFinder from expanding into rooms
-	// that don't exist in the terrain cache.
+	// which is north). This keeps PathFinder focused on the fixture pair.
 	// South border (y=49), west border (x=0), east border (x=49) — all walls.
 	// North border (y=0) stays open as the exit to the neighbor room.
 	for (let i = 0; i < 50; i++) {
@@ -130,7 +126,7 @@ function buildNeighborSpec(): TerrainSpec {
 /**
  * The full 2500-tile terrain array for TERRAIN_FIXTURE_ROOM. Tests that need
  * to add the fixture room to their shard spec should pass this as the
- * `terrain` field on the `RoomSpec` so the DB and the runner cache agree.
+ * `terrain` field on the `RoomSpec` so DB helpers and player APIs agree.
  */
 export const TERRAIN_FIXTURE_SPEC: TerrainSpec = buildFixtureSpec();
 

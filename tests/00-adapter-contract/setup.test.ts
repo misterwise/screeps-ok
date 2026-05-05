@@ -227,6 +227,39 @@ describe('adapter contract: setup', () => {
 			// Wall must block the pathfinder — the path must detour around it.
 			expect(result.goesThroughWall).toBe(false);
 		});
+
+		test('createShard refreshes player-visible terrain after a previous shard', async ({ shard }) => {
+			shard.requires('terrain', 'terrain cache refresh requires terrain capability');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+			await shard.runPlayer('p1', code`Game.map.getRoomTerrain('W1N1').get(30, 30)`);
+
+			const plainTerrain = new Array<0 | 1 | 2>(2500).fill(0);
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1', terrain: plainTerrain },
+				],
+			});
+
+			const result = await shard.runPlayer('p1', code`
+				const terrain = Game.map.getRoomTerrain('W2N1');
+				const path = PathFinder.search(
+					new RoomPosition(29, 30, 'W2N1'),
+					{ pos: new RoomPosition(31, 30, 'W2N1'), range: 0 },
+					{ maxRooms: 1 },
+				).path;
+				({
+					terrainMask: terrain.get(30, 30),
+					goesThroughCenter: path.some(p => p.x === 30 && p.y === 30),
+				})
+			`) as { terrainMask: number; goesThroughCenter: boolean };
+
+			expect(result).toEqual({ terrainMask: 0, goesThroughCenter: true });
+		});
 	});
 
 	describe('default room terrain', () => {

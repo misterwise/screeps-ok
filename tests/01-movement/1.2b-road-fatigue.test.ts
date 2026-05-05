@@ -1,12 +1,24 @@
 import { describe, test, expect, code,
 	OK, MOVE, WORK,
-	STRUCTURE_ROAD, TOP,
+	STRUCTURE_ROAD, TOP, TERRAIN_WALL,
 } from '../../src/index.js';
-import {
-	TERRAIN_FIXTURE_ROOM,
-	TERRAIN_FIXTURE_SPEC,
-	TERRAIN_FIXTURE_LANDMARKS,
-} from '../../src/terrain-fixture.js';
+
+function terrainWithWalls(walls: Array<[number, number]>): Array<0 | 1 | 2> {
+	const terrain = new Array<0 | 1 | 2>(2500).fill(0);
+	for (const [x, y] of walls) terrain[y * 50 + x] = TERRAIN_WALL;
+	return terrain;
+}
+
+function wallPocketTerrain(cx: number, cy: number): Array<0 | 1 | 2> {
+	const walls: Array<[number, number]> = [];
+	for (let dy = -1; dy <= 1; dy++) {
+		for (let dx = -1; dx <= 1; dx++) {
+			if (dx === 0 && dy === 0) continue;
+			walls.push([cx + dx, cy + dy]);
+		}
+	}
+	return terrainWithWalls(walls);
+}
 
 describe('Road fatigue', () => {
 	test('ROAD-FATIGUE-001 creep moving onto a road accumulates half the fatigue of plain terrain', async ({ shard }) => {
@@ -74,21 +86,21 @@ describe('Road fatigue', () => {
 		// MOVE-BASIC-002: same move() direction, different terrain+structure,
 		// observably different outcome.
 		shard.requires('terrain', 'custom terrain required for wall tile traversal');
-		const [wx, wy] = TERRAIN_FIXTURE_LANDMARKS.isolatedWallTile;
+		const wx = 20, wy = 20;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{
-				name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1',
-				terrain: TERRAIN_FIXTURE_SPEC,
+				name: 'W1N1', rcl: 1, owner: 'p1',
+				terrain: terrainWithWalls([[wx, wy]]),
 			}],
 		});
-		await shard.placeStructure(TERRAIN_FIXTURE_ROOM, {
+		await shard.placeStructure('W1N1', {
 			pos: [wx, wy], structureType: STRUCTURE_ROAD,
 		});
 		// Creep stands on a plain neighbor to the south and moves TOP onto the
 		// wall-road tile. One MOVE per weighted part keeps fatigue at 0 so the
 		// move resolves immediately.
-		const creepId = await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
+		const creepId = await shard.placeCreep('W1N1', {
 			pos: [wx, wy + 1], owner: 'p1',
 			body: [MOVE],
 		});
@@ -111,18 +123,18 @@ describe('Road fatigue', () => {
 		// 1 (same as plain or swamp roads). 3 WORK + 1 MOVE moving onto the
 		// wall-road generates 3 × 1 = 3 fatigue, then 1 MOVE reduces by 2 → 1.
 		shard.requires('terrain', 'custom terrain required for wall-road fatigue');
-		const [wx, wy] = TERRAIN_FIXTURE_LANDMARKS.isolatedWallTile;
+		const wx = 20, wy = 20;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{
-				name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1',
-				terrain: TERRAIN_FIXTURE_SPEC,
+				name: 'W1N1', rcl: 1, owner: 'p1',
+				terrain: terrainWithWalls([[wx, wy]]),
 			}],
 		});
-		await shard.placeStructure(TERRAIN_FIXTURE_ROOM, {
+		await shard.placeStructure('W1N1', {
 			pos: [wx, wy], structureType: STRUCTURE_ROAD,
 		});
-		const creepId = await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
+		const creepId = await shard.placeCreep('W1N1', {
 			pos: [wx, wy + 1], owner: 'p1',
 			body: [WORK, WORK, WORK, MOVE],
 		});
@@ -152,28 +164,28 @@ describe('Road fatigue', () => {
 		// 0-step self-path). If it respects the road, the path is 2 steps:
 		// (5, 4) then (5, 3).
 		shard.requires('terrain', 'custom terrain required for wall-pocket path');
-		const [px, py] = TERRAIN_FIXTURE_LANDMARKS.wallPocketCenter;
+		const px = 5, py = 5;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{
-				name: TERRAIN_FIXTURE_ROOM, rcl: 1, owner: 'p1',
-				terrain: TERRAIN_FIXTURE_SPEC,
+				name: 'W1N1', rcl: 1, owner: 'p1',
+				terrain: wallPocketTerrain(px, py),
 			}],
 		});
-		await shard.placeStructure(TERRAIN_FIXTURE_ROOM, {
+		await shard.placeStructure('W1N1', {
 			pos: [px, py - 1], structureType: STRUCTURE_ROAD,
 		});
 		// Place a creep so the player has visibility of the room for findPath.
-		await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
+		await shard.placeCreep('W1N1', {
 			pos: [px, py], owner: 'p1', body: [MOVE],
 		});
 		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
-			const room = Game.rooms[${TERRAIN_FIXTURE_ROOM}];
+			const room = Game.rooms['W1N1'];
 			const path = room.findPath(
-				new RoomPosition(${px}, ${py}, ${TERRAIN_FIXTURE_ROOM}),
-				new RoomPosition(${px}, ${py - 2}, ${TERRAIN_FIXTURE_ROOM}),
+				new RoomPosition(${px}, ${py}, 'W1N1'),
+				new RoomPosition(${px}, ${py - 2}, 'W1N1'),
 			);
 			path.map(step => ({ x: step.x, y: step.y }))
 		`) as { x: number; y: number }[];
