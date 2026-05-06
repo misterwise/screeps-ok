@@ -176,6 +176,9 @@ function layOutPackages(srcDir) {
 	rmSync(pathfinderDir, { recursive: true, force: true });
 	mkdirSync(dirname(pathfinderDir), { recursive: true });
 	execFileSync('cp', ['-RL', join(srcDir, 'packages/pathfinder') + '/.', pathfinderDir], { stdio: 'inherit' });
+	// Same reason as above: pnpm package-local node_modules is not a portable
+	// npm install tree once symlinks have been dereferenced.
+	rmSync(join(pathfinderDir, 'node_modules'), { recursive: true, force: true });
 }
 
 function inlineTsconfigBase(srcDir) {
