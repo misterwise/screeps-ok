@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2462%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2018%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-104-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2466%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2021%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-105-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2462](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-05 02:41 UTC |
-| 🟡 | **xxscreeps** | [2018](#xxscreeps-passing-tests) | [104](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-05 02:38 UTC |
+| 🟢 | **vanilla** | [2466](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-06 04:49 UTC |
+| 🟡 | **xxscreeps** | [2021](#xxscreeps-passing-tests) | [105](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-06 04:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 104 tests. That includes 36 open parity gaps covering 99 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 105 tests. That includes 37 open parity gaps covering 100 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,6 +33,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `find-hostile-structures-includes-unowned` | `Room.find(FIND_HOSTILE_STRUCTURES)` returns every structure whose `owner` is not the evaluating player, which incorrectly includes unowned structures (`STRUCTURE_ROAD`, `STRUCTURE_WALL`, etc.). The predicate is the negation of `FIND_MY_STRUCTURES` instead of mirroring its `owner === self` test against a different user. | Vanilla returns only structures owned by some other player. Unowned structures must be excluded from both `FIND_MY_STRUCTURES` and `FIND_HOSTILE_STRUCTURES` and appear only in `FIND_STRUCTURES`. | [1](#xxscreeps-gap-find-hostile-structures-includes-unowned) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `id-constructor-overlay-copy` | `new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy. | Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored. | [3](#xxscreeps-gap-id-constructor-overlay-copy) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
@@ -72,6 +73,13 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 Click a test count above to jump to the affected test list for that gap.
 
+<details id="xxscreeps-gap-find-hostile-structures-includes-unowned">
+<summary><code>find-hostile-structures-includes-unowned</code> — 1 test</summary>
+
+- `Room.find ROOM-FIND-001:findHostileStructures returns exactly the expected set for the current player`
+
+</details>
+
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
 
@@ -98,12 +106,12 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 6 tests</summary>
 
+- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
-- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 
 </details>
 
@@ -450,7 +458,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2462 tests across 127 files</summary>
+<summary>2466 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2708,11 +2716,11 @@ Click a count to jump to the affected test list.
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
-- Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side
-- Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the concatenation of all four side-specific exit sets
-- Room.find player-relative creep constants ROOM-FIND-006 FIND_MY_CREEPS and FIND_HOSTILE_CREEPS evaluate from the current player perspective
+- Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border tiles on that side, with no duplicates
+- Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
+- Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (13)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (17)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -2721,12 +2729,16 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
-- Room.find ROOM-FIND-001 [FIND_MY_CREEPS] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_HOSTILE_CREEPS] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_MY_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_HOSTILE_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
-- Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
+- Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findMyStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findMySpawns returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileSpawns returns exactly the expected set for the current player
+- Room.find ROOM-FIND-002:functionFilter Room.find(type, { filter: fn }) returns only matching items
+- Room.find ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items
+- Room.find ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0
 
 **`tests/16-room-mechanics/16.4-look.test.ts`** (10)
 
@@ -3872,7 +3884,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2018 tests across 104 files</summary>
+<summary>2021 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5782,11 +5794,11 @@ Click a count to jump to the affected test list.
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
-- Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border positions on that side
-- Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the concatenation of all four side-specific exit sets
-- Room.find player-relative creep constants ROOM-FIND-006 FIND_MY_CREEPS and FIND_HOSTILE_CREEPS evaluate from the current player perspective
+- Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border tiles on that side, with no duplicates
+- Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
+- Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (13)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (16)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -5795,12 +5807,15 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
-- Room.find ROOM-FIND-001 [FIND_MY_CREEPS] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_HOSTILE_CREEPS] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_MY_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-001 [FIND_HOSTILE_STRUCTURES] player-relative FIND constants evaluate from the current player perspective
-- Room.find ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set
-- Room.find ROOM-FIND-005 FIND_SOURCES returns sources in the room
+- Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findMyStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findMySpawns returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileSpawns returns exactly the expected set for the current player
+- Room.find ROOM-FIND-002:functionFilter Room.find(type, { filter: fn }) returns only matching items
+- Room.find ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items
+- Room.find ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0
 
 **`tests/16-room-mechanics/16.4-look.test.ts`** (6)
 

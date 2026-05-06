@@ -60,21 +60,22 @@ function checkXxscreeps() {
 	);
 
 	const pathfinderRoot = resolvePackageRoot('@xxscreeps/pathfinder');
+	checkXxscreepsPathfinder(pathfinderRoot);
+}
+
+function checkXxscreepsPathfinder(pathfinderRoot) {
 	const nativeId = `${process.arch}-${process.platform}-${process.version}`;
-	const pfNode = path.join(pathfinderRoot, 'out', nativeId, 'pf.node');
-	checkFile(
-		pfNode,
-		`xxscreeps path-finder native module is missing for ${nativeId}.`,
-		'Run npm run setup:xxscreeps',
-	);
+	const legacyPfNode = path.join(pathfinderRoot, 'out', nativeId, 'pf.node');
+	const loadTarget = existsSync(legacyPfNode) ? legacyPfNode : pathfinderRoot;
 
 	try {
-		require(pfNode);
+		require(loadTarget);
 	} catch (error) {
 		fail(
 			'xxscreeps path-finder native module failed to load.',
 			[
 				String(error instanceof Error ? error.message : error),
+				`Expected legacy file: ${legacyPfNode}`,
 				'Run npm run setup:xxscreeps after switching to the intended Node version.',
 			],
 		);

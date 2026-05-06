@@ -42,8 +42,10 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // @xxscreeps/lodash3 wiring after upstream extracted lodash from the
 // xxscreeps package into a sibling workspace; v5 dereferences pnpm
 // symlinks during layOutPackages; v6 wipes carried-over node_modules so
-// nested install fetches lodash3's `dist/` tarball from the registry).
-const stampSchema = 'v6';
+// nested install fetches lodash3's `dist/` tarball from the registry; v7
+// patches the precompiled pathfinder package layout for xxscreeps's
+// runtime webpack build.
+const stampSchema = 'v7';
 
 function stampContent(token) {
 	return `${token}\nschema=${stampSchema}`;
@@ -105,6 +107,8 @@ layOutPackages(srcDir);
 inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
+patchPathfinderEntrypoints();
+patchSandboxNativeExternalResolution();
 applyUpstreamPatches(srcDir);
 patchIvmInspectPrepareScript();
 buildNestedNativeAddons();
@@ -248,6 +252,78 @@ function installNestedDeps() {
 		'--no-audit',
 		'--no-fund',
 	], { stdio: 'inherit' });
+}
+
+function patchPathfinderEntrypoints() {
+	const triplet = pathfinderTriplet();
+	const specifier = `@xxscreeps/pathfinder-${triplet}/pf.${triplet}.node`;
+	const source = `const path = require.resolve(${JSON.stringify(specifier)});
+module.exports = require(${JSON.stringify(specifier)});
+module.exports.path = path;
+if (module.exports.version !== 11) {
+\tthrow new Error('pf.node is out of date. Please reinstall.');
+}
+`;
+	for (const root of [
+		pathfinderDir,
+		join(xxscreepsDir, 'node_modules/@xxscreeps/pathfinder'),
+	]) {
+		const entrypoint = join(root, 'module/index.js');
+		if (!existsSync(entrypoint)) continue;
+		writeFileSync(entrypoint, source);
+	}
+	console.log(`[screeps-ok] Patched pathfinder entrypoints for ${triplet}`);
+}
+
+function pathfinderTriplet() {
+	const { arch, platform } = process;
+	if (platform !== 'linux') return `${platform}-${arch}`;
+	try {
+		if (readFileSync('/usr/bin/ldd', 'latin1').includes('ld-musl-')) {
+			return `linux-${arch}-musl`;
+		}
+	} catch {}
+	return `linux-${arch}-gnu`;
+}
+
+function patchSandboxNativeExternalResolution() {
+	const sandboxPath = join(xxscreepsDir, 'driver/sandbox/index.ts');
+	if (!existsSync(sandboxPath)) return;
+	let source = readFileSync(sandboxPath, 'utf8');
+	if (!source.includes("import { createRequire } from 'node:module';")) {
+		source = source.replace(
+			"import * as Path from 'node:path';\n",
+			"import * as Path from 'node:path';\nimport { createRequire } from 'node:module';\n",
+		);
+	}
+	if (!source.includes('const nodeRequire = createRequire(import.meta.url);')) {
+		source = source.replace(
+			"const didMakeSandbox = hooks.makeIterated('sandboxCreated');\n",
+			"const didMakeSandbox = hooks.makeIterated('sandboxCreated');\nconst nodeRequire = createRequire(import.meta.url);\n",
+		);
+	}
+	const original = `\t\t\texternals: ({ context, request }) =>
+\t\t\t\trequest?.endsWith('.node')
+\t\t\t\t\t? \`globalThis[\${JSON.stringify(Path.join(context!, request))}]\` : undefined,
+`;
+	const replacement = `\t\t\texternals: ({ context, request }) => {
+\t\t\t\tif (!request?.endsWith('.node')) return undefined;
+\t\t\t\tconst modulePath = request.startsWith('.') || Path.isAbsolute(request)
+\t\t\t\t\t? Path.join(context!, request)
+\t\t\t\t\t: nodeRequire.resolve(request, context ? { paths: [ context ] } : undefined);
+\t\t\t\treturn \`globalThis[\${JSON.stringify(modulePath)}]\`;
+\t\t\t},
+`;
+	const patched = source.replace(original, replacement);
+	if (patched === source) {
+		if (source.includes('const modulePath = request.startsWith(\'.\') || Path.isAbsolute(request)')) {
+			console.log('[screeps-ok] xxscreeps sandbox native external resolution already patched');
+			return;
+		}
+		throw new Error('Failed to patch xxscreeps sandbox native external resolution');
+	}
+	writeFileSync(sandboxPath, patched);
+	console.log('[screeps-ok] Patched xxscreeps sandbox native external resolution');
 }
 
 function buildNestedNativeAddons() {
