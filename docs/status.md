@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2466%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2021%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-105-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2467%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2021%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-106-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2466](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-06 04:49 UTC |
-| 🟡 | **xxscreeps** | [2021](#xxscreeps-passing-tests) | [105](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-06 04:46 UTC |
+| 🟢 | **vanilla** | [2467](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-06 23:31 UTC |
+| 🟡 | **xxscreeps** | [2021](#xxscreeps-passing-tests) | [106](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-06 23:28 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 105 tests. That includes 37 open parity gaps covering 100 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 106 tests. That includes 38 open parity gaps covering 101 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -69,6 +69,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `ctrl-bodypart-too-early` | `checkCommon(creep, C.CLAIM)` is step 1 of `checkAttackController`, `checkClaimController`, and `checkReserveController` (`packages/xxscreeps/mods/controller/creep.ts:117, 133, 163`); ERR_NO_BODYPART fires before checkTarget/checkRange/state checks. | Vanilla returns ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the controller-state ERR_INVALID_TARGET before ERR_NO_BODYPART for the controller intents. | [5](#xxscreeps-gap-ctrl-bodypart-too-early) |
 | `spawn-not-owner-too-early` | `checkSpawnCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:300-345`) calls `checkMyStructure(spawn, StructureSpawn)` first, returning ERR_NOT_OWNER before name string, NAME_EXISTS, or directions array validation. | Vanilla validates the name argument, name uniqueness, and directions array before ERR_NOT_OWNER on the spawn. | [3](#xxscreeps-gap-spawn-not-owner-too-early) |
 | `renew-not-owner-too-early` | `checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first. | Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn. | [2](#xxscreeps-gap-renew-not-owner-too-early) |
+| `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -388,6 +389,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-simult-heal-saves-doomed-creep">
+<summary><code>simult-heal-saves-doomed-creep</code> — 1 test</summary>
+
+- `Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)`
+
+</details>
+
 <details id="xxscreeps-gap-lab-self-as-reagent-not-rejected">
 <summary><code>lab-self-as-reagent-not-rejected</code> — 1 test</summary>
 
@@ -458,7 +466,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2466 tests across 127 files</summary>
+<summary>2467 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1738,12 +1746,13 @@ Click a count to jump to the affected test list.
 - creep.rangedMassAttack() COMBAT-RMA-005:notOwnerBeforeNoBodypart rangedMassAttack() validation returns the canonical code
 - creep.rangedMassAttack() COMBAT-RMA-005:busyBeforeNoBodypart rangedMassAttack() validation returns the canonical code
 
-**`tests/07-combat/7.7-simultaneous.test.ts`** (5)
+**`tests/07-combat/7.7-simultaneous.test.ts`** (6)
 
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-003 overkill damage does not carry over to the next tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
+- Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
 - Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
 
 **`tests/07-combat/7.9-7.11-tower.test.ts`** (46)

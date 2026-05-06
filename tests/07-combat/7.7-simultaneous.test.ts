@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	OK,
-	MOVE, ATTACK, TOUGH, HEAL, body,
-	ATTACK_POWER, HEAL_POWER, BODYPART_HITS,
+	MOVE, ATTACK, RANGED_ATTACK, TOUGH, HEAL, body,
+	ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, BODYPART_HITS,
 	FIND_TOMBSTONES,
 } from '../../src/index.js';
 
@@ -214,6 +214,75 @@ describe('Simultaneous damage & healing resolution', () => {
 		expect(after).toBeDefined();
 		// 30 - 30 + 60 = 60.
 		expect(after.hits).toBe(60);
+	});
+
+	test('COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)', async ({ shard }) => {
+		// Death case for the same rule. Self-heal cannot save a creep when incoming
+		// damage > current hits + heal: damage and heal are summed first, then the
+		// death check sees hits <= 0. Both intents return OK at submission because
+		// the HEAL part is still active when the intent is queued — the kill is
+		// decided at tick resolution, not at intent time.
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		// Body [MOVE, HEAL] = 200 hits. Vanilla applies damage front-to-back, so
+		// MOVE absorbs the first 100 damage; HEAL still has hits (and is active for
+		// self-healing) until the very end.
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE, HEAL],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [24, 25], owner: 'p2',
+			body: [ATTACK, MOVE],
+		});
+		// Ranger only exists to trim the last 10 hits without overshooting ATTACK_POWER.
+		const rangerId = await shard.placeCreep('W1N1', {
+			pos: [22, 25], owner: 'p2',
+			body: [RANGED_ATTACK, MOVE],
+		});
+		await shard.tick();
+
+		// Pre-damage to 10 hits: 6 melee ticks (180) + 1 ranged tick (10) = 190.
+		for (let i = 0; i < 6; i++) {
+			const rc = await shard.runPlayer('p2', code`
+				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(OK);
+			await shard.tick();
+		}
+		const rangedRc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${rangerId}).rangedAttack(Game.getObjectById(${targetId}))
+		`);
+		expect(rangedRc).toBe(OK);
+		await shard.tick();
+
+		const mid = await shard.expectObject(targetId, 'creep');
+		expect(mid.hits).toBe(2 * BODYPART_HITS - 6 * ATTACK_POWER - RANGED_ATTACK_POWER);
+		// Below ATTACK_POWER - HEAL_POWER, so attack alone outruns heal.
+		expect(mid.hits).toBeLessThan(ATTACK_POWER - HEAL_POWER);
+
+		// Same-tick: 30 dmg in, 12 heal in, starting from 10. Net = -8 → dies.
+		const results = await shard.runPlayers({
+			p1: code`Game.getObjectById(${targetId}).heal(Game.getObjectById(${targetId}))`,
+			p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
+		});
+		expect(results.p1).toBe(OK);
+		expect(results.p2).toBe(OK);
+		await shard.tick();
+
+		// Creep is gone after resolution despite the same-tick self-heal.
+		const after = await shard.getObject(targetId);
+		expect(after).toBeNull();
+
+		// Tombstone left at the target's last position.
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const ts = tombstones.find(t => t.pos.x === 25 && t.pos.y === 25);
+		expect(ts).toBeDefined();
 	});
 
 	test('COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently', async ({ shard }) => {

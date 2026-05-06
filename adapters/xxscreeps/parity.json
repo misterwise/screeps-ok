@@ -194,6 +194,11 @@
 			"expected": "Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn.",
 			"tests": ["RENEW-CREEP-011:busyBeforeNotOwner", "RENEW-CREEP-011:invalidTargetBeforeNotOwner"]
 		},
+		"simult-heal-saves-doomed-creep": {
+			"actual": "When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying.",
+			"expected": "Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135.",
+			"tests": ["COMBAT-SIMULT-004"]
+		},
 		"lab-self-as-reagent-not-rejected": {
 			"actual": "`checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug.",
 			"expected": "Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot.",

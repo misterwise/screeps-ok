@@ -3,11 +3,18 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-04 against pin `3f011d0a`.
+Last refreshed: 2026-05-06 against pin `aadbbd4f`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 43 open parity gaps covering 121 tests, plus 3 accepted divergences covering 5 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 44 open parity gaps covering 122 tests, plus 3 accepted divergences covering 5 tests.
 
 ## Open parity gaps
+
+### simult-heal-saves-doomed-creep
+
+- Tests: COMBAT-SIMULT-004 (Issue 201 row)
+- Status: CONFIRMED. Filed upstream as [laverdet/xxscreeps#201](https://github.com/laverdet/xxscreeps/issues/201).
+- Cause: same-tick damage and heal don't sum cleanly before the death check. A 10-hit `[MOVE, HEAL]` target taking 30 melee + 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. Buffering lives in `mods/combat/processor.ts` (`tickHealing`) and `mods/creep/creep.ts:#applyDamage` (`tickRawDamage`); applied together in `mods/creep/processor.ts:319-342`.
+- Plan: ensure damage and heal apply together so the death check sees `clamp(oldHits + heal - damage, 0, hitsMax) <= 0`. Vanilla reference: `@screeps/engine/src/processor/intents/creeps/tick.js:118-135`.
 
 ### shape-flag-extra-id
 
