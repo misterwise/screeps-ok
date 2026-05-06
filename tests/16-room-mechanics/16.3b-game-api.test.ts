@@ -1,9 +1,10 @@
 import {
 	describe, test, expect, code,
 	MOVE, CARRY,
-	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES, FIND_SOURCES,
+	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES,
+	FIND_SOURCES, FIND_SOURCES_ACTIVE,
 	LOOK_CREEPS,
-	STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
+	STRUCTURE_EXTENSION, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../../src/matrices/room-find.js';
@@ -161,37 +162,45 @@ describe('room energy tracking', () => {
 
 describe('Room.find', () => {
 	for (const { label, findConstant, expectedValues } of roomFindPlayerRelativeCases) {
-		test(`ROOM-FIND-001 [${label}] player-relative FIND constants evaluate from the current player perspective`, async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Mine',
-		});
-		await shard.placeCreep('W1N1', {
-			pos: [26, 25], owner: 'p2', body: [MOVE], name: 'Hostile',
-		});
-		await shard.placeStructure('W1N1', {
-			pos: [24, 25], owner: 'p1', structureType: STRUCTURE_SPAWN,
-		});
-		await shard.placeStructure('W1N1', {
-			pos: [27, 25], owner: 'p2', structureType: STRUCTURE_SPAWN,
-		});
-		await shard.tick();
+		test(`ROOM-FIND-001:${label} returns exactly the expected set for the current player`, async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+			await shard.placeCreep('W1N1', {
+				pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Mine',
+			});
+			await shard.placeCreep('W1N1', {
+				pos: [26, 25], owner: 'p2', body: [MOVE], name: 'Hostile',
+			});
+			await shard.placeStructure('W1N1', {
+				pos: [24, 25], owner: 'p1', structureType: STRUCTURE_SPAWN,
+			});
+			await shard.placeStructure('W1N1', {
+				pos: [27, 25], owner: 'p2', structureType: STRUCTURE_SPAWN,
+			});
+			// Unowned structures: must appear in FIND_STRUCTURES but in
+			// neither FIND_MY_STRUCTURES nor FIND_HOSTILE_STRUCTURES.
+			await shard.placeStructure('W1N1', {
+				pos: [23, 25], structureType: STRUCTURE_ROAD,
+			});
+			await shard.placeStructure('W1N1', {
+				pos: [28, 25], structureType: STRUCTURE_WALL,
+			});
+			await shard.tick();
 
-		const result = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1']
-				.find(${findConstant})
-				.map(obj => obj.structureType || obj.name)
-				.sort()
-		`) as string[];
+			const result = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1']
+					.find(${findConstant})
+					.map(obj => obj.structureType || obj.name)
+					.sort()
+			`) as string[];
 
-		expect(result).toEqual(expectedValues);
+			expect(result).toEqual(expectedValues);
 		});
 	}
 
-	test('ROOM-FIND-002 Room.find(type, { filter }) applies the filter to the selected result set', async ({ shard }) => {
+	test('ROOM-FIND-002:functionFilter Room.find(type, { filter: fn }) returns only matching items', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Keep',
@@ -205,22 +214,48 @@ describe('Room.find', () => {
 			Game.rooms['W1N1']
 				.find(FIND_MY_CREEPS, { filter: c => c.name === 'Keep' })
 				.map(c => c.name)
+				.sort()
 		`) as string[];
 
 		expect(names).toEqual(['Keep']);
 	});
 
-	test('ROOM-FIND-005 FIND_SOURCES returns sources in the room', async ({ shard }) => {
+	test('ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		await shard.placeSource('W1N1', { pos: [10, 10] });
-		await shard.placeSource('W1N1', { pos: [40, 40] });
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'Keep',
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p1', body: [MOVE], name: 'Drop',
+		});
 		await shard.tick();
 
-		const count = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].find(FIND_SOURCES).length
-		`);
+		const names = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1']
+				.find(FIND_MY_CREEPS, { filter: { name: 'Keep' } })
+				.map(c => c.name)
+				.sort()
+		`) as string[];
 
-		expect(count).toBe(2);
+		expect(names).toEqual(['Keep']);
+	});
+
+	test('ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const fullId = await shard.placeSource('W1N1', { pos: [10, 10], energy: 3000 });
+		const emptyId = await shard.placeSource('W1N1', { pos: [40, 40], energy: 0 });
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			({
+				allIds: room.find(FIND_SOURCES).map(s => s.id).sort(),
+				activeIds: room.find(FIND_SOURCES_ACTIVE).map(s => s.id).sort(),
+			})
+		`) as { allIds: string[]; activeIds: string[] };
+
+		expect(result.allIds).toEqual([fullId, emptyId].sort());
+		expect(result.activeIds).toEqual([fullId]);
 	});
 });
 

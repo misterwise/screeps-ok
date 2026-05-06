@@ -1,5 +1,10 @@
 {
 	"expected_failures": {
+		"find-hostile-structures-includes-unowned": {
+			"actual": "`Room.find(FIND_HOSTILE_STRUCTURES)` returns every structure whose `owner` is not the evaluating player, which incorrectly includes unowned structures (`STRUCTURE_ROAD`, `STRUCTURE_WALL`, etc.). The predicate is the negation of `FIND_MY_STRUCTURES` instead of mirroring its `owner === self` test against a different user.",
+			"expected": "Vanilla returns only structures owned by some other player. Unowned structures must be excluded from both `FIND_MY_STRUCTURES` and `FIND_HOSTILE_STRUCTURES` and appear only in `FIND_STRUCTURES`.",
+			"tests": ["ROOM-FIND-001:findHostileStructures"]
+		},
 		"controller-my-never-owned-returns-false": {
 			"intentional": true,
 			"why": "PR #128 intentionally keeps `controller.my === false` for never-claimed controllers: xxscreeps has no serialized absent-user sentinel, and upstream decided vanilla's `undefined` sentinel is a quirk worth dropping.",

@@ -2603,23 +2603,32 @@ Coverage Notes
 
 ### 16.3 Find
 - `ROOM-FIND-001` `matrix` `verified_vanilla`
-  `Room.find()` result sets for supported `FIND_*` constants match the
-  canonical room-find mapping.
+  `Room.find()` returns exactly the canonical set for each supported
+  `FIND_*` constant: `FIND_STRUCTURES` covers every structure regardless
+  of owner; `FIND_MY_STRUCTURES` / `FIND_HOSTILE_STRUCTURES` and
+  `FIND_MY_SPAWNS` / `FIND_HOSTILE_SPAWNS` exclude unowned structures
+  (roads, neutral walls) from both sides; `FIND_MY_CREEPS` /
+  `FIND_HOSTILE_CREEPS` partition creeps by ownership relative to the
+  evaluating player.
 - `ROOM-FIND-002` `behavior` `verified_vanilla`
-  `Room.find(type, {filter})` applies the filter to the selected result set
-  before returning it.
+  `Room.find(type, {filter})` applies both function predicates and
+  object-pattern predicates to the selected result set, returning only
+  matching items.
 - `ROOM-FIND-003` `behavior` `verified_vanilla`
   `FIND_EXIT_TOP`, `FIND_EXIT_RIGHT`, `FIND_EXIT_BOTTOM`, and
-  `FIND_EXIT_LEFT` return walkable border positions on that side.
+  `FIND_EXIT_LEFT` return unique `RoomPosition` instances on the
+  corresponding border whose tile terrain is not `TERRAIN_MASK_WALL`.
 - `ROOM-FIND-004` `behavior` `verified_vanilla`
-  `FIND_EXIT` returns the concatenation of the four side-specific exit result
-  sets.
+  `FIND_EXIT` returns the set union of the four side-specific exit
+  result sets, with no duplicates and every position on the room border.
 - `ROOM-FIND-005` `behavior` `verified_vanilla`
-  `FIND_SOURCES_ACTIVE` returns only sources whose current energy is greater
-  than `0`.
+  `FIND_SOURCES` returns every source in the room; `FIND_SOURCES_ACTIVE`
+  returns only sources whose current energy is greater than `0`.
 - `ROOM-FIND-006` `behavior` `verified_vanilla`
-  Player-relative `FIND_*` constants such as `FIND_MY_CREEPS` and
-  `FIND_HOSTILE_CREEPS` evaluate from the current player's perspective.
+  Player-relative `FIND_*` constants invert when the same room is
+  evaluated from each player's perspective: each player's owned creeps
+  and structures appear in the `MY` sets and the other player's appear
+  in the `HOSTILE` sets.
 
 ### 16.4 Look
 - `ROOM-LOOK-001` `behavior` `verified_vanilla`
