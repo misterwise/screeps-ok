@@ -185,8 +185,8 @@ describe('lab.unboostCreep()', () => {
 		test(`UNBOOST-006:${row.label} unboostCreep() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
 			const blockers = new Set(row.blockers);
-			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const creepOwner = blockers.has('not-owner') && !blockers.has('invalid-target') ? 'p2' : 'p1';
+			const labOwner = blockers.has('lab-not-owner') ? 'p2' : 'p1';
+			const creepOwner = blockers.has('creep-not-owner') && !blockers.has('invalid-target') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],

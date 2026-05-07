@@ -3,7 +3,7 @@
 > _If your engine agrees, it's Screeps._
 
 <!-- BADGES:START -->
-[![vanilla](https://img.shields.io/badge/vanilla-2475%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2044%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2473%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2050%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
 <!-- BADGES:END -->
 ![status](https://img.shields.io/badge/status-alpha-blue)
 

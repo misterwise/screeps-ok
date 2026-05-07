@@ -65,6 +65,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
 - Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
 
+### lab-unboost-target-owner-too-late
+
+- Tests: UNBOOST-006:creepNotOwnerBeforeRcl
+- Status: PR pending against laverdet/xxscreeps as the unboost half of the intent-precedence audit (#117).
+- Cause: `mods/chemistry/lab.ts:191-211` `checkUnboostCreep` runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch. Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` together for ERR_NOT_OWNER before the active-structure RCL gate.
+- Plan: hoist the target-ownership branch above `checkIsActive`. Drop this gap once the upstream PR merges.
+
 ### actionlog-lab-renderer-missing-combined-actions
 
 - Tests: ACTIONLOG-STRUCT-001:lab (lab `runReaction` / `reverseReaction` rows)

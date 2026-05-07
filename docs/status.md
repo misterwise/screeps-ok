@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2475%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2044%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2473%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2050%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2475](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 03:59 UTC |
-| 🟡 | **xxscreeps** | [2044](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 03:56 UTC |
+| 🟢 | **vanilla** | [2473](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 04:30 UTC |
+| 🟡 | **xxscreeps** | [2050](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 04:27 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 35 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 36 open parity gaps covering 78 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -35,7 +35,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `find-hostile-structures-includes-unowned` | `Room.find(FIND_HOSTILE_STRUCTURES)` returns every structure whose `owner` is not the evaluating player, which incorrectly includes unowned structures (`STRUCTURE_ROAD`, `STRUCTURE_WALL`, etc.). The predicate is the negation of `FIND_MY_STRUCTURES` instead of mirroring its `owner === self` test against a different user. | Vanilla returns only structures owned by some other player. Unowned structures must be excluded from both `FIND_MY_STRUCTURES` and `FIND_HOSTILE_STRUCTURES` and appear only in `FIND_STRUCTURES`. | [1](#xxscreeps-gap-find-hostile-structures-includes-unowned) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
-| `id-constructor-overlay-copy` | `new Creep(id)` and sibling id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, creep overlay primitives such as `hits` and `fatigue` differ from `Game.getObjectById(id)`, wrong-type ids are rejected, and primitive writes mutate the constructed wrapper instead of being ignored. A fix is staged on branch [`fix/id-constructor-overlay-copy`](https://github.com/misterwise/xxscreeps/tree/fix/id-constructor-overlay-copy); compare link for upstream PR creation: https://github.com/laverdet/xxscreeps/compare/main...misterwise:xxscreeps:fix/id-constructor-overlay-copy. | Vanilla id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative overlay fields match the live object; `new Creep(structureId)` does not type-check the id; writes to a constructed creep wrapper do not mutate the canonical live object and primitive overlay writes are ignored. | [3](#xxscreeps-gap-id-constructor-overlay-copy) |
+| `id-constructor-overlay-copy` | `new Creep(id)` and sibling same-type id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, and primitive overlay fields such as `hits` and `fatigue` can differ from `Game.getObjectById(id)`. Upstream PR 178 handled most same-type constructor cases; `new Ruin(id)` remains the observed residual under the current pin. | Vanilla same-type id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative public fields match the live object. | [1](#xxscreeps-gap-id-constructor-overlay-copy) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
@@ -68,6 +68,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-not-owner-too-early` | `checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first. | Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn. | [2](#xxscreeps-gap-renew-not-owner-too-early) |
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
+| `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -86,11 +87,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-id-constructor-overlay-copy">
-<summary><code>id-constructor-overlay-copy</code> — 3 tests</summary>
+<summary><code>id-constructor-overlay-copy</code> — 1 test</summary>
 
 - `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Ruin(id) reconstructs a Ruin view with overlay fields`
-- `Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new Creep(structureId) returns a Creep view and does not validate the target type`
-- `Undocumented API Surface — id constructors UNDOC-IDCTOR-004 writes to a constructed Creep view do not mutate the canonical live object`
 
 </details>
 
@@ -360,6 +359,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-lab-unboost-target-owner-too-late">
+<summary><code>lab-unboost-target-owner-too-late</code> — 1 test</summary>
+
+- `lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -423,7 +429,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2475 tests across 127 files</summary>
+<summary>2473 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3196,7 +3202,7 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
-**`tests/27-undocumented/27.11-id-constructors.test.ts`** (11)
+**`tests/27-undocumented/27.11-id-constructors.test.ts`** (9)
 
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Creep(id) reconstructs a Creep view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Structure(id) reconstructs a Structure view with overlay fields
@@ -3207,8 +3213,6 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
-- Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new Creep(structureId) returns a Creep view and does not validate the target type
-- Undocumented API Surface — id constructors UNDOC-IDCTOR-004 writes to a constructed Creep view do not mutate the canonical live object
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
@@ -3858,7 +3862,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2044 tests across 104 files</summary>
+<summary>2050 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5081,7 +5085,7 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-010:notEnoughEnergyBeforeNotFound boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:notEnoughMineralBeforeNotFound boostCreep() validation returns the canonical code
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (25)
+**`tests/08-boosts/8.2-unboost.test.ts`** (31)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
 - lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
@@ -5089,19 +5093,25 @@ Click a count to jump to the affected test list.
 - lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
 - lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - lab.unboostCreep() UNBOOST-006:invalidTarget unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rcl unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:cooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:notFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:range unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeLabNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeCreepNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeRcl unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeRange unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeRcl unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeCooldown unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeNotFound unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeRange unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeCreepNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeRcl unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeRange unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRange unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeNotFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeRange unboostCreep() validation returns the canonical code
