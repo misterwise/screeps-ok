@@ -51,6 +51,26 @@ Each definition should include:
 - `Verification Notes`
   The executable case list lives in `src/matrices/id-constructors.ts`.
 
+### STALE-RECEIVER
+
+- `Catalog Entries`
+  `UNDOC-STALERECV-001`
+- `Canonical Source`
+  Vanilla runtime behavior for public method calls on cached `RoomObject`
+  wrappers whose backing object has been removed before the call.
+- `Dimensions`
+  receiver class, public method, setup removal path
+- `Applicability`
+  Source-confirmed rows currently include cached removed
+  `ConstructionSite.remove()` and cached removed
+  `Structure.notifyWhenAttacked(enabled)`.
+- `Exclusions`
+  Stale target arguments, getter or field reads on stale cached objects, and
+  `Structure.destroy()` as a stale receiver behavior.
+- `Verification Notes`
+  Each row must be verified against vanilla before being added. The executable
+  case list lives in `src/matrices/stale-receiver.ts`.
+
 ### STORE-OPEN
 
 - `Catalog Entries`

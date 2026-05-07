@@ -8,6 +8,9 @@ import { describe, test, expect, code, body,
 } from '../../src/index.js';
 import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
 import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const staleConstructionSiteRemoveCase = staleReceiverCases.find(row => row.key === 'constructionSiteRemove')!;
 
 describe('room.createConstructionSite()', () => {
 	test('CONSTRUCTION-SITE-001 creates a construction site via player code', async ({ shard }) => {
@@ -190,7 +193,7 @@ describe('room.createConstructionSite()', () => {
 		expect(site).toBeNull();
 	});
 
-	test('CONSTRUCTION-SITE-015 stale cached ConstructionSite.remove() throws a runtime error', async ({ shard }) => {
+	test(`${staleConstructionSiteRemoveCase.catalogId}:${staleConstructionSiteRemoveCase.label} stale cached ConstructionSite.remove() throws a runtime error`, async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const siteId = await shard.placeSite('W1N1', {
 			pos: [25, 25], owner: 'p1', structureType: STRUCTURE_ROAD,
