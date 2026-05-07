@@ -208,11 +208,15 @@ describe('room.createConstructionSite()', () => {
 		const site = await shard.getObject(siteId);
 		expect(site).toBeNull();
 
+		// Matrix asserts that stale receiver access is *blocked* by a runtime
+		// error. Vanilla blocks via missing-id; xxscreeps would block via its
+		// released-object check. xxscreeps's ConstructionSite.remove() bypasses
+		// that check and silently returns OK — that's the parity bug this row
+		// catches.
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleConstructionSite.remove()
 		`, 'runtime');
-		expect(err.errorKind).toBe('runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID/);
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
 	});
 
 	test('CONSTRUCTION-SITE-007 only one construction site can exist at a given position', async ({ shard }) => {

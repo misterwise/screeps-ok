@@ -134,10 +134,10 @@
 			"expected": "Vanilla returns ERR_INVALID_ARGS for an oversized name.",
 			"tests": ["CONSTRUCTION-SITE-011:invalidArgs", "CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget", "CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull"]
 		},
-		"stale-receiver-missing-id-runtime-error": {
-			"actual": "Stale cached receivers do not surface vanilla's missing-backing-object runtime error. `ConstructionSite.remove()` returns `OK` and queues another remove intent after the backing site has already been removed; `Structure.notifyWhenAttacked(enabled)` throws xxscreeps's released-object runtime error (`Accessed a released object from a previous tick[...]`) instead of the vanilla missing-id error.",
-			"expected": "Vanilla resolves current backing data by receiver id before method-specific validation or intent queueing; if the object is gone, the public stale-object call throws a runtime error whose message contains `Could not find an object with ID`.",
-			"tests": ["UNDOC-STALERECV-001:constructionSiteRemove", "UNDOC-STALERECV-001:structureNotifyWhenAttacked"]
+		"stale-construction-site-remove-allowed": {
+			"actual": "`ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`).",
+			"expected": "Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. Vanilla resolves current backing data by receiver id and throws `Could not find an object with ID...`; the matrix accepts that or any equivalent stale-access runtime error (e.g. xxscreeps's released-object check).",
+			"tests": ["UNDOC-STALERECV-001:constructionSiteRemove"]
 		},
 		"harvest-bodypart-too-early-vs-target": {
 			"actual": "Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`).",

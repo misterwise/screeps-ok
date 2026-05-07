@@ -86,12 +86,12 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: `packages/xxscreeps/mods/construction/room.ts:99-102` rejects every placement in any room where `!room.controller?.my` with `ERR_RCL_NOT_ENOUGH`. Regression introduced by upstream commit `afba4b3a` ("Fix spawn placement"), which audited `.my ===` patterns and changed `controller?.my === false` to `!controller?.my`. The first form blocked only hostile-owned rooms; the second blocks unowned and reserved rooms too. Vanilla `rooms.js:1052-1064` separates the cases (hostile-owned → ERR_NOT_OWNER; hostile-reserved → ERR_NOT_OWNER; unowned/self-reserved → fall through to `checkControllerAvailability` at rcl 0, where road and container have non-zero caps).
 - Plan: restore the four-case split — hostile-owned (`level > 0 && !my`) returns ERR_NOT_OWNER; hostile reservation returns ERR_NOT_OWNER; otherwise compute the effective rcl as `controller && controller.user ? controller.level : 0` and reuse the existing per-type `CONTROLLER_STRUCTURES` count check.
 
-### stale-receiver-missing-id-runtime-error
+### stale-construction-site-remove-allowed
 
-- Tests: UNDOC-STALERECV-001 (`constructionSiteRemove`, `structureNotifyWhenAttacked` rows).
+- Tests: UNDOC-STALERECV-001:constructionSiteRemove.
 - Status: CONFIRMED.
-- Cause: stale cached receiver methods do not share vanilla's missing-backing-object behavior. `ConstructionSite.remove()` accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has been removed. `Structure.notifyWhenAttacked(enabled)` does throw on a stale cached structure, but the error is xxscreeps's released-object message (`Accessed a released object from a previous tick[...]`) rather than vanilla's missing-id runtime error. Vanilla first resolves current backing data for `this.id`; if the object is gone, that lookup throws before method-specific validation or intent queueing.
-- Plan: resolve current backing data by receiver id at method entry for stale-sensitive public receiver methods, and surface the same missing-id runtime error for removed cached receivers.
+- Cause: `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has been removed. Other receiver methods (`Structure.notifyWhenAttacked`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`) throw xxscreeps's `Accessed a released object from a previous tick` runtime error on stale wrappers, which the matrix accepts. `ConstructionSite.remove()` somehow bypasses that check — the schema-backed `#user` read inside `checkRemove` does not throw the released-object error the way the same pattern does for the other receivers — and the call proceeds through to `intents.save`.
+- Plan: gate `ConstructionSite.remove()` on the same released-object / missing-backing-data check that the other receiver methods already trigger, so a stale cached site rejects the call instead of queueing a duplicate remove intent.
 
 ### look-energy-alias-not-registered
 

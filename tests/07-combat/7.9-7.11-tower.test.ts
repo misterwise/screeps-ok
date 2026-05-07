@@ -3,6 +3,11 @@ import { towerAttackValidationCases } from '../../src/matrices/tower-attack-vali
 import { towerHealValidationCases } from '../../src/matrices/tower-heal-validation.js';
 import { towerRepairValidationCases } from '../../src/matrices/tower-repair-validation.js';
 import { towerAttackRangeCases, towerHealRangeCases, towerRepairRangeCases } from '../../src/matrices/tower-range.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const staleTowerAttackCase = staleReceiverCases.find(row => row.key === 'towerAttack')!;
+const staleTowerHealCase = staleReceiverCases.find(row => row.key === 'towerHeal')!;
+const staleTowerRepairCase = staleReceiverCases.find(row => row.key === 'towerRepair')!;
 
 describe('StructureTower', () => {
 	for (const { range, expectedAmount } of towerAttackRangeCases) {
@@ -240,6 +245,94 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).attack(Game.getObjectById(${targetId}))
 		`);
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
+	});
+
+	test(`${staleTowerAttackCase.catalogId}:${staleTowerAttackCase.label} stale cached StructureTower.attack() throws a runtime error`, async ({ shard }) => {
+		// Vanilla's tower.attack runs target validation before resolving
+		// data(this.id), so the target must pass that check (Creep in register)
+		// for the stale receiver lookup to fire. Tower.attack does not reject
+		// friendly targets at the API layer. A friendly creep also avoids
+		// destroy() being gated by ERR_BUSY (hostile-creeps-in-room).
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p1',
+			body: body(9, TOUGH, MOVE),
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const tower = Game.getObjectById(${towerId});
+			globalThis.__screepsOkStaleTower = tower;
+			tower.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleTower.attack(Game.getObjectById(${targetId}))
+		`, 'runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+	});
+
+	test(`${staleTowerHealCase.catalogId}:${staleTowerHealCase.label} stale cached StructureTower.heal() throws a runtime error`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p1',
+			body: body(9, TOUGH, MOVE),
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const tower = Game.getObjectById(${towerId});
+			globalThis.__screepsOkStaleTower = tower;
+			tower.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleTower.heal(Game.getObjectById(${targetId}))
+		`, 'runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+	});
+
+	test(`${staleTowerRepairCase.catalogId}:${staleTowerRepairCase.label} stale cached StructureTower.repair() throws a runtime error`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 28], structureType: STRUCTURE_ROAD, hits: 100,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const tower = Game.getObjectById(${towerId});
+			globalThis.__screepsOkStaleTower = tower;
+			tower.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleTower.repair(Game.getObjectById(${roadId}))
+		`, 'runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
 	});
 
 	for (const row of towerAttackValidationCases) {

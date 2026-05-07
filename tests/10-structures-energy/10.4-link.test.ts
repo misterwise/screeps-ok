@@ -1,5 +1,8 @@
 import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
 import { linkValidationCases } from '../../src/matrices/link-validation.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const staleLinkTransferCase = staleReceiverCases.find(row => row.key === 'linkTransferEnergy')!;
 
 describe('StructureLink', () => {
 	test('LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss', async ({ shard }) => {
@@ -309,6 +312,35 @@ describe('StructureLink', () => {
 		// Full 400 transferred; target receives 400 minus LINK_LOSS_RATIO loss (rounded up).
 		expect(src.store.energy ?? 0).toBe(0);
 		expect(dst.store.energy).toBe(400 - Math.ceil(400 * LINK_LOSS_RATIO));
+	});
+
+	test(`${staleLinkTransferCase.catalogId}:${staleLinkTransferCase.label} stale cached StructureLink.transferEnergy() throws a runtime error`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
+		});
+		const sourceId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 400 },
+		});
+		const targetId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const link = Game.getObjectById(${sourceId});
+			globalThis.__screepsOkStaleLink = link;
+			link.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleLink.transferEnergy(Game.getObjectById(${targetId}), 50)
+		`, 'runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
 	});
 
 	for (const row of linkValidationCases) {

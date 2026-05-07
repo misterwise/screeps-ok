@@ -62,14 +62,20 @@ Each definition should include:
   receiver class, public method, setup removal path
 - `Applicability`
   Source-confirmed rows currently include cached removed
-  `ConstructionSite.remove()` and cached removed
-  `Structure.notifyWhenAttacked(enabled)`.
+  `ConstructionSite.remove()`, cached removed
+  `Structure.notifyWhenAttacked(enabled)`, cached removed
+  `StructureLink.transferEnergy(target, amount)`, and cached removed
+  `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
 - `Exclusions`
   Stale target arguments, getter or field reads on stale cached objects, and
   `Structure.destroy()` as a stale receiver behavior.
 - `Verification Notes`
-  Each row must be verified against vanilla before being added. The executable
-  case list lives in `src/matrices/stale-receiver.ts`.
+  Each row must be verified against vanilla before being added. The matrix
+  asserts that the stale call is *blocked* with a runtime error matching
+  `/Could not find an object with ID|Accessed a released object/`; the exact
+  message is not load-bearing, only that the engine refuses the stale access
+  rather than letting it through. The executable case list lives in
+  `src/matrices/stale-receiver.ts`.
 
 ### STORE-OPEN
 

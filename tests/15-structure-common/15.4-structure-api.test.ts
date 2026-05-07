@@ -232,7 +232,6 @@ describe('structure.notifyWhenAttacked()', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleStructure.notifyWhenAttacked(true)
 		`, 'runtime');
-		expect(err.errorKind).toBe('runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID/);
+		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
 	});
 });

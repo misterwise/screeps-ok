@@ -4065,23 +4065,33 @@ Coverage Notes
 
 Bots can keep heap references to game-object wrappers across ticks. When the
 underlying object is removed before a later public method call on that cached
-receiver, vanilla resolves current backing data by receiver id before normal
-validation or intent queueing. If no live backing object exists, the method
-throws a runtime error rather than returning an API code.
+receiver, vanilla resolves current backing data by receiver id and throws a
+runtime error before normal validation or intent queueing. The matrix
+verifies that stale access is *blocked* with a runtime error rather than
+silently allowed; the engine-specific message is not load-bearing. Vanilla
+emits `Could not find an object with ID...`; xxscreeps releases all
+`RoomObject` wrappers at end-of-tick and emits
+`Accessed a released object from a previous tick`. Engines that block stale
+access more aggressively than vanilla (e.g. by also rejecting cross-tick
+access to a *live* object) still satisfy this matrix; that broader behavior
+is its own undocumented gap and out of scope here.
 
 - `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
   Public methods in the stale cached receiver matrix throw a runtime error
-  matching `/Could not find an object with ID/` when called on a cached
-  `RoomObject` wrapper after its backing object has been removed.
+  when called on a cached `RoomObject` wrapper after its backing object has
+  been removed. The expected runtime message matches
+  `/Could not find an object with ID|Accessed a released object/`.
 
 Coverage Notes
-- Confirmed rows currently cover cached removed `ConstructionSite.remove()`
-  and cached removed `Structure.notifyWhenAttacked(enabled)`.
+- Confirmed rows currently cover cached removed `ConstructionSite.remove()`,
+  cached removed `Structure.notifyWhenAttacked(enabled)`, cached removed
+  `StructureLink.transferEnergy(target, amount)`, and cached removed
+  `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
 - This facet owns stale receivers only. Stale object arguments, getter or
   field reads on stale cached objects, and `Structure.destroy()` as a stale
   receiver are out of scope.
 - `Structure.destroy()` is used only as setup for removing a structure before
-  calling `notifyWhenAttacked(enabled)` on the cached receiver.
+  calling the receiver method on the cached wrapper.
 
 Coverage Notes
 - Entries in this section interact with `§25 Memory` and `§24.2 Same-Tick
