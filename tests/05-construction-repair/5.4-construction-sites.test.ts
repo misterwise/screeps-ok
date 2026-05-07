@@ -190,6 +190,28 @@ describe('room.createConstructionSite()', () => {
 		expect(site).toBeNull();
 	});
 
+	test('CONSTRUCTION-SITE-015 stale cached ConstructionSite.remove() throws a runtime error', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 25], owner: 'p1', structureType: STRUCTURE_ROAD,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			const site = Game.getObjectById(${siteId});
+			globalThis.__screepsOkStaleConstructionSite = site;
+			site.remove()
+		`);
+		expect(rc).toBe(OK);
+		const site = await shard.getObject(siteId);
+		expect(site).toBeNull();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleConstructionSite.remove()
+		`, 'runtime');
+		expect(err.errorKind).toBe('runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID/);
+	});
+
 	test('CONSTRUCTION-SITE-007 only one construction site can exist at a given position', async ({ shard }) => {
 		// Engine utils.js:171 — checkConstructionSite returns false if any
 		// existing constructionSite occupies the tile. Player-side check

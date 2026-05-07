@@ -134,6 +134,11 @@
 			"expected": "Vanilla returns ERR_INVALID_ARGS for an oversized name.",
 			"tests": ["CONSTRUCTION-SITE-011:invalidArgs", "CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget", "CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull"]
 		},
+		"construction-site-stale-remove-returns-ok": {
+			"actual": "Calling `remove()` on a cached `ConstructionSite` object after the underlying site has already been removed returns `OK` and queues another remove intent.",
+			"expected": "Vanilla resolves the construction-site backing data before ownership and intent queueing; if the underlying object is gone, the public stale-object call throws a runtime error with `Could not find an object with ID ...`.",
+			"tests": ["CONSTRUCTION-SITE-015"]
+		},
 		"harvest-bodypart-too-early-vs-target": {
 			"actual": "Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`).",
 			"expected": "Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`.",

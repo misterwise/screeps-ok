@@ -841,6 +841,9 @@ Coverage Notes
   survives — only the move intent triggers the site-destruction path.
 - `CONSTRUCTION-SITE-006` `behavior` `verified_vanilla`
   `ConstructionSite.remove()` removes the site by the owner.
+- `CONSTRUCTION-SITE-015` `behavior` `verified_vanilla`
+  Calling `remove()` on a cached `ConstructionSite` object after the
+  underlying site has been removed throws a runtime error.
 - `CONSTRUCTION-SITE-007` `behavior` `verified_vanilla`
   Only one construction site can exist at a given position.
 - `CONSTRUCTION-SITE-008` `behavior` `verified_vanilla`

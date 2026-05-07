@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2467%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2044%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2475%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2044%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2467](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 00:19 UTC |
-| 🟡 | **xxscreeps** | [2044](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 00:16 UTC |
+| 🟢 | **vanilla** | [2475](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 03:59 UTC |
+| 🟡 | **xxscreeps** | [2044](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 03:56 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 37 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 34 open parity gaps covering 78 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 35 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -57,6 +57,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` for hostile-owned rooms and does not reject hostile reservations with `ERR_NOT_OWNER` ahead of the rcl check. | Vanilla returns ERR_NOT_OWNER for hostile-owned rooms and hostile-reserved rooms before RCL or structure-cap checks. | [4](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `construction-site-cap-too-early` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation. | Vanilla evaluates the global site cap last — after structure type, owner, RCL, and tile placement. | [3](#xxscreeps-gap-construction-site-cap-too-early) |
 | `construction-site-bad-name-silently-dropped` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:66-72`) calls `factory.checkName(this, nameArg)`; for SPAWN with a 101-char name `checkName` (`packages/xxscreeps/mods/spawn/spawn.ts:223-227`) returns `null`, the wrapper's `if (name)` is falsy so the bad name is silently dropped, and `checkCreateConstructionSite` then re-invokes `checkName(_, null)` which auto-generates a fresh name like `Spawn1` — the chain returns OK. | Vanilla returns ERR_INVALID_ARGS for an oversized name. | [5](#xxscreeps-gap-construction-site-bad-name-silently-dropped) |
+| `construction-site-stale-remove-returns-ok` | Calling `remove()` on a cached `ConstructionSite` object after the underlying site has already been removed returns `OK` and queues another remove intent. | Vanilla resolves the construction-site backing data before ownership and intent queueing; if the underlying object is gone, the public stale-object call throws a runtime error with `Could not find an object with ID ...`. | [1](#xxscreeps-gap-construction-site-stale-remove-returns-ok) |
 | `harvest-bodypart-too-early-vs-target` | Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`). | Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`. | [2](#xxscreeps-gap-harvest-bodypart-too-early-vs-target) |
 | `harvest-depleted-too-late` | `packages/xxscreeps/mods/source/game.ts:42-55` and `packages/xxscreeps/mods/mineral/mineral.ts:45-65` put the depleted (`energy <= 0` / `mineralAmount <= 0`) check in the LAST inline lambda, after `checkRange` and (for source) the hostile-room ERR_NOT_OWNER branch. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES (depleted) before ERR_NOT_IN_RANGE and before the hostile-room ERR_NOT_OWNER. | [3](#xxscreeps-gap-harvest-depleted-too-late) |
 | `harvest-mineral-cooldown-api-gate-inverted` | `packages/xxscreeps/mods/mineral/mineral.ts:61-63` reads `extractor.cooldown !== 0 && extractor.cooldown !== C.EXTRACTOR_COOLDOWN ? ERR_TIRED : OK` — only returns OK when the extractor cooldown is exactly 0 or exactly EXTRACTOR_COOLDOWN; any intermediate value (e.g. mid-decrement at 9) yields ERR_TIRED at the API layer. | Vanilla does not gate mineral harvest on intermediate extractor cooldown values at the API layer; the call returns OK and the processor handles yield/cooldown bookkeeping. | [1](#xxscreeps-gap-harvest-mineral-cooldown-api-gate-inverted) |
@@ -271,6 +272,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-construction-site-stale-remove-returns-ok">
+<summary><code>construction-site-stale-remove-returns-ok</code> — 1 test</summary>
+
+- `room.createConstructionSite() CONSTRUCTION-SITE-015 stale cached ConstructionSite.remove() throws a runtime error`
+
+</details>
+
 <details id="xxscreeps-gap-harvest-bodypart-too-early-vs-target">
 <summary><code>harvest-bodypart-too-early-vs-target</code> — 2 tests</summary>
 
@@ -415,7 +423,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2467 tests across 127 files</summary>
+<summary>2475 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1214,7 +1222,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (54)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -1224,6 +1232,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-004 a hostile creep moving onto a construction site destroys it
 - room.createConstructionSite() CONSTRUCTION-SITE-005 a site placed under an already-standing hostile creep survives the next tick
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
+- room.createConstructionSite() CONSTRUCTION-SITE-015 stale cached ConstructionSite.remove() throws a runtime error
 - room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
 - room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile
@@ -1793,7 +1802,7 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-010:notEnoughEnergyBeforeNotFound boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:notEnoughMineralBeforeNotFound boostCreep() validation returns the canonical code
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (25)
+**`tests/08-boosts/8.2-unboost.test.ts`** (32)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
 - lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
@@ -1801,19 +1810,26 @@ Click a count to jump to the affected test list.
 - lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
 - lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - lab.unboostCreep() UNBOOST-006:invalidTarget unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rcl unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:cooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:notFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:range unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeLabNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:invalidTargetBeforeCreepNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeRcl unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:invalidTargetBeforeRange unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeRcl unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeCooldown unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeNotFound unboostCreep() validation returns the canonical code
-- lab.unboostCreep() UNBOOST-006:notOwnerBeforeRange unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeCreepNotOwner unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeRcl unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeRange unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRange unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeNotFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:rclBeforeRange unboostCreep() validation returns the canonical code

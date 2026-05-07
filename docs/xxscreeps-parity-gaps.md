@@ -5,7 +5,7 @@ For the full generated list and current counts, see `docs/status.md`.
 
 Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 34 open parity gaps covering 78 tests, plus 3 accepted divergences covering 5 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 35 open parity gaps covering 79 tests, plus 3 accepted divergences covering 5 tests.
 
 ## Open parity gaps
 
@@ -78,6 +78,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED. Filed upstream as [laverdet/xxscreeps#185](https://github.com/laverdet/xxscreeps/issues/185).
 - Cause: `packages/xxscreeps/mods/construction/room.ts:99-102` rejects every placement in any room where `!room.controller?.my` with `ERR_RCL_NOT_ENOUGH`. Regression introduced by upstream commit `afba4b3a` ("Fix spawn placement"), which audited `.my ===` patterns and changed `controller?.my === false` to `!controller?.my`. The first form blocked only hostile-owned rooms; the second blocks unowned and reserved rooms too. Vanilla `rooms.js:1052-1064` separates the cases (hostile-owned → ERR_NOT_OWNER; hostile-reserved → ERR_NOT_OWNER; unowned/self-reserved → fall through to `checkControllerAvailability` at rcl 0, where road and container have non-zero caps).
 - Plan: restore the four-case split — hostile-owned (`level > 0 && !my`) returns ERR_NOT_OWNER; hostile reservation returns ERR_NOT_OWNER; otherwise compute the effective rcl as `controller && controller.user ? controller.level : 0` and reuse the existing per-type `CONTROLLER_STRUCTURES` count check.
+
+### construction-site-stale-remove-returns-ok
+
+- Tests: CONSTRUCTION-SITE-015.
+- Status: CONFIRMED. Source audit for xxscreeps issue 117 found this as the remaining `checkRemove` gap.
+- Cause: `ConstructionSite.remove()` accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent even after the backing site has been removed. Vanilla first resolves current backing data for `this.id`; if the object is gone, that lookup throws before ownership handling or intent queueing.
+- Plan: make construction-site remove validation resolve the current object by id before accepting the intent, and surface the same runtime error for stale cached objects.
 
 ### look-energy-alias-not-registered
 
