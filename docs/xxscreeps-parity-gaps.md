@@ -86,12 +86,12 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: `packages/xxscreeps/mods/construction/room.ts:99-102` rejects every placement in any room where `!room.controller?.my` with `ERR_RCL_NOT_ENOUGH`. Regression introduced by upstream commit `afba4b3a` ("Fix spawn placement"), which audited `.my ===` patterns and changed `controller?.my === false` to `!controller?.my`. The first form blocked only hostile-owned rooms; the second blocks unowned and reserved rooms too. Vanilla `rooms.js:1052-1064` separates the cases (hostile-owned → ERR_NOT_OWNER; hostile-reserved → ERR_NOT_OWNER; unowned/self-reserved → fall through to `checkControllerAvailability` at rcl 0, where road and container have non-zero caps).
 - Plan: restore the four-case split — hostile-owned (`level > 0 && !my`) returns ERR_NOT_OWNER; hostile reservation returns ERR_NOT_OWNER; otherwise compute the effective rcl as `controller && controller.user ? controller.level : 0` and reuse the existing per-type `CONTROLLER_STRUCTURES` count check.
 
-### construction-site-stale-remove-returns-ok
+### stale-receiver-missing-id-runtime-error
 
-- Tests: CONSTRUCTION-SITE-015.
-- Status: CONFIRMED. Source audit for xxscreeps issue 117 found this as the remaining `checkRemove` gap.
-- Cause: `ConstructionSite.remove()` accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent even after the backing site has been removed. Vanilla first resolves current backing data for `this.id`; if the object is gone, that lookup throws before ownership handling or intent queueing.
-- Plan: make construction-site remove validation resolve the current object by id before accepting the intent, and surface the same runtime error for stale cached objects.
+- Tests: UNDOC-STALERECV-001 (`constructionSiteRemove`, `structureNotifyWhenAttacked` rows).
+- Status: CONFIRMED.
+- Cause: stale cached receiver methods do not share vanilla's missing-backing-object behavior. `ConstructionSite.remove()` accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has been removed. `Structure.notifyWhenAttacked(enabled)` does throw on a stale cached structure, but the error is xxscreeps's released-object message (`Accessed a released object from a previous tick[...]`) rather than vanilla's missing-id runtime error. Vanilla first resolves current backing data for `this.id`; if the object is gone, that lookup throws before method-specific validation or intent queueing.
+- Plan: resolve current backing data by receiver id at method entry for stale-sensitive public receiver methods, and surface the same missing-id runtime error for removed cached receivers.
 
 ### look-energy-alias-not-registered
 

@@ -4,7 +4,10 @@ import { describe, test, expect, code,
 	FIND_STRUCTURES, FIND_RUINS,
 	STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_TOWER,
 } from '../../src/index.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
 import { structureDestroyValidationCases } from '../../src/matrices/structure-destroy-validation.js';
+
+const staleStructureNotifyCase = staleReceiverCases.find(row => row.key === 'structureNotifyWhenAttacked')!;
 
 describe('structure.destroy()', () => {
 	test('STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player', async ({ shard }) => {
@@ -208,5 +211,28 @@ describe('structure.notifyWhenAttacked()', () => {
 			s ? s.notifyWhenAttacked(true) : -99
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);
+	});
+
+	test(`${staleStructureNotifyCase.catalogId}:${staleStructureNotifyCase.label} stale cached Structure.notifyWhenAttacked() throws a runtime error`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 500 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const structure = Game.getObjectById(${towerId});
+			globalThis.__screepsOkStaleStructure = structure;
+			structure.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleStructure.notifyWhenAttacked(true)
+		`, 'runtime');
+		expect(err.errorKind).toBe('runtime');
+		expect(err.engineMessage).toMatch(/Could not find an object with ID/);
 	});
 });

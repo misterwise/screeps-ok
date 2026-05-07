@@ -841,9 +841,6 @@ Coverage Notes
   survives — only the move intent triggers the site-destruction path.
 - `CONSTRUCTION-SITE-006` `behavior` `verified_vanilla`
   `ConstructionSite.remove()` removes the site by the owner.
-- `CONSTRUCTION-SITE-015` `behavior` `verified_vanilla`
-  Calling `remove()` on a cached `ConstructionSite` object after the
-  underlying site has been removed throws a runtime error.
 - `CONSTRUCTION-SITE-007` `behavior` `verified_vanilla`
   Only one construction site can exist at a given position.
 - `CONSTRUCTION-SITE-008` `behavior` `verified_vanilla`
@@ -889,6 +886,10 @@ Coverage Notes
   structure type, including road and container. Engine `rooms.js:1055-1061`
   rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
   from the caller's user, before the rcl check runs.
+
+Coverage Notes
+- Stale cached `ConstructionSite.remove()` receiver behavior is owned by
+  `UNDOC-STALERECV-001` (section 27.12).
 
 ---
 
@@ -4059,6 +4060,28 @@ Coverage Notes
   `Resource`, `Tombstone`, `Ruin`, `Mineral`, and `Source`. `Flag` is excluded
   because flags are id-less by design, and `ObserverSpy` is excluded because it
   is an internal implementation object rather than player API surface.
+
+### 27.12 Stale Cached Object Receivers
+
+Bots can keep heap references to game-object wrappers across ticks. When the
+underlying object is removed before a later public method call on that cached
+receiver, vanilla resolves current backing data by receiver id before normal
+validation or intent queueing. If no live backing object exists, the method
+throws a runtime error rather than returning an API code.
+
+- `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
+  Public methods in the stale cached receiver matrix throw a runtime error
+  matching `/Could not find an object with ID/` when called on a cached
+  `RoomObject` wrapper after its backing object has been removed.
+
+Coverage Notes
+- Confirmed rows currently cover cached removed `ConstructionSite.remove()`
+  and cached removed `Structure.notifyWhenAttacked(enabled)`.
+- This facet owns stale receivers only. Stale object arguments, getter or
+  field reads on stale cached objects, and `Structure.destroy()` as a stale
+  receiver are out of scope.
+- `Structure.destroy()` is used only as setup for removing a structure before
+  calling `notifyWhenAttacked(enabled)` on the cached receiver.
 
 Coverage Notes
 - Entries in this section interact with `§25 Memory` and `§24.2 Same-Tick
