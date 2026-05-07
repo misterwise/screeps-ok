@@ -3,11 +3,18 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-06 against pin `aadbbd4f`.
+Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 44 open parity gaps covering 122 tests, plus 3 accepted divergences covering 5 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 34 open parity gaps covering 78 tests, plus 3 accepted divergences covering 5 tests.
 
 ## Open parity gaps
+
+### withdraw-safemode-hoisted-too-far
+
+- Tests: WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner, WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner
+- Status: NEW — introduced by [laverdet/xxscreeps#189](https://github.com/laverdet/xxscreeps/pull/189) (the same PR that closed the prior `withdraw-safemode-not-owner-too-late` gap).
+- Cause: PR #189 hoisted `checkSafeMode(creep.room, ERR_NOT_OWNER)` to step 2 of `checkWithdraw`, directly after `checkCommon`. The five "safemode-too-late" rows now pass, but safemode lands one step too early — before `checkTarget` (ERR_INVALID_TARGET) and before any `checkHasResource` call that could surface ERR_INVALID_ARGS.
+- Plan: move `checkSafeMode` between `target-not-owner` and `invalid-capacity` (vanilla position 6). A small follow-up PR on top of #189; ordering should be `checkCommon → checkTarget → checkHasResource(args) → target-not-owner gate → checkSafeMode → checkInteractionBlocked → checkRange → ...`.
 
 ### simult-heal-saves-doomed-creep
 

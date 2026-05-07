@@ -89,25 +89,15 @@
 			"expected": "Vanilla returns ERR_INVALID_TARGET when the target's store cannot hold the requested resource (e.g. withdrawing H from a spawn) before ERR_NOT_IN_RANGE.",
 			"tests": ["WITHDRAW-017:invalidCapacityBeforeRange"]
 		},
-		"withdraw-safemode-not-owner-too-late": {
-			"actual": "`checkWithdraw` runs `checkSafeMode(creep.room, ERR_NOT_OWNER)` (`packages/xxscreeps/mods/creep/creep.ts:544`) as the LAST step of the chain.",
-			"expected": "Vanilla returns the safe-mode ERR_NOT_OWNER immediately after the busy/owner gate, so it precedes invalid-capacity, range, full, full-amount, and not-enough.",
-			"tests": ["WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity", "WITHDRAW-017:safemodeNotOwnerBeforeRange", "WITHDRAW-017:safemodeNotOwnerBeforeFull", "WITHDRAW-017:safemodeNotOwnerBeforeFullAmount", "WITHDRAW-017:safemodeNotOwnerBeforeNotEnough"]
+		"withdraw-safemode-hoisted-too-far": {
+			"actual": "[laverdet/xxscreeps#189](https://github.com/laverdet/xxscreeps/pull/189) hoisted `checkSafeMode(creep.room, ERR_NOT_OWNER)` to step 2 of `checkWithdraw` (directly after `checkCommon`), correctly fixing the previous five `safemode too late` rows. It over-hoists past `invalid-args` and `invalid-target`: safemode now lands at position 2 instead of vanilla's position 6, so invalid-args/invalid-target rooms in safemode return ERR_NOT_OWNER instead of the canonical ERR_INVALID_ARGS / ERR_INVALID_TARGET.",
+			"expected": "Vanilla puts `safemode-not-owner` between `target-not-owner` and `invalid-capacity` (precedence position 6), so ERR_INVALID_ARGS and ERR_INVALID_TARGET both precede the safe-mode ERR_NOT_OWNER.",
+			"tests": ["WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner", "WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner"]
 		},
-		"transfer-and-withdraw-full-vs-not-enough-inverted": {
-			"actual": "`checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:527-528`) and `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:542-543`) order `checkHasResource` (ERR_NOT_ENOUGH_RESOURCES) before `checkHasCapacity` (ERR_FULL).",
-			"expected": "Vanilla returns ERR_FULL on the destination before ERR_NOT_ENOUGH_RESOURCES on the source for both `transfer` and `withdraw`.",
-			"tests": ["WITHDRAW-017:fullBeforeNotEnough", "WITHDRAW-017:fullAmountBeforeNotEnough", "TRANSFER-015:fullBeforeNotEnoughAmount"]
-		},
-		"transfer-target-needs-store": {
-			"actual": "`checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:525`) calls `checkTarget(target, RoomObject)`, accepting any RoomObject including a Source. `calculateChecked` then yields NaN for the amount and `checkHasResource(creep, energy, NaN)` short-circuits to ERR_NOT_ENOUGH_RESOURCES because `50 >= NaN` is false.",
-			"expected": "Vanilla returns ERR_INVALID_TARGET when the transfer target lacks a store; the type guard requires a store-bearing object before any other check.",
-			"tests": ["TRANSFER-015:invalidTarget", "TRANSFER-015:invalidTargetBeforeInvalidCapacity", "TRANSFER-015:invalidTargetBeforeRange", "TRANSFER-015:invalidTargetBeforeNotEnough", "TRANSFER-015:invalidTargetBeforeFull", "TRANSFER-015:invalidTargetBeforeNotEnoughAmount", "TRANSFER-015:invalidTargetBeforeFullAmount", "TRANSFER-015:invalidCapacityBeforeRange", "TRANSFER-015:invalidCapacityBeforeNotEnough", "TRANSFER-015:invalidCapacityBeforeNotEnoughAmount"]
-		},
-		"transfer-args-validation-too-late": {
-			"actual": "Same shape as `withdraw-args-validation-too-late`: `checkHasResource`'s ERR_INVALID_ARGS branch runs after `checkRange` in `checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:526-527`).",
-			"expected": "Vanilla returns ERR_INVALID_ARGS for an unknown resource type before ERR_NOT_IN_RANGE.",
-			"tests": ["TRANSFER-015:invalidArgsBeforeRange"]
+		"withdraw-full-vs-not-enough-inverted": {
+			"actual": "`checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:542-543`) orders `checkHasResource` (ERR_NOT_ENOUGH_RESOURCES) before `checkHasCapacity` (ERR_FULL). Companion `checkTransfer` was realigned to vanilla in [laverdet/xxscreeps#196](https://github.com/laverdet/xxscreeps/pull/196); the same interleave fix has not been applied to `checkWithdraw`.",
+			"expected": "Vanilla returns ERR_FULL on the destination before ERR_NOT_ENOUGH_RESOURCES on the source for `withdraw`.",
+			"tests": ["WITHDRAW-017:fullBeforeNotEnough", "WITHDRAW-017:fullAmountBeforeNotEnough"]
 		},
 		"link-cooldown-not-api-gated": {
 			"actual": "`checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:71-93`) puts the cooldown branch in the LAST inline lambda; `checkSameRoom` even runs ahead of it.",
@@ -173,16 +163,6 @@
 			"actual": "`checkDismantle` (`packages/xxscreeps/mods/construction/creep.ts`) only runs `checkTarget(target, Structure)` — controllers (and other structures with `hits === undefined`) pass that check, so dismantling a controller returns OK and the precedence chain returns ERR_NOT_IN_RANGE when range also blocks.",
 			"expected": "Vanilla rejects targets without a finite `hits` value (controllers, indestructible walls) with ERR_INVALID_TARGET ahead of range checks.",
 			"tests": ["DISMANTLE-009:invalidTarget", "DISMANTLE-009:invalidTargetBeforeRange"]
-		},
-		"ctrl-claim-gcl-too-late": {
-			"actual": "`checkClaimController` (`packages/xxscreeps/mods/controller/creep.ts:131-151`) puts the GCL check at step 4 (inside the final lambda), after `checkCommon(creep, C.CLAIM)`, `checkTarget(target, StructureController)`, and `checkRange`.",
-			"expected": "Vanilla returns ERR_GCL_NOT_ENOUGH before ERR_NO_BODYPART, ERR_INVALID_TARGET, and ERR_NOT_IN_RANGE.",
-			"tests": ["CTRL-CLAIM-008:gclNotEnoughBeforeInvalidTarget", "CTRL-CLAIM-008:gclNotEnoughBeforeNoBodypart", "CTRL-CLAIM-008:gclNotEnoughBeforeRange"]
-		},
-		"ctrl-bodypart-too-early": {
-			"actual": "`checkCommon(creep, C.CLAIM)` is step 1 of `checkAttackController`, `checkClaimController`, and `checkReserveController` (`packages/xxscreeps/mods/controller/creep.ts:117, 133, 163`); ERR_NO_BODYPART fires before checkTarget/checkRange/state checks.",
-			"expected": "Vanilla returns ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the controller-state ERR_INVALID_TARGET before ERR_NO_BODYPART for the controller intents.",
-			"tests": ["CTRL-CLAIM-008:invalidTargetBeforeNoBodypart", "CTRL-RESERVE-008:invalidTargetBeforeNoBodypart", "CTRL-RESERVE-008:rangeBeforeNoBodypart", "CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart", "CTRL-ATTACK-007:invalidTargetBeforeNoBodypart"]
 		},
 		"spawn-not-owner-too-early": {
 			"actual": "`checkSpawnCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:300-345`) calls `checkMyStructure(spawn, StructureSpawn)` first, returning ERR_NOT_OWNER before name string, NAME_EXISTS, or directions array validation.",

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2467%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2021%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-106-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2467%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2044%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2467](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-06 23:31 UTC |
-| 🟡 | **xxscreeps** | [2021](#xxscreeps-passing-tests) | [106](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-06 23:28 UTC |
+| 🟢 | **vanilla** | [2467](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 00:19 UTC |
+| 🟡 | **xxscreeps** | [2044](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 00:16 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 106 tests. That includes 38 open parity gaps covering 101 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 37 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 34 open parity gaps covering 78 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -48,10 +48,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `constructor-by-id-missing-for-noncreep-objects` | Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position. | Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick. | [1](#xxscreeps-gap-constructor-by-id-missing-for-noncreep-objects) |
 | `withdraw-args-validation-too-late` | `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:536-545`) calls `checkHasResource` (the gate that rejects an unknown resource type with ERR_INVALID_ARGS) at chain step 5, after `checkTarget`, `checkInteractionBlocked`, and `checkRange`. | Vanilla validates the resource argument before any target/owner/range check, so ERR_INVALID_ARGS precedes ERR_INVALID_TARGET, ERR_NOT_OWNER, and ERR_NOT_IN_RANGE for `creep.withdraw`. | [3](#xxscreeps-gap-withdraw-args-validation-too-late) |
 | `withdraw-target-store-compat-too-late` | The incompatible-store branch lives in `checkHasResource` (`packages/xxscreeps/mods/resource/store.ts:357`, returning ERR_INVALID_TARGET) which `checkWithdraw` runs at step 5, after `checkRange`. | Vanilla returns ERR_INVALID_TARGET when the target's store cannot hold the requested resource (e.g. withdrawing H from a spawn) before ERR_NOT_IN_RANGE. | [1](#xxscreeps-gap-withdraw-target-store-compat-too-late) |
-| `withdraw-safemode-not-owner-too-late` | `checkWithdraw` runs `checkSafeMode(creep.room, ERR_NOT_OWNER)` (`packages/xxscreeps/mods/creep/creep.ts:544`) as the LAST step of the chain. | Vanilla returns the safe-mode ERR_NOT_OWNER immediately after the busy/owner gate, so it precedes invalid-capacity, range, full, full-amount, and not-enough. | [5](#xxscreeps-gap-withdraw-safemode-not-owner-too-late) |
-| `transfer-and-withdraw-full-vs-not-enough-inverted` | `checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:527-528`) and `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:542-543`) order `checkHasResource` (ERR_NOT_ENOUGH_RESOURCES) before `checkHasCapacity` (ERR_FULL). | Vanilla returns ERR_FULL on the destination before ERR_NOT_ENOUGH_RESOURCES on the source for both `transfer` and `withdraw`. | [3](#xxscreeps-gap-transfer-and-withdraw-full-vs-not-enough-inverted) |
-| `transfer-target-needs-store` | `checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:525`) calls `checkTarget(target, RoomObject)`, accepting any RoomObject including a Source. `calculateChecked` then yields NaN for the amount and `checkHasResource(creep, energy, NaN)` short-circuits to ERR_NOT_ENOUGH_RESOURCES because `50 >= NaN` is false. | Vanilla returns ERR_INVALID_TARGET when the transfer target lacks a store; the type guard requires a store-bearing object before any other check. | [10](#xxscreeps-gap-transfer-target-needs-store) |
-| `transfer-args-validation-too-late` | Same shape as `withdraw-args-validation-too-late`: `checkHasResource`'s ERR_INVALID_ARGS branch runs after `checkRange` in `checkTransfer` (`packages/xxscreeps/mods/creep/creep.ts:526-527`). | Vanilla returns ERR_INVALID_ARGS for an unknown resource type before ERR_NOT_IN_RANGE. | [1](#xxscreeps-gap-transfer-args-validation-too-late) |
+| `withdraw-safemode-hoisted-too-far` | [laverdet/xxscreeps#189](https://github.com/laverdet/xxscreeps/pull/189) hoisted `checkSafeMode(creep.room, ERR_NOT_OWNER)` to step 2 of `checkWithdraw` (directly after `checkCommon`), correctly fixing the previous five `safemode too late` rows. It over-hoists past `invalid-args` and `invalid-target`: safemode now lands at position 2 instead of vanilla's position 6, so invalid-args/invalid-target rooms in safemode return ERR_NOT_OWNER instead of the canonical ERR_INVALID_ARGS / ERR_INVALID_TARGET. | Vanilla puts `safemode-not-owner` between `target-not-owner` and `invalid-capacity` (precedence position 6), so ERR_INVALID_ARGS and ERR_INVALID_TARGET both precede the safe-mode ERR_NOT_OWNER. | [2](#xxscreeps-gap-withdraw-safemode-hoisted-too-far) |
+| `withdraw-full-vs-not-enough-inverted` | `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:542-543`) orders `checkHasResource` (ERR_NOT_ENOUGH_RESOURCES) before `checkHasCapacity` (ERR_FULL). Companion `checkTransfer` was realigned to vanilla in [laverdet/xxscreeps#196](https://github.com/laverdet/xxscreeps/pull/196); the same interleave fix has not been applied to `checkWithdraw`. | Vanilla returns ERR_FULL on the destination before ERR_NOT_ENOUGH_RESOURCES on the source for `withdraw`. | [2](#xxscreeps-gap-withdraw-full-vs-not-enough-inverted) |
 | `link-cooldown-not-api-gated` | `checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:71-93`) puts the cooldown branch in the LAST inline lambda; `checkSameRoom` even runs ahead of it. | Vanilla returns ERR_TIRED right after the source link is verified my, so cooldown precedes RCL, range, not-enough, and full. | [4](#xxscreeps-gap-link-cooldown-not-api-gated) |
 | `link-rcl-too-early` | `checkIsActive(link)` runs at step 2 of `checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:74`), before any arg/target/owner check. | Vanilla puts ERR_RCL_NOT_ENOUGH after ERR_INVALID_ARGS, ERR_INVALID_TARGET, and the target/source ownership checks. | [3](#xxscreeps-gap-link-rcl-too-early) |
 | `link-source-owner-too-early` | `checkMyStructure(link, StructureLink)` (`packages/xxscreeps/mods/logistics/link.ts:73`) returns ERR_NOT_OWNER for a hostile source link at step 1 of the chain. | Vanilla returns ERR_INVALID_ARGS or ERR_INVALID_TARGET before ERR_NOT_OWNER on the source link. | [2](#xxscreeps-gap-link-source-owner-too-early) |
@@ -65,8 +63,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `build-repair-not-enough-too-late` | `checkBuild` (`packages/xxscreeps/mods/construction/creep.ts`) and `checkRepair` (`packages/xxscreeps/mods/structure/creep.ts`) place the source-energy check after target validation and range. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES before ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the blocked-target check. | [5](#xxscreeps-gap-build-repair-not-enough-too-late) |
 | `build-blocked-vs-range-inverted` | `checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET. | [1](#xxscreeps-gap-build-blocked-vs-range-inverted) |
 | `dismantle-indestructible-not-rejected` | `checkDismantle` (`packages/xxscreeps/mods/construction/creep.ts`) only runs `checkTarget(target, Structure)` — controllers (and other structures with `hits === undefined`) pass that check, so dismantling a controller returns OK and the precedence chain returns ERR_NOT_IN_RANGE when range also blocks. | Vanilla rejects targets without a finite `hits` value (controllers, indestructible walls) with ERR_INVALID_TARGET ahead of range checks. | [2](#xxscreeps-gap-dismantle-indestructible-not-rejected) |
-| `ctrl-claim-gcl-too-late` | `checkClaimController` (`packages/xxscreeps/mods/controller/creep.ts:131-151`) puts the GCL check at step 4 (inside the final lambda), after `checkCommon(creep, C.CLAIM)`, `checkTarget(target, StructureController)`, and `checkRange`. | Vanilla returns ERR_GCL_NOT_ENOUGH before ERR_NO_BODYPART, ERR_INVALID_TARGET, and ERR_NOT_IN_RANGE. | [3](#xxscreeps-gap-ctrl-claim-gcl-too-late) |
-| `ctrl-bodypart-too-early` | `checkCommon(creep, C.CLAIM)` is step 1 of `checkAttackController`, `checkClaimController`, and `checkReserveController` (`packages/xxscreeps/mods/controller/creep.ts:117, 133, 163`); ERR_NO_BODYPART fires before checkTarget/checkRange/state checks. | Vanilla returns ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the controller-state ERR_INVALID_TARGET before ERR_NO_BODYPART for the controller intents. | [5](#xxscreeps-gap-ctrl-bodypart-too-early) |
 | `spawn-not-owner-too-early` | `checkSpawnCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:300-345`) calls `checkMyStructure(spawn, StructureSpawn)` first, returning ERR_NOT_OWNER before name string, NAME_EXISTS, or directions array validation. | Vanilla validates the name argument, name uniqueness, and directions array before ERR_NOT_OWNER on the spawn. | [3](#xxscreeps-gap-spawn-not-owner-too-early) |
 | `renew-not-owner-too-early` | `checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first. | Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn. | [2](#xxscreeps-gap-renew-not-owner-too-early) |
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
@@ -194,46 +190,19 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-withdraw-safemode-not-owner-too-late">
-<summary><code>withdraw-safemode-not-owner-too-late</code> — 5 tests</summary>
+<details id="xxscreeps-gap-withdraw-safemode-hoisted-too-far">
+<summary><code>withdraw-safemode-hoisted-too-far</code> — 2 tests</summary>
 
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeRange withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFullAmount withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeNotEnough withdraw() validation returns the canonical code`
+- `creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code`
+- `creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code`
 
 </details>
 
-<details id="xxscreeps-gap-transfer-and-withdraw-full-vs-not-enough-inverted">
-<summary><code>transfer-and-withdraw-full-vs-not-enough-inverted</code> — 3 tests</summary>
+<details id="xxscreeps-gap-withdraw-full-vs-not-enough-inverted">
+<summary><code>withdraw-full-vs-not-enough-inverted</code> — 2 tests</summary>
 
-- `creep.transfer() TRANSFER-015:fullBeforeNotEnoughAmount transfer() validation returns the canonical code`
 - `creep.withdraw() WITHDRAW-017:fullBeforeNotEnough withdraw() validation returns the canonical code`
 - `creep.withdraw() WITHDRAW-017:fullAmountBeforeNotEnough withdraw() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-transfer-target-needs-store">
-<summary><code>transfer-target-needs-store</code> — 10 tests</summary>
-
-- `creep.transfer() TRANSFER-015:invalidTarget transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeInvalidCapacity transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeRange transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnough transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeFull transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnoughAmount transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidTargetBeforeFullAmount transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidCapacityBeforeRange transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnough transfer() validation returns the canonical code`
-- `creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnoughAmount transfer() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-transfer-args-validation-too-late">
-<summary><code>transfer-args-validation-too-late</code> — 1 test</summary>
-
-- `creep.transfer() TRANSFER-015:invalidArgsBeforeRange transfer() validation returns the canonical code`
 
 </details>
 
@@ -349,26 +318,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `creep.dismantle() DISMANTLE-009:invalidTarget dismantle() validation returns the canonical code`
 - `creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-ctrl-claim-gcl-too-late">
-<summary><code>ctrl-claim-gcl-too-late</code> — 3 tests</summary>
-
-- `controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidTarget claimController() validation returns the canonical code`
-- `controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeNoBodypart claimController() validation returns the canonical code`
-- `controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeRange claimController() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-ctrl-bodypart-too-early">
-<summary><code>ctrl-bodypart-too-early</code> — 5 tests</summary>
-
-- `controller mechanics CTRL-CLAIM-008:invalidTargetBeforeNoBodypart claimController() validation returns the canonical code`
-- `controller mechanics CTRL-RESERVE-008:invalidTargetBeforeNoBodypart reserveController() validation returns the canonical code`
-- `controller mechanics CTRL-RESERVE-008:rangeBeforeNoBodypart reserveController() validation returns the canonical code`
-- `controller mechanics CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart reserveController() validation returns the canonical code`
-- `controller mechanics CTRL-ATTACK-007:invalidTargetBeforeNoBodypart attackController() validation returns the canonical code`
 
 </details>
 
@@ -3893,7 +3842,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2021 tests across 104 files</summary>
+<summary>2044 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4322,7 +4271,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (57)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (69)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -4341,6 +4290,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:notOwner transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busy transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacity transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:range transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnough transfer() validation returns the canonical code
@@ -4366,11 +4316,21 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:busyBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnoughAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidTargetBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidCapacityBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeFull transfer() validation returns the canonical code
@@ -4379,10 +4339,11 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:notEnoughBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:fullBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:fullBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughAmountBeforeFullAmount transfer() validation returns the canonical code
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (118)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (121)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -4427,13 +4388,11 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:busyBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeNotEnough withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeTargetNotOwner withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFull withdraw() validation returns the canonical code
@@ -4445,6 +4404,11 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeNotEnough withdraw() validation returns the canonical code
@@ -4639,7 +4603,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (98)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (106)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -4667,7 +4631,11 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-008:busyBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidTarget claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeNoBodypart claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:invalidTargetBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeInvalidControllerState claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:noBodypartBeforeRange claimController() validation returns the canonical code
@@ -4696,7 +4664,10 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-008:busyBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:invalidTargetBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:rangeBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:rangeBeforeNoBodypart reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
 - controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
@@ -4731,6 +4702,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:busyBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeCooldown attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:invalidTargetBeforeNoBodypart attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeCooldown attackController() validation returns the canonical code
