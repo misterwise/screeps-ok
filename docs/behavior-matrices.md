@@ -64,18 +64,21 @@ Each definition should include:
   Source-confirmed rows currently include cached removed
   `ConstructionSite.remove()`, cached removed
   `Structure.notifyWhenAttacked(enabled)`, cached removed
-  `StructureLink.transferEnergy(target, amount)`, and cached removed
-  `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
+  `StructureSpawn.spawnCreep()` / `renewCreep()` / `recycleCreep()`,
+  cached removed `StructureLink.transferEnergy(target, amount)`, and cached
+  removed `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
 - `Exclusions`
   Stale target arguments, getter or field reads on stale cached objects, and
   `Structure.destroy()` as a stale receiver behavior.
 - `Verification Notes`
   Each row must be verified against vanilla before being added. The matrix
-  asserts that the stale call is *blocked* with a runtime error matching
-  `/Could not find an object with ID|Accessed a released object/`; the exact
-  message is not load-bearing, only that the engine refuses the stale access
-  rather than letting it through. The executable case list lives in
-  `src/matrices/stale-receiver.ts`.
+  asserts only that the engine throws a runtime error on the stale call
+  (`errorKind === 'runtime'`); exact error wording is allowed to differ
+  between engines. Vanilla typically throws `Could not find an object with
+  ID ...`; xxscreeps emits `Accessed a released object from a previous
+  tick`; vanilla `StructureSpawn.recycleCreep` throws a TypeError because
+  that one method bypasses the `data()` helper. The executable case list
+  lives in `src/matrices/stale-receiver.ts`.
 
 ### STORE-OPEN
 

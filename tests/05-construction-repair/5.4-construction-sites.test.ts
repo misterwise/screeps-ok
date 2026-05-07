@@ -216,7 +216,7 @@ describe('room.createConstructionSite()', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleConstructionSite.remove()
 		`, 'runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	test('CONSTRUCTION-SITE-007 only one construction site can exist at a given position', async ({ shard }) => {

@@ -8,6 +8,9 @@ import {
 	FIND_CREEPS, TERRAIN_WALL,
 } from '../../src/index.js';
 import { spawnCreateValidationCases } from '../../src/matrices/spawn-create-validation.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const staleSpawnCreepCase = staleReceiverCases.find(row => row.key === 'spawnCreep')!;
 
 describe('StructureSpawn', () => {
 	const workerBodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
@@ -495,6 +498,28 @@ describe('StructureSpawn', () => {
 		// Creep should no longer be on the spawn tile [25,25].
 		const onSpawn = c!.pos.x === 25 && c!.pos.y === 25;
 		expect(onSpawn).toBe(false);
+	});
+
+	test(`${staleSpawnCreepCase.catalogId}:${staleSpawnCreepCase.label} stale cached StructureSpawn.spawnCreep() throws a runtime error`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			globalThis.__screepsOkStaleSpawn = spawn;
+			spawn.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			globalThis.__screepsOkStaleSpawn.spawnCreep([MOVE], 'StaleSpawnCreep')
+		`, 'runtime');
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	for (const row of spawnCreateValidationCases) {

@@ -3,6 +3,9 @@ export interface StaleReceiverCase {
 	key:
 		| 'constructionSiteRemove'
 		| 'structureNotifyWhenAttacked'
+		| 'spawnCreep'
+		| 'spawnRenewCreep'
+		| 'spawnRecycleCreep'
 		| 'linkTransferEnergy'
 		| 'towerAttack'
 		| 'towerHeal'
@@ -26,6 +29,27 @@ export const staleReceiverCases: readonly StaleReceiverCase[] = [
 		label: 'structureNotifyWhenAttacked',
 		receiver: 'Structure',
 		method: 'notifyWhenAttacked',
+	},
+	{
+		catalogId: 'UNDOC-STALERECV-001',
+		key: 'spawnCreep',
+		label: 'spawnCreep',
+		receiver: 'StructureSpawn',
+		method: 'spawnCreep',
+	},
+	{
+		catalogId: 'UNDOC-STALERECV-001',
+		key: 'spawnRenewCreep',
+		label: 'spawnRenewCreep',
+		receiver: 'StructureSpawn',
+		method: 'renewCreep',
+	},
+	{
+		catalogId: 'UNDOC-STALERECV-001',
+		key: 'spawnRecycleCreep',
+		label: 'spawnRecycleCreep',
+		receiver: 'StructureSpawn',
+		method: 'recycleCreep',
 	},
 	{
 		catalogId: 'UNDOC-STALERECV-001',

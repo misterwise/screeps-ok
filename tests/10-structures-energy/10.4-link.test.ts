@@ -340,7 +340,7 @@ describe('StructureLink', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleLink.transferEnergy(Game.getObjectById(${targetId}), 50)
 		`, 'runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	for (const row of linkValidationCases) {

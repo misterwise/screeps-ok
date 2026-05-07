@@ -4079,14 +4079,26 @@ is its own undocumented gap and out of scope here.
 - `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
   Public methods in the stale cached receiver matrix throw a runtime error
   when called on a cached `RoomObject` wrapper after its backing object has
-  been removed. The expected runtime message matches
-  `/Could not find an object with ID|Accessed a released object/`.
+  been removed. The matrix asserts `errorKind === 'runtime'` only; engines
+  may surface different error wordings (vanilla typically throws
+  `Could not find an object with ID ...`; xxscreeps emits
+  `Accessed a released object from a previous tick`;
+  `StructureSpawn.recycleCreep` on vanilla throws a TypeError because that
+  one method bypasses the `data()` helper).
+
+Stale-receiver parity tracking lands in three buckets: (1) both engines
+throw — parity, no gap; (2) one engine surfaces an ungraceful error
+wording (e.g. vanilla `recycleCreep` TypeError on `.off`) but still rejects
+the call — parity, noted in matrix prose, no gap; (3) one engine returns
+`OK` and dispatches a stale intent — real parity gap, recorded in
+`adapters/<engine>/parity.json` and `docs/<engine>-parity-gaps.md`.
 
 Coverage Notes
 - Confirmed rows currently cover cached removed `ConstructionSite.remove()`,
   cached removed `Structure.notifyWhenAttacked(enabled)`, cached removed
-  `StructureLink.transferEnergy(target, amount)`, and cached removed
-  `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
+  `StructureSpawn.spawnCreep()` / `renewCreep()` / `recycleCreep()`,
+  cached removed `StructureLink.transferEnergy(target, amount)`, and cached
+  removed `StructureTower.attack(target)` / `heal(target)` / `repair(target)`.
 - This facet owns stale receivers only. Stale object arguments, getter or
   field reads on stale cached objects, and `Structure.destroy()` as a stale
   receiver are out of scope.

@@ -5,6 +5,9 @@ import { describe, test, expect, code,
 	CREEP_CORPSE_RATE, CREEP_LIFE_TIME,
 } from '../../src/index.js';
 import { recycleCreepValidationCases } from '../../src/matrices/recycle-creep-validation.js';
+import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const staleSpawnRecycleCreepCase = staleReceiverCases.find(row => row.key === 'spawnRecycleCreep')!;
 
 describe('Spawn.recycleCreep', () => {
 	test('RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
@@ -125,6 +128,33 @@ describe('Spawn.recycleCreep', () => {
 		// After enough ticks it will be fully recycled.
 		// The recycle process drops energy at the spawn tile.
 		// Just verify the intent was accepted — full lifecycle tested below.
+	});
+
+	test(`${staleSpawnRecycleCreepCase.catalogId}:${staleSpawnRecycleCreepCase.label} stale cached StructureSpawn.recycleCreep() throws a runtime error`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			globalThis.__screepsOkStaleRecycleSpawn = spawn;
+			spawn.destroy()
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			const target = Game.getObjectById(${creepId});
+			globalThis.__screepsOkStaleRecycleSpawn.recycleCreep(target)
+		`, 'runtime');
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	for (const row of recycleCreepValidationCases) {

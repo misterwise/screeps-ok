@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2478%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2481%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2058%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,24 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2478](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 05:22 UTC |
-| 🔴 | **xxscreeps** | [2055](#xxscreeps-passing-tests) | [82](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 05:18 UTC |
+| 🟢 | **vanilla** | [2481](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 05:38 UTC |
+| 🟡 | **xxscreeps** | [2058](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 05:35 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## 🚨 Regression traps triggered
-
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code`
-
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 82 tests. That includes 36 open parity gaps covering 77 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 36 open parity gaps covering 78 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -65,7 +57,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` for hostile-owned rooms and does not reject hostile reservations with `ERR_NOT_OWNER` ahead of the rcl check. | Vanilla returns ERR_NOT_OWNER for hostile-owned rooms and hostile-reserved rooms before RCL or structure-cap checks. | [4](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `construction-site-cap-too-early` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation. | Vanilla evaluates the global site cap last — after structure type, owner, RCL, and tile placement. | [3](#xxscreeps-gap-construction-site-cap-too-early) |
 | `construction-site-bad-name-silently-dropped` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:66-72`) calls `factory.checkName(this, nameArg)`; for SPAWN with a 101-char name `checkName` (`packages/xxscreeps/mods/spawn/spawn.ts:223-227`) returns `null`, the wrapper's `if (name)` is falsy so the bad name is silently dropped, and `checkCreateConstructionSite` then re-invokes `checkName(_, null)` which auto-generates a fresh name like `Spawn1` — the chain returns OK. | Vanilla returns ERR_INVALID_ARGS for an oversized name. | [5](#xxscreeps-gap-construction-site-bad-name-silently-dropped) |
-| `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. Vanilla resolves current backing data by receiver id and throws `Could not find an object with ID...`; the matrix accepts that or any equivalent stale-access runtime error (e.g. xxscreeps's released-object check). | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
+| `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
 | `harvest-bodypart-too-early-vs-target` | Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`). | Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`. | [2](#xxscreeps-gap-harvest-bodypart-too-early-vs-target) |
 | `harvest-depleted-too-late` | `packages/xxscreeps/mods/source/game.ts:42-55` and `packages/xxscreeps/mods/mineral/mineral.ts:45-65` put the depleted (`energy <= 0` / `mineralAmount <= 0`) check in the LAST inline lambda, after `checkRange` and (for source) the hostile-room ERR_NOT_OWNER branch. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES (depleted) before ERR_NOT_IN_RANGE and before the hostile-room ERR_NOT_OWNER. | [3](#xxscreeps-gap-harvest-depleted-too-late) |
 | `harvest-mineral-cooldown-api-gate-inverted` | `packages/xxscreeps/mods/mineral/mineral.ts:61-63` reads `extractor.cooldown !== 0 && extractor.cooldown !== C.EXTRACTOR_COOLDOWN ? ERR_TIRED : OK` — only returns OK when the extractor cooldown is exactly 0 or exactly EXTRACTOR_COOLDOWN; any intermediate value (e.g. mid-decrement at 9) yields ERR_TIRED at the API layer. | Vanilla does not gate mineral harvest on intermediate extractor cooldown values at the API layer; the call returns OK and the processor handles yield/cooldown bookkeeping. | [1](#xxscreeps-gap-harvest-mineral-cooldown-api-gate-inverted) |
@@ -76,7 +68,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-not-owner-too-early` | `checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first. | Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn. | [2](#xxscreeps-gap-renew-not-owner-too-early) |
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
-| `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | 0 |
+| `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -368,8 +360,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-lab-unboost-target-owner-too-late">
-<summary><code>lab-unboost-target-owner-too-late</code> — 0 tests</summary>
+<summary><code>lab-unboost-target-owner-too-late</code> — 1 test</summary>
 
+- `lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code`
 
 </details>
 
@@ -436,7 +429,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2478 tests across 127 files</summary>
+<summary>2481 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1896,7 +1889,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (48)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -1918,6 +1911,7 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
 - StructureSpawn SPAWN-TIMING-006 creep exits the spawn tile in the chosen direction on completion
+- StructureSpawn UNDOC-STALERECV-001:spawnCreep stale cached StructureSpawn.spawnCreep() throws a runtime error
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptions spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExists spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirections spawnCreep() validation returns the canonical code
@@ -1956,7 +1950,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (32)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (33)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -1969,6 +1963,7 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
 - Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources
 - Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning
+- Spawn.renewCreep UNDOC-STALERECV-001:spawnRenewCreep stale cached StructureSpawn.renewCreep() throws a runtime error
 - Spawn.renewCreep RENEW-CREEP-011:busy renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTarget renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwner renewCreep() validation returns the canonical code
@@ -1991,12 +1986,13 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (14)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (15)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
 - Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
+- Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreep recycleCreep() validation returns the canonical code
@@ -3874,7 +3870,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2055 tests across 104 files</summary>
+<summary>2058 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5177,7 +5173,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (45)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (46)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -5199,6 +5195,7 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
 - StructureSpawn SPAWN-TIMING-006 creep exits the spawn tile in the chosen direction on completion
+- StructureSpawn UNDOC-STALERECV-001:spawnCreep stale cached StructureSpawn.spawnCreep() throws a runtime error
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptions spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExists spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirections spawnCreep() validation returns the canonical code
@@ -5234,7 +5231,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (30)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (31)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -5247,6 +5244,7 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
 - Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources
 - Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning
+- Spawn.renewCreep UNDOC-STALERECV-001:spawnRenewCreep stale cached StructureSpawn.renewCreep() throws a runtime error
 - Spawn.renewCreep RENEW-CREEP-011:busy renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTarget renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwner renewCreep() validation returns the canonical code
@@ -5267,12 +5265,13 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (14)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (15)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
 - Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
+- Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreep recycleCreep() validation returns the canonical code

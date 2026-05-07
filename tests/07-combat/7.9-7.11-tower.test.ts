@@ -278,7 +278,7 @@ describe('StructureTower', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleTower.attack(Game.getObjectById(${targetId}))
 		`, 'runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	test(`${staleTowerHealCase.catalogId}:${staleTowerHealCase.label} stale cached StructureTower.heal() throws a runtime error`, async ({ shard }) => {
@@ -307,7 +307,7 @@ describe('StructureTower', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleTower.heal(Game.getObjectById(${targetId}))
 		`, 'runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	test(`${staleTowerRepairCase.catalogId}:${staleTowerRepairCase.label} stale cached StructureTower.repair() throws a runtime error`, async ({ shard }) => {
@@ -332,7 +332,7 @@ describe('StructureTower', () => {
 		const err = await shard.expectRunPlayerError('p1', code`
 			globalThis.__screepsOkStaleTower.repair(Game.getObjectById(${roadId}))
 		`, 'runtime');
-		expect(err.engineMessage).toMatch(/Could not find an object with ID|Accessed a released object/);
+		expect(err.errorKind).toBe('runtime');
 	});
 
 	for (const row of towerAttackValidationCases) {
