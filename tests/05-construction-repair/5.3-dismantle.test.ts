@@ -4,7 +4,10 @@ import { describe, test, expect, code, body,
 	FIND_DROPPED_RESOURCES, RESOURCE_ENERGY,
 	DISMANTLE_POWER, DISMANTLE_COST, ENERGY_DECAY } from '../../src/index.js';
 import { dismantleValidationCases } from '../../src/matrices/dismantle-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const staleDismantleCase = staleArgumentCases.find(row => row.key === 'creepDismantle')!;
 
 describe('creep.dismantle()', () => {
 	test('DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure', async ({ shard }) => {
@@ -250,4 +253,28 @@ describe('creep.dismantle()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleDismantleCase.catalogId}:${staleDismantleCase.label} creep.dismantle() rejects a stale cached Structure target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, MOVE],
+		});
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: 1000,
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgDismantle = Game.getObjectById(${rampartId});
+			globalThis.__screepsOkStaleArgDismantle.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(rampartId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${creepId}).dismantle(globalThis.__screepsOkStaleArgDismantle)
+		`);
+	});
 });

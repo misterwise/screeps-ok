@@ -1,8 +1,11 @@
 import { describe, test, expect, code, body,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, ERR_NO_BODYPART,
-	WORK, CARRY, MOVE, STRUCTURE_ROAD, REPAIR_POWER, REPAIR_COST, ROAD_HITS } from '../../src/index.js';
+	WORK, CARRY, MOVE, STRUCTURE_ROAD, STRUCTURE_RAMPART, REPAIR_POWER, REPAIR_COST, ROAD_HITS } from '../../src/index.js';
 import { repairValidationCases } from '../../src/matrices/repair-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const staleRepairCase = staleArgumentCases.find(row => row.key === 'creepRepair')!;
 
 describe('creep.repair()', () => {
 	test('REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick', async ({ shard }) => {
@@ -269,4 +272,32 @@ describe('creep.repair()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleRepairCase.catalogId}:${staleRepairCase.label} creep.repair() rejects a stale cached Structure target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: 1000,
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgRampart = Game.getObjectById(${rampartId});
+			globalThis.__screepsOkStaleArgRampart.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(rampartId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${creepId}).repair(globalThis.__screepsOkStaleArgRampart)
+		`);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(50);
+	});
 });

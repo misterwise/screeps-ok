@@ -269,6 +269,12 @@ Coverage Notes
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
+- `MOVE-PULL-012` `behavior` `verified_vanilla`
+  When the puller dies from `ticksToLive === 1` on the same tick a pull
+  resolves, the pull still completes — the pulled creep moves into the
+  puller's old tile — and the pulled creep is left holding the move's
+  fatigue. A pulled creep with no `MOVE` parts then has no way to clear
+  that fatigue on subsequent ticks.
 
 ### 1.6 Collision Resolution
 - `MOVE-COLLISION-001` `behavior` `verified_vanilla`
@@ -4124,6 +4130,56 @@ Framework Notes
 - Entries asserting absence (e.g. `UNDOC-MEMJSON-001` stripping a function)
   must compare against a control fixture that would have persisted a
   non-stripped value, to distinguish "stripped" from "never written."
+
+### 27.13 Stale Cached Object Arguments
+
+Bots can keep heap references to game-object wrappers across ticks and pass
+them as target arguments to action methods on a fresh receiver in a later
+tick. When the cached argument's backing object has been removed before the
+call, vanilla rejects the call without dispatching an intent — typically by
+returning `ERR_INVALID_TARGET` once the live target lookup fails, though
+some methods throw a runtime error before validation runs. The matrix
+verifies that stale-target access is *rejected* with no observable side
+effect; the engine-specific rejection shape (runtime throw vs return code)
+is not load-bearing.
+
+- `UNDOC-STALEARG-001` `matrix` `verified_vanilla`
+  Public action methods in the stale cached argument matrix reject the
+  call when invoked on a fresh receiver with a cached `RoomObject` wrapper
+  whose backing object has been removed. Each row asserts (a) the call did
+  not return `OK` (it threw a runtime error or returned a non-OK code) and
+  (b) the action's observable effect did not occur (no matching
+  `Room.getEventLog()` entry, no state change on the fresh receiver
+  consistent with the action having run). Engines may surface different
+  rejection shapes; the matrix accepts any rejection.
+
+Stale-argument parity tracking lands in three buckets: (1) both engines
+reject — parity, no gap; (2) one engine surfaces an ungraceful rejection
+shape (e.g. runtime throw where the other returns `ERR_INVALID_TARGET`)
+but still rejects the call — parity, noted in matrix prose, no gap;
+(3) one engine returns `OK` and dispatches a stale intent — real parity
+gap, recorded in `adapters/<engine>/parity.json` and
+`docs/<engine>-parity-gaps.md`.
+
+Coverage Notes
+- Confirmed rows are listed in `src/matrices/stale-argument.ts`.
+- This facet owns stale target *arguments* only. Stale receivers (the
+  method's `this`) are owned by §27.12; stale getter / field reads on
+  cached objects are out of scope; live cross-tick wrapper access (where
+  the backing object is still alive) is its own undocumented gap and
+  out of scope here.
+- The argument is captured via `globalThis` reference in tick N, the
+  backing object is removed via owner code (destroy / suicide / pickup)
+  in an intervening tick, and the action method is invoked on a fresh
+  receiver in a later tick with the cached wrapper.
+
+Framework Notes
+- The `simulate()` public API is sufficient for all entries in this
+  matrix; no adapter internals are required.
+- "No effect" assertion: prefer `Room.getEventLog()` absence of the
+  action event for the fresh receiver in the call's tick. Add per-row
+  state assertions (e.g. unchanged store, unchanged hits) when the engine
+  surface lacks an event entry for the action being asserted.
 
 ---
 

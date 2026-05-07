@@ -6,8 +6,11 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { recycleCreepValidationCases } from '../../src/matrices/recycle-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
 const staleSpawnRecycleCreepCase = staleReceiverCases.find(row => row.key === 'spawnRecycleCreep')!;
+const staleArgSpawnRecycleCreepCase = staleArgumentCases.find(row => row.key === 'spawnRecycleCreep')!;
 
 describe('Spawn.recycleCreep', () => {
 	test('RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
@@ -189,4 +192,27 @@ describe('Spawn.recycleCreep', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleArgSpawnRecycleCreepCase.catalogId}:${staleArgSpawnRecycleCreepCase.label} StructureSpawn.recycleCreep() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [WORK, CARRY, MOVE], name: 'RecycleTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgRecycleCreep = Game.getObjectById(${creepId});
+			globalThis.__screepsOkStaleArgRecycleCreep.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(creepId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${spawnId}).recycleCreep(globalThis.__screepsOkStaleArgRecycleCreep)
+		`);
+	});
 });

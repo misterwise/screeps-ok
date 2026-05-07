@@ -1,4 +1,11 @@
 import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_INVALID_TARGET, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, CARRY, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN } from '../../src/index.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
+
+const staleAttackCase = staleArgumentCases.find(row => row.key === 'creepAttackCreep')!;
+const staleHealCase = staleArgumentCases.find(row => row.key === 'creepHeal')!;
+const staleRangedAttackCase = staleArgumentCases.find(row => row.key === 'creepRangedAttack')!;
+const staleRangedHealCase = staleArgumentCases.find(row => row.key === 'creepRangedHeal')!;
 import { combatHealValidationCases } from '../../src/matrices/combat-heal-validation.js';
 import { combatMeleeValidationCases } from '../../src/matrices/combat-melee-validation.js';
 import { combatRangedValidationCases } from '../../src/matrices/combat-ranged-validation.js';
@@ -316,6 +323,35 @@ describe('creep.attack()', () => {
 		});
 	}
 
+	test(`${staleAttackCase.catalogId}:${staleAttackCase.label} creep.attack() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		// p1 caches the hostile target wrapper. p2 suicides the target in the
+		// same tick — runPlayers preserves same-tick observation, so p1 sees the
+		// live target while it captures the wrapper.
+		await shard.runPlayers({
+			p1: code`
+				globalThis.__screepsOkStaleArgAttackTarget = Game.getObjectById(${targetId});
+				null
+			`,
+			p2: code`Game.getObjectById(${targetId}).suicide()`,
+		});
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${attackerId}).attack(globalThis.__screepsOkStaleArgAttackTarget)
+		`);
+	});
 });
 
 describe('creep.rangedAttack()', () => {
@@ -535,6 +571,33 @@ describe('creep.rangedAttack()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleRangedAttackCase.catalogId}:${staleRangedAttackCase.label} creep.rangedAttack() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 27], owner: 'p2', body: [TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayers({
+			p1: code`
+				globalThis.__screepsOkStaleArgRangedAttackTarget = Game.getObjectById(${targetId});
+				null
+			`,
+			p2: code`Game.getObjectById(${targetId}).suicide()`,
+		});
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${attackerId}).rangedAttack(globalThis.__screepsOkStaleArgRangedAttackTarget)
+		`);
+	});
 });
 
 describe('creep.heal()', () => {
@@ -966,4 +1029,48 @@ describe('creep.heal()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleHealCase.catalogId}:${staleHealCase.label} creep.heal() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const healerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [HEAL, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [TOUGH, MOVE], name: 'HealTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgHealTarget = Game.getObjectById(${targetId});
+			globalThis.__screepsOkStaleArgHealTarget.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${healerId}).heal(globalThis.__screepsOkStaleArgHealTarget)
+		`);
+	});
+
+	test(`${staleRangedHealCase.catalogId}:${staleRangedHealCase.label} creep.rangedHeal() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const healerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [HEAL, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 27], owner: 'p1', body: [TOUGH, MOVE], name: 'RangedHealTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgRangedHealTarget = Game.getObjectById(${targetId});
+			globalThis.__screepsOkStaleArgRangedHealTarget.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${healerId}).rangedHeal(globalThis.__screepsOkStaleArgRangedHealTarget)
+		`);
+	});
 });

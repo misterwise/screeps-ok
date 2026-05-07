@@ -5,7 +5,7 @@ import { describe, test, expect, code, body,
 	FIND_CREEPS, FIND_DROPPED_RESOURCES,
 	RESOURCE_ENERGY,
 	STRUCTURE_CONTAINER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_TERMINAL,
-	STRUCTURE_LAB, STRUCTURE_NUKER,
+	STRUCTURE_LAB, STRUCTURE_NUKER, STRUCTURE_TOWER,
 	CARRY_CAPACITY, ENERGY_DECAY, SPAWN_ENERGY_CAPACITY,
 	LAB_MINERAL_CAPACITY,
 	PWR_DISRUPT_TERMINAL,
@@ -14,7 +14,11 @@ import { describe, test, expect, code, body,
 import { dropValidationCases } from '../../src/matrices/drop-validation.js';
 import { pickupValidationCases } from '../../src/matrices/pickup-validation.js';
 import { withdrawValidationCases } from '../../src/matrices/withdraw-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const staleWithdrawStructureCase = staleArgumentCases.find(row => row.key === 'creepWithdrawStructure')!;
+const stalePickupCase = staleArgumentCases.find(row => row.key === 'creepPickup')!;
 
 describe('creep.withdraw()', () => {
 	test('WITHDRAW-001 withdraws energy from container', async ({ shard }) => {
@@ -474,6 +478,33 @@ describe('creep.withdraw()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleWithdrawStructureCase.catalogId}:${staleWithdrawStructureCase.label} creep.withdraw() rejects a stale cached Structure target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 100 },
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgWithdrawTower = Game.getObjectById(${towerId});
+			globalThis.__screepsOkStaleArgWithdrawTower.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(towerId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${creepId}).withdraw(globalThis.__screepsOkStaleArgWithdrawTower, RESOURCE_ENERGY)
+		`);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy ?? 0).toBe(0);
+	});
 });
 
 describe('creep.drop()', () => {
@@ -1046,6 +1077,36 @@ describe('creep.pickup()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${stalePickupCase.catalogId}:${stalePickupCase.label} creep.pickup() rejects a stale cached Resource target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const carrierId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE], name: 'Carrier',
+		});
+		const cleanerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [CARRY, MOVE], name: 'Cleaner',
+		});
+		const dropId = await shard.placeDroppedResource('W1N1', {
+			pos: [25, 26], resourceType: RESOURCE_ENERGY, amount: 50,
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgResource = Game.getObjectById(${dropId});
+			Game.getObjectById(${cleanerId}).pickup(globalThis.__screepsOkStaleArgResource)
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(dropId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${carrierId}).pickup(globalThis.__screepsOkStaleArgResource)
+		`);
+
+		const carrier = await shard.expectObject(carrierId, 'creep');
+		expect(carrier.store.energy ?? 0).toBe(0);
+	});
 });
 
 describe('Dropped resource decay', () => {

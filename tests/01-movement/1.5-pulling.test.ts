@@ -3,7 +3,10 @@ import { describe, test, expect, code, limitationGated,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
 import { movePullValidationCases } from '../../src/matrices/move-pull-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const stalePullCase = staleArgumentCases.find(row => row.key === 'creepPull')!;
 
 describe('creep.pull()', () => {
 	test('MOVE-PULL-001 pull() on an adjacent friendly creep returns OK', async ({ shard }) => {
@@ -380,4 +383,101 @@ describe('creep.pull()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test('MOVE-PULL-012 fatigue routing when the puller dies of TTL on the same tick a pull resolves', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Carrier (puller): 2 MOVE — zero own fatigue contribution, full
+		// MOVE clearing. TTL=2 means: tick 1 (T) carrier acts with TTL=1
+		// computed at observe time; tick 2 (T+1) the carrier dies.
+		const carrierId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE, MOVE], name: 'carrier',
+			ticksToLive: 2,
+		});
+		// Harvester (pulled): 2 WORK — 2 weighted parts, no MOVE. Plain
+		// terrain fatigue from a single move = 2 weighted * 2 = 4. With no
+		// MOVE parts, harvester cannot clear fatigue itself.
+		const harvesterId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, WORK], name: 'harvester',
+		});
+
+		// Tick T: carrier still has remaining TTL — pull resolves normally.
+		// Harvester's move fatigue routes up the pull chain to the carrier;
+		// the carrier's MOVE parts clear it. Harvester ends T at fatigue 0.
+		await shard.runPlayer('p1', code`
+			const carrier = Game.creeps['carrier'];
+			const harvester = Game.creeps['harvester'];
+			carrier.pull(harvester);
+			carrier.move(TOP);
+			harvester.move(carrier);
+		`);
+
+		const carrierMid = await shard.expectObject(carrierId, 'creep');
+		const harvesterMid = await shard.expectObject(harvesterId, 'creep');
+		expect(carrierMid.pos.y).toBe(24);
+		expect(harvesterMid.pos.y).toBe(25);
+		expect(carrierMid.fatigue).toBe(0);
+		expect(harvesterMid.fatigue).toBe(0);
+		// One tick has passed; carrier's TTL has decremented. The next tick
+		// is the carrier's last.
+		expect(carrierMid.ticksToLive).toBe(1);
+
+		// Tick T+1: the carrier's TTL hits 0 mid-tick. Both move intents are
+		// queued and the pull is set up before the carrier is removed; the
+		// harvester moves into the carrier's old tile. The question this
+		// test pins down is where the harvester's move fatigue ends up when
+		// the pull-chain head dies during the same tick.
+		await shard.runPlayer('p1', code`
+			const carrier = Game.creeps['carrier'];
+			const harvester = Game.creeps['harvester'];
+			if (carrier) {
+				carrier.pull(harvester);
+				carrier.move(TOP);
+				harvester.move(carrier);
+			}
+		`);
+
+		// Carrier dies — gone before the next tick.
+		expect(await shard.getObject(carrierId)).toBeNull();
+
+		// Harvester moved into carrier's old tile (the pull resolved before
+		// the carrier was buried).
+		const harvesterAfter = await shard.expectObject(harvesterId, 'creep');
+		expect(harvesterAfter.pos.x).toBe(25);
+		expect(harvesterAfter.pos.y).toBe(24);
+		// Harvester body weight (2 WORK) * plain fatigue rate (2) = 4.
+		// On vanilla the chain walk in `_add-fatigue` cannot reach the
+		// already-buried carrier, so the harvester is left holding the
+		// move's fatigue.
+		expect(harvesterAfter.fatigue).toBe(4);
+
+		// One more tick: harvester has no MOVE parts to clear fatigue, so
+		// it remains stuck at 4 indefinitely.
+		await shard.tick();
+		const harvesterStuck = await shard.expectObject(harvesterId, 'creep');
+		expect(harvesterStuck.fatigue).toBe(4);
+	});
+
+	test(`${stalePullCase.catalogId}:${stalePullCase.label} creep.pull() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const pullerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE, MOVE], name: 'PullPuller',
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [WORK], name: 'PullTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgPullTarget = Game.getObjectById(${targetId});
+			globalThis.__screepsOkStaleArgPullTarget.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${pullerId}).pull(globalThis.__screepsOkStaleArgPullTarget)
+		`);
+	});
 });

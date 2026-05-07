@@ -1,7 +1,10 @@
 import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
 	WORK, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_SPAWN, BUILD_POWER } from '../../src/index.js';
 import { buildValidationCases } from '../../src/matrices/build-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const staleBuildCase = staleArgumentCases.find(row => row.key === 'creepBuild')!;
 
 describe('creep.build()', () => {
 	test('BUILD-001 increases site progress by BUILD_POWER per WORK part', async ({ shard }) => {
@@ -293,4 +296,34 @@ describe('creep.build()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleBuildCase.catalogId}:${staleBuildCase.label} creep.build() rejects a stale cached ConstructionSite target`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgSite = Game.getObjectById(${siteId});
+			globalThis.__screepsOkStaleArgSite.remove()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(siteId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${creepId}).build(globalThis.__screepsOkStaleArgSite)
+		`);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(50);
+	});
 });

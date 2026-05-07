@@ -79,6 +79,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
 - Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
 
+### pull-fatigue-evaporates-on-puller-ttl-death
+
+- Tests: MOVE-PULL-012
+- Status: CONFIRMED.
+- Cause: xxscreeps's pull-aware fatigue accounting runs inside the `move` intent processor (`packages/xxscreeps/mods/creep/processor.ts:221-227`), which walks the `pulledToPuller` chain and adds the move's fatigue to the chain head before any per-object tick processor runs. When the puller is on its last tick (`#ageTime <= Game.time`), `registerObjectTickProcessor` (`processor.ts:332-338`) calls `buryCreep` and removes the puller after the fatigue has already landed on it, so the fatigue evaporates with the corpse. Vanilla's `_add-fatigue` chain walk (`@screeps/engine/src/processor/intents/creeps/_add-fatigue.js:24-26`) instead runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and deletes the puller from `roomObjects`. If the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller and the move's fatigue lands on the harvester instead — visibly stuck on a no-MOVE pulled creep.
+- Plan: route pull-aware fatigue through the per-creep tick processor (after the death check), or have `buryCreep` repoint the chain so the head's residual is left on the surviving pulled creep. Either approach reproduces the vanilla observable that the harvester ends the tick holding the move's fatigue.
+
 ### construction-site-foreign-room-wrong-error
 
 - Tests: CONSTRUCTION-SITE-011 (notOwner rows), CONSTRUCTION-SITE-012, CONSTRUCTION-SITE-013, CONSTRUCTION-SITE-014.
@@ -92,6 +99,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED.
 - Cause: `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has been removed. Other receiver methods (`Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`) throw xxscreeps's `Accessed a released object from a previous tick` runtime error on stale wrappers, which the matrix accepts. `ConstructionSite.remove()` somehow bypasses that check — the schema-backed `#user` read inside `checkRemove` does not throw the released-object error the way the same pattern does for the other receivers — and the call proceeds through to `intents.save`.
 - Plan: gate `ConstructionSite.remove()` on the same released-object / missing-backing-data check that the other receiver methods already trigger, so a stale cached site rejects the call instead of queueing a duplicate remove intent.
+
+### stale-pickup-target-allowed
+
+- Tests: UNDOC-STALEARG-001:creepPickup.
+- Status: CONFIRMED.
+- Cause: `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads only `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `target.pos` for range, neither of which triggers the guard either. `intents.save(this, 'pickup', resource.id)` then queues the intent against the cached id; the processor finds no backing resource and silently no-ops. The other 17 stale-argument matrix rows reject the call because their per-target checks read schema-backed fields (e.g. `target.store` for transfer/withdraw, `target.hits` for attack/heal/repair) that do trip the guard — `pickup` happens to be the only row whose canonical check chain doesn't.
+- Plan: have `checkTarget` (or `checkPickup` directly) read a schema-backed field of the target so a released wrapper trips the guard uniformly. The architectural fix is to make `checkTarget` raise the released-object error for stale wrappers, which closes the entire stale-argument axis at once rather than per-method.
 
 ### look-energy-alias-not-registered
 

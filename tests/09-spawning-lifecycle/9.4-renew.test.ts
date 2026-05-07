@@ -8,8 +8,11 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { renewCreepValidationCases } from '../../src/matrices/renew-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
 const staleSpawnRenewCreepCase = staleReceiverCases.find(row => row.key === 'spawnRenewCreep')!;
+const staleArgSpawnRenewCreepCase = staleArgumentCases.find(row => row.key === 'spawnRenewCreep')!;
 
 describe('Spawn.renewCreep', () => {
 	test('RENEW-CREEP-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
@@ -401,4 +404,27 @@ describe('Spawn.renewCreep', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleArgSpawnRenewCreepCase.catalogId}:${staleArgSpawnRenewCreepCase.label} StructureSpawn.renewCreep() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: [MOVE], name: 'RenewTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgRenewCreep = Game.getObjectById(${creepId});
+			globalThis.__screepsOkStaleArgRenewCreep.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(creepId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${spawnId}).renewCreep(globalThis.__screepsOkStaleArgRenewCreep)
+		`);
+	});
 });

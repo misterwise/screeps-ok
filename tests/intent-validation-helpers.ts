@@ -1,6 +1,8 @@
 import type { ShardFixture } from '../src/fixture.js';
+import type { PlayerCode } from '../src/code.js';
+import type { PlayerReturnValue } from '../src/adapter.js';
 import {
-	code, CARRY, FIND_CREEPS, MOVE, STRUCTURE_SPAWN, WORK,
+	code, CARRY, FIND_CREEPS, MOVE, OK, RunPlayerError, STRUCTURE_SPAWN, WORK,
 } from '../src/index.js';
 
 interface BusyCreepOptions {
@@ -74,4 +76,28 @@ export async function placeFatiguedCreep(shard: ShardFixture, options: FatiguedC
 	const creep = await shard.expectObject(creepId, 'creep');
 	if (creep.fatigue <= 0) throw new Error('placeFatiguedCreep: creep did not become fatigued');
 	return creepId;
+}
+
+export async function expectStaleArgumentRejected(
+	shard: ShardFixture,
+	userId: string,
+	playerCode: PlayerCode,
+): Promise<void> {
+	let threw = false;
+	let rc: PlayerReturnValue | undefined;
+	try {
+		rc = await shard.runPlayer(userId, playerCode);
+	} catch (err) {
+		if (err instanceof RunPlayerError) {
+			threw = true;
+		} else {
+			throw err;
+		}
+	}
+	if (!threw && rc === OK) {
+		throw new Error(
+			`expectStaleArgumentRejected: runPlayer returned OK; ` +
+			`expected runtime throw or non-OK code from a stale-argument call`,
+		);
+	}
 }

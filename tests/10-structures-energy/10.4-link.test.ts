@@ -1,8 +1,11 @@
 import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
 import { linkValidationCases } from '../../src/matrices/link-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
 const staleLinkTransferCase = staleReceiverCases.find(row => row.key === 'linkTransferEnergy')!;
+const staleArgLinkTransferCase = staleArgumentCases.find(row => row.key === 'linkTransferEnergy')!;
 
 describe('StructureLink', () => {
 	test('LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss', async ({ shard }) => {
@@ -390,4 +393,33 @@ describe('StructureLink', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleArgLinkTransferCase.catalogId}:${staleArgLinkTransferCase.label} StructureLink.transferEnergy() rejects a stale cached Link target`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
+		});
+		const sourceId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 400 },
+		});
+		const targetId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgLink = Game.getObjectById(${targetId});
+			globalThis.__screepsOkStaleArgLink.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${sourceId}).transferEnergy(globalThis.__screepsOkStaleArgLink, 50)
+		`);
+		const source = await shard.expectStructure(sourceId, STRUCTURE_LINK);
+		expect(source.store.energy).toBe(400);
+	});
 });

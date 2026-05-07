@@ -1,13 +1,18 @@
-import { describe, test, expect, code, OK, ERR_NOT_ENOUGH_ENERGY, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_ENOUGH_ENERGY, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD, STRUCTURE_RAMPART } from '../../src/index.js';
 import { towerAttackValidationCases } from '../../src/matrices/tower-attack-validation.js';
 import { towerHealValidationCases } from '../../src/matrices/tower-heal-validation.js';
 import { towerRepairValidationCases } from '../../src/matrices/tower-repair-validation.js';
 import { towerAttackRangeCases, towerHealRangeCases, towerRepairRangeCases } from '../../src/matrices/tower-range.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
 const staleTowerAttackCase = staleReceiverCases.find(row => row.key === 'towerAttack')!;
 const staleTowerHealCase = staleReceiverCases.find(row => row.key === 'towerHeal')!;
 const staleTowerRepairCase = staleReceiverCases.find(row => row.key === 'towerRepair')!;
+const staleArgTowerAttackCase = staleArgumentCases.find(row => row.key === 'towerAttack')!;
+const staleArgTowerHealCase = staleArgumentCases.find(row => row.key === 'towerHeal')!;
+const staleArgTowerRepairCase = staleArgumentCases.find(row => row.key === 'towerRepair')!;
 
 describe('StructureTower', () => {
 	for (const { range, expectedAmount } of towerAttackRangeCases) {
@@ -430,4 +435,85 @@ describe('StructureTower', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleArgTowerAttackCase.catalogId}:${staleArgTowerAttackCase.label} StructureTower.attack() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p2', body: [TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		await shard.runPlayers({
+			p1: code`
+				globalThis.__screepsOkStaleArgTowerAttack = Game.getObjectById(${targetId});
+				null
+			`,
+			p2: code`Game.getObjectById(${targetId}).suicide()`,
+		});
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${towerId}).attack(globalThis.__screepsOkStaleArgTowerAttack)
+		`);
+		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+		expect(tower.store.energy).toBe(1000);
+	});
+
+	test(`${staleArgTowerHealCase.catalogId}:${staleArgTowerHealCase.label} StructureTower.heal() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 28], owner: 'p1', body: [TOUGH, MOVE], name: 'TowerHealTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgTowerHeal = Game.getObjectById(${targetId});
+			globalThis.__screepsOkStaleArgTowerHeal.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(targetId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${towerId}).heal(globalThis.__screepsOkStaleArgTowerHeal)
+		`);
+		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+		expect(tower.store.energy).toBe(1000);
+	});
+
+	test(`${staleArgTowerRepairCase.catalogId}:${staleArgTowerRepairCase.label} StructureTower.repair() rejects a stale cached Structure target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 1000 },
+		});
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 28], structureType: STRUCTURE_RAMPART, owner: 'p1',
+			hits: 1000,
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgTowerRepair = Game.getObjectById(${rampartId});
+			globalThis.__screepsOkStaleArgTowerRepair.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(rampartId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${towerId}).repair(globalThis.__screepsOkStaleArgTowerRepair)
+		`);
+		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+		expect(tower.store.energy).toBe(1000);
+	});
 });

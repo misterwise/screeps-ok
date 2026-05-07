@@ -80,6 +80,39 @@ Each definition should include:
   that one method bypasses the `data()` helper. The executable case list
   lives in `src/matrices/stale-receiver.ts`.
 
+### STALE-ARGUMENT
+
+- `Catalog Entries`
+  `UNDOC-STALEARG-001`
+- `Canonical Source`
+  Vanilla runtime behavior for public action methods called on a fresh
+  receiver with a cached `RoomObject` wrapper passed as a target argument
+  whose backing object has been removed before the call.
+- `Dimensions`
+  receiver class, public method, target argument class, setup removal path
+- `Applicability`
+  Source-confirmed rows currently span `Creep` action methods that take a
+  target argument (`transfer`, `withdraw`, `attack`, `heal`, `rangedAttack`,
+  `rangedHeal`, `repair`, `dismantle`, `build`, `pickup`, `pull`) and
+  structure target-takers (`StructureTower.attack` / `heal` / `repair`,
+  `StructureLink.transferEnergy`, `StructureSpawn.renewCreep` /
+  `recycleCreep`).
+- `Exclusions`
+  Stale receivers (the method's `this`) are owned by `UNDOC-STALERECV-001`;
+  stale getter / field reads on cached objects are out of scope; live
+  cross-tick wrapper access (where the backing object is still alive) is
+  its own undocumented gap and out of scope here. Methods whose only
+  object-typed arguments target singleton room objects that cannot be
+  removed (`Source`, `Mineral`, `StructureController`) are excluded.
+- `Verification Notes`
+  Each row must be verified against vanilla before being added. The matrix
+  asserts (a) the call did not return `OK` (it threw a runtime error or
+  returned a non-OK code) and (b) no observable side effect occurred (no
+  matching `Room.getEventLog()` entry, no state change consistent with
+  the action having run). Engines may surface different rejection shapes;
+  the matrix accepts any rejection. The executable case list lives in
+  `src/matrices/stale-argument.ts`.
+
 ### STORE-OPEN
 
 - `Catalog Entries`

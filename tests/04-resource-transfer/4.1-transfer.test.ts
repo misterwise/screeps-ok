@@ -3,12 +3,16 @@ import { describe, test, expect, code, body,
 	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_FULL, ERR_BUSY,
 	CARRY, MOVE, WORK,
 	RESOURCE_ENERGY,
-	STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_LAB, STRUCTURE_CONTROLLER,
+	STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_LAB, STRUCTURE_CONTROLLER, STRUCTURE_EXTENSION,
 	SPAWN_ENERGY_CAPACITY, LAB_MINERAL_CAPACITY, CARRY_CAPACITY,
 	UPGRADE_CONTROLLER_POWER,
 } from '../../src/index.js';
 import { transferValidationCases } from '../../src/matrices/transfer-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+
+const staleTransferStructureCase = staleArgumentCases.find(row => row.key === 'creepTransferStructure')!;
+const staleTransferCreepCase = staleArgumentCases.find(row => row.key === 'creepTransferCreep')!;
 
 describe('creep.transfer()', () => {
 	test('TRANSFER-001 transfers energy from the creep store to the target store', async ({ shard }) => {
@@ -395,4 +399,60 @@ describe('creep.transfer()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test(`${staleTransferStructureCase.catalogId}:${staleTransferStructureCase.label} creep.transfer() rejects a stale cached Structure target`, async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const extensionId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgExtension = Game.getObjectById(${extensionId});
+			globalThis.__screepsOkStaleArgExtension.destroy()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(extensionId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${creepId}).transfer(globalThis.__screepsOkStaleArgExtension, RESOURCE_ENERGY)
+		`);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(50);
+	});
+
+	test(`${staleTransferCreepCase.catalogId}:${staleTransferCreepCase.label} creep.transfer() rejects a stale cached Creep target`, async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const giverId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const receiverId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [CARRY, MOVE], name: 'TransferTarget',
+		});
+		await shard.tick();
+
+		const rc1 = await shard.runPlayer('p1', code`
+			globalThis.__screepsOkStaleArgCreep = Game.getObjectById(${receiverId});
+			globalThis.__screepsOkStaleArgCreep.suicide()
+		`);
+		expect(rc1).toBe(OK);
+		expect(await shard.getObject(receiverId)).toBeNull();
+
+		await expectStaleArgumentRejected(shard, 'p1', code`
+			Game.getObjectById(${giverId}).transfer(globalThis.__screepsOkStaleArgCreep, RESOURCE_ENERGY)
+		`);
+
+		const giver = await shard.expectObject(giverId, 'creep');
+		expect(giver.store.energy).toBe(50);
+	});
 });

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2481%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2058%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2499%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2075%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2481](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 05:38 UTC |
-| 🟡 | **xxscreeps** | [2058](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 05:35 UTC |
+| 🟢 | **vanilla** | [2499](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 23:29 UTC |
+| 🟡 | **xxscreeps** | [2075](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 23:25 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 36 open parity gaps covering 78 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 38 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -58,6 +58,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `construction-site-cap-too-early` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation. | Vanilla evaluates the global site cap last — after structure type, owner, RCL, and tile placement. | [3](#xxscreeps-gap-construction-site-cap-too-early) |
 | `construction-site-bad-name-silently-dropped` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:66-72`) calls `factory.checkName(this, nameArg)`; for SPAWN with a 101-char name `checkName` (`packages/xxscreeps/mods/spawn/spawn.ts:223-227`) returns `null`, the wrapper's `if (name)` is falsy so the bad name is silently dropped, and `checkCreateConstructionSite` then re-invokes `checkName(_, null)` which auto-generates a fresh name like `Spawn1` — the chain returns OK. | Vanilla returns ERR_INVALID_ARGS for an oversized name. | [5](#xxscreeps-gap-construction-site-bad-name-silently-dropped) |
 | `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
+| `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `harvest-bodypart-too-early-vs-target` | Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`). | Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`. | [2](#xxscreeps-gap-harvest-bodypart-too-early-vs-target) |
 | `harvest-depleted-too-late` | `packages/xxscreeps/mods/source/game.ts:42-55` and `packages/xxscreeps/mods/mineral/mineral.ts:45-65` put the depleted (`energy <= 0` / `mineralAmount <= 0`) check in the LAST inline lambda, after `checkRange` and (for source) the hostile-room ERR_NOT_OWNER branch. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES (depleted) before ERR_NOT_IN_RANGE and before the hostile-room ERR_NOT_OWNER. | [3](#xxscreeps-gap-harvest-depleted-too-late) |
 | `harvest-mineral-cooldown-api-gate-inverted` | `packages/xxscreeps/mods/mineral/mineral.ts:61-63` reads `extractor.cooldown !== 0 && extractor.cooldown !== C.EXTRACTOR_COOLDOWN ? ERR_TIRED : OK` — only returns OK when the extractor cooldown is exactly 0 or exactly EXTRACTOR_COOLDOWN; any intermediate value (e.g. mid-decrement at 9) yields ERR_TIRED at the API layer. | Vanilla does not gate mineral harvest on intermediate extractor cooldown values at the API layer; the call returns OK and the processor handles yield/cooldown bookkeeping. | [1](#xxscreeps-gap-harvest-mineral-cooldown-api-gate-inverted) |
@@ -69,6 +70,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
 | `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
+| `pull-fatigue-evaporates-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves, xxscreeps adds the pulled creep's move fatigue to the puller during the move intent (`mods/creep/processor.ts:221-227`, walking `pulledToPuller` to the chain head) — before the per-creep tick processor runs `buryCreep` (`mods/creep/processor.ts:332-338`). The carrier is buried with the fatigue, so the surviving harvester ends the tick at fatigue 0. | Vanilla's `_add-fatigue` chain walk runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and removes the puller from `roomObjects`. When the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller, so the move's fatigue lands on the harvester and stays stuck (no MOVE parts to clear). | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -278,6 +280,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-stale-pickup-target-allowed">
+<summary><code>stale-pickup-target-allowed</code> — 1 test</summary>
+
+- `creep.pickup() UNDOC-STALEARG-001:creepPickup creep.pickup() rejects a stale cached Resource target`
+
+</details>
+
 <details id="xxscreeps-gap-harvest-bodypart-too-early-vs-target">
 <summary><code>harvest-bodypart-too-early-vs-target</code> — 2 tests</summary>
 
@@ -366,6 +375,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-pull-fatigue-evaporates-on-puller-ttl-death">
+<summary><code>pull-fatigue-evaporates-on-puller-ttl-death</code> — 0 tests</summary>
+
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -429,7 +444,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2481 tests across 127 files</summary>
+<summary>2499 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -676,7 +691,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (22)
+**`tests/01-movement/1.5-pulling.test.ts`** (23)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -700,6 +715,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
 **`tests/01-movement/1.6-collision.test.ts`** (7)
 
@@ -911,7 +927,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (69)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (71)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -982,8 +998,10 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:fullBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:fullBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughAmountBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
+- creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (143)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (145)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -1078,6 +1096,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:fullBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:fullBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:fullAmountBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() UNDOC-STALEARG-001:creepWithdrawStructure creep.withdraw() rejects a stale cached Structure target
 - creep.drop() DROP-001 drop() removes the dropped amount from the creep store
 - creep.drop() DROP-001 drop() creates a dropped resource at the creep position
 - creep.drop() DROP-002 drops partial amount
@@ -1123,13 +1142,14 @@ Click a count to jump to the affected test list.
 - creep.pickup() PICKUP-010:invalidTargetBeforeFull pickup() validation returns the canonical code
 - creep.pickup() PICKUP-010:invalidTargetBeforeRange pickup() validation returns the canonical code
 - creep.pickup() PICKUP-010:fullBeforeRange pickup() validation returns the canonical code
+- creep.pickup() UNDOC-STALEARG-001:creepPickup creep.pickup() rejects a stale cached Resource target
 - Dropped resource decay DROP-DECAY-001 dropped energy decays by ceil(amount / ENERGY_DECAY) per tick
 - Dropped resource decay DROP-DECAY-002 dropped resource disappears when amount reaches 0
 - Dropped resource decay DROP-DECAY-004 harvesting above carry capacity drops the overflow on the creep tile
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (37)
+**`tests/05-construction-repair/5.1-build.test.ts`** (38)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
@@ -1168,8 +1188,9 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:invalidTargetBeforeRange build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code
+- creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target
 
-**`tests/05-construction-repair/5.2-repair.test.ts`** (30)
+**`tests/05-construction-repair/5.2-repair.test.ts`** (31)
 
 - creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
 - creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
@@ -1201,8 +1222,9 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:notEnoughBeforeInvalidTarget repair() validation returns the canonical code
 - creep.repair() REPAIR-010:notEnoughBeforeRange repair() validation returns the canonical code
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
+- creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (23)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (24)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
@@ -1227,6 +1249,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
+- creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
 **`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
 
@@ -1531,7 +1554,7 @@ Click a count to jump to the affected test list.
 
 - StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (86)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
 - creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
@@ -1557,6 +1580,7 @@ Click a count to jump to the affected test list.
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeInvalidTarget attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:invalidTargetBeforeRange attack() validation returns the canonical code
+- creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target
 - creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
 - creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
@@ -1578,6 +1602,7 @@ Click a count to jump to the affected test list.
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeRange rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:invalidTargetBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
 - creep.heal() COMBAT-HEAL-003 heal accepts any creep target regardless of ownership
@@ -1619,6 +1644,8 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypartBeforeInvalidTarget rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypartBeforeRange rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:invalidTargetBeforeRange rangedHeal() validation returns the canonical code
+- creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target
+- creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target
 
 **`tests/07-combat/7.12-tower-intent.test.ts`** (5)
 
@@ -1719,7 +1746,7 @@ Click a count to jump to the affected test list.
 - Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
 - Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
 
-**`tests/07-combat/7.9-7.11-tower.test.ts`** (49)
+**`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
 
 - StructureTower TOWER-ATTACK-002 [range=3] tower.attack() deals the expected falloff damage
 - StructureTower TOWER-ATTACK-002 [range=10] tower.attack() deals the expected falloff damage
@@ -1770,6 +1797,9 @@ Click a count to jump to the affected test list.
 - StructureTower TOWER-REPAIR-005:invalidTargetBeforeNotEnough tower.repair() validation returns the canonical code
 - StructureTower TOWER-REPAIR-005:invalidTargetBeforeRcl tower.repair() validation returns the canonical code
 - StructureTower TOWER-REPAIR-005:notEnoughBeforeRcl tower.repair() validation returns the canonical code
+- StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target
+- StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target
+- StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target
 
 **`tests/08-boosts/8.1-boost-application.test.ts`** (37)
 
@@ -1950,7 +1980,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (33)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (34)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -1985,8 +2015,9 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (15)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (16)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
@@ -2003,6 +2034,7 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
 **`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
 
@@ -2059,7 +2091,7 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 - Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (59)
+**`tests/10-structures-energy/10.4-link.test.ts`** (60)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
 - StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
@@ -2120,6 +2152,7 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:notEnoughBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:fullBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target
 
 **`tests/11-structures-production/11.1-11.2-lab.test.ts`** (171)
 
@@ -3870,7 +3903,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2058 tests across 104 files</summary>
+<summary>2075 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4109,7 +4142,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (21)
+**`tests/01-movement/1.5-pulling.test.ts`** (22)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -4132,6 +4165,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
 **`tests/01-movement/1.6-collision.test.ts`** (7)
 
@@ -4299,7 +4333,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (69)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (71)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -4370,8 +4404,10 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:fullBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:fullBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughAmountBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
+- creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (121)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (122)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -4444,6 +4480,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:rangeBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:rangeBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:fullBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() UNDOC-STALEARG-001:creepWithdrawStructure creep.withdraw() rejects a stale cached Structure target
 - creep.drop() DROP-001 drop() removes the dropped amount from the creep store
 - creep.drop() DROP-001 drop() creates a dropped resource at the creep position
 - creep.drop() DROP-002 drops partial amount
@@ -4495,7 +4532,7 @@ Click a count to jump to the affected test list.
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (33)
+**`tests/05-construction-repair/5.1-build.test.ts`** (34)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
@@ -4530,8 +4567,9 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:noBodypartBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeRange build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeBlockedTarget build() validation returns the canonical code
+- creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target
 
-**`tests/05-construction-repair/5.2-repair.test.ts`** (28)
+**`tests/05-construction-repair/5.2-repair.test.ts`** (29)
 
 - creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
 - creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
@@ -4561,8 +4599,9 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:noBodypartBeforeInvalidTarget repair() validation returns the canonical code
 - creep.repair() REPAIR-010:noBodypartBeforeRange repair() validation returns the canonical code
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
+- creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (21)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (22)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
@@ -4585,6 +4624,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:busyBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
+- creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
 **`tests/05-construction-repair/5.4-construction-sites.test.ts`** (42)
 
@@ -4872,7 +4912,7 @@ Click a count to jump to the affected test list.
 
 - StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (86)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
 - creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
@@ -4898,6 +4938,7 @@ Click a count to jump to the affected test list.
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeInvalidTarget attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:invalidTargetBeforeRange attack() validation returns the canonical code
+- creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target
 - creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
 - creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
@@ -4919,6 +4960,7 @@ Click a count to jump to the affected test list.
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeRange rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:invalidTargetBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
 - creep.heal() COMBAT-HEAL-003 heal accepts any creep target regardless of ownership
@@ -4960,6 +5002,8 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypartBeforeInvalidTarget rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypartBeforeRange rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:invalidTargetBeforeRange rangedHeal() validation returns the canonical code
+- creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target
+- creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target
 
 **`tests/07-combat/7.12-tower-intent.test.ts`** (5)
 
@@ -5004,7 +5048,7 @@ Click a count to jump to the affected test list.
 - Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
 - Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
 
-**`tests/07-combat/7.9-7.11-tower.test.ts`** (49)
+**`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
 
 - StructureTower TOWER-ATTACK-002 [range=3] tower.attack() deals the expected falloff damage
 - StructureTower TOWER-ATTACK-002 [range=10] tower.attack() deals the expected falloff damage
@@ -5055,6 +5099,9 @@ Click a count to jump to the affected test list.
 - StructureTower TOWER-REPAIR-005:invalidTargetBeforeNotEnough tower.repair() validation returns the canonical code
 - StructureTower TOWER-REPAIR-005:invalidTargetBeforeRcl tower.repair() validation returns the canonical code
 - StructureTower TOWER-REPAIR-005:notEnoughBeforeRcl tower.repair() validation returns the canonical code
+- StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target
+- StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target
+- StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target
 
 **`tests/08-boosts/8.1-boost-application.test.ts`** (37)
 
@@ -5231,7 +5278,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (31)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (32)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -5264,8 +5311,9 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (15)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (16)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
 - Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
@@ -5282,6 +5330,7 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
 **`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
 
@@ -5334,7 +5383,7 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 - Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (48)
+**`tests/10-structures-energy/10.4-link.test.ts`** (49)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
 - StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
@@ -5384,6 +5433,7 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:notEnoughBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:fullBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target
 
 **`tests/11-structures-production/11.1-11.2-lab.test.ts`** (168)
 

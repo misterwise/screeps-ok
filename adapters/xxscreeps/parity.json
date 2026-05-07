@@ -139,6 +139,11 @@
 			"expected": "Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing.",
 			"tests": ["UNDOC-STALERECV-001:constructionSiteRemove"]
 		},
+		"stale-pickup-target-allowed": {
+			"actual": "`Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops.",
+			"expected": "Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code).",
+			"tests": ["UNDOC-STALEARG-001:creepPickup"]
+		},
 		"harvest-bodypart-too-early-vs-target": {
 			"actual": "Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`).",
 			"expected": "Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`.",
@@ -200,6 +205,11 @@
 			"actual": "`checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY.",
 			"expected": "Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe.",
 			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
+		},
+		"pull-fatigue-evaporates-on-puller-ttl-death": {
+			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves, xxscreeps adds the pulled creep's move fatigue to the puller during the move intent (`mods/creep/processor.ts:221-227`, walking `pulledToPuller` to the chain head) — before the per-creep tick processor runs `buryCreep` (`mods/creep/processor.ts:332-338`). The carrier is buried with the fatigue, so the surviving harvester ends the tick at fatigue 0.",
+			"expected": "Vanilla's `_add-fatigue` chain walk runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and removes the puller from `roomObjects`. When the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller, so the move's fatigue lands on the harvester and stays stuck (no MOVE parts to clear).",
+			"tests": ["MOVE-PULL-012"]
 		}
 	}
 }
