@@ -163,27 +163,30 @@ describe('Nuke launch — section 7.13', () => {
 	});
 
 	test('NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient', async ({ shard }) => {
+		// CONTROLLER_STRUCTURES.nuker permits one nuker per room, so each store
+		// scenario gets its own room. Co-locating multiple nukers would put two
+		// of them into the engine's "inactive" bucket and surface ERR_RCL_NOT_ENOUGH
+		// before the resource check — testing rules the catalog row doesn't claim.
 		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
 				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W1N2', rcl: 8, owner: 'p1' },
+				{ name: 'W1N3', rcl: 8, owner: 'p1' },
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
-		// Nuker with no resources.
 		const emptyId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
 			store: {},
 		});
-		// Nuker with full energy but no ghodium.
-		const noGId = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
+		const noGId = await shard.placeStructure('W1N2', {
+			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
 			store: { energy: NUKER_ENERGY_CAPACITY },
 		});
-		// Nuker with full ghodium but no energy.
-		const noEId = await shard.placeStructure('W1N1', {
-			pos: [29, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
+		const noEId = await shard.placeStructure('W1N3', {
+			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
 			store: { G: NUKER_GHODIUM_CAPACITY },
 		});
 		await shard.tick();
