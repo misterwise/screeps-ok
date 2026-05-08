@@ -31,9 +31,9 @@ function parseCatalog() {
 // 2. Scan test files
 // ---------------------------------------------------------------------------
 
-const TEST_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/g;
+const TEST_ID_RE = /\b([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})\b/g;
 const MATRIX_IMPORT_RE = /from\s+['"]([^'"]+\/matrices\/[^'"]+?)(?:\.js)?['"]/g;
-const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([A-Z]+-(?:[A-Z]+-)?[0-9]{3})['"]/g;
+const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})['"]/g;
 
 function walkDir(dir) {
 	const results = [];

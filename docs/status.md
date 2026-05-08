@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2503%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2077%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2499%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2073%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2503](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 00:39 UTC |
-| 🟡 | **xxscreeps** | [2077](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 00:36 UTC |
+| 🟡 | **vanilla** | [2499](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:01 UTC |
+| 🟡 | **xxscreeps** | [2073](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 03:58 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -660,7 +660,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2503 tests across 127 files</summary>
+<summary>2499 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2789,14 +2789,10 @@ Click a count to jump to the affected test list.
 - StructureObserver OBSERVER-007:invalidArgsBeforeRange observeRoom() validation returns the canonical code
 - StructureObserver OBSERVER-007:rclBeforeRange observeRoom() validation returns the canonical code
 
-**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (6)
+**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (2)
 
-- StructureExtractor EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount
-- StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN
-- StructureExtractor EXTRACTOR-002 harvest(mineral) returns ERR_NOT_FOUND when no extractor is present
-- StructureExtractor EXTRACTOR-003 harvest(mineral) returns ERR_NOT_OWNER when extractor is not owned by the player
-- StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
-- StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
+- StructureExtractor cooldown property EXTRACTOR-001 cooldown returns 0 when no cooldown is active
+- StructureExtractor cooldown property EXTRACTOR-002 cooldown decreases by 1 each tick until reaching 0
 
 **`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
 
@@ -4137,7 +4133,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2077 tests across 104 files</summary>
+<summary>2073 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6015,14 +6011,10 @@ Click a count to jump to the affected test list.
 - StructureObserver OBSERVER-007:invalidArgsBeforeRange observeRoom() validation returns the canonical code
 - StructureObserver OBSERVER-007:rclBeforeRange observeRoom() validation returns the canonical code
 
-**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (6)
+**`tests/13-structures-infrastructure/13.5-extractor.test.ts`** (2)
 
-- StructureExtractor EXTRACTOR-001 harvest(mineral) returns OK and reduces mineralAmount
-- StructureExtractor EXTRACTOR-006 harvest(mineral) sets extractor cooldown to EXTRACTOR_COOLDOWN
-- StructureExtractor EXTRACTOR-002 harvest(mineral) returns ERR_NOT_FOUND when no extractor is present
-- StructureExtractor EXTRACTOR-003 harvest(mineral) returns ERR_NOT_OWNER when extractor is not owned by the player
-- StructureExtractor EXTRACTOR-004 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor is inactive
-- StructureExtractor EXTRACTOR-005 harvest(mineral) returns ERR_TIRED while extractor is on cooldown
+- StructureExtractor cooldown property EXTRACTOR-001 cooldown returns 0 when no cooldown is active
+- StructureExtractor cooldown property EXTRACTOR-002 cooldown decreases by 1 each tick until reaching 0
 
 **`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
 

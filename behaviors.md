@@ -1699,7 +1699,7 @@ Coverage Notes
 - `SPAWN-TIMING-006` `behavior` `verified_vanilla`
   When spawning completes, the creep exits the spawn tile in the chosen
   direction.
-- `SPAWN-TIMING-007` `behavior` `needs_vanilla_verification`
+- `SPAWN-TIMING-007` `behavior` `verified_vanilla`
   `StructureSpawn.Spawning.setDirections(dirs)` replaces the current
   directions wholesale: a subsequent read of `spawn.spawning.directions`
   returns exactly `dirs`, regardless of how many directions were supplied
@@ -1804,7 +1804,7 @@ Coverage Notes
   A spawning creep cannot perform creep actions.
 - `CREEP-SPAWNING-004` `behavior` `verified_vanilla`
   A spawning creep's body parts are visible before spawning completes.
-- `CREEP-SPAWNING-005` `behavior` `needs_vanilla_verification`
+- `CREEP-SPAWNING-005` `behavior` `verified_vanilla`
   When a spawn finishes producing a creep, `StructureSpawn.spawning` is
   `null` from the next tick onward, until another `spawnCreep()` succeeds.
   Distinct from `CREEP-SPAWNING-001`, which covers `creep.spawning ===
@@ -2608,6 +2608,12 @@ Coverage Notes
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `Structure.destroy()` failure return codes and precedence match the
   canonical validation matrix for ownership and room-busy state.
+- `STRUCTURE-API-008` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` for an unowned
+  structure in a room whose controller is owned by another player. The
+  controller-owner branch rejects the caller even though the structure
+  itself has no owner — distinct from the unowned-in-own-room case
+  (`STRUCTURE-API-007`) which returns `OK`.
 
 ### 15.4b Attack Notification APIs
 - `ATTACK-NOTIFY-001` `behavior` `needs_vanilla_verification`
