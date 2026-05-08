@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2499%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2073%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2501%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2075%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2499](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:01 UTC |
-| 🟡 | **xxscreeps** | [2073](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 03:58 UTC |
+| 🟡 | **vanilla** | [2501](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:11 UTC |
+| 🟡 | **xxscreeps** | [2075](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 04:07 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -660,7 +660,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2499 tests across 127 files</summary>
+<summary>2501 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2189,6 +2189,10 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnough spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnough spawnCreep() validation returns the canonical code
 
+**`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (1)
+
+- Spawning duration and direction SPAWN-TIMING-007 spawning.setDirections replaces the current direction array
+
 **`tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts`** (6)
 
 - Spawn stomping SPAWN-STOMP-001 hostile creep is destroyed when all tiles are blocked
@@ -2254,7 +2258,7 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (16)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
@@ -2271,6 +2275,7 @@ Click a count to jump to the affected test list.
 - Creep spawning state CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning
 - Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
 - Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
+- Creep spawning state CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds
 
 **`tests/09-spawning-lifecycle/9.7a-lifetime.test.ts`** (3)
 
@@ -4133,7 +4138,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2073 tests across 104 files</summary>
+<summary>2075 tests across 105 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5502,6 +5507,10 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnough spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnough spawnCreep() validation returns the canonical code
 
+**`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (1)
+
+- Spawning duration and direction SPAWN-TIMING-007 spawning.setDirections replaces the current direction array
+
 **`tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts`** (6)
 
 - Spawn stomping SPAWN-STOMP-001 hostile creep is destroyed when all tiles are blocked
@@ -5565,7 +5574,7 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (15)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (16)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
@@ -5582,6 +5591,7 @@ Click a count to jump to the affected test list.
 - Creep spawning state CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning
 - Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
 - Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
+- Creep spawning state CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds
 
 **`tests/09-spawning-lifecycle/9.7a-lifetime.test.ts`** (3)
 

@@ -368,4 +368,49 @@ describe('Creep spawning state', () => {
 		`);
 		expect(body).toEqual([WORK, CARRY, MOVE]);
 	});
+
+	test('CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const firstStarted = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SpawnStateBoundary')
+		`);
+		expect(firstStarted).toBe(OK);
+
+		const midSpawn = await shard.runPlayer('p1', code`
+			const spawning = Game.getObjectById(${spawnId}).spawning;
+			spawning ? spawning.name : null
+		`);
+		expect(midSpawn).toBe('SpawnStateBoundary');
+
+		await shard.tick(CREEP_SPAWN_TIME - 2);
+
+		const afterCompletion = await shard.runPlayer('p1', code`
+			const spawning = Game.getObjectById(${spawnId}).spawning;
+			spawning ? spawning.name : null
+		`);
+		expect(afterCompletion).toBeNull();
+
+		const stillIdle = await shard.runPlayer('p1', code`
+			const spawning = Game.getObjectById(${spawnId}).spawning;
+			spawning ? spawning.name : null
+		`);
+		expect(stillIdle).toBeNull();
+
+		const secondStarted = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SpawnStateRestart')
+		`);
+		expect(secondStarted).toBe(OK);
+
+		const restarted = await shard.runPlayer('p1', code`
+			const spawning = Game.getObjectById(${spawnId}).spawning;
+			spawning ? spawning.name : null
+		`);
+		expect(restarted).toBe('SpawnStateRestart');
+	});
 });
