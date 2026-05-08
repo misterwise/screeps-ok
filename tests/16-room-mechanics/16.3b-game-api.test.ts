@@ -35,7 +35,7 @@ describe('room visibility', () => {
 		// a real room), just unowned with no p1 structures or creeps. Canonical
 		// Game API must still hide it from p1. Engines that populate Game.rooms
 		// from the engine-loaded set (rather than per-player visibility) fail
-		// this case while passing VIS-002.
+		// this case while passing ROOM-VIS-002.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

@@ -2547,6 +2547,12 @@ Coverage Notes
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `Structure.destroy()` failure return codes and precedence match the
   canonical validation matrix for ownership and room-busy state.
+- `STRUCTURE-API-008` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` for an unowned
+  structure in a room whose controller is owned by another player. The
+  controller-owner branch rejects the caller even though the structure
+  itself has no owner — distinct from the unowned-in-own-room case
+  (`STRUCTURE-API-007`) which returns `OK`.
 
 ### 15.5 Effects Substrate `capability: powerCreeps`
 - `EFFECT-DECAY-001` `behavior` `verified_vanilla`
