@@ -59,19 +59,19 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 
 <div class="stats">
   <div class="stat-card"><div class="num">1046</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1026</div><div class="label">tested</div></div>
-  <div class="stat-card"><div class="num yellow">18</div><div class="label">feasible untested</div></div>
+  <div class="stat-card"><div class="num green">1030</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num yellow">14</div><div class="label">feasible untested</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">98%</div><div class="label">overall</div></div>
-  <div class="stat-card"><div class="num">98%</div><div class="label">of feasible</div></div>
+  <div class="stat-card"><div class="num">99%</div><div class="label">of feasible</div></div>
 </div>
 
 <h2>Coverage by section</h2>
 <div class="bar-row">
   <span class="bar-label" title="1. Movement">1. Movement</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:97%;background:var(--yellow)"></div>
-    <span class="bar-text">64/66</span>
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">66/66</span>
   </div>
 </div>
 <div class="bar-row">
@@ -217,8 +217,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="22. RoomPosition">22. RoomPosition</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:92%;background:var(--yellow)"></div>
-    <span class="bar-text">22/24</span>
+    <div class="bar-fill" style="width:100%;background:var(--green)"></div>
+    <span class="bar-text">24/24</span>
   </div>
 </div>
 <div class="bar-row">
@@ -275,7 +275,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
-<tr><td><span class="badge badge-yellow">feasible</span></td><td>18</td><td><code>MOVE-BASIC-028</code> <code>MOVE-COLLISION-007</code> <code>STRUCTURE-API-008</code> <code>ROOMPOS-FIND-009</code> <code>ROOMPOS-FIND-011</code> <code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
+<tr><td><span class="badge badge-yellow">feasible</span></td><td>14</td><td><code>STRUCTURE-API-008</code> <code>UNDOC-SYSUSER-002</code> <code>DEPRECATED-MAP-001</code> <code>DEPRECATED-MAP-002</code> <code>DEPRECATED-PATH-001</code> <code>DEPRECATED-PATH-002</code> <code>DEPRECATED-PATH-003</code> <code>DEPRECATED-SPAWN-001</code> <code>DEPRECATED-DEDUP-001</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>ISM-004</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
 <tr><td><span class="badge badge-muted">capability: powerCreeps</span></td><td>2</td><td><code>SHARD-PCREEP-001</code> <code>SHARD-PCREEP-002</code></td></tr>
 </tbody>
 </table>
@@ -528,14 +528,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/01-movement/1.1-basic-movement.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>MOVE-BASIC-028</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>behavior</td>
   <td>needs_vanilla_verification</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/01-movement/1.1-basic-movement.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>MOVE-FATIGUE-001</code></td>
@@ -861,14 +861,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/01-movement/1.6-collision.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>MOVE-COLLISION-007</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>behavior</td>
   <td>needs_vanilla_verification</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/01-movement/1.6-collision.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>MOVE-POWER-001</code></td>
@@ -8133,14 +8133,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/22-roomposition/22.1-22.4-roomposition.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>ROOMPOS-FIND-009</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>22. RoomPosition</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/22-roomposition/22.1-22.4-roomposition.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>ROOMPOS-FIND-010</code></td>
@@ -8151,14 +8151,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td></td>
   <td><small>tests/22-roomposition/22.1-22.4-roomposition.test.ts</small></td>
 </tr>
-<tr data-status="untested" data-blocker="feasible">
+<tr data-status="tested" data-blocker="">
   <td><code>ROOMPOS-FIND-011</code></td>
-  <td><span class="badge badge-yellow">feasible</span></td>
+  <td><span class="badge badge-green">tested</span></td>
   <td>22. RoomPosition</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
-  <td><small></small></td>
+  <td><small>tests/22-roomposition/22.1-22.4-roomposition.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>ROOMPOS-LOOK-001</code></td>

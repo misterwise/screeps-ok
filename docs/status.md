@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2504%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-29-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2078%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2508%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-32-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-105-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2504](#vanilla-passing-tests) | [29](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:32 UTC |
-| 🟡 | **xxscreeps** | [2078](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [355](#xxscreeps-skipped-tests) | 2026-05-08 04:29 UTC |
+| 🟡 | **vanilla** | [2508](#vanilla-passing-tests) | [32](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 05:05 UTC |
+| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [105](#xxscreeps-expected-failures) | — | [355](#xxscreeps-skipped-tests) | 2026-05-08 05:01 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 14 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 14 open parity gaps covering 29 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 17 expected-failure classifications against vanilla's canonical behavior, covering 32 tests. That includes 17 open parity gaps covering 32 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,6 +33,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
 | `construction-site-array-prototype-pollution` | Stable vanilla iterates room-edge border-tile arrays with inherited enumerable Array.prototype keys, so an enumerable user-code Array.prototype property makes otherwise-valid edge-adjacent construction sites fail validation with ERR_INVALID_TARGET. | Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges. | [1](#vanilla-gap-construction-site-array-prototype-pollution) |
 | `corner-exit-tiles-auto-transition` | Stable vanilla auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#vanilla-gap-corner-exit-tiles-auto-transition) |
 | `renew-creep-energy-structures-option-missing` | Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
@@ -47,8 +48,17 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `market-history-empty-array-missing` | Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
 | `movecache-fatigue-visualization-recomputes` | Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle. | A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. | [1](#vanilla-gap-movecache-fatigue-visualization-recomputes) |
+| `moveto-no-shared-exit-walks-into-wall` | Stable vanilla creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path even when no inter-room route exists (screeps/engine#98, closed as not-a-bug). | creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement. | [1](#vanilla-gap-moveto-no-shared-exit-walks-into-wall) |
+| `moveto-all-routes-blocked-walks-into-creeps` | Stable vanilla creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#vanilla-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death">
+<summary><code>pull-fatigue-stranded-on-puller-ttl-death</code> — 1 test</summary>
+
+- `creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep`
+
+</details>
 
 <details id="vanilla-gap-construction-site-array-prototype-pollution">
 <summary><code>construction-site-array-prototype-pollution</code> — 1 test</summary>
@@ -163,11 +173,25 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="vanilla-gap-moveto-no-shared-exit-walks-into-wall">
+<summary><code>moveto-no-shared-exit-walks-into-wall</code> — 1 test</summary>
+
+- `creep.moveTo() MOVE-BASIC-028 moveTo() to a room with no shared exit returns ERR_NO_PATH and does not move`
+
+</details>
+
+<details id="vanilla-gap-moveto-all-routes-blocked-walks-into-creeps">
+<summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
+
+- `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
+
+</details>
+
 
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 expected-failure classifications against vanilla's canonical behavior, covering 103 tests. That includes 47 open parity gaps covering 98 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 52 expected-failure classifications against vanilla's canonical behavior, covering 105 tests. That includes 49 open parity gaps covering 100 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -222,6 +246,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `room-factory-shortcut-missing` | room.factory is undefined for a visible room containing an owned factory. | Visible rooms expose room.factory as the factory object when present. | [1](#xxscreeps-gap-room-factory-shortcut-missing) |
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
+| `moveto-no-shared-exit-walks-into-wall` | creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path inherited from vanilla (screeps/engine#98, closed as not-a-bug). | creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement. | [1](#xxscreeps-gap-moveto-no-shared-exit-walks-into-wall) |
+| `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -256,12 +282,12 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 6 tests</summary>
 
-- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
+- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 
 </details>
 
@@ -605,6 +631,20 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-moveto-no-shared-exit-walks-into-wall">
+<summary><code>moveto-no-shared-exit-walks-into-wall</code> — 1 test</summary>
+
+- `creep.moveTo() MOVE-BASIC-028 moveTo() to a room with no shared exit returns ERR_NO_PATH and does not move`
+
+</details>
+
+<details id="xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps">
+<summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
+
+- `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -668,7 +708,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2504 tests across 128 files</summary>
+<summary>2508 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -915,7 +955,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (25)
+**`tests/01-movement/1.5-pulling.test.ts`** (24)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -939,7 +979,6 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
-- creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep
 - creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
@@ -1477,7 +1516,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (56)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -1519,6 +1558,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
 - room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type
+- room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
@@ -1666,7 +1706,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (48)
+**`tests/06-controller/6.4-upgrade.test.ts`** (49)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -1680,6 +1720,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -3242,7 +3283,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (15)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (18)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -3253,12 +3294,15 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
 - RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
 - RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists
+- RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route
+- RoomPosition find helpers ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall
 - RoomPosition find helpers ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty
 - RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set
 - RoomPosition look ROOMPOS-LOOK-001 look() returns {type, ...} records for objects and terrain
 - RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
 - RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 - RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
+- RoomPosition actions ROOMPOS-ACTION-003 createConstructionSite passes name through to the site and the completed structure
 
 **`tests/22-roomposition/22.2-direction.test.ts`** (8)
 
@@ -4150,7 +4194,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2078 tests across 105 files</summary>
+<summary>2083 tests across 105 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4875,7 +4919,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (43)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (44)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4916,6 +4960,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
 - room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation
+- room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
@@ -5049,7 +5094,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (47)
+**`tests/06-controller/6.4-upgrade.test.ts`** (48)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -5062,6 +5107,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -6277,7 +6323,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (15)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (18)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -6288,12 +6334,15 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
 - RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
 - RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists
+- RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route
+- RoomPosition find helpers ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall
 - RoomPosition find helpers ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty
 - RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set
 - RoomPosition look ROOMPOS-LOOK-001 look() returns {type, ...} records for objects and terrain
 - RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
 - RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 - RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
+- RoomPosition actions ROOMPOS-ACTION-003 createConstructionSite passes name through to the site and the completed structure
 
 **`tests/22-roomposition/22.2-direction.test.ts`** (8)
 
