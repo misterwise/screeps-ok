@@ -482,6 +482,45 @@ describe('room.createConstructionSite()', () => {
 		});
 	});
 
+	test('CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate', async ({ shard }) => {
+		// Counter to engine issue #59: build progress accumulates and surplus
+		// sites complete normally even when sites + active > CONTROLLER_STRUCTURES
+		// for the structure type. RCL 1 has CONTROLLER_STRUCTURES.extension = 0,
+		// so any extension site is over-cap; placeSite bypasses the placement-time
+		// check that CONSTRUCTION-SITE-003 covers.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		// Site at progress 2995 — one tick of building from a 5-WORK creep
+		// (build power 25) crosses the 3000 progressTotal.
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			structureType: STRUCTURE_EXTENSION,
+			progress: 2995,
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: body(5, WORK, 5, CARRY, MOVE),
+			store: { energy: 250 },
+		});
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
+		`);
+		await shard.tick();
+
+		// Site disappeared and an extension structure was created at the tile.
+		const site = await shard.getObject(siteId);
+		expect(site).toBeNull();
+
+		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+		const extension = structures.find(s =>
+			s.structureType === STRUCTURE_EXTENSION &&
+			s.pos.x === 25 && s.pos.y === 25);
+		expect(extension).toBeDefined();
+	});
+
 	for (const row of constructionSiteCreateValidationCases) {
 		test(`CONSTRUCTION-SITE-011:${row.label} createConstructionSite() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);

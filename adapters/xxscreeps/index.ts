@@ -482,7 +482,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const progressTotal = structureFactories.get(spec.structureType)?.checkPlacement(room, pos)
 				?? C.CONSTRUCTION_COST[spec.structureType as keyof typeof C.CONSTRUCTION_COST]
 				?? 0;
-			const site = createSite(pos, spec.structureType as any, userId, progressTotal);
+			const site = createSite(pos, spec.structureType as any, userId, progressTotal, spec.name);
 			site.id = id;
 			if (spec.progress !== undefined) {
 				site.progress = spec.progress;
