@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2508%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-32-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-105-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2508%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-104-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2508](#vanilla-passing-tests) | [32](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 05:05 UTC |
-| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [105](#xxscreeps-expected-failures) | — | [355](#xxscreeps-skipped-tests) | 2026-05-08 05:01 UTC |
+| 🟡 | **vanilla** | [2508](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 05:54 UTC |
+| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [104](#xxscreeps-expected-failures) | — | [355](#xxscreeps-skipped-tests) | 2026-05-08 05:51 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 17 expected-failure classifications against vanilla's canonical behavior, covering 32 tests. That includes 17 open parity gaps covering 32 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 16 expected-failure classifications against vanilla's canonical behavior, covering 31 tests. That includes 16 open parity gaps covering 31 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -38,7 +38,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `corner-exit-tiles-auto-transition` | Stable vanilla auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#vanilla-gap-corner-exit-tiles-auto-transition) |
 | `renew-creep-energy-structures-option-missing` | Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
 | `legacy-path-cost-callback-false-ignored` | Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
-| `room-find-closest-by-path-missing` | Stable vanilla does not expose Room.findClosestByPath on Room. | Room.findClosestByPath exists and honors the range option as the goal range. | [1](#vanilla-gap-room-find-closest-by-path-missing) |
 | `attack-notify-getter-api-missing` | Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
 | `effects-empty-array-missing` | Stable vanilla omits the effects property on RoomObjects that have no active effects. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#vanilla-gap-effects-empty-array-missing) |
 | `room-factory-shortcut-missing` | Stable vanilla does not populate room.factory for an owned factory in a visible room. | Visible rooms expose room.factory as the factory object when present. | [1](#vanilla-gap-room-factory-shortcut-missing) |
@@ -87,13 +86,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>legacy-path-cost-callback-false-ignored</code> — 1 test</summary>
 
 - `Legacy Pathfinding LEGACY-PATH-010 Room.findPath costCallback returning false blocks the room`
-
-</details>
-
-<details id="vanilla-gap-room-find-closest-by-path-missing">
-<summary><code>room-find-closest-by-path-missing</code> — 1 test</summary>
-
-- `Legacy Pathfinding LEGACY-PATH-011 Room.findClosestByPath range option uses goal range`
 
 </details>
 
@@ -191,7 +183,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 52 expected-failure classifications against vanilla's canonical behavior, covering 105 tests. That includes 49 open parity gaps covering 100 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 51 expected-failure classifications against vanilla's canonical behavior, covering 104 tests. That includes 48 open parity gaps covering 99 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -238,7 +230,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
 | `corner-exit-tiles-auto-transition` | xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#xxscreeps-gap-corner-exit-tiles-auto-transition) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
-| `room-find-closest-by-path-missing` | Room.findClosestByPath is not exposed on Room. | Room.findClosestByPath exists and honors the range option as the goal range. | [1](#xxscreeps-gap-room-find-closest-by-path-missing) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
@@ -282,12 +273,12 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 6 tests</summary>
 
+- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
-- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
 
 </details>
 
@@ -563,13 +554,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>legacy-path-cost-callback-false-ignored</code> — 1 test</summary>
 
 - `Legacy Pathfinding LEGACY-PATH-010 Room.findPath costCallback returning false blocks the room`
-
-</details>
-
-<details id="xxscreeps-gap-room-find-closest-by-path-missing">
-<summary><code>room-find-closest-by-path-missing</code> — 1 test</summary>
-
-- `Legacy Pathfinding LEGACY-PATH-011 Room.findClosestByPath range option uses goal range`
 
 </details>
 

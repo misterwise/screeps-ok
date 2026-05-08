@@ -209,11 +209,6 @@
 			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
 			"tests": ["LEGACY-PATH-010"]
 		},
-		"room-find-closest-by-path-missing": {
-			"actual": "Room.findClosestByPath is not exposed on Room.",
-			"expected": "Room.findClosestByPath exists and honors the range option as the goal range.",
-			"tests": ["LEGACY-PATH-011"]
-		},
 		"renew-creep-energy-structures-option-missing": {
 			"actual": "StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources.",
 			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set.",

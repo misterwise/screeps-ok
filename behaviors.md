@@ -447,9 +447,6 @@ Coverage Notes
   `Room.findPath(..., { costCallback })` treats a `costCallback` return value
   of `false` as blocking that room, yielding an empty path (`[]`, or `''` when
   serialized).
-- `LEGACY-PATH-011` `behavior` `needs_vanilla_verification`
-  `Room.findClosestByPath(..., { range: N })` uses `N` as the goal range when
-  deciding whether a candidate is path-reachable.
 
 ---
 

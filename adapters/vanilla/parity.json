@@ -25,11 +25,6 @@
 			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
 			"tests": ["LEGACY-PATH-010"]
 		},
-		"room-find-closest-by-path-missing": {
-			"actual": "Stable vanilla does not expose Room.findClosestByPath on Room.",
-			"expected": "Room.findClosestByPath exists and honors the range option as the goal range.",
-			"tests": ["LEGACY-PATH-011"]
-		},
 		"attack-notify-getter-api-missing": {
 			"actual": "Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed.",
 			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state.",
