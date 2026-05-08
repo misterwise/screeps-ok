@@ -3447,7 +3447,7 @@ Coverage Notes
   `findClosestByPath()` returns `null` when no reachable target exists.
 - `ROOMPOS-FIND-008` `behavior` `verified_vanilla`
   `findClosestByRange()` returns `null` when the candidate set is empty.
-- `ROOMPOS-FIND-009` `behavior` `needs_vanilla_verification`
+- `ROOMPOS-FIND-009` `behavior` `verified_vanilla`
   `pos.findClosestByPath(targets, {costCallback})` invokes `costCallback`
   for each candidate room and uses the returned `CostMatrix` to shape the
   search. A callback that walls off the cheapest route causes the
@@ -3456,7 +3456,7 @@ Coverage Notes
 - `ROOMPOS-FIND-010` `behavior` `needs_vanilla_verification`
   `RoomPosition.findClosestByPath(..., { range: N })` uses `N` as the goal
   range when deciding whether a candidate is path-reachable.
-- `ROOMPOS-FIND-011` `behavior` `needs_vanilla_verification`
+- `ROOMPOS-FIND-011` `behavior` `verified_vanilla`
   `pos.findPathTo(otherRoomPos, opts)` honors `opts` (e.g. `maxOps`) for
   the cross-room exit-selection step. Without the pass-through, only the
   default 2000 operations are spent picking an exit and the resulting

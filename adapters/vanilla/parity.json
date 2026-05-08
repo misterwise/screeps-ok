@@ -69,6 +69,16 @@
 			"actual": "Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle.",
 			"expected": "A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path.",
 			"tests": ["UNDOC-MOVECACHE-004"]
+		},
+		"moveto-no-shared-exit-walks-into-wall": {
+			"actual": "Stable vanilla creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path even when no inter-room route exists (screeps/engine#98, closed as not-a-bug).",
+			"expected": "creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement.",
+			"tests": ["MOVE-BASIC-028"]
+		},
+		"moveto-all-routes-blocked-walks-into-creeps": {
+			"actual": "Stable vanilla creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
+			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
+			"tests": ["MOVE-COLLISION-007"]
 		}
 	}
 }

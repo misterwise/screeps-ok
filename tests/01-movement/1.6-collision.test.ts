@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, RIGHT, BOTTOM, TOP_LEFT } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, RIGHT, BOTTOM, TOP_LEFT, ERR_NO_PATH } from '../../src/index.js';
 
 describe('creep movement collision', () => {
 	test('MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep', async ({ shard }) => {
@@ -189,5 +189,42 @@ describe('creep movement collision', () => {
 			c.pos.x === 25 && c.pos.y === 25
 		);
 		expect(rotated || allStayed).toBe(true);
+	});
+
+	test('MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Mover starts away from the target. The target tile (10, 10) is a
+		// stationary creep, and every 8-neighbour of (10, 10) is also a
+		// stationary creep — no walkable tile within range 1 of the goal.
+		const moverId = await shard.placeCreep('W1N1', {
+			pos: [5, 5], owner: 'p1', body: [MOVE], name: 'mover',
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [10, 10], owner: 'p1', body: [MOVE], name: 'sentry',
+		});
+		const surroundOffsets: Array<[number, number]> = [
+			[-1, -1], [0, -1], [1, -1],
+			[-1, 0], [1, 0],
+			[-1, 1], [0, 1], [1, 1],
+		];
+		for (const [dx, dy] of surroundOffsets) {
+			await shard.placeCreep('W1N1', {
+				pos: [10 + dx, 10 + dy], owner: 'p1', body: [MOVE],
+				name: `block_${dx}_${dy}`,
+			});
+		}
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.creeps['mover'].moveTo(Game.creeps['sentry'], {
+				ignoreCreeps: false,
+				maxRooms: 1,
+			})
+		`);
+		expect(rc).toBe(ERR_NO_PATH);
+
+		const mover = await shard.expectObject(moverId, 'creep');
+		expect(mover.pos.x).toBe(5);
+		expect(mover.pos.y).toBe(5);
 	});
 });

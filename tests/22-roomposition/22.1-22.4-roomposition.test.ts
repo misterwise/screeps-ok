@@ -156,6 +156,84 @@ describe('RoomPosition find helpers', () => {
 		expect(result).toBeNull();
 	});
 
+	test('ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// target1 is 3 tiles north, target2 is 5 tiles south. costCallback
+		// walls row y=4 across the room interior, sealing off target1. With
+		// costCallback honored, only target2 remains reachable; ignoring it
+		// would let the closer target1 win.
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(5, 5, 'W1N1');
+			const target1 = new RoomPosition(5, 2, 'W1N1');
+			const target2 = new RoomPosition(5, 10, 'W1N1');
+			const closest = origin.findClosestByPath([target1, target2], {
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					for (let x = 2; x <= 47; x++) {
+						matrix.set(x, 4, 255);
+					}
+					return matrix;
+				},
+			});
+			closest ? { x: closest.x, y: closest.y, roomName: closest.roomName } : null
+		`) as { x: number; y: number; roomName: string } | null;
+
+		expect(result).toEqual({ x: 5, y: 10, roomName: 'W1N1' });
+	});
+
+	test('ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+				{ name: 'W1N0', rcl: 1, owner: 'p1' },
+				{ name: 'W2N0', rcl: 1, owner: 'p1' },
+			],
+		});
+
+		// Origin is in W1N1 mid-room. Target is in W2N1 mid-room. costCallback
+		// walls off the east strip of W1N1 (cols 45..49) so the natural east
+		// exit is unreachable. A complete path must instead route up to W1N0,
+		// across to W2N0, and down to W2N1 — only possible if findExitTo
+		// receives the same opts as the path-computation step.
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(25, 25, 'W1N1');
+			const target = new RoomPosition(25, 25, 'W2N1');
+			const path = origin.findPathTo(target, {
+				maxOps: 20000,
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					if (roomName === 'W1N1') {
+						for (let x = 45; x <= 49; x++) {
+							for (let y = 0; y <= 49; y++) {
+								matrix.set(x, y, 255);
+							}
+						}
+					}
+					return matrix;
+				},
+			});
+			const last = path.length ? path[path.length - 1] : null;
+			({
+				length: path.length,
+				lastX: last ? last.x : null,
+				lastY: last ? last.y : null,
+			})
+		`) as { length: number; lastX: number | null; lastY: number | null };
+
+		// A complete path that follows opts ends on a boundary tile of W1N1
+		// (the alternate exit). A path that dead-ends at the cost-matrix wall
+		// stops at x=44 with no boundary tile in sight.
+		expect(result.length).toBeGreaterThan(0);
+		const onBoundary = (
+			result.lastX === 0 || result.lastX === 49
+			|| result.lastY === 0 || result.lastY === 49
+		);
+		expect(onBoundary).toBe(true);
+	});
+
 	test('ROOMPOS-FIND-010 findClosestByPath range option uses goal range', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
