@@ -921,14 +921,18 @@ Coverage Notes
   Enumerable user-code additions to `Array.prototype` do not affect
   `Room.createConstructionSite()` or `RoomPosition.createConstructionSite()`
   validation for valid or invalid edge-adjacent construction-site positions.
-- `CONSTRUCTION-SITE-016` `behavior` `needs_vanilla_verification`
-  When a room's RCL falls below the count of active structures plus
-  existing construction sites of a given structure type (e.g. a downgrade
-  leaves `sites + active > CONTROLLER_STRUCTURES[type][rcl]`), build
-  progress on the surplus sites of that type does not accumulate; the
-  sites cannot complete until the room's controller again satisfies the
-  cap. Distinct from `CONSTRUCTION-SITE-003`, which gates at placement
-  time; this entry covers the post-placement progress gate.
+- `CONSTRUCTION-SITE-016` `behavior` `verified_vanilla`
+  When a room's RCL leaves `sites + active > CONTROLLER_STRUCTURES[type][rcl]`
+  for a given structure type (e.g. after a downgrade, or via direct fixture
+  setup), build progress on surplus sites still accumulates and the sites
+  complete normally; the resulting surplus structures are produced.
+  Per-structure-type tick handlers then disable the surplus active
+  structures (e.g. `_calc_spawns.js` sets `off=true` on excess
+  spawns/extensions; `checkStructureAgainstController` reports them
+  inactive). Counter to engine issue #59, which speculated a build-time
+  gate; vanilla and xxscreeps both treat the cap as a placement-time and
+  active-structure check only, not a build-time one. Distinct from
+  `CONSTRUCTION-SITE-003`, which gates at placement time.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
@@ -1050,7 +1054,7 @@ Coverage Notes
   `creep.upgradeController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, resource availability, target validity, and range.
-- `CTRL-UPGRADE-014` `behavior` `needs_vanilla_verification`
+- `CTRL-UPGRADE-014` `behavior` `verified_vanilla`
   `upgradeController()` against a creep whose `store` lacks the `energy`
   key entirely (not `store.energy === 0`) returns
   `ERR_NOT_ENOUGH_RESOURCES`; controller `progress` is unchanged and no
@@ -3476,7 +3480,7 @@ Coverage Notes
 - `ROOMPOS-ACTION-002` `behavior` `verified_vanilla`
   A successful `RoomPosition.createFlag()` returns the flag name and creates
   the flag at the RoomPosition's coordinates in the same tick.
-- `ROOMPOS-ACTION-003` `behavior` `needs_vanilla_verification`
+- `ROOMPOS-ACTION-003` `behavior` `verified_vanilla`
   `pos.createConstructionSite(structureType, name?)` passes the optional
   `name` through to the underlying `Room.createConstructionSite()`. When
   the structure type accepts a name (currently `STRUCTURE_SPAWN`), the

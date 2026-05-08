@@ -1,4 +1,5 @@
-import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, STRUCTURE_SPAWN, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { body } from '../../src/helpers/body.js';
 
 describe('RoomPosition spatial queries', () => {
 	test('ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room', async ({ shard }) => {
@@ -279,5 +280,61 @@ describe('RoomPosition actions', () => {
 		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
 		const road = sites.find(s => s.structureType === STRUCTURE_ROAD && s.pos.x === 30 && s.pos.y === 30);
 		expect(road).toBeDefined();
+	});
+
+	test('ROOMPOS-ACTION-003 createConstructionSite passes name through to the site and the completed structure', async ({ shard }) => {
+		// Engine @screeps/engine/src/game/rooms.js — pos.createConstructionSite is
+		// a thin wrapper that forwards (structureType, name) to Room.createConstructionSite.
+		// For STRUCTURE_SPAWN the engine stores the name on the site and on the
+		// resulting structure when the build completes (build.js:121).
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			new RoomPosition(30, 30, 'W1N1').createConstructionSite(STRUCTURE_SPAWN, 'TestSpawn')
+		`);
+		expect(rc).toBe(OK);
+		await shard.tick();
+
+		// SiteSnapshot does not expose `name`; query via runPlayer.
+		const siteName = await shard.runPlayer('p1', code`
+			const site = Game.rooms['W1N1'].find(FIND_CONSTRUCTION_SITES)
+				.find(s => s.structureType === STRUCTURE_SPAWN);
+			site ? site.name : null
+		`);
+		expect(siteName).toBe('TestSpawn');
+
+		// Verify the name passes through to the structure on completion. Reload
+		// the test world with a near-complete site (placed via fixture spec) so
+		// one tick of build finishes it and we observe the resulting spawn.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const siteId = await shard.placeSite('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			structureType: STRUCTURE_SPAWN,
+			progress: 14995,
+			name: 'TestSpawn',
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: body(2, WORK, CARRY, MOVE),
+			store: { energy: 50 },
+		});
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
+		`);
+		await shard.tick();
+
+		const completedSpawnName = await shard.runPlayer('p1', code`
+			const spawn = Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25)
+				.find(s => s.structureType === STRUCTURE_SPAWN);
+			spawn ? spawn.name : null
+		`);
+		expect(completedSpawnName).toBe('TestSpawn');
 	});
 });

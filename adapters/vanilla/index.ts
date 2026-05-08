@@ -929,6 +929,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			structureType: spec.structureType,
 			progress: spec.progress ?? 0,
 			progressTotal: this.getProgressTotal(spec.structureType),
+			...(spec.name !== undefined ? { name: spec.name } : {}),
 		});
 		return result._id;
 	}

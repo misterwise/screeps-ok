@@ -87,6 +87,9 @@ export interface SiteSpec {
 	owner: string;
 	structureType: string;
 	progress?: number;
+	/** Optional construction site name. Currently only `STRUCTURE_SPAWN` accepts
+	 *  a name; the engine passes it through to the structure on completion. */
+	name?: string;
 }
 
 export interface SourceSpec {

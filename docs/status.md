@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2499%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2073%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](docs/status.md#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2076%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2499](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:01 UTC |
-| 🟡 | **xxscreeps** | [2073](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 03:58 UTC |
+| 🔴 | **vanilla** | [2501](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | [1](#vanilla-unexpected-failures) | [3](#vanilla-skipped-tests) | 2026-05-08 04:41 UTC |
+| 🟡 | **xxscreeps** | [2076](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 04:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## vanilla unexpected failures
+
+- `creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep`
 
 ## vanilla expected failures
 
@@ -660,7 +664,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2499 tests across 127 files</summary>
+<summary>2501 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -907,7 +911,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (25)
+**`tests/01-movement/1.5-pulling.test.ts`** (24)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -931,7 +935,6 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
-- creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep
 - creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
@@ -1469,7 +1472,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (56)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -1511,6 +1514,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
 - room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type
+- room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
@@ -1658,7 +1662,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (48)
+**`tests/06-controller/6.4-upgrade.test.ts`** (49)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -1672,6 +1676,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -3226,7 +3231,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (15)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (16)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -3243,6 +3248,7 @@ Click a count to jump to the affected test list.
 - RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
 - RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 - RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
+- RoomPosition actions ROOMPOS-ACTION-003 createConstructionSite passes name through to the site and the completed structure
 
 **`tests/22-roomposition/22.2-direction.test.ts`** (8)
 
@@ -4133,7 +4139,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2073 tests across 104 files</summary>
+<summary>2076 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4858,7 +4864,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (43)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (44)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4899,6 +4905,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
 - room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation
+- room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
@@ -5032,7 +5039,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (47)
+**`tests/06-controller/6.4-upgrade.test.ts`** (48)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -5045,6 +5052,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -6252,7 +6260,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (15)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (16)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -6269,6 +6277,7 @@ Click a count to jump to the affected test list.
 - RoomPosition look ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist
 - RoomPosition actions ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates
 - RoomPosition actions ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick
+- RoomPosition actions ROOMPOS-ACTION-003 createConstructionSite passes name through to the site and the completed structure
 
 **`tests/22-roomposition/22.2-direction.test.ts`** (8)
 

@@ -3,6 +3,7 @@ import { describe, test, expect, code,
 	WORK, CARRY, MOVE, CLAIM, UPGRADE_CONTROLLER_POWER,
 	CONTROLLER_LEVELS, CONTROLLER_MAX_UPGRADE_PER_TICK,
 	CONTROLLER_NUKE_BLOCKED_UPGRADE,
+	EVENT_UPGRADE_CONTROLLER,
 } from '../../src/index.js';
 import { body } from '../../src/helpers/body.js';
 import { ctrlUpgradeValidationCases } from '../../src/matrices/ctrl-upgrade-validation.js';
@@ -340,6 +341,49 @@ describe('creep.upgradeController()', () => {
 		// progress after advance is the overflow past the L1 threshold (0 or small).
 		expect(result.progress).toBeGreaterThanOrEqual(0);
 		expect(result.progress).toBeLessThan(CONTROLLER_LEVELS[1]);
+	});
+
+	test('CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event', async ({ shard }) => {
+		// Engine creep API @screeps/engine/src/game/creeps.js:930 — `!this.carry.energy`
+		// fences the case where `store` lacks the `energy` key entirely. Without the
+		// API fence, the processor's `object.store.energy <= 0` check (which evaluates
+		// `undefined <= 0` as false) would let the upgrade proceed and produce
+		// NaN progress. Reported as engine #151.
+		await shard.ownedRoom('p1');
+		const ctrlPos = await shard.getControllerPos('W1N1');
+
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: {},
+		});
+
+		const progressBefore = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.progress
+		`) as number;
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).upgradeController(
+				Game.rooms['W1N1'].controller
+			)
+		`);
+		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
+
+		await shard.tick();
+
+		const progressAfter = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.progress
+		`) as number;
+		expect(progressAfter).toBe(progressBefore);
+
+		// The upgrade event must not appear because the API rejected the call
+		// before the intent was queued.
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as Array<{ event: number }>;
+		const upgradeEvents = events.filter(e => e.event === EVENT_UPGRADE_CONTROLLER);
+		expect(upgradeEvents).toHaveLength(0);
 	});
 
 	for (const row of ctrlUpgradeValidationCases) {
