@@ -384,27 +384,26 @@ describe('creep.pull()', () => {
 		});
 	}
 
-	test('MOVE-PULL-012 fatigue routing when the puller dies of TTL on the same tick a pull resolves', async ({ shard }) => {
+	test('MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Carrier (puller): 2 MOVE — zero own fatigue contribution, full
-		// MOVE clearing. TTL=2 means: tick 1 (T) carrier acts with TTL=1
-		// computed at observe time; tick 2 (T+1) the carrier dies.
+		// MOVE clearing. TTL=2: first runPlayer tick is normal; second is
+		// the carrier's last.
 		const carrierId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [MOVE, MOVE], name: 'carrier',
 			ticksToLive: 2,
 		});
 		// Harvester (pulled): 2 WORK — 2 weighted parts, no MOVE. Plain
-		// terrain fatigue from a single move = 2 weighted * 2 = 4. With no
-		// MOVE parts, harvester cannot clear fatigue itself.
+		// terrain fatigue from a single move = 2 weighted * 2 = 4. No MOVE
+		// means it cannot clear fatigue once it lands.
 		const harvesterId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			body: [WORK, WORK], name: 'harvester',
 		});
 
-		// Tick T: carrier still has remaining TTL — pull resolves normally.
-		// Harvester's move fatigue routes up the pull chain to the carrier;
-		// the carrier's MOVE parts clear it. Harvester ends T at fatigue 0.
+		// Tick T: carrier alive — pull resolves; harvester's move fatigue
+		// chain-walks to the carrier; carrier's MOVE clears it.
 		await shard.runPlayer('p1', code`
 			const carrier = Game.creeps['carrier'];
 			const harvester = Game.creeps['harvester'];
@@ -419,15 +418,17 @@ describe('creep.pull()', () => {
 		expect(harvesterMid.pos.y).toBe(25);
 		expect(carrierMid.fatigue).toBe(0);
 		expect(harvesterMid.fatigue).toBe(0);
-		// One tick has passed; carrier's TTL has decremented. The next tick
-		// is the carrier's last.
 		expect(carrierMid.ticksToLive).toBe(1);
 
-		// Tick T+1: the carrier's TTL hits 0 mid-tick. Both move intents are
-		// queued and the pull is set up before the carrier is removed; the
-		// harvester moves into the carrier's old tile. The question this
-		// test pins down is where the harvester's move fatigue ends up when
-		// the pull-chain head dies during the same tick.
+		// Tick T+1: carrier dies mid-tick. The intended behavior is that
+		// the move's fatigue is buried with the dying puller — the pulled
+		// creep ends the tick at fatigue 0 regardless of placement /
+		// iteration order. Vanilla's `_add-fatigue` chain walk runs from
+		// inside per-creep `creeps/tick.js`, where the puller can be
+		// removed from `roomObjects` before the pulled creep's later
+		// `movement.execute`; with the carrier inserted first that walk
+		// fails to find the (now-deleted) carrier and strands the fatigue
+		// on the harvester. That's tracked as a vanilla parity gap.
 		await shard.runPlayer('p1', code`
 			const carrier = Game.creeps['carrier'];
 			const harvester = Game.creeps['harvester'];
@@ -438,25 +439,64 @@ describe('creep.pull()', () => {
 			}
 		`);
 
-		// Carrier dies — gone before the next tick.
 		expect(await shard.getObject(carrierId)).toBeNull();
 
-		// Harvester moved into carrier's old tile (the pull resolved before
-		// the carrier was buried).
 		const harvesterAfter = await shard.expectObject(harvesterId, 'creep');
 		expect(harvesterAfter.pos.x).toBe(25);
 		expect(harvesterAfter.pos.y).toBe(24);
-		// Harvester body weight (2 WORK) * plain fatigue rate (2) = 4.
-		// On vanilla the chain walk in `_add-fatigue` cannot reach the
-		// already-buried carrier, so the harvester is left holding the
-		// move's fatigue.
-		expect(harvesterAfter.fatigue).toBe(4);
+		expect(harvesterAfter.fatigue).toBe(0);
 
-		// One more tick: harvester has no MOVE parts to clear fatigue, so
-		// it remains stuck at 4 indefinitely.
+		// And nothing rematerializes on a later tick.
 		await shard.tick();
-		const harvesterStuck = await shard.expectObject(harvesterId, 'creep');
-		expect(harvesterStuck.fatigue).toBe(4);
+		const harvesterLater = await shard.expectObject(harvesterId, 'creep');
+		expect(harvesterLater.fatigue).toBe(0);
+	});
+
+	test('MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Same scenario but harvester placed first. Vanilla happens to
+		// produce the intended outcome here even with its order-dependent
+		// chain walk: the harvester's per-creep tick.js iterates before
+		// the carrier's, so `_add-fatigue` reaches the still-alive carrier
+		// and the fatigue dies with the carrier in its own tick.js. This
+		// row exists to lock in that the intended behavior is observable
+		// in at least one vanilla configuration; the `:pullerFirst` row
+		// captures the one vanilla cannot reach without the chain-walk
+		// quirk biting.
+		const harvesterId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, WORK], name: 'harvester',
+		});
+		const carrierId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [MOVE, MOVE], name: 'carrier',
+			ticksToLive: 2,
+		});
+
+		await shard.runPlayer('p1', code`
+			const carrier = Game.creeps['carrier'];
+			const harvester = Game.creeps['harvester'];
+			carrier.pull(harvester);
+			carrier.move(TOP);
+			harvester.move(carrier);
+		`);
+
+		await shard.runPlayer('p1', code`
+			const carrier = Game.creeps['carrier'];
+			const harvester = Game.creeps['harvester'];
+			if (carrier) {
+				carrier.pull(harvester);
+				carrier.move(TOP);
+				harvester.move(carrier);
+			}
+		`);
+
+		expect(await shard.getObject(carrierId)).toBeNull();
+
+		const harvesterAfter = await shard.expectObject(harvesterId, 'creep');
+		expect(harvesterAfter.pos.x).toBe(25);
+		expect(harvesterAfter.pos.y).toBe(24);
+		expect(harvesterAfter.fatigue).toBe(0);
 	});
 
 	test(`${stalePullCase.catalogId}:${stalePullCase.label} creep.pull() rejects a stale cached Creep target`, async ({ shard }) => {

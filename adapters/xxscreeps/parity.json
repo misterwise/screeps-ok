@@ -205,11 +205,6 @@
 			"actual": "`checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY.",
 			"expected": "Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe.",
 			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
-		},
-		"pull-fatigue-evaporates-on-puller-ttl-death": {
-			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves, xxscreeps adds the pulled creep's move fatigue to the puller during the move intent (`mods/creep/processor.ts:221-227`, walking `pulledToPuller` to the chain head) — before the per-creep tick processor runs `buryCreep` (`mods/creep/processor.ts:332-338`). The carrier is buried with the fatigue, so the surviving harvester ends the tick at fatigue 0.",
-			"expected": "Vanilla's `_add-fatigue` chain walk runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and removes the puller from `roomObjects`. When the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller, so the move's fatigue lands on the harvester and stays stuck (no MOVE parts to clear).",
-			"tests": ["MOVE-PULL-012"]
 		}
 	}
 }

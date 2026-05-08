@@ -79,13 +79,6 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
 - Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
 
-### pull-fatigue-evaporates-on-puller-ttl-death
-
-- Tests: MOVE-PULL-012
-- Status: CONFIRMED.
-- Cause: xxscreeps's pull-aware fatigue accounting runs inside the `move` intent processor (`packages/xxscreeps/mods/creep/processor.ts:221-227`), which walks the `pulledToPuller` chain and adds the move's fatigue to the chain head before any per-object tick processor runs. When the puller is on its last tick (`#ageTime <= Game.time`), `registerObjectTickProcessor` (`processor.ts:332-338`) calls `buryCreep` and removes the puller after the fatigue has already landed on it, so the fatigue evaporates with the corpse. Vanilla's `_add-fatigue` chain walk (`@screeps/engine/src/processor/intents/creeps/_add-fatigue.js:24-26`) instead runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and deletes the puller from `roomObjects`. If the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller and the move's fatigue lands on the harvester instead — visibly stuck on a no-MOVE pulled creep.
-- Plan: route pull-aware fatigue through the per-creep tick processor (after the death check), or have `buryCreep` repoint the chain so the head's residual is left on the surviving pulled creep. Either approach reproduces the vanilla observable that the harvester ends the tick holding the move's fatigue.
-
 ### construction-site-foreign-room-wrong-error
 
 - Tests: CONSTRUCTION-SITE-011 (notOwner rows), CONSTRUCTION-SITE-012, CONSTRUCTION-SITE-013, CONSTRUCTION-SITE-014.

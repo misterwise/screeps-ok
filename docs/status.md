@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2499%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2075%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2500%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2077%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,39 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟢 | **vanilla** | [2499](#vanilla-passing-tests) | — | — | [3](#vanilla-skipped-tests) | 2026-05-07 23:29 UTC |
-| 🟡 | **xxscreeps** | [2075](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 23:25 UTC |
+| 🟡 | **vanilla** | [2500](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 00:01 UTC |
+| 🟡 | **xxscreeps** | [2077](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 23:58 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## vanilla expected failures
+
+vanilla currently declares 1 expected-failure classification against vanilla's canonical behavior, covering 1 test. That includes 1 open parity gap covering 1 test and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+
+### Open parity gaps
+
+These are known differences that may still be fixed upstream or in the adapter. If the behavior changes, the corresponding test flips from expected-failure to unexpected-pass.
+
+| Gap | Actual | Expected | Tests |
+| --- | --- | --- | :-: |
+| `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
+
+Click a test count above to jump to the affected test list for that gap.
+
+<details id="vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death">
+<summary><code>pull-fatigue-stranded-on-puller-ttl-death</code> — 1 test</summary>
+
+- `creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep`
+
+</details>
+
+
+
 ## xxscreeps expected failures
 
-xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 38 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 37 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -70,7 +93,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
 | `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
-| `pull-fatigue-evaporates-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves, xxscreeps adds the pulled creep's move fatigue to the puller during the move intent (`mods/creep/processor.ts:221-227`, walking `pulledToPuller` to the chain head) — before the per-creep tick processor runs `buryCreep` (`mods/creep/processor.ts:332-338`). The carrier is buried with the fatigue, so the surviving harvester ends the tick at fatigue 0. | Vanilla's `_add-fatigue` chain walk runs from inside per-creep `creeps/tick.js`, which interleaves `movement.execute` with the lifetime check that calls `_die` and removes the puller from `roomObjects`. When the puller is processed first and dies, the harvester's later `movement.execute` cannot follow `_pulled` to the (now-deleted) puller, so the move's fatigue lands on the harvester and stays stuck (no MOVE parts to clear). | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -375,12 +397,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-pull-fatigue-evaporates-on-puller-ttl-death">
-<summary><code>pull-fatigue-evaporates-on-puller-ttl-death</code> — 0 tests</summary>
-
-
-</details>
-
 
 ## xxscreeps intentional divergences
 
@@ -444,7 +460,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2499 tests across 127 files</summary>
+<summary>2500 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -691,7 +707,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (23)
+**`tests/01-movement/1.5-pulling.test.ts`** (24)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -715,6 +731,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
 **`tests/01-movement/1.6-collision.test.ts`** (7)
@@ -3903,7 +3920,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2075 tests across 104 files</summary>
+<summary>2077 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4142,7 +4159,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (22)
+**`tests/01-movement/1.5-pulling.test.ts`** (24)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -4165,6 +4182,8 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep
+- creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
 **`tests/01-movement/1.6-collision.test.ts`** (7)

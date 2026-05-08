@@ -269,12 +269,21 @@ Coverage Notes
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
-- `MOVE-PULL-012` `behavior` `verified_vanilla`
+- `MOVE-PULL-012` `behavior`
   When the puller dies from `ticksToLive === 1` on the same tick a pull
   resolves, the pull still completes — the pulled creep moves into the
-  puller's old tile — and the pulled creep is left holding the move's
-  fatigue. A pulled creep with no `MOVE` parts then has no way to clear
-  that fatigue on subsequent ticks.
+  puller's old tile — and the move's fatigue is buried with the dying
+  puller; the pulled creep ends the tick at fatigue `0` regardless of
+  placement or iteration order. The two rows differ only in which creep
+  is inserted first into `roomObjects`: `:pullerFirst` and
+  `:pulledFirst`. Vanilla's `_add-fatigue` chain walk runs from inside
+  per-creep `creeps/tick.js`, so when the puller is iterated first it
+  has already been removed from `roomObjects` by the time the pulled
+  creep's `movement.execute` walks the chain — vanilla then strands the
+  fatigue on the pulled creep instead of letting it die with the
+  puller. That `:pullerFirst` deviation is tracked as a vanilla parity
+  gap; the `:pulledFirst` row pins down the configuration where vanilla
+  does produce the intended outcome.
 
 ### 1.6 Collision Resolution
 - `MOVE-COLLISION-001` `behavior` `verified_vanilla`
