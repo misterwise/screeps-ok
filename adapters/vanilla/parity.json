@@ -45,6 +45,11 @@
 			"expected": "EVENT_BUILD data includes energySpent equal to the energy spent by the build action.",
 			"tests": ["ROOM-EVENTLOG-013"]
 		},
+		"eventlog-structure-destroy-intent-missing": {
+			"actual": "Stable vanilla Structure.destroy() removes the structure but does not emit EVENT_OBJECT_DESTROYED for the owner-initiated intent path.",
+			"expected": "Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType.",
+			"tests": ["ROOM-EVENTLOG-027"]
+		},
 		"power-creep-long-name-and-ttl-pr-behavior-missing": {
 			"actual": "Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death.",
 			"expected": "Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned.",

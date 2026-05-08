@@ -3,6 +3,7 @@ import { describe, test, expect, code,
 	ERR_INVALID_ARGS, ERR_RCL_NOT_ENOUGH,
 	STRUCTURE_TERMINAL, PWR_OPERATE_TERMINAL, POWER_INFO,
 	TERMINAL_COOLDOWN,
+	RESOURCE_ENERGY, RESOURCE_POWER,
 } from '../../src/index.js';
 import { terminalSendValidationCases } from '../../src/matrices/terminal-send-validation.js';
 
@@ -452,4 +453,45 @@ describe('Terminal send', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test('TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown', async ({ shard }) => {
+		shard.requires('market');
+		const amount = 1;
+		const energyBefore = 100000;
+		const roomLinearDistance = 4;
+		const expectedEnergyCost = Math.ceil(amount * (1 - Math.exp(-roomLinearDistance / 30)));
+
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+			],
+		});
+		const srcId = await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_TERMINAL,
+			owner: 'p1',
+			store: { [RESOURCE_ENERGY]: energyBefore, [RESOURCE_POWER]: amount },
+		});
+		const dstId = await shard.placeStructure('W5N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_TERMINAL,
+			owner: 'p1',
+			store: { [RESOURCE_POWER]: 0 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${srcId}).send(RESOURCE_POWER, ${amount}, 'W5N1')
+		`);
+		expect(rc).toBe(OK);
+
+		const src = await shard.expectStructure(srcId, STRUCTURE_TERMINAL);
+		const dst = await shard.expectStructure(dstId, STRUCTURE_TERMINAL);
+		expect(src.store[RESOURCE_POWER] ?? 0).toBe(0);
+		expect(src.store[RESOURCE_ENERGY]).toBe(energyBefore - expectedEnergyCost);
+		expect(dst.store[RESOURCE_POWER]).toBe(amount);
+		expect(src.cooldown).toBe(TERMINAL_COOLDOWN - 1);
+	});
 });

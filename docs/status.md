@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2501%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2075%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2504%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-29-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2078%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2501](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:11 UTC |
-| 🟡 | **xxscreeps** | [2075](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 04:07 UTC |
+| 🟡 | **vanilla** | [2504](#vanilla-passing-tests) | [29](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 04:32 UTC |
+| 🟡 | **xxscreeps** | [2078](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [355](#xxscreeps-skipped-tests) | 2026-05-08 04:29 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 28 tests. That includes 13 open parity gaps covering 28 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 14 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 14 open parity gaps covering 29 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -42,6 +42,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `effects-empty-array-missing` | Stable vanilla omits the effects property on RoomObjects that have no active effects. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#vanilla-gap-effects-empty-array-missing) |
 | `room-factory-shortcut-missing` | Stable vanilla does not populate room.factory for an owned factory in a visible room. | Visible rooms expose room.factory as the factory object when present. | [1](#vanilla-gap-room-factory-shortcut-missing) |
 | `eventlog-build-energy-spent-missing` | Stable vanilla EVENT_BUILD entries omit data.energySpent. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
+| `eventlog-structure-destroy-intent-missing` | Stable vanilla Structure.destroy() removes the structure but does not emit EVENT_OBJECT_DESTROYED for the owner-initiated intent path. | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-long-name-and-ttl-pr-behavior-missing` | Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death. | Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned. | [4](#vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing) |
 | `market-history-empty-array-missing` | Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
@@ -121,6 +122,13 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>eventlog-build-energy-spent-missing</code> — 1 test</summary>
 
 - `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
+
+</details>
+
+<details id="vanilla-gap-eventlog-structure-destroy-intent-missing">
+<summary><code>eventlog-structure-destroy-intent-missing</code> — 1 test</summary>
+
+- `room.getEventLog() ROOM-EVENTLOG-027 Structure.destroy emits EVENT_OBJECT_DESTROYED with structureType`
 
 </details>
 
@@ -660,7 +668,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2501 tests across 128 files</summary>
+<summary>2504 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2724,7 +2732,7 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (48)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (49)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
@@ -2774,6 +2782,7 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (16)
 
@@ -2959,7 +2968,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (19)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (20)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -2968,6 +2977,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
+- room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
@@ -3032,7 +3042,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (24)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
@@ -3057,6 +3067,7 @@ Click a count to jump to the affected test list.
 - Flags FLAG-009:invalidColorBeforeNameExists createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
+- Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -3551,13 +3562,13 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 354 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 355 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerCreeps` | Power creeps and powers | [112](#xxscreeps-skip-capability-powercreeps) |
 | capability | `nuke` | Nukes | [83](#xxscreeps-skip-capability-nuke) |
-| capability | `market` | Market and terminal | [81](#xxscreeps-skip-capability-market) |
+| capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
@@ -3878,14 +3889,14 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 81 tests across 9 files</summary>
+<summary><code>capability:market</code> — 82 tests across 9 files</summary>
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (2)
 
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (48)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (49)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
@@ -3935,6 +3946,7 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (1)
 
@@ -4138,7 +4150,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2075 tests across 105 files</summary>
+<summary>2078 tests across 105 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6108,7 +6120,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (17)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (18)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -6117,6 +6129,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
+- room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
@@ -6145,7 +6158,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (22)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (23)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -6153,6 +6166,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 - room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"
 - room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType
+- room.getEventLog() ROOM-EVENTLOG-027 Structure.destroy emits EVENT_OBJECT_DESTROYED with structureType
 - room.getEventLog() ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction
 - room.getEventLog() ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y
 - room.getEventLog() ROOM-EVENTLOG-009 EVENT_ATTACK_CONTROLLER is emitted with no data payload when a CLAIM creep attacks an enemy controller
@@ -6170,7 +6184,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (24)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
@@ -6195,6 +6209,7 @@ Click a count to jump to the affected test list.
 - Flags FLAG-009:invalidColorBeforeNameExists createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
+- Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 

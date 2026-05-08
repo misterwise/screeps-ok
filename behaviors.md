@@ -2321,7 +2321,7 @@ Coverage Notes
   codes and precedence match the canonical validation matrix for ownership,
   active-structure state, argument validity, resource availability, and
   cooldown.
-- `TERMINAL-SEND-014` `behavior` `needs_vanilla_verification`
+- `TERMINAL-SEND-014` `behavior` `verified_vanilla`
   `send(resourceType, amount, targetRoomName)` accepts any positive
   integer `amount`; there is no lower bound above 1. A successful
   `send(resource, 1, dest)` returns `OK`, deducts the standard energy
@@ -2712,7 +2712,7 @@ Coverage Notes
 - `ROOM-ENERGY-002` `behavior` `verified_vanilla`
   `room.energyCapacityAvailable` equals the sum of energy capacity in the
   room's active spawns and extensions.
-- `ROOM-ENERGY-003` `behavior` `needs_vanilla_verification`
+- `ROOM-ENERGY-003` `behavior` `verified_vanilla`
   `room.energyAvailable` and `room.energyCapacityAvailable` count only
   spawns and extensions owned by the room's controller owner. Hostile-
   owned spawns/extensions present in the room contribute zero, even when
@@ -2937,7 +2937,7 @@ Coverage Notes
   `Room.createFlag(x, y, name?, color?, secondaryColor?)` failure return
   codes and precedence match the canonical validation matrix for argument
   validity, name uniqueness, and flag cap.
-- `FLAG-010` `behavior` `needs_vanilla_verification`
+- `FLAG-010` `behavior` `verified_vanilla`
   `RoomPosition.createFlag()` against a roomName not present in
   `Game.rooms` (no current visibility) throws
   `Error("Could not access room <name>")`. Visibility is a hard

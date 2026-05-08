@@ -190,4 +190,20 @@ describe('Flags', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	test('FLAG-010 RoomPosition.createFlag without room visibility throws before validation', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		await shard.tick();
+
+		const err = await shard.expectRunPlayerError('p1', code`
+			new RoomPosition(25, 25, 'W2N1').createFlag(${'x'.repeat(101)}, 99, 99)
+		`, 'runtime');
+		expect(err.engineMessage).toMatch(/Could not access room W2N1/);
+	});
 });

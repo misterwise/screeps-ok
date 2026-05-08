@@ -6,6 +6,7 @@ import {
 	LOOK_CREEPS,
 	STRUCTURE_EXTENSION, STRUCTURE_FACTORY, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_WALL,
 	RESOURCE_ENERGY,
+	SPAWN_ENERGY_CAPACITY, EXTENSION_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../../src/matrices/room-find.js';
 
@@ -157,6 +158,86 @@ describe('room energy tracking', () => {
 			energyCapacityAvailable: 0,
 			extensionActive: false,
 		});
+	});
+
+	test('ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions', async ({ shard }) => {
+		const ownSpawnEnergy = 200;
+		const ownExtensionEnergy = 17;
+
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 2, owner: 'p1' },
+				{ name: 'W2N1', rcl: 2, owner: 'p2' },
+			],
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [24, 25],
+			structureType: STRUCTURE_SPAWN,
+			owner: 'p1',
+			store: { [RESOURCE_ENERGY]: ownSpawnEnergy },
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_EXTENSION,
+			owner: 'p1',
+			store: { [RESOURCE_ENERGY]: ownExtensionEnergy },
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [26, 25],
+			structureType: STRUCTURE_SPAWN,
+			owner: 'p2',
+			store: { [RESOURCE_ENERGY]: SPAWN_ENERGY_CAPACITY },
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [27, 25],
+			structureType: STRUCTURE_EXTENSION,
+			owner: 'p2',
+			store: { [RESOURCE_ENERGY]: EXTENSION_ENERGY_CAPACITY[2] },
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const energyStructures = s =>
+				s.structureType === STRUCTURE_SPAWN || s.structureType === STRUCTURE_EXTENSION;
+			const room = Game.rooms['W1N1'];
+			({
+				energyAvailable: room.energyAvailable,
+				energyCapacityAvailable: room.energyCapacityAvailable,
+				ownEnergy: room.find(FIND_MY_STRUCTURES)
+					.filter(energyStructures)
+					.reduce((sum, s) => sum + (s.store[RESOURCE_ENERGY] || 0), 0),
+				hostileEnergy: room.find(FIND_HOSTILE_STRUCTURES)
+					.filter(energyStructures)
+					.reduce((sum, s) => sum + (s.store[RESOURCE_ENERGY] || 0), 0),
+				ownCapacity: room.find(FIND_MY_STRUCTURES)
+					.filter(energyStructures)
+					.reduce((sum, s) => sum + s.store.getCapacity(RESOURCE_ENERGY), 0),
+				hostileCapacity: room.find(FIND_HOSTILE_STRUCTURES)
+					.filter(energyStructures)
+					.reduce((sum, s) => sum + s.store.getCapacity(RESOURCE_ENERGY), 0),
+				myEnergyStructures: room.find(FIND_MY_STRUCTURES).filter(energyStructures).length,
+				hostileEnergyStructures: room.find(FIND_HOSTILE_STRUCTURES).filter(energyStructures).length,
+			})
+		`) as {
+			energyAvailable: number;
+			energyCapacityAvailable: number;
+			ownEnergy: number;
+			hostileEnergy: number;
+			ownCapacity: number;
+			hostileCapacity: number;
+			myEnergyStructures: number;
+			hostileEnergyStructures: number;
+		};
+
+		expect(result.energyAvailable).toBe(result.ownEnergy);
+		expect(result.energyCapacityAvailable).toBe(result.ownCapacity);
+		expect(result.ownCapacity).toBe(SPAWN_ENERGY_CAPACITY + EXTENSION_ENERGY_CAPACITY[2]);
+		expect(result.myEnergyStructures).toBe(2);
+		expect(result.hostileEnergyStructures).toBe(2);
+		expect(result.ownEnergy).toBeGreaterThan(0);
+		expect(result.hostileEnergy).toBeGreaterThan(0);
+		expect(result.hostileCapacity).toBeGreaterThan(0);
 	});
 });
 

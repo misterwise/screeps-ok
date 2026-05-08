@@ -263,6 +263,35 @@ describe('room.getEventLog()', () => {
 		expect(destroyed.data.type).toBe(STRUCTURE_WALL);
 	});
 
+	test('ROOM-EVENTLOG-027 Structure.destroy emits EVENT_OBJECT_DESTROYED with structureType', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_SPAWN,
+			owner: 'p1',
+		});
+		await shard.tick();
+
+		const realSpawnId = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).id
+		`) as string;
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).destroy()
+		`);
+		expect(rc).toBe(OK);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+		const destroyed = expectExactlyOne(events,
+			e => e.event === EVENT_OBJECT_DESTROYED && e.objectId === realSpawnId);
+		expect(destroyed.data).toBeDefined();
+		expect(destroyed.data.type).toBe(STRUCTURE_SPAWN);
+	});
+
 	test('ROOM-EVENTLOG-007 EVENT_TRANSFER is emitted by creep transfer/withdraw and link transferEnergy with vanilla object/target direction', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
