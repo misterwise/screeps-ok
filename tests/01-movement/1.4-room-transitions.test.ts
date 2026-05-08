@@ -161,4 +161,43 @@ describe('Room transitions', () => {
 		expect(creep.fatigue).toBe(0);
 	});
 
+	test('ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+				{ name: 'W0N1', rcl: 1, owner: 'p1' },
+				{ name: 'W1N2', rcl: 1, owner: 'p1' },
+				{ name: 'W1N0', rcl: 1, owner: 'p1' },
+				{ name: 'W2N2', rcl: 1, owner: 'p1' },
+				{ name: 'W2N0', rcl: 1, owner: 'p1' },
+				{ name: 'W0N2', rcl: 1, owner: 'p1' },
+				{ name: 'W0N0', rcl: 1, owner: 'p1' },
+			],
+		});
+		const corners = [
+			{ name: 'CornerTopLeft', x: 0, y: 0 },
+			{ name: 'CornerBottomLeft', x: 0, y: 49 },
+			{ name: 'CornerTopRight', x: 49, y: 0 },
+			{ name: 'CornerBottomRight', x: 49, y: 49 },
+		];
+		const ids: Array<{ id: string; x: number; y: number }> = [];
+		for (const corner of corners) {
+			const id = await shard.placeCreep('W1N1', {
+				pos: [corner.x, corner.y], owner: 'p1', body: [MOVE], name: corner.name,
+			});
+			ids.push({ id, x: corner.x, y: corner.y });
+		}
+
+		await shard.tick();
+
+		for (const { id, x, y } of ids) {
+			const creep = await shard.expectObject(id, 'creep');
+			expect(creep.pos.roomName).toBe('W1N1');
+			expect(creep.pos.x).toBe(x);
+			expect(creep.pos.y).toBe(y);
+		}
+	});
+
 });

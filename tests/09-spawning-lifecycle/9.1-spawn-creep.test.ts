@@ -1,6 +1,6 @@
 import {
 	describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS, ERR_INVALID_ARGS, ERR_BUSY,
+	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS, ERR_INVALID_ARGS, ERR_BUSY, ERR_NOT_OWNER,
 	WORK, CARRY, MOVE, TOUGH, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
 	CREEP_SPAWN_TIME, MAX_CREEP_SIZE,
@@ -340,6 +340,105 @@ describe('StructureSpawn', () => {
 			Game.creeps['MemTest'].memory
 		`);
 		expect(mem).toEqual({ role: 'scout', priority: 5 });
+	});
+
+	test('ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'NotifyMe',
+		});
+		await shard.tick();
+
+		const state = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).notifiesWhenAttacked()
+		`);
+		expect(state).toBe(true);
+	});
+
+	test('ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'QuietMe',
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).notifyWhenAttacked(false)
+		`);
+		expect(rc).toBe(OK);
+
+		const state = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).notifiesWhenAttacked()
+		`);
+		expect(state).toBe(false);
+	});
+
+	test('ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		const quietSpawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const defaultSpawnId = await shard.placeStructure('W1N1', {
+			pos: [20, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const rcs = await shard.runPlayer('p1', code`
+			({
+				quiet: Game.getObjectById(${quietSpawnId}).spawnCreep([MOVE], 'QuietSpawned', {
+					notifyWhenAttacked: false,
+				}),
+				defaulted: Game.getObjectById(${defaultSpawnId}).spawnCreep([MOVE], 'DefaultSpawned'),
+			})
+		`) as { quiet: number; defaulted: number };
+		expect(rcs).toEqual({ quiet: OK, defaulted: OK });
+
+		await shard.tick(CREEP_SPAWN_TIME);
+
+		const states = await shard.runPlayer('p1', code`
+			({
+				quiet: Game.creeps['QuietSpawned'].notifiesWhenAttacked(),
+				defaulted: Game.creeps['DefaultSpawned'].notifiesWhenAttacked(),
+			})
+		`) as { quiet: boolean; defaulted: boolean };
+		expect(states).toEqual({ quiet: false, defaulted: true });
+	});
+
+	test('ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 2, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		const hostileId = await shard.placeCreep('W1N1', {
+			pos: [20, 20], owner: 'p2', body: [MOVE], name: 'HostileNotify',
+		});
+		await shard.tick();
+
+		const spawnRc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'StillSpawning')
+		`);
+		expect(spawnRc).toBe(OK);
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			({
+				spawning: Game.creeps['StillSpawning'].notifiesWhenAttacked(),
+				unowned: Game.getObjectById(${hostileId}).notifiesWhenAttacked(),
+			})
+		`) as { spawning: number; unowned: number };
+		expect(result).toEqual({ spawning: ERR_BUSY, unowned: ERR_NOT_OWNER });
 	});
 
 	// ── Spawning timing ─────────────────────────────────────────

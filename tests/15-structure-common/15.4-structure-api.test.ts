@@ -1,8 +1,8 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS,
+	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS, ERR_INVALID_TARGET,
 	MOVE,
 	FIND_STRUCTURES, FIND_RUINS,
-	STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_TOWER,
+	STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_TOWER,
 } from '../../src/index.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
 import { structureDestroyValidationCases } from '../../src/matrices/structure-destroy-validation.js';
@@ -157,7 +157,7 @@ describe('structure.notifyWhenAttacked()', () => {
 		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
-	test('STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument', async ({ shard }) => {
+	test('STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -169,9 +169,64 @@ describe('structure.notifyWhenAttacked()', () => {
 			Game.getObjectById(${towerId}).notifyWhenAttacked(false)
 		`);
 		expect(rc).toBe(OK);
+
+		const state = await shard.runPlayer('p1', code`
+			Game.getObjectById(${towerId}).notifiesWhenAttacked()
+		`);
+		expect(state).toBe(false);
 	});
 
-	test('STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller\'s own room', async ({ shard }) => {
+	test('ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 500 },
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [20, 20], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			({
+				tower: Game.getObjectById(${towerId}).notifiesWhenAttacked(),
+				spawn: Game.getObjectById(${spawnId}).notifiesWhenAttacked(),
+			})
+		`) as { tower: boolean; spawn: boolean };
+		expect(result).toEqual({ tower: true, spawn: true });
+	});
+
+	test('ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 500 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${towerId}).notifyWhenAttacked(false)
+		`);
+		expect(rc).toBe(OK);
+
+		const state = await shard.runPlayer('p1', code`
+			Game.getObjectById(${towerId}).notifiesWhenAttacked()
+		`);
+		expect(state).toBe(false);
+	});
+
+	test('ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].controller.notifiesWhenAttacked()
+		`);
+		expect(rc).toBe(ERR_INVALID_TARGET);
+	});
+
+	test('ATTACK-NOTIFY-005 notifyWhenAttacked returns OK for unowned structure in the caller\'s own room', async ({ shard }) => {
 		// Vanilla's check (structures.js:89) rejects only if my === false OR another
 		// player owns the room controller. An unowned structure (road) in your own
 		// room passes both clauses.
@@ -187,7 +242,7 @@ describe('structure.notifyWhenAttacked()', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player\'s room', async ({ shard }) => {
+	test('ATTACK-NOTIFY-006 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player\'s room', async ({ shard }) => {
 		// The controller-owner branch of the check: even though the road itself
 		// is unowned, the room controller belongs to p1, so p2 is rejected.
 		await shard.createShard({

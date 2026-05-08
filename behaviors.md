@@ -145,6 +145,12 @@ conformance test or one generated test family.
   `creep.move(direction)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, fatigue, and argument validity.
+- `MOVE-BASIC-028` `behavior` `needs_vanilla_verification`
+  `creep.moveTo(otherRoomPos)` against a destination in a room that is
+  not present in `Game.map.describeExits(creep.room.name)` (no shared
+  exit) returns `ERR_NO_PATH` and produces zero movement. The creep
+  remains on its current tile rather than walking into the boundary
+  wall.
 
 Coverage Notes
 - `move()` into an occupied tile is owned by the collision resolution facet
@@ -220,6 +226,9 @@ Coverage Notes
 - `ROOM-TRANSITION-005` `behavior` `verified_vanilla`
   A creep's body composition, hit points, and store contents are preserved
   intact across a room transition.
+- `ROOM-TRANSITION-006` `behavior` `needs_vanilla_verification`
+  A creep already standing on a room corner tile (`(0,0)`, `(0,49)`,
+  `(49,0)`, or `(49,49)`) does not auto-transition rooms on the next tick.
 
 Coverage Notes
 - Room adjacency and coordinate topology are owned by `21. Map`
@@ -269,21 +278,14 @@ Coverage Notes
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
-- `MOVE-PULL-012` `behavior`
+- `MOVE-PULL-012` `behavior` `verified_vanilla`
   When the puller dies from `ticksToLive === 1` on the same tick a pull
   resolves, the pull still completes — the pulled creep moves into the
   puller's old tile — and the move's fatigue is buried with the dying
   puller; the pulled creep ends the tick at fatigue `0` regardless of
   placement or iteration order. The two rows differ only in which creep
   is inserted first into `roomObjects`: `:pullerFirst` and
-  `:pulledFirst`. Vanilla's `_add-fatigue` chain walk runs from inside
-  per-creep `creeps/tick.js`, so when the puller is iterated first it
-  has already been removed from `roomObjects` by the time the pulled
-  creep's `movement.execute` walks the chain — vanilla then strands the
-  fatigue on the pulled creep instead of letting it die with the
-  puller. That `:pullerFirst` deviation is tracked as a vanilla parity
-  gap; the `:pulledFirst` row pins down the configuration where vanilla
-  does produce the intended outcome.
+  `:pulledFirst`.
 
 ### 1.6 Collision Resolution
 - `MOVE-COLLISION-001` `behavior` `verified_vanilla`
@@ -304,6 +306,13 @@ Coverage Notes
   In a circular movement chain (A moves to B's tile, B moves to C's tile,
   C moves to A's tile), all creeps either rotate positions simultaneously or
   all remain in place.
+- `MOVE-COLLISION-007` `behavior` `needs_vanilla_verification`
+  When `creep.moveTo(target, { ignoreCreeps: false })` would have to pass
+  through a tile occupied by a stationary creep on every viable route,
+  the call returns `ERR_NO_PATH` rather than `OK`. Distinct from
+  `MOVE-COLLISION-005` (single-tile blocking) and `MOVE-BASIC-018`
+  (terrain-only `ERR_NO_PATH`); this entry covers the all-paths-blocked-
+  by-creeps case.
 
 Coverage Notes
 - Same-input determinism should be proven through concrete repeated scenarios,
@@ -434,6 +443,13 @@ Coverage Notes
 - `LEGACY-PATH-009` `behavior` `verified_vanilla`
   Each element of the path step array contains `x`, `y`, `dx`, `dy`, and
   `direction` fields.
+- `LEGACY-PATH-010` `behavior` `needs_vanilla_verification`
+  `Room.findPath(..., { costCallback })` treats a `costCallback` return value
+  of `false` as blocking that room, yielding an empty path (`[]`, or `''` when
+  serialized).
+- `LEGACY-PATH-011` `behavior` `needs_vanilla_verification`
+  `Room.findClosestByPath(..., { range: N })` uses `N` as the goal range when
+  deciding whether a candidate is path-reachable.
 
 ---
 
@@ -901,6 +917,18 @@ Coverage Notes
   structure type, including road and container. Engine `rooms.js:1055-1061`
   rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
   from the caller's user, before the rcl check runs.
+- `CONSTRUCTION-SITE-015` `behavior` `needs_vanilla_verification`
+  Enumerable user-code additions to `Array.prototype` do not affect
+  `Room.createConstructionSite()` or `RoomPosition.createConstructionSite()`
+  validation for valid or invalid edge-adjacent construction-site positions.
+- `CONSTRUCTION-SITE-016` `behavior` `needs_vanilla_verification`
+  When a room's RCL falls below the count of active structures plus
+  existing construction sites of a given structure type (e.g. a downgrade
+  leaves `sites + active > CONTROLLER_STRUCTURES[type][rcl]`), build
+  progress on the surplus sites of that type does not accumulate; the
+  sites cannot complete until the room's controller again satisfies the
+  cap. Distinct from `CONSTRUCTION-SITE-003`, which gates at placement
+  time; this entry covers the post-placement progress gate.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
@@ -1022,6 +1050,12 @@ Coverage Notes
   `creep.upgradeController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, resource availability, target validity, and range.
+- `CTRL-UPGRADE-014` `behavior` `needs_vanilla_verification`
+  `upgradeController()` against a creep whose `store` lacks the `energy`
+  key entirely (not `store.energy === 0`) returns
+  `ERR_NOT_ENOUGH_RESOURCES`; controller `progress` is unchanged and no
+  `EVENT_UPGRADE_CONTROLLER` is emitted. Fences the `undefined <= 0`
+  coercion bypass that would otherwise produce `NaN` progress.
 
 Coverage Notes
 - Upgrade boost magnitudes and zero-extra-cost are owned by
@@ -1665,6 +1699,11 @@ Coverage Notes
 - `SPAWN-TIMING-006` `behavior` `verified_vanilla`
   When spawning completes, the creep exits the spawn tile in the chosen
   direction.
+- `SPAWN-TIMING-007` `behavior` `needs_vanilla_verification`
+  `StructureSpawn.Spawning.setDirections(dirs)` replaces the current
+  directions wholesale: a subsequent read of `spawn.spawning.directions`
+  returns exactly `dirs`, regardless of how many directions were supplied
+  to the original `spawnCreep()` or to prior `setDirections()` calls.
 
 ### 9.3 Spawn Stomping
 - `SPAWN-STOMP-001` `behavior` `verified_vanilla`
@@ -1722,6 +1761,17 @@ Coverage Notes
   `renewCreep(creep)` failure return codes and precedence match the canonical
   validation matrix for ownership, caller busy state, target validity, range,
   store capacity, and resource availability.
+- `RENEW-CREEP-012` `behavior` `needs_vanilla_verification`
+  `renewCreep(creep, options)` returns `ERR_INVALID_ARGS` when `options` is
+  supplied and is not an object.
+- `RENEW-CREEP-013` `behavior` `needs_vanilla_verification`
+  When `options.energyStructures` is supplied to `renewCreep()`, only the
+  listed active owned spawns/extensions contribute available energy and only
+  those listed structures are charged.
+- `RENEW-CREEP-014` `behavior` `needs_vanilla_verification`
+  Duplicate, inactive, unowned, non-spawn/extension, or stale
+  `options.energyStructures` entries do not contribute energy to
+  `renewCreep()` and do not double-count.
 
 ### 9.5 Recycle Creep
 - `RECYCLE-CREEP-001` `behavior` `verified_vanilla`
@@ -1754,6 +1804,12 @@ Coverage Notes
   A spawning creep cannot perform creep actions.
 - `CREEP-SPAWNING-004` `behavior` `verified_vanilla`
   A spawning creep's body parts are visible before spawning completes.
+- `CREEP-SPAWNING-005` `behavior` `needs_vanilla_verification`
+  When a spawn finishes producing a creep, `StructureSpawn.spawning` is
+  `null` from the next tick onward, until another `spawnCreep()` succeeds.
+  Distinct from `CREEP-SPAWNING-001`, which covers `creep.spawning ===
+  true` during production; this entry covers the spawn-side post-
+  completion transition.
 
 ### 9.7 Aging & Death
 - `CREEP-LIFETIME-001` `behavior` `verified_vanilla`
@@ -2265,6 +2321,11 @@ Coverage Notes
   codes and precedence match the canonical validation matrix for ownership,
   active-structure state, argument validity, resource availability, and
   cooldown.
+- `TERMINAL-SEND-014` `behavior` `needs_vanilla_verification`
+  `send(resourceType, amount, targetRoomName)` accepts any positive
+  integer `amount`; there is no lower bound above 1. A successful
+  `send(resource, 1, dest)` returns `OK`, deducts the standard energy
+  cost and resource, and applies `TERMINAL_COOLDOWN`.
 
 Coverage Notes
 - Terminal store-type semantics and capacity constants belong in section `23. Store API`.
@@ -2541,14 +2602,40 @@ Coverage Notes
 - `STRUCTURE-API-005` `behavior` `verified_vanilla`
   `notifyWhenAttacked(enabled)` returns `ERR_INVALID_ARGS` when `enabled` is not
   boolean.
-- `STRUCTURE-API-006` `behavior` `verified_vanilla`
-  A successful `notifyWhenAttacked(enabled)` returns `OK` and updates the
-  structure's attack notification setting on the next tick.
+- `STRUCTURE-API-006` `behavior` `needs_vanilla_verification`
+  A successful structure `notifyWhenAttacked(enabled)` returns `OK` and the
+  next-tick `notifiesWhenAttacked()` value reflects the requested setting.
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `Structure.destroy()` failure return codes and precedence match the
   canonical validation matrix for ownership and room-busy state.
 
+### 15.4b Attack Notification APIs
+- `ATTACK-NOTIFY-001` `behavior` `needs_vanilla_verification`
+  `notifiesWhenAttacked()` returns the current boolean attack-notification
+  state for an owned creep, a spawned owned power creep, a valid owned
+  structure, and an owned spawn.
+- `ATTACK-NOTIFY-002` `behavior` `needs_vanilla_verification`
+  `notifyWhenAttacked(enabled)` changes the next-tick value observed through
+  `notifiesWhenAttacked()`.
+- `ATTACK-NOTIFY-003` `behavior` `needs_vanilla_verification`
+  `spawnCreep(..., { notifyWhenAttacked: false })` creates a creep whose
+  initial attack-notification state is `false`; omitting the option defaults
+  the new creep's state to `true`.
+- `ATTACK-NOTIFY-004` `behavior` `needs_vanilla_verification`
+  `notifiesWhenAttacked()` failure codes match object kind: spawning creep
+  `ERR_BUSY`, unowned object `ERR_NOT_OWNER`, unspawned power creep `ERR_BUSY`,
+  and invalid structure `ERR_INVALID_TARGET`.
+- `ATTACK-NOTIFY-005` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `OK` for an unowned structure in a room
+  controlled by the caller.
+- `ATTACK-NOTIFY-006` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` for an unowned
+  structure in another player's controlled room.
+
 ### 15.5 Effects Substrate `capability: powerCreeps`
+- `EFFECT-EMPTY-001` `behavior` `needs_vanilla_verification`
+  Every `RoomObject` exposes `effects` as an array; when no effects are active,
+  player code observes an empty array (`[]`) rather than `undefined`.
 - `EFFECT-DECAY-001` `behavior` `verified_vanilla`
   An entry's `ticksRemaining` decrements by exactly 1 each subsequent tick
   while the host RoomObject remains alive.
@@ -2619,6 +2706,12 @@ Coverage Notes
 - `ROOM-ENERGY-002` `behavior` `verified_vanilla`
   `room.energyCapacityAvailable` equals the sum of energy capacity in the
   room's active spawns and extensions.
+- `ROOM-ENERGY-003` `behavior` `needs_vanilla_verification`
+  `room.energyAvailable` and `room.energyCapacityAvailable` count only
+  spawns and extensions owned by the room's controller owner. Hostile-
+  owned spawns/extensions present in the room contribute zero, even when
+  the hostile owner's RCL would mark them active from the hostile's
+  perspective.
 
 ### 16.3 Find
 - `ROOM-FIND-001` `matrix` `verified_vanilla`
@@ -2648,6 +2741,12 @@ Coverage Notes
   evaluated from each player's perspective: each player's owned creeps
   and structures appear in the `MY` sets and the other player's appear
   in the `HOSTILE` sets.
+
+### 16.3b Structure Shortcuts
+- `ROOM-STRUCTURE-001` `behavior` `needs_vanilla_verification`
+  Visible rooms expose `room.storage`, `room.terminal`, and `room.factory` as
+  the corresponding structure object when that structure is present, otherwise
+  `undefined`. The factory row requires `capability: factory`.
 
 ### 16.4 Look
 - `ROOM-LOOK-001` `behavior` `verified_vanilla`
@@ -2742,11 +2841,12 @@ Coverage Notes
   `EVENT_HARVEST` is emitted when a creep harvests a source, with
   `objectId` set to the creep, `data.targetId` set to the source, and
   `data.amount` set to the energy harvested this tick.
-- `ROOM-EVENTLOG-013` `behavior` `verified_vanilla`
+- `ROOM-EVENTLOG-013` `behavior` `needs_vanilla_verification`
   `EVENT_BUILD` is emitted when a creep builds a construction site, with
   `objectId` set to the creep, `data.targetId` set to the site,
-  `data.amount` equal to the progress added this tick, and `data.incomplete`
-  reflecting whether the site still has work remaining.
+  `data.amount` equal to the progress added this tick, `data.energySpent`
+  equal to the energy spent this tick, and `data.incomplete` reflecting
+  whether the site still has work remaining.
 - `ROOM-EVENTLOG-014` `behavior` `verified_vanilla`
   `EVENT_REPAIR` is emitted when a creep repairs a structure, with
   `objectId` set to the creep, `data.targetId` set to the structure, and
@@ -2800,6 +2900,12 @@ Coverage Notes
   Nuke-specific event-log details match the canonical matrix for `EVENT_ATTACK`
   object/target ids, absence of creep attack events from room-wide nuke kills,
   and rampart-before-covered-structure ordering.
+- `ROOM-EVENTLOG-027` `behavior` `needs_vanilla_verification`
+  `EVENT_OBJECT_DESTROYED` is emitted when an owner calls
+  `Structure.destroy()` (non-attack destruction), with `data.type` set to
+  the destroyed `structureType`. Distinct from `ROOM-EVENTLOG-006`, which
+  covers attack-induced destruction; this entry covers the
+  `Structure.destroy()` intent path.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`
@@ -2825,6 +2931,13 @@ Coverage Notes
   `Room.createFlag(x, y, name?, color?, secondaryColor?)` failure return
   codes and precedence match the canonical validation matrix for argument
   validity, name uniqueness, and flag cap.
+- `FLAG-010` `behavior` `needs_vanilla_verification`
+  `RoomPosition.createFlag()` against a roomName not present in
+  `Game.rooms` (no current visibility) throws
+  `Error("Could not access room <name>")`. Visibility is a hard
+  prerequisite that precedes argument validation. `Room.createFlag()`
+  cannot reach this state because obtaining the `Room` object already
+  requires visibility.
 
 Coverage Notes
 - Old FLAG-007 ("player-scoped and referenced by name") dropped: player-scoping
@@ -2992,7 +3105,11 @@ Coverage Notes
   new unspawned power creep with that name and class.
 - `POWERCREEP-CREATE-002` `matrix` `verified_vanilla`
   `PowerCreep.create()` failure codes match the canonical validation matrix
-  for invalid arguments, duplicate name, and insufficient free power levels.
+  for invalid arguments (including names longer than 100 characters),
+  duplicate name, and insufficient free power levels.
+- `POWERCREEP-CREATE-003` `behavior` `needs_vanilla_verification`
+  `PowerCreep.create()` accepts a 100-character name and the created power
+  creep preserves that exact name.
 - `POWERCREEP-SPAWN-001` `behavior` `verified_vanilla`
   A successful `powerCreep.spawn(powerSpawn)` returns `OK`, places the power
   creep on the power spawn's tile and restores full hits and full TTL when the
@@ -3002,9 +3119,14 @@ Coverage Notes
   busy, invalid target, ownership, inactive power spawn, and spawn cooldown.
 - `POWERCREEP-LIFETIME-001` `behavior` `verified_vanilla`
   A spawned power creep's `ticksToLive` decreases by `1` each tick.
+- `POWERCREEP-LIFETIME-002` `behavior` `needs_vanilla_verification`
+  An unspawned power creep exposes `ticksToLive === undefined` to player code.
 - `POWERCREEP-DEATH-001` `behavior` `verified_vanilla`
   A power creep death creates a tombstone on the death tile with the power
   creep snapshot fields and `TOMBSTONE_DECAY_POWER_CREEP` decay time.
+- `POWERCREEP-DEATH-002` `behavior` `needs_vanilla_verification`
+  After a spawned power creep dies and becomes unspawned again, it exposes
+  `ticksToLive === undefined` to player code.
 - `POWERCREEP-RENEW-001` `behavior` `verified_vanilla`
   A successful `powerCreep.renew(target)` returns `OK` and resets
   `ticksToLive` to `POWER_CREEP_LIFE_TIME` in the same tick.
@@ -3017,6 +3139,12 @@ Coverage Notes
   `powerCreep.delete()` returns `ERR_BUSY` for a spawned power creep.
 - `POWERCREEP-DELETE-003` `behavior` `verified_vanilla`
   `powerCreep.delete()` returns `ERR_NOT_OWNER` for an unowned power creep.
+- `POWERCREEP-RENAME-001` `behavior` `needs_vanilla_verification`
+  `PowerCreep.rename()` accepts a 100-character name and preserves that exact
+  name.
+- `POWERCREEP-RENAME-002` `behavior` `verified_vanilla`
+  `PowerCreep.rename()` rejects names longer than 100 characters with
+  `ERR_INVALID_ARGS`.
 - `POWERCREEP-UPGRADE-001` `behavior` `verified_vanilla`
   A successful `powerCreep.upgrade(power)` returns `OK`, increases the
   specified power's level by `1`, increases the power creep's `level` by `1`,
@@ -3204,6 +3332,12 @@ Notes
 - `MARKET-QUERY-005` `behavior` `verified_vanilla`
   Exposed order prices and market credits use public credit units rather than
   the engine's internal milli-credit storage.
+- `MARKET-QUERY-006` `behavior` `needs_vanilla_verification`
+  `Game.market.getHistory(invalidResource)` and valid resources with no
+  history return an empty array (`[]`), not an empty object.
+- `MARKET-QUERY-007` `behavior` `verified_vanilla`
+  `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
+  array (`[]`).
 
 ---
 
@@ -3303,6 +3437,20 @@ Coverage Notes
   `findClosestByPath()` returns `null` when no reachable target exists.
 - `ROOMPOS-FIND-008` `behavior` `verified_vanilla`
   `findClosestByRange()` returns `null` when the candidate set is empty.
+- `ROOMPOS-FIND-009` `behavior` `needs_vanilla_verification`
+  `pos.findClosestByPath(targets, {costCallback})` invokes `costCallback`
+  for each candidate room and uses the returned `CostMatrix` to shape the
+  search. A callback that walls off the cheapest route causes the
+  function to return the next-cheapest reachable target instead of the
+  range-1 result.
+- `ROOMPOS-FIND-010` `behavior` `needs_vanilla_verification`
+  `RoomPosition.findClosestByPath(..., { range: N })` uses `N` as the goal
+  range when deciding whether a candidate is path-reachable.
+- `ROOMPOS-FIND-011` `behavior` `needs_vanilla_verification`
+  `pos.findPathTo(otherRoomPos, opts)` honors `opts` (e.g. `maxOps`) for
+  the cross-room exit-selection step. Without the pass-through, only the
+  default 2000 operations are spent picking an exit and the resulting
+  path can dead-end at a wall.
 
 ### 22.4 Look
 - `ROOMPOS-LOOK-001` `behavior` `verified_vanilla`
@@ -3322,6 +3470,12 @@ Coverage Notes
 - `ROOMPOS-ACTION-002` `behavior` `verified_vanilla`
   A successful `RoomPosition.createFlag()` returns the flag name and creates
   the flag at the RoomPosition's coordinates in the same tick.
+- `ROOMPOS-ACTION-003` `behavior` `needs_vanilla_verification`
+  `pos.createConstructionSite(structureType, name?)` passes the optional
+  `name` through to the underlying `Room.createConstructionSite()`. When
+  the structure type accepts a name (currently `STRUCTURE_SPAWN`), the
+  resulting `ConstructionSite.name` and the structure produced on
+  completion both carry that name.
 
 ---
 
@@ -3991,6 +4145,9 @@ the key is undocumented even though the behavior that produces it
   Deleting `creep.memory._move` before a subsequent `moveTo` call causes
   that call to recompute the path rather than reuse; the engine writes a
   fresh `_move` object whose `time` equals the current `Game.time`.
+- `UNDOC-MOVECACHE-004` `behavior` `needs_vanilla_verification`
+  With a valid reusable `creep.memory._move`, `visualizePathStyle`, and
+  `fatigue > 0`, `moveTo()` returns `ERR_TIRED` without recomputing a path.
 
 ### 27.10 Room History Action Log `capability: actionLogCapture`
 

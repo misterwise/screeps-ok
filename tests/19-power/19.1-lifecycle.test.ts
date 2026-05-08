@@ -1,11 +1,12 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE,
-	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
-	MOVE, CARRY,
+	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
+	ATTACK, MOVE, CARRY,
+	body,
 } from '../../src/index.js';
 
 describe('Power creep lifecycle', () => {
-	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep', async ({ shard }) => {
+	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -17,6 +18,16 @@ describe('Power creep lifecycle', () => {
 			PowerCreep.create('TestPC', POWER_CLASS.OPERATOR)
 		`);
 		expect(rc).toBe(OK);
+
+		const result = await shard.runPlayer('p1', code`
+			const pc = Game.powerCreeps['TestPC'];
+			pc ? ({
+				exists: true,
+				name: pc.name,
+				classMatches: pc.className === POWER_CLASS.OPERATOR,
+			}) : ({ exists: false })
+		`) as { exists: boolean; name?: string; classMatches?: boolean };
+		expect(result).toEqual({ exists: true, name: 'TestPC', classMatches: true });
 	});
 
 	test('POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments', async ({ shard }) => {
@@ -28,10 +39,155 @@ describe('Power creep lifecycle', () => {
 		await shard.tick();
 
 		// Invalid class name
+		const result = await shard.runPlayer('p1', code`
+			({
+				invalidClass: PowerCreep.create('TestPC', 'invalid_class'),
+				tooLongName: PowerCreep.create(${'x'.repeat(101)}, POWER_CLASS.OPERATOR),
+			})
+		`) as { invalidClass: number; tooLongName: number };
+		expect(result).toEqual({
+			invalidClass: ERR_INVALID_ARGS,
+			tooLongName: ERR_INVALID_ARGS,
+		});
+	});
+
+	test('POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		const name = 'p'.repeat(100);
 		const rc = await shard.runPlayer('p1', code`
-			PowerCreep.create('TestPC', 'invalid_class')
+			PowerCreep.create(${name}, POWER_CLASS.OPERATOR)
 		`);
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(OK);
+
+		const result = await shard.runPlayer('p1', code`
+			const pc = Game.powerCreeps[${name}];
+			pc ? ({ name: pc.name, length: pc.name.length }) : null
+		`) as { name: string; length: number } | null;
+		expect(result).toEqual({ name, length: 100 });
+	});
+
+	test('POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			PowerCreep.create('RenameBase', POWER_CLASS.OPERATOR)
+		`);
+		const name = 'r'.repeat(100);
+		const rc = await shard.runPlayer('p1', code`
+			Game.powerCreeps['RenameBase'].rename(${name})
+		`);
+		expect(rc).toBe(OK);
+
+		const result = await shard.runPlayer('p1', code`
+			const pc = Game.powerCreeps[${name}];
+			pc ? ({ name: pc.name, length: pc.name.length }) : null
+		`) as { name: string; length: number } | null;
+		expect(result).toEqual({ name, length: 100 });
+	});
+
+	test('POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			PowerCreep.create('RenameReject', POWER_CLASS.OPERATOR)
+		`);
+		const rc = await shard.runPlayer('p1', code`
+			Game.powerCreeps['RenameReject'].rename(${'x'.repeat(101)})
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			PowerCreep.create('UnspawnedTtl', POWER_CLASS.OPERATOR)
+		`);
+		const isUndefined = await shard.runPlayer('p1', code`
+			typeof Game.powerCreeps['UnspawnedTtl'].ticksToLive === 'undefined'
+		`);
+		expect(isUndefined).toBe(true);
+	});
+
+	test('ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.placePowerCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', name: 'NotifyPC',
+			powers: {},
+			store: { ops: 10 },
+		});
+		await shard.tick();
+
+		const state = await shard.runPlayer('p1', code`
+			Game.powerCreeps['NotifyPC'].notifiesWhenAttacked()
+		`);
+		expect(state).toBe(true);
+	});
+
+	test('ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.placePowerCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', name: 'QuietPC',
+			powers: {},
+			store: { ops: 10 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.powerCreeps['QuietPC'].notifyWhenAttacked(false)
+		`);
+		expect(rc).toBe(OK);
+
+		const state = await shard.runPlayer('p1', code`
+			Game.powerCreeps['QuietPC'].notifiesWhenAttacked()
+		`);
+		expect(state).toBe(false);
+	});
+
+	test('ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		await shard.runPlayer('p1', code`
+			PowerCreep.create('UnspawnedNotify', POWER_CLASS.OPERATOR)
+		`);
+		const rc = await shard.runPlayer('p1', code`
+			Game.powerCreeps['UnspawnedNotify'].notifiesWhenAttacked()
+		`);
+		expect(rc).toBe(ERR_BUSY);
 	});
 
 	test('POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick', async ({ shard }) => {
@@ -82,6 +238,40 @@ describe('Power creep lifecycle', () => {
 			pcs[0] ? pcs[0].delete() : -99
 		`);
 		expect(rc).toBe(ERR_BUSY);
+	});
+
+	test('POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const pcId = await shard.placePowerCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', name: 'DoomedPC',
+			powers: {},
+			store: { ops: 10 },
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2',
+			body: body(34, ATTACK, 16, MOVE),
+			name: 'PowerKiller',
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p2', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${pcId}))
+		`);
+		expect(rc).toBe(OK);
+
+		await shard.tick();
+
+		const isUndefined = await shard.runPlayer('p1', code`
+			typeof Game.powerCreeps['DoomedPC'].ticksToLive === 'undefined'
+		`);
+		expect(isUndefined).toBe(true);
 	});
 
 	test('POWERCREEP-MOVE-001 power creep move generates no fatigue', async ({ shard }) => {
@@ -388,7 +578,7 @@ describe('Power creep lifecycle', () => {
 
 		// Place a road at [25, 24] (where the PC will move to).
 		const roadId = await shard.placeStructure('W1N1', {
-			pos: [25, 24], structureType: 'road', owner: 'p1',
+			pos: [25, 24], structureType: STRUCTURE_ROAD, owner: 'p1',
 			hits: 5000,
 		});
 		await shard.placePowerCreep('W1N1', {

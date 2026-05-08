@@ -4,6 +4,7 @@ import { describe, test, expect, code, body,
 	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES,
 	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
 	STRUCTURE_CONTAINER, STRUCTURE_WALL, TERRAIN_WALL,
+	TERRAIN_PLAIN,
 	MAX_CONSTRUCTION_SITES,
 } from '../../src/index.js';
 import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
@@ -441,6 +442,43 @@ describe('room.createConstructionSite()', () => {
 			wall: ERR_NOT_OWNER,
 			tower: ERR_NOT_OWNER,
 			spawn: ERR_NOT_OWNER,
+		});
+	});
+
+	test('CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation', async ({ shard }) => {
+		const terrain = new Array<0 | 1 | 2>(2500).fill(TERRAIN_PLAIN);
+		for (let y = 24; y <= 27; y++) {
+			terrain[y * 50] = TERRAIN_WALL;
+		}
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', terrain }],
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			Object.defineProperty(Array.prototype, '__screepsOkEdgePollution', {
+				configurable: true,
+				enumerable: true,
+				value: function() { return 'polluted'; },
+			});
+			try {
+				({
+					roomValid: Game.rooms['W1N1'].createConstructionSite(1, 25, STRUCTURE_EXTENSION),
+					posValid: new RoomPosition(1, 26, 'W1N1').createConstructionSite(STRUCTURE_EXTENSION),
+					roomInvalid: Game.rooms['W1N1'].createConstructionSite(1, 30, STRUCTURE_EXTENSION),
+					posInvalid: new RoomPosition(1, 31, 'W1N1').createConstructionSite(STRUCTURE_EXTENSION),
+				})
+			} finally {
+				delete Array.prototype.__screepsOkEdgePollution;
+			}
+		`) as Record<string, number>;
+
+		expect(result).toEqual({
+			roomValid: OK,
+			posValid: OK,
+			roomInvalid: ERR_INVALID_TARGET,
+			posInvalid: ERR_INVALID_TARGET,
 		});
 	});
 

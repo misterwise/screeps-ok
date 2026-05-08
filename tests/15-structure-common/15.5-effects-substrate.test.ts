@@ -12,6 +12,7 @@
 import { describe, test, expect, code,
 	OK,
 	FIND_RUINS,
+	MOVE,
 	STRUCTURE_TOWER,
 	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER,
 } from '../../src/index.js';
@@ -20,6 +21,41 @@ type EffectEntry = { power: number; effect: number; level: number; ticksRemainin
 type Sample = { entry: EffectEntry | null; gameTime: number; effectsLength: number };
 
 describe('15.5 Effects Substrate', () => {
+	test('EFFECT-EMPTY-001 RoomObjects expose empty effects arrays when no effects are active', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 3);
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 500 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p1', body: [MOVE], name: 'Effectless',
+		});
+		const sourceId = await shard.placeSource('W1N1', {
+			pos: [10, 10], energy: 3000,
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const ids = {
+				tower: ${towerId},
+				creep: ${creepId},
+				source: ${sourceId},
+			};
+			Object.fromEntries(Object.entries(ids).map(([key, id]) => {
+				const obj = Game.getObjectById(id);
+				return [key, {
+					isArray: Array.isArray(obj.effects),
+					length: Array.isArray(obj.effects) ? obj.effects.length : -1,
+				}];
+			}))
+		`) as Record<string, { isArray: boolean; length: number }>;
+
+		expect(result).toEqual({
+			tower: { isArray: true, length: 0 },
+			creep: { isArray: true, length: 0 },
+			source: { isArray: true, length: 0 },
+		});
+	});
 
 	// EFFECT-DECAY-001 — ticksRemaining decrements by exactly 1 per tick.
 	// Spec: the runtime view of an entry's remaining duration is recomputed

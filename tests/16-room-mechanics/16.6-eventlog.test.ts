@@ -547,6 +547,7 @@ describe('room.getEventLog()', () => {
 			e => e.event === EVENT_BUILD && e.objectId === ids.builder);
 		expect(build.data.targetId).toBe(ids.site);
 		expect(build.data.amount).toBe(BUILD_POWER);
+		expect(build.data.energySpent).toBe(1);
 		// One swing is far below a road's progressTotal, so the site stays incomplete.
 		expect(build.data.incomplete).toBe(true);
 	});

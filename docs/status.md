@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2500%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-1-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2077%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2503%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2077%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-103-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2500](#vanilla-passing-tests) | [1](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 00:01 UTC |
-| 🟡 | **xxscreeps** | [2077](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [343](#xxscreeps-skipped-tests) | 2026-05-07 23:58 UTC |
+| 🟡 | **vanilla** | [2503](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-08 00:39 UTC |
+| 🟡 | **xxscreeps** | [2077](#xxscreeps-passing-tests) | [103](#xxscreeps-expected-failures) | — | [354](#xxscreeps-skipped-tests) | 2026-05-08 00:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 1 expected-failure classification against vanilla's canonical behavior, covering 1 test. That includes 1 open parity gap covering 1 test and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 28 tests. That includes 13 open parity gaps covering 28 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -33,14 +33,125 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
+| `construction-site-array-prototype-pollution` | Stable vanilla iterates room-edge border-tile arrays with inherited enumerable Array.prototype keys, so an enumerable user-code Array.prototype property makes otherwise-valid edge-adjacent construction sites fail validation with ERR_INVALID_TARGET. | Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges. | [1](#vanilla-gap-construction-site-array-prototype-pollution) |
+| `corner-exit-tiles-auto-transition` | Stable vanilla auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#vanilla-gap-corner-exit-tiles-auto-transition) |
+| `renew-creep-energy-structures-option-missing` | Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
+| `legacy-path-cost-callback-false-ignored` | Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
+| `room-find-closest-by-path-missing` | Stable vanilla does not expose Room.findClosestByPath on Room. | Room.findClosestByPath exists and honors the range option as the goal range. | [1](#vanilla-gap-room-find-closest-by-path-missing) |
+| `attack-notify-getter-api-missing` | Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
+| `effects-empty-array-missing` | Stable vanilla omits the effects property on RoomObjects that have no active effects. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#vanilla-gap-effects-empty-array-missing) |
+| `room-factory-shortcut-missing` | Stable vanilla does not populate room.factory for an owned factory in a visible room. | Visible rooms expose room.factory as the factory object when present. | [1](#vanilla-gap-room-factory-shortcut-missing) |
+| `eventlog-build-energy-spent-missing` | Stable vanilla EVENT_BUILD entries omit data.energySpent. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
+| `power-creep-long-name-and-ttl-pr-behavior-missing` | Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death. | Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned. | [4](#vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing) |
+| `market-history-empty-array-missing` | Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
+| `roomposition-find-closest-by-path-range-ignored` | Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
+| `movecache-fatigue-visualization-recomputes` | Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle. | A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. | [1](#vanilla-gap-movecache-fatigue-visualization-recomputes) |
 
 Click a test count above to jump to the affected test list for that gap.
 
-<details id="vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death">
-<summary><code>pull-fatigue-stranded-on-puller-ttl-death</code> — 1 test</summary>
+<details id="vanilla-gap-construction-site-array-prototype-pollution">
+<summary><code>construction-site-array-prototype-pollution</code> — 1 test</summary>
 
-- `creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep`
+- `room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation`
+
+</details>
+
+<details id="vanilla-gap-corner-exit-tiles-auto-transition">
+<summary><code>corner-exit-tiles-auto-transition</code> — 1 test</summary>
+
+- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
+
+</details>
+
+<details id="vanilla-gap-renew-creep-energy-structures-option-missing">
+<summary><code>renew-creep-energy-structures-option-missing</code> — 3 tests</summary>
+
+- `Spawn.renewCreep RENEW-CREEP-012 renewCreep returns ERR_INVALID_ARGS for non-object options`
+- `Spawn.renewCreep RENEW-CREEP-013 renewCreep uses only listed energyStructures for availability and charging`
+- `Spawn.renewCreep RENEW-CREEP-014 invalid energyStructures entries do not contribute or double-count`
+
+</details>
+
+<details id="vanilla-gap-legacy-path-cost-callback-false-ignored">
+<summary><code>legacy-path-cost-callback-false-ignored</code> — 1 test</summary>
+
+- `Legacy Pathfinding LEGACY-PATH-010 Room.findPath costCallback returning false blocks the room`
+
+</details>
+
+<details id="vanilla-gap-room-find-closest-by-path-missing">
+<summary><code>room-find-closest-by-path-missing</code> — 1 test</summary>
+
+- `Legacy Pathfinding LEGACY-PATH-011 Room.findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="vanilla-gap-attack-notify-getter-api-missing">
+<summary><code>attack-notify-getter-api-missing</code> — 11 tests</summary>
+
+- `StructureSpawn ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state`
+- `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
+- `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
+- `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
+- `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
+- `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
+
+</details>
+
+<details id="vanilla-gap-effects-empty-array-missing">
+<summary><code>effects-empty-array-missing</code> — 1 test</summary>
+
+- `15.5 Effects Substrate EFFECT-EMPTY-001 RoomObjects expose empty effects arrays when no effects are active`
+
+</details>
+
+<details id="vanilla-gap-room-factory-shortcut-missing">
+<summary><code>room-factory-shortcut-missing</code> — 1 test</summary>
+
+- `room structure shortcuts ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined`
+
+</details>
+
+<details id="vanilla-gap-eventlog-build-energy-spent-missing">
+<summary><code>eventlog-build-energy-spent-missing</code> — 1 test</summary>
+
+- `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
+
+</details>
+
+<details id="vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing">
+<summary><code>power-creep-long-name-and-ttl-pr-behavior-missing</code> — 4 tests</summary>
+
+- `Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name`
+- `Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name`
+- `Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive`
+- `Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again`
+
+</details>
+
+<details id="vanilla-gap-market-history-empty-array-missing">
+<summary><code>market-history-empty-array-missing</code> — 1 test</summary>
+
+- `Market queries MARKET-QUERY-006 getHistory invalid resources and valid resources with no history return empty arrays`
+
+</details>
+
+<details id="vanilla-gap-roomposition-find-closest-by-path-range-ignored">
+<summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
+
+- `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="vanilla-gap-movecache-fatigue-visualization-recomputes">
+<summary><code>movecache-fatigue-visualization-recomputes</code> — 1 test</summary>
+
+- `Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-004 fatigued moveTo with reusable path and visualization does not recompute`
 
 </details>
 
@@ -48,7 +159,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 37 open parity gaps covering 79 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 50 expected-failure classifications against vanilla's canonical behavior, covering 103 tests. That includes 47 open parity gaps covering 98 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -93,6 +204,16 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
 | `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
 | `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
+| `corner-exit-tiles-auto-transition` | xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#xxscreeps-gap-corner-exit-tiles-auto-transition) |
+| `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
+| `room-find-closest-by-path-missing` | Room.findClosestByPath is not exposed on Room. | Room.findClosestByPath exists and honors the range option as the goal range. | [1](#xxscreeps-gap-room-find-closest-by-path-missing) |
+| `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
+| `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
+| `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
+| `effects-empty-array-missing` | RoomObjects with no active effects omit the effects property. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#xxscreeps-gap-effects-empty-array-missing) |
+| `room-factory-shortcut-missing` | room.factory is undefined for a visible room containing an owned factory. | Visible rooms expose room.factory as the factory object when present. | [1](#xxscreeps-gap-room-factory-shortcut-missing) |
+| `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
+| `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -397,6 +518,85 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-corner-exit-tiles-auto-transition">
+<summary><code>corner-exit-tiles-auto-transition</code> — 1 test</summary>
+
+- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
+
+</details>
+
+<details id="xxscreeps-gap-legacy-path-cost-callback-false-ignored">
+<summary><code>legacy-path-cost-callback-false-ignored</code> — 1 test</summary>
+
+- `Legacy Pathfinding LEGACY-PATH-010 Room.findPath costCallback returning false blocks the room`
+
+</details>
+
+<details id="xxscreeps-gap-room-find-closest-by-path-missing">
+<summary><code>room-find-closest-by-path-missing</code> — 1 test</summary>
+
+- `Legacy Pathfinding LEGACY-PATH-011 Room.findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="xxscreeps-gap-renew-creep-energy-structures-option-missing">
+<summary><code>renew-creep-energy-structures-option-missing</code> — 3 tests</summary>
+
+- `Spawn.renewCreep RENEW-CREEP-012 renewCreep returns ERR_INVALID_ARGS for non-object options`
+- `Spawn.renewCreep RENEW-CREEP-013 renewCreep uses only listed energyStructures for availability and charging`
+- `Spawn.renewCreep RENEW-CREEP-014 invalid energyStructures entries do not contribute or double-count`
+
+</details>
+
+<details id="xxscreeps-gap-attack-notify-getter-api-missing">
+<summary><code>attack-notify-getter-api-missing</code> — 8 tests</summary>
+
+- `StructureSpawn ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state`
+- `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
+- `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
+- `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
+- `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
+- `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
+
+</details>
+
+<details id="xxscreeps-gap-structure-active-equal-distance-scan-order">
+<summary><code>structure-active-equal-distance-scan-order</code> — 1 test</summary>
+
+- `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
+
+</details>
+
+<details id="xxscreeps-gap-effects-empty-array-missing">
+<summary><code>effects-empty-array-missing</code> — 1 test</summary>
+
+- `15.5 Effects Substrate EFFECT-EMPTY-001 RoomObjects expose empty effects arrays when no effects are active`
+
+</details>
+
+<details id="xxscreeps-gap-room-factory-shortcut-missing">
+<summary><code>room-factory-shortcut-missing</code> — 1 test</summary>
+
+- `room structure shortcuts ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined`
+
+</details>
+
+<details id="xxscreeps-gap-eventlog-build-energy-spent-uses-progress">
+<summary><code>eventlog-build-energy-spent-uses-progress</code> — 1 test</summary>
+
+- `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
+
+</details>
+
+<details id="xxscreeps-gap-roomposition-find-closest-by-path-range-ignored">
+<summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
+
+- `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -460,7 +660,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2500 tests across 127 files</summary>
+<summary>2503 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -707,7 +907,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (24)
+**`tests/01-movement/1.5-pulling.test.ts`** (25)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -731,6 +931,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep
 - creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
@@ -2709,7 +2910,7 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (12)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (11)
 
 - structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
 - structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
@@ -2719,9 +2920,8 @@ Click a count to jump to the affected test list.
 - structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusy destroy() validation returns the canonical code
 - structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
 - structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
-- structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
-- structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room
-- structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
+- structure.notifyWhenAttacked() ATTACK-NOTIFY-005 notifyWhenAttacked returns OK for unowned structure in the caller's own room
+- structure.notifyWhenAttacked() ATTACK-NOTIFY-006 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
 - structure.notifyWhenAttacked() UNDOC-STALERECV-001:structureNotifyWhenAttacked stale cached Structure.notifyWhenAttacked() throws a runtime error
 
 **`tests/15-structure-common/15.5-effects-substrate.test.ts`** (5)
@@ -2758,7 +2958,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (17)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (19)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -2767,6 +2967,8 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
+- room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
+- room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
@@ -2799,7 +3001,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (28)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (27)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -2813,7 +3015,6 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
 - room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
 - room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
-- room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added
 - room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
 - room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
 - room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
@@ -2930,10 +3131,11 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (16)
+**`tests/19-power/19.1-lifecycle.test.ts`** (17)
 
-- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep
+- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
+- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
 - Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
 - Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
 - Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
@@ -2975,7 +3177,7 @@ Click a count to jump to the affected test list.
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
 
-**`tests/20-market/20.2-20.4-market.test.ts`** (20)
+**`tests/20-market/20.2-20.4-market.test.ts`** (21)
 
 - Market orders MARKET-ORDER-001 createOrder creates orders with requested parameters and public credit units
 - Market orders MARKET-ORDER-002 createOrder fails with exact validation codes
@@ -2996,6 +3198,7 @@ Click a count to jump to the affected test list.
 - Market queries MARKET-QUERY-002 getAllOrders returns only active orders matching the supplied filter
 - Market queries MARKET-QUERY-003 getOrderById returns public active orders, owner orders, or null
 - Market queries MARKET-QUERY-004 getHistory returns scoped history containers deterministically
+- Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
@@ -3347,13 +3550,13 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 343 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 354 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [104](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [112](#xxscreeps-skip-capability-powercreeps) |
 | capability | `nuke` | Nukes | [83](#xxscreeps-skip-capability-nuke) |
-| capability | `market` | Market and terminal | [78](#xxscreeps-skip-capability-market) |
+| capability | `market` | Market and terminal | [81](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
@@ -3364,7 +3567,7 @@ xxscreeps has 343 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 104 tests across 24 files</summary>
+<summary><code>capability:powerCreeps</code> — 112 tests across 24 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3485,12 +3688,20 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (16)
+**`tests/19-power/19.1-lifecycle.test.ts`** (24)
 
-- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep
+- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
+- Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
+- Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive
+- Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state
+- Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state
+- Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY
 - Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
 - Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
+- Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again
 - Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
 - Power creep lifecycle POWERCREEP-ACTION-003 power creeps do not expose body-part action methods
 - Power creep lifecycle POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true
@@ -3666,7 +3877,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 78 tests across 8 files</summary>
+<summary><code>capability:market</code> — 81 tests across 9 files</summary>
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (2)
 
@@ -3732,7 +3943,11 @@ Click a count to jump to the affected test list.
 
 - Construction costs CONSTRUCTION-COST-001:terminal costs 100000
 
-**`tests/20-market/20.2-20.4-market.test.ts`** (20)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (1)
+
+- room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
+
+**`tests/20-market/20.2-20.4-market.test.ts`** (22)
 
 - Market orders MARKET-ORDER-001 createOrder creates orders with requested parameters and public credit units
 - Market orders MARKET-ORDER-002 createOrder fails with exact validation codes
@@ -3753,6 +3968,8 @@ Click a count to jump to the affected test list.
 - Market queries MARKET-QUERY-002 getAllOrders returns only active orders matching the supplied filter
 - Market queries MARKET-QUERY-003 getOrderById returns public active orders, owner orders, or null
 - Market queries MARKET-QUERY-004 getHistory returns scoped history containers deterministically
+- Market queries MARKET-QUERY-006 getHistory invalid resources and valid resources with no history return empty arrays
+- Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
 **`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
@@ -4645,7 +4862,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (42)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (43)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4685,6 +4902,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
+- room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
@@ -5842,13 +6060,12 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store
 - Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
 
-**`tests/15-structure-common/15.2-isactive.test.ts`** (5)
+**`tests/15-structure-common/15.2-isactive.test.ts`** (4)
 
 - Structure isActive() STRUCTURE-ACTIVE-001 isActive returns true only for allowed structures at the current RCL
 - Structure isActive() STRUCTURE-ACTIVE-002 inactive structures reject gated gameplay actions
 - Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
-- Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
 
 **`tests/15-structure-common/15.3-construction-cost.test.ts`** (16)
 
@@ -5869,7 +6086,7 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (12)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (11)
 
 - structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
 - structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
@@ -5879,9 +6096,8 @@ Click a count to jump to the affected test list.
 - structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusy destroy() validation returns the canonical code
 - structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
 - structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
-- structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument
-- structure.notifyWhenAttacked() STRUCTURE-API-007 notifyWhenAttacked returns OK for unowned structure in the caller's own room
-- structure.notifyWhenAttacked() STRUCTURE-API-008 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
+- structure.notifyWhenAttacked() ATTACK-NOTIFY-005 notifyWhenAttacked returns OK for unowned structure in the caller's own room
+- structure.notifyWhenAttacked() ATTACK-NOTIFY-006 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
 - structure.notifyWhenAttacked() UNDOC-STALERECV-001:structureNotifyWhenAttacked stale cached Structure.notifyWhenAttacked() throws a runtime error
 
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
@@ -5890,7 +6106,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (16)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (17)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -5899,6 +6115,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
+- room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
@@ -5926,7 +6143,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (23)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (22)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -5940,7 +6157,6 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
 - room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
 - room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
-- room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added
 - room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
 - room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
 - room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
@@ -6299,11 +6515,12 @@ Click a count to jump to the affected test list.
 
 - Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is a non-empty string accessible on the global scope
 
-**`tests/27-undocumented/27.9-move-cache.test.ts`** (3)
+**`tests/27-undocumented/27.9-move-cache.test.ts`** (4)
 
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-001 moveTo with reusePath > 0 writes _move with path/dest/time/room keys
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
+- Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-004 fatigued moveTo with reusable path and visualization does not recompute
 
 **`tests/29-multi-shard/29.1-shard-identity.test.ts`** (3)
 

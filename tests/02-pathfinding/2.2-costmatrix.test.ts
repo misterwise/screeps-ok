@@ -41,13 +41,33 @@ describe('CostMatrix', () => {
 		const result = await shard.runPlayer('p1', code`
 			const cm = new PathFinder.CostMatrix();
 			cm.set(10, 10, 42);
+			cm.set(11, 10, 7);
 			const clone = cm.clone();
+			const bitsEqualBefore = cm._bits.length === clone._bits.length
+				&& Array.prototype.every.call(cm._bits, (value, index) => value === clone._bits[index]);
+			const sharesBits = cm._bits === clone._bits;
+			const cloneIsCostMatrix = clone instanceof PathFinder.CostMatrix;
 			clone.set(10, 10, 99);
-			({ original: cm.get(10, 10), cloned: clone.get(10, 10) })
-		`) as { original: number; cloned: number };
+			({
+				original: cm.get(10, 10),
+				cloned: clone.get(10, 10),
+				cloneIsCostMatrix,
+				bitsEqualBefore,
+				sharesBits,
+			})
+		`) as {
+			original: number;
+			cloned: number;
+			cloneIsCostMatrix: boolean;
+			bitsEqualBefore: boolean;
+			sharesBits: boolean;
+		};
 
 		expect(result.original).toBe(42);
 		expect(result.cloned).toBe(99);
+		expect(result.cloneIsCostMatrix).toBe(true);
+		expect(result.bitsEqualBefore).toBe(true);
+		expect(result.sharesBits).toBe(false);
 	});
 
 	test('COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255', async ({ shard }) => {

@@ -1,9 +1,69 @@
 {
 	"expected_failures": {
-		"pull-fatigue-stranded-on-puller-ttl-death": {
-			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract.",
-			"expected": "The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`.",
-			"tests": ["MOVE-PULL-012:pullerFirst"]
+		"construction-site-array-prototype-pollution": {
+			"actual": "Stable vanilla iterates room-edge border-tile arrays with inherited enumerable Array.prototype keys, so an enumerable user-code Array.prototype property makes otherwise-valid edge-adjacent construction sites fail validation with ERR_INVALID_TARGET.",
+			"expected": "Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges.",
+			"tests": ["CONSTRUCTION-SITE-015"]
+		},
+		"corner-exit-tiles-auto-transition": {
+			"actual": "Stable vanilla auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1.",
+			"expected": "Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick.",
+			"tests": ["ROOM-TRANSITION-006"]
+		},
+		"renew-creep-energy-structures-option-missing": {
+			"actual": "Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources.",
+			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set.",
+			"tests": ["RENEW-CREEP-012", "RENEW-CREEP-013", "RENEW-CREEP-014"]
+		},
+		"legacy-path-cost-callback-false-ignored": {
+			"actual": "Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path.",
+			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
+			"tests": ["LEGACY-PATH-010"]
+		},
+		"room-find-closest-by-path-missing": {
+			"actual": "Stable vanilla does not expose Room.findClosestByPath on Room.",
+			"expected": "Room.findClosestByPath exists and honors the range option as the goal range.",
+			"tests": ["LEGACY-PATH-011"]
+		},
+		"attack-notify-getter-api-missing": {
+			"actual": "Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed.",
+			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state.",
+			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
+		},
+		"effects-empty-array-missing": {
+			"actual": "Stable vanilla omits the effects property on RoomObjects that have no active effects.",
+			"expected": "Every RoomObject exposes effects as an array, with no active effects represented as [].",
+			"tests": ["EFFECT-EMPTY-001"]
+		},
+		"room-factory-shortcut-missing": {
+			"actual": "Stable vanilla does not populate room.factory for an owned factory in a visible room.",
+			"expected": "Visible rooms expose room.factory as the factory object when present.",
+			"tests": ["ROOM-STRUCTURE-001:factory"]
+		},
+		"eventlog-build-energy-spent-missing": {
+			"actual": "Stable vanilla EVENT_BUILD entries omit data.energySpent.",
+			"expected": "EVENT_BUILD data includes energySpent equal to the energy spent by the build action.",
+			"tests": ["ROOM-EVENTLOG-013"]
+		},
+		"power-creep-long-name-and-ttl-pr-behavior-missing": {
+			"actual": "Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death.",
+			"expected": "Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned.",
+			"tests": ["POWERCREEP-CREATE-003", "POWERCREEP-RENAME-001", "POWERCREEP-LIFETIME-002", "POWERCREEP-DEATH-002"]
+		},
+		"market-history-empty-array-missing": {
+			"actual": "Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history.",
+			"expected": "Game.market.getHistory returns an empty array for invalid resources and valid resources with no history.",
+			"tests": ["MARKET-QUERY-006"]
+		},
+		"roomposition-find-closest-by-path-range-ignored": {
+			"actual": "Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"tests": ["ROOMPOS-FIND-010"]
+		},
+		"movecache-fatigue-visualization-recomputes": {
+			"actual": "Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle.",
+			"expected": "A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path.",
+			"tests": ["UNDOC-MOVECACHE-004"]
 		}
 	}
 }

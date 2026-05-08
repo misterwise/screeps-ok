@@ -4,7 +4,7 @@ import {
 	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES,
 	FIND_SOURCES, FIND_SOURCES_ACTIVE,
 	LOOK_CREEPS,
-	STRUCTURE_EXTENSION, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
+	STRUCTURE_EXTENSION, STRUCTURE_FACTORY, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_WALL,
 	RESOURCE_ENERGY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../../src/matrices/room-find.js';
@@ -160,6 +160,88 @@ describe('room energy tracking', () => {
 	});
 });
 
+describe('room structure shortcuts', () => {
+	test('ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', rcl: 8, owner: 'p1' },
+			],
+		});
+		const storageId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_STORAGE, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const storage = Game.rooms['W1N1'].storage;
+			({
+				present: storage && { id: storage.id, structureType: storage.structureType },
+				absentType: typeof Game.rooms['W2N1'].storage,
+			})
+		`) as { present: { id: string; structureType: string }; absentType: string };
+		expect(result).toEqual({
+			present: { id: storageId, structureType: STRUCTURE_STORAGE },
+			absentType: 'undefined',
+		});
+	});
+
+	test('ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined', async ({ shard }) => {
+		shard.requires('market');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', rcl: 8, owner: 'p1' },
+			],
+		});
+		const terminalId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const terminal = Game.rooms['W1N1'].terminal;
+			({
+				present: terminal && { id: terminal.id, structureType: terminal.structureType },
+				absentType: typeof Game.rooms['W2N1'].terminal,
+			})
+		`) as { present: { id: string; structureType: string }; absentType: string };
+		expect(result).toEqual({
+			present: { id: terminalId, structureType: STRUCTURE_TERMINAL },
+			absentType: 'undefined',
+		});
+	});
+
+	test('ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined', async ({ shard }) => {
+		shard.requires('factory');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', rcl: 8, owner: 'p1' },
+			],
+		});
+		const factoryId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const factory = Game.rooms['W1N1'].factory;
+			({
+				present: factory && { id: factory.id, structureType: factory.structureType },
+				absentType: typeof Game.rooms['W2N1'].factory,
+			})
+		`) as { present: { id: string; structureType: string }; absentType: string };
+		expect(result).toEqual({
+			present: { id: factoryId, structureType: STRUCTURE_FACTORY },
+			absentType: 'undefined',
+		});
+	});
+});
+
 describe('Room.find', () => {
 	for (const { label, findConstant, expectedValues } of roomFindPlayerRelativeCases) {
 		test(`ROOM-FIND-001:${label} returns exactly the expected set for the current player`, async ({ shard }) => {
@@ -258,4 +340,3 @@ describe('Room.find', () => {
 		expect(result.activeIds).toEqual([fullId]);
 	});
 });
-

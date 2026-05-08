@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, OK } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, WORK, OK, ERR_TIRED } from '../../src/index.js';
 
 describe('Undocumented API Surface — creep.memory._move (moveTo reusePath cache)', () => {
 	test('UNDOC-MOVECACHE-001 moveTo with reusePath > 0 writes _move with path/dest/time/room keys', async ({ shard }) => {
@@ -107,5 +107,48 @@ describe('Undocumented API Surface — creep.memory._move (moveTo reusePath cach
 
 		expect(result.beforeWasSet).toBe(true);
 		expect(result.afterIsGameTime).toBe(true);
+	});
+
+	test('UNDOC-MOVECACHE-004 fatigued moveTo with reusable path and visualization does not recompute', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, WORK, WORK, WORK, MOVE],
+			name: 'walker',
+		});
+		await shard.tick();
+
+		const initial = await shard.runPlayer('p1', code`
+			const creep = Game.creeps['walker'];
+			const rc = creep.moveTo(10, 10, { reusePath: 20 });
+			({ rc, hasMove: !!creep.memory._move })
+		`) as { rc: number; hasMove: boolean };
+		expect(initial.rc).toBe(OK);
+		expect(initial.hasMove).toBe(true);
+
+		const result = await shard.runPlayer('p1', code`
+			Memory.__screepsOkMoveCostCalls = 0;
+			const creep = Game.creeps['walker'];
+			const target = new RoomPosition(10, 10, 'W1N1');
+			const rc = creep.moveTo(target, {
+				reusePath: 20,
+				visualizePathStyle: { stroke: '#ffffff' },
+				costCallback(roomName, matrix) {
+					Memory.__screepsOkMoveCostCalls++;
+					return matrix;
+				},
+			});
+			({
+				rc,
+				costCalls: Memory.__screepsOkMoveCostCalls,
+				fatigue: creep.fatigue,
+				hasMove: !!creep.memory._move,
+			})
+		`) as { rc: number; costCalls: number; fatigue: number; hasMove: boolean };
+
+		expect(result.fatigue).toBeGreaterThan(0);
+		expect(result.hasMove).toBe(true);
+		expect(result.rc).toBe(ERR_TIRED);
+		expect(result.costCalls).toBe(0);
 	});
 });

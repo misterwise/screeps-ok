@@ -1,8 +1,8 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, ERR_BUSY,
-	ERR_RCL_NOT_ENOUGH,
+	ERR_RCL_NOT_ENOUGH, ERR_INVALID_ARGS,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
-	STRUCTURE_SPAWN, STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
+	STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
 	CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, CREEP_SPAWN_TIME, SPAWN_RENEW_RATIO,
 	BOOSTS, FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
@@ -195,6 +195,155 @@ describe('Spawn.renewCreep', () => {
 		const bodyLength = 3;
 		const expectedCost = Math.ceil(SPAWN_RENEW_RATIO * bodyCostSum / CREEP_SPAWN_TIME / bodyLength);
 		expect(energyBefore - energyAfter).toBe(expectedCost);
+	});
+
+	test('RENEW-CREEP-012 renewCreep returns ERR_INVALID_ARGS for non-object options', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 500 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [MOVE],
+			ticksToLive: 100,
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).renewCreep(Game.getObjectById(${creepId}), 42)
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
+	});
+
+	test('RENEW-CREEP-013 renewCreep uses only listed energyStructures for availability and charging', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 500 },
+		});
+		const emptyExtId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 0 },
+		});
+		const selectedExtId = await shard.placeStructure('W1N1', {
+			pos: [27, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const unlistedExtId = await shard.placeStructure('W1N1', {
+			pos: [28, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 100,
+		});
+		await shard.tick();
+
+		const insufficient = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).renewCreep(Game.getObjectById(${creepId}), {
+				energyStructures: [Game.getObjectById(${emptyExtId})],
+			})
+		`);
+		expect(insufficient).toBe(ERR_NOT_ENOUGH_ENERGY);
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).renewCreep(Game.getObjectById(${creepId}), {
+				energyStructures: [Game.getObjectById(${selectedExtId})],
+			})
+		`);
+		expect(rc).toBe(OK);
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		const empty = await shard.expectStructure(emptyExtId, STRUCTURE_EXTENSION);
+		const selected = await shard.expectStructure(selectedExtId, STRUCTURE_EXTENSION);
+		const unlisted = await shard.expectStructure(unlistedExtId, STRUCTURE_EXTENSION);
+		const expectedCost = Math.ceil(
+			SPAWN_RENEW_RATIO *
+			(BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE]) /
+			CREEP_SPAWN_TIME /
+			3,
+		);
+		expect(spawn.store.energy).toBe(500);
+		expect(empty.store.energy ?? 0).toBe(0);
+		expect(selected.store.energy ?? 0).toBe(50 - expectedCost);
+		expect(unlisted.store.energy ?? 0).toBe(50);
+	});
+
+	test('RENEW-CREEP-014 invalid energyStructures entries do not contribute or double-count', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 500 },
+		});
+		const selectedExtId = await shard.placeStructure('W1N1', {
+			pos: [5, 5], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 20 },
+		});
+		for (const [x, y] of [[6, 5], [7, 5], [8, 5], [9, 5]] as const) {
+			await shard.placeStructure('W1N1', {
+				pos: [x, y], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+				store: { energy: 0 },
+			});
+		}
+		const inactiveExtId = await shard.placeStructure('W1N1', {
+			pos: [40, 40], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const unownedExtId = await shard.placeStructure('W1N1', {
+			pos: [27, 25], structureType: STRUCTURE_EXTENSION, owner: 'p2',
+			store: { energy: 50 },
+		});
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [28, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const staleExtId = await shard.placeStructure('W1N1', {
+			pos: [10, 5], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 50 },
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			ticksToLive: 100,
+		});
+		await shard.tick();
+
+		const destroyRc = await shard.runPlayer('p1', code`
+			const stale = Game.getObjectById(${staleExtId});
+			globalThis.__screepsOkStaleRenewEnergyStructure = stale;
+			stale.destroy()
+		`);
+		expect(destroyRc).toBe(OK);
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).renewCreep(Game.getObjectById(${creepId}), {
+				energyStructures: [
+					Game.getObjectById(${selectedExtId}),
+					Game.getObjectById(${selectedExtId}),
+					Game.getObjectById(${inactiveExtId}),
+					Game.getObjectById(${unownedExtId}),
+					Game.getObjectById(${towerId}),
+					globalThis.__screepsOkStaleRenewEnergyStructure,
+				],
+			})
+		`);
+		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		const selected = await shard.expectStructure(selectedExtId, STRUCTURE_EXTENSION);
+		const inactive = await shard.expectStructure(inactiveExtId, STRUCTURE_EXTENSION);
+		const unowned = await shard.expectStructure(unownedExtId, STRUCTURE_EXTENSION);
+		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
+		expect(spawn.store.energy).toBe(500);
+		expect(selected.store.energy ?? 0).toBe(20);
+		expect(inactive.store.energy ?? 0).toBe(50);
+		expect(unowned.store.energy ?? 0).toBe(50);
+		expect(tower.store.energy ?? 0).toBe(50);
 	});
 
 	test('RENEW-CREEP-004 renewCreep removes all boosts from the target creep', async ({ shard }) => {

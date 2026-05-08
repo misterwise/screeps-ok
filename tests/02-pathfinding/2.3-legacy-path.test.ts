@@ -234,6 +234,53 @@ describe('Legacy Pathfinding', () => {
 		expect(result.allCorrect).toBe(true);
 	});
 
+	test('LEGACY-PATH-010 Room.findPath costCallback returning false blocks the room', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const from = new RoomPosition(10, 10, 'W1N1');
+			const to = new RoomPosition(20, 10, 'W1N1');
+			const path = room.findPath(from, to, { costCallback: () => false });
+			const serialized = room.findPath(from, to, { serialize: true, costCallback: () => false });
+			({
+				isArray: Array.isArray(path),
+				length: path.length,
+				serialized,
+			})
+		`) as { isArray: boolean; length: number; serialized: string };
+
+		expect(result).toEqual({
+			isArray: true,
+			length: 0,
+			serialized: '',
+		});
+	});
+
+	test('LEGACY-PATH-011 Room.findClosestByPath range option uses goal range', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const target = new RoomPosition(30, 10, 'W1N1');
+			const closest = room.findClosestByPath(new RoomPosition(10, 10, 'W1N1'), [target], {
+				range: 5,
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					for (let x = 26; x <= 34; x++) {
+						for (let y = 6; y <= 14; y++) {
+							matrix.set(x, y, 255);
+						}
+					}
+					return matrix;
+				},
+			});
+			closest ? { x: closest.x, y: closest.y, roomName: closest.roomName } : null
+		`) as { x: number; y: number; roomName: string } | null;
+
+		expect(result).toEqual({ x: 30, y: 10, roomName: 'W1N1' });
+	});
+
 	pathFinderUseTest('LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing', async ({ shard }) => {
 		// Catalog rule: "PathFinder.use() toggles between new PathFinder and legacy mode."
 		// The actual mode-switch is not observable from user code (legacy and new

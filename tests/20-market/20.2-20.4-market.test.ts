@@ -911,15 +911,52 @@ describe('Market queries', () => {
 
 		const result = await shard.runPlayer('p1', code`
 			({
-				energy: Game.market.getHistory(RESOURCE_ENERGY),
 				all: Game.market.getHistory(),
-				invalid: Game.market.getHistory('not-a-resource'),
 			})
-		`) as { energy: Record<string, unknown>; all: unknown[]; invalid: Record<string, unknown> };
+		`) as { all: unknown[] };
 
-		expect(result.energy).toEqual({});
 		expect(result.all).toEqual([]);
-		expect(result.invalid).toEqual({});
+	});
+
+	test('MARKET-QUERY-006 getHistory invalid resources and valid resources with no history return empty arrays', async ({ shard }) => {
+		await createSingleMarketRoom(shard);
+
+		const result = await shard.runPlayer('p1', code`
+			const invalid = Game.market.getHistory('not-a-resource');
+			const emptyEnergy = Game.market.getHistory(RESOURCE_ENERGY);
+			({
+				invalidIsArray: Array.isArray(invalid),
+				invalidLength: Array.isArray(invalid) ? invalid.length : -1,
+				emptyEnergyIsArray: Array.isArray(emptyEnergy),
+				emptyEnergyLength: Array.isArray(emptyEnergy) ? emptyEnergy.length : -1,
+			})
+		`) as {
+			invalidIsArray: boolean;
+			invalidLength: number;
+			emptyEnergyIsArray: boolean;
+			emptyEnergyLength: number;
+		};
+
+		expect(result).toEqual({
+			invalidIsArray: true,
+			invalidLength: 0,
+			emptyEnergyIsArray: true,
+			emptyEnergyLength: 0,
+		});
+	});
+
+	test('MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array', async ({ shard }) => {
+		await createSingleMarketRoom(shard);
+
+		const result = await shard.runPlayer('p1', code`
+			const orders = Game.market.getAllOrders({ resourceType: 'not-a-resource' });
+			({
+				isArray: Array.isArray(orders),
+				length: orders.length,
+			})
+		`) as { isArray: boolean; length: number };
+
+		expect(result).toEqual({ isArray: true, length: 0 });
 	});
 
 	test('MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits', async ({ shard }) => {

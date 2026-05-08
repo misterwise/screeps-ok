@@ -72,25 +72,30 @@ describe('RoomPosition spatial queries', () => {
 describe('RoomPosition find helpers', () => {
 	test('ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// Place two creeps: one reachable, one surrounded by walls (unreachable)
-		// Since we can't set terrain, use a far-away creep vs a near one
-		// and verify the near one is returned
 		await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1', body: [MOVE],
+			pos: [20, 10], owner: 'p1', body: [MOVE], name: 'blocked',
 		});
 		await shard.placeCreep('W1N1', {
-			pos: [10, 12], owner: 'p1', body: [MOVE],
+			pos: [35, 10], owner: 'p1', body: [MOVE], name: 'reachable',
 		});
+		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
-			const pos = new RoomPosition(10, 11, 'W1N1');
-			const closest = pos.findClosestByPath(FIND_CREEPS);
-			closest ? ({ x: closest.pos.x, y: closest.pos.y }) : null
-		`) as { x: number; y: number } | null;
-		// Either adjacent creep is valid — both are reachable at range 1
-		expect(result).not.toBeNull();
-		expect(result!.x).toBe(10);
-		expect([10, 12]).toContain(result!.y);
+			const pos = new RoomPosition(10, 10, 'W1N1');
+			const closest = pos.findClosestByPath(FIND_CREEPS, {
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					for (let x = 19; x <= 21; x++) {
+						for (let y = 9; y <= 11; y++) {
+							matrix.set(x, y, 255);
+						}
+					}
+					return matrix;
+				},
+			});
+			closest ? closest.name : null
+		`);
+		expect(result).toBe('reachable');
 	});
 
 	test('ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range', async ({ shard }) => {
@@ -128,12 +133,50 @@ describe('RoomPosition find helpers', () => {
 
 	test('ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		await shard.placeCreep('W1N1', {
+			pos: [20, 20], owner: 'p1', body: [MOVE], name: 'blocked',
+		});
+		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
-			const pos = new RoomPosition(25, 25, 'W1N1');
-			pos.findClosestByPath(FIND_CREEPS)
+			const pos = new RoomPosition(10, 10, 'W1N1');
+			pos.findClosestByPath(FIND_CREEPS, {
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					for (let x = 19; x <= 21; x++) {
+						for (let y = 19; y <= 21; y++) {
+							matrix.set(x, y, 255);
+						}
+					}
+					return matrix;
+				},
+			})
 		`);
 		expect(result).toBeNull();
+	});
+
+	test('ROOMPOS-FIND-010 findClosestByPath range option uses goal range', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const origin = new RoomPosition(10, 10, 'W1N1');
+			const target = new RoomPosition(30, 10, 'W1N1');
+			const closest = origin.findClosestByPath([target], {
+				range: 5,
+				costCallback(roomName, matrix) {
+					matrix = matrix || new PathFinder.CostMatrix();
+					for (let x = 26; x <= 34; x++) {
+						for (let y = 6; y <= 14; y++) {
+							matrix.set(x, y, 255);
+						}
+					}
+					return matrix;
+				},
+			});
+			closest ? { x: closest.x, y: closest.y, roomName: closest.roomName } : null
+		`) as { x: number; y: number; roomName: string } | null;
+
+		expect(result).toEqual({ x: 30, y: 10, roomName: 'W1N1' });
 	});
 
 	test('ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty', async ({ shard }) => {
@@ -234,7 +277,7 @@ describe('RoomPosition actions', () => {
 		await shard.tick();
 
 		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-		const road = sites.find(s => s.structureType === 'road' && s.pos.x === 30 && s.pos.y === 30);
+		const road = sites.find(s => s.structureType === STRUCTURE_ROAD && s.pos.x === 30 && s.pos.y === 30);
 		expect(road).toBeDefined();
 	});
 });

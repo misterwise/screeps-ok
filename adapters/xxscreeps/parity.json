@@ -199,6 +199,56 @@
 			"expected": "Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate.",
 			"tests": ["UNBOOST-006:creepNotOwnerBeforeRcl"]
 		},
+		"corner-exit-tiles-auto-transition": {
+			"actual": "xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1.",
+			"expected": "Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick.",
+			"tests": ["ROOM-TRANSITION-006"]
+		},
+		"legacy-path-cost-callback-false-ignored": {
+			"actual": "Room.findPath ignores a costCallback return value of false and still returns a path.",
+			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
+			"tests": ["LEGACY-PATH-010"]
+		},
+		"room-find-closest-by-path-missing": {
+			"actual": "Room.findClosestByPath is not exposed on Room.",
+			"expected": "Room.findClosestByPath exists and honors the range option as the goal range.",
+			"tests": ["LEGACY-PATH-011"]
+		},
+		"renew-creep-energy-structures-option-missing": {
+			"actual": "StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources.",
+			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set.",
+			"tests": ["RENEW-CREEP-012", "RENEW-CREEP-013", "RENEW-CREEP-014"]
+		},
+		"attack-notify-getter-api-missing": {
+			"actual": "notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK.",
+			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state.",
+			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
+		},
+		"structure-active-equal-distance-scan-order": {
+			"actual": "For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive.",
+			"expected": "Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order.",
+			"tests": ["STRUCTURE-ACTIVE-005"]
+		},
+		"effects-empty-array-missing": {
+			"actual": "RoomObjects with no active effects omit the effects property.",
+			"expected": "Every RoomObject exposes effects as an array, with no active effects represented as [].",
+			"tests": ["EFFECT-EMPTY-001"]
+		},
+		"room-factory-shortcut-missing": {
+			"actual": "room.factory is undefined for a visible room containing an owned factory.",
+			"expected": "Visible rooms expose room.factory as the factory object when present.",
+			"tests": ["ROOM-STRUCTURE-001:factory"]
+		},
+		"eventlog-build-energy-spent-uses-progress": {
+			"actual": "EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress.",
+			"expected": "EVENT_BUILD data.energySpent equals the energy spent by the build action.",
+			"tests": ["ROOM-EVENTLOG-013"]
+		},
+		"roomposition-find-closest-by-path-range-ignored": {
+			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"tests": ["ROOMPOS-FIND-010"]
+		},
 		"factory-power-effect-not-implemented": {
 			"intentional": true,
 			"why": "`mods/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional.",
