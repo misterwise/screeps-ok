@@ -1003,10 +1003,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 		}
 		if (spec.cooldown !== undefined) {
-			const gameTime = await currentGameTime();
-			if (spec.structureType === 'link') {
+			// Vanilla stores cooldown in two shapes: extractor and link use a
+			// per-tick counter at `o.cooldown`, while lab/terminal/nuker/factory
+			// use a future timestamp at `o.cooldownTime`. Match the right field
+			// or the seeded value is silently dropped at the runtime getter.
+			if (spec.structureType === 'link' || spec.structureType === 'extractor') {
 				attrs.cooldown = spec.cooldown;
 			} else {
+				const gameTime = await currentGameTime();
 				attrs.cooldownTime = gameTime + spec.cooldown;
 			}
 		}

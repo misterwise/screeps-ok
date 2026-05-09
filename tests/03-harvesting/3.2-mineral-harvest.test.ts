@@ -396,16 +396,6 @@ describe('creep.harvest(mineral)', () => {
 					...(blockers.has('cooldown') ? { cooldown: 10 } : {}),
 				});
 			}
-			if (blockers.has('cooldown') && !blockers.has('busy')) {
-				await shard.tick();
-			}
-			if (row.label === 'cooldown') {
-				const first = await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
-				`);
-				expect(first).toBe(OK);
-				await shard.tick();
-			}
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))

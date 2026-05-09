@@ -323,6 +323,13 @@ function patchSandboxNativeExternalResolution() {
 			console.log('[screeps-ok] xxscreeps sandbox native external resolution already patched');
 			return;
 		}
+		if (
+			source.includes("if (request === '@xxscreeps/pathfinder')") &&
+			source.includes('export const pathFinderBinaryPath = locateModule();')
+		) {
+			console.log('[screeps-ok] xxscreeps sandbox uses upstream pathfinder native external resolution');
+			return;
+		}
 		throw new Error('Failed to patch xxscreeps sandbox native external resolution');
 	}
 	writeFileSync(sandboxPath, patched);

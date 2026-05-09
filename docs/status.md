@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2562%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-104-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2562%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2102%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-85-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2562](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 04:27 UTC |
-| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [104](#xxscreeps-expected-failures) | — | [409](#xxscreeps-skipped-tests) | 2026-05-09 04:24 UTC |
+| 🟡 | **vanilla** | [2562](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 22:48 UTC |
+| 🟡 | **xxscreeps** | [2102](#xxscreeps-passing-tests) | [85](#xxscreeps-expected-failures) | — | [409](#xxscreeps-skipped-tests) | 2026-05-09 22:45 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -96,13 +96,13 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
 - `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
 - `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
+- `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
-- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
-- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
-- `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
 
 </details>
 
@@ -183,7 +183,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 51 expected-failure classifications against vanilla's canonical behavior, covering 104 tests. That includes 48 open parity gaps covering 99 tests and 3 intentional divergences covering 5 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 85 tests. That includes 38 open parity gaps covering 81 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -191,8 +191,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `find-hostile-structures-includes-unowned` | `Room.find(FIND_HOSTILE_STRUCTURES)` returns every structure whose `owner` is not the evaluating player, which incorrectly includes unowned structures (`STRUCTURE_ROAD`, `STRUCTURE_WALL`, etc.). The predicate is the negation of `FIND_MY_STRUCTURES` instead of mirroring its `owner === self` test against a different user. | Vanilla returns only structures owned by some other player. Unowned structures must be excluded from both `FIND_MY_STRUCTURES` and `FIND_HOSTILE_STRUCTURES` and appear only in `FIND_STRUCTURES`. | [1](#xxscreeps-gap-find-hostile-structures-includes-unowned) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
+| `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
 | `id-constructor-overlay-copy` | `new Creep(id)` and sibling same-type id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, and primitive overlay fields such as `hits` and `fatigue` can differ from `Game.getObjectById(id)`. Upstream PR 178 handled most same-type constructor cases; `new Ruin(id)` remains the observed residual under the current pin. | Vanilla same-type id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative public fields match the live object. | [1](#xxscreeps-gap-id-constructor-overlay-copy) |
 | `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
 | `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
@@ -200,7 +200,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
-| `look-energy-alias-not-registered` | `LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no xxscreeps mod aliases it onto `Resource`. Surfaces three ways: `lookAt(x, y)` (`game/room/look.ts`) emits each object using its `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `{ type: 'energy', energy: ... }` entry; `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants`; `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined. | Vanilla wires `LOOK_ENERGY` as a legacy alias to the `Resource` register (`@screeps/engine/src/game/rooms.js:768-796`): `lookAt` yields two entries per dropped resource (`type: 'energy'` and `type: 'resource'`), and `lookForAt`/`lookForAtArea(LOOK_ENERGY, ...)` return the same `Resource` collection as `LOOK_RESOURCES`. | [3](#xxscreeps-gap-look-energy-alias-not-registered) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `constructor-by-id-missing-for-noncreep-objects` | Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position. | Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick. | [1](#xxscreeps-gap-constructor-by-id-missing-for-noncreep-objects) |
@@ -217,17 +216,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `construction-site-bad-name-silently-dropped` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:66-72`) calls `factory.checkName(this, nameArg)`; for SPAWN with a 101-char name `checkName` (`packages/xxscreeps/mods/spawn/spawn.ts:223-227`) returns `null`, the wrapper's `if (name)` is falsy so the bad name is silently dropped, and `checkCreateConstructionSite` then re-invokes `checkName(_, null)` which auto-generates a fresh name like `Spawn1` — the chain returns OK. | Vanilla returns ERR_INVALID_ARGS for an oversized name. | [5](#xxscreeps-gap-construction-site-bad-name-silently-dropped) |
 | `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
-| `harvest-bodypart-too-early-vs-target` | Outer `checkHarvest` (`packages/xxscreeps/mods/harvestable/creep.ts:9-13`) calls `checkCommon(creep)` without a part argument before falling through to ERR_INVALID_TARGET when the target isn't a registered Harvestable. The WORK part check is buried inside the per-target inner chain (`packages/xxscreeps/mods/source/game.ts:44`, `packages/xxscreeps/mods/mineral/mineral.ts:47`). | Vanilla returns ERR_NO_BODYPART before ERR_INVALID_TARGET for `creep.harvest`. | [2](#xxscreeps-gap-harvest-bodypart-too-early-vs-target) |
-| `harvest-depleted-too-late` | `packages/xxscreeps/mods/source/game.ts:42-55` and `packages/xxscreeps/mods/mineral/mineral.ts:45-65` put the depleted (`energy <= 0` / `mineralAmount <= 0`) check in the LAST inline lambda, after `checkRange` and (for source) the hostile-room ERR_NOT_OWNER branch. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES (depleted) before ERR_NOT_IN_RANGE and before the hostile-room ERR_NOT_OWNER. | [3](#xxscreeps-gap-harvest-depleted-too-late) |
-| `harvest-mineral-cooldown-api-gate-inverted` | `packages/xxscreeps/mods/mineral/mineral.ts:61-63` reads `extractor.cooldown !== 0 && extractor.cooldown !== C.EXTRACTOR_COOLDOWN ? ERR_TIRED : OK` — only returns OK when the extractor cooldown is exactly 0 or exactly EXTRACTOR_COOLDOWN; any intermediate value (e.g. mid-decrement at 9) yields ERR_TIRED at the API layer. | Vanilla does not gate mineral harvest on intermediate extractor cooldown values at the API layer; the call returns OK and the processor handles yield/cooldown bookkeeping. | [1](#xxscreeps-gap-harvest-mineral-cooldown-api-gate-inverted) |
 | `build-repair-not-enough-too-late` | `checkBuild` (`packages/xxscreeps/mods/construction/creep.ts`) and `checkRepair` (`packages/xxscreeps/mods/structure/creep.ts`) place the source-energy check after target validation and range. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES before ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the blocked-target check. | [5](#xxscreeps-gap-build-repair-not-enough-too-late) |
 | `build-blocked-vs-range-inverted` | `checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET. | [1](#xxscreeps-gap-build-blocked-vs-range-inverted) |
-| `dismantle-indestructible-not-rejected` | `checkDismantle` (`packages/xxscreeps/mods/construction/creep.ts`) only runs `checkTarget(target, Structure)` — controllers (and other structures with `hits === undefined`) pass that check, so dismantling a controller returns OK and the precedence chain returns ERR_NOT_IN_RANGE when range also blocks. | Vanilla rejects targets without a finite `hits` value (controllers, indestructible walls) with ERR_INVALID_TARGET ahead of range checks. | [2](#xxscreeps-gap-dismantle-indestructible-not-rejected) |
-| `spawn-not-owner-too-early` | `checkSpawnCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:300-345`) calls `checkMyStructure(spawn, StructureSpawn)` first, returning ERR_NOT_OWNER before name string, NAME_EXISTS, or directions array validation. | Vanilla validates the name argument, name uniqueness, and directions array before ERR_NOT_OWNER on the spawn. | [3](#xxscreeps-gap-spawn-not-owner-too-early) |
-| `renew-not-owner-too-early` | `checkRenewCreep` (`packages/xxscreeps/mods/spawn/spawn.ts:272-289`) calls `checkMyStructure(spawn, StructureSpawn)` first. | Vanilla returns ERR_BUSY (spawn spawning) and ERR_INVALID_TARGET (target not a creep) before ERR_NOT_OWNER on the spawn. | [2](#xxscreeps-gap-renew-not-owner-too-early) |
-| `simult-heal-saves-doomed-creep` | When same-tick damage exceeds current hits plus same-tick healing, a self-heal still raises the creep above 0 hits and it survives the death check. Observed: a 10-hit `[MOVE, HEAL]` target taking 30 melee damage and 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. | Vanilla resolves damage and healing as a sum before the death check (`newHits = clamp(oldHits - damage + heal, 0, hitsMax)`); the death check sees `<= 0` and the creep dies, leaving a tombstone. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135. | [1](#xxscreeps-gap-simult-heal-saves-doomed-creep) |
-| `lab-self-as-reagent-not-rejected` | `checkReverseReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:151-188`) doesn't reject the case where `lab1` or `lab2` is the source lab; the chain falls through `checkTarget` and `checkRange` and lands on `lab1.id === lab2.id` returning ERR_INVALID_ARGS. Same gap shape exists in `checkRunReaction` (`packages/xxscreeps/mods/chemistry/lab.ts:230-247`) — no matrix coverage today but identical bug. | Vanilla returns ERR_INVALID_TARGET when the reaction lab is also passed as a reagent slot. | [1](#xxscreeps-gap-lab-self-as-reagent-not-rejected) |
-| `lab-unboost-target-owner-too-late` | `checkUnboostCreep` (`packages/xxscreeps/mods/chemistry/lab.ts:191-211`) runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch, so a foreign target on an inactive lab returns ERR_RCL_NOT_ENOUGH instead of ERR_NOT_OWNER. | Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` for ERR_NOT_OWNER before the active-structure RCL gate. | [1](#xxscreeps-gap-lab-unboost-target-owner-too-late) |
 | `corner-exit-tiles-auto-transition` | xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#xxscreeps-gap-corner-exit-tiles-auto-transition) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
@@ -242,17 +232,18 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 Click a test count above to jump to the affected test list for that gap.
 
-<details id="xxscreeps-gap-find-hostile-structures-includes-unowned">
-<summary><code>find-hostile-structures-includes-unowned</code> — 1 test</summary>
-
-- `Room.find ROOM-FIND-001:findHostileStructures returns exactly the expected set for the current player`
-
-</details>
-
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
 
 - `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
+
+</details>
+
+<details id="xxscreeps-gap-controller-my-reset-returns-undefined">
+<summary><code>controller-my-reset-returns-undefined</code> — 2 tests</summary>
+
+- `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
+- `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
 
 </details>
 
@@ -311,15 +302,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers`
 - `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers`
-
-</details>
-
-<details id="xxscreeps-gap-look-energy-alias-not-registered">
-<summary><code>look-energy-alias-not-registered</code> — 3 tests</summary>
-
-- `Room look API ROOM-LOOK-007 lookForAt(LOOK_ENERGY) returns the same Resource as LOOK_RESOURCES`
-- `Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key`
-- `Room look API ROOM-LOOK-009 lookAt yields both energy and resource entries on a dropped-resource tile`
 
 </details>
 
@@ -455,30 +437,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-harvest-bodypart-too-early-vs-target">
-<summary><code>harvest-bodypart-too-early-vs-target</code> — 2 tests</summary>
-
-- `creep.harvest() HARVEST-015:noBodypartBeforeInvalidTarget harvest(source) validation returns the canonical code`
-- `creep.harvest(mineral) HARVEST-MINERAL-014:noBodypartBeforeInvalidTarget harvest(mineral) validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-harvest-depleted-too-late">
-<summary><code>harvest-depleted-too-late</code> — 3 tests</summary>
-
-- `creep.harvest() HARVEST-015:depletedBeforeRange harvest(source) validation returns the canonical code`
-- `creep.harvest() HARVEST-015:depletedBeforeHostileRoom harvest(source) validation returns the canonical code`
-- `creep.harvest(mineral) HARVEST-MINERAL-014:depletedBeforeRange harvest(mineral) validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-harvest-mineral-cooldown-api-gate-inverted">
-<summary><code>harvest-mineral-cooldown-api-gate-inverted</code> — 1 test</summary>
-
-- `creep.harvest(mineral) HARVEST-MINERAL-014:cooldown harvest(mineral) validation returns the canonical code`
-
-</details>
-
 <details id="xxscreeps-gap-build-repair-not-enough-too-late">
 <summary><code>build-repair-not-enough-too-late</code> — 5 tests</summary>
 
@@ -494,52 +452,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>build-blocked-vs-range-inverted</code> — 1 test</summary>
 
 - `creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-dismantle-indestructible-not-rejected">
-<summary><code>dismantle-indestructible-not-rejected</code> — 2 tests</summary>
-
-- `creep.dismantle() DISMANTLE-009:invalidTarget dismantle() validation returns the canonical code`
-- `creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-spawn-not-owner-too-early">
-<summary><code>spawn-not-owner-too-early</code> — 3 tests</summary>
-
-- `StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotOwner spawnCreep() validation returns the canonical code`
-- `StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotOwner spawnCreep() validation returns the canonical code`
-- `StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotOwner spawnCreep() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-renew-not-owner-too-early">
-<summary><code>renew-not-owner-too-early</code> — 2 tests</summary>
-
-- `Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotOwner renewCreep() validation returns the canonical code`
-- `Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotOwner renewCreep() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-simult-heal-saves-doomed-creep">
-<summary><code>simult-heal-saves-doomed-creep</code> — 1 test</summary>
-
-- `Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)`
-
-</details>
-
-<details id="xxscreeps-gap-lab-self-as-reagent-not-rejected">
-<summary><code>lab-self-as-reagent-not-rejected</code> — 1 test</summary>
-
-- `Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeSameLab reverseReaction() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-lab-unboost-target-owner-too-late">
-<summary><code>lab-unboost-target-owner-too-late</code> — 1 test</summary>
-
-- `lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code`
 
 </details>
 
@@ -636,18 +548,10 @@ These are known vanilla differences that the engine maintainers have decided not
 
 | Gap | Why | Actual | Vanilla behavior | Tests |
 | --- | --- | --- | --- | :-: |
-| `controller-my-never-owned-returns-false` | PR #128 intentionally keeps `controller.my === false` for never-claimed controllers: xxscreeps has no serialized absent-user sentinel, and upstream decided vanilla's `undefined` sentinel is a quirk worth dropping. | Intentional xxscreeps behavior ([laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128)): `StructureController.my` returns `false` on a never-owned controller | Vanilla returns `undefined` on a never-owned controller; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix | [1](#xxscreeps-gap-controller-my-never-owned-returns-false) |
 | `shape-body-part-always-has-boost` | PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference. | Intentional xxscreeps behavior ([laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163)): unboosted body parts expose a `boost` own property with value `undefined` | Vanilla exposes `boost` as an own property only when the part is actually boosted; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `factory-power-effect-not-implemented` | `mods/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional. | `checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-controller-my-never-owned-returns-false">
-<summary><code>controller-my-never-owned-returns-false</code> — 1 test</summary>
-
-- `controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller`
-
-</details>
 
 <details id="xxscreeps-gap-shape-body-part-always-has-boost">
 <summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
@@ -4286,7 +4190,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2083 tests across 105 files</summary>
+<summary>2102 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4608,7 +4512,7 @@ Click a count to jump to the affected test list.
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
 - Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
 
-**`tests/03-harvesting/3.1-source-harvest.test.ts`** (39)
+**`tests/03-harvesting/3.1-source-harvest.test.ts`** (42)
 
 - creep.harvest() HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store
 - creep.harvest() HARVEST-009 harvest reduces source energy by the harvested amount
@@ -4642,15 +4546,18 @@ Click a count to jump to the affected test list.
 - creep.harvest() HARVEST-015:busyBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeRange harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeHostileRoom harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:depletedBeforeRange harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:depletedBeforeHostileRoom harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:rangeBeforeHostileRoom harvest(source) validation returns the canonical code
 
-**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (65)
+**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (68)
 
 - creep.harvest(mineral) HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part
 - creep.harvest(mineral) HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity
@@ -4674,6 +4581,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:noExtractor harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwner harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractor harvest(mineral) validation returns the canonical code
+- creep.harvest(mineral) HARVEST-MINERAL-014:cooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:notOwnerBeforeBusy harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:notOwnerBeforeNoBodypart harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:notOwnerBeforeInvalidTarget harvest(mineral) validation returns the canonical code
@@ -4691,6 +4599,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:busyBeforeExtractorNotOwner harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:busyBeforeInactiveExtractor harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:busyBeforeCooldown harvest(mineral) validation returns the canonical code
+- creep.harvest(mineral) HARVEST-MINERAL-014:noBodypartBeforeInvalidTarget harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:noBodypartBeforeDepleted harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:noBodypartBeforeRange harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:noBodypartBeforeNoExtractor harvest(mineral) validation returns the canonical code
@@ -4703,6 +4612,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:invalidTargetBeforeExtractorNotOwner harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:invalidTargetBeforeInactiveExtractor harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:invalidTargetBeforeCooldown harvest(mineral) validation returns the canonical code
+- creep.harvest(mineral) HARVEST-MINERAL-014:depletedBeforeRange harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:depletedBeforeNoExtractor harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:depletedBeforeExtractorNotOwner harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:depletedBeforeInactiveExtractor harvest(mineral) validation returns the canonical code
@@ -4986,7 +4896,7 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
 - creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (22)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (24)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
@@ -4999,6 +4909,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:notOwner dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busy dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypart dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:invalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:range dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeBusy dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeNoBodypart dismantle() validation returns the canonical code
@@ -5009,6 +4920,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:busyBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
 **`tests/05-construction-repair/5.4-construction-sites.test.ts`** (44)
@@ -5058,7 +4970,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (106)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (107)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -5068,6 +4980,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
 - controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
+- controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-CLAIM-008:notOwner claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busy claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnough claimController() validation returns the canonical code
@@ -5259,10 +5172,9 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (7)
+**`tests/06-controller/6.7-downgrade.test.ts`** (6)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
-- Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
 - Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
@@ -5295,10 +5207,6 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeBusy activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
-
-**`tests/06-controller/6.9-unclaim.test.ts`** (1)
-
-- StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
 
 **`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
@@ -5428,12 +5336,13 @@ Click a count to jump to the affected test list.
 - creep.rangedMassAttack() COMBAT-RMA-005:notOwnerBeforeNoBodypart rangedMassAttack() validation returns the canonical code
 - creep.rangedMassAttack() COMBAT-RMA-005:busyBeforeNoBodypart rangedMassAttack() validation returns the canonical code
 
-**`tests/07-combat/7.7-simultaneous.test.ts`** (5)
+**`tests/07-combat/7.7-simultaneous.test.ts`** (6)
 
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-003 overkill damage does not carry over to the next tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
+- Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
 - Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
 
 **`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
@@ -5531,7 +5440,7 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-010:notEnoughEnergyBeforeNotFound boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:notEnoughMineralBeforeNotFound boostCreep() validation returns the canonical code
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (31)
+**`tests/08-boosts/8.2-unboost.test.ts`** (32)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
 - lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
@@ -5555,6 +5464,7 @@ Click a count to jump to the affected test list.
 - lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:labNotOwnerBeforeRange unboostCreep() validation returns the canonical code
+- lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRcl unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeCooldown unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeNotFound unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:creepNotOwnerBeforeRange unboostCreep() validation returns the canonical code
@@ -5608,7 +5518,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (46)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -5640,13 +5550,16 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-014:notEnough spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameExists spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidDirections spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeBusy spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidBody spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotEnough spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidDirections spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeBusy spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidBody spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeBusy spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeInvalidBody spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotEnough spawnCreep() validation returns the canonical code
@@ -5670,7 +5583,7 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (32)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (34)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
@@ -5691,9 +5604,11 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:notEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:full renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeInvalidTarget renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotOwner renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotOwner renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeFull renewCreep() validation returns the canonical code
@@ -5828,7 +5743,7 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:fullBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target
 
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (168)
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (169)
 
 - Lab runReaction LAB-RUN-001:H+O runReaction produces OH
 - Lab runReaction LAB-RUN-001:H+L runReaction produces LH
@@ -5985,6 +5900,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeFull reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeFull reverseReaction() validation returns the canonical code
@@ -6258,7 +6174,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (18)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (19)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -6273,19 +6189,23 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findMyStructures returns exactly the expected set for the current player
+- Room.find ROOM-FIND-001:findHostileStructures returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findMySpawns returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileSpawns returns exactly the expected set for the current player
 - Room.find ROOM-FIND-002:functionFilter Room.find(type, { filter: fn }) returns only matching items
 - Room.find ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items
 - Room.find ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (6)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (9)
 
 - Room look API ROOM-LOOK-001 lookAt returns terrain plus creeps and structures on the tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
 - Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
 - Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
 - Room look API ROOM-LOOK-005 lookForAtArea filters to objects inside the bounding box
+- Room look API ROOM-LOOK-007 lookForAt(LOOK_ENERGY) returns the same Resource as LOOK_RESOURCES
+- Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key
+- Room look API ROOM-LOOK-009 lookAt yields both energy and resource entries on a dropped-resource tile
 - Room look API ROOM-LOOK-010 lookForAt returns [] for valid LOOK_* constants whose register is empty
 
 **`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
