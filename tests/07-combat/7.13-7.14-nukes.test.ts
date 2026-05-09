@@ -7,7 +7,7 @@ import { describe, test, expect, code,
 	CONTROLLER_NUKE_BLOCKED_UPGRADE,
 	BODYPART_HITS,
 	FIND_TOMBSTONES, FIND_RUINS, FIND_DROPPED_RESOURCES, FIND_CONSTRUCTION_SITES,
-	FIND_SOURCES, FIND_MINERALS,
+	FIND_SOURCES, FIND_MINERALS, FIND_NUKES,
 	RESOURCE_ENERGY, RESOURCE_GHODIUM, RESOURCE_SILICON,
 } from '../../src/index.js';
 import { nukeLaunchValidationCases } from '../../src/matrices/nuke-launch-validation.js';
@@ -947,5 +947,73 @@ describe('Nuke impact — section 7.14', () => {
 
 		const wall = await shard.expectStructure(wallId, STRUCTURE_WALL);
 		expect(wall.hits).toBe(wallHits - NUKE_DAMAGE[0] * 2);
+	});
+
+	test('NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES', async ({ shard }) => {
+		shard.requires('nuke');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [10, 10],
+			owner: 'p1',
+			body: [TOUGH, MOVE],
+		});
+		await shard.placeNuke('W1N1', {
+			pos: [25, 25],
+			launchRoomName: 'W2N1',
+			timeToLand: 2,
+		});
+
+		await shard.tick();
+		const preImpact = JSON.parse(await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const nukes = room.find(FIND_NUKES);
+			JSON.stringify({
+				nukeCount: nukes.length,
+				timeToLand: nukes[0] ? nukes[0].timeToLand : null,
+				creepExists: Game.getObjectById(${creepId}) !== null,
+				tombstones: room.find(FIND_TOMBSTONES).length,
+			})
+		`) as string) as {
+			creepExists: boolean;
+			nukeCount: number;
+			timeToLand: number | null;
+			tombstones: number;
+		};
+		expect(preImpact).toEqual({
+			nukeCount: 1,
+			timeToLand: 1,
+			creepExists: true,
+			tombstones: 0,
+		});
+
+		const impactVisible = JSON.parse(await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const nukes = room.find(FIND_NUKES);
+			JSON.stringify({
+				nukeCount: nukes.length,
+				timeToLand: nukes[0] ? nukes[0].timeToLand : null,
+				creepExists: Game.getObjectById(${creepId}) !== null,
+				tombstones: room.find(FIND_TOMBSTONES).length,
+			})
+		`) as string) as {
+			creepExists: boolean;
+			nukeCount: number;
+			timeToLand: number | null;
+			tombstones: number;
+		};
+		expect(impactVisible).toEqual({
+			nukeCount: 1,
+			timeToLand: 0,
+			creepExists: false,
+			tombstones: 0,
+		});
+
+		const nukeCountAfterLanding = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].find(FIND_NUKES).length
+		`);
+		expect(nukeCountAfterLanding).toBe(0);
 	});
 });
