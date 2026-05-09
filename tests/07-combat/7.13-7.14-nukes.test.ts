@@ -14,6 +14,7 @@ import { describe, test, expect, code,
 import { nukeLaunchValidationCases } from '../../src/matrices/nuke-launch-validation.js';
 import { nukerPropCases } from '../../src/matrices/nuker-props.js';
 import { nukeImpactObjectCases } from '../../src/matrices/nuke-impact-objects.js';
+import { nukeImpactFootprintCases } from '../../src/matrices/nuke-impact-footprint.js';
 
 // Section 7.13/7.14 — Nuker launch and Nuke impact behaviors.
 //
@@ -1097,4 +1098,31 @@ describe('Nuke impact — section 7.14', () => {
 		`);
 		expect(nukeCountAfterLanding).toBe(0);
 	});
+
+	for (const row of nukeImpactFootprintCases) {
+		test(`NUKE-IMPACT-014:${row.label} per-tile damage matches the 5x5 footprint and stops at range 3`, async ({ shard }) => {
+			// Engine: @screeps/engine/src/processor/intents/nukes/tick.js:39-44 —
+			// the dx/dy loop runs from -2..2 (Chebyshev range 0-2), with damage
+			// `range == 0 ? NUKE_DAMAGE[0] : NUKE_DAMAGE[2]`. Cells where
+			// `max(|dx|, |dy|) >= 3` are outside the loop and take no damage.
+			shard.requires('nuke');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+
+			// Slack ensures the rampart absorbs the full hit without dropping to 0.
+			const rampartHits = NUKE_DAMAGE[0] + 5_000_000;
+			const rampartId = await shard.placeStructure('W1N1', {
+				pos: [25 + row.dx, 25 + row.dy],
+				structureType: STRUCTURE_RAMPART,
+				owner: 'p1',
+				hits: rampartHits,
+			});
+			await shard.placeNuke('W1N1', {
+				pos: [25, 25], launchRoomName: 'W1N1', timeToLand: 1,
+			});
+			await shard.tick(2);
+
+			const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
+			expect(rampartHits - rampart.hits).toBe(row.expectedDamage);
+		});
+	}
 });

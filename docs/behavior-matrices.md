@@ -574,6 +574,32 @@ Each definition should include:
   place or expose that type.
   The executable case list lives in `src/matrices/nuke-impact-objects.ts`.
 
+### NUKE-IMPACT-FOOTPRINT
+
+- `Catalog Entries`
+  `NUKE-IMPACT-014`
+- `Canonical Source`
+  Official nuke impact processor (`@screeps/engine/src/processor/intents/nukes/tick.js:39-44`)
+  — nested `dx,dy ∈ [-2, 2]` loop with
+  `damage = range == 0 ? NUKE_DAMAGE[0] : NUKE_DAMAGE[2]`.
+- `Dimensions`
+  per-tile offset `(dx, dy)` over the 7x7 box around the impact, derived
+  Chebyshev range, and expected per-tile damage.
+- `Applicability`
+  Structure damage on a single rampart placed at each tile of the 7x7 box,
+  pinning every cell of the 5x5 blast (range 0-2) and every cell of the
+  range-3 ring (no damage).
+- `Exclusions`
+  Creep deaths, room-wide cleanup, controller side effects, multiple-nuke
+  cumulative damage, and rampart-vs-covered-structure absorption (those are
+  owned by `NUKE-IMPACT-005`, `NUKE-IMPACT-006`, `NUKE-IMPACT-009`-`012`, and
+  `RAMPART-PROTECT-008`).
+- `Verification Notes`
+  Single nuke landing per row keeps each cell's damage attributable to one
+  observable; high-hits ramparts ensure the engine can record full damage
+  without dropping the rampart to 0.
+  The executable case list lives in `src/matrices/nuke-impact-footprint.ts`.
+
 ### COMBAT-RMA
 
 - `Catalog Entries`

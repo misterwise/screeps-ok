@@ -1487,11 +1487,20 @@ Coverage Notes
   On the first player-visible tick after nuke impact side effects apply, the
   landing `Nuke` object is still returned by `FIND_NUKES` with
   `timeToLand === 0`; it is removed on the following tick.
+- `NUKE-IMPACT-014` `matrix` `verified_vanilla`
+  Per-tile structure damage spans the full 5x5 footprint with the canonical
+  Chebyshev falloff (`range == 0` → `NUKE_DAMAGE[0]`, `range` 1 or 2 →
+  `NUKE_DAMAGE[2]`) and stops at the range-3 boundary, where rampart hits are
+  unchanged.
 
 Coverage Notes
 - `NUKE-IMPACT-004` (rampart absorbs nuke damage for structures underneath)
   was a duplicate of `RAMPART-PROTECT-008` (section 12.1) and is dropped here;
   the nuke + rampart structure-absorption observable is owned by section 12.1.
+- `NUKE-IMPACT-002` and `NUKE-IMPACT-003` already pin the center and a single
+  east-axis sample for ranges 1 and 2; `NUKE-IMPACT-014` extends that to the
+  full 49-tile box (25 in-blast cells + 24 range-3 cells) so the geometry and
+  the range-3 boundary are verified per tile.
 
 ### 7.15 Safe Mode — Combat Effects
 - `SAFEMODE-COMBAT-001` `behavior` `verified_vanilla`
