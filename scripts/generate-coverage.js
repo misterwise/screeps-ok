@@ -135,6 +135,15 @@ function crossReference(catalog, testedIds) {
 
 // IDs whose tests require simulate() which xxscreeps doesn't support
 const SIMULATE_FAMILIES = ['FLAG', 'RAWMEMORY', 'RAWMEMORY-FOREIGN'];
+// IDs whose vanilla behavior is cataloged, but the fixture cannot currently
+// create the world state needed for an executable adapter test.
+const FIXTURE_BLOCKED_IDS = new Set([
+	'NUKE-LAUNCH-014',
+	'NUKE-LAUNCH-015',
+	'NUKE-LAUNCH-016',
+	'NUKE-LAUNCH-017',
+	'UNDOC-SYSUSER-002',
+]);
 // Capabilities that neither adapter currently supports
 const BLOCKED_CAPABILITIES = new Set([
 	'powerCreeps', 'factory', 'market', 'nuke', 'deposit',
@@ -144,6 +153,9 @@ const BLOCKED_CAPABILITIES = new Set([
 const POWER_EFFECT_RE = /^(TOWER-POWER|RAMPART-DECAY-00[45]|SOURCE-POWER|MINERAL-POWER|SPAWN-TIMING-005)/;
 
 function categorizeUntested(entry) {
+	if (FIXTURE_BLOCKED_IDS.has(entry.id)) {
+		return 'fixture-blocked';
+	}
 	if (entry.capability && BLOCKED_CAPABILITIES.has(entry.capability)) {
 		return `capability: ${entry.capability}`;
 	}

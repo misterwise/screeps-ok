@@ -506,8 +506,10 @@ Each definition should include:
   `launchNuke()` ownership, argument type, cooldown, active-structure state,
   target range, and energy/ghodium availability.
 - `Exclusions`
-  Room-status restrictions such as novice and respawn areas until the adapter
-  contract exposes canonical room-status setup.
+  Room-status restrictions are not part of this executable validation matrix;
+  `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` register those vanilla behaviors
+  explicitly and mark them fixture-blocked until `RoomSpec` can create
+  canonical novice and respawn room status.
 - `Verification Notes`
   This family should include both single-blocker rows and selected precedence
   rows: cooldown before inactive/range/resources, inactive before

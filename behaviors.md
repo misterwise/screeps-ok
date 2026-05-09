@@ -1444,9 +1444,29 @@ Coverage Notes
 - `NUKE-LAUNCH-013` `behavior` `needs_vanilla_verification`
   After launch, `nuker.cooldown` decreases by exactly `1` on each subsequent
   tick until it reaches `0`.
+- `NUKE-LAUNCH-014` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_INVALID_TARGET` when the source room is in a
+  novice area.
+- `NUKE-LAUNCH-015` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_INVALID_TARGET` when the source room is in a
+  respawn area.
+- `NUKE-LAUNCH-016` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_INVALID_TARGET` when the destination room is in
+  a novice area.
+- `NUKE-LAUNCH-017` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_INVALID_TARGET` when the destination room is in
+  a respawn area.
 - `NUKER-PROPS-001` `matrix` `needs_vanilla_verification`
   `StructureNuker` legacy resource properties mirror the store and capacity
   constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.
+
+Coverage Notes
+- `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` are fixture-blocked:
+  vanilla `StructureNuker.launchNuke()` rejects novice and respawn rooms
+  through source-room fields and destination-room status data, but current
+  `RoomSpec` cannot mark a room as a novice-area or respawn-area room.
+  Deferring executable adapter tests until the fixture exposes canonical
+  room-status setup.
 
 ### 7.14 Nukes — Impact `capability: nuke`
 - `NUKE-IMPACT-001` `behavior` `verified_vanilla` Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on launch.
