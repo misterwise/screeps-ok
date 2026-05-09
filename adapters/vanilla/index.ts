@@ -4,7 +4,7 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
-	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec,
 } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -49,6 +49,7 @@ let sharedServer: any = null;
 let sharedServerCleanupRegistered = false;
 let sharedUserCodeTimestamp = Date.now();
 let sharedTerrainRevision = 0;
+let sharedRoomStatusRevision = 0;
 let runnerLogPath: string | null = null;
 let runnerFatal: Error | null = null;
 const runnerFatalBus = new EventEmitter();
@@ -56,6 +57,7 @@ runnerFatalBus.setMaxListeners(0);
 
 const VANILLA_WORLD_SIZE_ENV_KEY = 'screeps-ok:worldSize';
 const VANILLA_TERRAIN_REVISION_ENV_KEY = 'screeps-ok:terrainRevision';
+const VANILLA_ROOM_STATUS_REVISION_ENV_KEY = 'screeps-ok:roomStatusRevision';
 const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
 // Hard ceiling on a single server.tick() call. The driver waits for the
 // engine_runner subprocess to send back a tick reply over IPC; if the runner
@@ -82,17 +84,21 @@ function writeRunnerSandboxPatch(root: string): string {
 	const patchPath = path.join(root, RUNNER_SANDBOX_PATCH_FILE);
 	const userVmPath = nodeRequire.resolve('@screeps/driver/lib/runtime/user-vm.js');
 	const makePath = nodeRequire.resolve('@screeps/driver/lib/runtime/make.js');
+	const dataPath = nodeRequire.resolve('@screeps/driver/lib/runtime/data.js');
 	const patchSource = `'use strict';
 const Module = require('module');
 const fs = require('fs');
 
 const userVmTarget = ${JSON.stringify(userVmPath)};
 const makeTarget = ${JSON.stringify(makePath)};
+const dataTarget = ${JSON.stringify(dataPath)};
 const worldSizeKey = ${JSON.stringify(VANILLA_WORLD_SIZE_ENV_KEY)};
 const terrainRevisionKey = ${JSON.stringify(VANILLA_TERRAIN_REVISION_ENV_KEY)};
+const roomStatusRevisionKey = ${JSON.stringify(VANILLA_ROOM_STATUS_REVISION_ENV_KEY)};
 const originalJs = Module._extensions['.js'];
 let patchedUserVm = false;
 let patchedMake = false;
+let patchedData = false;
 
 Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filename) {
 	if (filename === userVmTarget) {
@@ -103,11 +109,15 @@ Module._extensions['.js'] = function screepsOkVanillaSandboxPatch(module, filena
 		patchMake(module, filename);
 		return;
 	}
+	if (filename === dataTarget) {
+		patchData(module, filename);
+		return;
+	}
 	return originalJs(module, filename);
 };
 
 function maybeRestore() {
-	if (patchedUserVm && patchedMake) {
+	if (patchedUserVm && patchedMake && patchedData) {
 		Module._extensions['.js'] = originalJs;
 	}
 }
@@ -182,6 +192,33 @@ function patchMake(module, filename) {
 	);
 	module._compile(source, filename);
 	patchedMake = true;
+	maybeRestore();
+}
+
+function patchData(module, filename) {
+	let source = fs.readFileSync(filename, 'utf8');
+	const start = source.indexOf('function getRoomStatusData() {');
+	const end = source.indexOf('\\n\\nexports.get = function(userId)', start);
+	if (start === -1 || end === -1) {
+		throw new Error('screeps-ok vanilla sandbox patch: data.js room status cache block not found');
+	}
+	const replacement = "function getRoomStatusData() {\\n" +
+		"    return env.get(" + JSON.stringify(roomStatusRevisionKey) + ")\\n" +
+		"        .catch(() => null)\\n" +
+		"        .then((revision) => {\\n" +
+		"            if(roomStatusDataCache.data && roomStatusDataCache.revision === revision) {\\n" +
+		"                return roomStatusDataCache.data;\\n" +
+		"            }\\n" +
+		"            return env.get(env.keys.ROOM_STATUS_DATA).then(data => {\\n" +
+		"                roomStatusDataCache.data = JSON.parse(data || '{\\"novice\\":{},\\"respawn\\":{},\\"closed\\":{}}');\\n" +
+		"                roomStatusDataCache.revision = revision;\\n" +
+		"                return roomStatusDataCache.data;\\n" +
+		"            });\\n" +
+		"        });\\n" +
+		"}";
+	source = source.slice(0, start) + replacement + source.slice(end);
+	module._compile(source, filename);
+	patchedData = true;
 	maybeRestore();
 }
 `;
@@ -439,6 +476,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		nuke: true,
 		deposit: true,
 		terrain: true,
+		roomStatus: true,
 		portals: true,
 		invaderCore: true,
 		invaderRaidSpawner: true,
@@ -615,6 +653,64 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		await this.env.set(VANILLA_TERRAIN_REVISION_ENV_KEY, String(++sharedTerrainRevision));
 	}
 
+	private roomStatusUntil(roomSpec: RoomSpec): number | null {
+		if (!roomSpec.status || roomSpec.status === 'normal') return null;
+		return Date.now() + 60 * 60 * 1000;
+	}
+
+	private async applyRoomStatus(roomSpec: RoomSpec): Promise<void> {
+		const status = roomSpec.status ?? 'normal';
+		const until = this.roomStatusUntil(roomSpec);
+		const fields: Record<string, unknown> = {
+			status: 'normal',
+			novice: null,
+			respawnArea: null,
+			openTime: null,
+		};
+		if (status === 'novice') {
+			fields.novice = until;
+		} else if (status === 'respawn') {
+			fields.respawnArea = until;
+		} else if (status === 'closed') {
+			fields.openTime = until;
+		}
+		await this.db.rooms.update({ _id: roomSpec.name }, { $set: fields });
+	}
+
+	private async publishRoomStatusData(): Promise<void> {
+		const now = Date.now();
+		const rooms = await this.db.rooms.find();
+		const statusData: {
+			novice: Record<string, number>;
+			respawn: Record<string, number>;
+			closed: Record<string, number>;
+		} = { novice: {}, respawn: {}, closed: {} };
+		const accessibleRooms: string[] = [];
+
+		for (const room of rooms) {
+			const roomName = String(room._id);
+			if (room.novice > now) {
+				statusData.novice[roomName] = room.novice;
+			} else if (room.respawnArea > now) {
+				statusData.respawn[roomName] = room.respawnArea;
+			} else if (room.openTime > now) {
+				statusData.closed[roomName] = room.openTime;
+			} else if (room.status === 'out of borders') {
+				statusData.closed[roomName] = Infinity;
+			}
+
+			if (room.status === 'normal' && (!room.openTime || room.openTime < now)) {
+				accessibleRooms.push(roomName);
+			}
+		}
+
+		await Promise.all([
+			this.env.set(this.env.keys.ACCESSIBLE_ROOMS, JSON.stringify(accessibleRooms)),
+			this.env.set(this.env.keys.ROOM_STATUS_DATA, JSON.stringify(statusData)),
+			this.env.set(VANILLA_ROOM_STATUS_REVISION_ENV_KEY, String(++sharedRoomStatusRevision)),
+		]);
+	}
+
 	private async bumpUserCodeTimestamps(): Promise<void> {
 		const timestamp = ++sharedUserCodeTimestamp;
 		await Promise.all([...this.users.keys()].map(handle =>
@@ -658,6 +754,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
 				level: roomSpec.rcl ?? 0,
 			});
+			await this.applyRoomStatus(roomSpec);
 		}
 
 		// Preload fixture terrain that is not part of this shard's room set.
@@ -669,6 +766,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			if (specRoomNames.has(preload.name)) continue;
 			await this.server.world.setTerrain(preload.name, buildTerrain(preload.terrain));
 		}
+		await this.publishRoomStatusData();
 		await this.publishTerrainRevision();
 		await this.publishSandboxWorldSize();
 

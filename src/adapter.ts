@@ -33,11 +33,18 @@ export interface PlayerSpec {
 	power?: number;
 }
 
+export type RoomStatusSpec = 'normal' | 'novice' | 'respawn' | 'closed';
+
 export interface RoomSpec {
 	name: string;
 	terrain?: TerrainSpec;
 	rcl?: number;
 	owner?: string;
+	/**
+	 * Seed public room status for Game.map.getRoomStatus() and engine guards
+	 * that consult novice/respawn protection. Defaults to `normal`.
+	 */
+	status?: RoomStatusSpec;
 	safeModeAvailable?: number;
 	/**
 	 * Pre-set the controller's active safe-mode timer in ticks remaining.
@@ -216,6 +223,8 @@ export interface AdapterCapabilities {
 	deposit: boolean;
 	/** Custom terrain setup through RoomSpec.terrain / setTerrain. */
 	terrain: boolean;
+	/** Public room-status setup through RoomSpec.status. */
+	roomStatus: boolean;
 	/** Portal structures and inter-room/inter-shard teleport mechanics. */
 	portals: boolean;
 	/** Invader core structures (level, deploy timer, collapse lifecycle). */

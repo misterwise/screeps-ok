@@ -1,5 +1,6 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_NOT_IN_RANGE,
+	ERR_INVALID_TARGET,
 	MOVE, TOUGH, CLAIM, body,
 	STRUCTURE_NUKER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
@@ -37,6 +38,46 @@ function nukerStore(kind: 'full' | 'empty' | 'energyOnly' | 'ghodiumOnly'): Reco
 			return {};
 	}
 }
+
+type NukeLaunchRoomStatusCase = {
+	catalogId: 'NUKE-LAUNCH-014' | 'NUKE-LAUNCH-015' | 'NUKE-LAUNCH-016' | 'NUKE-LAUNCH-017';
+	label: string;
+	sourceStatus?: 'novice' | 'respawn';
+	destinationStatus?: 'novice' | 'respawn';
+	statusRoomName: string;
+	expectedStatus: 'novice' | 'respawn';
+};
+
+const nukeLaunchRoomStatusCases: readonly NukeLaunchRoomStatusCase[] = [
+	{
+		catalogId: 'NUKE-LAUNCH-014',
+		label: 'source-room-novice',
+		sourceStatus: 'novice',
+		statusRoomName: 'W1N1',
+		expectedStatus: 'novice',
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-015',
+		label: 'source-room-respawn',
+		sourceStatus: 'respawn',
+		statusRoomName: 'W1N1',
+		expectedStatus: 'respawn',
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-016',
+		label: 'destination-room-novice',
+		destinationStatus: 'novice',
+		statusRoomName: 'W2N1',
+		expectedStatus: 'novice',
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-017',
+		label: 'destination-room-respawn',
+		destinationStatus: 'respawn',
+		statusRoomName: 'W2N1',
+		expectedStatus: 'respawn',
+	},
+];
 
 describe('Nuke launch — section 7.13', () => {
 	test('NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium', async ({ shard }) => {
@@ -299,6 +340,43 @@ describe('Nuke launch — section 7.13', () => {
 					Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, ${row.targetRoomName}))
 				`);
 			expect(rc).toBe(row.expectedRc);
+		});
+	}
+
+	for (const row of nukeLaunchRoomStatusCases) {
+		test(`${row.catalogId} launchNuke returns ERR_INVALID_TARGET when ${row.label} status is active`, async ({ shard }) => {
+			shard.requires('nuke');
+			shard.requires('roomStatus');
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1', status: row.sourceStatus },
+					{ name: 'W2N1', rcl: 1, owner: 'p2', status: row.destinationStatus },
+				],
+			});
+			const nukerId = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_NUKER,
+				owner: 'p1',
+				store: nukerStore('full'),
+			});
+			await shard.tick();
+
+			const mapStatus = await shard.runPlayer('p1', code`
+				Game.map.getRoomStatus(${row.statusRoomName}).status
+			`);
+			expect(mapStatus).toBe(row.expectedStatus);
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
+			`);
+			expect(rc).toBe(ERR_INVALID_TARGET);
+
+			await shard.tick();
+			const nuker = await shard.expectStructure(nukerId, STRUCTURE_NUKER);
+			expect(nuker.store.energy).toBe(NUKER_ENERGY_CAPACITY);
+			expect(nuker.store.G).toBe(NUKER_GHODIUM_CAPACITY);
+			expect(nuker.cooldown).toBe(0);
 		});
 	}
 

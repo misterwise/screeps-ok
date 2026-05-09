@@ -177,6 +177,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		nuke: false,
 		deposit: false,
 		terrain: true,
+		roomStatus: false,
 		// Portal mod is optional in pinned xxscreeps. Capability tracks
 		// the dynamic import result so PORTAL-* tests skip cleanly when
 		// the mod is absent and run when it lands upstream.

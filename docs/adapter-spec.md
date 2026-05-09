@@ -75,6 +75,10 @@ That includes:
 - create the requested rooms
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
+- if the adapter declares `roomStatus`, apply public room status from
+  `RoomSpec.status`; omitted status means `normal`, while `novice`,
+  `respawn`, and `closed` must be visible through `Game.map.getRoomStatus()`
+  and any engine validation that consults room status
 - provide the canonical default room layout for rooms without extra typed
   placements:
   plain terrain unless `RoomSpec.terrain` overrides it, exactly one controller
@@ -329,6 +333,7 @@ Current capability flags are:
 - `nuke`
 - `deposit`
 - `terrain`
+- `roomStatus`
 - `portals`
 - `invaderCore`
 - `invaderRaidSpawner`

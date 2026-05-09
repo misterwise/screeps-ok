@@ -138,10 +138,6 @@ const SIMULATE_FAMILIES = ['FLAG', 'RAWMEMORY', 'RAWMEMORY-FOREIGN'];
 // IDs whose vanilla behavior is cataloged, but the fixture cannot currently
 // create the world state needed for an executable adapter test.
 const FIXTURE_BLOCKED_IDS = new Set([
-	'NUKE-LAUNCH-014',
-	'NUKE-LAUNCH-015',
-	'NUKE-LAUNCH-016',
-	'NUKE-LAUNCH-017',
 	'UNDOC-SYSUSER-002',
 ]);
 // Capabilities that neither adapter currently supports

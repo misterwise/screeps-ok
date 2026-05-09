@@ -1460,14 +1460,6 @@ Coverage Notes
   `StructureNuker` legacy resource properties mirror the store and capacity
   constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.
 
-Coverage Notes
-- `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` are fixture-blocked:
-  vanilla `StructureNuker.launchNuke()` rejects novice and respawn rooms
-  through source-room fields and destination-room status data, but current
-  `RoomSpec` cannot mark a room as a novice-area or respawn-area room.
-  Deferring executable adapter tests until the fixture exposes canonical
-  room-status setup.
-
 ### 7.14 Nukes — Impact `capability: nuke`
 - `NUKE-IMPACT-001` `behavior` `verified_vanilla` Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on launch.
 - `NUKE-IMPACT-002` `behavior` `verified_vanilla` Damage at ground zero (range 0) is `NUKE_DAMAGE[0]` (10,000,000).

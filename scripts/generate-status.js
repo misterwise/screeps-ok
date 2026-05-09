@@ -327,6 +327,7 @@ const CAPABILITY_DESCRIPTIONS = {
 	nuke: 'Nukes',
 	deposit: 'Deposits (highway)',
 	terrain: 'Custom terrain specs',
+	roomStatus: 'Room status fixture setup',
 	portals: 'Portal structures and teleport mechanics',
 	invaderCore: 'Invader core structures',
 	invaderRaidSpawner: 'Inactive-room Invader raid spawning',

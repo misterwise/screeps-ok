@@ -169,6 +169,9 @@ Examples:
 - `placeSource(..., { energy: 0, energyCapacity: 3000 })` means a depleted
   source with known capacity
 - `RoomSpec.owner` and `RoomSpec.rcl` define controller ownership and level
+- with `capabilities.roomStatus`, `RoomSpec.status` defines public room status
+  (`normal`, `novice`, `respawn`, or `closed`) for `Game.map.getRoomStatus()`
+  and engine validation that consults room status
 
 Do not hide semantics behind vague generic object creation when a typed helper
 exists.

@@ -507,9 +507,8 @@ Each definition should include:
   target range, and energy/ghodium availability.
 - `Exclusions`
   Room-status restrictions are not part of this executable validation matrix;
-  `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` register those vanilla behaviors
-  explicitly and mark them fixture-blocked until `RoomSpec` can create
-  canonical novice and respawn room status.
+  `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` register and test those vanilla
+  behaviors explicitly through `RoomSpec.status`.
 - `Verification Notes`
   This family should include both single-blocker rows and selected precedence
   rows: cooldown before inactive/range/resources, inactive before
