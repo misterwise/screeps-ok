@@ -1,4 +1,13 @@
-import { describe, test, expect, code, OK, CARRY, MOVE, ATTACK, RUIN_DECAY, RUIN_DECAY_STRUCTURES, FIND_RUINS, STRUCTURE_WALL, body } from '../../src/index.js';
+import {
+	describe, test, expect, code,
+	OK,
+	CARRY, MOVE, ATTACK,
+	RESOURCE_ENERGY,
+	RUIN_DECAY, RUIN_DECAY_STRUCTURES,
+	FIND_RUINS,
+	STRUCTURE_CONTAINER, STRUCTURE_WALL,
+	body,
+} from '../../src/index.js';
 
 describe('Ruin', () => {
 	test('RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer', async ({ shard }) => {
@@ -144,5 +153,50 @@ describe('Ruin', () => {
 
 		expect(r1.ticksToDecay).toBeLessThan(r0.ticksToDecay);
 		expect(r2.ticksToDecay).toBeLessThan(r1.ticksToDecay);
+	});
+
+	test('RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const ruinId = await shard.placeRuin('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_CONTAINER,
+			structureHitsMax: 250000,
+			structureOwner: 'p1',
+			store: { [RESOURCE_ENERGY]: 100 },
+			ticksToDecay: 400,
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const ruin = Game.getObjectById(${ruinId});
+			const structure = ruin.structure;
+			({
+				id: structure.id,
+				hits: structure.hits,
+				hitsMax: structure.hitsMax,
+				structureType: structure.structureType,
+				owner: structure.owner.username,
+				my: structure.my,
+			})
+		`) as {
+			id: string;
+			hits: number;
+			hitsMax: number;
+			structureType: string;
+			owner: string;
+			my: boolean;
+		};
+
+		expect(result.id).toEqual(expect.any(String));
+		expect(result.id.length).toBeGreaterThan(0);
+		expect(result.hits).toBe(0);
+		expect(result.hitsMax).toBe(250000);
+		expect(result.structureType).toBe(STRUCTURE_CONTAINER);
+		expect(result.owner).toEqual(expect.any(String));
+		expect(result.owner.length).toBeGreaterThan(0);
+		expect(result.my).toBe(true);
 	});
 });

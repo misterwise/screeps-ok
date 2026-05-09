@@ -1138,12 +1138,22 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const gameTime = await this.server.world.gameTime;
 		const destroyTime = spec.destroyTime ?? gameTime;
 		const ticksToDecay = spec.ticksToDecay ?? 500;
+		const structureUser = spec.structureOwner ? this.resolvePlayer(spec.structureOwner) : undefined;
+		const structure = {
+			id: spec.structureId ?? this.nextId(),
+			type: spec.structureType,
+			hits: 0,
+			hitsMax: spec.structureHitsMax ?? 0,
+			...(structureUser ? { user: structureUser } : {}),
+		};
 		const result = await this.db['rooms.objects'].insert({
 			room: roomName,
 			type: 'ruin',
 			x: spec.pos[0],
 			y: spec.pos[1],
 			structureType: spec.structureType,
+			structure,
+			...(structureUser ? { user: structureUser } : {}),
 			destroyTime,
 			decayTime: destroyTime + ticksToDecay,
 			store: spec.store ?? {},
@@ -1178,13 +1188,17 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		const gameTime = await this.server.world.gameTime;
 		const name = spec.name ?? `PowerCreep_${this.nextId()}`;
 
-		// Build the powers map in the engine's format: { [PWR]: { level, cooldown } }
-		const powers: Record<string, { level: number; cooldown: number }> = {};
-		for (const [pwr, level] of Object.entries(spec.powers)) {
-			powers[pwr] = { level: level as number, cooldown: 0 };
+		// Build the powers map in the engine's format: each power stores a
+		// future cooldownTime tick. The player getter and usePower validation
+		// both read cooldownTime, not a relative cooldown field.
+		const powers: Record<string, { level: number; cooldownTime: number }> = {};
+		let pcLevel = 0;
+		for (const [pwr, power] of Object.entries(spec.powers)) {
+			const level = typeof power === 'number' ? power : power.level;
+			const cooldown = typeof power === 'number' ? 0 : power.cooldown ?? 0;
+			powers[pwr] = { level, cooldownTime: gameTime + cooldown };
+			pcLevel += level;
 		}
-
-		const pcLevel = Object.values(spec.powers).reduce((s, l) => s + l, 0);
 
 		// Insert into rooms.objects so the engine sees it in the room.
 		const result = await this.db['rooms.objects'].insert({

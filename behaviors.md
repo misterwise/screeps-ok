@@ -3089,6 +3089,9 @@ Coverage Notes
 - `RUIN-006` `behavior` `verified_vanilla`
   A ruin's `ticksToDecay` strictly decreases by one each subsequent tick
   until removal.
+- `RUIN-007` `behavior` `verified_vanilla`
+  A ruin's embedded `structure` object exposes the destroyed structure's id,
+  hits, hitsMax, structureType, and owned-structure `owner` / `my` fields.
 
 ### 18.3 Nuke (In-Flight)
 - `NUKE-FLIGHT-001` `behavior` `verified_vanilla`
@@ -3230,6 +3233,9 @@ Coverage Notes
 - `POWER-OPERATE-005` `matrix` `needs_vanilla_verification`
   For room-bound operate powers, target validity and failure in rooms without
   power enabled match the canonical power-to-target matrix.
+- `POWER-OPERATE-006` `behavior` `verified_vanilla`
+  A power creep whose power is still on cooldown gets `ERR_TIRED` from
+  `usePower()` for that power.
 
 Coverage Notes
 - The production consequences of `PWR_OPERATE_FACTORY` are owned by `11.5

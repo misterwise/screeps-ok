@@ -132,6 +132,12 @@ export interface TombstoneSpec {
 export interface RuinSpec {
 	pos: [number, number];
 	structureType: string;
+	/** Override the destroyed structure id exposed through `ruin.structure.id`. */
+	structureId?: string;
+	/** Override the destroyed structure hitsMax exposed through `ruin.structure.hitsMax`. */
+	structureHitsMax?: number;
+	/** Owner handle for the destroyed structure, when it was an OwnedStructure. */
+	structureOwner?: string;
 	destroyTime?: number;
 	store?: Record<string, number>;
 	ticksToDecay?: number;
@@ -147,8 +153,8 @@ export interface PowerCreepSpec {
 	pos: [number, number];
 	owner: string;
 	name?: string;
-	/** Map of PWR_* constant to level (1-5). */
-	powers: Record<number, number>;
+	/** Map of PWR_* constant to level (1-5), optionally with remaining cooldown. */
+	powers: Record<number, number | { level: number; cooldown?: number }>;
 	store?: Record<string, number>;
 }
 

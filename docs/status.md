@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2562%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2102%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-85-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2564%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2103%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-85-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2562](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 22:48 UTC |
-| 🟡 | **xxscreeps** | [2102](#xxscreeps-passing-tests) | [85](#xxscreeps-expected-failures) | — | [409](#xxscreeps-skipped-tests) | 2026-05-09 22:45 UTC |
+| 🟡 | **vanilla** | [2564](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 23:37 UTC |
+| 🟡 | **xxscreeps** | [2103](#xxscreeps-passing-tests) | [85](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-09 23:33 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -96,13 +96,13 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
 - `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
 - `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
-- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
-- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
-- `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
+- `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
 
 </details>
 
@@ -596,7 +596,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2562 tests across 128 files</summary>
+<summary>2564 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3095,7 +3095,7 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (6)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
 - Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
@@ -3103,6 +3103,7 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
+- Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
 **`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
 
@@ -3146,10 +3147,11 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (18)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
+- Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
 - Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
 - Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
@@ -3548,12 +3550,12 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 409 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 410 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `nuke` | Nukes | [137](#xxscreeps-skip-capability-nuke) |
-| capability | `powerCreeps` | Power creeps and powers | [112](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [113](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
@@ -3740,7 +3742,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 112 tests across 24 files</summary>
+<summary><code>capability:powerCreeps</code> — 113 tests across 24 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3888,10 +3890,11 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (18)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
+- Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
 - Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
 - Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
@@ -4190,7 +4193,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2102 tests across 104 files</summary>
+<summary>2103 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6297,7 +6300,7 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (6)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
 - Ruin RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise
@@ -6305,6 +6308,7 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-004 destroying a structure creates a ruin at its position in the same tick
 - Ruin RUIN-005 ruin is removed when ticksToDecay reaches 0
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
+- Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
 

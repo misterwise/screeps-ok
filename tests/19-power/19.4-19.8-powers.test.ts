@@ -5,6 +5,8 @@ import { describe, test, expect, code,
 	PWR_OPERATE_FACTORY, PWR_OPERATE_TERMINAL, PWR_OPERATE_SPAWN, PWR_OPERATE_POWER,
 	PWR_REGEN_SOURCE, PWR_REGEN_MINERAL, PWR_DISRUPT_SOURCE,
 	PWR_SHIELD, PWR_FORTIFY,
+	ERR_TIRED,
+	RESOURCE_ENERGY, RESOURCE_OPS,
 	STRUCTURE_TOWER, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_TERMINAL,
 	STRUCTURE_POWER_SPAWN, STRUCTURE_SPAWN, STRUCTURE_OBSERVER,
 	ATTACK, MOVE, TOUGH,
@@ -97,6 +99,34 @@ describe('Operate powers', () => {
 		const expectedOps = PI[PWR_OPERATE_TOWER].ops;
 		expect(storeBefore - result.ops).toBe(expectedOps);
 		expect(result.cooldown).toBeGreaterThan(0);
+	});
+
+	test('POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+
+		const towerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25],
+			structureType: STRUCTURE_TOWER,
+			owner: 'p1',
+			store: { [RESOURCE_ENERGY]: 1000 },
+		});
+		await shard.placePowerCreep('W1N1', {
+			pos: [25, 26],
+			owner: 'p1',
+			powers: { [PWR_OPERATE_TOWER]: { level: 1, cooldown: 10 } },
+			store: { [RESOURCE_OPS]: 200 },
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const pc = Object.values(Game.powerCreeps)[0];
+			pc.usePower(PWR_OPERATE_TOWER, Game.getObjectById(${towerId}))
+		`);
+		expect(rc).toBe(ERR_TIRED);
 	});
 
 	// POWER-OPERATE-004: PWR_OPERATE_FACTORY changes production level (already tested in FACTORY-COMMODITY-003)

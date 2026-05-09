@@ -610,6 +610,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeRuin(roomName: string, spec: RuinSpec): Promise<string> {
 		const id = this.nextId();
+		const structureId = spec.structureId ?? this.nextId();
+		const structureOwner = spec.structureOwner ? this.resolvePlayer(spec.structureOwner) : null;
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:ruin`, id);
 
 		this.queueOp(roomName, room => {
@@ -626,10 +628,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			primeRuinStructure(
 				ruin,
 				{
-					id,
-					hitsMax: 0,
+					id: structureId,
+					hitsMax: spec.structureHitsMax ?? 0,
 					type: spec.structureType,
-					user: null as any,
+					user: structureOwner,
 				},
 				this.simulation!.shard.time + (spec.ticksToDecay ?? 500),
 			);
