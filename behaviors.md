@@ -1483,6 +1483,10 @@ Coverage Notes
 - `NUKE-IMPACT-012` `behavior` `needs_vanilla_verification`
   Multiple nukes landing in the same room on the same tick apply cumulative
   damage to structures that survive each prior nuke's damage.
+- `NUKE-IMPACT-013` `behavior` `verified_vanilla`
+  On the first player-visible tick after nuke impact side effects apply, the
+  landing `Nuke` object is still returned by `FIND_NUKES` with
+  `timeToLand === 0`; it is removed on the following tick.
 
 Coverage Notes
 - `NUKE-IMPACT-004` (rampart absorbs nuke damage for structures underneath)

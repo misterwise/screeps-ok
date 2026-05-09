@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2512%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-104-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2513%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2083%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-104-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2512](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 00:59 UTC |
-| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [104](#xxscreeps-expected-failures) | — | [359](#xxscreeps-skipped-tests) | 2026-05-09 00:56 UTC |
+| 🟡 | **vanilla** | [2513](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 01:34 UTC |
+| 🟡 | **xxscreeps** | [2083](#xxscreeps-passing-tests) | [104](#xxscreeps-expected-failures) | — | [360](#xxscreeps-skipped-tests) | 2026-05-09 01:31 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -692,7 +692,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2512 tests across 128 files</summary>
+<summary>2513 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1906,7 +1906,7 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (51)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (52)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -1959,6 +1959,7 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
 - Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
+- Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES
 
 **`tests/07-combat/7.15-safemode-combat.test.ts`** (2)
 
@@ -3594,12 +3595,12 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 359 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 360 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerCreeps` | Power creeps and powers | [112](#xxscreeps-skip-capability-powercreeps) |
-| capability | `nuke` | Nukes | [87](#xxscreeps-skip-capability-nuke) |
+| capability | `nuke` | Nukes | [88](#xxscreeps-skip-capability-nuke) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
@@ -3800,7 +3801,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 87 tests across 11 files</summary>
+<summary><code>capability:nuke</code> — 88 tests across 11 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -3827,7 +3828,7 @@ Click a count to jump to the affected test list.
 
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (51)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (52)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -3880,6 +3881,7 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
 - Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
+- Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES
 
 **`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (2)
 
