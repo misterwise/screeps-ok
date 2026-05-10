@@ -14,7 +14,7 @@ export type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec,
-	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';

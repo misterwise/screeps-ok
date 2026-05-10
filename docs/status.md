@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2571%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2109%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-86-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2578%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-29-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2571](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-10 00:18 UTC |
-| 🟡 | **xxscreeps** | [2109](#xxscreeps-passing-tests) | [86](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-10 00:15 UTC |
+| 🟡 | **vanilla** | [2578](#vanilla-passing-tests) | [29](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-10 02:02 UTC |
+| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-10 01:58 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 16 expected-failure classifications against vanilla's canonical behavior, covering 31 tests. That includes 16 open parity gaps covering 31 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 14 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 14 open parity gaps covering 29 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -40,14 +40,12 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `legacy-path-cost-callback-false-ignored` | Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
 | `attack-notify-getter-api-missing` | Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
 | `effects-empty-array-missing` | Stable vanilla omits the effects property on RoomObjects that have no active effects. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#vanilla-gap-effects-empty-array-missing) |
-| `room-factory-shortcut-missing` | Stable vanilla does not populate room.factory for an owned factory in a visible room. | Visible rooms expose room.factory as the factory object when present. | [1](#vanilla-gap-room-factory-shortcut-missing) |
 | `eventlog-build-energy-spent-missing` | Stable vanilla EVENT_BUILD entries omit data.energySpent. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
 | `eventlog-structure-destroy-intent-missing` | Stable vanilla Structure.destroy() removes the structure but does not emit EVENT_OBJECT_DESTROYED for the owner-initiated intent path. | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-long-name-and-ttl-pr-behavior-missing` | Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death. | Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned. | [4](#vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing) |
 | `market-history-empty-array-missing` | Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
 | `movecache-fatigue-visualization-recomputes` | Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle. | A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. | [1](#vanilla-gap-movecache-fatigue-visualization-recomputes) |
-| `moveto-no-shared-exit-walks-into-wall` | Stable vanilla creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path even when no inter-room route exists (screeps/engine#98, closed as not-a-bug). | creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement. | [1](#vanilla-gap-moveto-no-shared-exit-walks-into-wall) |
 | `moveto-all-routes-blocked-walks-into-creeps` | Stable vanilla creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#vanilla-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -113,13 +111,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="vanilla-gap-room-factory-shortcut-missing">
-<summary><code>room-factory-shortcut-missing</code> — 1 test</summary>
-
-- `room structure shortcuts ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined`
-
-</details>
-
 <details id="vanilla-gap-eventlog-build-energy-spent-missing">
 <summary><code>eventlog-build-energy-spent-missing</code> — 1 test</summary>
 
@@ -165,13 +156,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="vanilla-gap-moveto-no-shared-exit-walks-into-wall">
-<summary><code>moveto-no-shared-exit-walks-into-wall</code> — 1 test</summary>
-
-- `creep.moveTo() MOVE-BASIC-028 moveTo() to a room with no shared exit returns ERR_NO_PATH and does not move`
-
-</details>
-
 <details id="vanilla-gap-moveto-all-routes-blocked-walks-into-creeps">
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
@@ -183,7 +167,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 86 tests. That includes 39 open parity gaps covering 82 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 37 open parity gaps covering 80 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -225,10 +209,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
 | `effects-empty-array-missing` | RoomObjects with no active effects omit the effects property. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#xxscreeps-gap-effects-empty-array-missing) |
-| `room-factory-shortcut-missing` | room.factory is undefined for a visible room containing an owned factory. | Visible rooms expose room.factory as the factory object when present. | [1](#xxscreeps-gap-room-factory-shortcut-missing) |
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
-| `moveto-no-shared-exit-walks-into-wall` | creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path inherited from vanilla (screeps/engine#98, closed as not-a-bug). | creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement. | [1](#xxscreeps-gap-moveto-no-shared-exit-walks-into-wall) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -514,13 +496,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-room-factory-shortcut-missing">
-<summary><code>room-factory-shortcut-missing</code> — 1 test</summary>
-
-- `room structure shortcuts ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined`
-
-</details>
-
 <details id="xxscreeps-gap-eventlog-build-energy-spent-uses-progress">
 <summary><code>eventlog-build-energy-spent-uses-progress</code> — 1 test</summary>
 
@@ -532,13 +507,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
 
 - `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
-
-</details>
-
-<details id="xxscreeps-gap-moveto-no-shared-exit-walks-into-wall">
-<summary><code>moveto-no-shared-exit-walks-into-wall</code> — 1 test</summary>
-
-- `creep.moveTo() MOVE-BASIC-028 moveTo() to a room with no shared exit returns ERR_NO_PATH and does not move`
 
 </details>
 
@@ -604,7 +572,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2571 tests across 128 files</summary>
+<summary>2578 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -647,7 +615,7 @@ Click a count to jump to the affected test list.
 - adapter contract: error model error kind discrimination runPlayers preserves engineMessage without handle prefix
 - adapter contract: error model error kind discrimination game object return does not silently produce empty object
 
-**`tests/00-adapter-contract/execution.test.ts`** (18)
+**`tests/00-adapter-contract/execution.test.ts`** (21)
 
 - adapter contract: execution runPlayer returns a number (action return code)
 - adapter contract: execution runPlayer returns a string
@@ -667,6 +635,9 @@ Click a count to jump to the affected test list.
 - adapter contract: execution runPlayers runPlayers advances game time by exactly 1
 - adapter contract: execution tick advances game time by 1
 - adapter contract: execution tick tick(N) advances game time by N
+- adapter contract: execution tick options.random rejects out-of-range values without advancing time
+- adapter contract: execution tick options.random throws when sequence exhausted by processor random calls
+- adapter contract: execution tick options.random does not throw when sequence has more values than consumed
 
 **`tests/00-adapter-contract/hard-prerequisites.test.ts`** (4)
 
@@ -3075,7 +3046,7 @@ Click a count to jump to the affected test list.
 - Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
 - Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (11)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
 - mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
@@ -3088,6 +3059,10 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-001:ultra density=4 regenerates to MINERAL_DENSITY[4]=100000
 - mineral regeneration MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration
 - mineral regeneration MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration
+- mineral regeneration MINERAL-REGEN-009:moderateRedensify DENSITY_MODERATE redensifies when injected gate < MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:moderateUnchanged DENSITY_MODERATE stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:highRedensify DENSITY_HIGH redensifies when injected gate < MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:highUnchanged DENSITY_HIGH stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
 
 **`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
 
@@ -4208,7 +4183,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2109 tests across 104 files</summary>
+<summary>2116 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4251,7 +4226,7 @@ Click a count to jump to the affected test list.
 - adapter contract: error model error kind discrimination runPlayers preserves engineMessage without handle prefix
 - adapter contract: error model error kind discrimination game object return does not silently produce empty object
 
-**`tests/00-adapter-contract/execution.test.ts`** (18)
+**`tests/00-adapter-contract/execution.test.ts`** (21)
 
 - adapter contract: execution runPlayer returns a number (action return code)
 - adapter contract: execution runPlayer returns a string
@@ -4271,6 +4246,9 @@ Click a count to jump to the affected test list.
 - adapter contract: execution runPlayers runPlayers advances game time by exactly 1
 - adapter contract: execution tick advances game time by 1
 - adapter contract: execution tick tick(N) advances game time by N
+- adapter contract: execution tick options.random rejects out-of-range values without advancing time
+- adapter contract: execution tick options.random throws when sequence exhausted by processor random calls
+- adapter contract: execution tick options.random does not throw when sequence has more values than consumed
 
 **`tests/00-adapter-contract/hard-prerequisites.test.ts`** (4)
 
@@ -6296,7 +6274,7 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (11)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
 - mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
@@ -6309,6 +6287,10 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-001:ultra density=4 regenerates to MINERAL_DENSITY[4]=100000
 - mineral regeneration MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration
 - mineral regeneration MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration
+- mineral regeneration MINERAL-REGEN-009:moderateRedensify DENSITY_MODERATE redensifies when injected gate < MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:moderateUnchanged DENSITY_MODERATE stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:highRedensify DENSITY_HIGH redensifies when injected gate < MINERAL_DENSITY_CHANGE
+- mineral regeneration MINERAL-REGEN-009:highUnchanged DENSITY_HIGH stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
 
 **`tests/18-game-objects/18.1-tombstone.test.ts`** (8)
 

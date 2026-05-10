@@ -250,7 +250,8 @@ player in that same tick snapshot.
 
 ### `tick`
 
-`tick(count?)` advances gameplay processing by exactly `count` ticks (default 1).
+`tick(count?, options?)` advances gameplay processing by exactly `count` ticks
+(default 1).
 
 From the test side, the expected contract is:
 
@@ -264,6 +265,27 @@ From the test side, the expected contract is:
 This means `runPlayer() + tick()` always advances time by exactly 2 ticks,
 and `runPlayer()` alone advances by exactly 1. Tests should account for this
 when asserting tick-sensitive state.
+
+`options.random` deterministically feeds the engine processor's `Math.random()`
+calls for the duration of the call. Adapters that declare the `randomInjection`
+capability must:
+
+- accept a `readonly number[]` whose values lie in `[0, 1)`. Out-of-range or
+  non-finite values throw before any tick advances.
+- consume the sequence in natural call order across all `count` ticks of the
+  same `tick()` invocation. The sequence is shared across the entire call, not
+  reset between sub-ticks.
+- throw with a descriptive error rather than fall back to the original
+  `Math.random` once the sequence is exhausted.
+- restore the engine's original `Math.random` after the call returns, including
+  on error paths.
+
+The sequence is consumed by every `Math.random()` call the engine processor
+makes during the tick, in their natural execution order — including subsystems
+beyond the one a test is targeting (e.g. movement tie-breaking, source/mineral
+regen). Tests that gate on `randomInjection` should isolate the room state so
+the processor's random call sites are predictable, then provide just enough
+values to cover them.
 
 ## Inspection Semantics
 
@@ -346,6 +368,7 @@ Current capability flags are:
 - `cpuShardLimits`
 - `liveWorldSize`
 - `actionLogCapture`
+- `randomInjection`
 
 Rules:
 

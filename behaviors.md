@@ -145,12 +145,6 @@ conformance test or one generated test family.
   `creep.move(direction)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, body-part
   requirements, fatigue, and argument validity.
-- `MOVE-BASIC-028` `behavior` `needs_vanilla_verification`
-  `creep.moveTo(otherRoomPos)` against a destination in a room that is
-  not present in `Game.map.describeExits(creep.room.name)` (no shared
-  exit) returns `ERR_NO_PATH` and produces zero movement. The creep
-  remains on its current tile rather than walking into the boundary
-  wall.
 
 Coverage Notes
 - `move()` into an occupied tile is owned by the collision resolution facet
@@ -2776,9 +2770,9 @@ Coverage Notes
 
 ### 16.3b Structure Shortcuts
 - `ROOM-STRUCTURE-001` `behavior` `needs_vanilla_verification`
-  Visible rooms expose `room.storage`, `room.terminal`, and `room.factory` as
-  the corresponding structure object when that structure is present, otherwise
-  `undefined`. The factory row requires `capability: factory`.
+  Visible rooms expose `room.storage` and `room.terminal` as the
+  corresponding structure object when that structure is present, otherwise
+  `undefined`.
 
 ### 16.4 Look
 - `ROOM-LOOK-001` `behavior` `verified_vanilla`
@@ -3030,11 +3024,10 @@ Coverage Notes
   Regeneration of a `DENSITY_ULTRA` mineral always redensifies it: after the
   next regeneration the mineral's density is some other valid density level
   drawn from `MINERAL_DENSITY_PROBABILITY`.
-
-Coverage Notes
-- `MINERAL_DENSITY_CHANGE` (5%) stochastic redensify of `DENSITY_MODERATE`
-  and `DENSITY_HIGH` minerals is gated on a deterministic-randomness adapter
-  capability and is tracked separately.
+- `MINERAL-REGEN-009` `behavior` `verified_vanilla` `capability: randomInjection`
+  Regeneration of a `DENSITY_MODERATE` or `DENSITY_HIGH` mineral redensifies it
+  when an injected `Math.random()` value is below `MINERAL_DENSITY_CHANGE`
+  (5%); otherwise the density stays unchanged.
 
 ### 17.4 Mineral Power Effects
 - `MINERAL-POWER-001` `matrix` `verified_vanilla`

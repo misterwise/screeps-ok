@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, DENSITY_MODERATE } from '../../src/index.js';
 import { RunPlayerError } from '../../src/errors.js';
 
 describe('adapter contract: execution', () => {
@@ -236,6 +236,37 @@ describe('adapter contract: execution', () => {
 			await shard.tick(5);
 			const after = await shard.getGameTime();
 			expect(after).toBe(before + 5);
+		});
+	});
+
+	describe('tick options.random', () => {
+		test('rejects out-of-range values without advancing time', async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			const before = await shard.getGameTime();
+			await expect(shard.tick(1, { random: [1.0] })).rejects.toThrow(/random\[0\]/);
+			const after = await shard.getGameTime();
+			expect(after).toBe(before);
+		});
+
+		test('throws when sequence exhausted by processor random calls', async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			// A regenerating MODERATE mineral consumes 2 random values on the
+			// regen tick (gate, then density selection). Providing a single
+			// gate-passing value forces exhaustion mid-tick.
+			await shard.placeMineral('W1N1', {
+				pos: [25, 25], mineralType: 'H', density: DENSITY_MODERATE,
+				mineralAmount: 0, ticksToRegeneration: 3,
+			});
+			await expect(shard.tick(5, { random: [0.04] })).rejects.toThrow(/exhausted/);
+		});
+
+		test('does not throw when sequence has more values than consumed', async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			// Empty owned room consumes no random values during a single tick.
+			await expect(shard.tick(1, { random: [0.5, 0.5, 0.5] })).resolves.toBeUndefined();
 		});
 	});
 });

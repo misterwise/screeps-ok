@@ -4,10 +4,10 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
-	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
 } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -52,6 +52,10 @@ let sharedTerrainRevision = 0;
 let sharedRoomStatusRevision = 0;
 let runnerLogPath: string | null = null;
 let runnerFatal: Error | null = null;
+let processorRandomSequencePath: string | null = null;
+let processorRandomSentinelPath: string | null = null;
+let processorRandomVersion = 0;
+let processorRandomSequenceSet = false;
 const runnerFatalBus = new EventEmitter();
 runnerFatalBus.setMaxListeners(0);
 
@@ -59,6 +63,11 @@ const VANILLA_WORLD_SIZE_ENV_KEY = 'screeps-ok:worldSize';
 const VANILLA_TERRAIN_REVISION_ENV_KEY = 'screeps-ok:terrainRevision';
 const VANILLA_ROOM_STATUS_REVISION_ENV_KEY = 'screeps-ok:roomStatusRevision';
 const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
+const PROCESSOR_RANDOM_PATCH_FILE = 'processor-random-patch.cjs';
+const PROCESSOR_RANDOM_SEQUENCE_FILE = 'processor-random-sequence.json';
+const PROCESSOR_RANDOM_SENTINEL_FILE = 'processor-random-exhausted.flag';
+const PROCESSOR_RANDOM_SEQUENCE_ENV_KEY = 'SCREEPS_OK_RANDOM_SEQUENCE_FILE';
+const PROCESSOR_RANDOM_SENTINEL_ENV_KEY = 'SCREEPS_OK_RANDOM_SENTINEL_FILE';
 // Hard ceiling on a single server.tick() call. The driver waits for the
 // engine_runner subprocess to send back a tick reply over IPC; if the runner
 // crashes (e.g. V8 snapshot mismatch), server-mockup auto-restarts it in a
@@ -226,12 +235,67 @@ function patchData(module, filename) {
 	return patchPath;
 }
 
-function installRunnerSandboxPatch(server: any, patchPath: string): void {
+function writeProcessorRandomPatch(root: string): string {
+	const patchPath = path.join(root, PROCESSOR_RANDOM_PATCH_FILE);
+	const patchSource = `'use strict';
+const fs = require('fs');
+
+const sequenceFile = process.env[${JSON.stringify(PROCESSOR_RANDOM_SEQUENCE_ENV_KEY)}];
+const sentinelFile = process.env[${JSON.stringify(PROCESSOR_RANDOM_SENTINEL_ENV_KEY)}];
+if (sequenceFile && sentinelFile) {
+    const originalRandom = Math.random.bind(Math);
+    let cachedMtime = -1;
+    let sequence = null;
+    let index = 0;
+
+    Math.random = function() {
+        let stat = null;
+        try { stat = fs.statSync(sequenceFile); } catch (_) {}
+        if (stat) {
+            if (stat.mtimeMs !== cachedMtime) {
+                try {
+                    const data = JSON.parse(fs.readFileSync(sequenceFile, 'utf8'));
+                    sequence = Array.isArray(data && data.sequence) ? data.sequence : null;
+                } catch (_) { sequence = null; }
+                index = 0;
+                cachedMtime = stat.mtimeMs;
+            }
+        } else if (cachedMtime !== -1) {
+            sequence = null;
+            cachedMtime = -1;
+        }
+        if (!sequence) return originalRandom();
+        if (index >= sequence.length) {
+            try { fs.writeFileSync(sentinelFile, 'X'); } catch (_) {}
+            throw new Error('vanilla tick: deterministic random sequence exhausted');
+        }
+        return sequence[index++];
+    };
+}
+`;
+	writeFileSync(patchPath, patchSource);
+	return patchPath;
+}
+
+function installSandboxPatches(
+	server: any,
+	runnerPatchPath: string,
+	processorPatchPath: string,
+	processorEnv: Record<string, string>,
+): void {
 	const originalStartProcess = server.startProcess.bind(server);
 	server.startProcess = async (name: string, execPath: string, env: Record<string, string>) => {
-		const childEnv = name === 'engine_runner'
-			? { ...env, NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, patchPath) }
-			: env;
+		let childEnv = env;
+		if (name === 'engine_runner') {
+			childEnv = { ...childEnv, NODE_OPTIONS: appendNodeRequire(childEnv.NODE_OPTIONS, runnerPatchPath) };
+		}
+		if (name === 'engine_processor') {
+			childEnv = {
+				...childEnv,
+				...processorEnv,
+				NODE_OPTIONS: appendNodeRequire(childEnv.NODE_OPTIONS, processorPatchPath),
+			};
+		}
 		const result = await originalStartProcess(name, execPath, childEnv);
 		attachCrashWatcher(server, name);
 		return result;
@@ -308,6 +372,35 @@ async function guardedTick(server: any): Promise<void> {
 	if (runnerFatal) throw runnerFatal;
 }
 
+function writeProcessorRandomSequence(sequence: readonly number[] | undefined): void {
+	if (!processorRandomSequencePath || !processorRandomSentinelPath) return;
+	try { unlinkSync(processorRandomSentinelPath); } catch {}
+	if (!sequence) {
+		// File-absent is the patch's fast path → it short-circuits to the
+		// original Math.random with one statSync per call. Skip any work when
+		// no sequence was ever set on this server instance.
+		if (!processorRandomSequenceSet) return;
+		try { unlinkSync(processorRandomSequencePath); } catch {}
+		processorRandomSequenceSet = false;
+		return;
+	}
+	processorRandomVersion += 1;
+	const payload = JSON.stringify({
+		version: processorRandomVersion,
+		sequence: Array.from(sequence),
+	});
+	writeFileSync(processorRandomSequencePath, payload);
+	processorRandomSequenceSet = true;
+}
+
+function readProcessorRandomExhaustion(): Error | null {
+	if (!processorRandomSentinelPath) return null;
+	let exists = false;
+	try { readFileSync(processorRandomSentinelPath); exists = true; } catch {}
+	if (!exists) return null;
+	return new Error('vanilla tick: deterministic random sequence exhausted');
+}
+
 function appendNodeRequire(existing: string | undefined, patchPath: string): string {
 	const option = `--require=${patchPath}`;
 	if (!existing) return option;
@@ -337,6 +430,11 @@ async function getServer(): Promise<any> {
 		mkdirSync(path.join(root, 'server'), { recursive: true });
 		mkdirSync(logdir, { recursive: true });
 		const runnerSandboxPatch = writeRunnerSandboxPatch(root);
+		const processorRandomPatch = writeProcessorRandomPatch(root);
+		processorRandomSequencePath = path.join(root, PROCESSOR_RANDOM_SEQUENCE_FILE);
+		processorRandomSentinelPath = path.join(root, PROCESSOR_RANDOM_SENTINEL_FILE);
+		try { unlinkSync(processorRandomSequencePath); } catch {}
+		try { unlinkSync(processorRandomSentinelPath); } catch {}
 		runnerLogPath = path.join(logdir, 'engine_runner.log');
 		runnerFatal = null;
 		sharedServer = new ScreepsServer({
@@ -350,7 +448,10 @@ async function getServer(): Promise<any> {
 		// actual cause. The exit watcher in attachCrashWatcher captures the
 		// real crash; this listener exists solely to absorb the noisy emit.
 		sharedServer.on('error', () => {});
-		installRunnerSandboxPatch(sharedServer, runnerSandboxPatch);
+		installSandboxPatches(sharedServer, runnerSandboxPatch, processorRandomPatch, {
+			[PROCESSOR_RANDOM_SEQUENCE_ENV_KEY]: processorRandomSequencePath,
+			[PROCESSOR_RANDOM_SENTINEL_ENV_KEY]: processorRandomSentinelPath,
+		});
 		registerSharedServerCleanup();
 		silenceDriverSigtermLog();
 		await sharedServer.world.reset();
@@ -496,6 +597,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// Captured from vanilla's persisted room-history payload for the
 		// current tick, then normalized to the shared adapter shape.
 		actionLogCapture: true,
+		// engine_processor's Math.random is overridden by a child-process
+		// patch that reads a per-tick sequence file. Sequence file is rewritten
+		// (with a fresh mtime) before each tick(count, options) call.
+		randomInjection: true,
 	};
 
 	private server: any = null;
@@ -1494,10 +1599,29 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 	}
 
-	async tick(count = 1): Promise<void> {
-		for (let i = 0; i < count; i++) {
-			await guardedTick(this.server);
+	async tick(count = 1, options: TickOptions = {}): Promise<void> {
+		const sequence = options.random;
+		if (sequence) {
+			for (let i = 0; i < sequence.length; i++) {
+				const value = sequence[i];
+				if (!Number.isFinite(value) || value < 0 || value >= 1) {
+					throw new Error(`tick: random[${i}] must be in [0, 1), got ${value}`);
+				}
+			}
 		}
+		writeProcessorRandomSequence(sequence);
+		let exhaustionError: Error | null = null;
+		try {
+			for (let i = 0; i < count; i++) {
+				await guardedTick(this.server);
+			}
+			exhaustionError = readProcessorRandomExhaustion();
+		} finally {
+			// Each tick() call owns its own sequence; clear afterwards so a
+			// follow-up tick() without options falls back to original Math.random.
+			writeProcessorRandomSequence(undefined);
+		}
+		if (exhaustionError) throw exhaustionError;
 		if (count > 0) this.firstTickRun = true;
 	}
 

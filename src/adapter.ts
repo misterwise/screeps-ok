@@ -217,6 +217,17 @@ export interface InvaderRaidSpawnerOptions {
 	random?: readonly number[];
 }
 
+export interface TickOptions {
+	/**
+	 * Deterministic values consumed in order by the engine processor's
+	 * Math.random() calls during this tick(count) call. Each value must lie in
+	 * `[0, 1)`. The same sequence is consumed across all `count` ticks; once
+	 * exhausted, adapters must throw rather than falling back to the original
+	 * Math.random. Requires the `randomInjection` capability.
+	 */
+	random?: readonly number[];
+}
+
 // ── Capabilities ─────────────────────────────────────────────
 
 export interface AdapterCapabilities {
@@ -260,6 +271,12 @@ export interface AdapterCapabilities {
 	liveWorldSize: boolean;
 	/** Normalized capture of the room-history/client action-log payload. */
 	actionLogCapture: boolean;
+	/**
+	 * `tick({ random: [...] })` deterministically feeds the engine processor's
+	 * Math.random() calls for the duration of the call. Required for tests that
+	 * exercise stochastic processor branches (e.g. mineral redensify gate).
+	 */
+	randomInjection: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;
@@ -354,7 +371,7 @@ export interface ScreepsOkAdapter {
 	 */
 	runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>>;
 	/** Advance gameplay processing by N ticks. */
-	tick(count?: number): Promise<void>;
+	tick(count?: number, options?: TickOptions): Promise<void>;
 
 	/** Return a plain JSON snapshot for one object, or null if it no longer exists. */
 	getObject(id: string): Promise<ObjectSnapshot | null>;

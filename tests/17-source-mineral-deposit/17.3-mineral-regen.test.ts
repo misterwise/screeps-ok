@@ -140,4 +140,44 @@ describe('mineral regeneration', () => {
 		expect(VALID_DENSITIES).toContain(mineral.density);
 		expect(mineral.density).not.toBe(DENSITY_ULTRA);
 	});
+
+	// MINERAL-REGEN-009 — MODERATE/HIGH redensify gated on the stochastic
+	// `Math.random() < MINERAL_DENSITY_CHANGE` (5%) check. With injected
+	// random sequences both adapters take the same branch deterministically.
+	// Selection value 0.05 picks density 1 (LOW) on both engines:
+	//   - vanilla: 0.05 ≤ MINERAL_DENSITY_PROBABILITY[1]=0.1 → newDensity=1
+	//   - xxscreeps: 0.05 * accumulated.at(-1)=0.6 → 0.03; first accumulated
+	//     entry ≥ 0.03 is index 1 → density=1
+	for (const { density, label, densityName } of [
+		{ density: DENSITY_MODERATE, label: 'moderate', densityName: 'DENSITY_MODERATE' },
+		{ density: DENSITY_HIGH, label: 'high', densityName: 'DENSITY_HIGH' },
+	]) {
+		test(`MINERAL-REGEN-009:${label}Redensify ${densityName} redensifies when injected gate < MINERAL_DENSITY_CHANGE`, async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeMineral('W1N1', {
+				pos: [25, 25], mineralType: 'H', density,
+				mineralAmount: 0, ticksToRegeneration: 3,
+			});
+
+			await shard.tick(5, { random: [0.04, 0.05] });
+
+			const mineral = await shard.expectObject(id, 'mineral');
+			expect(mineral.density).toBe(DENSITY_LOW);
+		});
+
+		test(`MINERAL-REGEN-009:${label}Unchanged ${densityName} stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE`, async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeMineral('W1N1', {
+				pos: [25, 25], mineralType: 'H', density,
+				mineralAmount: 0, ticksToRegeneration: 3,
+			});
+
+			await shard.tick(5, { random: [0.99] });
+
+			const mineral = await shard.expectObject(id, 'mineral');
+			expect(mineral.density).toBe(density);
+		});
+	}
 });

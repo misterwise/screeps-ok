@@ -7,7 +7,7 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
-	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
 import type { PlayerCode } from '../../src/code.js';
@@ -198,6 +198,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Captured through the backend/client renderer for the current tick,
 		// then normalized to the shared adapter shape.
 		actionLogCapture: true,
+		// xxscreeps simulation runs in-process, so a global Math.random override
+		// scoped to the simulation.tick() call deterministically feeds processor
+		// random calls.
+		randomInjection: true,
 	};
 
 	readonly limitations = {
@@ -976,13 +980,38 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return results;
 	}
 
-	async tick(count = 1): Promise<void> {
+	async tick(count = 1, options: TickOptions = {}): Promise<void> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		for (let i = 0; i < count; i++) {
-			await this.keepRoomsActive();
-			await this.simulation!.tick(1);
+
+		const sequence = options.random;
+		if (sequence) {
+			for (let i = 0; i < sequence.length; i++) {
+				const value = sequence[i];
+				if (!Number.isFinite(value) || value < 0 || value >= 1) {
+					throw new Error(`tick: random[${i}] must be in [0, 1), got ${value}`);
+				}
+			}
+		}
+
+		const originalRandom = Math.random;
+		let randomIndex = 0;
+		if (sequence) {
+			Math.random = () => {
+				if (randomIndex >= sequence.length) {
+					throw new Error('tick: deterministic random sequence exhausted');
+				}
+				return sequence[randomIndex++];
+			};
+		}
+		try {
+			for (let i = 0; i < count; i++) {
+				await this.keepRoomsActive();
+				await this.simulation!.tick(1);
+			}
+		} finally {
+			if (sequence) Math.random = originalRandom;
 		}
 		if (count > 0) this.firstTickRun = true;
 	}
