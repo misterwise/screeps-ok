@@ -106,6 +106,10 @@ Examples:
   the factory starts with exact public factory level `1`.
 - `placeSource(..., { energy: 0, energyCapacity: 3000 })` means a depleted
   source with known capacity.
+- `placeMineral(..., { density: DENSITY_LOW })` means the placed mineral
+  reports `density === DENSITY_LOW`. When `mineralAmount` is omitted, the
+  placed amount is `MINERAL_DENSITY[density]`. Density defaults to
+  `DENSITY_HIGH`.
 
 `placeObject()` is an escape hatch for rare or newly added public objects. It
 must not become the primary path for common gameplay setup.

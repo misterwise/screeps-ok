@@ -277,6 +277,7 @@ export interface MineralSnapshot {
 	pos: PosSnapshot;
 	mineralType: string;
 	mineralAmount: number;
+	density: number;
 	ticksToRegeneration: number;
 }
 

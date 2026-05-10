@@ -1060,11 +1060,13 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeMineral(roomName: string, spec: MineralSpec): Promise<string> {
+		const C = this.server.constants;
 		const gameTime = await this.server.world.gameTime;
+		const density = spec.density ?? C.DENSITY_HIGH;
 		const attrs: Record<string, unknown> = {
 			mineralType: spec.mineralType,
-			mineralAmount: spec.mineralAmount ?? 100000,
-			density: 3,
+			mineralAmount: spec.mineralAmount ?? C.MINERAL_DENSITY[density],
+			density,
 		};
 		if (spec.ticksToRegeneration !== undefined) {
 			attrs.nextRegenerationTime = gameTime + spec.ticksToRegeneration;

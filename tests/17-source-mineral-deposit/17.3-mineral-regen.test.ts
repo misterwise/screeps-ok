@@ -1,5 +1,6 @@
 import { describe, test, expect,
-	MINERAL_DENSITY, DENSITY_HIGH,
+	DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA,
+	MINERAL_DENSITY,
 } from '../../src/index.js';
 import { mineralRegenCases } from '../../src/matrices/mineral-regen.js';
 
@@ -48,8 +49,7 @@ describe('mineral regeneration', () => {
 		await shard.tick(5);
 
 		const after = await shard.expectObject(id, 'mineral');
-		// Mineral should have regenerated. Amount matches MINERAL_DENSITY[density].
-		// Default density is 3 (DENSITY_HIGH) → MINERAL_DENSITY[3] = 70000.
+		// Default density is DENSITY_HIGH → MINERAL_DENSITY[3] = 70000.
 		expect(after.mineralAmount).toBe(MINERAL_DENSITY[DENSITY_HIGH]);
 		expect(after.ticksToRegeneration).toBe(0);
 	});
@@ -68,13 +68,76 @@ describe('mineral regeneration', () => {
 		expect(mineral.mineralAmount).toBeGreaterThan(0);
 	});
 
-	// ---- Matrix: density → amount mapping (MINERAL-REGEN-001) ----
-	// This verifies the MINERAL_DENSITY table is correct. We can't set density
-	// directly via placeMineral (it defaults to 3/HIGH), so we verify the
-	// constant table values match the canonical mapping.
+	test('MINERAL-REGEN-006 mineral.density exposes the placed density level', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		// Place one mineral per density level at distinct positions.
+		const placements = [
+			{ density: DENSITY_LOW, pos: [25, 20] as [number, number] },
+			{ density: DENSITY_MODERATE, pos: [25, 22] as [number, number] },
+			{ density: DENSITY_HIGH, pos: [25, 24] as [number, number] },
+			{ density: DENSITY_ULTRA, pos: [25, 26] as [number, number] },
+		];
+		for (const { density, pos } of placements) {
+			const id = await shard.placeMineral('W1N1', {
+				pos, mineralType: 'H', density,
+			});
+			const mineral = await shard.expectObject(id, 'mineral');
+			expect(mineral.density).toBe(density);
+		}
+	});
+
+	// ---- Matrix: density-keyed refill amount (MINERAL-REGEN-001) ----
+	// Place a depleted mineral at each density, regenerate, assert the restored
+	// amount equals MINERAL_DENSITY[density]. Replaces the prior constants-table
+	// check, which only validated the table's values rather than engine behavior.
 	for (const { density, label, expectedAmount } of mineralRegenCases) {
-		test(`MINERAL-REGEN-001:${label} MINERAL_DENSITY[${density}] equals ${expectedAmount}`, () => {
-			expect(MINERAL_DENSITY[density]).toBe(expectedAmount);
+		test(`MINERAL-REGEN-001:${label} density=${density} regenerates to MINERAL_DENSITY[${density}]=${expectedAmount}`, async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeMineral('W1N1', {
+				pos: [25, 25], mineralType: 'H', density,
+				mineralAmount: 0, ticksToRegeneration: 3,
+			});
+
+			await shard.tick(5);
+
+			const mineral = await shard.expectObject(id, 'mineral');
+			expect(mineral.mineralAmount).toBe(expectedAmount);
+			expect(mineral.ticksToRegeneration).toBe(0);
 		});
 	}
+
+	// LOW and ULTRA always redensify on regeneration (deterministic gate in
+	// the engine processor). The new density is sampled from
+	// MINERAL_DENSITY_PROBABILITY with the current density removed, so the
+	// resulting density is non-deterministic across runs — assert membership +
+	// inequality, not a specific value.
+	const VALID_DENSITIES = [DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA];
+
+	test('MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeMineral('W1N1', {
+			pos: [25, 25], mineralType: 'H', density: DENSITY_LOW,
+			mineralAmount: 0, ticksToRegeneration: 3,
+		});
+
+		await shard.tick(5);
+
+		const mineral = await shard.expectObject(id, 'mineral');
+		expect(VALID_DENSITIES).toContain(mineral.density);
+		expect(mineral.density).not.toBe(DENSITY_LOW);
+	});
+
+	test('MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const id = await shard.placeMineral('W1N1', {
+			pos: [25, 25], mineralType: 'H', density: DENSITY_ULTRA,
+			mineralAmount: 0, ticksToRegeneration: 3,
+		});
+
+		await shard.tick(5);
+
+		const mineral = await shard.expectObject(id, 'mineral');
+		expect(VALID_DENSITIES).toContain(mineral.density);
+		expect(mineral.density).not.toBe(DENSITY_ULTRA);
+	});
 });

@@ -508,7 +508,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
 				setSourceNextRegenerationTime(source, Game.time, spec.ticksToRegeneration);
 			} else if (source.energy < source.energyCapacity) {
-				setSourceNextRegenerationTime(source, Game.time, 300); // ENERGY_REGEN_TIME
+				setSourceNextRegenerationTime(source, Game.time, C.ENERGY_REGEN_TIME);
 			}
 			insertRoomObject(room, source);
 		});
@@ -520,14 +520,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const id = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:mineral`, id);
 		const ticksToRegen = spec.ticksToRegeneration;
+		const density = spec.density ?? C.DENSITY_HIGH;
+		const mineralAmount = spec.mineralAmount ?? (C.MINERAL_DENSITY[density] ?? 0);
 
 		this.queueOp(roomName, room => {
 			const mineral = new Mineral();
 			mineral.id = id;
 			bindObjectPos(mineral, new RoomPosition(spec.pos[0], spec.pos[1], roomName));
 			mineral.mineralType = spec.mineralType as any;
-			mineral.mineralAmount = spec.mineralAmount ?? 100000;
-			mineral.density = 3; // DENSITY_HIGH — matches vanilla default
+			mineral.mineralAmount = mineralAmount;
+			mineral.density = density;
 			if (ticksToRegen !== undefined) {
 				setMineralNextRegenerationTime(mineral, this.simulation!.shard.time, ticksToRegen);
 			}
@@ -577,6 +579,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
 		const id = this.nextId();
+		const corpseId = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:tombstone`, id);
 
 		this.queueOp(roomName, room => {
@@ -594,7 +597,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				tombstone,
 				{
 					body: [],
-					id,
+					id: corpseId,
 					name: spec.creepName,
 					saying: undefined as any,
 					ticksToLive: 0,

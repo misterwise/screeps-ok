@@ -179,4 +179,79 @@ describe('Tombstone', () => {
 		expect(t1.ticksToDecay).toBeLessThan(t0.ticksToDecay);
 		expect(t2.ticksToDecay).toBeLessThan(t1.ticksToDecay);
 	});
+
+	// TOMBSTONE-006..009: deceased-creep field exposure on tombstone.creep.
+	// Set up a single natural-death scenario shared across the four rows.
+	// The owner-username assertion compares post-death to the live creep's
+	// owner.username captured pre-death (both resolve through the engine's
+	// user registry, so the value is engine-specific but self-consistent).
+	async function killAndReadTombstone(shard: any) {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const targetBody = [CARRY, MOVE];
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: body(7, ATTACK, MOVE),
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2',
+			body: targetBody,
+			name: 'fallen',
+		});
+		await shard.tick();
+		const live = await shard.runPlayer('p2', code`
+			(() => {
+				const c = Game.getObjectById(${targetId});
+				return { id: c.id, owner: c.owner.username };
+			})()
+		`) as { id: string; owner: string };
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
+		`);
+		await shard.tick();
+		await shard.tick();
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const tomb = tombstones.find((t: any) => t.creepName === 'fallen');
+		expect(tomb).toBeDefined();
+		const fields = await shard.runPlayer('p1', code`
+			(() => {
+				const t = Game.getObjectById(${tomb!.id});
+				return {
+					sameId: t.creep.id === t.id,
+					creepId: t.creep.id,
+					creepName: t.creep.name,
+					owner: t.creep.owner.username,
+					bodyTypes: t.creep.body.map(part => part.type),
+				};
+			})()
+		`) as { sameId: boolean; creepId: string; creepName: string; owner: string; bodyTypes: string[] };
+		return { tomb: tomb!, targetId, targetBody, live, fields };
+	}
+
+	test('TOMBSTONE-006 tombstone.creep.body preserves deceased body part order', async ({ shard }) => {
+		const { fields, targetBody } = await killAndReadTombstone(shard);
+		expect(fields.bodyTypes).toEqual(targetBody);
+	});
+
+	test('TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id', async ({ shard }) => {
+		const { fields, tomb, live } = await killAndReadTombstone(shard);
+		expect(fields.creepId).toBe(live.id);
+		expect(fields.sameId).toBe(false);
+		expect(fields.creepId).not.toBe(tomb.id);
+	});
+
+	test('TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner', async ({ shard }) => {
+		const { fields, live } = await killAndReadTombstone(shard);
+		expect(fields.owner).toBe(live.owner);
+	});
+
+	test('TOMBSTONE-009 tombstone.creep.name matches deceased name', async ({ shard }) => {
+		const { fields } = await killAndReadTombstone(shard);
+		expect(fields.creepName).toBe('fallen');
+	});
 });

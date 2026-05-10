@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2564%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2103%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-85-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2571%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-31-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2109%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-86-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2564](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-09 23:37 UTC |
-| 🟡 | **xxscreeps** | [2103](#xxscreeps-passing-tests) | [85](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-09 23:33 UTC |
+| 🟡 | **vanilla** | [2571](#vanilla-passing-tests) | [31](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-10 00:18 UTC |
+| 🟡 | **xxscreeps** | [2109](#xxscreeps-passing-tests) | [86](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-10 00:15 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -183,7 +183,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 85 tests. That includes 38 open parity gaps covering 81 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 86 tests. That includes 39 open parity gaps covering 82 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -191,6 +191,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
 | `id-constructor-overlay-copy` | `new Creep(id)` and sibling same-type id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, and primitive overlay fields such as `hits` and `fatigue` can differ from `Game.getObjectById(id)`. Upstream PR 178 handled most same-type constructor cases; `new Ruin(id)` remains the observed residual under the current pin. | Vanilla same-type id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative public fields match the live object. | [1](#xxscreeps-gap-id-constructor-overlay-copy) |
@@ -231,6 +232,13 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-tombstone-creep-body-types-not-objects">
+<summary><code>tombstone-creep-body-types-not-objects</code> — 1 test</summary>
+
+- `Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order`
+
+</details>
 
 <details id="xxscreeps-gap-shape-flag-extra-id">
 <summary><code>shape-flag-extra-id</code> — 1 test</summary>
@@ -596,7 +604,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2564 tests across 128 files</summary>
+<summary>2571 tests across 128 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3067,16 +3075,19 @@ Click a count to jump to the affected test list.
 - Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
 - Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (8)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (11)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
 - mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
 - mineral regeneration MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount
 - mineral regeneration MINERAL-REGEN-005 mineral type remains the same after regeneration
-- mineral regeneration MINERAL-REGEN-001:low MINERAL_DENSITY[1] equals 15000
-- mineral regeneration MINERAL-REGEN-001:moderate MINERAL_DENSITY[2] equals 35000
-- mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
-- mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
+- mineral regeneration MINERAL-REGEN-006 mineral.density exposes the placed density level
+- mineral regeneration MINERAL-REGEN-001:low density=1 regenerates to MINERAL_DENSITY[1]=15000
+- mineral regeneration MINERAL-REGEN-001:moderate density=2 regenerates to MINERAL_DENSITY[2]=35000
+- mineral regeneration MINERAL-REGEN-001:high density=3 regenerates to MINERAL_DENSITY[3]=70000
+- mineral regeneration MINERAL-REGEN-001:ultra density=4 regenerates to MINERAL_DENSITY[4]=100000
+- mineral regeneration MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration
+- mineral regeneration MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration
 
 **`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
 
@@ -3087,13 +3098,17 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (5)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (9)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
+- Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order
+- Tombstone TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id
+- Tombstone TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner
+- Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
@@ -4193,7 +4208,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2103 tests across 104 files</summary>
+<summary>2109 tests across 104 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6281,24 +6296,30 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (8)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (11)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
 - mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
 - mineral regeneration MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount
 - mineral regeneration MINERAL-REGEN-005 mineral type remains the same after regeneration
-- mineral regeneration MINERAL-REGEN-001:low MINERAL_DENSITY[1] equals 15000
-- mineral regeneration MINERAL-REGEN-001:moderate MINERAL_DENSITY[2] equals 35000
-- mineral regeneration MINERAL-REGEN-001:high MINERAL_DENSITY[3] equals 70000
-- mineral regeneration MINERAL-REGEN-001:ultra MINERAL_DENSITY[4] equals 100000
+- mineral regeneration MINERAL-REGEN-006 mineral.density exposes the placed density level
+- mineral regeneration MINERAL-REGEN-001:low density=1 regenerates to MINERAL_DENSITY[1]=15000
+- mineral regeneration MINERAL-REGEN-001:moderate density=2 regenerates to MINERAL_DENSITY[2]=35000
+- mineral regeneration MINERAL-REGEN-001:high density=3 regenerates to MINERAL_DENSITY[3]=70000
+- mineral regeneration MINERAL-REGEN-001:ultra density=4 regenerates to MINERAL_DENSITY[4]=100000
+- mineral regeneration MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration
+- mineral regeneration MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (5)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (8)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
+- Tombstone TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id
+- Tombstone TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner
+- Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 

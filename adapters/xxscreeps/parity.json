@@ -1,5 +1,10 @@
 {
 	"expected_failures": {
+		"tombstone-creep-body-types-not-objects": {
+			"actual": "`tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged.",
+			"expected": "Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape.",
+			"tests": ["TOMBSTONE-006"]
+		},
 		"shape-body-part-always-has-boost": {
 			"intentional": true,
 			"why": "PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference.",

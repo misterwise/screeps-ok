@@ -111,6 +111,13 @@ export interface MineralSpec {
 	mineralType: string;
 	mineralAmount?: number;
 	ticksToRegeneration?: number;
+	/**
+	 * Mineral density level: `DENSITY_LOW` (1), `DENSITY_MODERATE` (2),
+	 * `DENSITY_HIGH` (3), or `DENSITY_ULTRA` (4). Defaults to
+	 * `DENSITY_HIGH`. When `mineralAmount` is omitted, the placed amount
+	 * is `MINERAL_DENSITY[density]`.
+	 */
+	density?: number;
 }
 
 export interface FlagSpec {

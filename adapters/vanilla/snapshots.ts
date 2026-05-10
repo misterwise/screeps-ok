@@ -439,6 +439,7 @@ export function snapshotMineral(obj: any, gameTime?: number): MineralSnapshot {
 		pos: snapPos(obj),
 		mineralType: obj.mineralType,
 		mineralAmount: obj.mineralAmount ?? 0,
+		density: obj.density,
 		ticksToRegeneration: ticksToRegen,
 	};
 }

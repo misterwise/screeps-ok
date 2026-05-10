@@ -9,6 +9,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
 ## Open parity gaps
 
+### tombstone-creep-body-types-not-objects
+
+- Tests: TOMBSTONE-006
+- Status: CONFIRMED.
+- Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
+- Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
+
 ### withdraw-safemode-hoisted-too-far
 
 - Tests: WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner, WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner

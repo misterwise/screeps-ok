@@ -3008,7 +3008,8 @@ Coverage Notes
 
 ### 17.3 Mineral Regeneration
 - `MINERAL-REGEN-001` `matrix` `verified_vanilla`
-  Mineral densities and full amounts match the canonical density mapping.
+  When a depleted mineral regenerates, the restored `mineralAmount` equals
+  `MINERAL_DENSITY[density]` for each canonical density level.
 - `MINERAL-REGEN-002` `behavior` `verified_vanilla`
   When a mineral regeneration timer completes, the mineral restores to its
   current density amount in the same tick.
@@ -3019,6 +3020,21 @@ Coverage Notes
   by `1` each tick until regeneration completes.
 - `MINERAL-REGEN-005` `behavior` `verified_vanilla`
   A mineral's `mineralType` remains the same across regenerations.
+- `MINERAL-REGEN-006` `behavior` `verified_vanilla`
+  A placed mineral exposes its density level via `mineral.density`.
+- `MINERAL-REGEN-007` `behavior` `verified_vanilla`
+  Regeneration of a `DENSITY_LOW` mineral always redensifies it: after the
+  next regeneration the mineral's density is some other valid density level
+  drawn from `MINERAL_DENSITY_PROBABILITY`.
+- `MINERAL-REGEN-008` `behavior` `verified_vanilla`
+  Regeneration of a `DENSITY_ULTRA` mineral always redensifies it: after the
+  next regeneration the mineral's density is some other valid density level
+  drawn from `MINERAL_DENSITY_PROBABILITY`.
+
+Coverage Notes
+- `MINERAL_DENSITY_CHANGE` (5%) stochastic redensify of `DENSITY_MODERATE`
+  and `DENSITY_HIGH` minerals is gated on a deterministic-randomness adapter
+  capability and is tracked separately.
 
 ### 17.4 Mineral Power Effects
 - `MINERAL-POWER-001` `matrix` `verified_vanilla`
@@ -3066,6 +3082,17 @@ Coverage Notes
 - `TOMBSTONE-005` `behavior` `verified_vanilla`
   A tombstone's `ticksToDecay` strictly decreases by one each subsequent
   tick until removal.
+- `TOMBSTONE-006` `behavior` `verified_vanilla`
+  `tombstone.creep.body` exposes the body part types of the deceased creep,
+  preserving the order they appeared in at death.
+- `TOMBSTONE-007` `behavior` `verified_vanilla`
+  `tombstone.creep.id` equals the deceased creep's `id` and is distinct from
+  the enclosing `tombstone.id`.
+- `TOMBSTONE-008` `behavior` `verified_vanilla`
+  `tombstone.creep.owner.username` equals the deceased creep's owner's
+  username.
+- `TOMBSTONE-009` `behavior` `verified_vanilla`
+  `tombstone.creep.name` equals the deceased creep's name.
 
 Coverage Notes
 - Power creep tombstone decay dropped: requires `capability: powerCreeps`,

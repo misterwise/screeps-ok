@@ -341,6 +341,7 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 		pos: snapPos(obj),
 		mineralType: obj.mineralType,
 		mineralAmount: obj.mineralAmount,
+		density: obj.density,
 		ticksToRegeneration: obj.ticksToRegeneration ?? 0,
 	};
 }
