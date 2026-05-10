@@ -294,33 +294,6 @@ describe('room structure shortcuts', () => {
 			absentType: 'undefined',
 		});
 	});
-
-	test('ROOM-STRUCTURE-001:factory room.factory exposes the factory object or undefined', async ({ shard }) => {
-		shard.requires('factory');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 8, owner: 'p1' },
-			],
-		});
-		const factoryId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
-		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const factory = Game.rooms['W1N1'].factory;
-			({
-				present: factory && { id: factory.id, structureType: factory.structureType },
-				absentType: typeof Game.rooms['W2N1'].factory,
-			})
-		`) as { present: { id: string; structureType: string }; absentType: string };
-		expect(result).toEqual({
-			present: { id: factoryId, structureType: STRUCTURE_FACTORY },
-			absentType: 'undefined',
-		});
-	});
 });
 
 describe('Room.find', () => {

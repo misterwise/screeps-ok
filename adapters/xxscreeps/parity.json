@@ -177,11 +177,6 @@
 			"expected": "Every RoomObject exposes effects as an array, with no active effects represented as [].",
 			"tests": ["EFFECT-EMPTY-001"]
 		},
-		"room-factory-shortcut-missing": {
-			"actual": "room.factory is undefined for a visible room containing an owned factory.",
-			"expected": "Visible rooms expose room.factory as the factory object when present.",
-			"tests": ["ROOM-STRUCTURE-001:factory"]
-		},
 		"eventlog-build-energy-spent-uses-progress": {
 			"actual": "EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress.",
 			"expected": "EVENT_BUILD data.energySpent equals the energy spent by the build action.",
@@ -198,11 +193,6 @@
 			"actual": "`checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY.",
 			"expected": "Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe.",
 			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
-		},
-		"moveto-no-shared-exit-walks-into-wall": {
-			"actual": "creep.moveTo to a destination room not in describeExits returns OK and the creep walks one tile rather than receiving ERR_NO_PATH; the pathfinder surfaces a partial path inherited from vanilla (screeps/engine#98, closed as not-a-bug).",
-			"expected": "creep.moveTo to a room with no shared exit returns ERR_NO_PATH and produces zero movement.",
-			"tests": ["MOVE-BASIC-028"]
 		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",

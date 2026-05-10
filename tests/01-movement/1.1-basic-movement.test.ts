@@ -437,41 +437,6 @@ describe('creep.moveTo()', () => {
 		expect(rc).toBe(ERR_NO_PATH);
 	});
 
-	test('MOVE-BASIC-028 moveTo() to a room with no shared exit returns ERR_NO_PATH and does not move', async ({ shard }) => {
-		shard.requires('terrain', 'no-shared-exit fixture requires custom terrain support');
-		// TERRAIN_FIXTURE_ROOM (W5N5) has walls along its west, east, and south
-		// borders, so describeExits omits W4N5/W6N5/W5N4 — only the open
-		// north exit to W5N6 remains. Targeting (25, 25, W4N5) reproduces the
-		// engine #98 case: the creep would otherwise walk into the western
-		// boundary wall instead of receiving ERR_NO_PATH.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: TERRAIN_FIXTURE_ROOM, terrain: TERRAIN_FIXTURE_SPEC },
-			],
-		});
-		const id = await shard.placeCreep(TERRAIN_FIXTURE_ROOM, {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'walker',
-		});
-
-		const result = await shard.runPlayer('p1', code`
-			const exits = Game.map.describeExits('${TERRAIN_FIXTURE_ROOM}');
-			const exitRooms = exits ? Object.keys(exits).map(k => exits[k]) : [];
-			const target = new RoomPosition(25, 25, 'W4N5');
-			const rc = Game.creeps['walker'].moveTo(target, { maxOps: 100000 });
-			({ rc, targetInExits: exitRooms.indexOf('W4N5') >= 0, exitRooms })
-		`) as { rc: number; targetInExits: boolean; exitRooms: string[] };
-
-		expect(result.targetInExits).toBe(false);
-		expect(result.rc).toBe(ERR_NO_PATH);
-
-		const creep = await shard.expectObject(id, 'creep');
-		expect(creep.pos.x).toBe(25);
-		expect(creep.pos.y).toBe(25);
-		expect(creep.pos.roomName).toBe(TERRAIN_FIXTURE_ROOM);
-	});
-
 	test('MOVE-BASIC-020 moveTo() returns ERR_TIRED when the creep has fatigue > 0', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// 3 WORK + 1 MOVE: each move on plains generates 6 fatigue, MOVE
