@@ -172,11 +172,6 @@
 			"expected": "Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order.",
 			"tests": ["STRUCTURE-ACTIVE-005"]
 		},
-		"effects-empty-array-missing": {
-			"actual": "RoomObjects with no active effects omit the effects property.",
-			"expected": "Every RoomObject exposes effects as an array, with no active effects represented as [].",
-			"tests": ["EFFECT-EMPTY-001"]
-		},
 		"eventlog-build-energy-spent-uses-progress": {
 			"actual": "EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress.",
 			"expected": "EVENT_BUILD data.energySpent equals the energy spent by the build action.",

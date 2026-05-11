@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2578%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-29-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-84-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2578%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2578](#vanilla-passing-tests) | [29](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-10 02:19 UTC |
-| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [84](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-10 02:15 UTC |
+| 🟡 | **vanilla** | [2578](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-11 04:08 UTC |
+| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-11 04:05 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,7 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla expected failures
 
-vanilla currently declares 14 expected-failure classifications against vanilla's canonical behavior, covering 29 tests. That includes 14 open parity gaps covering 29 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 28 tests. That includes 13 open parity gaps covering 28 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -39,7 +39,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-creep-energy-structures-option-missing` | Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
 | `legacy-path-cost-callback-false-ignored` | Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
 | `attack-notify-getter-api-missing` | Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
-| `effects-empty-array-missing` | Stable vanilla omits the effects property on RoomObjects that have no active effects. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#vanilla-gap-effects-empty-array-missing) |
 | `eventlog-build-energy-spent-missing` | Stable vanilla EVENT_BUILD entries omit data.energySpent. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
 | `eventlog-structure-destroy-intent-missing` | Stable vanilla Structure.destroy() removes the structure but does not emit EVENT_OBJECT_DESTROYED for the owner-initiated intent path. | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-long-name-and-ttl-pr-behavior-missing` | Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death. | Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned. | [4](#vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing) |
@@ -104,13 +103,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="vanilla-gap-effects-empty-array-missing">
-<summary><code>effects-empty-array-missing</code> — 1 test</summary>
-
-- `15.5 Effects Substrate EFFECT-EMPTY-001 RoomObjects expose empty effects arrays when no effects are active`
-
-</details>
-
 <details id="vanilla-gap-eventlog-build-energy-spent-missing">
 <summary><code>eventlog-build-energy-spent-missing</code> — 1 test</summary>
 
@@ -167,7 +159,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 84 tests. That includes 37 open parity gaps covering 80 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 36 open parity gaps covering 79 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -208,7 +200,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
-| `effects-empty-array-missing` | RoomObjects with no active effects omit the effects property. | Every RoomObject exposes effects as an array, with no active effects represented as []. | [1](#xxscreeps-gap-effects-empty-array-missing) |
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
@@ -486,13 +477,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>structure-active-equal-distance-scan-order</code> — 1 test</summary>
 
 - `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
-
-</details>
-
-<details id="xxscreeps-gap-effects-empty-array-missing">
-<summary><code>effects-empty-array-missing</code> — 1 test</summary>
-
-- `15.5 Effects Substrate EFFECT-EMPTY-001 RoomObjects expose empty effects arrays when no effects are active`
 
 </details>
 

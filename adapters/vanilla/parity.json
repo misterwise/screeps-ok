@@ -30,11 +30,6 @@
 			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state.",
 			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
 		},
-		"effects-empty-array-missing": {
-			"actual": "Stable vanilla omits the effects property on RoomObjects that have no active effects.",
-			"expected": "Every RoomObject exposes effects as an array, with no active effects represented as [].",
-			"tests": ["EFFECT-EMPTY-001"]
-		},
 		"eventlog-build-energy-spent-missing": {
 			"actual": "Stable vanilla EVENT_BUILD entries omit data.energySpent.",
 			"expected": "EVENT_BUILD data includes energySpent equal to the energy spent by the build action.",

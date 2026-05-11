@@ -2659,9 +2659,6 @@ Coverage Notes
   structure in another player's controlled room.
 
 ### 15.5 Effects Substrate `capability: powerCreeps`
-- `EFFECT-EMPTY-001` `behavior` `needs_vanilla_verification`
-  Every `RoomObject` exposes `effects` as an array; when no effects are active,
-  player code observes an empty array (`[]`) rather than `undefined`.
 - `EFFECT-DECAY-001` `behavior` `verified_vanilla`
   An entry's `ticksRemaining` decrements by exactly 1 each subsequent tick
   while the host RoomObject remains alive.
