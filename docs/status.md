@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2578%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-28-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-83-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](docs/status.md#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,24 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2578](#vanilla-passing-tests) | [28](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-11 04:08 UTC |
-| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [83](#xxscreeps-expected-failures) | — | [410](#xxscreeps-skipped-tests) | 2026-05-11 04:05 UTC |
+| 🔴 | **vanilla** | [2578](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | [1](#vanilla-unexpected-failures) | [3](#vanilla-skipped-tests) | 2026-05-11 04:08 UTC |
+| 🔴 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [82](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [410](#xxscreeps-skipped-tests) | 2026-05-11 04:05 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## vanilla unexpected failures
+
+- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
+
+## xxscreeps unexpected failures
+
+- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
+
 ## vanilla expected failures
 
-vanilla currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 28 tests. That includes 13 open parity gaps covering 28 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 13 expected-failure classifications against vanilla's canonical behavior, covering 27 tests. That includes 13 open parity gaps covering 27 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -34,18 +42,18 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
-| `construction-site-array-prototype-pollution` | Stable vanilla iterates room-edge border-tile arrays with inherited enumerable Array.prototype keys, so an enumerable user-code Array.prototype property makes otherwise-valid edge-adjacent construction sites fail validation with ERR_INVALID_TARGET. | Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges. | [1](#vanilla-gap-construction-site-array-prototype-pollution) |
-| `corner-exit-tiles-auto-transition` | Stable vanilla auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#vanilla-gap-corner-exit-tiles-auto-transition) |
-| `renew-creep-energy-structures-option-missing` | Stable vanilla StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
-| `legacy-path-cost-callback-false-ignored` | Stable vanilla Room.findPath treats a costCallback return value of false as if no room-blocking matrix was returned, so it still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
-| `attack-notify-getter-api-missing` | Stable vanilla exposes notifyWhenAttacked but not the notifiesWhenAttacked getter API, and spawnCreep notifyWhenAttacked initial-state checks cannot be observed. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
-| `eventlog-build-energy-spent-missing` | Stable vanilla EVENT_BUILD entries omit data.energySpent. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
-| `eventlog-structure-destroy-intent-missing` | Stable vanilla Structure.destroy() removes the structure but does not emit EVENT_OBJECT_DESTROYED for the owner-initiated intent path. | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
-| `power-creep-long-name-and-ttl-pr-behavior-missing` | Stable vanilla does not preserve 100-character power creep names on create/rename and exposes a non-undefined ticksToLive while unspawned or after death. | Power creeps preserve 100-character names exactly and expose ticksToLive as undefined whenever unspawned. | [4](#vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing) |
-| `market-history-empty-array-missing` | Stable vanilla Game.market.getHistory returns an empty object for invalid resources and valid resources with no history. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
-| `roomposition-find-closest-by-path-range-ignored` | Stable vanilla RoomPosition.findClosestByPath does not use opts.range as the goal range. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
-| `movecache-fatigue-visualization-recomputes` | Stable vanilla calls the supplied costCallback while returning ERR_TIRED for a fatigued moveTo call with a reusable cached path and visualizePathStyle. | A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. | [1](#vanilla-gap-movecache-fatigue-visualization-recomputes) |
-| `moveto-all-routes-blocked-walks-into-creeps` | Stable vanilla creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#vanilla-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `construction-site-array-prototype-pollution` | Stable vanilla iterates room-edge border-tile arrays with `for(var i in borderTiles)` (`@screeps/engine/src/utils.js:140`, `:157`), which picks up inherited enumerable `Array.prototype` keys. An enumerable user-code addition to `Array.prototype` therefore makes otherwise-valid edge-adjacent construction sites fail validation with `ERR_INVALID_TARGET`. | Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges. | [1](#vanilla-gap-construction-site-array-prototype-pollution) |
+| `renew-creep-energy-structures-option-missing` | Stable vanilla's `StructureSpawn.renewCreep` is declared `function(target)` (`@screeps/engine/src/game/structures.js:1237-1267`) — no `options` parameter, no validation, no `energyStructures` plumbing. The `energyStructures` option is wired only into `spawnCreep` (`structures.js:1077`). | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#vanilla-gap-renew-creep-energy-structures-option-missing) |
+| `legacy-path-cost-callback-false-ignored` | Stable vanilla's `Room.findPath` (`@screeps/engine/src/game/rooms.js:247-250`) guards the `costCallback` return with `if (resultMatrix instanceof globals.PathFinder.CostMatrix)`; `false` fails the `instanceof` check and is silently ignored, so the path computation continues with the unmodified cost matrix and returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#vanilla-gap-legacy-path-cost-callback-false-ignored) |
+| `attack-notify-getter-api-missing` | Stable vanilla wires the setter (`notifyWhenAttacked`) on structures (`@screeps/engine/src/game/structures.js:89-106`), creeps (`creeps.js:988-1004`), and power creeps (`power-creeps.js:375-393`), but no `notifiesWhenAttacked` getter is defined on any of them. `spawnCreep` (`processor/intents/spawns/create-creep.js:93`) hard-codes `notifyWhenAttacked: true` on the new creep with no per-call option, so the initial state isn't observable through spawn either. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state. | [11](#vanilla-gap-attack-notify-getter-api-missing) |
+| `eventlog-build-energy-spent-missing` | Stable vanilla's build intent emits an `EVENT_BUILD` payload of `{ targetId, amount, structureType, x, y, incomplete }` (`@screeps/engine/src/processor/intents/creeps/build.js:91-101`) — `energySpent` is not on the payload. | EVENT_BUILD data includes energySpent equal to the energy spent by the build action. | [1](#vanilla-gap-eventlog-build-energy-spent-missing) |
+| `eventlog-structure-destroy-intent-missing` | Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`). | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
+| `power-creep-name-truncated-to-50-chars` | Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars. | Power creeps preserve 100-character names exactly through create and rename. | [2](#vanilla-gap-power-creep-name-truncated-to-50-chars) |
+| `power-creep-ticks-to-live-not-undefined-when-unspawned` | Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`. | Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death). | [2](#vanilla-gap-power-creep-ticks-to-live-not-undefined-when-unspawned) |
+| `market-history-empty-array-missing` | Stable vanilla's `Game.market.getHistory` (`@screeps/engine/src/game/market.js:41-52`) returns `{}` for an invalid resource (line 48) and `JSON.parse(JSON.stringify(history[resource] || {}))` for a valid-but-empty resource (line 50) — always an object, never `[]`. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | [1](#vanilla-gap-market-history-empty-array-missing) |
+| `roomposition-find-closest-by-path-range-ignored` | Stable vanilla's `_findClosestByPath2` (`@screeps/engine/src/game/rooms.js:304-374`) never reads `opts.range`: it hardcodes `{range: 1, pos: i}` on the PathFinder goal at line 328 and post-filters reachability with `lastPos.isNearTo(obj)` at line 368. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
+| `movecache-fatigue-visualization-recomputes` | Stable vanilla's `Creep.moveTo` short-circuits `if (fatigue>0 && !opts.visualizePathStyle) return ERR_TIRED` (`@screeps/engine/src/game/creeps.js:173`), so setting `visualizePathStyle` bypasses the early return. The reusable-cache branch (`creeps.js:241-302`) then calls `moveByPath` → `move` (which returns `ERR_TIRED`) and falls through to `findPathTo` at line 283, which re-invokes the supplied `costCallback`. | A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. | [1](#vanilla-gap-movecache-fatigue-visualization-recomputes) |
+| `moveto-all-routes-blocked-walks-into-creeps` | Stable vanilla's `Creep.moveTo` (`@screeps/engine/src/game/creeps.js:283-302`) returns a partial path from `findPathTo` without a destination-occupancy check; if `path.length > 0` it calls `this.move(path[0].direction)` and returns OK, walking the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#vanilla-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -60,13 +68,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>construction-site-array-prototype-pollution</code> — 1 test</summary>
 
 - `room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation`
-
-</details>
-
-<details id="vanilla-gap-corner-exit-tiles-auto-transition">
-<summary><code>corner-exit-tiles-auto-transition</code> — 1 test</summary>
-
-- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
 
 </details>
 
@@ -117,11 +118,17 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="vanilla-gap-power-creep-long-name-and-ttl-pr-behavior-missing">
-<summary><code>power-creep-long-name-and-ttl-pr-behavior-missing</code> — 4 tests</summary>
+<details id="vanilla-gap-power-creep-name-truncated-to-50-chars">
+<summary><code>power-creep-name-truncated-to-50-chars</code> — 2 tests</summary>
 
 - `Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name`
 - `Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name`
+
+</details>
+
+<details id="vanilla-gap-power-creep-ticks-to-live-not-undefined-when-unspawned">
+<summary><code>power-creep-ticks-to-live-not-undefined-when-unspawned</code> — 2 tests</summary>
+
 - `Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive`
 - `Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again`
 
@@ -159,7 +166,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 83 tests. That includes 36 open parity gaps covering 79 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 37 expected-failure classifications against vanilla's canonical behavior, covering 82 tests. That includes 35 open parity gaps covering 78 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -195,7 +202,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `build-repair-not-enough-too-late` | `checkBuild` (`packages/xxscreeps/mods/construction/creep.ts`) and `checkRepair` (`packages/xxscreeps/mods/structure/creep.ts`) place the source-energy check after target validation and range. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES before ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the blocked-target check. | [5](#xxscreeps-gap-build-repair-not-enough-too-late) |
 | `build-blocked-vs-range-inverted` | `checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET. | [1](#xxscreeps-gap-build-blocked-vs-range-inverted) |
-| `corner-exit-tiles-auto-transition` | xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1. | Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick. | [1](#xxscreeps-gap-corner-exit-tiles-auto-transition) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
@@ -433,13 +439,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>build-blocked-vs-range-inverted</code> — 1 test</summary>
 
 - `creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-corner-exit-tiles-auto-transition">
-<summary><code>corner-exit-tiles-auto-transition</code> — 1 test</summary>
-
-- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
 
 </details>
 

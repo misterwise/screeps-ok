@@ -277,6 +277,13 @@ export interface AdapterCapabilities {
 	 * exercise stochastic processor branches (e.g. mineral redensify gate).
 	 */
 	randomInjection: boolean;
+	/**
+	 * Vanilla's `register.deprecated` per-tick log notices for deprecated
+	 * Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). The
+	 * notice is emitted to the caller's console and dedup'd per tick.
+	 * `captureConsoleLogs(handle)` exposes the captured strings.
+	 */
+	deprecationNotices: boolean;
 }
 
 export type CapabilityName = keyof AdapterCapabilities;
@@ -407,6 +414,14 @@ export interface ScreepsOkAdapter {
 
 	/** Get the controller position for a room. Returns null if no controller. */
 	getControllerPos(room: string): Promise<{ x: number; y: number } | null>;
+
+	/**
+	 * Strings emitted to the player's in-game console during the most recent
+	 * `runPlayer`/`runPlayers` call (in emission order). Excludes the
+	 * adapter's internal result-marker entry. Adapters without
+	 * `deprecationNotices` may return an empty array.
+	 */
+	captureConsoleLogs(handle: string): Promise<string[]>;
 
 	/** Release any shard, runtime, or process resources held by the adapter. */
 	teardown(): Promise<void>;

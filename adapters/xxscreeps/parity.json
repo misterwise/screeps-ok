@@ -147,11 +147,6 @@
 			"expected": "Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET.",
 			"tests": ["BUILD-011:rangeBeforeBlockedTarget"]
 		},
-		"corner-exit-tiles-auto-transition": {
-			"actual": "xxscreeps auto-transitions creeps placed directly on room corner exit tiles; observed (0,0) in W1N1 moved to W2N1.",
-			"expected": "Creeps on room corner tiles (0,0), (0,49), (49,0), or (49,49) remain in the same room and position on the next tick.",
-			"tests": ["ROOM-TRANSITION-006"]
-		},
 		"legacy-path-cost-callback-false-ignored": {
 			"actual": "Room.findPath ignores a costCallback return value of false and still returns a path.",
 			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",

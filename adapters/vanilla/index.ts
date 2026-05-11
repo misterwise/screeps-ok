@@ -564,6 +564,7 @@ const INTER_SHARD_MEMORY_POLYFILL = `
 
 type ResultCapture = {
 	wait: () => Promise<string | undefined>;
+	logs: () => string[];
 	dispose: () => void;
 };
 
@@ -601,6 +602,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// patch that reads a per-tick sequence file. Sequence file is rewritten
 		// (with a fresh mtime) before each tick(count, options) call.
 		randomInjection: true,
+		// register.deprecated in the vanilla runtime emits per-tick log notices
+		// via globals.console.log, captured through the same user.on('console')
+		// channel that delivers runPlayer's eval result.
+		deprecationNotices: true,
 	};
 
 	private server: any = null;
@@ -613,6 +618,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	private env: any = null;
 	private firstTickRun = false;
 	private runCounter = 0;
+	private playerLogs = new Map<string, string[]>();
 	private nextId(): string {
 		return `sok${++this.idCounter}`;
 	}
@@ -631,9 +637,14 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		const marker = `${RESULT_PREFIX}${nonce}:`;
 		let resultJson: string | undefined;
+		const collectedLogs: string[] = [];
 		let resolveSeen: (value: string) => void = () => {};
 		const seen = new Promise<string>(resolve => { resolveSeen = resolve; });
-		const listener = (_logs: unknown[], results: unknown[]) => {
+		const listener = (logs: unknown[], results: unknown[]) => {
+			for (const entry of logs) {
+				const text = this.consoleEventText(entry);
+				if (text !== null) collectedLogs.push(text);
+			}
 			for (const entry of results) {
 				const text = this.consoleEventText(entry);
 				if (!text?.startsWith(marker)) continue;
@@ -657,6 +668,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				]);
 				return resultJson;
 			},
+			logs: () => collectedLogs.slice(),
 			dispose: () => {
 				if (typeof user.off === 'function') user.off('console', listener);
 				else if (typeof user.removeListener === 'function') user.removeListener('console', listener);
@@ -1555,7 +1567,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			});
 			await guardedTick(this.server);
 			this.firstTickRun = true;
-			return this.parseRunResult('runPlayer', handle, await capture.wait());
+			const parsed = this.parseRunResult('runPlayer', handle, await capture.wait());
+			this.playerLogs.set(handle, capture.logs());
+			return parsed;
 		} finally {
 			capture.dispose();
 		}
@@ -1592,11 +1606,17 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const results: Record<string, PlayerReturnValue> = {};
 			for (const handle of handles) {
 				results[handle] = this.parseRunResult('runPlayers', handle, resultJsonByHandle.get(handle));
+				this.playerLogs.set(handle, captures.get(handle)!.logs());
 			}
 			return results;
 		} finally {
 			for (const capture of captures.values()) capture.dispose();
 		}
+	}
+
+	async captureConsoleLogs(handle: string): Promise<string[]> {
+		if (!this.users.has(handle)) throw new Error(`Unknown player: ${handle}`);
+		return this.playerLogs.get(handle)?.slice() ?? [];
 	}
 
 	async tick(count = 1, options: TickOptions = {}): Promise<void> {

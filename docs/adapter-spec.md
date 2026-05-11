@@ -62,6 +62,7 @@ That includes:
 - `runInvaderRaidSpawner`
 - `clearInvaderRaidCreeps`
 - `getControllerPos`
+- `captureConsoleLogs`
 - `teardown`
 
 ## Setup Semantics
@@ -344,6 +345,15 @@ vanilla adapters should normalize the persisted room-history object payload,
 while xxscreeps adapters should normalize backend/client renderer output
 rather than exposing raw `#actionLog` vectors.
 
+### `captureConsoleLogs`
+
+`captureConsoleLogs(handle)` returns the strings the player's in-game console
+received during the most recent `runPlayer` / `runPlayers` call for that
+handle, in emission order. The adapter's internal result-marker entry is
+excluded. Adapters without the `deprecationNotices` capability may return
+an empty array; tests that exercise deprecation notices gate on the
+capability flag.
+
 ## Capabilities And Skip Policy
 
 `capabilities` declares whether an adapter supports a public feature area or
@@ -369,6 +379,7 @@ Current capability flags are:
 - `liveWorldSize`
 - `actionLogCapture`
 - `randomInjection`
+- `deprecationNotices`
 
 Rules:
 

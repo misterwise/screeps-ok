@@ -80,4 +80,29 @@ describe('InterShardMemory — local segment', () => {
 			}
 		}
 	});
+
+	test('ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment', async ({ shard }) => {
+		shard.requires('interShardMemory');
+		await shard.ownedRoom('p1');
+		await shard.tick();
+
+		// Seed a known prior value so a silent-noop rejection is observable.
+		// Then attempt setLocal with length 102401 (>100 KiB); either a throw
+		// or a no-op is a rejection as long as the segment still holds 'seed'.
+		const result = await shard.runPlayer('p1', code`
+			InterShardMemory.setLocal('seed');
+			let threw = false;
+			let message = '';
+			try {
+				InterShardMemory.setLocal('x'.repeat(102401));
+			} catch (err) {
+				threw = true;
+				message = String(err && err.message || err);
+			}
+			({ threw, message, after: InterShardMemory.getLocal() })
+		`) as { threw: boolean; message: string; after: unknown };
+
+		// Segment must still hold the prior value.
+		expect(result.after).toBe('seed');
+	});
 });

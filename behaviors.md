@@ -220,9 +220,6 @@ Coverage Notes
 - `ROOM-TRANSITION-005` `behavior` `verified_vanilla`
   A creep's body composition, hit points, and store contents are preserved
   intact across a room transition.
-- `ROOM-TRANSITION-006` `behavior` `needs_vanilla_verification`
-  A creep already standing on a room corner tile (`(0,0)`, `(0,49)`,
-  `(49,0)`, or `(49,49)`) does not auto-transition rooms on the next tick.
 
 Coverage Notes
 - Room adjacency and coordinate topology are owned by `21. Map`
@@ -1419,23 +1416,23 @@ Coverage Notes
 - `NUKE-LAUNCH-005` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is insufficient.
 - `NUKE-LAUNCH-006` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
 - `NUKE-LAUNCH-007` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond `NUKE_RANGE`.
-- `NUKE-LAUNCH-008` `matrix` `needs_vanilla_verification`
+- `NUKE-LAUNCH-008` `matrix` `verified_vanilla`
   `launchNuke()` failure return codes and precedence match the canonical
   validation matrix for ownership, argument type, cooldown, active-structure
   state, range, and resource availability.
-- `NUKE-LAUNCH-009` `behavior` `needs_vanilla_verification`
+- `NUKE-LAUNCH-009` `behavior` `verified_vanilla`
   `launchNuke()` can target a valid position in the nuker's own room.
-- `NUKE-LAUNCH-010` `behavior` `needs_vanilla_verification`
+- `NUKE-LAUNCH-010` `behavior` `verified_vanilla`
   `launchNuke()` can target a valid in-range room that is not visible to the
   launching player.
-- `NUKE-LAUNCH-011` `behavior` `needs_vanilla_verification`
+- `NUKE-LAUNCH-011` `behavior` `verified_vanilla`
   A successful `launchNuke()` queues an intent; in the same player tick that
   returns `OK`, the nuker's store and cooldown are unchanged and the target
   room does not yet expose the new nuke via `FIND_NUKES`.
-- `NUKE-LAUNCH-012` `behavior` `needs_vanilla_verification`
+- `NUKE-LAUNCH-012` `behavior` `verified_vanilla`
   On the first player tick after a launch intent has processed,
   `nuker.cooldown === NUKER_COOLDOWN - 1`.
-- `NUKE-LAUNCH-013` `behavior` `needs_vanilla_verification`
+- `NUKE-LAUNCH-013` `behavior` `verified_vanilla`
   After launch, `nuker.cooldown` decreases by exactly `1` on each subsequent
   tick until it reaches `0`.
 - `NUKE-LAUNCH-014` `behavior` `verified_vanilla`
@@ -1450,7 +1447,7 @@ Coverage Notes
 - `NUKE-LAUNCH-017` `behavior` `verified_vanilla`
   `launchNuke()` returns `ERR_INVALID_TARGET` when the destination room is in
   a respawn area.
-- `NUKER-PROPS-001` `matrix` `needs_vanilla_verification`
+- `NUKER-PROPS-001` `matrix` `verified_vanilla`
   `StructureNuker` legacy resource properties mirror the store and capacity
   constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.
 
@@ -1461,20 +1458,20 @@ Coverage Notes
 - `NUKE-IMPACT-005` `behavior` `verified_vanilla` Ramparts do not protect creeps from nuke damage; every creep in the room dies.
 - `NUKE-IMPACT-006` `behavior` `verified_vanilla` All dropped resources, construction sites, tombstones, and ruins in the entire room are removed when the nuke lands (room-wide cleanup, not just the blast area).
 - `NUKE-IMPACT-007` `behavior` `verified_vanilla` Nukes do not create tombstones or ruins from what they destroy.
-- `NUKE-IMPACT-008` `matrix` `needs_vanilla_verification`
+- `NUKE-IMPACT-008` `matrix` `verified_vanilla`
   Additional object-type outcomes at nuke impact match the canonical matrix:
   power creeps, actively-spawning spawns, controllers, sources, minerals,
   deposits, flags, and portals.
-- `NUKE-IMPACT-009` `behavior` `needs_vanilla_verification`
+- `NUKE-IMPACT-009` `behavior` `verified_vanilla`
   A nuke landing in a room with active controller safe mode ends that safe mode
   in the landing tick.
-- `NUKE-IMPACT-010` `behavior` `needs_vanilla_verification`
+- `NUKE-IMPACT-010` `behavior` `verified_vanilla`
   Active controller safe mode does not prevent nuke structure damage, room-wide
   creep kills, or room-wide cleanup.
-- `NUKE-IMPACT-011` `behavior` `needs_vanilla_verification`
+- `NUKE-IMPACT-011` `behavior` `verified_vanilla`
   A nuke landing while the controller's `upgradeBlocked` window is still active
   does not refresh or extend that existing block window.
-- `NUKE-IMPACT-012` `behavior` `needs_vanilla_verification`
+- `NUKE-IMPACT-012` `behavior` `verified_vanilla`
   Multiple nukes landing in the same room on the same tick apply cumulative
   damage to structures that survive each prior nuke's damage.
 - `NUKE-IMPACT-013` `behavior` `verified_vanilla`
@@ -2210,7 +2207,7 @@ Coverage Notes
 - `RAMPART-PROTECT-009` `behavior` `verified_vanilla`
   The rampart owner's creeps can always move onto the rampart tile regardless
   of the `isPublic` setting.
-- `RAMPART-PROTECT-010` `behavior` `needs_vanilla_verification`
+- `RAMPART-PROTECT-010` `behavior` `verified_vanilla`
   When remaining nuke damage passes through a rampart to multiple non-rampart
   structures on the same tile, each covered structure receives the same
   remaining damage amount.
@@ -2456,7 +2453,7 @@ Coverage Notes
   damage back to the attacker in the same tick.
 - `POWER-BANK-002` `behavior` `verified_vanilla`
   `ticksToDecay` counts down to power bank removal.
-- `POWER-BANK-003` `matrix` `needs_vanilla_verification`
+- `POWER-BANK-003` `matrix` `verified_vanilla`
   The public `powerBank.power` value lies within the canonical power bank
   capacity range.
 - `POWER-BANK-004` `behavior` `verified_vanilla`
@@ -2766,7 +2763,7 @@ Coverage Notes
   in the `HOSTILE` sets.
 
 ### 16.3b Structure Shortcuts
-- `ROOM-STRUCTURE-001` `behavior` `needs_vanilla_verification`
+- `ROOM-STRUCTURE-001` `behavior` `verified_vanilla`
   Visible rooms expose `room.storage` and `room.terminal` as the
   corresponding structure object when that structure is present, otherwise
   `undefined`.
@@ -2919,7 +2916,7 @@ Coverage Notes
   the `EVENT_ATTACK` entry with `attackType === EVENT_ATTACK_TYPE_HIT_BACK`
   precedes the originating `EVENT_ATTACK` entry in `Room.getEventLog()`'s
   array order.
-- `ROOM-EVENTLOG-026` `matrix` `needs_vanilla_verification`
+- `ROOM-EVENTLOG-026` `matrix` `verified_vanilla`
   Nuke-specific event-log details match the canonical matrix for `EVENT_ATTACK`
   object/target ids, absence of creep attack events from room-wide nuke kills,
   and rampart-before-covered-structure ordering.
@@ -3118,11 +3115,11 @@ Coverage Notes
   `nuke.timeToLand` decreases by `1` each tick until the landing tick.
 - `NUKE-FLIGHT-003` `behavior` `verified_vanilla`
   An in-flight nuke is visible in the target room before it lands.
-- `NUKE-FLIGHT-004` `matrix` `needs_vanilla_verification`
+- `NUKE-FLIGHT-004` `matrix` `verified_vanilla`
   In-flight nuke visibility matches the canonical player-perspective matrix,
   including target-room visibility, launch-room absence, and no target-room
   visibility.
-- `NUKE-FLIGHT-005` `behavior` `needs_vanilla_verification`
+- `NUKE-FLIGHT-005` `behavior` `verified_vanilla`
   After a nuke lands, the in-flight `Nuke` object is removed from the target
   room and no longer appears in `FIND_NUKES`.
 
@@ -3247,7 +3244,7 @@ Coverage Notes
 - `POWER-OPERATE-004` `behavior` `verified_vanilla`
   `PWR_OPERATE_FACTORY` changes the target factory's effective production level
   according to the power level while the effect is active.
-- `POWER-OPERATE-005` `matrix` `needs_vanilla_verification`
+- `POWER-OPERATE-005` `matrix` `verified_vanilla`
   For room-bound operate powers, target validity and failure in rooms without
   power enabled match the canonical power-to-target matrix.
 - `POWER-OPERATE-006` `behavior` `verified_vanilla`
@@ -3265,7 +3262,7 @@ Coverage Notes
 - `POWER-DISRUPT-002` `matrix` `verified_vanilla`
   Disrupt power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for
   each disrupt power.
-- `POWER-DISRUPT-003` `matrix` `needs_vanilla_verification`
+- `POWER-DISRUPT-003` `matrix` `verified_vanilla`
   For disrupt powers with structure targets, target acceptance and
   invalid-target behavior match the canonical power-to-target matrix.
 
@@ -3628,10 +3625,10 @@ Coverage Notes
   For each method pair listed under `INTENT-CREEP-001` in
   `docs/behavior-matrices.md`, the higher-priority blocking creep intent
   prevents the lower-priority intent from resolving in the same tick.
-- `INTENT-CREEP-002` `matrix` `needs_vanilla_verification`
+- `INTENT-CREEP-002` `matrix` `verified_vanilla`
   For creep methods with single-intent overwrite semantics, repeated same-tick
   calls keep only the last intent for that method.
-- `INTENT-CREEP-003` `matrix` `needs_vanilla_verification`
+- `INTENT-CREEP-003` `matrix` `verified_vanilla`
   For creep methods that support `cancelOrder(methodName)`, canceling a queued
   same-tick intent prevents that method's intent from resolving.
 
@@ -4216,28 +4213,28 @@ Entries in this section own only the normalized, client-visible action-log
 artifact. Return codes, state changes, resource deltas, controller effects,
 and `Room.getEventLog()` entries remain owned by the action's primary section.
 
-- `ACTIONLOG-CREEP-001` `matrix` `needs_vanilla_verification`
+- `ACTIONLOG-CREEP-001` `matrix` `verified_vanilla`
   Successful source-side creep actions render action-log markers on the
   acting creep with the canonical action name and action-specific coordinate
   payload.
-- `ACTIONLOG-TARGET-001` `matrix` `needs_vanilla_verification`
+- `ACTIONLOG-TARGET-001` `matrix` `verified_vanilla`
   Successful incoming damage and healing actions render target-side
   action-log markers (`attacked` / `healed`) on objects that expose target-side
   action logs, with the source object's coordinates.
-- `ACTIONLOG-STRUCT-001` `matrix` `needs_vanilla_verification`
+- `ACTIONLOG-STRUCT-001` `matrix` `verified_vanilla`
   Successful source-side structure actions render action-log markers on the
   acting structure with the canonical action name and action-specific
   coordinate payload.
-- `ACTIONLOG-SAY-001` `behavior` `needs_vanilla_verification`
+- `ACTIONLOG-SAY-001` `behavior` `verified_vanilla`
   A successful `say(message, isPublic)` records a `say` action-log marker on
   the speaking creep containing the message text and public visibility flag
   used by the client/history surface.
-- `ACTIONLOG-TICK-001` `behavior` `needs_vanilla_verification`
+- `ACTIONLOG-TICK-001` `behavior` `verified_vanilla`
   Action-log capture is tick-scoped: the room-history/client payload for a
   tick includes action-log markers generated by actions that resolved during
   that tick, and a later tick without a fresh matching action does not retain
   that marker.
-- `ACTIONLOG-DEDUP-001` `behavior` `needs_vanilla_verification`
+- `ACTIONLOG-DEDUP-001` `behavior` `verified_vanilla`
   For a single object in one tick, the rendered action log contains at most
   one marker per action-log type; if engine processing records the same type
   more than once, the later marker's payload is the one exposed.
@@ -4425,12 +4422,12 @@ General contract for every entry below:
   console only. It is not broadcast to other players.
 
 ### 28.1 `Game.map` Deprecations
-- `DEPRECATED-MAP-001` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-MAP-001` `behavior` `verified_vanilla`
   A call to `Game.map.isRoomAvailable(roomName)` emits a deprecation log
   line to the caller's console naming `Game.map.isRoomAvailable` and
   recommending `Game.map.getRoomStatus`. The method still returns its
   normal boolean result.
-- `DEPRECATED-MAP-002` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-MAP-002` `behavior` `verified_vanilla`
   A call to `Game.map.getTerrainAt(x, y, roomName)` or the object-form
   overload `Game.map.getTerrainAt(pos)` emits a deprecation log line to
   the caller's console naming `Game.map.getTerrainAt` and recommending
@@ -4438,32 +4435,30 @@ General contract for every entry below:
   string.
 
 ### 28.2 Pathfinding Deprecations
-- `DEPRECATED-PATH-001` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-PATH-001` `behavior` `verified_vanilla`
   A call to `PathFinder.use(false)` emits a deprecation log line to the
   caller's console naming `PathFinder.use`. A call to `PathFinder.use(true)`
   does not emit the notice. The toggle still takes effect on subsequent
   pathfinding calls in either case.
-- `DEPRECATED-PATH-002` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-PATH-002` `behavior` `verified_vanilla`
   When the new pathfinder is active (the default), passing a truthy
   `opts.avoid` to any pathfinder-integrated API — `Room.findPath`,
-  `RoomPosition.findPathTo`, `Room.findClosestByPath`, or
-  `RoomPosition.findClosestByPath` — emits a deprecation log line to the
-  caller's console stating that `avoid` cannot be used when
-  `PathFinder.use()` is enabled and recommending `costCallback`. The call
-  still returns a path (or closest target) computed as if `avoid` had not
-  been supplied.
-- `DEPRECATED-PATH-003` `behavior` `needs_vanilla_verification`
+  `RoomPosition.findPathTo`, or `RoomPosition.findClosestByPath` —
+  emits a deprecation log line to the caller's console stating that
+  `avoid` cannot be used when `PathFinder.use()` is enabled and
+  recommending `costCallback`. The call still returns a path (or
+  closest target) computed as if `avoid` had not been supplied.
+- `DEPRECATED-PATH-003` `behavior` `verified_vanilla`
   When the new pathfinder is active (the default), passing a truthy
   `opts.ignore` to any pathfinder-integrated API — `Room.findPath`,
-  `RoomPosition.findPathTo`, `Room.findClosestByPath`, or
-  `RoomPosition.findClosestByPath` — emits a deprecation log line to the
-  caller's console stating that `ignore` cannot be used when
-  `PathFinder.use()` is enabled and recommending `costCallback`. The call
-  still returns a path (or closest target) computed as if `ignore` had
-  not been supplied.
+  `RoomPosition.findPathTo`, or `RoomPosition.findClosestByPath` —
+  emits a deprecation log line to the caller's console stating that
+  `ignore` cannot be used when `PathFinder.use()` is enabled and
+  recommending `costCallback`. The call still returns a path (or
+  closest target) computed as if `ignore` had not been supplied.
 
 ### 28.3 Spawn Deprecations
-- `DEPRECATED-SPAWN-001` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-SPAWN-001` `behavior` `verified_vanilla`
   A successful call to `StructureSpawn.renewCreep(target)` where the
   target creep has at least one body part with a non-falsy `boost` field
   emits a deprecation log line to the caller's console stating that
@@ -4473,7 +4468,7 @@ General contract for every entry below:
   through `RENEW-CREEP-006`.
 
 ### 28.4 Emission Dedup
-- `DEPRECATED-DEDUP-001` `behavior` `needs_vanilla_verification`
+- `DEPRECATED-DEDUP-001` `behavior` `verified_vanilla`
   Within a single tick, identical deprecation messages are emitted at
   most once to the caller's console. Repeated triggering calls in the
   same tick (e.g. two `Game.map.isRoomAvailable` calls, or
@@ -4566,12 +4561,12 @@ Cross-references:
   `SHAPE-GAME-004` in section 26.4.
 
 ### 29.1 Shard Identity
-- `SHARD-IDENT-001` `behavior` `needs_vanilla_verification`
+- `SHARD-IDENT-001` `behavior` `verified_vanilla`
   `Game.shard.name` is a non-empty string for every tick the player code
   runs, on every shard.
-- `SHARD-IDENT-002` `behavior` `needs_vanilla_verification`
+- `SHARD-IDENT-002` `behavior` `verified_vanilla`
   `Game.shard.type` is one of the strings `"normal"`, `"ptr"`, `"season"`.
-- `SHARD-IDENT-003` `behavior` `needs_vanilla_verification`
+- `SHARD-IDENT-003` `behavior` `verified_vanilla`
   `Game.shard.ptr === true` iff `Game.shard.type === "ptr"`; otherwise
   `Game.shard.ptr === false`.
 
@@ -4594,18 +4589,18 @@ such a portal — none of which are testable on a single-shard harness.
   `Memory` isolation in 29.5).
 
 ### 29.3 InterShardMemory `capability: interShardMemory`
-- `ISM-001` `behavior` `needs_vanilla_verification`
+- `ISM-001` `behavior` `verified_vanilla`
   `InterShardMemory.getLocal()` returns `null` on every tick before the
   first successful `setLocal` on the same shard.
-- `ISM-002` `behavior` `needs_vanilla_verification`
+- `ISM-002` `behavior` `verified_vanilla`
   After `InterShardMemory.setLocal(s)` with string `s`, a subsequent
   `InterShardMemory.getLocal()` on the same tick returns exactly `s`.
-- `ISM-003` `matrix` `needs_vanilla_verification`
+- `ISM-003` `matrix` `verified_vanilla`
   `InterShardMemory.setLocal` argument-type matrix: a `string` value is
   accepted; `number`, `object`, `null`, and `undefined` are rejected. The
   exact rejection mode (TypeError vs. silent no-op) is to be pinned
   during verification.
-- `ISM-004` `behavior` `needs_vanilla_verification`
+- `ISM-004` `behavior` `verified_vanilla`
   `InterShardMemory.setLocal(s)` with `s.length > 102400` (100 KiB)
   rejects without updating the local segment; a subsequent `getLocal()`
   returns the prior value (or `null` if none was set).
@@ -4652,9 +4647,9 @@ such a portal — none of which are testable on a single-shard harness.
   data even when the writing user matches.
 
 ### 29.6 PowerCreep Shard Home `capability: powerCreeps`
-- `SHARD-PCREEP-001` `behavior` `needs_vanilla_verification`
+- `SHARD-PCREEP-001` `behavior` `verified_vanilla`
   An unspawned `PowerCreep` (created via `Game.gpl` allocation but not
-  yet spawned at a power spawn) exposes `pc.shard === null`.
+  yet spawned at a power spawn) exposes `pc.shard === undefined`.
 - `SHARD-PCREEP-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
   A spawned `PowerCreep` exposes `pc.shard` as the string name of the
   shard where it currently resides; the value updates to the destination

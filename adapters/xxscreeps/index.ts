@@ -202,6 +202,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// scoped to the simulation.tick() call deterministically feeds processor
 		// random calls.
 		randomInjection: true,
+		// xxscreeps has no `register.deprecated` per-tick console notice for the
+		// deprecated Game.map / PathFinder / findPath / renewCreep APIs cataloged
+		// in §28.
+		deprecationNotices: false,
 	};
 
 	readonly limitations = {
@@ -1153,6 +1157,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			return null;
 		});
+	}
+
+	async captureConsoleLogs(handle: string): Promise<string[]> {
+		// xxscreeps does not implement register.deprecated; capability gate
+		// `deprecationNotices` keeps callers off this path.
+		if (!this.playerMap.has(handle)) throw new Error(`Unknown player: ${handle}`);
+		return [];
 	}
 
 	async teardown(): Promise<void> {
