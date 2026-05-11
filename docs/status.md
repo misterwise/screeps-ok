@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](docs/status.md#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2587%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-82-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,20 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🔴 | **vanilla** | [2578](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | [1](#vanilla-unexpected-failures) | [3](#vanilla-skipped-tests) | 2026-05-11 04:08 UTC |
-| 🔴 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [82](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [410](#xxscreeps-skipped-tests) | 2026-05-11 04:05 UTC |
+| 🟡 | **vanilla** | [2587](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-11 04:59 UTC |
+| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [82](#xxscreeps-expected-failures) | — | [419](#xxscreeps-skipped-tests) | 2026-05-11 04:56 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## vanilla unexpected failures
-
-- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
-
-## xxscreeps unexpected failures
-
-- `Room transitions ROOM-TRANSITION-006 creep placed on a room corner tile does not auto-transition`
 
 ## vanilla expected failures
 
@@ -555,7 +547,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2578 tests across 128 files</summary>
+<summary>2587 tests across 133 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3507,33 +3499,58 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath
 - Undocumented API Surface — creep.memory._move (moveTo reusePath cache) UNDOC-MOVECACHE-003 deleting _move forces moveTo to recompute on the next tick
 
+**`tests/28-deprecation/28.1-map.test.ts`** (2)
+
+- Game.map deprecation notices DEPRECATED-MAP-001 Game.map.isRoomAvailable emits a deprecation notice naming the replacement
+- Game.map deprecation notices DEPRECATED-MAP-002 Game.map.getTerrainAt emits a deprecation notice recommending getRoomTerrain
+
+**`tests/28-deprecation/28.2-pathfinding.test.ts`** (3)
+
+- PathFinder.use deprecation notice DEPRECATED-PATH-001 PathFinder.use(false) emits a notice; PathFinder.use(true) is silent
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002 avoid emits a notice and recommends costCallback; path is still returned
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-003 ignore emits a notice and recommends costCallback; path is still returned
+
+**`tests/28-deprecation/28.3-spawn.test.ts`** (1)
+
+- StructureSpawn.renewCreep deprecation notice DEPRECATED-SPAWN-001 renewCreep on a boosted creep emits a notice recommending unboostCreep
+
+**`tests/28-deprecation/28.4-dedup.test.ts`** (1)
+
+- Deprecation notice dedup DEPRECATED-DEDUP-001 identical notices in the same tick collapse to one log; the next tick re-emits
+
 **`tests/29-multi-shard/29.1-shard-identity.test.ts`** (3)
 
 - Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
 
 - InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
 - InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
 - InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
+- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
+
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+
+- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
 
 </details>
 
 ## xxscreeps skipped tests
 
-xxscreeps has 410 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 419 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `nuke` | Nukes | [137](#xxscreeps-skip-capability-nuke) |
-| capability | `powerCreeps` | Power creeps and powers | [113](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [114](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
 | capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
-| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [3](#xxscreeps-skip-capability-intershardmemory) |
+| capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
+| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
@@ -3715,7 +3732,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 113 tests across 24 files</summary>
+<summary><code>capability:powerCreeps</code> — 114 tests across 25 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3901,6 +3918,10 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:powerSpawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
+
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+
+- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
 
 </details>
 
@@ -4131,14 +4152,39 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-intershardmemory">
-<summary><code>capability:interShardMemory</code> — 3 tests across 1 file</summary>
+<details id="xxscreeps-skip-capability-deprecationnotices">
+<summary><code>capability:deprecationNotices</code> — 7 tests across 4 files</summary>
 
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (3)
+**`tests/28-deprecation/28.1-map.test.ts`** (2)
+
+- Game.map deprecation notices DEPRECATED-MAP-001 Game.map.isRoomAvailable emits a deprecation notice naming the replacement
+- Game.map deprecation notices DEPRECATED-MAP-002 Game.map.getTerrainAt emits a deprecation notice recommending getRoomTerrain
+
+**`tests/28-deprecation/28.2-pathfinding.test.ts`** (3)
+
+- PathFinder.use deprecation notice DEPRECATED-PATH-001 PathFinder.use(false) emits a notice; PathFinder.use(true) is silent
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002 avoid emits a notice and recommends costCallback; path is still returned
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-003 ignore emits a notice and recommends costCallback; path is still returned
+
+**`tests/28-deprecation/28.3-spawn.test.ts`** (1)
+
+- StructureSpawn.renewCreep deprecation notice DEPRECATED-SPAWN-001 renewCreep on a boosted creep emits a notice recommending unboostCreep
+
+**`tests/28-deprecation/28.4-dedup.test.ts`** (1)
+
+- Deprecation notice dedup DEPRECATED-DEDUP-001 identical notices in the same tick collapse to one log; the next tick re-emits
+
+</details>
+
+<details id="xxscreeps-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
 
 - InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
 - InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
 - InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
+- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
 
 </details>
 
