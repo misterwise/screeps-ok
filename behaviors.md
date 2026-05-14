@@ -2809,6 +2809,27 @@ Coverage Notes
   including `LOOK_NUKES`, `LOOK_POWER_CREEPS`, and `LOOK_DEPOSITS`. The
   validity check on `type` is independent of whether any object of that
   type is present.
+- `ROOM-LOOK-011` `behavior` `verified_vanilla`
+  `lookForAtArea(type, top, left, bottom, right, false)` (also the default
+  when `asArray` is omitted) returns a sparse `{ [y]: { [x]: <obj>[] } }`
+  map. Rows are pre-initialized as empty objects for every `y` in
+  `[top, bottom]`; per-`x` cells exist only where at least one matching
+  object lives, and each cell array contains the raw game objects
+  themselves — not the `{ x, y, [type]: obj }` wrappers produced when
+  `asArray` is `true`.
+- `ROOM-LOOK-012` `behavior` `verified_vanilla`
+  When multiple objects of the queried `LOOK_*` type share a tile,
+  `lookForAtArea(type, ..., false)` returns all of them in the same
+  per-cell array (preserving the engine's spatial-register insertion
+  order). Cells of bounding-box tiles that contain no matching objects
+  remain `undefined`.
+- `ROOM-LOOK-013` `behavior` `verified_vanilla`
+  `lookAtArea(top, left, bottom, right, false)` returns a dense
+  `{ [y]: { [x]: <entry>[] } }` map: every cell in
+  `[top, bottom] × [left, right]` has a pre-initialized array containing
+  at minimum one `{ type: "terrain", terrain: "plain" | "swamp" | "wall" }`
+  entry, with creeps, structures, and dropped resources appearing as
+  `{ type, [type]: obj }` wrappers alongside the terrain entry.
 
 ### 16.5 Terrain
 - `ROOM-TERRAIN-001` `matrix` `verified_vanilla`

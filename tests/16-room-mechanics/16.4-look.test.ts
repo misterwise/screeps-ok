@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	ERR_INVALID_ARGS,
 	MOVE,
 	RESOURCE_ENERGY,
-	STRUCTURE_ROAD,
+	STRUCTURE_ROAD, STRUCTURE_RAMPART,
 	LOOK_STRUCTURES, LOOK_CREEPS, LOOK_TERRAIN,
 	LOOK_ENERGY, LOOK_RESOURCES,
 	LOOK_NUKES, LOOK_POWER_CREEPS, LOOK_DEPOSITS,
@@ -185,5 +185,119 @@ describe('Room look API', () => {
 		expect(result.nukes).toEqual([]);
 		expect(result.powerCreeps).toEqual([]);
 		expect(result.deposits).toEqual([]);
+	});
+
+	test('ROOM-LOOK-011 lookForAtArea with asArray=false returns sparse map of raw game objects', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_ROAD,
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const room = Game.rooms['W1N1'];
+			const explicit = room.lookForAtArea(LOOK_STRUCTURES, 24, 24, 26, 26, false);
+			const omitted = room.lookForAtArea(LOOK_STRUCTURES, 24, 24, 26, 26);
+			const describe = area => ({
+				row24Type: typeof area[24],
+				cell24_24Type: typeof (area[24] && area[24][24]),
+				cell25_25IsArray: Array.isArray(area[25] && area[25][25]),
+				cell25_25Length: area[25] && area[25][25] && area[25][25].length,
+				// Raw object: structureType is a direct prop, not nested under a wrapper key.
+				cell25_25StructureType: area[25] && area[25][25] && area[25][25][0] && area[25][25][0].structureType,
+				cell25_25WrapperKey: area[25] && area[25][25] && area[25][25][0] && (LOOK_STRUCTURES in area[25][25][0]),
+			});
+			({ explicit: describe(explicit), omitted: describe(omitted) })
+		`) as { explicit: any; omitted: any };
+
+		for (const shape of [result.explicit, result.omitted]) {
+			expect(shape.row24Type).toBe('object');
+			expect(shape.cell24_24Type).toBe('undefined');
+			expect(shape.cell25_25IsArray).toBe(true);
+			expect(shape.cell25_25Length).toBe(1);
+			expect(shape.cell25_25StructureType).toBe(STRUCTURE_ROAD);
+			expect(shape.cell25_25WrapperKey).toBe(false);
+		}
+	});
+
+	test('ROOM-LOOK-012 lookForAtArea(asArray=false) returns all stacked matches in a single cell', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_ROAD,
+		});
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const area = Game.rooms['W1N1'].lookForAtArea(LOOK_STRUCTURES, 24, 24, 26, 26, false);
+			({
+				cell25_25Types: (area[25] && area[25][25] || []).map(s => s.structureType).sort(),
+				cell24_24Type: typeof (area[24] && area[24][24]),
+				cell26_26Type: typeof (area[26] && area[26][26]),
+			})
+		`) as { cell25_25Types: string[]; cell24_24Type: string; cell26_26Type: string };
+
+		expect(result.cell25_25Types).toEqual([STRUCTURE_RAMPART, STRUCTURE_ROAD].sort());
+		expect(result.cell24_24Type).toBe('undefined');
+		expect(result.cell26_26Type).toBe('undefined');
+	});
+
+	test('ROOM-LOOK-013 lookAtArea with asArray=false returns dense map with terrain entry per cell', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_ROAD,
+		});
+		await shard.placeCreep('W1N1', {
+			pos: [24, 24], owner: 'p1',
+			body: [MOVE], name: 'AreaCreep',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const area = Game.rooms['W1N1'].lookAtArea(23, 23, 26, 26, false);
+			const summarize = cell => Array.isArray(cell)
+				? cell.map(e => e.type).sort()
+				: { notArray: typeof cell };
+			const structureCell = (area[25] && area[25][25]) || [];
+			const structureWrap = structureCell.find(e => e.type === 'structure');
+			const creepCell = (area[24] && area[24][24]) || [];
+			const creepWrap = creepCell.find(e => e.type === 'creep');
+			const terrainCell = (area[23] && area[23][23]) || [];
+			({
+				dense: [23, 24, 25, 26].every(y =>
+					typeof area[y] === 'object' &&
+					[23, 24, 25, 26].every(x => Array.isArray(area[y] && area[y][x]))),
+				plain: summarize(area[23][23]),
+				structureCellTypes: summarize(area[25][25]),
+				creepCellTypes: summarize(area[24][24]),
+				structureWrapStructureType: structureWrap && structureWrap.structure && structureWrap.structure.structureType,
+				structureWrapKeys: structureWrap ? Object.keys(structureWrap).sort() : null,
+				creepWrapName: creepWrap && creepWrap.creep && creepWrap.creep.name,
+				creepWrapKeys: creepWrap ? Object.keys(creepWrap).sort() : null,
+				terrainEntryType: terrainCell[0] && terrainCell[0].type,
+				terrainEntryTerrain: terrainCell[0] && terrainCell[0].terrain,
+				terrainWrapKeys: terrainCell[0] ? Object.keys(terrainCell[0]).sort() : null,
+			})
+		`) as {
+			dense: boolean; plain: string[]; structureCellTypes: string[]; creepCellTypes: string[];
+			structureWrapStructureType: string; structureWrapKeys: string[];
+			creepWrapName: string; creepWrapKeys: string[];
+			terrainEntryType: string; terrainEntryTerrain: string; terrainWrapKeys: string[];
+		};
+
+		expect(result.dense).toBe(true);
+		expect(result.plain).toEqual(['terrain']);
+		expect(result.structureCellTypes).toEqual(['structure', 'terrain'].sort());
+		expect(result.creepCellTypes).toEqual(['creep', 'terrain'].sort());
+		// Wrapper shape: exactly { type, [type]: obj } — no extra fields like x/y.
+		expect(result.structureWrapStructureType).toBe(STRUCTURE_ROAD);
+		expect(result.structureWrapKeys).toEqual(['structure', 'type']);
+		expect(result.creepWrapName).toBe('AreaCreep');
+		expect(result.creepWrapKeys).toEqual(['creep', 'type']);
+		expect(result.terrainEntryType).toBe('terrain');
+		expect(['plain', 'swamp', 'wall']).toContain(result.terrainEntryTerrain);
+		expect(result.terrainWrapKeys).toEqual(['terrain', 'type']);
 	});
 });
