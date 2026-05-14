@@ -5,7 +5,7 @@ For the full generated list and current counts, see `docs/status.md`.
 
 Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 35 open parity gaps covering 79 tests, plus 3 accepted divergences covering 5 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 36 open parity gaps covering 81 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Open parity gaps
 
@@ -120,6 +120,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
 - Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
+
+### look-area-asarray-false-map-shape
+
+- Tests: ROOM-LOOK-011, ROOM-LOOK-012, ROOM-LOOK-013.
+- Status: CONFIRMED.
+- Cause: `lookForAtArea(type, ..., false)` tries to push matching objects into an uninitialized per-cell array, so a populated tile runtime-errors instead of returning vanilla's sparse raw-object map. `lookAtArea(..., false)` gets farther, but its non-terrain entries still use the `asArray=true` wrapper shape with `x` and `y` coordinates included. Vanilla's map form drops those coordinates and stores exactly `{ type, [type]: object }` wrappers.
+- Plan: split the two map paths from the array-wrapper path: initialize `lookForAtArea(..., false)` cells lazily with raw object arrays, and render `lookAtArea(..., false)` cell wrappers without `x`/`y`.
 
 ### commonjs-main-exports-alias-missing
 

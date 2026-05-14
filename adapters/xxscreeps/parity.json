@@ -62,6 +62,11 @@
 			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
 			"tests": ["ROOM-LOOK-006"]
 		},
+		"look-area-asarray-false-map-shape": {
+			"actual": "`Room.lookForAtArea(type, ..., false)` runtime-errors when a matching object is present because the target cell array is not initialized before `push`; `Room.lookAtArea(..., false)` includes `x` and `y` fields on object wrapper entries.",
+			"expected": "Vanilla returns sparse raw-object arrays for `lookForAtArea(type, ..., false)`, and dense `lookAtArea(..., false)` cells whose non-terrain wrappers are exactly `{ type, [type]: object }` without coordinates.",
+			"tests": ["ROOM-LOOK-011", "ROOM-LOOK-012", "ROOM-LOOK-013"]
+		},
 		"commonjs-main-exports-alias-missing": {
 			"actual": "The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record.",
 			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick.",
