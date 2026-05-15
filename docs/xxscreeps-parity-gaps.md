@@ -5,7 +5,7 @@ For the full generated list and current counts, see `docs/status.md`.
 
 Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 36 open parity gaps covering 81 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 37 open parity gaps covering 82 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Open parity gaps
 
@@ -71,6 +71,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED, but wait for #140 before editing nearby memory code.
 - Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
 - Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
+
+### game-object-json-room-tojson-null-crash
+
+- Tests: UNDOC-JSONOBJ-001
+- Status: CONFIRMED.
+- Cause: `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and treats any object-typed value as safe to inspect with `value.room`. Because `typeof null === 'object'` and `room.survivalInfo` is enumerable and currently returns `null`, direct `JSON.stringify(room)` throws `Cannot read properties of null (reading 'room')`. The same failure appears when stringifying any live game object whose enumerable `room` reference causes `Room.toJSON()` to run.
+- Plan: guard the room serializer's object check against `null` (or otherwise preserve `null` fields without dereferencing them), then remove this gap once the `UNDOC-JSONOBJ-001` matrix passes. The matrix should stay broad because the bug is not creep-specific; creeps, structures, resources, flags, tombstones, and ruins all exercise the same nested-room path.
 
 ### lab-unboost-target-owner-too-late
 

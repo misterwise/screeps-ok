@@ -52,6 +52,11 @@
 			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
 			"tests": ["UNDOC-MEMJSON-005"]
 		},
+		"game-object-json-room-tojson-null-crash": {
+			"actual": "`JSON.stringify()` on `Room` and on live game objects whose serialization reaches their nested `room` reference throws `Cannot read properties of null (reading 'room')`. `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and reads `value.room` for every object-typed value without guarding `null`; the enumerable `survivalInfo` getter currently returns `null`.",
+			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`.",
+			"tests": ["UNDOC-JSONOBJ-001"]
+		},
 		"actionlog-lab-renderer-missing-combined-actions": {
 			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
 			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",

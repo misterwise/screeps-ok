@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 85 tests. That includes 36 open parity gaps covering 81 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 85 tests. That includes 37 open parity gaps covering 81 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -175,6 +175,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` on `Room` and on live game objects whose serialization reaches their nested `room` reference throws `Cannot read properties of null (reading 'room')`. `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and reads `value.room` for every object-typed value without guarding `null`; the enumerable `survivalInfo` getter currently returns `null`. | Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`. | 0 |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `look-area-asarray-false-map-shape` | `Room.lookForAtArea(type, ..., false)` runtime-errors when a matching object is present because the target cell array is not initialized before `push`; `Room.lookAtArea(..., false)` includes `x` and `y` fields on object wrapper entries. | Vanilla returns sparse raw-object arrays for `lookForAtArea(type, ..., false)`, and dense `lookAtArea(..., false)` cells whose non-terrain wrappers are exactly `{ type, [type]: object }` without coordinates. | [3](#xxscreeps-gap-look-area-asarray-false-map-shape) |
@@ -274,6 +275,12 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>memory-circular-ref-crash</code> — 1 test</summary>
 
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
+
+</details>
+
+<details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
+<summary><code>game-object-json-room-tojson-null-crash</code> — 0 tests</summary>
+
 
 </details>
 

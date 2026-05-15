@@ -113,6 +113,33 @@ Each definition should include:
   the matrix accepts any rejection. The executable case list lives in
   `src/matrices/stale-argument.ts`.
 
+### JSON-OBJECT
+
+- `Catalog Entries`
+  `UNDOC-JSONOBJ-001`
+- `Canonical Source`
+  Vanilla runtime behavior for direct `JSON.stringify()` on live game
+  objects, including ordinary end-of-tick memory serialization of object
+  graphs containing live game objects.
+- `Dimensions`
+  object class / ownership perspective, selector path, representative
+  public scalar fields copied into the parsed JSON snapshot
+- `Applicability`
+  Direct `JSON.stringify()` on `Room`, `RoomPosition`, and canonical
+  visible `RoomObject` families: creeps, power creeps, controllers,
+  structures, sources, minerals, deposits, resources, construction sites,
+  flags, tombstones, ruins, and nukes. Rows that require optional object
+  families are capability-gated.
+- `Exclusions`
+  Complete serialized object shape, function or prototype preservation,
+  cross-tick identity, and arbitrary `Memory` round-trip behavior. Those
+  are separate API surfaces.
+- `Verification Notes`
+  The matrix asserts that serialization does not throw, that the result is
+  parseable JSON, and that representative scalar fields on the parsed
+  snapshot match the live object at serialization time. The executable case
+  list lives in `src/matrices/json-objects.ts`.
+
 ### STORE-OPEN
 
 - `Catalog Entries`

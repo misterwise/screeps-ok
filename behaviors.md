@@ -4420,6 +4420,37 @@ Framework Notes
   state assertions (e.g. unchanged store, unchanged hits) when the engine
   surface lacks an event entry for the action being asserted.
 
+### 27.14 Game Object JSON Serialization
+
+Bots sometimes persist live game objects or nested collections containing
+live game objects into `Memory`. Vanilla treats end-of-tick memory save like
+ordinary `JSON.stringify()`: enumerable game-object fields are serialized as
+plain snapshots, including nested `room` references, rather than throwing
+from public game-object `toJSON()` paths.
+
+- `UNDOC-JSONOBJ-001` `matrix` `verified_vanilla`
+  Calling `JSON.stringify()` on canonical visible game object instances
+  succeeds and returns parseable JSON whose representative public fields
+  match the live object at serialization time. Covered rows include direct
+  `Room` and `RoomPosition` objects; owned and hostile creeps, structures,
+  and power creeps; controllers, sources, minerals, dropped resources,
+  construction sites, flags, tombstones, ruins, deposits, and nukes.
+
+Coverage Notes
+- This entry owns direct game-object JSON serialization, including the
+  nested `room` object reached while serializing `RoomObject` instances. It
+  does not own `Memory` round-trip semantics for arbitrary user data; those
+  remain in §27.3.
+- Capability-gated rows (`deposit`, `nuke`, and `powerCreep`) run only on
+  adapters that implement those object families. The non-gated rows still
+  cover the shared `RoomObject` serialization rule on all adapters.
+
+Framework Notes
+- The matrix asserts only player-observable JSON behavior: no throw,
+  parseable object output, and representative scalar fields matching the
+  live object. It does not pin the complete serialized object shape or
+  engine-private backing fields.
+
 ---
 
 ## 28. Deprecation Notices
