@@ -2719,6 +2719,20 @@ Coverage Notes
 Coverage Notes
 - Observer-provided visibility timing is owned by `13.4 Observer`.
 
+### 16.1b Survival Info
+- `ROOM-SURVIVAL-001` `behavior` `verified_vanilla`
+  When a room is not part of an active survival game, `room.survivalInfo`
+  is `undefined`, not `null`. The own property is set as
+  `this.survivalInfo = gameInfo` in `screeps-engine/src/game/rooms.js:437`
+  where `gameInfo` is read from `runtimeData.games[gameId]` and stays
+  `undefined` for rooms outside a survival game; the property is therefore
+  present on the room with value `undefined`. Observable as
+  `typeof room.survivalInfo === 'undefined'` and as
+  `JSON.parse(JSON.stringify(room)).survivalInfo === undefined` (key
+  dropped by `JSON.stringify`). The property's *presence* on the room
+  shape is owned by `SHAPE-ROOM-001`; this entry pins the *value type*
+  when no survival game is active.
+
 ### 16.2 Energy Tracking
 - `ROOM-ENERGY-001` `behavior` `verified_vanilla`
   `room.energyAvailable` equals the sum of stored energy in the room's active

@@ -79,6 +79,13 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Cause: `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and treats any object-typed value as safe to inspect with `value.room`. Because `typeof null === 'object'` and `room.survivalInfo` is enumerable and currently returns `null`, direct `JSON.stringify(room)` throws `Cannot read properties of null (reading 'room')`. The same failure appears when stringifying any live game object whose enumerable `room` reference causes `Room.toJSON()` to run.
 - Plan: guard the room serializer's object check against `null` (or otherwise preserve `null` fields without dereferencing them), then remove this gap once the `UNDOC-JSONOBJ-001` matrix passes. The matrix should stay broad because the bug is not creep-specific; creeps, structures, resources, flags, tombstones, and ruins all exercise the same nested-room path.
 
+### room-survival-info-null-instead-of-undefined
+
+- Tests: ROOM-SURVIVAL-001
+- Status: CONFIRMED.
+- Cause: `Room.survivalInfo` is an enumerable getter in `packages/xxscreeps/game/room/room.ts:38` that always returns `null`. Vanilla assigns `runtimeData.games[gameId]` to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; when no survival game is active, that value is `undefined` while the property remains present.
+- Plan: make xxscreeps expose `undefined` for the no-survival-mode stub while preserving the Room public property shape.
+
 ### lab-unboost-target-owner-too-late
 
 - Tests: UNBOOST-006:creepNotOwnerBeforeRcl

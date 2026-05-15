@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2590%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2116%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-85-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2117%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-99-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2590](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-14 02:28 UTC |
-| 🟡 | **xxscreeps** | [2116](#xxscreeps-passing-tests) | [85](#xxscreeps-expected-failures) | — | [419](#xxscreeps-skipped-tests) | 2026-05-14 02:25 UTC |
+| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-15 04:31 UTC |
+| 🟡 | **xxscreeps** | [2117](#xxscreeps-passing-tests) | [99](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-15 04:27 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 85 tests. That includes 37 open parity gaps covering 81 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 99 tests. That includes 38 open parity gaps covering 95 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -175,7 +175,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
-| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` on `Room` and on live game objects whose serialization reaches their nested `room` reference throws `Cannot read properties of null (reading 'room')`. `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and reads `value.room` for every object-typed value without guarding `null`; the enumerable `survivalInfo` getter currently returns `null`. | Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`. | 0 |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` on `Room` and on live game objects whose serialization reaches their nested `room` reference throws `Cannot read properties of null (reading 'room')`. `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and reads `value.room` for every object-typed value without guarding `null`; the enumerable `survivalInfo` getter currently returns `null`. | Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
+| `room-survival-info-null-instead-of-undefined` | `room.survivalInfo` returns `null` because `packages/xxscreeps/game/room/room.ts:38` implements it as an enumerable getter whose stub always returns null. | Vanilla assigns `runtimeData.games[gameId]` directly to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; with no active survival game that value is `undefined` while the `survivalInfo` property remains present. | [1](#xxscreeps-gap-room-survival-info-null-instead-of-undefined) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `look-area-asarray-false-map-shape` | `Room.lookForAtArea(type, ..., false)` runtime-errors when a matching object is present because the target cell array is not initialized before `push`; `Room.lookAtArea(..., false)` includes `x` and `y` fields on object wrapper entries. | Vanilla returns sparse raw-object arrays for `lookForAtArea(type, ..., false)`, and dense `lookAtArea(..., false)` cells whose non-terrain wrappers are exactly `{ type, [type]: object }` without coordinates. | [3](#xxscreeps-gap-look-area-asarray-false-map-shape) |
@@ -279,8 +280,28 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
-<summary><code>game-object-json-room-tojson-null-crash</code> — 0 tests</summary>
+<summary><code>game-object-json-room-tojson-null-crash</code> — 13 tests</summary>
 
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
+
+</details>
+
+<details id="xxscreeps-gap-room-survival-info-null-instead-of-undefined">
+<summary><code>room-survival-info-null-instead-of-undefined</code> — 1 test</summary>
+
+- `room survival info ROOM-SURVIVAL-001 survivalInfo is undefined when no survival game is active`
 
 </details>
 
@@ -564,7 +585,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2590 tests across 133 files</summary>
+<summary>2609 tests across 135 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2916,6 +2937,10 @@ Click a count to jump to the affected test list.
 - 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_FORTIFY->StructureRampart] target exposes active effects entry
 - 15.5 Effects Host Matrix EFFECT-HOST-001 [PWR_SHIELD->temporary StructureRampart] target exposes active effects entry
 
+**`tests/16-room-mechanics/16.1b-survival-info.test.ts`** (1)
+
+- room survival info ROOM-SURVIVAL-001 survivalInfo is undefined when no survival game is active
+
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
 - Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border tiles on that side, with no duplicates
@@ -3460,6 +3485,27 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
 
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (18)
+
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
+
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
@@ -3559,14 +3605,14 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 419 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 423 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `nuke` | Nukes | [137](#xxscreeps-skip-capability-nuke) |
-| capability | `powerCreeps` | Power creeps and powers | [114](#xxscreeps-skip-capability-powercreeps) |
+| capability | `nuke` | Nukes | [138](#xxscreeps-skip-capability-nuke) |
+| capability | `powerCreeps` | Power creeps and powers | [116](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
-| capability | `deposit` | Deposits (highway) | [39](#xxscreeps-skip-capability-deposit) |
+| capability | `deposit` | Deposits (highway) | [40](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
@@ -3577,7 +3623,7 @@ xxscreeps has 419 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 137 tests across 11 files</summary>
+<summary><code>capability:nuke</code> — 138 tests across 12 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (2)
 
@@ -3749,10 +3795,14 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
+
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot
+
 </details>
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 114 tests across 25 files</summary>
+<summary><code>capability:powerCreeps</code> — 116 tests across 26 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3939,6 +3989,11 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
 
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (2)
+
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
+
 **`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
 
 - PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
@@ -4060,7 +4115,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-deposit">
-<summary><code>capability:deposit</code> — 39 tests across 4 files</summary>
+<summary><code>capability:deposit</code> — 40 tests across 5 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -4112,6 +4167,10 @@ Click a count to jump to the affected test list.
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
 
 - 26.0 Object Shape Conformance SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape
+
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
+
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot
 
 </details>
 
@@ -4232,7 +4291,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2116 tests across 104 files</summary>
+<summary>2117 tests across 105 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6601,6 +6660,10 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
+
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
+
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 

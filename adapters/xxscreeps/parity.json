@@ -57,6 +57,11 @@
 			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`.",
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
+		"room-survival-info-null-instead-of-undefined": {
+			"actual": "`room.survivalInfo` returns `null` because `packages/xxscreeps/game/room/room.ts:38` implements it as an enumerable getter whose stub always returns null.",
+			"expected": "Vanilla assigns `runtimeData.games[gameId]` directly to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; with no active survival game that value is `undefined` while the `survivalInfo` property remains present.",
+			"tests": ["ROOM-SURVIVAL-001"]
+		},
 		"actionlog-lab-renderer-missing-combined-actions": {
 			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
 			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",
