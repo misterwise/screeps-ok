@@ -59,7 +59,7 @@ function checkXxscreeps() {
 		'Run npm run setup:xxscreeps',
 	);
 
-	const pathfinderRoot = resolvePackageRoot('@xxscreeps/pathfinder');
+	const pathfinderRoot = resolvePackageDependencyRoot(root, '@xxscreeps/pathfinder');
 	checkXxscreepsPathfinder(pathfinderRoot);
 }
 
@@ -187,6 +187,24 @@ function resolvePackageRoot(packageName) {
 	fail(
 		`Required package '${packageName}' is not installed.`,
 		['Run npm install from the repository root.'],
+	);
+}
+
+function resolvePackageDependencyRoot(packageRoot, packageName) {
+	const packageRequire = createRequire(path.join(packageRoot, 'package.json'));
+	for (const candidate of [`${packageName}/package.json`, packageName]) {
+		try {
+			const resolved = packageRequire.resolve(candidate);
+			const root = findPackageRoot(resolved);
+			if (root) return root;
+		} catch {
+			// Try the next resolution strategy.
+		}
+	}
+
+	fail(
+		`Required dependency '${packageName}' is not installed under ${packageRoot}.`,
+		['Run npm run setup:xxscreeps first.'],
 	);
 }
 
