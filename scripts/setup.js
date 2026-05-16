@@ -38,8 +38,7 @@ function setupXxscreeps() {
 	runTypeScriptBuild(root);
 	runGeneratedModsBootstrap(root);
 	const pathfinderRoot = resolvePackageRoot('@xxscreeps/pathfinder');
-	console.log(`[screeps-ok] Building path-finder native addon in ${pathfinderRoot}`);
-	run('npx node-gyp rebuild --release', { cwd: pathfinderRoot });
+	setupPathfinder(pathfinderRoot);
 }
 
 function setupVanilla() {
@@ -86,6 +85,23 @@ function run(command, options) {
 		shell: true,
 		...options,
 	});
+}
+
+function setupPathfinder(pathfinderRoot) {
+	if (existsSync(path.join(pathfinderRoot, 'binding.gyp'))) {
+		console.log(`[screeps-ok] Building path-finder native addon in ${pathfinderRoot}`);
+		run('npx node-gyp rebuild --release', { cwd: pathfinderRoot });
+		return;
+	}
+
+	console.log(`[screeps-ok] Verifying prebuilt path-finder native addon in ${pathfinderRoot}`);
+	try {
+		require(pathfinderRoot);
+	} catch (error) {
+		console.error('[screeps-ok] Failed to load @xxscreeps/pathfinder prebuilt native addon.');
+		console.error(String(error instanceof Error ? error.message : error));
+		process.exit(1);
+	}
 }
 
 function runTypeScriptBuild(cwd) {

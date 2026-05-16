@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-05-04 (pin `3f011d0a`).
+Last refreshed: 2026-05-16 (pin `724a7a70`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
@@ -17,7 +17,7 @@ These are the open PRs that either close current parity gaps or occupy Tier 1 fe
 
 ## Current parity queue
 
-`docs/status.md` currently reports 46 expected-failure classifications: 43 open parity gaps covering 121 tests, plus 3 accepted divergences covering 5 tests.
+`docs/status.md` currently reports 28 expected-failure classifications: 26 open parity gaps covering 57 tests, plus 2 accepted divergences covering 4 tests.
 
 ### Wait for open PRs
 

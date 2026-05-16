@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2117%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-99-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2155%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-61-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-15 04:31 UTC |
-| 🟡 | **xxscreeps** | [2117](#xxscreeps-passing-tests) | [99](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-15 04:27 UTC |
+| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-16 19:54 UTC |
+| 🟡 | **xxscreeps** | [2155](#xxscreeps-passing-tests) | [61](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-16 19:50 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 99 tests. That includes 38 open parity gaps covering 95 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 28 expected-failure classifications against vanilla's canonical behavior, covering 61 tests. That includes 26 open parity gaps covering 57 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -179,23 +179,11 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `room-survival-info-null-instead-of-undefined` | `room.survivalInfo` returns `null` because `packages/xxscreeps/game/room/room.ts:38` implements it as an enumerable getter whose stub always returns null. | Vanilla assigns `runtimeData.games[gameId]` directly to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; with no active survival game that value is `undefined` while the `survivalInfo` property remains present. | [1](#xxscreeps-gap-room-survival-info-null-instead-of-undefined) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
-| `look-area-asarray-false-map-shape` | `Room.lookForAtArea(type, ..., false)` runtime-errors when a matching object is present because the target cell array is not initialized before `push`; `Room.lookAtArea(..., false)` includes `x` and `y` fields on object wrapper entries. | Vanilla returns sparse raw-object arrays for `lookForAtArea(type, ..., false)`, and dense `lookAtArea(..., false)` cells whose non-terrain wrappers are exactly `{ type, [type]: object }` without coordinates. | [3](#xxscreeps-gap-look-area-asarray-false-map-shape) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `constructor-by-id-missing-for-noncreep-objects` | Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position. | Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick. | [1](#xxscreeps-gap-constructor-by-id-missing-for-noncreep-objects) |
-| `withdraw-args-validation-too-late` | `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:536-545`) calls `checkHasResource` (the gate that rejects an unknown resource type with ERR_INVALID_ARGS) at chain step 5, after `checkTarget`, `checkInteractionBlocked`, and `checkRange`. | Vanilla validates the resource argument before any target/owner/range check, so ERR_INVALID_ARGS precedes ERR_INVALID_TARGET, ERR_NOT_OWNER, and ERR_NOT_IN_RANGE for `creep.withdraw`. | [3](#xxscreeps-gap-withdraw-args-validation-too-late) |
-| `withdraw-target-store-compat-too-late` | The incompatible-store branch lives in `checkHasResource` (`packages/xxscreeps/mods/resource/store.ts:357`, returning ERR_INVALID_TARGET) which `checkWithdraw` runs at step 5, after `checkRange`. | Vanilla returns ERR_INVALID_TARGET when the target's store cannot hold the requested resource (e.g. withdrawing H from a spawn) before ERR_NOT_IN_RANGE. | [1](#xxscreeps-gap-withdraw-target-store-compat-too-late) |
-| `withdraw-safemode-hoisted-too-far` | [laverdet/xxscreeps#189](https://github.com/laverdet/xxscreeps/pull/189) hoisted `checkSafeMode(creep.room, ERR_NOT_OWNER)` to step 2 of `checkWithdraw` (directly after `checkCommon`), correctly fixing the previous five `safemode too late` rows. It over-hoists past `invalid-args` and `invalid-target`: safemode now lands at position 2 instead of vanilla's position 6, so invalid-args/invalid-target rooms in safemode return ERR_NOT_OWNER instead of the canonical ERR_INVALID_ARGS / ERR_INVALID_TARGET. | Vanilla puts `safemode-not-owner` between `target-not-owner` and `invalid-capacity` (precedence position 6), so ERR_INVALID_ARGS and ERR_INVALID_TARGET both precede the safe-mode ERR_NOT_OWNER. | [2](#xxscreeps-gap-withdraw-safemode-hoisted-too-far) |
-| `withdraw-full-vs-not-enough-inverted` | `checkWithdraw` (`packages/xxscreeps/mods/creep/creep.ts:542-543`) orders `checkHasResource` (ERR_NOT_ENOUGH_RESOURCES) before `checkHasCapacity` (ERR_FULL). Companion `checkTransfer` was realigned to vanilla in [laverdet/xxscreeps#196](https://github.com/laverdet/xxscreeps/pull/196); the same interleave fix has not been applied to `checkWithdraw`. | Vanilla returns ERR_FULL on the destination before ERR_NOT_ENOUGH_RESOURCES on the source for `withdraw`. | [2](#xxscreeps-gap-withdraw-full-vs-not-enough-inverted) |
-| `link-cooldown-not-api-gated` | `checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:71-93`) puts the cooldown branch in the LAST inline lambda; `checkSameRoom` even runs ahead of it. | Vanilla returns ERR_TIRED right after the source link is verified my, so cooldown precedes RCL, range, not-enough, and full. | [4](#xxscreeps-gap-link-cooldown-not-api-gated) |
-| `link-rcl-too-early` | `checkIsActive(link)` runs at step 2 of `checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:74`), before any arg/target/owner check. | Vanilla puts ERR_RCL_NOT_ENOUGH after ERR_INVALID_ARGS, ERR_INVALID_TARGET, and the target/source ownership checks. | [3](#xxscreeps-gap-link-rcl-too-early) |
-| `link-source-owner-too-early` | `checkMyStructure(link, StructureLink)` (`packages/xxscreeps/mods/logistics/link.ts:73`) returns ERR_NOT_OWNER for a hostile source link at step 1 of the chain. | Vanilla returns ERR_INVALID_ARGS or ERR_INVALID_TARGET before ERR_NOT_OWNER on the source link. | [2](#xxscreeps-gap-link-source-owner-too-early) |
-| `link-args-validation-too-late` | `checkHasResource(link, ENERGY, amount)` is the only ERR_INVALID_ARGS gate in `checkTransferEnergy` (`packages/xxscreeps/mods/logistics/link.ts:82`); it runs after target type and target ownership. | Vanilla validates the amount argument before any target check. | [2](#xxscreeps-gap-link-args-validation-too-late) |
-| `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:100-102`) returns `C.ERR_RCL_NOT_ENOUGH` for hostile-owned rooms and does not reject hostile reservations with `ERR_NOT_OWNER` ahead of the rcl check. | Vanilla returns ERR_NOT_OWNER for hostile-owned rooms and hostile-reserved rooms before RCL or structure-cap checks. | [4](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
-| `construction-site-cap-too-early` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:75-77`) checks `MAX_CONSTRUCTION_SITES` BEFORE invoking `checkCreateConstructionSite`, so ERR_FULL pre-empts every in-room validation. | Vanilla evaluates the global site cap last — after structure type, owner, RCL, and tile placement. | [3](#xxscreeps-gap-construction-site-cap-too-early) |
-| `construction-site-bad-name-silently-dropped` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:66-72`) calls `factory.checkName(this, nameArg)`; for SPAWN with a 101-char name `checkName` (`packages/xxscreeps/mods/spawn/spawn.ts:223-227`) returns `null`, the wrapper's `if (name)` is falsy so the bad name is silently dropped, and `checkCreateConstructionSite` then re-invokes `checkName(_, null)` which auto-generates a fresh name like `Spawn1` — the chain returns OK. | Vanilla returns ERR_INVALID_ARGS for an oversized name. | [5](#xxscreeps-gap-construction-site-bad-name-silently-dropped) |
+| `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
-| `build-repair-not-enough-too-late` | `checkBuild` (`packages/xxscreeps/mods/construction/creep.ts`) and `checkRepair` (`packages/xxscreeps/mods/structure/creep.ts`) place the source-energy check after target validation and range. | Vanilla returns ERR_NOT_ENOUGH_RESOURCES before ERR_INVALID_TARGET, ERR_NOT_IN_RANGE, and the blocked-target check. | [5](#xxscreeps-gap-build-repair-not-enough-too-late) |
 | `build-blocked-vs-range-inverted` | `checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET. | [1](#xxscreeps-gap-build-blocked-vs-range-inverted) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
@@ -320,15 +308,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-look-area-asarray-false-map-shape">
-<summary><code>look-area-asarray-false-map-shape</code> — 3 tests</summary>
-
-- `Room look API ROOM-LOOK-011 lookForAtArea with asArray=false returns sparse map of raw game objects`
-- `Room look API ROOM-LOOK-012 lookForAtArea(asArray=false) returns all stacked matches in a single cell`
-- `Room look API ROOM-LOOK-013 lookAtArea with asArray=false returns dense map with terrain entry per cell`
-
-</details>
-
 <details id="xxscreeps-gap-commonjs-main-exports-alias-missing">
 <summary><code>commonjs-main-exports-alias-missing</code> — 1 test</summary>
 
@@ -343,100 +322,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-withdraw-args-validation-too-late">
-<summary><code>withdraw-args-validation-too-late</code> — 3 tests</summary>
-
-- `creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidTarget withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:invalidArgsBeforeTargetNotOwner withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:invalidArgsBeforeRange withdraw() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-target-store-compat-too-late">
-<summary><code>withdraw-target-store-compat-too-late</code> — 1 test</summary>
-
-- `creep.withdraw() WITHDRAW-017:invalidCapacityBeforeRange withdraw() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-safemode-hoisted-too-far">
-<summary><code>withdraw-safemode-hoisted-too-far</code> — 2 tests</summary>
-
-- `creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-full-vs-not-enough-inverted">
-<summary><code>withdraw-full-vs-not-enough-inverted</code> — 2 tests</summary>
-
-- `creep.withdraw() WITHDRAW-017:fullBeforeNotEnough withdraw() validation returns the canonical code`
-- `creep.withdraw() WITHDRAW-017:fullAmountBeforeNotEnough withdraw() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-link-cooldown-not-api-gated">
-<summary><code>link-cooldown-not-api-gated</code> — 4 tests</summary>
-
-- `StructureLink LINK-014:cooldownBeforeRcl transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:cooldownBeforeNotEnough transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:cooldownBeforeFull transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:cooldownBeforeRange transferEnergy() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-link-rcl-too-early">
-<summary><code>link-rcl-too-early</code> — 3 tests</summary>
-
-- `StructureLink LINK-014:invalidArgsBeforeRcl transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:invalidTargetBeforeRcl transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:targetNotOwnerBeforeRcl transferEnergy() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-link-source-owner-too-early">
-<summary><code>link-source-owner-too-early</code> — 2 tests</summary>
-
-- `StructureLink LINK-014:invalidArgsBeforeSourceNotOwner transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:invalidTargetBeforeSourceNotOwner transferEnergy() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-link-args-validation-too-late">
-<summary><code>link-args-validation-too-late</code> — 2 tests</summary>
-
-- `StructureLink LINK-014:invalidArgsBeforeInvalidTarget transferEnergy() validation returns the canonical code`
-- `StructureLink LINK-014:invalidArgsBeforeTargetNotOwner transferEnergy() validation returns the canonical code`
-
-</details>
-
 <details id="xxscreeps-gap-construction-site-foreign-room-wrong-error">
-<summary><code>construction-site-foreign-room-wrong-error</code> — 4 tests</summary>
+<summary><code>construction-site-foreign-room-wrong-error</code> — 1 test</summary>
 
 - `room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget createConstructionSite() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-construction-site-cap-too-early">
-<summary><code>construction-site-cap-too-early</code> — 3 tests</summary>
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
-
-</details>
-
-<details id="xxscreeps-gap-construction-site-bad-name-silently-dropped">
-<summary><code>construction-site-bad-name-silently-dropped</code> — 5 tests</summary>
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget createConstructionSite() validation returns the canonical code`
-- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
 
 </details>
 
@@ -451,17 +340,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>stale-pickup-target-allowed</code> — 1 test</summary>
 
 - `creep.pickup() UNDOC-STALEARG-001:creepPickup creep.pickup() rejects a stale cached Resource target`
-
-</details>
-
-<details id="xxscreeps-gap-build-repair-not-enough-too-late">
-<summary><code>build-repair-not-enough-too-late</code> — 5 tests</summary>
-
-- `creep.build() BUILD-011:notEnoughBeforeInvalidTarget build() validation returns the canonical code`
-- `creep.build() BUILD-011:notEnoughBeforeRange build() validation returns the canonical code`
-- `creep.build() BUILD-011:notEnoughBeforeBlockedTarget build() validation returns the canonical code`
-- `creep.repair() REPAIR-010:notEnoughBeforeInvalidTarget repair() validation returns the canonical code`
-- `creep.repair() REPAIR-010:notEnoughBeforeRange repair() validation returns the canonical code`
 
 </details>
 
@@ -4291,7 +4169,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2117 tests across 105 files</summary>
+<summary>2155 tests across 105 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4806,7 +4684,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (122)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (130)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -4851,11 +4729,16 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:busyBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidCapacity withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFull withdraw() validation returns the canonical code
@@ -4872,6 +4755,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidCapacityBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeNotEnough withdraw() validation returns the canonical code
@@ -4879,6 +4763,8 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:rangeBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:rangeBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:fullBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:fullBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:fullAmountBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() UNDOC-STALEARG-001:creepWithdrawStructure creep.withdraw() rejects a stale cached Structure target
 - creep.drop() DROP-001 drop() removes the dropped amount from the creep store
 - creep.drop() DROP-001 drop() creates a dropped resource at the creep position
@@ -4931,7 +4817,7 @@ Click a count to jump to the affected test list.
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (34)
+**`tests/05-construction-repair/5.1-build.test.ts`** (37)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
@@ -4964,11 +4850,14 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:noBodypartBeforeInvalidTarget build() validation returns the canonical code
 - creep.build() BUILD-011:noBodypartBeforeRange build() validation returns the canonical code
 - creep.build() BUILD-011:noBodypartBeforeBlockedTarget build() validation returns the canonical code
+- creep.build() BUILD-011:notEnoughBeforeInvalidTarget build() validation returns the canonical code
+- creep.build() BUILD-011:notEnoughBeforeRange build() validation returns the canonical code
+- creep.build() BUILD-011:notEnoughBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeRange build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target
 
-**`tests/05-construction-repair/5.2-repair.test.ts`** (29)
+**`tests/05-construction-repair/5.2-repair.test.ts`** (31)
 
 - creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
 - creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
@@ -4997,6 +4886,8 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:noBodypartBeforeNotEnough repair() validation returns the canonical code
 - creep.repair() REPAIR-010:noBodypartBeforeInvalidTarget repair() validation returns the canonical code
 - creep.repair() REPAIR-010:noBodypartBeforeRange repair() validation returns the canonical code
+- creep.repair() REPAIR-010:notEnoughBeforeInvalidTarget repair() validation returns the canonical code
+- creep.repair() REPAIR-010:notEnoughBeforeRange repair() validation returns the canonical code
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
 - creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
@@ -5027,7 +4918,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (44)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -5069,10 +4960,21 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
 - room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation
 - room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (107)
 
@@ -5795,7 +5697,7 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 - Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (49)
+**`tests/10-structures-energy/10.4-link.test.ts`** (60)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
 - StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
@@ -5820,17 +5722,24 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:notEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:full transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:range transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeInvalidTarget transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeTargetNotOwner transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeCooldown transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeNotEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeTargetNotOwner transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidTargetBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeCooldown transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidTargetBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeNotEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeCooldown transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:targetNotOwnerBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeRange transferEnergy() validation returns the canonical code
@@ -5839,6 +5748,10 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:sourceNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeRcl transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeFull transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeNotEnough transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeRange transferEnergy() validation returns the canonical code
@@ -6300,7 +6213,7 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items
 - Room.find ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (9)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (12)
 
 - Room look API ROOM-LOOK-001 lookAt returns terrain plus creeps and structures on the tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
@@ -6311,6 +6224,9 @@ Click a count to jump to the affected test list.
 - Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key
 - Room look API ROOM-LOOK-009 lookAt yields both energy and resource entries on a dropped-resource tile
 - Room look API ROOM-LOOK-010 lookForAt returns [] for valid LOOK_* constants whose register is empty
+- Room look API ROOM-LOOK-011 lookForAtArea with asArray=false returns sparse map of raw game objects
+- Room look API ROOM-LOOK-012 lookForAtArea(asArray=false) returns all stacked matches in a single cell
+- Room look API ROOM-LOOK-013 lookAtArea with asArray=false returns dense map with terrain entry per cell
 
 **`tests/16-room-mechanics/16.5-terrain.test.ts`** (5)
 

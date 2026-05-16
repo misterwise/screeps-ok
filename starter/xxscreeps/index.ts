@@ -7,7 +7,7 @@ import type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
-	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions,
+	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
@@ -198,6 +198,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// Captured through the backend/client renderer for the current tick,
 		// then normalized to the shared adapter shape.
 		actionLogCapture: true,
+		// xxscreeps simulation runs in-process, so a global Math.random override
+		// scoped to the simulation.tick() call deterministically feeds processor
+		// random calls.
+		randomInjection: true,
+		// xxscreeps has no `register.deprecated` per-tick console notice for the
+		// deprecated Game.map / PathFinder / findPath / renewCreep APIs cataloged
+		// in §28.
+		deprecationNotices: false,
 	};
 
 	readonly limitations = {
@@ -483,7 +491,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const progressTotal = structureFactories.get(spec.structureType)?.checkPlacement(room, pos)
 				?? C.CONSTRUCTION_COST[spec.structureType as keyof typeof C.CONSTRUCTION_COST]
 				?? 0;
-			const site = createSite(pos, spec.structureType as any, userId, progressTotal);
+			const site = createSite(pos, spec.structureType as any, userId, progressTotal, spec.name);
 			site.id = id;
 			if (spec.progress !== undefined) {
 				site.progress = spec.progress;
@@ -508,7 +516,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
 				setSourceNextRegenerationTime(source, Game.time, spec.ticksToRegeneration);
 			} else if (source.energy < source.energyCapacity) {
-				setSourceNextRegenerationTime(source, Game.time, 300); // ENERGY_REGEN_TIME
+				setSourceNextRegenerationTime(source, Game.time, C.ENERGY_REGEN_TIME);
 			}
 			insertRoomObject(room, source);
 		});
@@ -520,14 +528,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const id = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:mineral`, id);
 		const ticksToRegen = spec.ticksToRegeneration;
+		const density = spec.density ?? C.DENSITY_HIGH;
+		const mineralAmount = spec.mineralAmount ?? (C.MINERAL_DENSITY[density] ?? 0);
 
 		this.queueOp(roomName, room => {
 			const mineral = new Mineral();
 			mineral.id = id;
 			bindObjectPos(mineral, new RoomPosition(spec.pos[0], spec.pos[1], roomName));
 			mineral.mineralType = spec.mineralType as any;
-			mineral.mineralAmount = spec.mineralAmount ?? 100000;
-			mineral.density = 3; // DENSITY_HIGH — matches vanilla default
+			mineral.mineralAmount = mineralAmount;
+			mineral.density = density;
 			if (ticksToRegen !== undefined) {
 				setMineralNextRegenerationTime(mineral, this.simulation!.shard.time, ticksToRegen);
 			}
@@ -577,6 +587,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeTombstone(roomName: string, spec: TombstoneSpec): Promise<string> {
 		const id = this.nextId();
+		const corpseId = this.nextId();
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:tombstone`, id);
 
 		this.queueOp(roomName, room => {
@@ -594,7 +605,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				tombstone,
 				{
 					body: [],
-					id,
+					id: corpseId,
 					name: spec.creepName,
 					saying: undefined as any,
 					ticksToLive: 0,
@@ -610,6 +621,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async placeRuin(roomName: string, spec: RuinSpec): Promise<string> {
 		const id = this.nextId();
+		const structureId = spec.structureId ?? this.nextId();
+		const structureOwner = spec.structureOwner ? this.resolvePlayer(spec.structureOwner) : null;
 		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:ruin`, id);
 
 		this.queueOp(roomName, room => {
@@ -626,10 +639,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			primeRuinStructure(
 				ruin,
 				{
-					id,
-					hitsMax: 0,
+					id: structureId,
+					hitsMax: spec.structureHitsMax ?? 0,
 					type: spec.structureType,
-					user: null as any,
+					user: structureOwner,
 				},
 				this.simulation!.shard.time + (spec.ticksToDecay ?? 500),
 			);
@@ -971,13 +984,38 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return results;
 	}
 
-	async tick(count = 1): Promise<void> {
+	async tick(count = 1, options: TickOptions = {}): Promise<void> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		for (let i = 0; i < count; i++) {
-			await this.keepRoomsActive();
-			await this.simulation!.tick(1);
+
+		const sequence = options.random;
+		if (sequence) {
+			for (let i = 0; i < sequence.length; i++) {
+				const value = sequence[i];
+				if (!Number.isFinite(value) || value < 0 || value >= 1) {
+					throw new Error(`tick: random[${i}] must be in [0, 1), got ${value}`);
+				}
+			}
+		}
+
+		const originalRandom = Math.random;
+		let randomIndex = 0;
+		if (sequence) {
+			Math.random = () => {
+				if (randomIndex >= sequence.length) {
+					throw new Error('tick: deterministic random sequence exhausted');
+				}
+				return sequence[randomIndex++];
+			};
+		}
+		try {
+			for (let i = 0; i < count; i++) {
+				await this.keepRoomsActive();
+				await this.simulation!.tick(1);
+			}
+		} finally {
+			if (sequence) Math.random = originalRandom;
 		}
 		if (count > 0) this.firstTickRun = true;
 	}
@@ -1119,6 +1157,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			return null;
 		});
+	}
+
+	async captureConsoleLogs(handle: string): Promise<string[]> {
+		// xxscreeps does not implement register.deprecated; capability gate
+		// `deprecationNotices` keeps callers off this path.
+		if (!this.playerMap.has(handle)) throw new Error(`Unknown player: ${handle}`);
+		return [];
 	}
 
 	async teardown(): Promise<void> {

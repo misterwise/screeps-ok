@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-06 against pin `b4587b0f`.
+Last refreshed: 2026-05-16 against pin `724a7a70`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 37 open parity gaps covering 82 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 26 open parity gaps covering 57 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Open parity gaps
 
@@ -15,13 +15,6 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED.
 - Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
 - Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
-
-### withdraw-safemode-hoisted-too-far
-
-- Tests: WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner, WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner
-- Status: NEW — introduced by [laverdet/xxscreeps#189](https://github.com/laverdet/xxscreeps/pull/189) (the same PR that closed the prior `withdraw-safemode-not-owner-too-late` gap).
-- Cause: PR #189 hoisted `checkSafeMode(creep.room, ERR_NOT_OWNER)` to step 2 of `checkWithdraw`, directly after `checkCommon`. The five "safemode-too-late" rows now pass, but safemode lands one step too early — before `checkTarget` (ERR_INVALID_TARGET) and before any `checkHasResource` call that could surface ERR_INVALID_ARGS.
-- Plan: move `checkSafeMode` between `target-not-owner` and `invalid-capacity` (vanilla position 6). A small follow-up PR on top of #189; ordering should be `checkCommon → checkTarget → checkHasResource(args) → target-not-owner gate → checkSafeMode → checkInteractionBlocked → checkRange → ...`.
 
 ### simult-heal-saves-doomed-creep
 
@@ -102,10 +95,10 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 
 ### construction-site-foreign-room-wrong-error
 
-- Tests: CONSTRUCTION-SITE-011 (notOwner rows), CONSTRUCTION-SITE-012, CONSTRUCTION-SITE-013, CONSTRUCTION-SITE-014.
-- Status: CONFIRMED. Filed upstream as [laverdet/xxscreeps#185](https://github.com/laverdet/xxscreeps/issues/185).
-- Cause: `packages/xxscreeps/mods/construction/room.ts:99-102` rejects every placement in any room where `!room.controller?.my` with `ERR_RCL_NOT_ENOUGH`. Regression introduced by upstream commit `afba4b3a` ("Fix spawn placement"), which audited `.my ===` patterns and changed `controller?.my === false` to `!controller?.my`. The first form blocked only hostile-owned rooms; the second blocks unowned and reserved rooms too. Vanilla `rooms.js:1052-1064` separates the cases (hostile-owned → ERR_NOT_OWNER; hostile-reserved → ERR_NOT_OWNER; unowned/self-reserved → fall through to `checkControllerAvailability` at rcl 0, where road and container have non-zero caps).
-- Plan: restore the four-case split — hostile-owned (`level > 0 && !my`) returns ERR_NOT_OWNER; hostile reservation returns ERR_NOT_OWNER; otherwise compute the effective rcl as `controller && controller.user ? controller.level : 0` and reuse the existing per-type `CONTROLLER_STRUCTURES` count check.
+- Tests: CONSTRUCTION-SITE-014.
+- Status: RESIDUAL after pin `724a7a70`.
+- Cause: the hostile-owned and validation-precedence rows now match vanilla, but hostile reservations still do not return `ERR_NOT_OWNER` ahead of the RCL/type checks for every structure type.
+- Plan: keep the four-case split narrow now: hostile reservation returns ERR_NOT_OWNER; otherwise let the existing ownership/RCL/type path handle the already-fixed cases.
 
 ### stale-construction-site-remove-allowed
 
@@ -134,13 +127,6 @@ Last refreshed: 2026-05-06 against pin `b4587b0f`.
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
 - Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
-
-### look-area-asarray-false-map-shape
-
-- Tests: ROOM-LOOK-011, ROOM-LOOK-012, ROOM-LOOK-013.
-- Status: CONFIRMED.
-- Cause: `lookForAtArea(type, ..., false)` tries to push matching objects into an uninitialized per-cell array, so a populated tile runtime-errors instead of returning vanilla's sparse raw-object map. `lookAtArea(..., false)` gets farther, but its non-terrain entries still use the `asArray=true` wrapper shape with `x` and `y` coordinates included. Vanilla's map form drops those coordinates and stores exactly `{ type, [type]: object }` wrappers.
-- Plan: split the two map paths from the array-wrapper path: initialize `lookForAtArea(..., false)` cells lazily with raw object arrays, and render `lookAtArea(..., false)` cell wrappers without `x`/`y`.
 
 ### commonjs-main-exports-alias-missing
 
