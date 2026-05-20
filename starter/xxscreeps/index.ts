@@ -262,7 +262,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		if (!this.simulation) return;
 		const { scratch } = this.simulation.shard;
 		for (const roomName of this.rooms) {
-			await scratch.zadd('processor/activeRooms', [[1, roomName]]);
+			await scratch.zAdd('processor/activeRooms', [[1, roomName]]);
 		}
 		const ownedByEngineId = new Map<string, string[]>();
 		for (const roomSpec of this.shardSpec?.rooms ?? []) {
@@ -275,11 +275,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		for (const [, engineId] of this.playerMap) {
 			for (const roomName of this.rooms) {
-				await scratch.sadd(`user/${engineId}/intentRooms`, [roomName]);
+				await scratch.sAdd(`user/${engineId}/intentRooms`, [roomName]);
 			}
 			const owned = ownedByEngineId.get(engineId);
 			if (owned && owned.length > 0) {
-				await scratch.sadd(`user/${engineId}/visibleRooms`, owned);
+				await scratch.sAdd(`user/${engineId}/visibleRooms`, owned);
 			}
 		}
 	}
@@ -1271,7 +1271,7 @@ async function createSimulation(
 	const terrainMap = new Map<string, { exits: number; terrain: TerrainWriter }>();
 
 	// Base: all shard.json rooms start with blank (all-plain) terrain
-	const existingRooms = await shard.data.smembers('rooms');
+	const existingRooms = await shard.data.sMembers('rooms');
 	for (const roomName of existingRooms) {
 		const writer = new TerrainWriter();
 		terrainMap.set(roomName, { exits: packExits(writer), terrain: writer });
@@ -1282,7 +1282,7 @@ async function createSimulation(
 		for (const [roomName, spec] of Object.entries(terrainOverrides)) {
 			terrainMap.set(roomName, buildTerrainEntry(spec));
 		}
-		await shard.data.sadd('rooms', Object.keys(terrainOverrides));
+		await shard.data.sAdd('rooms', Object.keys(terrainOverrides));
 	}
 
 	// Build world from terrain map
@@ -1309,7 +1309,7 @@ async function createSimulation(
 				// Room not in shard.json — create a blank room
 				room = new Room();
 				room.name = roomName;
-				await shard.data.sadd('rooms', [roomName]);
+				await shard.data.sAdd('rooms', [roomName]);
 			}
 			runOneShot(world, room, shard.time, '', () => callback(room));
 			room['#flushObjects'](null);
@@ -1364,8 +1364,8 @@ async function createSimulation(
 				playersThisTick.add(userId);
 
 				const [intentRooms, visibleRooms] = await Promise.all([
-					shard.scratch.smembers(userToIntentRoomsSetKey(userId)),
-					shard.scratch.smembers(userToVisibleRoomsSetKey(userId)),
+					shard.scratch.sMembers(userToIntentRoomsSetKey(userId)),
+					shard.scratch.sMembers(userToVisibleRoomsSetKey(userId)),
 				]);
 				const roomBlobs = await Promise.all(Fn.map(visibleRooms,
 					(rn: string) => shard.loadRoomBlob(rn, shard.time)));
@@ -1447,7 +1447,7 @@ async function createSimulation(
 			...sim,
 			async updateTerrain(roomName: string, spec: TerrainSpec): Promise<void> {
 				terrainMap.set(roomName, buildTerrainEntry(spec));
-				await shard.data.sadd('rooms', [roomName]);
+				await shard.data.sAdd('rooms', [roomName]);
 				await rebuildWorld();
 			},
 			async disposeUserSandbox(userId: string): Promise<void> {

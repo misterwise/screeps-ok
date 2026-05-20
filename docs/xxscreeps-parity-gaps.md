@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-16 against pin `724a7a70`.
+Last refreshed: 2026-05-19 against pin `15df4bea`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 26 open parity gaps covering 57 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 22 open parity gaps covering 46 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Open parity gaps
 
@@ -16,13 +16,6 @@ Last refreshed: 2026-05-16 against pin `724a7a70`.
 - Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
 - Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
 
-### simult-heal-saves-doomed-creep
-
-- Tests: COMBAT-SIMULT-004 (Issue 201 row)
-- Status: CONFIRMED. Filed upstream as [laverdet/xxscreeps#201](https://github.com/laverdet/xxscreeps/issues/201).
-- Cause: same-tick damage and heal don't sum cleanly before the death check. A 10-hit `[MOVE, HEAL]` target taking 30 melee + 12 self-heal in the same tick ends the tick alive at 12 hits with the HEAL part respawned, instead of dying. Buffering lives in `mods/combat/processor.ts` (`tickHealing`) and `mods/creep/creep.ts:#applyDamage` (`tickRawDamage`); applied together in `mods/creep/processor.ts:319-342`.
-- Plan: ensure damage and heal apply together so the death check sees `clamp(oldHits + heal - damage, 0, hitsMax) <= 0`. Vanilla reference: `@screeps/engine/src/processor/intents/creeps/tick.js:118-135`.
-
 ### shape-flag-extra-id
 
 - Tests: SHAPE-FLAG-001
@@ -30,61 +23,40 @@ Last refreshed: 2026-05-16 against pin `724a7a70`.
 - Cause: `RoomObject`'s base serialized schema contributes an `id` field, and Flag composes from that base even though vanilla flags are named objects without ids.
 - Plan: use `docs/xxscreeps-flag-id-plan.md` as the starting point. Avoid the shelved schema-layout split that broke ConstructionSite; prefer a narrower Flag-scoped fix unless upstream asks for the broader schema move.
 
-### rawmemory-set-no-eager-limit-check
-
-- Tests: MEMORY-004
-- Status: OPEN PR [laverdet/xxscreeps#140](https://github.com/laverdet/xxscreeps/pull/140).
-- Cause: `RawMemory.set()` accepts oversized strings and the 2 MB limit throws later during flush, outside user-code `try/catch`.
-- Plan: wait for #140, bump the pin, then remove this gap if MEMORY-004 passes.
-
 ### rawmemory-set-invalidates-parsed-memhack
 
-- Tests: MEMORY-002, UNDOC-MEMHACK-007, UNDOC-MEMHACK-008, UNDOC-MEMHACK-009, UNDOC-MEMHACK-010, UNDOC-MEMHACK-012
-- Status: BLOCKED on #140.
-- Cause: `RawMemory.set()` clears xxscreeps's parsed Memory cache, and object memory accessors bypass vanilla's self-replacing global `Memory` binding behavior. After a post-access `RawMemory.set()`, later same-tick Memory/object `.memory` reads can re-parse the just-set raw string and lose in-tick mutations.
-- Plan: re-test after #140. If residual tests remain, route object `.memory` through the pinned global Memory binding or add an equivalent per-tick pin that preserves the already-parsed object until the next tick.
+- Tests: UNDOC-MEMHACK-012
+- Status: RESIDUAL after pin `15df4bea`; the RawMemory.set mutation-preservation rows now pass.
+- Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object.
+- Plan: mirror vanilla's first-access descriptor flip so `Object.getOwnPropertyDescriptor(global, 'Memory')` reports a configurable enumerable value descriptor after `Memory` is read.
 
 ### foreign-segment-clear-request
 
 - Tests: RAWMEMORY-FOREIGN-006
-- Status: CONFIRMED, but wait for #140 before editing nearby memory code.
+- Status: CONFIRMED.
 - Cause: `setActiveForeignSegment(null)` does not clear the pending foreign-segment request, so `RawMemory.foreignSegment` remains populated on the following tick.
 - Plan: clear the pending request slot on `null` and verify the next-tick fallback to `undefined`.
 
 ### memory-parsed-json-not-refreshed-across-ticks
 
 - Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011
-- Status: CONFIRMED, but wait for #140 before editing nearby memory code.
+- Status: CONFIRMED.
 - Cause: xxscreeps caches parsed Memory in module-level state and does not invalidate it across ticks. Tick-end serialization normalizes functions, `NaN`, and `Infinity`, but next-tick `Memory` reads still see the stale live object instead of a fresh parse of raw memory.
 - Plan: reset parsed Memory state at the tick boundary so the next access re-parses `RawMemory.get()`.
 
 ### memory-circular-ref-crash
 
 - Tests: UNDOC-MEMJSON-005
-- Status: CONFIRMED, but wait for #140 before editing nearby memory code.
+- Status: CONFIRMED.
 - Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
 - Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
 
 ### game-object-json-room-tojson-null-crash
 
 - Tests: UNDOC-JSONOBJ-001
-- Status: CONFIRMED.
-- Cause: `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and treats any object-typed value as safe to inspect with `value.room`. Because `typeof null === 'object'` and `room.survivalInfo` is enumerable and currently returns `null`, direct `JSON.stringify(room)` throws `Cannot read properties of null (reading 'room')`. The same failure appears when stringifying any live game object whose enumerable `room` reference causes `Room.toJSON()` to run.
-- Plan: guard the room serializer's object check against `null` (or otherwise preserve `null` fields without dereferencing them), then remove this gap once the `UNDOC-JSONOBJ-001` matrix passes. The matrix should stay broad because the bug is not creep-specific; creeps, structures, resources, flags, tombstones, and ruins all exercise the same nested-room path.
-
-### room-survival-info-null-instead-of-undefined
-
-- Tests: ROOM-SURVIVAL-001
-- Status: CONFIRMED.
-- Cause: `Room.survivalInfo` is an enumerable getter in `packages/xxscreeps/game/room/room.ts:38` that always returns `null`. Vanilla assigns `runtimeData.games[gameId]` to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; when no survival game is active, that value is `undefined` while the property remains present.
-- Plan: make xxscreeps expose `undefined` for the no-survival-mode stub while preserving the Room public property shape.
-
-### lab-unboost-target-owner-too-late
-
-- Tests: UNBOOST-006:creepNotOwnerBeforeRcl
-- Status: PR pending against laverdet/xxscreeps as the unboost half of the intent-precedence audit (#117).
-- Cause: `mods/chemistry/lab.ts:191-211` `checkUnboostCreep` runs `checkIsActive(lab)` before the `!creep.my → ERR_NOT_OWNER` branch. Vanilla `screeps/engine src/game/structures.js StructureLab.prototype.unboostCreep` evaluates `!this.my || !target.my` together for ERR_NOT_OWNER before the active-structure RCL gate.
-- Plan: hoist the target-ownership branch above `checkIsActive`. Drop this gap once the upstream PR merges.
+- Status: RESIDUAL after pin `15df4bea`; `JSON.stringify()` no longer throws for the matrix, but most object snapshots still omit nested `pos` fields.
+- Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
+- Plan: ensure JSON serialization includes the same representative nested position fields as the live object snapshots. The matrix should stay broad because the missing field shape spans many object classes.
 
 ### actionlog-lab-renderer-missing-combined-actions
 
@@ -96,7 +68,7 @@ Last refreshed: 2026-05-16 against pin `724a7a70`.
 ### construction-site-foreign-room-wrong-error
 
 - Tests: CONSTRUCTION-SITE-014.
-- Status: RESIDUAL after pin `724a7a70`.
+- Status: RESIDUAL after pin `15df4bea`.
 - Cause: the hostile-owned and validation-precedence rows now match vanilla, but hostile reservations still do not return `ERR_NOT_OWNER` ahead of the RCL/type checks for every structure type.
 - Plan: keep the four-case split narrow now: hostile reservation returns ERR_NOT_OWNER; otherwise let the existing ownership/RCL/type path handle the already-fixed cases.
 
@@ -114,13 +86,6 @@ Last refreshed: 2026-05-16 against pin `724a7a70`.
 - Cause: `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads only `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `target.pos` for range, neither of which triggers the guard either. `intents.save(this, 'pickup', resource.id)` then queues the intent against the cached id; the processor finds no backing resource and silently no-ops. The other 17 stale-argument matrix rows reject the call because their per-target checks read schema-backed fields (e.g. `target.store` for transfer/withdraw, `target.hits` for attack/heal/repair) that do trip the guard — `pickup` happens to be the only row whose canonical check chain doesn't.
 - Plan: have `checkTarget` (or `checkPickup` directly) read a schema-backed field of the target so a released wrapper trips the guard uniformly. The architectural fix is to make `checkTarget` raise the released-object error for stale wrappers, which closes the entire stale-argument axis at once rather than per-method.
 
-### look-energy-alias-not-registered
-
-- Tests: ROOM-LOOK-007, ROOM-LOOK-008, ROOM-LOOK-009
-- Status: CONFIRMED.
-- Cause: `LOOK_ENERGY` is exported from `mods/resource/constants.ts` but no mod aliases it onto the `Resource` register. Three observable surfaces share the same root cause. `lookAt(x, y)` builds entries from each object's `'#lookType'` (`LOOK_RESOURCES` for `Resource`), so a dropped resource never produces a `type: "energy"` entry. `lookForAt(LOOK_ENERGY, ...)` short-circuits to `[]` because `'energy'` isn't in `lookConstants` (`game/room/look.ts:148-152`). `lookForAtArea(LOOK_ENERGY, ...)` runtime-errors on `Cannot read properties of undefined (reading 'length')` because `#lookFor('energy')` is undefined. Vanilla wires `LOOK_ENERGY` as a legacy alias to the same backing register as `LOOK_RESOURCES` (`@screeps/engine/src/game/rooms.js:768-796`).
-- Plan: register `LOOK_ENERGY` as an alias for `Resource` so `#lookFor('energy')` shares the resource register, and have `lookAt` emit a second `{ type: 'energy', energy: ... }` entry for each `Resource` (or generalize via the look-alias registry).
-
 ### look-for-at-unknown-returns-empty
 
 - Tests: ROOM-LOOK-006
@@ -135,20 +100,7 @@ Last refreshed: 2026-05-16 against pin `724a7a70`.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
 
-### constructor-by-id-missing-for-noncreep-objects
-
-- Tests: UNDOC-CTOR-002, UNDOC-CTOR-003, UNDOC-CTOR-004, UNDOC-CTOR-006, UNDOC-CTOR-007, UNDOC-CTOR-008
-- Status: CONFIRMED.
-- Cause: xxscreeps implements constructor-by-id for some public classes, but several non-creep object constructors either cannot reconstruct from id-backed state or reconstruct into a base object whose public getters are not usable. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` hits the base `Structure.structureType` throwing getter; `new Ruin(id)` does not expose a readable position.
-- Plan: if upstream wants vanilla-compatible undocumented constructors, route these constructors through the same live object registry path as `Game.getObjectById(id)` or copy enough public backing fields onto the constructed object for same-tick public access.
-
 ## Accepted divergences
-
-### controller-my-never-owned-returns-false
-
-- Tests: CTRL-CLAIM-007
-- Status: INTENTIONAL.
-- Decision: PR [laverdet/xxscreeps#128](https://github.com/laverdet/xxscreeps/pull/128) intentionally keeps `StructureController.my === false` for never-claimed controllers. screeps-ok keeps the vanilla assertion as an expected failure so consumers can see the divergence.
 
 ### shape-body-part-always-has-boost
 

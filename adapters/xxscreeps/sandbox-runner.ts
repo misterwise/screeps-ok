@@ -86,9 +86,9 @@ export class UserSandbox {
 		// Room's `#users` field: populate the map from the user registry
 		// directly. In tests this is a small set (players + Screeps/Invader/
 		// Source Keeper npcs) so scanning all users is cheap.
-		const userIds = await this.shard.db.data.smembers('users');
+		const userIds = await this.shard.db.data.sMembers('users');
 		const entries = await Promise.all(userIds.map(async uid => {
-			const name = await this.shard.db.data.hget(User.infoKey(uid), 'username');
+			const name = await this.shard.db.data.hGet(User.infoKey(uid), 'username');
 			return [uid, name ?? ''] as const;
 		}));
 		this.usernameCache = Object.fromEntries(entries);

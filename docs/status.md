@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2155%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-61-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2166%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-50-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-16 21:47 UTC |
-| 🟡 | **xxscreeps** | [2155](#xxscreeps-passing-tests) | [61](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-16 21:44 UTC |
+| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-20 01:40 UTC |
+| 🟡 | **xxscreeps** | [2166](#xxscreeps-passing-tests) | [50](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-20 01:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 28 expected-failure classifications against vanilla's canonical behavior, covering 61 tests. That includes 26 open parity gaps covering 57 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 50 tests. That includes 22 open parity gaps covering 46 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -169,18 +169,14 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
-| `id-constructor-overlay-copy` | `new Creep(id)` and sibling same-type id constructors do not consistently hydrate from the canonical live object overlay: some constructors throw for live ids, and primitive overlay fields such as `hits` and `fatigue` can differ from `Game.getObjectById(id)`. Upstream PR 178 handled most same-type constructor cases; `new Ruin(id)` remains the observed residual under the current pin. | Vanilla same-type id constructors return a requested-prototype wrapper over the id whose room, position, id, and representative public fields match the live object. | [1](#xxscreeps-gap-id-constructor-overlay-copy) |
-| `rawmemory-set-no-eager-limit-check` | `RawMemory.set(largeString)` returns normally; the 2MB cap throws later inside `memory/memory.ts:flush()` during `runtimeConnector.send`, surfaced to the adapter as a runtime sandbox error rather than a user-code exception | `RawMemory.set` throws synchronously at call time when the value exceeds the 2MB limit, so a user-code try/catch can observe the throw | [1](#xxscreeps-gap-rawmemory-set-no-eager-limit-check) |
-| `rawmemory-set-invalidates-parsed-memhack` | `RawMemory.set` clears the cached parsed `Memory`, so a subsequent `Memory.x` or object `.memory` access re-parses from the newly-set string and loses pre-set mutations. The underlying mechanism gap: the `Memory` global is bound as a per-access getter that does not self-replace into a value descriptor on first access (vanilla redefines `Memory` as `{ value: parsed }` after first access; observable via `UNDOC-MEMHACK-012`). | Setting `RawMemory` after `Memory` or an object `.memory` accessor has been accessed preserves the already-parsed `Memory` object for the rest of the tick (memhack). The `Memory` global descriptor flips from accessor to value descriptor on first access. | [6](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
+| `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
-| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` on `Room` and on live game objects whose serialization reaches their nested `room` reference throws `Cannot read properties of null (reading 'room')`. `Room.toJSON()` (`packages/xxscreeps/game/room/room.ts`) iterates enumerable room fields and reads `value.room` for every object-typed value without guarding `null`; the enumerable `survivalInfo` getter currently returns `null`. | Vanilla `JSON.stringify()` on canonical visible game objects succeeds and returns parseable JSON snapshots whose representative public fields match the live object, including nested room snapshots reached through `RoomObject.room`. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
-| `room-survival-info-null-instead-of-undefined` | `room.survivalInfo` returns `null` because `packages/xxscreeps/game/room/room.ts:38` implements it as an enumerable getter whose stub always returns null. | Vanilla assigns `runtimeData.games[gameId]` directly to `this.survivalInfo` in `screeps-engine/src/game/rooms.js:437`; with no active survival game that value is `undefined` while the `survivalInfo` property remains present. | [1](#xxscreeps-gap-room-survival-info-null-instead-of-undefined) |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [11](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
-| `constructor-by-id-missing-for-noncreep-objects` | Constructing several non-creep game objects directly from an id throws or produces an object whose public fields cannot be read. `new Source(id)`, `new Resource(id)`, `new Mineral(id)`, and `new Tombstone(id)` throw missing-backing-data TypeErrors; `new Structure(id)` reaches the base `Structure.structureType` getter and throws; `new Ruin(id)` does not expose a readable position. | Vanilla constructors for these object types accept an id and expose the same public fields as `Game.getObjectById(id)` for the same object within the tick. | [1](#xxscreeps-gap-constructor-by-id-missing-for-noncreep-objects) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
@@ -217,29 +213,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-id-constructor-overlay-copy">
-<summary><code>id-constructor-overlay-copy</code> — 1 test</summary>
-
-- `Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Ruin(id) reconstructs a Ruin view with overlay fields`
-
-</details>
-
-<details id="xxscreeps-gap-rawmemory-set-no-eager-limit-check">
-<summary><code>rawmemory-set-no-eager-limit-check</code> — 1 test</summary>
-
-- `Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB`
-
-</details>
-
 <details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
-<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 6 tests</summary>
+<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
 
-- `Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory`
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick`
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick`
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick`
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick`
 
 </details>
 
@@ -268,9 +245,8 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
-<summary><code>game-object-json-room-tojson-null-crash</code> — 13 tests</summary>
+<summary><code>game-object-json-room-tojson-null-crash</code> — 11 tests</summary>
 
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot`
@@ -280,16 +256,8 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
-
-</details>
-
-<details id="xxscreeps-gap-room-survival-info-null-instead-of-undefined">
-<summary><code>room-survival-info-null-instead-of-undefined</code> — 1 test</summary>
-
-- `room survival info ROOM-SURVIVAL-001 survivalInfo is undefined when no survival game is active`
 
 </details>
 
@@ -312,13 +280,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>commonjs-main-exports-alias-missing</code> — 1 test</summary>
 
 - `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module`
-
-</details>
-
-<details id="xxscreeps-gap-constructor-by-id-missing-for-noncreep-objects">
-<summary><code>constructor-by-id-missing-for-noncreep-objects</code> — 1 test</summary>
-
-- `Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)`
 
 </details>
 
@@ -4169,7 +4130,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2155 tests across 105 files</summary>
+<summary>2166 tests across 106 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6185,6 +6146,10 @@ Click a count to jump to the affected test list.
 - structure.notifyWhenAttacked() ATTACK-NOTIFY-006 notifyWhenAttacked returns ERR_NOT_OWNER for unowned structure in another player's room
 - structure.notifyWhenAttacked() UNDOC-STALERECV-001:structureNotifyWhenAttacked stale cached Structure.notifyWhenAttacked() throws a runtime error
 
+**`tests/16-room-mechanics/16.1b-survival-info.test.ts`** (1)
+
+- room survival info ROOM-SURVIVAL-001 survivalInfo is undefined when no survival game is active
+
 **`tests/16-room-mechanics/16.3-room-find.test.ts`** (3)
 
 - Room.find exit constants ROOM-FIND-003 FIND_EXIT_TOP/RIGHT/BOTTOM/LEFT return walkable border tiles on that side, with no duplicates
@@ -6479,10 +6444,12 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (17)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (19)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
+- Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
+- Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
 - Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
@@ -6535,7 +6502,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
 
-**`tests/27-undocumented/27.1-memhack.test.ts`** (6)
+**`tests/27-undocumented/27.1-memhack.test.ts`** (10)
 
 - Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
 - Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
@@ -6543,6 +6510,10 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-004 first Memory access populates RawMemory._parsed as a reference to Memory
 - Undocumented API Surface — memhack UNDOC-MEMHACK-005 RawMemory._parsed assignment alone does NOT short-circuit deserialization
 - Undocumented API Surface — memhack UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end
+- Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick
+- Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
 
 **`tests/27-undocumented/27.10-actionlog.test.ts`** (19)
 
@@ -6566,20 +6537,23 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
-**`tests/27-undocumented/27.11-id-constructors.test.ts`** (8)
+**`tests/27-undocumented/27.11-id-constructors.test.ts`** (9)
 
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Creep(id) reconstructs a Creep view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Structure(id) reconstructs a Structure view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new ConstructionSite(id) reconstructs a ConstructionSite view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Resource(id) reconstructs a Resource view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Tombstone(id) reconstructs a Tombstone view with overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Ruin(id) reconstructs a Ruin view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
 
-**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
+**`tests/27-undocumented/27.14-json-objects.test.ts`** (3)
 
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
 
@@ -6602,7 +6576,7 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
 
-**`tests/27-undocumented/27.6-identity.test.ts`** (12)
+**`tests/27-undocumented/27.6-identity.test.ts`** (13)
 
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
@@ -6616,6 +6590,7 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — within-tick object identity UNDOC-CTOR-005 new ConstructionSite(id) exposes the same public fields as Game.getObjectById(id)
 - Undocumented API Surface — within-tick object identity UNDOC-CTOR-006 new Mineral(id) exposes the same public fields as Game.getObjectById(id)
 - Undocumented API Surface — within-tick object identity UNDOC-CTOR-007 new Tombstone(id) exposes the same public fields as Game.getObjectById(id)
+- Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
