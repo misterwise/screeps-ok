@@ -658,7 +658,7 @@ describe('room.getEventLog()', () => {
 		expect(ranged.data.attackType).toBe(EVENT_ATTACK_TYPE_RANGED);
 	});
 
-	test('ROOM-EVENTLOG-016:basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -707,7 +707,7 @@ describe('room.getEventLog()', () => {
 		expect(byTarget.get(ids.far)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[3]));
 	});
 
-	test('ROOM-EVENTLOG-016:filter rangedMassAttack emits no RANGED_MASS entries for own creeps or unowned structures', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 filter rangedMassAttack emits no RANGED_MASS entries for own creeps or unowned structures', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -757,7 +757,7 @@ describe('room.getEventLog()', () => {
 		expect(massEvents.some(e => e.data?.targetId === ids.container)).toBe(false);
 	});
 
-	test('ROOM-EVENTLOG-016:range-2 rangedMassAttack event damage uses the middle distance bucket', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 range 2 rangedMassAttack event damage uses the middle distance bucket', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -796,7 +796,7 @@ describe('room.getEventLog()', () => {
 		expect(attack.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[2]));
 	});
 
-	test('ROOM-EVENTLOG-016:concurrent-attackers rangedMassAttack entries keep each attacker objectId', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 concurrent attackers rangedMassAttack entries keep each attacker objectId', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -844,7 +844,7 @@ describe('room.getEventLog()', () => {
 		expect(attackB.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
 	});
 
-	test('ROOM-EVENTLOG-016:rampart-redirect rangedMassAttack event targets the hostile rampart that absorbs damage', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 rampart redirect rangedMassAttack event targets the hostile rampart that absorbs damage', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p2' }],
@@ -886,7 +886,7 @@ describe('room.getEventLog()', () => {
 		expect(attack.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
 	});
 
-	test('ROOM-EVENTLOG-016:kill-ordering rangedMassAttack kill-shot logs destruction before attack', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016 kill ordering rangedMassAttack kill-shot logs destruction before attack', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p2' }],
