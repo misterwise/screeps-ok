@@ -658,7 +658,7 @@ describe('room.getEventLog()', () => {
 		expect(ranged.data.attackType).toBe(EVENT_ATTACK_TYPE_RANGED);
 	});
 
-	test('ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
+	test('ROOM-EVENTLOG-016:basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -705,6 +705,226 @@ describe('room.getEventLog()', () => {
 		// Distance 1: full damage. Distance 3: damage × distanceRate[3] (0.1), rounded.
 		expect(byTarget.get(ids.near)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
 		expect(byTarget.get(ids.far)).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[3]));
+	});
+
+	test('ROOM-EVENTLOG-016:filter rangedMassAttack emits no RANGED_MASS entries for own creeps or unowned structures', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const hostileId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		const friendlyId = await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p1', body: [TOUGH, TOUGH, MOVE],
+		});
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [24, 25], structureType: STRUCTURE_CONTAINER, hits: 1000,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				hostile: Game.getObjectById(${hostileId}).id,
+				friendly: Game.getObjectById(${friendlyId}).id,
+				container: Game.getObjectById(${containerId}).id,
+			})
+		`) as string) as { attacker: string; hostile: string; friendly: string; container: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+
+		const massEvents = events.filter(
+			e => e.event === EVENT_ATTACK
+				&& e.objectId === ids.attacker
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS,
+		);
+		expect(massEvents).toHaveLength(1);
+		expect(massEvents[0]!.data.targetId).toBe(ids.hostile);
+		expect(massEvents.some(e => e.data?.targetId === ids.friendly)).toBe(false);
+		expect(massEvents.some(e => e.data?.targetId === ids.container)).toBe(false);
+	});
+
+	test('ROOM-EVENTLOG-016:range-2 rangedMassAttack event damage uses the middle distance bucket', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [25, 27], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				target: Game.getObjectById(${targetId}).id,
+			})
+		`) as string) as { attacker: string; target: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+
+		const attack = expectExactlyOne(events,
+			e => e.event === EVENT_ATTACK
+				&& e.objectId === ids.attacker
+				&& e.data?.targetId === ids.target
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS);
+		expect(attack.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[2]));
+	});
+
+	test('ROOM-EVENTLOG-016:concurrent-attackers rangedMassAttack entries keep each attacker objectId', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+		const attackerAId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const attackerBId = await shard.placeCreep('W1N1', {
+			pos: [27, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const targetId = await shard.placeCreep('W1N1', {
+			pos: [26, 25], owner: 'p2', body: [TOUGH, TOUGH, TOUGH, TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attackerA: Game.getObjectById(${attackerAId}).id,
+				attackerB: Game.getObjectById(${attackerBId}).id,
+				target: Game.getObjectById(${targetId}).id,
+			})
+		`) as string) as { attackerA: string; attackerB: string; target: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerAId}).rangedMassAttack();
+			Game.getObjectById(${attackerBId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+
+		const massEvents = events.filter(
+			e => e.event === EVENT_ATTACK
+				&& e.data?.targetId === ids.target
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS,
+		);
+		expect(massEvents).toHaveLength(2);
+		const attackA = expectExactlyOne(massEvents, e => e.objectId === ids.attackerA);
+		const attackB = expectExactlyOne(massEvents, e => e.objectId === ids.attackerB);
+		expect(attackA.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
+		expect(attackB.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
+	});
+
+	test('ROOM-EVENTLOG-016:rampart-redirect rangedMassAttack event targets the hostile rampart that absorbs damage', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p2' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const rampartId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p2',
+			hits: 1000000,
+		});
+		const coveredId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				rampart: Game.getObjectById(${rampartId}).id,
+				covered: Game.getObjectById(${coveredId}).id,
+			})
+		`) as string) as { attacker: string; rampart: string; covered: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+
+		const attack = expectExactlyOne(events,
+			e => e.event === EVENT_ATTACK
+				&& e.objectId === ids.attacker
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS);
+		expect(attack.data.targetId).toBe(ids.rampart);
+		expect(attack.data.targetId).not.toBe(ids.covered);
+		expect(attack.data.damage).toBe(Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[1]));
+	});
+
+	test('ROOM-EVENTLOG-016:kill-ordering rangedMassAttack kill-shot logs destruction before attack', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p2' }],
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [RANGED_ATTACK, MOVE],
+		});
+		const targetId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p2',
+			hits: RANGED_ATTACK_POWER,
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({
+				attacker: Game.getObjectById(${attackerId}).id,
+				target: Game.getObjectById(${targetId}).id,
+			})
+		`) as string) as { attacker: string; target: string };
+
+		await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).rangedMassAttack()
+		`);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+
+		const destroyedIdx = events.findIndex(
+			e => e.event === EVENT_OBJECT_DESTROYED && e.objectId === ids.target);
+		const attackIdx = events.findIndex(
+			e => e.event === EVENT_ATTACK
+				&& e.objectId === ids.attacker
+				&& e.data?.targetId === ids.target
+				&& e.data?.attackType === EVENT_ATTACK_TYPE_RANGED_MASS);
+		expect(destroyedIdx).toBeGreaterThanOrEqual(0);
+		expect(attackIdx).toBeGreaterThanOrEqual(0);
+		expect(destroyedIdx).toBeLessThan(attackIdx);
 	});
 
 	test('ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts', async ({ shard }) => {

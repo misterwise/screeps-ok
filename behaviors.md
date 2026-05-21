@@ -2911,9 +2911,14 @@ Coverage Notes
   `data.attackType === EVENT_ATTACK_TYPE_RANGED` and `data.damage` equal to
   `RANGED_ATTACK_POWER` per RANGED_ATTACK part.
 - `ROOM-EVENTLOG-016` `behavior` `verified_vanilla`
-  `EVENT_ATTACK` from `rangedMassAttack` emits one entry per target hit,
+  `EVENT_ATTACK` from `rangedMassAttack` emits one entry per logged target,
   each with `data.attackType === EVENT_ATTACK_TYPE_RANGED_MASS` and
-  `data.damage` scaled by `RANGED_ATTACK_DISTANCE_RATE`.
+  `data.damage` scaled by `RANGED_ATTACK_DISTANCE_RATE`. The log omits
+  filter-rejected own creeps and unowned structures, reports the range-2
+  damage bucket, preserves each attacker's `objectId` under concurrent
+  attackers, reports an absorbing hostile rampart as `data.targetId`, and
+  emits structure-destruction `EVENT_OBJECT_DESTROYED` before the originating
+  attack entry on kill-shots.
 - `ROOM-EVENTLOG-017` `behavior` `verified_vanilla`
   When a creep with ATTACK parts is hit by a melee attack, an additional
   `EVENT_ATTACK` is emitted from the target with
