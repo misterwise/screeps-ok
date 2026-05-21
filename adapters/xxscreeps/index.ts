@@ -29,6 +29,7 @@ import { instantiateTestShard } from 'xxscreeps/test/import.js';
 import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';
 import { begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
 import { RoomProcessor } from 'xxscreeps/engine/processor/room.js';
+import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
@@ -71,6 +72,8 @@ import { create as createContainer } from 'xxscreeps/mods/resource/container.js'
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
+import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
+import { create as createNuke } from 'xxscreeps/mods/nuker/nuke.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
 import { Flag } from 'xxscreeps/mods/flag/flag.js';
@@ -174,7 +177,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		factory: !!createFactory,
 		market: false,
 		observer: true,
-		nuke: false,
+		nuke: true,
 		deposit: false,
 		terrain: true,
 		roomStatus: false,
@@ -673,8 +676,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('placePowerCreep not yet implemented for xxscreeps');
 	}
 
-	async placeNuke(_room: string, _spec: NukeSpec): Promise<string> {
-		throw new Error('placeNuke not yet implemented for xxscreeps');
+	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
+		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:nuke`, id);
+
+		this.queueOp(roomName, room => {
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const landTime = this.simulation!.shard.time + spec.timeToLand;
+			const nuke = createNuke(pos, spec.launchRoomName, landTime);
+			nuke.id = id;
+			insertRoomObject(room, nuke);
+		});
+
+		return id;
 	}
 
 	async placeMarketOrder(_spec: MarketOrderSpec): Promise<string> {
@@ -1198,6 +1212,7 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'road': return createRoad(pos);
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
+		case 'nuker': return createNuker(pos, owner!);
 		case 'terminal':
 			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
 			return createTerminal(pos, owner!);
@@ -1395,15 +1410,15 @@ async function createSimulation(
 			},
 
 			async tick(count = 1, players: Record<string, string> = {}): Promise<void> {
+				playersThisTick.clear();
 				for (let ii = 0; ii < count; ++ii) {
+					const time = shard.time;
 					for (const [userId, code] of Object.entries(players)) {
 						await sim.player(userId, code);
 					}
 					playersThisTick.clear();
 
-					const time = shard.time + 1;
-					const processorTime = await begetRoomProcessQueue(shard, time, time - 1);
-					assert.equal(time, processorTime);
+					await begetRoomProcessQueue(shard, time);
 					const nextRoomInstances = new Map<string, any>();
 					const contexts = new Map<string, any>();
 
@@ -1424,21 +1439,19 @@ async function createSimulation(
 					// Second phase
 					await Promise.all(Fn.map(contexts.values(), (ctx: any) => ctx.finalize(false)));
 					for await (const roomName of consumeSet(shard.scratch, finalizeExtraRoomsSetKey(time))) {
-						let room;
-						try {
-							room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
-						} catch {
-							continue;
-						}
+						const room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
 						const context = new RoomProcessor(shard, world, room, time);
 						await context.process(true);
 						await context.finalize(true);
 						nextRoomInstances.set(roomName, room);
 					}
 
-					await shard.data.set('time', time);
-					await shard.channel.publish({ type: 'tick', time });
-					shard.time = time;
+					await runShardTickProcessors(shard, time);
+
+					const nextTime = time + 1;
+					await shard.data.set('time', nextTime);
+					await shard.channel.publish({ type: 'tick', time: nextTime });
+					shard.time = nextTime;
 				}
 			},
 		};

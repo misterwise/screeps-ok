@@ -260,7 +260,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: (obj.store?.getCapacity?.(C.RESOURCE_ENERGY) ?? C.NUKER_ENERGY_CAPACITY)
+					+ (obj.store?.getCapacity?.(C.RESOURCE_GHODIUM) ?? C.NUKER_GHODIUM_CAPACITY),
 				cooldown: obj.cooldown ?? 0,
 			} satisfies NukerSnapshot;
 

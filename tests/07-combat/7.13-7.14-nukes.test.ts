@@ -18,8 +18,7 @@ import { nukeImpactFootprintCases } from '../../src/matrices/nuke-impact-footpri
 
 // Section 7.13/7.14 — Nuker launch and Nuke impact behaviors.
 //
-// All tests in this file require the `nuke` capability. xxscreeps adapter has
-// `nuke: false` and skips the entire suite.
+// All tests in this file require the `nuke` capability.
 //
 // Engine references:
 //   Launch:    @screeps/engine/src/game/structures.js:1356 (StructureNuker.launchNuke)

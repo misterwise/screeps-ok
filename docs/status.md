@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2166%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-50-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2609%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2290%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-20 01:40 UTC |
-| 🟡 | **xxscreeps** | [2166](#xxscreeps-passing-tests) | [50](#xxscreeps-expected-failures) | — | [423](#xxscreeps-skipped-tests) | 2026-05-20 01:36 UTC |
+| 🟡 | **vanilla** | [2609](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-20 23:51 UTC |
+| 🟡 | **xxscreeps** | [2290](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [291](#xxscreeps-skipped-tests) | 2026-05-20 23:48 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 50 tests. That includes 22 open parity gaps covering 46 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 28 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 26 open parity gaps covering 54 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -173,7 +173,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
-| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [11](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [12](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
@@ -188,6 +188,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `ranged-mass-attack-range-and-target-filter-regressed` | At xxscreeps upstream `123a1c58`, `rangedMassAttack` scans `positionsInRangeTo(creep.pos, 2)` and no longer filters out friendly creeps or unowned structures, so range-3 targets are skipped and non-hostile targets can be damaged. | Vanilla rangedMassAttack scans the full range-3 blast area, damages only hostile creeps/power creeps/structures, and emits one EVENT_ATTACK entry per damaged target with range-scaled RANGED_MASS damage. | [4](#xxscreeps-gap-ranged-mass-attack-range-and-target-filter-regressed) |
+| `nuker-cooldown-first-visible-tick-off-by-one` | After a processed launch, xxscreeps sets `#cooldownTime = Game.time + NUKER_COOLDOWN`, so the first player tick that can observe the updated nuker still reads `cooldown === NUKER_COOLDOWN`. | Vanilla's first player tick after a processed launch observes the cooldown already decremented by one tick, `NUKER_COOLDOWN - 1`. | [1](#xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one) |
+| `nuke-impact-visible-time-to-land-off-by-one` | On the tick where nuke impact effects are first observable, xxscreeps keeps the Nuke object in `FIND_NUKES` but its `timeToLand` getter returns `-1` after the processor sets `#landTime = 0`. | Vanilla keeps the landing Nuke visible for that observation tick with `timeToLand === 0`, then removes it on the following tick. | [1](#xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one) |
+| `withdraw-safe-mode-before-nuker-invalid-target` | For hostile creeps in a safe-mode room withdrawing from a nuker, xxscreeps checks `target.store['#doesAllowWithdraw']()` before `checkSafeMode`, so `NukerStore` returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_OWNER for hostile safe mode before the nuker's non-withdrawable store check. | [1](#xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -245,7 +249,7 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
-<summary><code>game-object-json-room-tojson-null-crash</code> — 11 tests</summary>
+<summary><code>game-object-json-room-tojson-null-crash</code> — 12 tests</summary>
 
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
@@ -258,6 +262,7 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
 
 </details>
 
@@ -366,6 +371,37 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
+
+</details>
+
+<details id="xxscreeps-gap-ranged-mass-attack-range-and-target-filter-regressed">
+<summary><code>ranged-mass-attack-range-and-target-filter-regressed</code> — 4 tests</summary>
+
+- `creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage`
+- `creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures`
+- `room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance`
+- `Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick`
+
+</details>
+
+<details id="xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one">
+<summary><code>nuker-cooldown-first-visible-tick-off-by-one</code> — 1 test</summary>
+
+- `Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1`
+
+</details>
+
+<details id="xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one">
+<summary><code>nuke-impact-visible-time-to-land-off-by-one</code> — 1 test</summary>
+
+- `Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES`
+
+</details>
+
+<details id="xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target">
+<summary><code>withdraw-safe-mode-before-nuker-invalid-target</code> — 1 test</summary>
+
+- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code`
 
 </details>
 
@@ -3444,204 +3480,25 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 423 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 291 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `nuke` | Nukes | [138](#xxscreeps-skip-capability-nuke) |
-| capability | `powerCreeps` | Power creeps and powers | [116](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [117](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
-| capability | `deposit` | Deposits (highway) | [40](#xxscreeps-skip-capability-deposit) |
+| capability | `deposit` | Deposits (highway) | [41](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
+| capability | `roomStatus` | Room status fixture setup | [4](#xxscreeps-skip-capability-roomstatus) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
 Click a count to jump to the affected test list.
 
-<details id="xxscreeps-skip-capability-nuke">
-<summary><code>capability:nuke</code> — 138 tests across 12 files</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (2)
-
-- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
-- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
-
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (13)
-
-- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
-- creep.withdraw() WITHDRAW-017:invalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:busyBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidNukerBeforeInvalidCapacity withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidNukerBeforeRange withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidNukerBeforeFull withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidNukerBeforeFullAmount withdraw() validation returns the canonical code
-- creep.withdraw() WITHDRAW-017:invalidNukerBeforeNotEnough withdraw() validation returns the canonical code
-
-**`tests/06-controller/6.4-upgrade.test.ts`** (1)
-
-- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (101)
-
-- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
-- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
-- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
-- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
-- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
-- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
-- Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
-- Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
-- Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
-- Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
-- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
-- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
-- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
-- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
-- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
-- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
-- Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
-- Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
-- Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
-- Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym2range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym1range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp0range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp1range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp2range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym1range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp0range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp1range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp0range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp0range0 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp0range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym1range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp0range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp1range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym2range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym1range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp0range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp1range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp2range3 per-tile damage matches the 5x5 footprint and stops at range 3
-- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
-
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (2)
-
-- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
-- StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
-
-**`tests/15-structure-common/15.1-hits.test.ts`** (1)
-
-- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
-
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
-
-- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
-
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (4)
-
-- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
-- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
-
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
-
-- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
-- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
-- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
-- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
-
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (3)
-
-- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
-
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
-
-**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
-
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot
-
-</details>
-
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 116 tests across 26 files</summary>
+<summary><code>capability:powerCreeps</code> — 117 tests across 27 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3660,6 +3517,10 @@ Click a count to jump to the affected test list.
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
 - creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (1)
+
+- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
 
 **`tests/07-combat/7.17-tower-power.test.ts`** (2)
 
@@ -3954,7 +3815,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-deposit">
-<summary><code>capability:deposit</code> — 40 tests across 5 files</summary>
+<summary><code>capability:deposit</code> — 41 tests across 6 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3993,6 +3854,10 @@ Click a count to jump to the affected test list.
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeRange harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (1)
+
+- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 
 **`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
 
@@ -4094,6 +3959,18 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-roomstatus">
+<summary><code>capability:roomStatus</code> — 4 tests across 1 file</summary>
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (4)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
+
+</details>
+
 <details id="xxscreeps-skip-capability-intershardmemory">
 <summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
 
@@ -4130,7 +4007,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2166 tests across 106 files</summary>
+<summary>2290 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4228,7 +4105,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (61)
+**`tests/00-adapter-contract/setup.test.ts`** (63)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -4279,6 +4156,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
+- adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeSite + runPlayer advances exactly 1 tick
@@ -4288,6 +4166,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
@@ -4645,7 +4524,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (130)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (142)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -4658,6 +4537,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-010 withdraw returns ERR_BUSY while spawning
 - creep.withdraw() WITHDRAW-011 withdraw returns ERR_INVALID_ARGS for invalid resourceType or negative amount
 - creep.withdraw() WITHDRAW-012 withdraw returns ERR_NOT_OWNER during hostile safe mode
+- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
 - creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource
 - creep.withdraw() WITHDRAW-015 withdrawing last mineral from lab clears mineral slot
 - creep.withdraw() WITHDRAW-016 withdraw returns ERR_FULL when amount exceeds creep free capacity
@@ -4667,6 +4547,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:range withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:full withdraw() validation returns the canonical code
@@ -4677,6 +4558,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeFull withdraw() validation returns the canonical code
@@ -4685,6 +4567,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidArgs withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFull withdraw() validation returns the canonical code
@@ -4693,6 +4576,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFull withdraw() validation returns the canonical code
@@ -4700,12 +4584,14 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFull withdraw() validation returns the canonical code
@@ -4716,6 +4602,11 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNukerBeforeInvalidCapacity withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNukerBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNukerBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNukerBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidNukerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFullAmount withdraw() validation returns the canonical code
@@ -5066,7 +4957,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (48)
+**`tests/06-controller/6.4-upgrade.test.ts`** (49)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -5077,6 +4968,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
+- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 - creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
@@ -5276,6 +5168,102 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (93)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
+- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
+- Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
+- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
+- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
+- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
+- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
+- Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
+- Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
+- Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
+- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
+- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
+- Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
+- Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
+- Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
+- Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
+- Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
+- Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym2range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym1range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp0range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp1range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp2range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dym1range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp0range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp1range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm2dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp0range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxm1dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp0range0 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp0dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dym1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp0range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp1range1 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp1dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dym1range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp0range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp1range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp2range2 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp2dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym2range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dym1range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp0range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp1range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp2range3 per-tile damage matches the 5x5 footprint and stops at range 3
+- Nuke impact — section 7.14 NUKE-IMPACT-014:dxp3dyp3range3 per-tile damage matches the 5x5 footprint and stops at range 3
+
 **`tests/07-combat/7.15-safemode-combat.test.ts`** (2)
 
 - Safe mode combat effects SAFEMODE-COMBAT-001 a tower in a safe-moded room can still attack a hostile creep
@@ -5288,13 +5276,11 @@ Click a count to jump to the affected test list.
 - creep body part damage COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)
 - creep body part damage COMBAT-BODYPART-004 a damaged body part with HP > 0 functions at full effectiveness
 
-**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (12)
+**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (10)
 
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
-- creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
-- creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures
 - creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart
 - creep.rangedMassAttack() COMBAT-RMA-005:notOwner rangedMassAttack() validation returns the canonical code
 - creep.rangedMassAttack() COMBAT-RMA-005:busy rangedMassAttack() validation returns the canonical code
@@ -6005,7 +5991,7 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (17)
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (19)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
@@ -6023,6 +6009,8 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-PROTECT-007 setPublic returns ERR_NOT_OWNER on a rampart not owned by the player
 - StructureRampart RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval
 - StructureRampart RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0
+- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
+- StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
 - StructureRampart RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile
 
 **`tests/12-structures-military/12.3-wall.test.ts`** (2)
@@ -6086,7 +6074,7 @@ Click a count to jump to the affected test list.
 - Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
-**`tests/15-structure-common/15.1-hits.test.ts`** (17)
+**`tests/15-structure-common/15.1-hits.test.ts`** (18)
 
 - Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
 - Structure hits STRUCTURE-HITS-001:extension initializes with 1000 hits
@@ -6100,6 +6088,7 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-001:extractor initializes with 500 hits
 - Structure hits STRUCTURE-HITS-001:lab initializes with 500 hits
 - Structure hits STRUCTURE-HITS-001:container initializes with 250000 hits
+- Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-002 destroyable structures expose hits and hitsMax
 - Structure hits STRUCTURE-HITS-003 a structure at 0 hits is destroyed in the same tick
@@ -6113,7 +6102,7 @@ Click a count to jump to the affected test list.
 - Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (16)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (17)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -6127,6 +6116,7 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:extractor costs 5000
 - Construction costs CONSTRUCTION-COST-001:lab costs 50000
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
+- Construction costs CONSTRUCTION-COST-001:nuker costs 100000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
 - Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
@@ -6201,7 +6191,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (23)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (26)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -6218,9 +6208,12 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
 - room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
 - room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
-- room.getEventLog() ROOM-EVENTLOG-016 EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
 - room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
+- room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
+- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
 - room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
 - room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick
@@ -6302,6 +6295,16 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 - Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
+
+- Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
+- Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
+- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
+- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
+
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
@@ -6363,7 +6366,7 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [LEFT] getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_LEFT] getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (19)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (22)
 
 - Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
 - Store STORE-OPEN-001:container getCapacity() returns total capacity for container
@@ -6380,10 +6383,13 @@ Click a count to jump to the affected test list.
 - Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
 - Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
 - Store STORE-RESTRICTED-001 lab getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
 - Store STORE-BIND-001 unbound lab mineral slot accepts any non-energy resource
 - Store STORE-BIND-002:H stored mineral binds the lab slot
 - Store STORE-BIND-002:O stored mineral binds the lab slot
 - Store STORE-BIND-002:G stored mineral binds the lab slot
+- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
 
 **`tests/23-store-api/23.5-timers.test.ts`** (2)
 
@@ -6439,9 +6445,8 @@ Click a count to jump to the affected test list.
 - Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist
 - Same-tick resource intent visibility INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed
 
-**`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (2)
+**`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (1)
 
-- Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
 **`tests/25-memory/25.1-25.3-memory.test.ts`** (19)
@@ -6466,7 +6471,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (33)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (35)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
@@ -6492,6 +6497,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:observer structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:nuker structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
@@ -6501,6 +6507,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 
 **`tests/27-undocumented/27.1-memhack.test.ts`** (10)
 
