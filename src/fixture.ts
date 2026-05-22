@@ -209,8 +209,11 @@ export const test = base.extend<{ shard: ShardFixture }>({
 	shard: async ({ skip, task }, use) => {
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
-		await use(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
-		await adapter.teardown();
+		try {
+			await use(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
+		} finally {
+			await adapter.teardown();
+		}
 	},
 });
 

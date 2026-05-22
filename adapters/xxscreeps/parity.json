@@ -124,11 +124,6 @@
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
 		},
-		"ranged-mass-attack-range-and-target-filter-regressed": {
-			"actual": "At xxscreeps upstream `123a1c58`, `rangedMassAttack` scans `positionsInRangeTo(creep.pos, 2)` and no longer filters out friendly creeps or unowned structures, so range-3 targets are skipped and non-hostile targets can be damaged.",
-			"expected": "Vanilla rangedMassAttack scans the full range-3 blast area, damages only hostile creeps/power creeps/structures, and emits one EVENT_ATTACK entry per damaged target with range-scaled RANGED_MASS damage.",
-			"tests": ["COMBAT-RMA-002", "COMBAT-RMA-003", "ROOM-EVENTLOG-016", "INTENT-SIMULT-001"]
-		},
 		"nuker-cooldown-first-visible-tick-off-by-one": {
 			"actual": "After a processed launch, xxscreeps sets `#cooldownTime = Game.time + NUKER_COOLDOWN`, so the first player tick that can observe the updated nuker still reads `cooldown === NUKER_COOLDOWN`.",
 			"expected": "Vanilla's first player tick after a processed launch observes the cooldown already decremented by one tick, `NUKER_COOLDOWN - 1`.",
