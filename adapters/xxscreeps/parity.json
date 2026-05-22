@@ -138,6 +138,11 @@
 			"actual": "For hostile creeps in a safe-mode room withdrawing from a nuker, xxscreeps checks `target.store['#doesAllowWithdraw']()` before `checkSafeMode`, so `NukerStore` returns ERR_INVALID_TARGET.",
 			"expected": "Vanilla returns ERR_NOT_OWNER for hostile safe mode before the nuker's non-withdrawable store check.",
 			"tests": ["WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker"]
+		},
+		"construction-site-stacking-non-road-rampart-pairs": {
+			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK.",
+			"expected": "Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status.",
+			"tests": ["CONSTRUCTION-SITE-017"]
 		}
 	}
 }

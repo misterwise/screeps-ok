@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2626%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-11%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2614%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2299%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,36 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2626](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-22 05:00 UTC |
-| 🔴 | **xxscreeps** | [2300](#xxscreeps-passing-tests) | [51](#xxscreeps-expected-failures) | [11](#xxscreeps-unexpected-failures) | [291](#xxscreeps-skipped-tests) | 2026-05-22 05:03 UTC |
+| 🟡 | **vanilla** | [2614](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-22 03:40 UTC |
+| 🟡 | **xxscreeps** | [2299](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [291](#xxscreeps-skipped-tests) | 2026-05-22 03:36 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## 🚨 Regression traps triggered
-
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code`
-- `Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1`
-- `Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES`
-
-## xxscreeps unexpected failures
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-tower] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-spawn] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-extension] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-blocks-container] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [spawn-blocks-container] structure under construction-site placement obeys road/rampart stacking`
-- `creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage`
-- `creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures`
-- `room.getEventLog() ROOM-EVENTLOG-016 basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance`
-- `room.getEventLog() ROOM-EVENTLOG-016 filter rangedMassAttack emits no RANGED_MASS entries for own creeps or unowned structures`
-- `room.getEventLog() ROOM-EVENTLOG-016 rampart redirect rangedMassAttack event targets the hostile rampart that absorbs damage`
-- `Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick`
 
 ## vanilla expected failures
 
@@ -182,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 27 expected-failure classifications against vanilla's canonical behavior, covering 51 tests. That includes 25 open parity gaps covering 47 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 28 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 26 open parity gaps covering 50 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -212,9 +188,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
-| `nuker-cooldown-first-visible-tick-off-by-one` | After a processed launch, xxscreeps sets `#cooldownTime = Game.time + NUKER_COOLDOWN`, so the first player tick that can observe the updated nuker still reads `cooldown === NUKER_COOLDOWN`. | Vanilla's first player tick after a processed launch observes the cooldown already decremented by one tick, `NUKER_COOLDOWN - 1`. | 0 |
-| `nuke-impact-visible-time-to-land-off-by-one` | On the tick where nuke impact effects are first observable, xxscreeps keeps the Nuke object in `FIND_NUKES` but its `timeToLand` getter returns `-1` after the processor sets `#landTime = 0`. | Vanilla keeps the landing Nuke visible for that observation tick with `timeToLand === 0`, then removes it on the following tick. | 0 |
-| `withdraw-safe-mode-before-nuker-invalid-target` | For hostile creeps in a safe-mode room withdrawing from a nuker, xxscreeps checks `target.store['#doesAllowWithdraw']()` before `checkSafeMode`, so `NukerStore` returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_OWNER for hostile safe mode before the nuker's non-withdrawable store check. | 0 |
+| `nuker-cooldown-first-visible-tick-off-by-one` | After a processed launch, xxscreeps sets `#cooldownTime = Game.time + NUKER_COOLDOWN`, so the first player tick that can observe the updated nuker still reads `cooldown === NUKER_COOLDOWN`. | Vanilla's first player tick after a processed launch observes the cooldown already decremented by one tick, `NUKER_COOLDOWN - 1`. | [1](#xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one) |
+| `nuke-impact-visible-time-to-land-off-by-one` | On the tick where nuke impact effects are first observable, xxscreeps keeps the Nuke object in `FIND_NUKES` but its `timeToLand` getter returns `-1` after the processor sets `#landTime = 0`. | Vanilla keeps the landing Nuke visible for that observation tick with `timeToLand === 0`, then removes it on the following tick. | [1](#xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one) |
+| `withdraw-safe-mode-before-nuker-invalid-target` | For hostile creeps in a safe-mode room withdrawing from a nuker, xxscreeps checks `target.store['#doesAllowWithdraw']()` before `checkSafeMode`, so `NukerStore` returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_OWNER for hostile safe mode before the nuker's non-withdrawable store check. | [1](#xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target) |
+| `construction-site-stacking-non-road-rampart-pairs` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK. | Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -398,19 +375,28 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one">
-<summary><code>nuker-cooldown-first-visible-tick-off-by-one</code> — 0 tests</summary>
+<summary><code>nuker-cooldown-first-visible-tick-off-by-one</code> — 1 test</summary>
 
+- `Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1`
 
 </details>
 
 <details id="xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one">
-<summary><code>nuke-impact-visible-time-to-land-off-by-one</code> — 0 tests</summary>
+<summary><code>nuke-impact-visible-time-to-land-off-by-one</code> — 1 test</summary>
 
+- `Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES`
 
 </details>
 
 <details id="xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target">
-<summary><code>withdraw-safe-mode-before-nuker-invalid-target</code> — 0 tests</summary>
+<summary><code>withdraw-safe-mode-before-nuker-invalid-target</code> — 1 test</summary>
+
+- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-construction-site-stacking-non-road-rampart-pairs">
+<summary><code>construction-site-stacking-non-road-rampart-pairs</code> — 0 tests</summary>
 
 
 </details>
@@ -470,7 +456,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2626 tests across 135 files</summary>
+<summary>2614 tests across 135 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1281,7 +1267,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (68)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (56)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -1319,18 +1305,6 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-tower] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-spawn] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-extension] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-blocks-container] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [spawn-blocks-container] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-road] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-rampart] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-allows-road] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-allows-rampart] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-container] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-tower] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [rampart-allows-tower] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
@@ -4034,7 +4008,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2300 tests across 108 files</summary>
+<summary>2299 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4797,7 +4771,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (62)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (55)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4834,13 +4808,6 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-road] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-rampart] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-allows-road] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-allows-rampart] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-container] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-tower] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-017 [rampart-allows-tower] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
@@ -5310,11 +5277,13 @@ Click a count to jump to the affected test list.
 - creep body part damage COMBAT-BODYPART-003 a body part at 0 hits is excluded from getActiveBodyparts(type)
 - creep body part damage COMBAT-BODYPART-004 a damaged body part with HP > 0 functions at full effectiveness
 
-**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (10)
+**`tests/07-combat/7.3-ranged-mass-attack.test.ts`** (12)
 
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=1] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-002 [range=2] rangedMassAttack() deals the expected per-range damage
+- creep.rangedMassAttack() COMBAT-RMA-002 [range=3] rangedMassAttack() deals the expected per-range damage
 - creep.rangedMassAttack() COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call
+- creep.rangedMassAttack() COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures
 - creep.rangedMassAttack() COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart
 - creep.rangedMassAttack() COMBAT-RMA-005:notOwner rangedMassAttack() validation returns the canonical code
 - creep.rangedMassAttack() COMBAT-RMA-005:busy rangedMassAttack() validation returns the canonical code
@@ -6225,7 +6194,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (29)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (32)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -6242,8 +6211,11 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
 - room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
 - room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
+- room.getEventLog() ROOM-EVENTLOG-016 basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
+- room.getEventLog() ROOM-EVENTLOG-016 filter rangedMassAttack emits no RANGED_MASS entries for own creeps or unowned structures
 - room.getEventLog() ROOM-EVENTLOG-016 range 2 rangedMassAttack event damage uses the middle distance bucket
 - room.getEventLog() ROOM-EVENTLOG-016 concurrent attackers rangedMassAttack entries keep each attacker objectId
+- room.getEventLog() ROOM-EVENTLOG-016 rampart redirect rangedMassAttack event targets the hostile rampart that absorbs damage
 - room.getEventLog() ROOM-EVENTLOG-016 kill ordering rangedMassAttack kill-shot logs destruction before attack
 - room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
@@ -6482,8 +6454,9 @@ Click a count to jump to the affected test list.
 - Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist
 - Same-tick resource intent visibility INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed
 
-**`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (1)
+**`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (2)
 
+- Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
 **`tests/25-memory/25.1-25.3-memory.test.ts`** (19)

@@ -123,6 +123,11 @@
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
+		},
+		"construction-site-stacking-non-road-rampart-pairs": {
+			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK.",
+			"expected": "Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status.",
+			"tests": ["CONSTRUCTION-SITE-017"]
 		}
 	}
 }
