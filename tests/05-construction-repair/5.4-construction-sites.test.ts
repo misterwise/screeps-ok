@@ -9,7 +9,10 @@ import { describe, test, expect, code, body,
 } from '../../src/index.js';
 import { constructionSiteCreateValidationCases } from '../../src/matrices/construction-site-create-validation.js';
 import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
+import { constructionSiteOverStructureCases } from '../../src/matrices/construction-site-over-structure.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+
+const STRUCTURE_TYPES_UNOWNED = new Set<string>([STRUCTURE_ROAD, STRUCTURE_CONTAINER]);
 
 const staleConstructionSiteRemoveCase = staleReceiverCases.find(row => row.key === 'constructionSiteRemove')!;
 
@@ -291,6 +294,44 @@ describe('room.createConstructionSite()', () => {
 			const site = sites.find(s => s.pos.x === 25 && s.pos.y === 25);
 			expect(site).toBeDefined();
 			expect(site!.structureType).toBe(placedType);
+		});
+	}
+
+	for (const { label, existingType, placedType, expectedRc } of constructionSiteOverStructureCases) {
+		test(`CONSTRUCTION-SITE-017 [${label}] structure under construction-site placement obeys road/rampart stacking`, async ({ shard }) => {
+			// Engine utils.js:181-184 — a placed site is rejected when an existing
+			// non-road/non-rampart structure with a CONSTRUCTION_COST type occupies
+			// the tile and the placed type is also non-road/non-rampart. Road and
+			// rampart short-circuit on either side, so they stack with anything.
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			});
+			await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: existingType,
+				...(STRUCTURE_TYPES_UNOWNED.has(existingType) ? {} : { owner: 'p1' }),
+			});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].createConstructionSite(25, 25, ${placedType})
+			`);
+			expect(rc).toBe(expectedRc);
+			await shard.tick();
+
+			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
+			const site = sites.find(s => s.pos.x === 25 && s.pos.y === 25);
+			if (expectedRc === OK) {
+				expect(site).toBeDefined();
+				expect(site!.structureType).toBe(placedType);
+				const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+				const existing = structures.find(s =>
+					s.structureType === existingType &&
+					s.pos.x === 25 && s.pos.y === 25);
+				expect(existing).toBeDefined();
+			} else {
+				expect(site).toBeUndefined();
+			}
 		});
 	}
 

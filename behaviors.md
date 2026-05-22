@@ -921,6 +921,15 @@ Coverage Notes
   gate; vanilla and xxscreeps both treat the cap as a placement-time and
   active-structure check only, not a build-time one. Distinct from
   `CONSTRUCTION-SITE-003`, which gates at placement time.
+- `CONSTRUCTION-SITE-017` `matrix` `verified_vanilla`
+  A construction site cannot be placed on a tile already occupied by a
+  non-road/non-rampart structure unless the placed type is itself road or
+  rampart; road and rampart stack with any other structure. Engine
+  `utils.checkConstructionSite` (utils.js:181-184) rejects with
+  `ERR_INVALID_TARGET` when both sides of the pair are non-road/non-rampart
+  `CONSTRUCTION_COST` types, and short-circuits otherwise. Same-type
+  stacking (e.g. tower-on-tower) is owned by utils.js:172 and is out of
+  scope; site-on-site is owned by `CONSTRUCTION-SITE-007`.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
