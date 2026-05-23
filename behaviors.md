@@ -3456,14 +3456,10 @@ Notes
   `Game.map.getRoomLinearDistance(roomA, roomB, true)` allows distance to wrap
   across opposite world edges before taking the shorter path.
 - `MAP-ROOM-004` `behavior` `verified_vanilla`
-  `Game.map.getRoomStatus(roomName)` returns `{status:'normal', timestamp:null}`
-  for an in-world room with no admin status set.
-- `MAP-ROOM-004b` `behavior`
-  `Game.map.getRoomStatus(roomName)` returns `{status:'closed', timestamp:<number>}`
-  for an admin-closed in-world room.
-- `MAP-ROOM-004c` `behavior`
-  `Game.map.getRoomStatus(roomName)` returns `{status:'closed', timestamp:null}`
-  for a valid-format room name that does not exist on the world.
+  `Game.map.getRoomStatus(roomName)` returns the canonical status and timestamp
+  mapping: default in-world rooms are `{status:'normal', timestamp:null}`,
+  admin-closed rooms are `{status:'closed', timestamp:<number>}`, and
+  valid-format rooms outside the world are `{status:'closed', timestamp:null}`.
 - `MAP-ROOM-005` `behavior` `verified_vanilla`
   `Game.map.getWorldSize()` returns the inclusive count of rooms along the
   longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`

@@ -44,7 +44,7 @@ describe('Game.map room queries', () => {
 		expect(result.wrapped).toBe(0);
 	});
 
-	test('MAP-ROOM-004 getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set', async ({ shard }) => {
+	test('MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -56,7 +56,7 @@ describe('Game.map room queries', () => {
 		expect(result.timestamp).toBeNull();
 	});
 
-	test('MAP-ROOM-004b getRoomStatus returns {status:"closed"} for an admin-closed in-world room', async ({ shard }) => {
+	test('MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room', async ({ shard }) => {
 		shard.requires('roomStatus');
 		await shard.createShard({
 			players: ['p1'],
@@ -76,7 +76,7 @@ describe('Game.map room queries', () => {
 		expect(result.timestamp).toBeGreaterThan(0);
 	});
 
-	test('MAP-ROOM-004c getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world', async ({ shard }) => {
+	test('MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`

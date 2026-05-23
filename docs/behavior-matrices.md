@@ -1215,7 +1215,8 @@ Each definition should include:
 - `Dimensions`
   room status class
 - `Applicability`
-  Normal, novice, respawn, and closed rooms
+  Default normal rooms, admin status rooms, and valid-format room names outside
+  the world
 - `Exclusions`
   Exit descriptions and linear-distance rules
 - `Verification Notes`

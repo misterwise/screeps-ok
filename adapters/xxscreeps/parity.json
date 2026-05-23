@@ -57,6 +57,11 @@
 			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
 			"tests": ["ROOM-LOOK-006"]
 		},
+		"map-room-status-offworld-undefined": {
+			"actual": "`Game.map.getRoomStatus()` returns `undefined` for a valid-format room name that is not present in the terrain map because `game/map.ts` returns early when `#terrain.has(roomName)` is false.",
+			"expected": "Vanilla returns `{ status: 'closed', timestamp: null }` for valid-format room names outside the accessible world after checking explicit closed/novice/respawn status data.",
+			"tests": ["MAP-ROOM-004:offWorld"]
+		},
 		"commonjs-main-exports-alias-missing": {
 			"actual": "The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record.",
 			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick.",

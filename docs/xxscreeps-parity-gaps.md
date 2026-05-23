@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-19 against pin `15df4bea`.
+Last refreshed: 2026-05-23 against pin `9e1aae5b`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 22 open parity gaps covering 46 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 27 open parity gaps covering 56 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Open parity gaps
 
@@ -92,6 +92,13 @@ Last refreshed: 2026-05-19 against pin `15df4bea`.
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
 - Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
+
+### map-room-status-offworld-undefined
+
+- Tests: MAP-ROOM-004:offWorld
+- Status: CONFIRMED.
+- Cause: `GameMap.getRoomStatus()` (`game/map.ts`) returns `undefined` whenever the room name is absent from `#terrain`, even if the name is syntactically valid. Vanilla first validates room-name syntax, checks explicit closed/novice/respawn status data, checks accessible rooms, and then returns `{status:'closed', timestamp:null}` for valid-format rooms outside the world.
+- Plan: return the vanilla closed/null status for valid room names that are missing from terrain while preserving `undefined` for invalid room-name syntax.
 
 ### commonjs-main-exports-alias-missing
 
