@@ -44,7 +44,7 @@ describe('Game.map room queries', () => {
 		expect(result.wrapped).toBe(0);
 	});
 
-	test('MAP-ROOM-004 getRoomStatus returns the canonical status and timestamp mapping for normal rooms', async ({ shard }) => {
+	test('MAP-ROOM-004 getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -52,8 +52,40 @@ describe('Game.map room queries', () => {
 			({ status: status.status, timestamp: status.timestamp })
 		`) as { status: string; timestamp: number | null };
 
-		// On a private server, all rooms are "normal" status with null timestamp.
 		expect(result.status).toBe('normal');
+		expect(result.timestamp).toBeNull();
+	});
+
+	test('MAP-ROOM-004b getRoomStatus returns {status:"closed"} for an admin-closed in-world room', async ({ shard }) => {
+		shard.requires('roomStatus');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', status: 'closed' },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const status = Game.map.getRoomStatus('W2N1');
+			({ status: status.status, timestamp: status.timestamp })
+		`) as { status: string; timestamp: number };
+
+		expect(result.status).toBe('closed');
+		expect(typeof result.timestamp).toBe('number');
+		expect(result.timestamp).toBeGreaterThan(0);
+	});
+
+	test('MAP-ROOM-004c getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const status = Game.map.getRoomStatus('W99N99');
+			({ statusType: typeof status, status: status && status.status, timestamp: status && status.timestamp })
+		`) as { statusType: string; status: string | undefined; timestamp: number | null | undefined };
+
+		expect(result.statusType).toBe('object');
+		expect(result.status).toBe('closed');
 		expect(result.timestamp).toBeNull();
 	});
 
