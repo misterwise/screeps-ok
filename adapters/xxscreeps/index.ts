@@ -1287,6 +1287,17 @@ async function createSimulation(
 
 	// Base: all shard.json rooms start with blank (all-plain) terrain
 	const existingRooms = await shard.data.sMembers('rooms');
+
+	// instantiateTestShard saves each grid room once at time 0 — only the even
+	// parity slot. Stamp the odd slot so a neighbor room a creep crosses into loads
+	// on any tick parity, not just even ones. Must precede the genesis bump.
+	await Promise.all(Fn.map(existingRooms, roomName =>
+		shard.copyRoomFromPreviousTick(roomName, 1)));
+
+	// Genesis at tick 1 → first player tick sees Game.time === 2, matching vanilla.
+	shard.time = 1;
+	await shard.data.set('time', shard.time);
+
 	for (const roomName of existingRooms) {
 		const writer = new TerrainWriter();
 		terrainMap.set(roomName, { exits: packExits(writer), terrain: writer });
