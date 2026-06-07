@@ -44,8 +44,9 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // symlinks during layOutPackages; v6 wipes carried-over node_modules so
 // nested install fetches lodash3's `dist/` tarball from the registry; v7
 // patches the precompiled pathfinder package layout for xxscreeps's
-// runtime webpack build.
-const stampSchema = 'v7';
+// runtime webpack build; v8 externalizes the pathfinder wrapper's `#pf`
+// native import (instead of the whole package) so the wrapper stays bundled.
+const stampSchema = 'v8';
 
 function stampContent(token) {
 	return `${token}\nschema=${stampSchema}`;
@@ -197,12 +198,13 @@ function inlineTsconfigBase(srcDir) {
 	if (patched === original) {
 		throw new Error('Failed to rewrite extends in xxscreeps tsconfig.json');
 	}
-	// Drop the sibling-workspace lodash3 path/reference. The published
+	// Drop the sibling-workspace lodash3 and pathfinder path/references. The published
 	// `@xxscreeps/lodash3` package resolves through node_modules at runtime,
 	// and TS finds its types via package resolution — no path override needed.
 	patched = patched
 		.replace(/^\s*"@xxscreeps\/lodash3":\s*\[[^\]]*\],?\s*$\n?/m, '')
-		.replace(/^\s*\{\s*"path":\s*"\.\.\/lodash3"\s*\},?\s*$\n?/m, '');
+		.replace(/^\s*\{\s*"path":\s*"\.\.\/lodash3"\s*\},?\s*$\n?/m, '')
+		.replace(/^\s*\{\s*"path":\s*"\.\.\/pathfinder"\s*\},?\s*$\n?/m, '');
 	writeFileSync(configPath, patched);
 }
 
@@ -293,6 +295,20 @@ function patchSandboxNativeExternalResolution() {
 	const sandboxPath = join(xxscreepsDir, 'driver/sandbox/index.ts');
 	if (!existsSync(sandboxPath)) return;
 	let source = readFileSync(sandboxPath, 'utf8');
+
+	// Externalize the wrapper's `#pf` native import, not the whole @xxscreeps/pathfinder package.
+	// The package is a JS shim adapting the public 5-arg search API to the 10-arg native; externalizing it whole bypasses the shim so runtime calls hit the native directly and @auto_js throws "Could not accept".
+	if (source.includes("if (request === '#pf')")) {
+		console.log('[screeps-ok] xxscreeps sandbox pathfinder externalization already patched');
+		return;
+	}
+	if (source.includes("if (request === '@xxscreeps/pathfinder')")) {
+		const patched = source.replace("if (request === '@xxscreeps/pathfinder')", "if (request === '#pf')");
+		writeFileSync(sandboxPath, patched);
+		console.log('[screeps-ok] Patched xxscreeps sandbox to externalize #pf (keep pathfinder wrapper bundled)');
+		return;
+	}
+
 	if (!source.includes("import { createRequire } from 'node:module';")) {
 		source = source.replace(
 			"import * as Path from 'node:path';\n",
@@ -321,13 +337,6 @@ function patchSandboxNativeExternalResolution() {
 	if (patched === source) {
 		if (source.includes('const modulePath = request.startsWith(\'.\') || Path.isAbsolute(request)')) {
 			console.log('[screeps-ok] xxscreeps sandbox native external resolution already patched');
-			return;
-		}
-		if (
-			source.includes("if (request === '@xxscreeps/pathfinder')") &&
-			source.includes('export const pathFinderBinaryPath = locateModule();')
-		) {
-			console.log('[screeps-ok] xxscreeps sandbox uses upstream pathfinder native external resolution');
 			return;
 		}
 		throw new Error('Failed to patch xxscreeps sandbox native external resolution');

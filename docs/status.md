@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2628%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2306%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-60-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2628%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2304%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2628](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-05-23 05:49 UTC |
-| 🟡 | **xxscreeps** | [2306](#xxscreeps-passing-tests) | [60](#xxscreeps-expected-failures) | — | [292](#xxscreeps-skipped-tests) | 2026-05-23 05:46 UTC |
+| 🟡 | **vanilla** | [2628](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-07 02:22 UTC |
+| 🟡 | **xxscreeps** | [2304](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [292](#xxscreeps-skipped-tests) | 2026-06-07 02:18 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 29 expected-failure classifications against vanilla's canonical behavior, covering 60 tests. That includes 27 open parity gaps covering 56 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 62 tests. That includes 28 open parity gaps covering 58 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -166,6 +166,11 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
+| `nuke-impact-invalid-wake-time-throws` | Regression at pin `549660784`: processing a landed nuke throws `Invalid wake time 1; current 1` from the tick scheduler, so the impact never resolves — the Nuke stays in FIND_NUKES and on-tile nuke damage (including the rampart-first ordering) is not applied. | A landed nuke resolves on schedule: ramparts absorb damage ahead of other structures on the tile, and the Nuke object is removed from FIND_NUKES on the following tick. | [2](#xxscreeps-gap-nuke-impact-invalid-wake-time-throws) |
+| `map-room-status-normal-returns-closed` | Regression at pin `549660784`: `Game.map.getRoomStatus()` returns `{status:'closed'}` for an in-world room with no admin status set. (The off-world case now coincidentally matches vanilla's `closed`, but in-world rooms regressed.) | Vanilla returns `{status:'normal', timestamp:null}` for an in-world room with no closed/novice/respawn status. | [1](#xxscreeps-gap-map-room-status-normal-returns-closed) |
+| `pathfinder-incomplete-false-on-partial-path` | Regression at pin `549660784`: `PathFinder.search` returns `incomplete: false` when no full path to the goal exists and only a partial path is produced. | `PathFinder.search` returns `incomplete: true` when it cannot reach the goal. | [1](#xxscreeps-gap-pathfinder-incomplete-false-on-partial-path) |
+| `costmatrix-255-not-treated-unwalkable` | Regression at pin `549660784`: a player `CostMatrix` value of 255 supplied through `roomCallback` no longer makes the tile unwalkable for `PathFinder.search`. | A CostMatrix value of 255 marks the tile unwalkable, so the search routes around it or reports the goal unreachable. | [1](#xxscreeps-gap-costmatrix-255-not-treated-unwalkable) |
+| `findclosestbypath-null-when-target-reachable` | Regression at pin `549660784`: `RoomPosition.findClosestByPath` returns `null` when a reachable target exists (sibling of the still-open range-handling gap ROOMPOS-FIND-010). | `findClosestByPath` returns the nearest target reachable by path. | [1](#xxscreeps-gap-findclosestbypath-null-when-target-reachable) |
 | `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
 | `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
@@ -176,7 +181,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [12](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
-| `map-room-status-offworld-undefined` | `Game.map.getRoomStatus()` returns `undefined` for a valid-format room name that is not present in the terrain map because `game/map.ts` returns early when `#terrain.has(roomName)` is false. | Vanilla returns `{ status: 'closed', timestamp: null }` for valid-format room names outside the accessible world after checking explicit closed/novice/respawn status data. | [1](#xxscreeps-gap-map-room-status-offworld-undefined) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `stale-construction-site-remove-allowed` | `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`). | Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing. | [1](#xxscreeps-gap-stale-construction-site-remove-allowed) |
@@ -189,12 +193,45 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
-| `nuker-cooldown-first-visible-tick-off-by-one` | After a processed launch, xxscreeps sets `#cooldownTime = Game.time + NUKER_COOLDOWN`, so the first player tick that can observe the updated nuker still reads `cooldown === NUKER_COOLDOWN`. | Vanilla's first player tick after a processed launch observes the cooldown already decremented by one tick, `NUKER_COOLDOWN - 1`. | [1](#xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one) |
-| `nuke-impact-visible-time-to-land-off-by-one` | On the tick where nuke impact effects are first observable, xxscreeps keeps the Nuke object in `FIND_NUKES` but its `timeToLand` getter returns `-1` after the processor sets `#landTime = 0`. | Vanilla keeps the landing Nuke visible for that observation tick with `timeToLand === 0`, then removes it on the following tick. | [1](#xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one) |
-| `withdraw-safe-mode-before-nuker-invalid-target` | For hostile creeps in a safe-mode room withdrawing from a nuker, xxscreeps checks `target.store['#doesAllowWithdraw']()` before `checkSafeMode`, so `NukerStore` returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_OWNER for hostile safe mode before the nuker's non-withdrawable store check. | [1](#xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target) |
 | `construction-site-stacking-non-road-rampart-pairs` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK. | Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status. | [5](#xxscreeps-gap-construction-site-stacking-non-road-rampart-pairs) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-nuke-impact-invalid-wake-time-throws">
+<summary><code>nuke-impact-invalid-wake-time-throws</code> — 2 tests</summary>
+
+- `StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile`
+- `Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES`
+
+</details>
+
+<details id="xxscreeps-gap-map-room-status-normal-returns-closed">
+<summary><code>map-room-status-normal-returns-closed</code> — 1 test</summary>
+
+- `Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set`
+
+</details>
+
+<details id="xxscreeps-gap-pathfinder-incomplete-false-on-partial-path">
+<summary><code>pathfinder-incomplete-false-on-partial-path</code> — 1 test</summary>
+
+- `PathFinder PATHFINDER-012 PathFinder.search returns incomplete: true with a partial path when no full path exists`
+
+</details>
+
+<details id="xxscreeps-gap-costmatrix-255-not-treated-unwalkable">
+<summary><code>costmatrix-255-not-treated-unwalkable</code> — 1 test</summary>
+
+- `CostMatrix COSTMATRIX-007 CostMatrix value 255 means the tile is unwalkable`
+
+</details>
+
+<details id="xxscreeps-gap-findclosestbypath-null-when-target-reachable">
+<summary><code>findclosestbypath-null-when-target-reachable</code> — 1 test</summary>
+
+- `RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists`
+
+</details>
 
 <details id="xxscreeps-gap-tombstone-creep-body-types-not-objects">
 <summary><code>tombstone-creep-body-types-not-objects</code> — 1 test</summary>
@@ -279,13 +316,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>look-for-at-unknown-returns-empty</code> — 1 test</summary>
 
 - `Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type`
-
-</details>
-
-<details id="xxscreeps-gap-map-room-status-offworld-undefined">
-<summary><code>map-room-status-offworld-undefined</code> — 1 test</summary>
-
-- `Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world`
 
 </details>
 
@@ -379,27 +409,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
-
-</details>
-
-<details id="xxscreeps-gap-nuker-cooldown-first-visible-tick-off-by-one">
-<summary><code>nuker-cooldown-first-visible-tick-off-by-one</code> — 1 test</summary>
-
-- `Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1`
-
-</details>
-
-<details id="xxscreeps-gap-nuke-impact-visible-time-to-land-off-by-one">
-<summary><code>nuke-impact-visible-time-to-land-off-by-one</code> — 1 test</summary>
-
-- `Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES`
-
-</details>
-
-<details id="xxscreeps-gap-withdraw-safe-mode-before-nuker-invalid-target">
-<summary><code>withdraw-safe-mode-before-nuker-invalid-target</code> — 1 test</summary>
-
-- `creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code`
 
 </details>
 
@@ -4039,7 +4048,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2306 tests across 108 files</summary>
+<summary>2304 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4320,7 +4329,7 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (19)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
@@ -4333,7 +4342,6 @@ Click a count to jump to the affected test list.
 - PathFinder PATHFINDER-009 PathFinder.search maxOps option limits the number of pathfinding operations
 - PathFinder PATHFINDER-010 PathFinder.search maxRooms option limits the number of rooms searched
 - PathFinder PATHFINDER-011 PathFinder.search flee mode finds a path away from the goal positions
-- PathFinder PATHFINDER-012 PathFinder.search returns incomplete: true with a partial path when no full path exists
 - PathFinder PATHFINDER-013 Empty goal array returns path: [] and ops: 0
 - PathFinder PATHFINDER-014 Nullish goal returns path: [] and ops: 0
 - PathFinder PATHFINDER-015 maxCost limits search by cumulative path cost
@@ -4343,7 +4351,7 @@ Click a count to jump to the affected test list.
 - PathFinder PATHFINDER-019 range > 0 terminates within range, not necessarily on goal
 - PathFinder PATHFINDER-020 multi-room path crosses room boundary with continuous positions
 
-**`tests/02-pathfinding/2.2-costmatrix.test.ts`** (8)
+**`tests/02-pathfinding/2.2-costmatrix.test.ts`** (7)
 
 - CostMatrix COSTMATRIX-001 new CostMatrix() creates a matrix with all values 0
 - CostMatrix COSTMATRIX-002 CostMatrix.set(x, y, cost) and get(x, y) round-trip the assigned value
@@ -4352,7 +4360,6 @@ Click a count to jump to the affected test list.
 - CostMatrix COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255
 - CostMatrix COSTMATRIX-006 CostMatrix value 0 means use the default terrain cost
 - CostMatrix COSTMATRIX-008 CostMatrix values 1–254 override terrain cost
-- CostMatrix COSTMATRIX-007 CostMatrix value 255 means the tile is unwalkable
 
 **`tests/02-pathfinding/2.3-legacy-path.test.ts`** (9)
 
@@ -4556,7 +4563,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (142)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (143)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -4629,6 +4636,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
@@ -5207,7 +5215,7 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (93)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (95)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -5232,6 +5240,7 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
 - Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
 - Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
+- Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
 - Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
 - Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
 - Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
@@ -5253,6 +5262,7 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
 - Nuke impact — section 7.14 NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage
+- Nuke impact — section 7.14 NUKE-IMPACT-013 impact effects are visible while the landing nuke remains in FIND_NUKES
 - Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym3range3 per-tile damage matches the 5x5 footprint and stops at range 3
 - Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym2range3 per-tile damage matches the 5x5 footprint and stops at range 3
 - Nuke impact — section 7.14 NUKE-IMPACT-014:dxm3dym1range3 per-tile damage matches the 5x5 footprint and stops at range 3
@@ -6032,7 +6042,7 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (19)
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (18)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
@@ -6050,7 +6060,6 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-PROTECT-007 setPublic returns ERR_NOT_OWNER on a rampart not owned by the player
 - StructureRampart RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval
 - StructureRampart RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0
-- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
 - StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
 - StructureRampart RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile
 
@@ -6342,7 +6351,7 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 - Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (6)
 
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
@@ -6350,14 +6359,13 @@ Click a count to jump to the affected test list.
 - Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
 **`tests/21-map/21.1-room-queries.test.ts`** (5)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
-- Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
+- Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
 - Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
@@ -6381,7 +6389,7 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (18)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (17)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
@@ -6391,7 +6399,6 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets
 - RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
 - RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
-- RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists
 - RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route
 - RoomPosition find helpers ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall
 - RoomPosition find helpers ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty

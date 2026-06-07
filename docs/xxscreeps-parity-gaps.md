@@ -3,9 +3,28 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-05-23 against pin `9e1aae5b`.
+Last refreshed: 2026-06-06 against pin `54966078`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 27 open parity gaps covering 56 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 28 open parity gaps covering 58 tests, plus 2 accepted divergences covering 4 tests.
+
+## Pin `549660784` regressions
+
+These passed at pin `9e1aae5b` and regressed on the bump to `549660784`. They are registered in `parity.json` so parity stays green; each is a candidate for an upstream xxscreeps fix rather than a long-standing gap.
+
+### nuke-impact-invalid-wake-time-throws
+
+- Tests: NUKE-FLIGHT-005, RAMPART-PROTECT-008
+- Cause: processing a landed nuke throws `Invalid wake time 1; current 1` from the tick scheduler, so impact never resolves — the Nuke is not removed from `FIND_NUKES` and on-tile nuke damage (rampart-first ordering) is not applied.
+
+### map-room-status-normal-returns-closed
+
+- Tests: MAP-ROOM-004:normal
+- Cause: `Game.map.getRoomStatus()` now returns `{status:'closed'}` for in-world rooms with no admin status. The off-world case now coincidentally matches vanilla's `closed`, but normal rooms regressed.
+
+### pathfinder edge cases (incomplete flag, CostMatrix 255, findClosestByPath)
+
+- Tests: PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007
+- Cause: the pathfinder rewrite (upstream `5496607`) changed edge-case behavior — `incomplete` is `false` on a partial path, a CostMatrix value of 255 no longer blocks, and `findClosestByPath` returns `null` for a reachable target. Masked before the `#pf` wrapper-bundling fix (every pathfinder call previously threw "Could not accept").
 
 ## Open parity gaps
 
@@ -92,13 +111,6 @@ Last refreshed: 2026-05-23 against pin `9e1aae5b`.
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
 - Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
-
-### map-room-status-offworld-undefined
-
-- Tests: MAP-ROOM-004:offWorld
-- Status: CONFIRMED.
-- Cause: `GameMap.getRoomStatus()` (`game/map.ts`) returns `undefined` whenever the room name is absent from `#terrain`, even if the name is syntactically valid. Vanilla first validates room-name syntax, checks explicit closed/novice/respawn status data, checks accessible rooms, and then returns `{status:'closed', timestamp:null}` for valid-format rooms outside the world.
-- Plan: return the vanilla closed/null status for valid room names that are missing from terrain while preserving `undefined` for invalid room-name syntax.
 
 ### commonjs-main-exports-alias-missing
 
