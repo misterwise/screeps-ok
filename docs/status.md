@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2628%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2304%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2305%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2628](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-07 02:22 UTC |
-| 🟡 | **xxscreeps** | [2304](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [292](#xxscreeps-skipped-tests) | 2026-06-07 02:18 UTC |
+| 🟡 | **vanilla** | [2631](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-07 04:10 UTC |
+| 🟡 | **xxscreeps** | [2305](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-07 04:06 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -478,7 +478,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2628 tests across 135 files</summary>
+<summary>2631 tests across 135 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3118,14 +3118,17 @@ Click a count to jump to the affected test list.
 - Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
-**`tests/21-map/21.1-room-queries.test.ts`** (7)
+**`tests/21-map/21.1-room-queries.test.ts`** (10)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
 - Game.map room queries MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room
+- Game.map room queries MAP-ROOM-004:novice getRoomStatus returns {status:"novice", timestamp:<number>} for a novice-area room
+- Game.map room queries MAP-ROOM-004:respawn getRoomStatus returns {status:"respawn", timestamp:<number>} for a respawn-area room
 - Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
+- Game.map room queries MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name
 - Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
@@ -3517,7 +3520,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 292 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 294 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -3526,8 +3529,8 @@ xxscreeps has 292 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deposit` | Deposits (highway) | [41](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
+| capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
-| capability | `roomStatus` | Room status fixture setup | [5](#xxscreeps-skip-capability-roomstatus) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -3972,6 +3975,24 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-roomstatus">
+<summary><code>capability:roomStatus</code> — 7 tests across 2 files</summary>
+
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (4)
+
+- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
+
+**`tests/21-map/21.1-room-queries.test.ts`** (3)
+
+- Game.map room queries MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room
+- Game.map room queries MAP-ROOM-004:novice getRoomStatus returns {status:"novice", timestamp:<number>} for a novice-area room
+- Game.map room queries MAP-ROOM-004:respawn getRoomStatus returns {status:"respawn", timestamp:<number>} for a respawn-area room
+
+</details>
+
 <details id="xxscreeps-skip-capability-deprecationnotices">
 <summary><code>capability:deprecationNotices</code> — 7 tests across 4 files</summary>
 
@@ -3993,22 +4014,6 @@ Click a count to jump to the affected test list.
 **`tests/28-deprecation/28.4-dedup.test.ts`** (1)
 
 - Deprecation notice dedup DEPRECATED-DEDUP-001 identical notices in the same tick collapse to one log; the next tick re-emits
-
-</details>
-
-<details id="xxscreeps-skip-capability-roomstatus">
-<summary><code>capability:roomStatus</code> — 5 tests across 2 files</summary>
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (4)
-
-- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
-
-**`tests/21-map/21.1-room-queries.test.ts`** (1)
-
-- Game.map room queries MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room
 
 </details>
 
@@ -4048,7 +4053,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2304 tests across 108 files</summary>
+<summary>2305 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6360,12 +6365,13 @@ Click a count to jump to the affected test list.
 - Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
 
-**`tests/21-map/21.1-room-queries.test.ts`** (5)
+**`tests/21-map/21.1-room-queries.test.ts`** (6)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
+- Game.map room queries MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name
 - Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)

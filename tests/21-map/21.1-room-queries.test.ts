@@ -76,6 +76,46 @@ describe('Game.map room queries', () => {
 		expect(result.timestamp).toBeGreaterThan(0);
 	});
 
+	test('MAP-ROOM-004:novice getRoomStatus returns {status:"novice", timestamp:<number>} for a novice-area room', async ({ shard }) => {
+		shard.requires('roomStatus');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', status: 'novice' },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const status = Game.map.getRoomStatus('W2N1');
+			({ status: status.status, timestamp: status.timestamp })
+		`) as { status: string; timestamp: number };
+
+		expect(result.status).toBe('novice');
+		expect(typeof result.timestamp).toBe('number');
+		expect(result.timestamp).toBeGreaterThan(0);
+	});
+
+	test('MAP-ROOM-004:respawn getRoomStatus returns {status:"respawn", timestamp:<number>} for a respawn-area room', async ({ shard }) => {
+		shard.requires('roomStatus');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W2N1', status: 'respawn' },
+			],
+		});
+
+		const result = await shard.runPlayer('p1', code`
+			const status = Game.map.getRoomStatus('W2N1');
+			({ status: status.status, timestamp: status.timestamp })
+		`) as { status: string; timestamp: number };
+
+		expect(result.status).toBe('respawn');
+		expect(typeof result.timestamp).toBe('number');
+		expect(result.timestamp).toBeGreaterThan(0);
+	});
+
 	test('MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
@@ -87,6 +127,18 @@ describe('Game.map room queries', () => {
 		expect(result.statusType).toBe('object');
 		expect(result.status).toBe('closed');
 		expect(result.timestamp).toBeNull();
+	});
+
+	test('MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// typeof is evaluated in the sandbox so the undefined return survives
+		// serialization (a bare undefined would JSON-encode to null).
+		const result = await shard.runPlayer('p1', code`
+			({ type: typeof Game.map.getRoomStatus('not_a_room') })
+		`) as { type: string };
+
+		expect(result.type).toBe('undefined');
 	});
 
 	test('MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span', async ({ shard }) => {

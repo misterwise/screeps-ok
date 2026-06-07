@@ -1215,12 +1215,16 @@ Each definition should include:
 - `Dimensions`
   room status class
 - `Applicability`
-  Default normal rooms, admin status rooms, and valid-format room names outside
-  the world
+  Normal in-world rooms, novice/respawn protection rooms, admin-closed rooms,
+  valid-format room names outside the world, and invalid-format room names
 - `Exclusions`
   Exit descriptions and linear-distance rules
 - `Verification Notes`
-  Timestamp presence and meaning should be defined per returned status here.
+  Timestamp presence and meaning is defined per returned status: invalid-format
+  names return `undefined`; the two `closed` outcomes split on timestamp
+  (admin-closed → number, off-world → null). The novice/respawn/admin-closed
+  rows are roomStatus-capability-skipped on xxscreeps — see
+  `docs/xxscreeps-parity-gaps.md`.
 
 ### MOVE-BASIC-DIRECTIONS
 
