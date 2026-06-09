@@ -27,7 +27,7 @@ const PathFinder = { search: pfSearch, CostMatrix, use: (_: boolean) => {} };
 import assert from 'node:assert';
 import { instantiateTestShard } from 'xxscreeps/test/import.js';
 import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';
-import { begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
+import { activeRoomsKey, begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
 import { RoomProcessor } from 'xxscreeps/engine/processor/room.js';
 import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
@@ -255,18 +255,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
 
-	// Keep every room in the processor queue and every player's intentRooms
-	// set so idle ticks don't silently drop intent routing. visibleRooms is
-	// scoped to rooms the player owns per shardSpec; the engine's `flushUsers`
-	// (`xxscreeps/game/room/room.ts`) and observer processor populate the
-	// rest after the first processed tick. Seeding every room here was the
-	// root cause of observer-room-always-visible.
-	private async keepRoomsActive(): Promise<void> {
+	// Seed every player's intentRooms set (and owned-room visibleRooms) so the
+	// adapter's direct intent routing can target any room before the engine's
+	// `flushUsers` (`xxscreeps/game/room/room.ts`) populates the relationship
+	// sets after the first processed tick. visibleRooms is scoped to rooms the
+	// player owns per shardSpec; the observer processor and flushUsers populate
+	// the rest. This deliberately does NOT force rooms into the processor active
+	// set: player-less rooms sleep naturally and wake via their own scheduled
+	// timers, or via the intent wake-guard in `tick` when they receive intents.
+	private async seedUserRoomRelationships(): Promise<void> {
 		if (!this.simulation) return;
 		const { scratch } = this.simulation.shard;
-		for (const roomName of this.rooms) {
-			await scratch.zAdd('processor/activeRooms', [[1, roomName]]);
-		}
 		const ownedByEngineId = new Map<string, string[]>();
 		for (const roomSpec of this.shardSpec?.rooms ?? []) {
 			if (!roomSpec.owner) continue;
@@ -803,7 +802,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.simulation = await createSimulation(bareInits, terrainOverrides);
 		await this.simulation.tick(1);
 
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 
 		// Now apply all pending setup ops via poke on top of the canonical
 		// sparse room layout used by the adapter contract: plain terrain
@@ -820,6 +819,21 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		this.pendingSetup.clear();
 		await this.flushPokeQueue();
+
+		// Genesis seed: mark every room active so the first tick after setup
+		// processes it once. That processed tick persists the canonical layout
+		// and placed objects into both tick-parity buffer slots (setup `poke`
+		// only writes one), and lets each lifecycle processor (source regen,
+		// structure decay, controller downgrade) schedule its wake before the
+		// room sleeps. After that single tick, player-less rooms sleep naturally
+		// and wake on their own timers. This replaces the old per-tick
+		// force-active loop without keeping idle rooms perpetually awake.
+		{
+			const { scratch } = this.simulation.shard;
+			for (const roomName of this.rooms) {
+				await scratch.zAdd(activeRoomsKey, [[1, roomName]]);
+			}
+		}
 
 		// After simulation init, objects have been saved and reloaded.
 		// Build the ID map by scanning rooms for objects placed by name/position.
@@ -916,7 +930,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		const engineUserId = this.resolvePlayer(userId);
 		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
 
@@ -938,7 +952,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		// Contract: runPlayer advances exactly 1 tick.
 		// simulation.player() only collects intents — tick() processes them.
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		await this.simulation!.tick(1);
 		this.firstTickRun = true;
 
@@ -949,7 +963,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 
 		const results: Record<string, PlayerReturnValue> = {};
 		const errors: Array<{ handle: string; error: RunPlayerError }> = [];
@@ -987,7 +1001,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		if (errors.length > 0) throw errors[0].error;
 
 		// Phase 2: process all collected intents in a single tick.
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		await this.simulation!.tick(1);
 		this.firstTickRun = true;
 
@@ -1025,7 +1039,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		try {
 			for (let i = 0; i < count; i++) {
-				await this.keepRoomsActive();
+				await this.seedUserRoomRelationships();
 				await this.simulation!.tick(1);
 			}
 		} finally {
@@ -1428,6 +1442,15 @@ async function createSimulation(
 						await sim.player(userId, code);
 					}
 					playersThisTick.clear();
+
+					// Wake-guard: the adapter routes player intents directly via
+					// intentsByRoom rather than the runner's pushIntentsForRoomNextTick,
+					// so an intent aimed at a sleeping room would be dropped when
+					// begetRoomProcessQueue builds the queue from the active set. Add
+					// every room receiving intents this tick to the active set first.
+					for (const roomName of intentsByRoom.keys()) {
+						await shard.scratch.zAdd(activeRoomsKey, [[1, roomName]]);
+					}
 
 					await begetRoomProcessQueue(shard, time);
 					const nextRoomInstances = new Map<string, any>();
