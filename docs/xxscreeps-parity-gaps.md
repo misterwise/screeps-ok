@@ -3,23 +3,13 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-06 against pin `54966078`.
+Last refreshed: 2026-06-08 against pin `c62365ec`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 28 open parity gaps covering 58 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 25 open parity gaps covering 50 tests, plus 2 accepted divergences covering 4 tests.
 
 ## Pin `549660784` regressions
 
-These passed at pin `9e1aae5b` and regressed on the bump to `549660784`. They are registered in `parity.json` so parity stays green; each is a candidate for an upstream xxscreeps fix rather than a long-standing gap.
-
-### nuke-impact-invalid-wake-time-throws
-
-- Tests: NUKE-FLIGHT-005, RAMPART-PROTECT-008
-- Cause: processing a landed nuke throws `Invalid wake time 1; current 1` from the tick scheduler, so impact never resolves — the Nuke is not removed from `FIND_NUKES` and on-tile nuke damage (rampart-first ordering) is not applied.
-
-### map-room-status-normal-returns-closed
-
-- Tests: MAP-ROOM-004:normal
-- Cause: `Game.map.getRoomStatus()` now returns `{status:'closed'}` for in-world rooms with no admin status. The off-world case now coincidentally matches vanilla's `closed`, but normal rooms regressed.
+The pathfinder edge cases below passed at pin `9e1aae5b` and regressed on the bump to `549660784`; they remain open at pin `c62365ec`. The nuke-impact (`Invalid wake time`) and `getRoomStatus` normal→closed regressions from `549660784` were fixed upstream at `c62365ec` and have been dropped. The remaining entry is registered in `parity.json` so parity stays green and is a candidate for an upstream xxscreeps fix.
 
 ### pathfinder edge cases (incomplete flag, CostMatrix 255, findClosestByPath)
 

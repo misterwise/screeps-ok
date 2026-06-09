@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2305%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2313%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2631](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-07 05:56 UTC |
-| 🟡 | **xxscreeps** | [2305](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-07 05:48 UTC |
+| 🟡 | **vanilla** | [2631](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-09 03:41 UTC |
+| 🟡 | **xxscreeps** | [2313](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-09 03:37 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 62 tests. That includes 28 open parity gaps covering 58 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 27 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 25 open parity gaps covering 50 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -166,8 +166,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `nuke-impact-invalid-wake-time-throws` | Regression at pin `549660784`: processing a landed nuke throws `Invalid wake time 1; current 1` from the tick scheduler, so the impact never resolves — the Nuke stays in FIND_NUKES and on-tile nuke damage (including the rampart-first ordering) is not applied. | A landed nuke resolves on schedule: ramparts absorb damage ahead of other structures on the tile, and the Nuke object is removed from FIND_NUKES on the following tick. | [2](#xxscreeps-gap-nuke-impact-invalid-wake-time-throws) |
-| `map-room-status-normal-returns-closed` | Regression at pin `549660784`: `Game.map.getRoomStatus()` returns `{status:'closed'}` for an in-world room with no admin status set. (The off-world case now coincidentally matches vanilla's `closed`, but in-world rooms regressed.) | Vanilla returns `{status:'normal', timestamp:null}` for an in-world room with no closed/novice/respawn status. | [1](#xxscreeps-gap-map-room-status-normal-returns-closed) |
 | `pathfinder-incomplete-false-on-partial-path` | Regression at pin `549660784`: `PathFinder.search` returns `incomplete: false` when no full path to the goal exists and only a partial path is produced. | `PathFinder.search` returns `incomplete: true` when it cannot reach the goal. | [1](#xxscreeps-gap-pathfinder-incomplete-false-on-partial-path) |
 | `costmatrix-255-not-treated-unwalkable` | Regression at pin `549660784`: a player `CostMatrix` value of 255 supplied through `roomCallback` no longer makes the tile unwalkable for `PathFinder.search`. | A CostMatrix value of 255 marks the tile unwalkable, so the search routes around it or reports the goal unreachable. | [1](#xxscreeps-gap-costmatrix-255-not-treated-unwalkable) |
 | `findclosestbypath-null-when-target-reachable` | Regression at pin `549660784`: `RoomPosition.findClosestByPath` returns `null` when a reachable target exists (sibling of the still-open range-handling gap ROOMPOS-FIND-010). | `findClosestByPath` returns the nearest target reachable by path. | [1](#xxscreeps-gap-findclosestbypath-null-when-target-reachable) |
@@ -193,24 +191,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
-| `construction-site-stacking-non-road-rampart-pairs` | `Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK. | Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status. | [5](#xxscreeps-gap-construction-site-stacking-non-road-rampart-pairs) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-nuke-impact-invalid-wake-time-throws">
-<summary><code>nuke-impact-invalid-wake-time-throws</code> — 2 tests</summary>
-
-- `StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile`
-- `Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES`
-
-</details>
-
-<details id="xxscreeps-gap-map-room-status-normal-returns-closed">
-<summary><code>map-room-status-normal-returns-closed</code> — 1 test</summary>
-
-- `Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set`
-
-</details>
 
 <details id="xxscreeps-gap-pathfinder-incomplete-false-on-partial-path">
 <summary><code>pathfinder-incomplete-false-on-partial-path</code> — 1 test</summary>
@@ -409,17 +391,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
-
-</details>
-
-<details id="xxscreeps-gap-construction-site-stacking-non-road-rampart-pairs">
-<summary><code>construction-site-stacking-non-road-rampart-pairs</code> — 5 tests</summary>
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-tower] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-spawn] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-extension] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-blocks-container] structure under construction-site placement obeys road/rampart stacking`
-- `room.createConstructionSite() CONSTRUCTION-SITE-017 [spawn-blocks-container] structure under construction-site placement obeys road/rampart stacking`
 
 </details>
 
@@ -4053,7 +4024,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2305 tests across 108 files</summary>
+<summary>2313 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4815,7 +4786,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (62)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (67)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4852,6 +4823,11 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-tower] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-container] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [road-ruin-place-road] a ruin does not block placing a construction site on its tile
+- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-tower] structure under construction-site placement obeys road/rampart stacking
+- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-spawn] structure under construction-site placement obeys road/rampart stacking
+- room.createConstructionSite() CONSTRUCTION-SITE-017 [container-blocks-extension] structure under construction-site placement obeys road/rampart stacking
+- room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-blocks-container] structure under construction-site placement obeys road/rampart stacking
+- room.createConstructionSite() CONSTRUCTION-SITE-017 [spawn-blocks-container] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-road] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [container-allows-rampart] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [tower-allows-road] structure under construction-site placement obeys road/rampart stacking
@@ -6047,7 +6023,7 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
-**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (18)
+**`tests/12-structures-military/12.1-12.2-rampart.test.ts`** (19)
 
 - StructureRampart RAMPART-DECAY-003 [rcl=2] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=3] owned rampart hitsMax matches the canonical table
@@ -6065,6 +6041,7 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-PROTECT-007 setPublic returns ERR_NOT_OWNER on a rampart not owned by the player
 - StructureRampart RAMPART-DECAY-001 a rampart loses RAMPART_DECAY_AMOUNT hits per decay interval
 - StructureRampart RAMPART-DECAY-002 a rampart is removed when decay reduces hits to 0
+- StructureRampart RAMPART-PROTECT-008 nuke damage is applied to the rampart before other structures on the same tile
 - StructureRampart RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile
 - StructureRampart RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile
 
@@ -6356,7 +6333,7 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 - Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (6)
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
 
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
@@ -6364,12 +6341,14 @@ Click a count to jump to the affected test list.
 - Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
-**`tests/21-map/21.1-room-queries.test.ts`** (6)
+**`tests/21-map/21.1-room-queries.test.ts`** (7)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
+- Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
 - Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
 - Game.map room queries MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name
 - Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span

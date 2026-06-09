@@ -1,15 +1,5 @@
 {
 	"expected_failures": {
-		"nuke-impact-invalid-wake-time-throws": {
-			"actual": "Regression at pin `549660784`: processing a landed nuke throws `Invalid wake time 1; current 1` from the tick scheduler, so the impact never resolves — the Nuke stays in FIND_NUKES and on-tile nuke damage (including the rampart-first ordering) is not applied.",
-			"expected": "A landed nuke resolves on schedule: ramparts absorb damage ahead of other structures on the tile, and the Nuke object is removed from FIND_NUKES on the following tick.",
-			"tests": ["NUKE-FLIGHT-005", "RAMPART-PROTECT-008"]
-		},
-		"map-room-status-normal-returns-closed": {
-			"actual": "Regression at pin `549660784`: `Game.map.getRoomStatus()` returns `{status:'closed'}` for an in-world room with no admin status set. (The off-world case now coincidentally matches vanilla's `closed`, but in-world rooms regressed.)",
-			"expected": "Vanilla returns `{status:'normal', timestamp:null}` for an in-world room with no closed/novice/respawn status.",
-			"tests": ["MAP-ROOM-004:normal"]
-		},
 		"pathfinder-incomplete-false-on-partial-path": {
 			"actual": "Regression at pin `549660784`: `PathFinder.search` returns `incomplete: false` when no full path to the goal exists and only a partial path is produced.",
 			"expected": "`PathFinder.search` returns `incomplete: true` when it cannot reach the goal.",
@@ -148,11 +138,6 @@
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
-		},
-		"construction-site-stacking-non-road-rampart-pairs": {
-			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK.",
-			"expected": "Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status.",
-			"tests": ["CONSTRUCTION-SITE-017"]
 		}
 	}
 }
