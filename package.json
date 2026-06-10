@@ -38,6 +38,8 @@
     "setup": "node scripts/setup.js",
     "setup:xxscreeps": "node scripts/build-xxscreeps.js && node scripts/setup.js xxscreeps",
     "setup:vanilla": "node scripts/setup.js vanilla",
+    "pf:build": "node scripts/build-pathfinder.js",
+    "pf:build:linux-x64": "docker run --rm --platform linux/amd64 -v \"$PWD\":/work -w /work debian:sid sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates clang-22 cmake git libboost-all-dev lld-22 llvm-22 ninja-build nodejs npm && node scripts/build-pathfinder.js'",
     "test": "node scripts/test.js",
     "posttest": "node scripts/generate-status.js && node scripts/generate-coverage.js",
     "test:watch": "vitest",

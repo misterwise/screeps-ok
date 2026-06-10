@@ -1,0 +1,18 @@
+{
+	"sourceSha": "e61801707e21b13a482ea2a35fc22bf5c417c39a",
+	"sourceTreeHash": "97f5dd97ce03884bdab867644db8adf4190951024d1e87a9239ce38fed551eb1",
+	"version": "0.3.0",
+	"abi": 12,
+	"builds": {
+		"darwin-arm64": {
+			"sourceSha": "e61801707e21b13a482ea2a35fc22bf5c417c39a",
+			"version": "0.3.0",
+			"abi": 12
+		},
+		"linux-x64-gnu": {
+			"sourceSha": "e61801707e21b13a482ea2a35fc22bf5c417c39a",
+			"version": "0.3.0",
+			"abi": 12
+		}
+	}
+}

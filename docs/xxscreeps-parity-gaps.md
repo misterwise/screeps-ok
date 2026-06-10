@@ -3,18 +3,11 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-08 against pin `c62365ec`.
+Last refreshed: 2026-06-09 against pin `e6180170`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 25 open parity gaps covering 50 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 22 open parity gaps covering 47 tests, plus 2 accepted divergences covering 4 tests.
 
-## Pin `549660784` regressions
-
-The pathfinder edge cases below passed at pin `9e1aae5b` and regressed on the bump to `549660784`; they remain open at pin `c62365ec`. The nuke-impact (`Invalid wake time`) and `getRoomStatus` normal→closed regressions from `549660784` were fixed upstream at `c62365ec` and have been dropped. The remaining entry is registered in `parity.json` so parity stays green and is a candidate for an upstream xxscreeps fix.
-
-### pathfinder edge cases (incomplete flag, CostMatrix 255, findClosestByPath)
-
-- Tests: PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007
-- Cause: the pathfinder rewrite (upstream `5496607`) changed edge-case behavior — `incomplete` is `false` on a partial path, a CostMatrix value of 255 no longer blocks, and `findClosestByPath` returns `null` for a reachable target. Masked before the `#pf` wrapper-bundling fix (every pathfinder call previously threw "Could not accept").
+> Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open.
 
 ## Open parity gaps
 

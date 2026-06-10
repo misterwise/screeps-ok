@@ -1,0 +1,17 @@
+{
+	"name": "@xxscreeps/pathfinder",
+	"type": "commonjs",
+	"version": "0.3.0",
+	"main": "./dist/pathfinder.mjs",
+	"imports": {
+		"#pf": {
+			"import": "./module/index.cjs",
+			"types": "./module/index.d.cts"
+		}
+	},
+	"homepage": "https://github.com/laverdet/xxscreeps/blob/main/packages/pathfinder/README.md",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/laverdet/xxscreeps.git"
+	}
+}

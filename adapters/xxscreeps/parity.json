@@ -1,20 +1,5 @@
 {
 	"expected_failures": {
-		"pathfinder-incomplete-false-on-partial-path": {
-			"actual": "Regression at pin `549660784`: `PathFinder.search` returns `incomplete: false` when no full path to the goal exists and only a partial path is produced.",
-			"expected": "`PathFinder.search` returns `incomplete: true` when it cannot reach the goal.",
-			"tests": ["PATHFINDER-012"]
-		},
-		"costmatrix-255-not-treated-unwalkable": {
-			"actual": "Regression at pin `549660784`: a player `CostMatrix` value of 255 supplied through `roomCallback` no longer makes the tile unwalkable for `PathFinder.search`.",
-			"expected": "A CostMatrix value of 255 marks the tile unwalkable, so the search routes around it or reports the goal unreachable.",
-			"tests": ["COSTMATRIX-007"]
-		},
-		"findclosestbypath-null-when-target-reachable": {
-			"actual": "Regression at pin `549660784`: `RoomPosition.findClosestByPath` returns `null` when a reachable target exists (sibling of the still-open range-handling gap ROOMPOS-FIND-010).",
-			"expected": "`findClosestByPath` returns the nearest target reachable by path.",
-			"tests": ["ROOMPOS-FIND-007"]
-		},
 		"tombstone-creep-body-types-not-objects": {
 			"actual": "`tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged.",
 			"expected": "Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape.",

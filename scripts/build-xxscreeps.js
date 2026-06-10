@@ -17,12 +17,14 @@
 // rebuilds (no stamp check) since the source tree is assumed to be edited.
 // Intended for the screeps-ok-pr workspace — see .agent/workflows/xxscreeps-pr.md.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import {
 	cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
+import { compareSemver, hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
 
 const require = createRequire(import.meta.url);
 const minNodeMajor = 24;
@@ -33,6 +35,7 @@ const pinFile = join(repoRoot, '.xxscreeps-pin');
 const xxscreepsDir = join(repoRoot, 'node_modules/xxscreeps');
 const pathfinderDir = join(repoRoot, 'node_modules/@xxscreeps/pathfinder');
 const cacheDir = join(repoRoot, 'node_modules/.cache/screeps-ok/xxscreeps-src');
+const vendorDir = join(repoRoot, 'vendor/pathfinder');
 const stampFile = join(xxscreepsDir, '.screeps-ok-pin');
 const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 
@@ -45,11 +48,18 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // nested install fetches lodash3's `dist/` tarball from the registry; v7
 // patches the precompiled pathfinder package layout for xxscreeps's
 // runtime webpack build; v8 externalizes the pathfinder wrapper's `#pf`
-// native import (instead of the whole package) so the wrapper stays bundled.
-const stampSchema = 'v8';
+// native import (instead of the whole package) so the wrapper stays bundled;
+// v9 applies the vendored pathfinder build when newer than the registry
+// prebuild (see applyVendorPathfinder).
+const stampSchema = 'v9';
 
 function stampContent(token) {
-	return `${token}\nschema=${stampSchema}`;
+	// Include the vendor manifest in the stamp so adding, refreshing, or
+	// removing vendor/pathfinder invalidates a previously stamped build.
+	const vendorToken = existsSync(join(vendorDir, 'manifest.json'))
+		? createHash('sha256').update(readFileSync(join(vendorDir, 'manifest.json'))).digest('hex').slice(0, 16)
+		: 'none';
+	return `${token}\nschema=${stampSchema}\nvendor=${vendorToken}`;
 }
 
 if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
@@ -108,6 +118,7 @@ layOutPackages(srcDir);
 inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
+applyVendorPathfinder(srcDir);
 patchPathfinderEntrypoints();
 patchSandboxNativeExternalResolution();
 applyUpstreamPatches(srcDir);
@@ -280,15 +291,45 @@ if (module.exports.version !== 11) {
 	console.log(`[screeps-ok] Patched pathfinder entrypoints for ${triplet}`);
 }
 
-function pathfinderTriplet() {
-	const { arch, platform } = process;
-	if (platform !== 'linux') return `${platform}-${arch}`;
-	try {
-		if (readFileSync('/usr/bin/ldd', 'latin1').includes('ld-musl-')) {
-			return `linux-${arch}-musl`;
-		}
-	} catch {}
-	return `linux-${arch}-gnu`;
+function applyVendorPathfinder(srcDir) {
+	const manifestPath = join(vendorDir, 'manifest.json');
+	if (!existsSync(manifestPath)) return;
+	const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+	const nestedPf = join(xxscreepsDir, 'node_modules/@xxscreeps/pathfinder');
+	const installed = JSON.parse(readFileSync(join(nestedPf, 'package.json'), 'utf8')).version;
+	if (compareSemver(installed, manifest.version) > 0) {
+		console.log(`[screeps-ok] Registry @xxscreeps/pathfinder@${installed} supersedes vendor build ${manifest.version}; using the registry prebuild (vendor/pathfinder can be retired)`);
+		return;
+	}
+	if (hashTree(join(srcDir, 'packages/pathfinder')) !== manifest.sourceTreeHash) {
+		console.warn(`[screeps-ok] WARNING: pinned packages/pathfinder differs from the vendor build (built at ${manifest.sourceSha.slice(0, 8)}). Refresh with npm run pf:build + npm run pf:build:linux-x64.`);
+	}
+	const triplet = pathfinderTriplet();
+	const binary = join(vendorDir, `platform/${triplet}/pf.${triplet}.node`);
+	if (!existsSync(binary)) {
+		console.warn(`[screeps-ok] WARNING: vendor pathfinder has no ${triplet} binary; using the registry prebuild here while vendor-built platforms diverge. Run npm run pf:build on this platform.`);
+		return;
+	}
+
+	// Replace the registry wrapper package wholesale (the vendor wrapper's ABI
+	// expectation must travel with the vendor binary), then drop the binary
+	// into the platform package the wrapper's loader resolves.
+	for (const dir of ['dist', 'module']) {
+		rmSync(join(nestedPf, dir), { recursive: true, force: true });
+		cpSync(join(vendorDir, 'package', dir), join(nestedPf, dir), { recursive: true });
+	}
+	cpSync(join(vendorDir, 'package/package.json'), join(nestedPf, 'package.json'));
+	const platformPkgDir = join(xxscreepsDir, `node_modules/@xxscreeps/pathfinder-${triplet}`);
+	if (!existsSync(join(platformPkgDir, 'package.json'))) {
+		mkdirSync(platformPkgDir, { recursive: true });
+		writeFileSync(join(platformPkgDir, 'package.json'), JSON.stringify({
+			name: `@xxscreeps/pathfinder-${triplet}`,
+			version: manifest.version,
+			main: `pf.${triplet}.node`,
+		}, null, '\t') + '\n');
+	}
+	cpSync(binary, join(platformPkgDir, `pf.${triplet}.node`));
+	console.log(`[screeps-ok] Using vendor pathfinder ${manifest.version} (abi ${manifest.abi}, source ${manifest.sourceSha.slice(0, 8)}) for ${triplet}`);
 }
 
 function patchSandboxNativeExternalResolution() {
