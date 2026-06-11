@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-09 against pin `e6180170`.
+Last refreshed: 2026-06-11 against pin `e6180170`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. Current generated status: 22 open parity gaps covering 47 tests, plus 2 accepted divergences covering 4 tests.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 gaps registered in `parity.json` (one held intentional: factory power effect); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open.
 
@@ -17,13 +17,6 @@ Last refreshed: 2026-06-09 against pin `e6180170`.
 - Status: CONFIRMED.
 - Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
 - Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
-
-### shape-flag-extra-id
-
-- Tests: SHAPE-FLAG-001
-- Status: CONFIRMED.
-- Cause: `RoomObject`'s base serialized schema contributes an `id` field, and Flag composes from that base even though vanilla flags are named objects without ids.
-- Plan: use `docs/xxscreeps-flag-id-plan.md` as the starting point. Avoid the shelved schema-layout split that broke ConstructionSite; prefer a narrower Flag-scoped fix unless upstream asks for the broader schema move.
 
 ### rawmemory-set-invalidates-parsed-memhack
 
@@ -104,16 +97,24 @@ Last refreshed: 2026-06-09 against pin `e6180170`.
 
 ## Accepted divergences
 
+Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but blocked on an upstream substrate stay in `parity.json` as expected failures (factory power effect below).
+
+### shape-flag-extra-id
+
+- Tests: SHAPE-FLAG-001 (passes; `id` folded into the expected key set).
+- Status: INTENTIONAL — declared divergence.
+- Decision (2026-06-11): accepted per laverdet/xxscreeps#215's shape rule ("we should not be bending over backwards to adhere to Screeps' exact undefined-in shapes"). `flag.id` always reads `null` at runtime — both `instantiate(Flag, ...)` sites write `id: null` and `Id.format` composes a zeroed slot as `null` — so value-level behavior matches vanilla; only property presence diverges. The narrow runtime fix attempt regressed ConstructionSite schema layout (`docs/xxscreeps-flag-id-plan.md`); laverdet approved special-casing Flag in PR 133, so the upstream door stays open if a fix ever becomes worth it.
+
 ### shape-body-part-always-has-boost
 
-- Tests: SHAPE-CREEP-002, SHAPE-CREEP-003
-- Status: INTENTIONAL.
-- Decision: PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed stripping the `boost` property from unboosted body parts to match vanilla and was closed as not desired. screeps-ok keeps the vanilla assertion as an expected failure.
+- Tests: SHAPE-CREEP-002, SHAPE-CREEP-003 (pass; `boost` folded into the expected key set).
+- Status: INTENTIONAL — declared divergence.
+- Decision: PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed stripping the `boost` property from unboosted body parts to match vanilla and was closed as not desired.
 
 ### factory-power-effect-not-implemented
 
 - Tests: FACTORY-PRODUCE-011:powerEffect, FACTORY-PRODUCE-011:powerEffectBeforeNotEnough
-- Status: INTENTIONAL.
+- Status: INTENTIONAL — expected failure, blocked on upstream substrate.
 - Decision: `mods/factory/factory.ts` documents the `PWR_OPERATE_FACTORY` branch as blocked until power creeps/effects exist upstream. screeps-ok keeps those rows as expected failures until that substrate lands.
 
 ## Capability skips

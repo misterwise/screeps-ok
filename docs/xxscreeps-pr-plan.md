@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-05-23 (pin `9e1aae5b`).
+Last refreshed: 2026-06-11 (pin `e6180170`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
@@ -27,16 +27,13 @@ The RawMemory.set guard and mutation-preservation rows now pass on pin `15df4bea
 - **`foreign-segment-clear-request`** — make `setActiveForeignSegment(null)` clear the pending foreign-segment request so `RawMemory.foreignSegment` becomes `undefined` next tick.
 - **Residual `rawmemory-set-invalidates-parsed-memhack` test** — mirror vanilla's first-access descriptor flip so `Memory` becomes a value descriptor after it is read.
 
-### Independent queued PR
-
-- **`shape-flag-extra-id`** — Flag still exposes an `id` field even though vanilla flags are named objects without ids. Use `docs/xxscreeps-flag-id-plan.md` as the starting point, but avoid the shelved Option A diff that disturbed ConstructionSite schema layout.
-
 ### Accepted divergences
 
-These remain expected failures in screeps-ok unless upstream changes direction:
+Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) and folded into shape-test expectations, so their tests pass; only substrate-blocked gaps remain expected failures in `parity.json`:
 
-- **`shape-body-part-always-has-boost`** — #163 was closed as not desired by upstream.
-- **`factory-power-effect-not-implemented`** — accepted as blocked until power creep/effects substrate exists upstream.
+- **`shape-flag-extra-id`** (declared divergence) — accepted 2026-06-11 per laverdet/xxscreeps#215's shape rule; `flag.id` is always `null` at runtime, so only property presence diverges. The queued upstream PR is retired — the narrow fix attempt regressed ConstructionSite schema layout (`docs/xxscreeps-flag-id-plan.md`), and laverdet's PR 133 openness to special-casing Flag keeps the door open if it ever becomes worth revisiting.
+- **`shape-body-part-always-has-boost`** (declared divergence) — #163 was closed as not desired by upstream.
+- **`factory-power-effect-not-implemented`** (expected failure) — accepted as blocked until power creep/effects substrate exists upstream.
 
 ## Feature queue coordination
 
@@ -49,5 +46,4 @@ Portal landed in #159, Game.notify queueing landed in #161, and the shard-tick p
 | Open PRs expected to close current gaps | 0 | 0 |
 | Open Tier 1 feature PRs | 0 | n/a |
 | Memory residuals | 4 residual areas | 7 |
-| Independent queued parity PR | 1 | 1 |
-| Accepted divergences | 2 | 4 |
+| Accepted divergences (2 declared on adapter, 1 expected failure) | 3 | 5 |

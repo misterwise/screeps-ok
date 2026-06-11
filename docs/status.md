@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2316%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-51-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2319%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-48-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2631](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-10 04:41 UTC |
-| 🟡 | **xxscreeps** | [2316](#xxscreeps-passing-tests) | [51](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-10 04:37 UTC |
+| 🟡 | **xxscreeps** | [2319](#xxscreeps-passing-tests) | [48](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-11 23:26 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 51 tests. That includes 22 open parity gaps covering 47 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 22 expected-failure classifications against vanilla's canonical behavior, covering 48 tests. That includes 21 open parity gaps covering 46 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,7 +167,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
-| `shape-flag-extra-id` | Flag objects expose an own `id` data property | Flag objects omit `id`; vanilla flags are named objects without object IDs | [1](#xxscreeps-gap-shape-flag-extra-id) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
@@ -195,13 +194,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>tombstone-creep-body-types-not-objects</code> — 1 test</summary>
 
 - `Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order`
-
-</details>
-
-<details id="xxscreeps-gap-shape-flag-extra-id">
-<summary><code>shape-flag-extra-id</code> — 1 test</summary>
-
-- `26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape`
 
 </details>
 
@@ -377,18 +369,9 @@ These are known vanilla differences that the engine maintainers have decided not
 
 | Gap | Why | Actual | Vanilla behavior | Tests |
 | --- | --- | --- | --- | :-: |
-| `shape-body-part-always-has-boost` | PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference. | Intentional xxscreeps behavior ([laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163)): unboosted body parts expose a `boost` own property with value `undefined` | Vanilla exposes `boost` as an own property only when the part is actually boosted; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix | [2](#xxscreeps-gap-shape-body-part-always-has-boost) |
 | `factory-power-effect-not-implemented` | `mods/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional. | `checkProduce` (`packages/xxscreeps/mods/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-shape-body-part-always-has-boost">
-<summary><code>shape-body-part-always-has-boost</code> — 2 tests</summary>
-
-- `26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes`
-- `26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost`
-
-</details>
 
 <details id="xxscreeps-gap-factory-power-effect-not-implemented">
 <summary><code>factory-power-effect-not-implemented</code> — 2 tests</summary>
@@ -4000,7 +3983,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2316 tests across 108 files</summary>
+<summary>2319 tests across 108 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6490,9 +6473,11 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (35)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (38)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
+- 26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape
@@ -6523,6 +6508,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RUIN-001 ruin data-property surface matches canonical shape

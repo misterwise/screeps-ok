@@ -217,6 +217,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		pullSelfHang: true,
 	};
 
+	readonly shapeDivergences = {
+		// laverdet/xxscreeps#215: behavioral parity is the contract, not
+		// object-shape parity — "we should not be bending over backwards to
+		// adhere to Screeps' exact undefined-in shapes." Flags ride the
+		// shared RoomObject schema, so they expose its `id` slot (always
+		// null at runtime; `declare id: never` blocks it at the type level).
+		flag: { extra: ['id'] },
+		// laverdet/xxscreeps#163: unboosted body parts keep an own
+		// `boost: undefined` property; upstream closed the PR that stripped
+		// it to match vanilla's boost-only-when-boosted shape.
+		bodyPart: { extra: ['boost'] },
+	};
+
 	private playerMap = new Map<string, string>();
 	private reversePlayerMap = new Map<string, string>();
 	// PlayerSpec.gcl overrides, keyed by handle. When set, runPlayer uses

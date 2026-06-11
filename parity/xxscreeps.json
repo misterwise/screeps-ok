@@ -5,18 +5,6 @@
 			"expected": "Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape.",
 			"tests": ["TOMBSTONE-006"]
 		},
-		"shape-body-part-always-has-boost": {
-			"intentional": true,
-			"why": "PR #163 proposed stripping the `boost` property from unboosted body parts to match vanilla; upstream closed it as not desired, so screeps-ok tracks this as an accepted xxscreeps surface difference.",
-			"actual": "Intentional xxscreeps behavior ([laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163)): unboosted body parts expose a `boost` own property with value `undefined`",
-			"expected": "Vanilla exposes `boost` as an own property only when the part is actually boosted; screeps-ok keeps this as an intentional parity gap rather than an upstream bug to fix",
-			"tests": ["SHAPE-CREEP-002", "SHAPE-CREEP-003"]
-		},
-		"shape-flag-extra-id": {
-			"actual": "Flag objects expose an own `id` data property",
-			"expected": "Flag objects omit `id`; vanilla flags are named objects without object IDs",
-			"tests": ["SHAPE-FLAG-001"]
-		},
 		"controller-my-reset-returns-undefined": {
 			"actual": "After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral.",
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
@@ -123,11 +111,6 @@
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
-		},
-		"construction-site-stacking-non-road-rampart-pairs": {
-			"actual": "`Room.createConstructionSite` (`packages/xxscreeps/mods/construction/room.ts:124-141`) gates the on-tile structure check on the placed type's `obstacle` flag, so container ↔ tower/spawn/extension pairs are not rejected: when the placed type is a container the obstacle check is skipped entirely, and when the existing structure is a container `obstacleChecker` returns false because containers are not movement obstacles. Both directions return OK.",
-			"expected": "Engine `utils.checkConstructionSite` (lines 181-184) rejects any pair where the existing and placed types both have a `CONSTRUCTION_COST` and neither is road or rampart, returning ERR_INVALID_TARGET regardless of obstacle status.",
-			"tests": ["CONSTRUCTION-SITE-017"]
 		}
 	}
 }

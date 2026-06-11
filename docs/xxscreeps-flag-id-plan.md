@@ -1,5 +1,7 @@
 # xxscreeps Flag/id Plan
 
+**Status (2026-06-11): retired — accepted divergence.** Per laverdet/xxscreeps#215's shape rule ("we should not be bending over backwards to adhere to Screeps' exact undefined-in shapes"), the extra `id` is accepted rather than fixed: `flag.id` always reads `null` at runtime (both `instantiate(Flag, ...)` sites write `id: null`, and `Id.format` composes a zeroed slot as `null`), so value-level behavior matches vanilla and only property presence diverges. Declared in `adapters/xxscreeps/index.ts` `shapeDivergences`; SHAPE-FLAG-001 folds `id` into its expected key set and passes. laverdet approved special-casing Flag in PR 133, so a narrow runtime fix remains possible if it ever becomes worth the schema risk below. Kept for historical context.
+
 **Status (2026-04-21): shelved.** Option A was implemented on branch `fix/flag-id-base-schema` (worktree `/Users/mrwise/Coding/Screeps/xxscreeps-pr-flag-id`) and validated against screeps-ok. It introduced ~18 new xxscreeps regressions clustered on ConstructionSite (`placeSite`/`getObjectById` return null, all 12 `CONSTRUCTION-COST-001:*`, `CONSTRUCTION-COST-002`, `BUILD-001/002/009/010`, `SAFEMODE-COMBAT-002`). Symptom: site placed but buffer `id` slot reads back wrong — likely a schema-layout packing collision between the moved `id` field and the `variant('constructionSite')` discriminator slot in `schema/layout.ts`. SHAPE-FLAG-001 no longer crashes but still fails a shape mismatch (needs PR-14's `hits`/`hitsMax`/`my` cleanup first). User decision: not worth the debugging time. Branch retained with the uncommitted diff for future reference.
 
 Deferred work from the original PR 133 scope (see `xxscreeps-pr-plan.md` for the broader tracker). PR 133 was split into three:
@@ -11,10 +13,10 @@ Deferred work from the original PR 133 scope (see `xxscreeps-pr-plan.md` for the
 ## Parity gap
 
 - Vanilla: `flag.id === undefined`.
-- xxscreeps today: `flag.id` is a non-undefined string read from the buffer slot (base `RoomObject` schema has `id: Id.format`; Flag composes from it).
-- Existing workaround: `declare id: never` (TS-only) on the Flag class + `id: null as never` at two `instantiate(Flag, ...)` sites. Neither is a runtime fix.
+- xxscreeps today: the base `RoomObject` schema contributes an `id` slot (`id: Id.format`) and Flag composes from it, so the property is present. [Correction 2026-06-11: the slot always reads back `null`, not a string — both `instantiate` sites write `id: null` and `Id.format` composes a zeroed slot as `null`.]
+- Existing workaround: `declare id: never` (TS-only) on the Flag class + `id: null as never` at two `instantiate(Flag, ...)` sites. Neither removes the property at runtime.
 
-User-observable: code like `if (obj.id) ...`, `Game.getObjectById(obj.id)`, or `obj.id === someId` can produce wrong branches for Flag. Not just a test-harness concern.
+User-observable: only property presence (`'id' in flag`, own-property enumeration, strict `flag.id === undefined` checks). Value-level branches (`if (obj.id)`, `Game.getObjectById(obj.id)`, `obj.id === someId`) behave the same as vanilla because the value is always `null`. [Corrected 2026-06-11; the original claim that value-level branches could go wrong assumed a real string id.]
 
 ## Laverdet's feedback (from PR 133 comments)
 

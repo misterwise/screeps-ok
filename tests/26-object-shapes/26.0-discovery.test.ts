@@ -21,7 +21,7 @@ import { describe, test, expect, code,
 	PWR_DISRUPT_TOWER,
 } from '../../src/index.js';
 import type { PlayerCode } from '../../src/index.js';
-import { hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { expectedShape, hasDocumentedAdapterLimitation } from '../../src/limitations.js';
 import {
 	CREEP_SHAPE, POWER_CREEP_SHAPE,
 	BODY_PART_SHAPE, BODY_PART_BOOSTED_SHAPE,
@@ -122,7 +122,7 @@ describe('26.0 Object Shape Conformance', () => {
 		`) as { bodyPart: string[]; owner: string[]; pos: string[] } | null;
 
 		expect(shape).not.toBeNull();
-		expect(shape!.bodyPart).toEqual([...BODY_PART_SHAPE]);
+		expect(shape!.bodyPart).toEqual(await expectedShape('bodyPart', BODY_PART_SHAPE));
 		expect(shape!.owner).toEqual([...OWNER_SHAPE]);
 		expect(shape!.pos).toEqual([...ROOM_POSITION_SHAPE]);
 	});
@@ -146,7 +146,7 @@ describe('26.0 Object Shape Conformance', () => {
 		`) as { unboosted: string[]; boosted: string[] } | null;
 
 		expect(shape).not.toBeNull();
-		expect(shape!.unboosted).toEqual([...BODY_PART_SHAPE]);
+		expect(shape!.unboosted).toEqual(await expectedShape('bodyPart', BODY_PART_SHAPE));
 		expect(shape!.boosted).toEqual([...BODY_PART_BOOSTED_SHAPE]);
 	});
 
@@ -508,7 +508,7 @@ describe('26.0 Object Shape Conformance', () => {
 			f ? dataProps(f) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual([...FLAG_SHAPE]);
+		expect(keys).toEqual(await expectedShape('flag', FLAG_SHAPE));
 	});
 
 	test('SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape', async ({ shard }) => {

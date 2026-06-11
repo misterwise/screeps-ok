@@ -338,6 +338,16 @@ export interface ScreepsOkAdapter {
 	 */
 	readonly limitations?: import('./limitations.js').AdapterLimitations;
 
+	/**
+	 * Intentional object-shape divergences from the canonical vanilla
+	 * surface that upstream has declined to change. Shape tests fold the
+	 * declared extras into their expected key sets via `expectedShape`,
+	 * so the remaining surface stays asserted. Distinct from parity.json
+	 * `expected_failures`, which tracks genuine gaps awaiting a fix.
+	 * See `ShapeDivergences` in `limitations.ts` for the catalog.
+	 */
+	readonly shapeDivergences?: import('./limitations.js').ShapeDivergences;
+
 	/** Create a fresh isolated shard for a single test. */
 	createShard(spec: ShardSpec): Promise<void>;
 

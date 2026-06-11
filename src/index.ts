@@ -5,6 +5,8 @@ export { RunPlayerError } from './errors.js';
 export { test, describe, expect } from './fixture.js';
 export { limitationGated } from './test-helpers.js';
 export type { AdapterLimitation, AdapterLimitations } from './limitations.js';
+export { expectedShape } from './limitations.js';
+export type { ShapeDivergence, ShapeDivergences, ShapeDivergenceTarget } from './limitations.js';
 
 // Adapter contract
 export type {

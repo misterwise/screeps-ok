@@ -27,8 +27,9 @@ const PathFinder = { search: pfSearch, CostMatrix, use: (_: boolean) => {} };
 import assert from 'node:assert';
 import { instantiateTestShard } from 'xxscreeps/test/import.js';
 import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';
-import { begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
+import { activeRoomsKey, begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
 import { RoomProcessor } from 'xxscreeps/engine/processor/room.js';
+import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
@@ -71,6 +72,8 @@ import { create as createContainer } from 'xxscreeps/mods/resource/container.js'
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
+import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
+import { create as createNuke } from 'xxscreeps/mods/nuker/nuke.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
 import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
 import { Flag } from 'xxscreeps/mods/flag/flag.js';
@@ -174,7 +177,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		factory: !!createFactory,
 		market: false,
 		observer: true,
-		nuke: false,
+		nuke: true,
 		deposit: false,
 		terrain: true,
 		roomStatus: false,
@@ -212,6 +215,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// xxscreeps pull(self) enters an infinite loop in the recursive
 		// circular-pull check, hanging the test runner.
 		pullSelfHang: true,
+	};
+
+	readonly shapeDivergences = {
+		// laverdet/xxscreeps#215: behavioral parity is the contract, not
+		// object-shape parity — "we should not be bending over backwards to
+		// adhere to Screeps' exact undefined-in shapes." Flags ride the
+		// shared RoomObject schema, so they expose its `id` slot (always
+		// null at runtime; `declare id: never` blocks it at the type level).
+		flag: { extra: ['id'] },
+		// laverdet/xxscreeps#163: unboosted body parts keep an own
+		// `boost: undefined` property; upstream closed the PR that stripped
+		// it to match vanilla's boost-only-when-boosted shape.
+		bodyPart: { extra: ['boost'] },
 	};
 
 	private playerMap = new Map<string, string>();
@@ -252,18 +268,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
 
-	// Keep every room in the processor queue and every player's intentRooms
-	// set so idle ticks don't silently drop intent routing. visibleRooms is
-	// scoped to rooms the player owns per shardSpec; the engine's `flushUsers`
-	// (`xxscreeps/game/room/room.ts`) and observer processor populate the
-	// rest after the first processed tick. Seeding every room here was the
-	// root cause of observer-room-always-visible.
-	private async keepRoomsActive(): Promise<void> {
+	// Seed every player's intentRooms set (and owned-room visibleRooms) so the
+	// adapter's direct intent routing can target any room before the engine's
+	// `flushUsers` (`xxscreeps/game/room/room.ts`) populates the relationship
+	// sets after the first processed tick. visibleRooms is scoped to rooms the
+	// player owns per shardSpec; the observer processor and flushUsers populate
+	// the rest. This deliberately does NOT force rooms into the processor active
+	// set: player-less rooms sleep naturally and wake via their own scheduled
+	// timers, or via the intent wake-guard in `tick` when they receive intents.
+	private async seedUserRoomRelationships(): Promise<void> {
 		if (!this.simulation) return;
 		const { scratch } = this.simulation.shard;
-		for (const roomName of this.rooms) {
-			await scratch.zAdd('processor/activeRooms', [[1, roomName]]);
-		}
 		const ownedByEngineId = new Map<string, string[]>();
 		for (const roomSpec of this.shardSpec?.rooms ?? []) {
 			if (!roomSpec.owner) continue;
@@ -673,8 +688,19 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('placePowerCreep not yet implemented for xxscreeps');
 	}
 
-	async placeNuke(_room: string, _spec: NukeSpec): Promise<string> {
-		throw new Error('placeNuke not yet implemented for xxscreeps');
+	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
+		const id = this.nextId();
+		this.posToSyntheticId.set(`${roomName}:${spec.pos[0]}:${spec.pos[1]}:nuke`, id);
+
+		this.queueOp(roomName, room => {
+			const pos = new RoomPosition(spec.pos[0], spec.pos[1], roomName);
+			const landTime = this.simulation!.shard.time + spec.timeToLand;
+			const nuke = createNuke(pos, spec.launchRoomName, landTime);
+			nuke.id = id;
+			insertRoomObject(room, nuke);
+		});
+
+		return id;
 	}
 
 	async placeMarketOrder(_spec: MarketOrderSpec): Promise<string> {
@@ -789,7 +815,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.simulation = await createSimulation(bareInits, terrainOverrides);
 		await this.simulation.tick(1);
 
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 
 		// Now apply all pending setup ops via poke on top of the canonical
 		// sparse room layout used by the adapter contract: plain terrain
@@ -806,6 +832,21 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		this.pendingSetup.clear();
 		await this.flushPokeQueue();
+
+		// Genesis seed: mark every room active so the first tick after setup
+		// processes it once. That processed tick persists the canonical layout
+		// and placed objects into both tick-parity buffer slots (setup `poke`
+		// only writes one), and lets each lifecycle processor (source regen,
+		// structure decay, controller downgrade) schedule its wake before the
+		// room sleeps. After that single tick, player-less rooms sleep naturally
+		// and wake on their own timers. This replaces the old per-tick
+		// force-active loop without keeping idle rooms perpetually awake.
+		{
+			const { scratch } = this.simulation.shard;
+			for (const roomName of this.rooms) {
+				await scratch.zAdd(activeRoomsKey, [[1, roomName]]);
+			}
+		}
 
 		// After simulation init, objects have been saved and reloaded.
 		// Build the ID map by scanning rooms for objects placed by name/position.
@@ -902,7 +943,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		const engineUserId = this.resolvePlayer(userId);
 		const ownedRoomCount = this.shardSpec?.rooms.filter(room => room.owner === userId).length ?? 0;
 
@@ -924,7 +965,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		// Contract: runPlayer advances exactly 1 tick.
 		// simulation.player() only collects intents — tick() processes them.
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		await this.simulation!.tick(1);
 		this.firstTickRun = true;
 
@@ -935,7 +976,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
 		await this.flushPokeQueue();
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 
 		const results: Record<string, PlayerReturnValue> = {};
 		const errors: Array<{ handle: string; error: RunPlayerError }> = [];
@@ -973,7 +1014,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		if (errors.length > 0) throw errors[0].error;
 
 		// Phase 2: process all collected intents in a single tick.
-		await this.keepRoomsActive();
+		await this.seedUserRoomRelationships();
 		await this.simulation!.tick(1);
 		this.firstTickRun = true;
 
@@ -1011,7 +1052,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		try {
 			for (let i = 0; i < count; i++) {
-				await this.keepRoomsActive();
+				await this.seedUserRoomRelationships();
 				await this.simulation!.tick(1);
 			}
 		} finally {
@@ -1198,6 +1239,7 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'road': return createRoad(pos);
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
+		case 'nuker': return createNuker(pos, owner!);
 		case 'terminal':
 			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
 			return createTerminal(pos, owner!);
@@ -1272,6 +1314,17 @@ async function createSimulation(
 
 	// Base: all shard.json rooms start with blank (all-plain) terrain
 	const existingRooms = await shard.data.sMembers('rooms');
+
+	// instantiateTestShard saves each grid room once at time 0 — only the even
+	// parity slot. Stamp the odd slot so a neighbor room a creep crosses into loads
+	// on any tick parity, not just even ones. Must precede the genesis bump.
+	await Promise.all(Fn.map(existingRooms, roomName =>
+		shard.copyRoomFromPreviousTick(roomName, 1)));
+
+	// Genesis at tick 1 → first player tick sees Game.time === 2, matching vanilla.
+	shard.time = 1;
+	await shard.data.set('time', shard.time);
+
 	for (const roomName of existingRooms) {
 		const writer = new TerrainWriter();
 		terrainMap.set(roomName, { exits: packExits(writer), terrain: writer });
@@ -1395,15 +1448,24 @@ async function createSimulation(
 			},
 
 			async tick(count = 1, players: Record<string, string> = {}): Promise<void> {
+				playersThisTick.clear();
 				for (let ii = 0; ii < count; ++ii) {
+					const time = shard.time;
 					for (const [userId, code] of Object.entries(players)) {
 						await sim.player(userId, code);
 					}
 					playersThisTick.clear();
 
-					const time = shard.time + 1;
-					const processorTime = await begetRoomProcessQueue(shard, time, time - 1);
-					assert.equal(time, processorTime);
+					// Wake-guard: the adapter routes player intents directly via
+					// intentsByRoom rather than the runner's pushIntentsForRoomNextTick,
+					// so an intent aimed at a sleeping room would be dropped when
+					// begetRoomProcessQueue builds the queue from the active set. Add
+					// every room receiving intents this tick to the active set first.
+					for (const roomName of intentsByRoom.keys()) {
+						await shard.scratch.zAdd(activeRoomsKey, [[1, roomName]]);
+					}
+
+					await begetRoomProcessQueue(shard, time);
 					const nextRoomInstances = new Map<string, any>();
 					const contexts = new Map<string, any>();
 
@@ -1424,21 +1486,19 @@ async function createSimulation(
 					// Second phase
 					await Promise.all(Fn.map(contexts.values(), (ctx: any) => ctx.finalize(false)));
 					for await (const roomName of consumeSet(shard.scratch, finalizeExtraRoomsSetKey(time))) {
-						let room;
-						try {
-							room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
-						} catch {
-							continue;
-						}
+						const room = roomInstances.get(roomName) ?? await shard.loadRoom(roomName);
 						const context = new RoomProcessor(shard, world, room, time);
 						await context.process(true);
 						await context.finalize(true);
 						nextRoomInstances.set(roomName, room);
 					}
 
-					await shard.data.set('time', time);
-					await shard.channel.publish({ type: 'tick', time });
-					shard.time = time;
+					await runShardTickProcessors(shard, time);
+
+					const nextTime = time + 1;
+					await shard.data.set('time', nextTime);
+					await shard.channel.publish({ type: 'tick', time: nextTime });
+					shard.time = nextTime;
 				}
 			},
 		};
