@@ -34,7 +34,7 @@ import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
 import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
-import { loadTerrain } from 'xxscreeps/driver/pathfinder.js';
+import { loadTerrain } from 'xxscreeps/driver/pathfinder/pathfinder.js';
 import * as MapSchema from 'xxscreeps/game/map.js';
 import { makeWriter } from 'xxscreeps/schema/write.js';
 import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
@@ -104,11 +104,21 @@ for (const [name, assign] of [
 }
 
 // Module-level initialization
-import { importMods } from 'xxscreeps/config/mods/index.js';
+import { mods } from 'xxscreeps/config/mods.js';
+import type { Provide } from 'xxscreeps/config/loader.js';
 import { initializeIntentConstraints } from 'xxscreeps/engine/processor/index.js';
 import { initializeGameEnvironment } from 'xxscreeps/game/index.js';
-import 'xxscreeps/config/mods/import/game.js';
 
+// Upstream's mods overhaul (db0d77e) replaced importMods with a virtual-module
+// Node loader; we run in-process, so load providers from the resolved manifest.
+async function importMods(provide: Provide) {
+	for (const mod of mods) {
+		const url = mod.provides[provide];
+		if (url !== undefined) await import(url);
+	}
+}
+
+await importMods('game');
 // `driver` mods register `runnerConnector` hooks (flag, memory, visual,
 // controller). These must be imported before `createSimulation` runs so the
 // sandbox wiring in `UserSandbox.create` can iterate them.

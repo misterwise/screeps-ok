@@ -50,8 +50,10 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // runtime webpack build; v8 externalizes the pathfinder wrapper's `#pf`
 // native import (instead of the whole package) so the wrapper stays bundled;
 // v9 applies the vendored pathfinder build when newer than the registry
-// prebuild (see applyVendorPathfinder).
-const stampSchema = 'v9';
+// prebuild (see applyVendorPathfinder); v10 drops the pathfinder-entrypoint
+// and sandbox `#pf` externalization patches after upstream's napi/sandbox
+// refactor (pin db0d77e) self-resolves both.
+const stampSchema = 'v10';
 
 function stampContent(token) {
 	// Include the vendor manifest in the stamp so adding, refreshing, or
@@ -119,13 +121,10 @@ inlineTsconfigBase(srcDir);
 rewriteWorkspaceRefs();
 installNestedDeps();
 applyVendorPathfinder(srcDir);
-patchPathfinderEntrypoints();
-patchSandboxNativeExternalResolution();
 applyUpstreamPatches(srcDir);
 patchIvmInspectPrepareScript();
 buildNestedNativeAddons();
 buildTypeScript();
-runGeneratedModsBootstrap();
 writeFileSync(stampFile, stampContent(localOverride ? `local:${localOverride}` : pin) + '\n');
 console.log(localOverride
 	? `[screeps-ok] xxscreeps ready from local ${localOverride}`
@@ -270,27 +269,6 @@ function installNestedDeps() {
 	], { stdio: 'inherit' });
 }
 
-function patchPathfinderEntrypoints() {
-	const triplet = pathfinderTriplet();
-	const specifier = `@xxscreeps/pathfinder-${triplet}/pf.${triplet}.node`;
-	const source = `const path = require.resolve(${JSON.stringify(specifier)});
-module.exports = require(${JSON.stringify(specifier)});
-module.exports.path = path;
-if (module.exports.version !== 11) {
-\tthrow new Error('pf.node is out of date. Please reinstall.');
-}
-`;
-	for (const root of [
-		pathfinderDir,
-		join(xxscreepsDir, 'node_modules/@xxscreeps/pathfinder'),
-	]) {
-		const entrypoint = join(root, 'module/index.js');
-		if (!existsSync(entrypoint)) continue;
-		writeFileSync(entrypoint, source);
-	}
-	console.log(`[screeps-ok] Patched pathfinder entrypoints for ${triplet}`);
-}
-
 function applyVendorPathfinder(srcDir) {
 	const manifestPath = join(vendorDir, 'manifest.json');
 	if (!existsSync(manifestPath)) return;
@@ -330,60 +308,6 @@ function applyVendorPathfinder(srcDir) {
 	}
 	cpSync(binary, join(platformPkgDir, `pf.${triplet}.node`));
 	console.log(`[screeps-ok] Using vendor pathfinder ${manifest.version} (abi ${manifest.abi}, source ${manifest.sourceSha.slice(0, 8)}) for ${triplet}`);
-}
-
-function patchSandboxNativeExternalResolution() {
-	const sandboxPath = join(xxscreepsDir, 'driver/sandbox/index.ts');
-	if (!existsSync(sandboxPath)) return;
-	let source = readFileSync(sandboxPath, 'utf8');
-
-	// Externalize the wrapper's `#pf` native import, not the whole @xxscreeps/pathfinder package.
-	// The package is a JS shim adapting the public 5-arg search API to the 10-arg native; externalizing it whole bypasses the shim so runtime calls hit the native directly and @auto_js throws "Could not accept".
-	if (source.includes("if (request === '#pf')")) {
-		console.log('[screeps-ok] xxscreeps sandbox pathfinder externalization already patched');
-		return;
-	}
-	if (source.includes("if (request === '@xxscreeps/pathfinder')")) {
-		const patched = source.replace("if (request === '@xxscreeps/pathfinder')", "if (request === '#pf')");
-		writeFileSync(sandboxPath, patched);
-		console.log('[screeps-ok] Patched xxscreeps sandbox to externalize #pf (keep pathfinder wrapper bundled)');
-		return;
-	}
-
-	if (!source.includes("import { createRequire } from 'node:module';")) {
-		source = source.replace(
-			"import * as Path from 'node:path';\n",
-			"import * as Path from 'node:path';\nimport { createRequire } from 'node:module';\n",
-		);
-	}
-	if (!source.includes('const nodeRequire = createRequire(import.meta.url);')) {
-		source = source.replace(
-			"const didMakeSandbox = hooks.makeIterated('sandboxCreated');\n",
-			"const didMakeSandbox = hooks.makeIterated('sandboxCreated');\nconst nodeRequire = createRequire(import.meta.url);\n",
-		);
-	}
-	const original = `\t\t\texternals: ({ context, request }) =>
-\t\t\t\trequest?.endsWith('.node')
-\t\t\t\t\t? \`globalThis[\${JSON.stringify(Path.join(context!, request))}]\` : undefined,
-`;
-	const replacement = `\t\t\texternals: ({ context, request }) => {
-\t\t\t\tif (!request?.endsWith('.node')) return undefined;
-\t\t\t\tconst modulePath = request.startsWith('.') || Path.isAbsolute(request)
-\t\t\t\t\t? Path.join(context!, request)
-\t\t\t\t\t: nodeRequire.resolve(request, context ? { paths: [ context ] } : undefined);
-\t\t\t\treturn \`globalThis[\${JSON.stringify(modulePath)}]\`;
-\t\t\t},
-`;
-	const patched = source.replace(original, replacement);
-	if (patched === source) {
-		if (source.includes('const modulePath = request.startsWith(\'.\') || Path.isAbsolute(request)')) {
-			console.log('[screeps-ok] xxscreeps sandbox native external resolution already patched');
-			return;
-		}
-		throw new Error('Failed to patch xxscreeps sandbox native external resolution');
-	}
-	writeFileSync(sandboxPath, patched);
-	console.log('[screeps-ok] Patched xxscreeps sandbox native external resolution');
 }
 
 function buildNestedNativeAddons() {
@@ -449,11 +373,4 @@ function buildTypeScript() {
 	} else {
 		console.log('[screeps-ok] xxscreeps JavaScript build complete');
 	}
-}
-
-function runGeneratedModsBootstrap() {
-	execFileSync(process.execPath, ['dist/config/mods/index.js'], {
-		cwd: xxscreepsDir,
-		stdio: 'inherit',
-	});
 }

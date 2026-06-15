@@ -36,6 +36,12 @@ export default defineConfig({
 	test: {
 		testTimeout: 15000,
 		fileParallelism: false,
+		// xxscreeps' mods-resolution overhaul serves the engine's virtual
+		// `xxscreeps:mods/*` modules via a `register()`-based Node loader; load
+		// it before any test pulls the engine in.
+		setupFiles: adapter.includes('xxscreeps')
+			? [path.join(projectRoot, 'adapters/xxscreeps/register-loader.ts')]
+			: [],
 		include: [
 			'tests/**/*.test.ts',
 			...(adapter.includes('xxscreeps') ? ['tests-xxscreeps/**/*.test.ts'] : []),

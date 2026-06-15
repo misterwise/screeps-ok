@@ -20,7 +20,7 @@ import type { Shard } from 'xxscreeps/engine/db/index.js';
 import type { World } from 'xxscreeps/game/map.js';
 import type { Sandbox } from 'xxscreeps/driver/sandbox/index.js';
 import type { Effect } from 'xxscreeps/utility/types.js';
-import config from 'xxscreeps/config/index.js';
+import { config } from 'xxscreeps/config/index.js';
 import { createSandbox } from 'xxscreeps/driver/sandbox/index.js';
 import { hooks as runnerHooks } from 'xxscreeps/engine/runner/index.js';
 import * as Code from 'xxscreeps/engine/db/user/code.js';

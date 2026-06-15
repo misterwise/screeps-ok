@@ -1,9 +1,9 @@
 import { execFileSync, execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,20 +25,19 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 }
 
 if (target === 'all' || target === 'xxscreeps') {
-	setupXxscreeps();
+	await setupXxscreeps();
 }
 
 if (target === 'all' || target === 'vanilla') {
 	setupVanilla();
 }
 
-function setupXxscreeps() {
+async function setupXxscreeps() {
 	const root = resolvePackageRoot('xxscreeps');
 	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
 	runTypeScriptBuild(root);
-	runGeneratedModsBootstrap(root);
 	const pathfinderRoot = resolvePackageDependencyRoot(root, '@xxscreeps/pathfinder');
-	setupPathfinder(pathfinderRoot);
+	await setupPathfinder(pathfinderRoot);
 }
 
 function setupVanilla() {
@@ -104,21 +103,28 @@ function run(command, options) {
 	});
 }
 
-function setupPathfinder(pathfinderRoot) {
+async function setupPathfinder(pathfinderRoot) {
 	if (existsSync(path.join(pathfinderRoot, 'binding.gyp'))) {
 		console.log(`[screeps-ok] Building path-finder native addon in ${pathfinderRoot}`);
 		run('npx node-gyp rebuild --release', { cwd: pathfinderRoot });
-		verifyPathfinder(pathfinderRoot);
+		await verifyPathfinder(pathfinderRoot);
 		return;
 	}
 
 	console.log(`[screeps-ok] Verifying prebuilt path-finder native addon in ${pathfinderRoot}`);
-	verifyPathfinder(pathfinderRoot);
+	await verifyPathfinder(pathfinderRoot);
 }
 
-function verifyPathfinder(pathfinderRoot) {
+async function verifyPathfinder(pathfinderRoot) {
+	// napi pathfinder is exports-only ESM, so import the manifest's entry rather
+	// than directory-require it; the import runs the native load + version check.
+	const pkg = JSON.parse(readFileSync(path.join(pathfinderRoot, 'package.json'), 'utf8'));
+	const entry = typeof pkg.exports?.['.'] === 'string' ? pkg.exports['.'] : pkg.main ?? 'index.js';
 	try {
-		require(pathfinderRoot);
+		const pf = await import(pathToFileURL(path.join(pathfinderRoot, entry)).href);
+		if (pf.path === undefined) {
+			throw new Error('pathfinder loaded but exposes no native `path`');
+		}
 	} catch (error) {
 		console.error('[screeps-ok] Failed to load @xxscreeps/pathfinder native addon.');
 		console.error(String(error instanceof Error ? error.message : error));
@@ -141,14 +147,6 @@ function runTypeScriptBuild(cwd) {
 		console.error(`[screeps-ok] xxscreeps tsc build did not emit dist/test/simulate.js in ${cwd}`);
 		process.exit(1);
 	}
-}
-
-function runGeneratedModsBootstrap(cwd) {
-	console.log(`[screeps-ok] ${process.execPath} dist/config/mods/index.js`);
-	execFileSync(process.execPath, ['dist/config/mods/index.js'], {
-		cwd,
-		stdio: 'inherit',
-	});
 }
 
 function findPackageRoot(resolvedPath) {

@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
@@ -29,53 +29,41 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 }
 
 if (adapter === 'all' || adapter === 'xxscreeps') {
-	checkXxscreeps();
+	await checkXxscreeps();
 }
 
 if (adapter === 'all' || adapter === 'vanilla') {
 	await checkVanilla();
 }
 
-function checkXxscreeps() {
+async function checkXxscreeps() {
 	const root = resolvePackageRoot('xxscreeps');
 	checkFile(
 		path.join(root, 'dist/test/simulate.js'),
 		'xxscreeps JavaScript build output is missing.',
 		'Run npm run setup:xxscreeps',
 	);
-	checkFile(
-		path.join(root, 'dist/config/mods.static/constants.js'),
-		'xxscreeps generated mods constants bundle is missing.',
-		'Run npm run setup:xxscreeps',
-	);
-	checkFile(
-		path.join(root, 'dist/config/mods.static/game.js'),
-		'xxscreeps generated mods game bundle is missing.',
-		'Run npm run setup:xxscreeps',
-	);
-	checkFile(
-		path.join(root, 'dist/config/mods.static/config.js'),
-		'xxscreeps generated mods config bundle is missing.',
-		'Run npm run setup:xxscreeps',
-	);
 
 	const pathfinderRoot = resolvePackageDependencyRoot(root, '@xxscreeps/pathfinder');
-	checkXxscreepsPathfinder(pathfinderRoot);
+	await checkXxscreepsPathfinder(pathfinderRoot);
 }
 
-function checkXxscreepsPathfinder(pathfinderRoot) {
-	const nativeId = `${process.arch}-${process.platform}-${process.version}`;
-	const legacyPfNode = path.join(pathfinderRoot, 'out', nativeId, 'pf.node');
-	const loadTarget = existsSync(legacyPfNode) ? legacyPfNode : pathfinderRoot;
+async function checkXxscreepsPathfinder(pathfinderRoot) {
+	// napi pathfinder is exports-only ESM, so import the manifest's entry rather
+	// than directory-require it; the import runs the native load + version check.
+	const pkg = JSON.parse(readFileSync(path.join(pathfinderRoot, 'package.json'), 'utf8'));
+	const entry = typeof pkg.exports?.['.'] === 'string' ? pkg.exports['.'] : pkg.main ?? 'index.js';
 
 	try {
-		require(loadTarget);
+		const pf = await import(pathToFileURL(path.join(pathfinderRoot, entry)).href);
+		if (pf.path === undefined) {
+			throw new Error('pathfinder loaded but exposes no native `path`');
+		}
 	} catch (error) {
 		fail(
 			'xxscreeps path-finder native module failed to load.',
 			[
 				String(error instanceof Error ? error.message : error),
-				`Expected legacy file: ${legacyPfNode}`,
 				'Run npm run setup:xxscreeps after switching to the intended Node version.',
 			],
 		);
