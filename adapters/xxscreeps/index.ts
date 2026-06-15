@@ -95,10 +95,14 @@ import { asUnion } from 'xxscreeps/utility/utility.js';
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
 let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
+// powerspawn is a feature-branch mod, absent from the upstream pin; gate it the
+// same way so PowerSpawn placement works only when the mod is loaded.
+let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
 for (const [name, assign] of [
 	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
 	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
 	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
+	['xxscreeps/mods/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
@@ -1250,6 +1254,9 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
 		case 'nuker': return createNuker(pos, owner!);
+		case 'powerSpawn':
+			if (!createPowerSpawn) throw new Error('powerspawn mod not available in this xxscreeps build');
+			return createPowerSpawn(pos, owner!);
 		case 'terminal':
 			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
 			return createTerminal(pos, owner!);
