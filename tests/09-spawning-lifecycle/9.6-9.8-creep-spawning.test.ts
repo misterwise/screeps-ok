@@ -413,4 +413,46 @@ describe('Creep spawning state', () => {
 		`);
 		expect(restarted).toBe('SpawnStateRestart');
 	});
+
+	test('CREEP-SPAWNING-006 a creep spawned this tick reports spawning=true the same tick', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const rc = spawn.spawnCreep([MOVE], 'SameTickSpawn');
+			const creep = Game.creeps['SameTickSpawn'];
+			({ rc, hasCreep: !!creep, spawning: creep ? creep.spawning : 'no-creep' })
+		`) as { rc: number; hasCreep: boolean; spawning: unknown };
+
+		expect(result.rc).toBe(OK);
+		expect(result.hasCreep).toBe(true);
+		expect(result.spawning).toBe(true);
+	});
+
+	test('CREEP-SPAWNING-007 an intent on a creep spawned this tick returns ERR_BUSY without throwing', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			store: { energy: 300 },
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const spawn = Game.getObjectById(${spawnId});
+			const rc = spawn.spawnCreep([MOVE], 'SameTickMove');
+			const creep = Game.creeps['SameTickMove'];
+			let moveRc;
+			try { moveRc = creep ? creep.move(TOP) : 'no-creep'; }
+			catch (err) { moveRc = 'throw:' + (err && err.message); }
+			({ rc, moveRc })
+		`) as { rc: number; moveRc: unknown };
+
+		expect(result.rc).toBe(OK);
+		expect(result.moveRc).toBe(ERR_BUSY);
+	});
 });

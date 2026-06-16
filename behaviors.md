@@ -1836,6 +1836,14 @@ Coverage Notes
   Distinct from `CREEP-SPAWNING-001`, which covers `creep.spawning ===
   true` during production; this entry covers the spawn-side post-
   completion transition.
+- `CREEP-SPAWNING-006` `behavior` `verified_vanilla`
+  A creep created by `spawnCreep()` appears in `Game.creeps` the same tick
+  with `creep.spawning === true`. Distinct from `CREEP-SPAWNING-001`, which
+  reads `spawning` on a later tick; this entry pins the same-tick view of a
+  just-spawned creep.
+- `CREEP-SPAWNING-007` `behavior` `verified_vanilla`
+  An intent (e.g. `move`) on a creep spawned the same tick returns
+  `ERR_BUSY` without throwing, since the just-spawned creep is spawning.
 
 ### 9.7 Aging & Death
 - `CREEP-LIFETIME-001` `behavior` `verified_vanilla`

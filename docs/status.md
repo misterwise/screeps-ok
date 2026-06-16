@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2631%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2319%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-48-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2633%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2319%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-50-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2631](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-15 04:10 UTC |
-| 🟡 | **xxscreeps** | [2319](#xxscreeps-passing-tests) | [48](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-15 04:06 UTC |
+| 🟡 | **vanilla** | [2633](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-16 02:48 UTC |
+| 🟡 | **xxscreeps** | [2319](#xxscreeps-passing-tests) | [50](#xxscreeps-expected-failures) | — | [294](#xxscreeps-skipped-tests) | 2026-06-16 02:44 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 22 expected-failure classifications against vanilla's canonical behavior, covering 48 tests. That includes 21 open parity gaps covering 46 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 23 expected-failure classifications against vanilla's canonical behavior, covering 50 tests. That includes 22 open parity gaps covering 48 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -187,6 +187,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `spawn-same-tick-creep-not-spawning` | On the tick `StructureSpawn.spawnCreep` is called, the fake creep it adds to `Game.creeps` (`mods/spawn/spawn.ts`) reports `spawning === false`: it is built by `createCreep`, whose `create()` sets `#ageTime` to `Game.time + CREEP_LIFE_TIME`, while the `spawning` getter is `#ageTime === 0`. Because the creep is not treated as spawning, an intent on it the same tick does not return ERR_BUSY — on the current pin `move` returns OK; with the #250 receiver-exists guard it instead throws `Could not find an object with ID …` since the fake creep is absent from `getObjectById`. | Vanilla's same-tick `spawnCreep` fake creep reports `spawning === true`, and any intent (e.g. `move`) on a spawning creep returns ERR_BUSY without throwing. | [2](#xxscreeps-gap-spawn-same-tick-creep-not-spawning) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -362,6 +363,14 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-spawn-same-tick-creep-not-spawning">
+<summary><code>spawn-same-tick-creep-not-spawning</code> — 2 tests</summary>
+
+- `Creep spawning state CREEP-SPAWNING-006 a creep spawned this tick reports spawning=true the same tick`
+- `Creep spawning state CREEP-SPAWNING-007 an intent on a creep spawned this tick returns ERR_BUSY without throwing`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -408,7 +417,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2631 tests across 135 files</summary>
+<summary>2633 tests across 135 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2076,7 +2085,7 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (16)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (18)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
@@ -2094,6 +2103,8 @@ Click a count to jump to the affected test list.
 - Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
 - Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
 - Creep spawning state CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds
+- Creep spawning state CREEP-SPAWNING-006 a creep spawned this tick reports spawning=true the same tick
+- Creep spawning state CREEP-SPAWNING-007 an intent on a creep spawned this tick returns ERR_BUSY without throwing
 
 **`tests/09-spawning-lifecycle/9.7a-lifetime.test.ts`** (3)
 
