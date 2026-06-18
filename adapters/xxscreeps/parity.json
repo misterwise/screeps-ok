@@ -55,11 +55,6 @@
 			"expected": "Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks.",
 			"tests": ["CONSTRUCTION-SITE-014"]
 		},
-		"stale-construction-site-remove-allowed": {
-			"actual": "`ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has already been removed. The schema-backed `#user` read in `checkRemove` does not trip xxscreeps's released-object runtime error the way other receiver methods do (e.g. `Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`, all of which throw `Accessed a released object from a previous tick`).",
-			"expected": "Stale cached receiver methods must reject the call with a runtime error rather than letting the intent through. The matrix asserts only `errorKind === 'runtime'`; engine-specific wording (vanilla `Could not find an object with ID ...` vs xxscreeps `Accessed a released object`) is not load-bearing.",
-			"tests": ["UNDOC-STALERECV-001:constructionSiteRemove"]
-		},
 		"stale-pickup-target-allowed": {
 			"actual": "`Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops.",
 			"expected": "Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code).",
@@ -112,10 +107,15 @@
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
 		},
-		"spawn-same-tick-creep-not-spawning": {
-			"actual": "On the tick `StructureSpawn.spawnCreep` is called, the fake creep it adds to `Game.creeps` (`mods/spawn/spawn.ts`) reports `spawning === false`: it is built by `createCreep`, whose `create()` sets `#ageTime` to `Game.time + CREEP_LIFE_TIME`, while the `spawning` getter is `#ageTime === 0`. Because the creep is not treated as spawning, an intent on it the same tick does not return ERR_BUSY — on the current pin `move` returns OK; with the #250 receiver-exists guard it instead throws `Could not find an object with ID …` since the fake creep is absent from `getObjectById`.",
-			"expected": "Vanilla's same-tick `spawnCreep` fake creep reports `spawning === true`, and any intent (e.g. `move`) on a spawning creep returns ERR_BUSY without throwing.",
-			"tests": ["CREEP-SPAWNING-006", "CREEP-SPAWNING-007"]
+		"getroomstatus-throws-on-non-string-arg": {
+			"actual": "Game.map.getRoomStatus(undefined|null|number) throws TypeError ('Cannot read properties of undefined (reading slice)'). game/map.ts:getRoomStatus calls parseRoomName(roomName) with no type/shape guard; game/room/name.ts parseSignedRoomName does name.slice(1), which throws on a non-string.",
+			"expected": "Vanilla game/map.js getRoomStatus guards with /^(W|E)\\d+(N|S)\\d+$/.test(roomName); a non-string coerces to a string that fails the pattern, so it returns undefined (same as an invalid-format name).",
+			"tests": ["MAP-ROOM-006"]
+		},
+		"require-cache-missing": {
+			"actual": "require.cache is undefined in the xxscreeps runtime. The flat CJS loader (driver/runtime/module.ts:28) sets globalThis.require = requireFrom() (closure-internal cache Map) but never attaches a .cache property; delete require.cache['main'] throws TypeError 'Cannot convert undefined or null to object'.",
+			"expected": "Vanilla exposes require.cache as a module-cache object: typeof require.cache === 'object' and delete require.cache['main'] returns true without throwing.",
+			"tests": ["UNDOC-GLOBAL-004"]
 		}
 	}
 }

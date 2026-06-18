@@ -7,7 +7,7 @@ import { describe, test, expect, code,
 describe('StructurePowerSpawn processPower', () => {
 	// ---- POWER-SPAWN-001: processPower() returns OK, consumes resources, adds GPL progress ----
 	test('POWER-SPAWN-001 processPower returns OK and consumes 1 power + POWER_SPAWN_ENERGY_RATIO energy', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -49,6 +49,7 @@ describe('StructurePowerSpawn processPower', () => {
 
 	// ---- POWER-SPAWN-002: PWR_OPERATE_POWER increases power consumed ----
 	test('POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power', async ({ shard }) => {
+		shard.requires('powerSpawn');
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -112,7 +113,7 @@ describe('StructurePowerSpawn processPower', () => {
 
 	// ---- POWER-SPAWN-003: ERR_NOT_ENOUGH_RESOURCES when lacking power or energy ----
 	test('POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking power', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -141,7 +142,7 @@ describe('StructurePowerSpawn processPower', () => {
 	});
 
 	test('POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking energy', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -162,7 +163,7 @@ describe('StructurePowerSpawn processPower', () => {
 
 	// ---- POWER-SPAWN-004: ERR_RCL_NOT_ENOUGH when inactive (RCL < 8) ----
 	test('POWER-SPAWN-004 processPower returns ERR_RCL_NOT_ENOUGH when RCL < 8', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		// Power spawn requires RCL 8 — place at RCL 7 where isActive() is false.
 		await shard.createShard({
 			players: ['p1'],
@@ -183,7 +184,7 @@ describe('StructurePowerSpawn processPower', () => {
 
 	// ---- POWER-SPAWN-005: ERR_NOT_OWNER when not owned by player ----
 	test('POWER-SPAWN-005 processPower returns ERR_NOT_OWNER when not owned by the player', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

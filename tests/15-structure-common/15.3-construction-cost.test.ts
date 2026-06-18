@@ -10,7 +10,7 @@ const siteCap: Record<string, string | undefined> = {
 	terminal: 'market',
 	factory: 'factory',
 	nuker: 'nuke',
-	powerSpawn: 'powerCreeps',
+	powerSpawn: 'powerSpawn',
 };
 
 // ── CONSTRUCTION-COST-001: canonical cost table ─────────────

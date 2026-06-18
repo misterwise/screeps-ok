@@ -572,6 +572,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
 		powerCreeps: true,
+		powerSpawn: true,
 		factory: true,
 		market: true,
 		observer: true,

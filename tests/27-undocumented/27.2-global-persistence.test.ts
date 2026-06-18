@@ -57,4 +57,16 @@ describe('Undocumented API Surface — global / VM persistence', () => {
 		expect(result.viaExportsOnModule).toBe('exports-value');
 		expect(result.viaModuleOnExports).toBe('module-value');
 	});
+
+	test('UNDOC-GLOBAL-004 require.cache is an object and delete require.cache[name] succeeds', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			require('main');
+			({ cacheType: typeof require.cache, deleteOk: (delete require.cache['main']) })
+		`) as { cacheType: string; deleteOk: boolean };
+
+		expect(result.cacheType).toBe('object');
+		expect(result.deleteOk).toBe(true);
+	});
 });

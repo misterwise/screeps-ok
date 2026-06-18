@@ -141,6 +141,19 @@ describe('Game.map room queries', () => {
 		expect(result.type).toBe('undefined');
 	});
 
+	test('MAP-ROOM-006 getRoomStatus returns undefined for non-string arguments', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		// undefined doesn't survive JSON across the boundary, so map each result
+		// to a tag string. All three short-circuit on the format regex before any
+		// room-status lookup, so no roomStatus capability is needed.
+		const result = await shard.runPlayer('p1', code`
+			[undefined, null, 123].map(a => Game.map.getRoomStatus(a) === undefined ? 'undefined' : 'value')
+		`) as string[];
+
+		expect(result).toEqual(['undefined', 'undefined', 'undefined']);
+	});
+
 	test('MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span', async ({ shard }) => {
 		shard.requires('liveWorldSize');
 		await shard.ownedRoom('p1');

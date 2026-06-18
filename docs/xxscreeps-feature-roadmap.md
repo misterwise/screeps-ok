@@ -43,7 +43,7 @@ No dependencies; can land in any order. Each closes a discrete item from the aud
 - **Construction site stomping** (#99) — movement destroys hostile sites on entry
 - **Spawn stomping** (#100) — new creep destroys hostile creeps on the spawn tile
 - **`Game.notify`** — queueing landed in #161; delivery is still in flight upstream as #165, so do not duplicate that branch
-- **`Game.gpl`** — currently hardcoded zeros; mirror `Game.gcl` plumbing on the user record
+- **`Game.gpl` / PowerSpawn** — landed in #260; screeps-ok now verifies the account-power formula plus unboosted `processPower()` branches on xxscreeps
 - **`RoomObject.effects`** — surface getter; precondition for Power and InvaderCore effects (start with `[]` default)
 - **`notifyWhenAttacked` damage-side consumer** — surface landed in #132; after #165, damage processors still need to read `'#noAttackNotify'` and emit notifications
 
@@ -112,8 +112,7 @@ Tracked upstream as #53 (draft). Self-contained subsystem; can slot in any time 
 
 - `PowerCreep` (currently stubbed via `Game.powerCreeps = {}`)
 - `StructurePowerBank`
-- `StructurePowerSpawn`
-- Power resource flow + power-creep abilities
+- Power-creep abilities and boosted power flows (`PWR_OPERATE_POWER`, `PWR_OPERATE_FACTORY`, etc.)
 
 ## Tier 6 — Cross-shard / InterShardMemory
 
@@ -144,6 +143,6 @@ Independent of game systems; largely client/backend work.
 
 ## Suggested next step
 
-Tier 1 is still the right batch, but Portal landed in #159 and the remaining `Game.notify` delivery work is already in flight upstream as #165. The next clean new feature branch should be **`RoomObject.effects`** because it unlocks Tier 4 strongholds and Tier 5 power without colliding with current PRs. After that, the remaining small standalone Tier 1 choices are construction-site stomping, spawn stomping, and `Game.gpl`.
+Tier 1 is still the right batch, but Portal landed in #159, `Game.notify` delivery is already in flight upstream as #165, and PowerSpawn / `Game.gpl` landed in #260. The next clean new feature branch should be **`RoomObject.effects`** because it unlocks Tier 4 strongholds and remaining Tier 5 power work without colliding with current PRs. After that, the remaining small standalone Tier 1 choices are construction-site stomping and spawn stomping.
 
 If picking one Tier 2 item to start in parallel later: **Nuker** is the cleanest (well-scoped delayed-impact intent, no NPC entanglement) and closes the last RCL 8 row in the audit.

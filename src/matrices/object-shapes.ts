@@ -255,7 +255,7 @@ export const structureShapes: readonly StructureShapeEntry[] = [
 		),
 	},
 	{
-		structureType: STRUCTURE_POWER_SPAWN, rcl: 8, owned: true, cap: 'powerCreeps',
+		structureType: STRUCTURE_POWER_SPAWN, rcl: 8, owned: true, cap: 'powerSpawn',
 		extra: { store: { energy: 100 } },
 		shape: shape(
 			'energy', 'energyCapacity', 'hits', 'hitsMax', 'id', 'my',

@@ -20,7 +20,7 @@ const requiredCap: Record<string, string | undefined> = {
 	terminal: 'market',
 	factory: 'factory',
 	nuker: 'nuke',
-	powerSpawn: 'powerCreeps',
+	powerSpawn: 'powerSpawn',
 	observer: 'observer',
 };
 

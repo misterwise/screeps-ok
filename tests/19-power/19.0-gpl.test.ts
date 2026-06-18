@@ -29,7 +29,7 @@ const readGpl = code`
 
 describe('Game.gpl', () => {
 	test('GPL-001 Game.gpl starts at level 0 with 1000 progressTotal when account power is 0', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 		await shard.createShard({
 			players: [{ name: 'p1', power: 0 }],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -48,7 +48,7 @@ describe('Game.gpl', () => {
 		['e', 9000],
 	] as const) {
 		test(`GPL-002${caseId} Game.gpl follows vanilla account-power math at ${power} power`, async ({ shard }) => {
-			shard.requires('powerCreeps');
+			shard.requires('powerSpawn');
 			await shard.createShard({
 				players: [{ name: 'p1', power }],
 				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

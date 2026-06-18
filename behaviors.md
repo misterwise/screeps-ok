@@ -2173,7 +2173,7 @@ Coverage Notes
 - Factory error-code behavior for invalid commodity level requests is covered by
   `FACTORY-PRODUCE-009`.
 
-### 11.6 Power Spawn `capability: powerCreeps`
+### 11.6 Power Spawn `capability: powerSpawn`
 - `POWER-SPAWN-001` `behavior` `verified_vanilla`
   A successful `processPower()` returns `OK`, consumes 1 power and
   `POWER_SPAWN_ENERGY_RATIO` energy and adds exactly 1 GPL progress.
@@ -3186,9 +3186,11 @@ Coverage Notes
 
 ### 19.0 Game.gpl
 - `GPL-001` `behavior` `verified_vanilla`
+  `capability: powerSpawn`
   With zero processed account power, `Game.gpl` reports level `0`, progress `0`,
   and `POWER_LEVEL_MULTIPLY` progress required for the next level.
 - `GPL-002` `matrix` `verified_vanilla`
+  `capability: powerSpawn`
   `Game.gpl.level`, `progress`, and `progressTotal` follow the vanilla account
   power formula at threshold edges:
   `level = floor((power / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW))`,
@@ -3476,6 +3478,11 @@ Notes
   `Game.map.getWorldSize()` returns the inclusive count of rooms along the
   longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`
   over the rooms that exist in the engine.
+- `MAP-ROOM-006` `behavior` `verified_vanilla`
+  `Game.map.getRoomStatus(arg)` returns `undefined` for a non-string argument
+  (`undefined`, `null`, a number) — the same `undefined` outcome vanilla gives an
+  invalid-format string name. Vanilla applies `/^(W|E)\d+(N|S)\d+$/.test(arg)`,
+  which coerces a non-string to a string that fails the pattern.
 
 ### 21.2 Route Finding
 - `MAP-ROUTE-001` `behavior` `verified_vanilla`
@@ -4066,6 +4073,11 @@ Notes
   In an executing CommonJS user module, bare `exports` aliases
   `module.exports`: properties written through either object are observable
   through the other during that tick.
+- `UNDOC-GLOBAL-004` `behavior` `verified_vanilla`
+  The module loader exposes `require.cache` as an object, and
+  `delete require.cache[name]` succeeds (returns `true`) without throwing — the
+  standard module-cache surface bundlers use to free a module after load (e.g.
+  the rustyscreeps wasm loader frees its `.wasm` bytes this way).
 
 Notes
 - VM reset *timing* (when a global reset occurs) is engine-scheduler

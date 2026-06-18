@@ -318,6 +318,7 @@ describe('26.0 Object Shape Conformance', () => {
 	});
 
 	test('SHAPE-GAME-006 Game.gpl matches canonical shape', async ({ shard }) => {
+		shard.requires('powerSpawn');
 		await shard.ownedRoom('p1');
 		await shard.tick();
 

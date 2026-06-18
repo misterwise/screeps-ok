@@ -33,7 +33,7 @@ const requiredCapability: Record<string, string | undefined> = {
 	[STRUCTURE_TERMINAL]: 'market',
 	[STRUCTURE_FACTORY]: 'factory',
 	[STRUCTURE_NUKER]: 'nuke',
-	[STRUCTURE_POWER_SPAWN]: 'powerCreeps',
+	[STRUCTURE_POWER_SPAWN]: 'powerSpawn',
 };
 
 describe('Store', () => {
@@ -216,7 +216,7 @@ describe('Store', () => {
 	});
 
 	test('STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps', async ({ shard }) => {
-		shard.requires('powerCreeps');
+		shard.requires('powerSpawn');
 
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const id = await shard.placeStructure('W1N1', {

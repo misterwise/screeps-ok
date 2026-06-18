@@ -9,7 +9,7 @@ import {
 interface StoreDisallowedCase {
 	label: string;
 	structureType: string;
-	capability: 'nuke' | 'powerCreeps';
+	capability: 'nuke' | 'powerSpawn';
 	rcl: number;
 	disallowed: readonly string[];
 }
@@ -26,7 +26,7 @@ export const storeDisallowedCases: readonly StoreDisallowedCase[] = [
 	{
 		label: 'powerSpawn',
 		structureType: STRUCTURE_POWER_SPAWN,
-		capability: 'powerCreeps',
+		capability: 'powerSpawn',
 		rcl: 8,
 		// Power spawn accepts energy + power only. Sample minerals (including G) and a commodity.
 		disallowed: ['H', 'O', 'Z', 'G', 'ops'],

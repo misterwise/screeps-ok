@@ -30,6 +30,7 @@ import { consumeSet, consumeSortedSet } from 'xxscreeps/engine/db/async.js';
 import { activeRoomsKey, begetRoomProcessQueue, finalizeExtraRoomsSetKey, processRoomsSetKey, updateUserRoomRelationships, userToIntentRoomsSetKey, userToVisibleRoomsSetKey } from 'xxscreeps/engine/processor/model.js';
 import { RoomProcessor } from 'xxscreeps/engine/processor/room.js';
 import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
+import * as User from 'xxscreeps/engine/db/user/index.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
@@ -95,8 +96,8 @@ import { asUnion } from 'xxscreeps/utility/utility.js';
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
 let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
-// powerspawn is a feature-branch mod, absent from the upstream pin; gate it the
-// same way so PowerSpawn placement works only when the mod is loaded.
+// powerspawn is optional across pins; gate the PowerSpawn/GPL surface on the
+// dynamic import result so older pins skip cleanly and current main runs it.
 let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
 for (const [name, assign] of [
 	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
@@ -188,6 +189,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
 		powerCreeps: false,
+		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
 		market: false,
 		observer: true,
@@ -252,6 +254,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	// ERR_GCL_NOT_ENOUGH (see `mods/controller/creep.ts:137` —
 	// `level <= #roomCount` fails).
 	private playerGcl = new Map<string, number>();
+	private playerPower = new Map<string, number>();
 	private pendingSetup = new Map<string, Array<(room: Room) => void>>();
 	private rooms: string[] = [];
 	private simulation: Awaited<ReturnType<typeof createSimulation>> | null = null;
@@ -363,6 +366,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			if (typeof entry !== 'string' && entry.gcl !== undefined) {
 				this.playerGcl.set(handle, entry.gcl);
 			}
+			this.playerPower.set(handle, typeof entry !== 'string' && entry.power !== undefined
+				? entry.power
+				: 10000000);
 		}
 
 		for (const roomSpec of spec.rooms) {
@@ -827,6 +833,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			bareInits[roomName] = () => {};
 		}
 		this.simulation = await createSimulation(bareInits, terrainOverrides);
+		for (const [handle, power] of this.playerPower) {
+			const engineId = this.playerMap.get(handle);
+			if (engineId) {
+				await this.simulation.shard.db.data.hSet(User.infoKey(engineId), 'power', String(power));
+			}
+		}
 		await this.simulation.tick(1);
 
 		await this.seedUserRoomRelationships();
@@ -1232,6 +1244,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.playerGcl.clear();
+		this.playerPower.clear();
 		this.idMap.clear();
 		this.nameToSyntheticId.clear();
 		this.posToSyntheticId.clear();

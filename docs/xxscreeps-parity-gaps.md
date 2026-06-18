@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-14 against pin `db0d77e9`.
+Last refreshed: 2026-06-18 against pin `8e6a71b9`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 gaps registered in `parity.json` (one held intentional: factory power effect); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
 
@@ -67,13 +67,6 @@ Last refreshed: 2026-06-14 against pin `db0d77e9`.
 - Cause: the hostile-owned and validation-precedence rows now match vanilla, but hostile reservations still do not return `ERR_NOT_OWNER` ahead of the RCL/type checks for every structure type.
 - Plan: keep the four-case split narrow now: hostile reservation returns ERR_NOT_OWNER; otherwise let the existing ownership/RCL/type path handle the already-fixed cases.
 
-### stale-construction-site-remove-allowed
-
-- Tests: UNDOC-STALERECV-001:constructionSiteRemove.
-- Status: CONFIRMED.
-- Cause: `ConstructionSite.remove()` (`packages/xxscreeps/mods/construction/construction-site.ts`) accepts a stale cached construction-site wrapper and returns `OK`, queueing another remove intent after the backing site has been removed. Other receiver methods (`Structure.notifyWhenAttacked`, `StructureSpawn.spawnCreep` / `renewCreep` / `recycleCreep`, `StructureLink.transferEnergy`, `StructureTower.attack`/`heal`/`repair`) throw xxscreeps's `Accessed a released object from a previous tick` runtime error on stale wrappers, which the matrix accepts. `ConstructionSite.remove()` somehow bypasses that check — the schema-backed `#user` read inside `checkRemove` does not throw the released-object error the way the same pattern does for the other receivers — and the call proceeds through to `intents.save`.
-- Plan: gate `ConstructionSite.remove()` on the same released-object / missing-backing-data check that the other receiver methods already trigger, so a stale cached site rejects the call instead of queueing a duplicate remove intent.
-
 ### stale-pickup-target-allowed
 
 - Tests: UNDOC-STALEARG-001:creepPickup.
@@ -94,6 +87,20 @@ Last refreshed: 2026-06-14 against pin `db0d77e9`.
 - Status: CONFIRMED.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
+
+### getroomstatus-throws-on-non-string-arg
+
+- Tests: MAP-ROOM-006
+- Status: CONFIRMED (live-evaluated against the running engine; vanilla side via engine source map.js:210).
+- Cause: `game/map.ts` `getRoomStatus` calls `parseRoomName` before any shape check; `parseSignedRoomName`'s `name.slice(1)` throws on a non-string. Malformed *string* names already return `undefined` via the NaN path, so only non-string args diverge.
+- Plan: guard at the top of `getRoomStatus` to match vanilla — return `undefined` when the arg isn't a room-name-shaped string (typeof check, or the vanilla regex) before calling `parseRoomName`.
+
+### require-cache-missing
+
+- Tests: UNDOC-GLOBAL-004
+- Status: CONFIRMED (live eval: `typeof require.cache === 'undefined'`; `delete require.cache['x']` throws).
+- Cause: `driver/runtime/module.ts` builds `require` via `requireFrom()` with a closure-private cache Map and never exposes `require.cache`. The canonical rustyscreeps wasm loader does `delete require.cache[MODULE_NAME]` right after instantiation, before `module.exports.loop = loaded_loop`, so the throw bricks the bot before its real loop runs.
+- Plan: expose a `.cache` on the runtime `require` — minimally a plain object so the delete idiom doesn't throw; ideally a small object/Proxy view over the internal cache Map keyed by the same names so deletes actually evict. Engine change (separate xxscreeps PR); this is what unblocks stock Rust/wasm-bindgen bots.
 
 ## Accepted divergences
 

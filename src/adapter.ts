@@ -235,6 +235,8 @@ export interface AdapterCapabilities {
 	chemistry: boolean;
 	/** Power creeps and their public gameplay APIs. */
 	powerCreeps: boolean;
+	/** Power spawn structure, processPower(), and Game.gpl account power. */
+	powerSpawn: boolean;
 	/** Factory structure and production APIs. */
 	factory: boolean;
 	/** Market and terminal-driven market interactions. */
