@@ -58,15 +58,29 @@ describe('Undocumented API Surface — global / VM persistence', () => {
 		expect(result.viaModuleOnExports).toBe('module-value');
 	});
 
-	test('UNDOC-GLOBAL-004 require.cache is an object and delete require.cache[name] succeeds', async ({ shard }) => {
+	test('UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
+		// `delete require.cache[name]` returning true proves nothing on its own — `delete`
+		// only returns false for a non-configurable property. The meaningful contract is that
+		// the read view exposes the cached module under the name it was required as, and that
+		// deleting it actually evicts the entry (how a wasm bot frees its instantiated bytes).
 		const result = await shard.runPlayer('p1', code`
 			require('main');
-			({ cacheType: typeof require.cache, deleteOk: (delete require.cache['main']) })
-		`) as { cacheType: string; deleteOk: boolean };
+			const before = require.cache['main'];
+			const deleteOk = delete require.cache['main'];
+			const after = require.cache['main'];
+			({
+				cacheType: typeof require.cache,
+				cachedBeforeDelete: before !== undefined,
+				deleteOk,
+				evictedAfterDelete: after === undefined,
+			})
+		`) as { cacheType: string; cachedBeforeDelete: boolean; deleteOk: boolean; evictedAfterDelete: boolean };
 
 		expect(result.cacheType).toBe('object');
+		expect(result.cachedBeforeDelete).toBe(true);
 		expect(result.deleteOk).toBe(true);
+		expect(result.evictedAfterDelete).toBe(true);
 	});
 });
