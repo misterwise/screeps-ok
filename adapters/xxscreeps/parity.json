@@ -35,6 +35,11 @@
 			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields.",
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
+		"roomobject-id-constructor-subclass-unbound": {
+			"actual": "`new Subclass(id)` where `Subclass extends Creep` constructs an unbound subclass instance. The object keeps the subclass prototype, but its id is null and its live RoomObject fields are not bound to the looked-up creep.",
+			"expected": "Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object.",
+			"tests": ["UNDOC-IDCTOR-003"]
+		},
 		"actionlog-lab-renderer-missing-combined-actions": {
 			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
 			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",

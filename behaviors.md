@@ -4353,6 +4353,10 @@ reconstitute game-object views later without routing every read through
   `new Creep(Memory.targetId)` in a later tick, and the constructed view
   exposes live creep overlay fields such as `hits`, `fatigue`, and
   `ticksToLive` with the same values as the live creep object.
+- `UNDOC-IDCTOR-003` `behavior` `verified_vanilla`
+  Calling `new Subclass(id)` for a subclass of `Creep` keeps the subclass
+  prototype while binding `id`, `room`, `pos`, and representative public creep
+  fields to the live creep for that id.
 
 Coverage Notes
 - The constructor matrix covers `Creep`, `Structure`, `ConstructionSite`,

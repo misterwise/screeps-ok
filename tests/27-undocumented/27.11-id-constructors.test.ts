@@ -20,6 +20,18 @@ interface ConstructorResult {
 	constructedFields: Record<string, EncodedValue>;
 }
 
+interface SubclassConstructorResult {
+	instanceOfSubclass: boolean;
+	instanceOfCreep: boolean;
+	marker: EncodedValue;
+	liveId: EncodedValue;
+	id: EncodedValue;
+	posRoomName: EncodedValue;
+	roomName: EncodedValue;
+	liveFields: Record<string, EncodedValue>;
+	constructedFields: Record<string, EncodedValue>;
+}
+
 async function setupCaseObject(shard: ShardFixture, objectType: typeof idConstructorCases[number]['objectType']): Promise<string> {
 	switch (objectType) {
 		case 'creep': {
@@ -256,6 +268,85 @@ describe('Undocumented API Surface — id constructors', () => {
 		expect(result.id).toBe(result.live.id);
 		expect(result.constructed).toEqual(result.live);
 		expect(result.constructed.fatigue).toBeGreaterThan(0);
+	});
+
+	test('UNDOC-IDCTOR-003 new subclass of Creep(id) keeps the subclass prototype and binds live creep fields', async ({ shard }) => {
+		const id = await setupCaseObject(shard, 'creep');
+
+		const result = await shard.runPlayer('p1', code`
+			class RoleCreep extends Creep {
+				constructor(id) {
+					super(id);
+				}
+
+				roleMarker() {
+					return 'role-creep';
+				}
+			}
+
+			function readPath(obj, path) {
+				let value = obj;
+				for (const part of path.split('.')) {
+					if (value == null) return undefined;
+					value = value[part];
+				}
+				return value;
+			}
+
+			function encode(value) {
+				return value === undefined
+					? { defined: false }
+					: { defined: true, value };
+			}
+
+			const fields = [
+				'name',
+				'hits',
+				'hitsMax',
+				'fatigue',
+				'ticksToLive',
+				'body.length',
+				'pos.x',
+				'pos.y',
+				'store.energy',
+			];
+			const live = Game.getObjectById(${id});
+			const constructed = new RoleCreep(live.id);
+			const liveFields = {};
+			const constructedFields = {};
+			for (const field of fields) {
+				liveFields[field] = encode(readPath(live, field));
+				constructedFields[field] = encode(readPath(constructed, field));
+			}
+
+			({
+				instanceOfSubclass: constructed instanceof RoleCreep,
+				instanceOfCreep: constructed instanceof Creep,
+				marker: encode(
+					typeof constructed.roleMarker === 'function'
+						? constructed.roleMarker()
+						: undefined
+				),
+				liveId: encode(live && live.id),
+				id: encode(constructed.id),
+				posRoomName: encode(constructed.pos && constructed.pos.roomName),
+				roomName: encode(constructed.room && constructed.room.name),
+				liveFields,
+				constructedFields,
+			})
+		`) as unknown as SubclassConstructorResult;
+
+		expect(result.instanceOfSubclass).toBe(true);
+		expect(result.instanceOfCreep).toBe(true);
+		expect(result.marker).toEqual({ defined: true, value: 'role-creep' });
+		expect(result.id).toEqual(result.liveId);
+		expect(result.id).toMatchObject({ defined: true });
+		expect(result.posRoomName).toEqual({ defined: true, value: 'W1N1' });
+		expect(result.roomName).toEqual({ defined: true, value: 'W1N1' });
+		for (const field of Object.keys(result.liveFields)) {
+			expect(result.constructedFields[field]).toEqual(result.liveFields[field]);
+			expect(result.constructedFields[field]).toMatchObject({ defined: true });
+		}
 	});
 
 });
