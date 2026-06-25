@@ -422,8 +422,19 @@ function sortedActionLogObjects(objects: RoomActionLogCapture['objects']): RoomA
 	return objects.sort((left, right) => left.id.localeCompare(right.id));
 }
 
+// We must pick the storage port ourselves (server-mockup needs STORAGE_PORT up
+// front) but the storage subprocess only binds it after we hand off, so a
+// just-freed ephemeral port can be taken in between (EADDRINUSE). A full
+// parity run spawns one storage process per test file (~136), which makes that
+// window matter. Re-pick a fresh port and rebuild on launch failure rather than
+// failing the whole file.
+const STORAGE_LAUNCH_ATTEMPTS = 4;
+
 async function getServer(): Promise<any> {
-	if (!sharedServer) {
+	if (sharedServer) return sharedServer;
+	silenceDriverSigtermLog();
+	let lastError: unknown;
+	for (let attempt = 1; attempt <= STORAGE_LAUNCH_ATTEMPTS; attempt++) {
 		const port = await getStoragePort();
 		const root = path.join(tmpdir(), 'screeps-ok-vanilla', `${process.pid}-${port}`);
 		const logdir = path.join(root, 'logs');
@@ -437,7 +448,7 @@ async function getServer(): Promise<any> {
 		try { unlinkSync(processorRandomSentinelPath); } catch {}
 		runnerLogPath = path.join(logdir, 'engine_runner.log');
 		runnerFatal = null;
-		sharedServer = new ScreepsServer({
+		const server = new ScreepsServer({
 			path: path.join(root, 'server'),
 			logdir,
 			port,
@@ -447,17 +458,31 @@ async function getServer(): Promise<any> {
 		// vitest reports them on top of our captured runnerFatal, masking the
 		// actual cause. The exit watcher in attachCrashWatcher captures the
 		// real crash; this listener exists solely to absorb the noisy emit.
-		sharedServer.on('error', () => {});
-		installSandboxPatches(sharedServer, runnerSandboxPatch, processorRandomPatch, {
+		server.on('error', () => {});
+		installSandboxPatches(server, runnerSandboxPatch, processorRandomPatch, {
 			[PROCESSOR_RANDOM_SEQUENCE_ENV_KEY]: processorRandomSequencePath,
 			[PROCESSOR_RANDOM_SENTINEL_ENV_KEY]: processorRandomSentinelPath,
 		});
+		try {
+			await server.world.reset();
+			await server.start();
+		} catch (error) {
+			lastError = error;
+			// Tear the half-built server down (SIGTERM → exit code null, so the
+			// crash watcher no-ops) and clear the EADDRINUSE crash it recorded
+			// before retrying with a fresh port.
+			try { server.stop?.(); } catch {}
+			runnerFatal = null;
+			continue;
+		}
+		sharedServer = server;
 		registerSharedServerCleanup();
-		silenceDriverSigtermLog();
-		await sharedServer.world.reset();
-		await sharedServer.start();
+		return sharedServer;
 	}
-	return sharedServer;
+	throw new Error(
+		`vanilla adapter: storage process failed to launch after ${STORAGE_LAUNCH_ATTEMPTS} attempts. ` +
+		`Last error: ${String(lastError)}`,
+	);
 }
 
 async function getStoragePort(): Promise<number> {
@@ -470,7 +495,10 @@ async function findAvailablePort(): Promise<number> {
 	return new Promise((resolve, reject) => {
 		const server = createServer();
 		server.once('error', reject);
-		server.listen(0, 'localhost', () => {
+		// Bind the wildcard interface (not just IPv4 `localhost`) so the chosen
+		// port is free on the IPv6 `::1` stack the storage subprocess binds —
+		// an IPv4-only check can miss a lingering `::1` binding from a prior run.
+		server.listen(0, () => {
 			const address = server.address();
 			const port = typeof address === 'object' && address ? address.port : 0;
 			server.close(error => {

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2338%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-50-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2341%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-47-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-19 04:07 UTC |
-| 🟡 | **xxscreeps** | [2338](#xxscreeps-passing-tests) | [50](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-06-19 04:03 UTC |
+| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-25 23:07 UTC |
+| 🟡 | **xxscreeps** | [2341](#xxscreeps-passing-tests) | [47](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-06-25 23:02 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 50 tests. That includes 23 open parity gaps covering 48 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 22 expected-failure classifications against vanilla's canonical behavior, covering 47 tests. That includes 21 open parity gaps covering 45 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -168,13 +168,13 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
+| `controller-effects-key-always-present` | Regression at pin `d1e3bade`: `StructureController` declares an `@enumerable override get effects()` (`mods/controller/controller.ts:62`) returning the EFFECT_INVULNERABILITY (safe-mode) effect or `undefined`. The `@enumerable` decorator keeps the `effects` key present in the data-property surface even when the getter returns `undefined`, so a controller with no active effect still enumerates an `effects` key. | Vanilla only assigns `effects` when an object actually has effects (`screeps-engine/src/game/rooms.js:1651` guards `if(effects)`), so a no-effect controller omits the `effects` key entirely. | [1](#xxscreeps-gap-controller-effects-key-always-present) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [12](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
-| `roomobject-id-constructor-subclass-unbound` | `new Subclass(id)` where `Subclass extends Creep` constructs an unbound subclass instance. The object keeps the subclass prototype, but its id is null and its live RoomObject fields are not bound to the looked-up creep. | Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object. | [1](#xxscreeps-gap-roomobject-id-constructor-subclass-unbound) |
-| `actionlog-lab-renderer-missing-combined-actions` | Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`. | Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs. | [2](#xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions) |
+| `roomobject-id-constructor-subclass-unbound` | At pin `d1e3bade` (after #269's `5be5d872`), `new Subclass(id)` where `Subclass extends Creep` now binds the looked-up creep's buffer so id and live fields resolve, but the id-string constructor (`game/object.ts:64-66`) unconditionally resets the instance prototype to the looked-up object's prototype, stripping the user subclass — so `new Subclass(id) instanceof Subclass` is `false`. | Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object. | [1](#xxscreeps-gap-roomobject-id-constructor-subclass-unbound) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
@@ -187,8 +187,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
-| `getroomstatus-throws-on-non-string-arg` | Game.map.getRoomStatus(undefined|null|number) throws TypeError ('Cannot read properties of undefined (reading slice)'). game/map.ts:getRoomStatus calls parseRoomName(roomName) with no type/shape guard; game/room/name.ts parseSignedRoomName does name.slice(1), which throws on a non-string. | Vanilla game/map.js getRoomStatus guards with /^(W|E)\d+(N|S)\d+$/.test(roomName); a non-string coerces to a string that fails the pattern, so it returns undefined (same as an invalid-format name). | [1](#xxscreeps-gap-getroomstatus-throws-on-non-string-arg) |
-| `require-cache-missing` | require.cache is undefined in the xxscreeps runtime. The flat CJS loader (driver/runtime/module.ts:28) sets globalThis.require = requireFrom() (closure-internal cache Map) but never attaches a .cache property; delete require.cache['main'] throws TypeError 'Cannot convert undefined or null to object'. | Vanilla exposes require.cache as a module-cache object: typeof require.cache === 'object' and delete require.cache['main'] returns true without throwing. | [1](#xxscreeps-gap-require-cache-missing) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -204,6 +202,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
+
+</details>
+
+<details id="xxscreeps-gap-controller-effects-key-always-present">
+<summary><code>controller-effects-key-always-present</code> — 1 test</summary>
+
+- `26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape`
 
 </details>
 
@@ -260,14 +265,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomobject-id-constructor-subclass-unbound</code> — 1 test</summary>
 
 - `Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new subclass of Creep(id) keeps the subclass prototype and binds live creep fields`
-
-</details>
-
-<details id="xxscreeps-gap-actionlog-lab-renderer-missing-combined-actions">
-<summary><code>actionlog-lab-renderer-missing-combined-actions</code> — 2 tests</summary>
-
-- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers`
-- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers`
 
 </details>
 
@@ -361,20 +358,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
-
-</details>
-
-<details id="xxscreeps-gap-getroomstatus-throws-on-non-string-arg">
-<summary><code>getroomstatus-throws-on-non-string-arg</code> — 1 test</summary>
-
-- `Game.map room queries MAP-ROOM-006 getRoomStatus returns undefined for non-string arguments`
-
-</details>
-
-<details id="xxscreeps-gap-require-cache-missing">
-<summary><code>require-cache-missing</code> — 1 test</summary>
-
-- `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry`
 
 </details>
 
@@ -3979,7 +3962,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2338 tests across 110 files</summary>
+<summary>2341 tests across 110 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6322,7 +6305,7 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
 - Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
 
-**`tests/21-map/21.1-room-queries.test.ts`** (7)
+**`tests/21-map/21.1-room-queries.test.ts`** (8)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
@@ -6330,6 +6313,7 @@ Click a count to jump to the affected test list.
 - Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
 - Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
 - Game.map room queries MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name
+- Game.map room queries MAP-ROOM-006 getRoomStatus returns undefined for non-string arguments
 - Game.map room queries MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span
 
 **`tests/21-map/21.2-route-finding.test.ts`** (5)
@@ -6493,13 +6477,12 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (39)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (38)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
 - 26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-003 controller.reservation sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-001 Game data-property surface matches canonical shape
@@ -6548,7 +6531,7 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick
 - Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
 
-**`tests/27-undocumented/27.10-actionlog.test.ts`** (19)
+**`tests/27-undocumented/27.10-actionlog.test.ts`** (21)
 
 - Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers
 - Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers
@@ -6566,6 +6549,8 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers
 - Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers
 - Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers
 - Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
@@ -6588,10 +6573,11 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
 
-**`tests/27-undocumented/27.2-global-persistence.test.ts`** (2)
+**`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry
 
 **`tests/27-undocumented/27.3-memjson.test.ts`** (1)
 

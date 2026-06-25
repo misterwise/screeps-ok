@@ -10,6 +10,11 @@
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
 			"tests": ["CTRL-DOWNGRADE-002", "CTRL-UNCLAIM-001"]
 		},
+		"controller-effects-key-always-present": {
+			"actual": "Regression at pin `d1e3bade`: `StructureController` declares an `@enumerable override get effects()` (`mods/controller/controller.ts:62`) returning the EFFECT_INVULNERABILITY (safe-mode) effect or `undefined`. The `@enumerable` decorator keeps the `effects` key present in the data-property surface even when the getter returns `undefined`, so a controller with no active effect still enumerates an `effects` key.",
+			"expected": "Vanilla only assigns `effects` when an object actually has effects (`screeps-engine/src/game/rooms.js:1651` guards `if(effects)`), so a no-effect controller omits the `effects` key entirely.",
+			"tests": ["SHAPE-CTRL-001"]
+		},
 		"rawmemory-set-invalidates-parsed-memhack": {
 			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
 			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",
@@ -36,14 +41,9 @@
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
 		"roomobject-id-constructor-subclass-unbound": {
-			"actual": "`new Subclass(id)` where `Subclass extends Creep` constructs an unbound subclass instance. The object keeps the subclass prototype, but its id is null and its live RoomObject fields are not bound to the looked-up creep.",
+			"actual": "At pin `d1e3bade` (after #269's `5be5d872`), `new Subclass(id)` where `Subclass extends Creep` now binds the looked-up creep's buffer so id and live fields resolve, but the id-string constructor (`game/object.ts:64-66`) unconditionally resets the instance prototype to the looked-up object's prototype, stripping the user subclass — so `new Subclass(id) instanceof Subclass` is `false`.",
 			"expected": "Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object.",
 			"tests": ["UNDOC-IDCTOR-003"]
-		},
-		"actionlog-lab-renderer-missing-combined-actions": {
-			"actual": "Lab `runReaction` and `reverseReaction` save raw action-log vectors, but `mods/chemistry/backend.ts` checks `raw.reaction1` / `raw.reaction2` even though `renderActionLog()` returns them under `raw.actionLog`, so the rendered client/history payload omits `runReaction` and `reverseReaction`.",
-			"expected": "Successful lab reactions render source-side action-log markers on the acting lab as `runReaction` / `reverseReaction` with the two reagent/output lab coordinate pairs.",
-			"tests": ["ACTIONLOG-STRUCT-001:lab"]
 		},
 		"look-for-at-unknown-returns-empty": {
 			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
@@ -111,16 +111,6 @@
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
-		},
-		"getroomstatus-throws-on-non-string-arg": {
-			"actual": "Game.map.getRoomStatus(undefined|null|number) throws TypeError ('Cannot read properties of undefined (reading slice)'). game/map.ts:getRoomStatus calls parseRoomName(roomName) with no type/shape guard; game/room/name.ts parseSignedRoomName does name.slice(1), which throws on a non-string.",
-			"expected": "Vanilla game/map.js getRoomStatus guards with /^(W|E)\\d+(N|S)\\d+$/.test(roomName); a non-string coerces to a string that fails the pattern, so it returns undefined (same as an invalid-format name).",
-			"tests": ["MAP-ROOM-006"]
-		},
-		"require-cache-missing": {
-			"actual": "require.cache is undefined in the xxscreeps runtime. The flat CJS loader (driver/runtime/module.ts:28) sets globalThis.require = requireFrom() (closure-internal cache Map) but never attaches a .cache property; delete require.cache['main'] throws TypeError 'Cannot convert undefined or null to object'.",
-			"expected": "Vanilla exposes require.cache as a module-cache object: typeof require.cache === 'object' and delete require.cache['main'] returns true without throwing.",
-			"tests": ["UNDOC-GLOBAL-004"]
 		}
 	}
 }

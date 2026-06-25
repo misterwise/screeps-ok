@@ -3,13 +3,20 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-18 against pin `8e6a71b9`.
+Last refreshed: 2026-06-25 against pin `d1e3bade`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 23 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 21 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
 
 ## Open parity gaps
+
+### controller-effects-key-always-present
+
+- Tests: SHAPE-CTRL-001
+- Status: REGRESSION at pin `d1e3bade` — flagged for upstream review.
+- Cause: `mods/controller/controller.ts:62` declares `@enumerable override get effects()` returning the EFFECT_INVULNERABILITY (safe-mode) effect or `undefined`. The `@enumerable` decorator keeps the `effects` key present on the controller's data-property surface even when the value is `undefined`, so a no-effect controller enumerates an `effects` key (17 keys vs the canonical 16). Vanilla `screeps-engine/src/game/rooms.js:1651` only assigns `effects` when the object has active effects, so a no-effect controller omits the key.
+- Plan: upstream — make the controller `effects` getter non-enumerable (or omit the key when it returns `undefined`) to match vanilla's present-only-when-set surface. Same shape class as the accepted `boost` / `flag.id` always-present divergences; if upstream prefers to keep it always-present, move this to the adapter's `shapeDivergences` instead.
 
 ### tombstone-creep-body-types-not-objects
 
@@ -56,16 +63,9 @@ Last refreshed: 2026-06-18 against pin `8e6a71b9`.
 ### roomobject-id-constructor-subclass-unbound
 
 - Tests: UNDOC-IDCTOR-003
-- Status: CONFIRMED; filed upstream as [laverdet/xxscreeps#269](https://github.com/laverdet/xxscreeps/issues/269).
-- Cause: the id-string constructor in `packages/xxscreeps/game/object.ts` checks `object instanceof new.target`. For `class RoleCreep extends Creep`, `new.target` is the subclass while `Game.getObjectById(id)` returns a native `Creep`, so the guard misses and the constructor falls through to an unbound object. The passing branch also resets the prototype to the looked-up object's prototype, which would strip user subclasses if the guard were widened without care.
-- Plan: extend the id-string constructor to accept subclasses derived from the looked-up object's class, while preserving the user subclass prototype in that case.
-
-### actionlog-lab-renderer-missing-combined-actions
-
-- Tests: ACTIONLOG-STRUCT-001:lab (lab `runReaction` / `reverseReaction` rows)
-- Status: CONFIRMED.
-- Cause: `mods/chemistry/backend.ts` calls `renderActionLog(lab['#actionLog'], previousTime)`, which returns `{ actionLog: { reaction1, reaction2, ... } }`, but the combiner checks `raw.reaction1` / `raw.reaction2` instead of `raw.actionLog.reaction1` / `raw.actionLog.reaction2`. The raw vectors are saved, but the rendered client/history payload omits the combined `runReaction` and `reverseReaction` markers.
-- Plan: fix the lab backend combiner to read from `raw.actionLog`, then remove this gap if the `ACTIONLOG-STRUCT-001` lab rows pass.
+- Status: RESIDUAL after #269's `5be5d872` (pin `d1e3bade`) — the failure mode changed but the test still fails. #269 is only partially fixed; re-flag upstream.
+- Cause: `5be5d872` widened the id-string constructor guard (`isSuperClass(object) || isSubClass(object)`) so `new Subclass(id)` now enters the binding branch and resolves id / live fields. But the branch then runs `ObjectSetPrototypeOf(this, ObjectGetPrototypeOf(object))` unconditionally (`game/object.ts:64-66`), resetting the instance to the looked-up object's native prototype and stripping the user subclass — so `new Subclass(id) instanceof Subclass` is now `false` (it was the binding, not the prototype, that broke before).
+- Plan: upstream — skip the prototype reset when `this`'s prototype already derives from the looked-up object's prototype (the subclass case), so the user subclass is preserved while base-class id constructors still normalize.
 
 ### construction-site-foreign-room-wrong-error
 
@@ -94,20 +94,6 @@ Last refreshed: 2026-06-18 against pin `8e6a71b9`.
 - Status: CONFIRMED.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
-
-### getroomstatus-throws-on-non-string-arg
-
-- Tests: MAP-ROOM-006
-- Status: CONFIRMED (live-evaluated against the running engine; vanilla side via engine source map.js:210).
-- Cause: `game/map.ts` `getRoomStatus` calls `parseRoomName` before any shape check; `parseSignedRoomName`'s `name.slice(1)` throws on a non-string. Malformed *string* names already return `undefined` via the NaN path, so only non-string args diverge.
-- Plan: guard at the top of `getRoomStatus` to match vanilla — return `undefined` when the arg isn't a room-name-shaped string (typeof check, or the vanilla regex) before calling `parseRoomName`.
-
-### require-cache-missing
-
-- Tests: UNDOC-GLOBAL-004
-- Status: CONFIRMED (live eval: `typeof require.cache === 'undefined'`; `delete require.cache['x']` throws).
-- Cause: `driver/runtime/module.ts` builds `require` via `requireFrom()` with a closure-private cache Map and never exposes `require.cache`. The canonical rustyscreeps wasm loader does `delete require.cache[MODULE_NAME]` right after instantiation, before `module.exports.loop = loaded_loop`, so the throw bricks the bot before its real loop runs.
-- Plan: expose a `.cache` on the runtime `require` — minimally a plain object so the delete idiom doesn't throw; ideally a small object/Proxy view over the internal cache Map keyed by the same names so deletes actually evict. Engine change (separate xxscreeps PR); this is what unblocks stock Rust/wasm-bindgen bots.
 
 ## Accepted divergences
 

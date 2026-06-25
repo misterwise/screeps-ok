@@ -25,7 +25,7 @@ import { createSandbox } from 'xxscreeps/driver/sandbox/index.js';
 import { hooks as runnerHooks } from 'xxscreeps/engine/runner/index.js';
 import * as Code from 'xxscreeps/engine/db/user/code.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
-import { acquire } from 'xxscreeps/utility/async.js';
+import { acquireWith } from 'xxscreeps/utility/async.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { RunPlayerError } from '../../src/errors.js';
 import type { PlayerReturnValue } from '../../src/adapter.js';
@@ -105,8 +105,19 @@ export class UserSandbox {
 		// visual, controller) only read { shard, userId, world } from the
 		// passed-in context, so a minimal object satisfies the interface.
 		const context = { shard, userId, world } as any;
+		// `acquireWith` replaces the removed `acquire` helper (xxscreeps async-
+		// disposables refactor, 5af3d0ae). Each runnerConnector hook resolves to
+		// `[effect, connector]`; gather the effects into one cleanup and keep the
+		// connector objects. Inlines `engine/runner/instance.ts`'s acquireConnectors
+		// without pulling DisposableStack in for this single call site.
 		const connectorPromises = [...runnerHooks.map('runnerConnector', hook => hook(context))];
-		const [effect, connectors] = await acquire(...connectorPromises);
+		const effects: Effect[] = [];
+		const resolved = await acquireWith(value => {
+			const cleanup = value?.[0];
+			if (cleanup) effects.push(cleanup);
+		}, ...connectorPromises.map(hook => Promise.resolve(hook)));
+		const connectors = [...Fn.filter(Fn.map(resolved, value => value?.[1]))];
+		const effect: Effect = () => { for (const fn of effects) fn(); };
 		const initialize = [...Fn.filter(Fn.map(connectors, c => c.initialize))];
 		const refresh = [...Fn.filter(Fn.map(connectors, c => c.refresh))];
 		const save = [...Fn.filter(Fn.map(connectors, c => c.save))].reverse();
