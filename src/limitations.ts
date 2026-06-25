@@ -81,7 +81,9 @@ export type ShapeDivergenceTarget =
 	/** Flag object data-property surface. */
 	| 'flag'
 	/** Creep body part entries (`{type, hits[, boost]}`). */
-	| 'bodyPart';
+	| 'bodyPart'
+	/** Controller data-property surface (`effects` always enumerable). */
+	| 'controller';
 
 export interface ShapeDivergence {
 	/** Property keys present on this engine beyond the canonical shape. */

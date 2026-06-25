@@ -5,18 +5,11 @@ For the full generated list and current counts, see `docs/status.md`.
 
 Last refreshed: 2026-06-25 against pin `d1e3bade`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 21 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two intentional shape divergences (flag `id`, body-part `boost`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 20 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
 
 ## Open parity gaps
-
-### controller-effects-key-always-present
-
-- Tests: SHAPE-CTRL-001
-- Status: REGRESSION at pin `d1e3bade` — flagged for upstream review.
-- Cause: `mods/controller/controller.ts:62` declares `@enumerable override get effects()` returning the EFFECT_INVULNERABILITY (safe-mode) effect or `undefined`. The `@enumerable` decorator keeps the `effects` key present on the controller's data-property surface even when the value is `undefined`, so a no-effect controller enumerates an `effects` key (17 keys vs the canonical 16). Vanilla `screeps-engine/src/game/rooms.js:1651` only assigns `effects` when the object has active effects, so a no-effect controller omits the key.
-- Plan: upstream — make the controller `effects` getter non-enumerable (or omit the key when it returns `undefined`) to match vanilla's present-only-when-set surface. Same shape class as the accepted `boost` / `flag.id` always-present divergences; if upstream prefers to keep it always-present, move this to the adapter's `shapeDivergences` instead.
 
 ### tombstone-creep-body-types-not-objects
 
@@ -110,6 +103,12 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Tests: SHAPE-CREEP-002, SHAPE-CREEP-003 (pass; `boost` folded into the expected key set).
 - Status: INTENTIONAL — declared divergence.
 - Decision: PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed stripping the `boost` property from unboosted body parts to match vanilla and was closed as not desired.
+
+### shape-controller-effects-always-enumerable
+
+- Tests: SHAPE-CTRL-001 (passes; `effects` folded into the expected key set via `expectedShape('controller', ...)`).
+- Status: INTENTIONAL — declared divergence (`controller: { extra: ['effects'] }`).
+- Decision: appeared at pin `d1e3bade`. `mods/controller/controller.ts:62` declares an `@enumerable override get effects()` (safe-mode invulnerability / `PWR_OPERATE_CONTROLLER`), the same deliberate treatment as `StructureInvaderCore` (`mods/invader/invader-core.ts:29`, already canonical in SHAPE-NPC-002). The base `RoomObject.effects` getter is non-enumerable, so this is an intentional per-object choice to surface controller effects, not an accident — accepted like `boost` / `flag.id`. Vanilla `screeps-engine/src/game/rooms.js:1651` assigns `effects` only when an effect is active, so its no-effect controller omits the key; the divergence is empty-case key presence only.
 
 ### factory-power-effect-not-implemented
 

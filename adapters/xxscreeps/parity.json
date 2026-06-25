@@ -10,11 +10,6 @@
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
 			"tests": ["CTRL-DOWNGRADE-002", "CTRL-UNCLAIM-001"]
 		},
-		"controller-effects-key-always-present": {
-			"actual": "Regression at pin `d1e3bade`: `StructureController` declares an `@enumerable override get effects()` (`mods/controller/controller.ts:62`) returning the EFFECT_INVULNERABILITY (safe-mode) effect or `undefined`. The `@enumerable` decorator keeps the `effects` key present in the data-property surface even when the getter returns `undefined`, so a controller with no active effect still enumerates an `effects` key.",
-			"expected": "Vanilla only assigns `effects` when an object actually has effects (`screeps-engine/src/game/rooms.js:1651` guards `if(effects)`), so a no-effect controller omits the `effects` key entirely.",
-			"tests": ["SHAPE-CTRL-001"]
-		},
 		"rawmemory-set-invalidates-parsed-memhack": {
 			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
 			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",

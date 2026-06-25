@@ -193,7 +193,7 @@ describe('26.0 Object Shape Conformance', () => {
 			ctrl ? dataProps(ctrl) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual([...CONTROLLER_SHAPE]);
+		expect(keys).toEqual(await expectedShape('controller', CONTROLLER_SHAPE));
 	});
 
 	test('SHAPE-CTRL-002 controller.sign sub-object matches canonical shape', async ({ shard }) => {

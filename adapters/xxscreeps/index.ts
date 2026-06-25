@@ -244,6 +244,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// `boost: undefined` property; upstream closed the PR that stripped
 		// it to match vanilla's boost-only-when-boosted shape.
 		bodyPart: { extra: ['boost'] },
+		// Controller declares an `@enumerable` `effects` getter (safe-mode
+		// invulnerability / PWR_OPERATE_CONTROLLER), like StructureInvaderCore,
+		// so the key is always present; vanilla sets `effects` only when an
+		// effect is active.
+		controller: { extra: ['effects'] },
 	};
 
 	private playerMap = new Map<string, string>();
