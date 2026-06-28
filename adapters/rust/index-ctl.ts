@@ -52,17 +52,17 @@ class RustAdapter implements ScreepsOkAdapter {
 		// observability through player code is not, so terrain assertions can't pass
 		// honestly yet — keep false so terrain tests SKIP rather than fail.
 		terrain: true,
-		roomStatus: true,
-		portals: true,
-		invaderCore: true,
-		invaderRaidSpawner: true,
+		roomStatus: false,
+		portals: false,
+		invaderCore: false,
+		invaderRaidSpawner: false,
 		multiShard: false,
-		interShardMemory: true,
-		cpuShardLimits: true,
+		interShardMemory: false,
+		cpuShardLimits: false,
 		liveWorldSize: false,
-		actionLogCapture: true,
-		randomInjection: true,
-		deprecationNotices: true,
+		actionLogCapture: false,
+		randomInjection: false,
+		deprecationNotices: false,
 	};
 
 	private proc: ChildProcessByStdio<Writable, Readable, null>;
@@ -196,12 +196,10 @@ class RustAdapter implements ScreepsOkAdapter {
 	}
 
 	async tick(count = 1, options: TickOptions = {}): Promise<void> {
-		// Forward a deterministic random sequence when provided. The engine
-		// validates each value is in [0, 1) (rejecting without advancing time on a
-		// bad value) and throws if the processor draws past the sequence's end.
-		const extra: Record<string, unknown> = { count };
-		if (options.random) extra.random = options.random;
-		await this.send('tick', extra);
+		if (options.random) {
+			throw new Error('rust adapter does not support deterministic random injection');
+		}
+		await this.send('tick', { count });
 	}
 
 	async getObject(id: string): Promise<ObjectSnapshot | null> {
@@ -220,16 +218,14 @@ class RustAdapter implements ScreepsOkAdapter {
 		return this.send('captureActionLog', { room }) as Promise<RoomActionLogCapture>;
 	}
 
-	async setInvaderRaidState(room: string, spec: InvaderRaidRoomStateSpec): Promise<void> {
-		await this.send('setInvaderRaidState', { room, spec });
+	async setInvaderRaidState(_room: string, _spec: InvaderRaidRoomStateSpec): Promise<void> {
+		throw new Error('rust adapter does not support invaderRaidSpawner');
 	}
-	async runInvaderRaidSpawner(options: InvaderRaidSpawnerOptions = {}): Promise<void> {
-		const extra: Record<string, unknown> = {};
-		if (options.random) extra.random = options.random;
-		await this.send('runInvaderRaidSpawner', extra);
+	async runInvaderRaidSpawner(_options?: InvaderRaidSpawnerOptions): Promise<void> {
+		throw new Error('rust adapter does not support invaderRaidSpawner');
 	}
-	async clearInvaderRaidCreeps(room: string): Promise<void> {
-		await this.send('clearInvaderRaidCreeps', { room });
+	async clearInvaderRaidCreeps(_room: string): Promise<void> {
+		throw new Error('rust adapter does not support invaderRaidSpawner');
 	}
 
 	async getControllerPos(room: string): Promise<{ x: number; y: number } | null> {

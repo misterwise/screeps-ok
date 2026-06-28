@@ -27,6 +27,7 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
+import { runNpm } from './npm-cli.js';
 
 const require = createRequire(import.meta.url);
 // Match upstream's pathfinder.yml so the binary targets the same node ABI.
@@ -92,7 +93,7 @@ function stageBuildTree() {
 }
 
 function installBuildDeps() {
-	execFileSync('npm', [
+	runNpm([
 		'install', '--ignore-scripts', '--no-audit', '--no-fund',
 	], { cwd: packageDir, stdio: 'inherit' });
 	// npm strips the exec bit that pnpm preserves on @auto_js's cmake helpers.

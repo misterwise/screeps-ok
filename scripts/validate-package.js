@@ -9,10 +9,10 @@
 // explicitly intend to publish, plus a denylist of patterns that must
 // never appear.
 
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
+import { runNpm } from './npm-cli.js';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -63,7 +63,7 @@ const denyPatterns = [
 function main() {
 	// --ignore-scripts avoids running `prepare`, whose stdout would
 	// corrupt the JSON stream we parse below.
-	const output = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+	const output = runNpm(['pack', '--dry-run', '--json', '--ignore-scripts'], {
 		cwd: packageRoot,
 		stdio: ['ignore', 'pipe', 'inherit'],
 		encoding: 'utf8',

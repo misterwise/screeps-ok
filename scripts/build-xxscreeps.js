@@ -25,6 +25,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { compareSemver, hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
+import { runNpm } from './npm-cli.js';
 
 const require = createRequire(import.meta.url);
 const minNodeMajor = 24;
@@ -258,7 +259,7 @@ function readLodash3Version() {
 }
 
 function installNestedDeps() {
-	execFileSync('npm', [
+	runNpm([
 		'install',
 		'--prefix', xxscreepsDir,
 		'--no-package-lock',
@@ -319,7 +320,7 @@ function buildNestedNativeAddons() {
 	const natives = ['isolated-vm', 'ivm-inspect'];
 	for (const name of natives) {
 		if (!existsSync(join(xxscreepsDir, 'node_modules', name, 'binding.gyp'))) continue;
-		execFileSync('npm', ['rebuild', '--prefix', xxscreepsDir, name], { stdio: 'inherit' });
+		runNpm(['rebuild', '--prefix', xxscreepsDir, name], { stdio: 'inherit' });
 	}
 }
 
