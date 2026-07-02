@@ -49,7 +49,7 @@ import {
 	setStructureNextDecayTime,
 	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
-	setKeeperLairNextSpawnTime,
+	setKeeperLairNextSpawnTime, setDepositState,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
 	initializeRoomIndices,
 } from './engine-internals.js';
@@ -73,6 +73,8 @@ import { create as createContainer } from 'xxscreeps/mods/resource/container.js'
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
+import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
+import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/mineral/constants.js';
 import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
 import { create as createNuke } from 'xxscreeps/mods/nuker/nuke.js';
 import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
@@ -194,7 +196,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		market: false,
 		observer: true,
 		nuke: true,
-		deposit: false,
+		deposit: true,
 		terrain: true,
 		roomStatus: false,
 		// Portal mod is optional in pinned xxscreeps. Capability tracks
@@ -738,12 +740,35 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				return this.placeKeeperLair(roomName, spec);
 			case 'portal':
 				return this.placePortal(roomName, spec);
+			case 'deposit':
+				return this.placeDeposit(roomName, spec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair, portal.`,
+					`Supported types: keeperLair, portal, deposit.`,
 				);
 		}
+	}
+
+	private async placeDeposit(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:deposit`, id);
+
+		this.queueOp(roomName, room => {
+			const deposit = createObject(new Deposit(), new RoomPosition(pos[0], pos[1], roomName));
+			deposit.id = id;
+			deposit.depositType = (spec.depositType as any) ?? C.RESOURCE_SILICON;
+			if (typeof spec.lastCooldown === 'number') deposit.lastCooldown = spec.lastCooldown;
+			setDepositState(deposit, this.simulation!.shard.time, {
+				cooldownTicks: typeof spec.cooldownTime === 'number' ? spec.cooldownTime : undefined,
+				decayTicks: typeof spec.decayTime === 'number' ? spec.decayTime : DEPOSIT_DECAY_TIME,
+				harvested: typeof spec.harvested === 'number' ? spec.harvested : undefined,
+			});
+			insertRoomObject(room, deposit);
+		});
+
+		return id;
 	}
 
 	private async placeKeeperLair(roomName: string, spec: Record<string, unknown>): Promise<string> {

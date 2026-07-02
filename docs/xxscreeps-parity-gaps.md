@@ -50,7 +50,7 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 
 - Tests: UNDOC-JSONOBJ-001
 - Status: RESIDUAL after pin `15df4bea`; `JSON.stringify()` no longer throws for the matrix, but most object snapshots still omit nested `pos` fields.
-- Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
+- Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, deposits, nukes, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
 - Plan: ensure JSON serialization includes the same representative nested position fields as the live object snapshots. The matrix should stay broad because the missing field shape spans many object classes.
 
 ### construction-site-foreign-room-wrong-error
@@ -72,7 +72,7 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Tests: ROOM-LOOK-006
 - Status: CONFIRMED.
 - Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
-- Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_NUKES`/`LOOK_POWER_CREEPS`/`LOOK_DEPOSITS`, which xxscreeps doesn't register. Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
+- Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_POWER_CREEPS`, which xxscreeps doesn't register (`LOOK_NUKES` and `LOOK_DEPOSITS` are registered as of pin `05be3b2e`). Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
 
 ### commonjs-main-exports-alias-missing
 

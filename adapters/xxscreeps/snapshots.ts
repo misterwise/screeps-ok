@@ -6,7 +6,7 @@ import type {
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
 	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
 	KeeperLairSnapshot, PortalSnapshot, WallSnapshot,
-	SiteSnapshot, SourceSnapshot, MineralSnapshot,
+	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
 } from '../../src/snapshots/common.js';
@@ -16,6 +16,7 @@ import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.
 import { Resource } from 'xxscreeps/mods/resource/resource.js';
 import { Source } from 'xxscreeps/mods/source/source.js';
 import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
+import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
 import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
@@ -347,6 +348,18 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 	};
 }
 
+export function snapshotDeposit(obj: any): DepositSnapshot {
+	return {
+		kind: 'deposit',
+		id: obj.id,
+		pos: snapPos(obj),
+		depositType: obj.depositType,
+		lastCooldown: obj.lastCooldown ?? 0,
+		cooldown: obj.cooldown ?? 0,
+		ticksToDecay: obj.ticksToDecay ?? null,
+	};
+}
+
 export function getStructureType(obj: any): string | undefined {
 	try {
 		return obj.structureType;
@@ -400,6 +413,7 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 	if (obj instanceof Resource) return snapshotDroppedResource(obj);
 	if (obj instanceof Source) return snapshotSource(obj);
 	if (obj instanceof Mineral) return snapshotMineral(obj);
+	if (obj instanceof Deposit) return snapshotDeposit(obj);
 	if (obj.structureType) return snapshotStructure(obj, resolver);
 	return null;
 }
@@ -423,6 +437,9 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				break;
 			case 'minerals':
 				match = obj instanceof Mineral;
+				break;
+			case 'deposits':
+				match = obj instanceof Deposit;
 				break;
 			case 'tombstones':
 				match = obj instanceof Tombstone;

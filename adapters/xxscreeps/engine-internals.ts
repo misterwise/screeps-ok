@@ -176,6 +176,19 @@ export function setKeeperLairNextSpawnTime(
 	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
 }
 
+/** SETUP — mods/deposit/deposit.ts: cooldown getter derives from `#cooldownTime`;
+ *  ticksToDecay wraps `#nextDecayTime` in `requiredExpiryTime`, which throws on
+ *  a stale tick, so `decayTicks` is mandatory. `#harvested` feeds the
+ *  exhaust-cooldown growth in the harvest processor. */
+export function setDepositState(
+	deposit: any, gameTime: number,
+	state: { cooldownTicks?: number; decayTicks: number; harvested?: number },
+): void {
+	if (state.cooldownTicks !== undefined) deposit['#cooldownTime'] = gameTime + state.cooldownTicks;
+	if (state.harvested !== undefined) deposit['#harvested'] = state.harvested;
+	deposit['#nextDecayTime'] = gameTime + state.decayTicks;
+}
+
 // ── SETUP: store manipulation ────────────────────────────────────────
 
 /** SETUP — game/store.ts: `#add` adds resource amount to the store. Mirrors what

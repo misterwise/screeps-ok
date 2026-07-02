@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2343%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-45-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2383%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-46-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:00 UTC |
-| 🟡 | **xxscreeps** | [2343](#xxscreeps-passing-tests) | [45](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-07-02 22:56 UTC |
+| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:27 UTC |
+| 🟡 | **xxscreeps** | [2383](#xxscreeps-passing-tests) | [46](#xxscreeps-expected-failures) | — | [237](#xxscreeps-skipped-tests) | 2026-07-02 23:22 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 45 tests. That includes 19 open parity gaps covering 43 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 46 tests. That includes 19 open parity gaps covering 44 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -172,7 +172,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
-| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [12](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
@@ -235,7 +235,7 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
-<summary><code>game-object-json-room-tojson-null-crash</code> — 12 tests</summary>
+<summary><code>game-object-json-room-tojson-null-crash</code> — 13 tests</summary>
 
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
@@ -248,6 +248,7 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
 
 </details>
@@ -3438,13 +3439,12 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 278 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 237 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerCreeps` | Power creeps and powers | [101](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
-| capability | `deposit` | Deposits (highway) | [41](#xxscreeps-skip-capability-deposit) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
@@ -3747,70 +3747,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-deposit">
-<summary><code>capability:deposit</code> — 41 tests across 6 files</summary>
-
-**`tests/00-adapter-contract/inspection.test.ts`** (1)
-
-- adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
-
-**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (31)
-
-- deposit lifecycle (section 17.5) DEPOSIT-005 repeated harvests increase lastCooldown
-- deposit lifecycle (section 17.5) DEPOSIT-001 deposit exposes canonical depositType values
-- deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
-- deposit lifecycle (section 17.5) DEPOSIT-003 lastCooldown reflects the most recent cooldown value
-- deposit lifecycle (section 17.5) DEPOSIT-006 deposit disappears when the decay timer expires
-- creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
-- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
-- creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
-- creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwner harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:busy harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypart harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTarget harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:range harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:cooldown harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeBusy harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeNoBodypart harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeInvalidTarget harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeRange harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeCooldown harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeNoBodypart harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeInvalidTarget harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeRange harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeCooldown harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeInvalidTarget harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeRange harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeCooldown harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeRange harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
-- creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (1)
-
-- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-
-**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
-
-- Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
-- Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
-- Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
-- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
-- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
-- Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
-
-- 26.0 Object Shape Conformance SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape
-
-**`tests/27-undocumented/27.14-json-objects.test.ts`** (1)
-
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot
-
-</details>
-
 <details id="xxscreeps-skip-capability-invaderraidspawner">
 <summary><code>capability:invaderRaidSpawner</code> — 21 tests across 1 file</summary>
 
@@ -3946,7 +3882,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2343 tests across 110 files</summary>
+<summary>2383 tests across 112 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4020,7 +3956,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (21)
+**`tests/00-adapter-contract/inspection.test.ts`** (22)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -4037,6 +3973,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection findInRoom returns empty array for empty room type
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
+- adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots observer snapshot includes cooldown
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
@@ -4388,6 +4325,40 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeInactiveExtractor harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
+
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (31)
+
+- deposit lifecycle (section 17.5) DEPOSIT-005 repeated harvests increase lastCooldown
+- deposit lifecycle (section 17.5) DEPOSIT-001 deposit exposes canonical depositType values
+- deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
+- deposit lifecycle (section 17.5) DEPOSIT-003 lastCooldown reflects the most recent cooldown value
+- deposit lifecycle (section 17.5) DEPOSIT-006 deposit disappears when the decay timer expires
+- creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
+- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
+- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
+- creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
+- creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwner harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:busy harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypart harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTarget harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:range harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:cooldown harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeBusy harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeNoBodypart harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeInvalidTarget harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeRange harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwnerBeforeCooldown harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeNoBodypart harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeInvalidTarget harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeRange harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:busyBeforeCooldown harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeInvalidTarget harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeRange harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:noBodypartBeforeCooldown harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeRange harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
+- creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
 
 **`tests/04-resource-transfer/4.1-transfer.test.ts`** (71)
 
@@ -5121,7 +5092,7 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (95)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (96)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -5162,6 +5133,7 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
@@ -6249,6 +6221,15 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-009:highRedensify DENSITY_HIGH redensifies when injected gate < MINERAL_DENSITY_CHANGE
 - mineral regeneration MINERAL-REGEN-009:highUnchanged DENSITY_HIGH stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
 
+**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
+
+- Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
+- Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
+- Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
+- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
+- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
+- Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
+
 **`tests/18-game-objects/18.1-tombstone.test.ts`** (8)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
@@ -6461,7 +6442,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (39)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (40)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
@@ -6496,6 +6477,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SITE-001 constructionSite data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-FLAG-001 flag data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape
