@@ -365,6 +365,7 @@ Current capability flags are:
 - `powerCreeps`
 - `factory`
 - `market`
+- `terminalSend`
 - `observer`
 - `nuke`
 - `deposit`

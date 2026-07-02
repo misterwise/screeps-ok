@@ -97,6 +97,11 @@
 			"expected": "Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe.",
 			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
 		},
+		"terminal-send-check-order-diverges": {
+			"actual": "`checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last.",
+			"expected": "Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks.",
+			"tests": ["TERMINAL-SEND-005", "TERMINAL-SEND-013:invalidRoom", "TERMINAL-SEND-013:invalidRoomBeforeInvalidResource", "TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount", "TERMINAL-SEND-013:invalidRoomBeforeCooldown", "TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost", "TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription", "TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost", "TERMINAL-SEND-013:cooldownBeforeInvalidDescription"]
+		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",

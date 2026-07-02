@@ -603,6 +603,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		powerSpawn: true,
 		factory: true,
 		market: true,
+		terminalSend: true,
 		observer: true,
 		nuke: true,
 		deposit: true,

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2383%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-46-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2421%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:27 UTC |
-| 🟡 | **xxscreeps** | [2383](#xxscreeps-passing-tests) | [46](#xxscreeps-expected-failures) | — | [237](#xxscreeps-skipped-tests) | 2026-07-02 23:22 UTC |
+| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:48 UTC |
+| 🟡 | **xxscreeps** | [2421](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-07-02 23:43 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 46 tests. That includes 19 open parity gaps covering 44 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 21 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 20 open parity gaps covering 53 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -184,6 +184,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
 | `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
+| `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -336,6 +337,21 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
 
 - `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="xxscreeps-gap-terminal-send-check-order-diverges">
+<summary><code>terminal-send-check-order-diverges</code> — 9 tests</summary>
+
+- `Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments`
+- `Terminal send TERMINAL-SEND-013:invalidRoom send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidResource send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeCooldown send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code`
+- `Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code`
 
 </details>
 
@@ -3439,12 +3455,12 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 237 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 190 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [101](#xxscreeps-skip-capability-powercreeps) |
-| capability | `market` | Market and terminal | [82](#xxscreeps-skip-capability-market) |
+| capability | `powerCreeps` | Power creeps and powers | [103](#xxscreeps-skip-capability-powercreeps) |
+| capability | `market` | Market and terminal | [33](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
@@ -3456,7 +3472,7 @@ xxscreeps has 237 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 101 tests across 24 files</summary>
+<summary><code>capability:powerCreeps</code> — 103 tests across 25 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3506,6 +3522,11 @@ Click a count to jump to the affected test list.
 
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
+
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (2)
+
+- Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
+- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
 
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (1)
 
@@ -3634,64 +3655,12 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 82 tests across 9 files</summary>
+<summary><code>capability:market</code> — 33 tests across 8 files</summary>
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (2)
 
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
-
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (49)
-
-- Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
-- Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
-- Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
-- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
-- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
-- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
-- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
-- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
-- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
-- Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
-- Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
-- Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
-- Terminal send TERMINAL-SEND-013:notOwner send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rcl send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoom send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidResource send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughAmount send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:cooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeRcl send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidRoom send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidResource send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeNotEnoughAmount send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeCooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeInvalidRoom send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeInvalidResource send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeNotEnoughAmount send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeCooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:rclBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidResource send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoomBeforeCooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughAmount send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidResourceBeforeCooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:invalidResourceBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeCooldown send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
-- Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (1)
 
@@ -3882,7 +3851,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2383 tests across 112 files</summary>
+<summary>2421 tests across 113 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5973,6 +5942,47 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:swamp road on swamp terrain decays by 500 per interval
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
+
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (38)
+
+- Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
+- Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
+- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
+- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
+- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
+- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
+- Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
+- Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
+- Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
+- Terminal send TERMINAL-SEND-013:notOwner send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rcl send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidResource send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughAmount send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:cooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeRcl send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidRoom send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidResource send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeNotEnoughAmount send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeCooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notOwnerBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeInvalidRoom send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeInvalidResource send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeNotEnoughAmount send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeCooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:rclBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughAmount send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidResourceBeforeCooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidResourceBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeCooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (15)
 

@@ -194,6 +194,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
 		market: false,
+		terminalSend: true,
 		observer: true,
 		nuke: true,
 		deposit: true,

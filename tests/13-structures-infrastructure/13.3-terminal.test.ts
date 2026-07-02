@@ -9,7 +9,7 @@ import { terminalSendValidationCases } from '../../src/matrices/terminal-send-va
 
 describe('Terminal send', () => {
 	test('TERMINAL-SEND-001 successful send returns OK and sets cooldown', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -41,7 +41,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -91,7 +91,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-003 send deducts energy cost from the sender', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -139,7 +139,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -192,7 +192,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -218,7 +218,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -244,7 +244,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -276,7 +276,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -302,7 +302,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -329,7 +329,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -360,7 +360,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -387,7 +387,7 @@ describe('Terminal send', () => {
 	});
 
 	test('TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -416,7 +416,7 @@ describe('Terminal send', () => {
 
 	for (const row of terminalSendValidationCases) {
 		test(`TERMINAL-SEND-013:${row.label} send() validation returns the canonical code`, async ({ shard }) => {
-			shard.requires('market');
+			shard.requires('terminalSend');
 			const blockers = new Set(row.blockers);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
@@ -455,7 +455,7 @@ describe('Terminal send', () => {
 	}
 
 	test('TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminalSend');
 		const amount = 1;
 		const energyBefore = 100000;
 		const roomLinearDistance = 4;

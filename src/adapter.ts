@@ -241,6 +241,9 @@ export interface AdapterCapabilities {
 	factory: boolean;
 	/** Market and terminal-driven market interactions. */
 	market: boolean;
+	/** StructureTerminal.send: energy cost, cooldown, delivery, and
+	 *  transaction recording — independent of the market order book. */
+	terminalSend: boolean;
 	/** Observer structure and room observation APIs. */
 	observer: boolean;
 	/** Nuker structure and nuke APIs. */
