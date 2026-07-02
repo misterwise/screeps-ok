@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2342%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-46-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2343%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-45-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-06-25 23:31 UTC |
-| 🟡 | **xxscreeps** | [2342](#xxscreeps-passing-tests) | [46](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-06-25 23:26 UTC |
+| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:00 UTC |
+| 🟡 | **xxscreeps** | [2343](#xxscreeps-passing-tests) | [45](#xxscreeps-expected-failures) | — | [278](#xxscreeps-skipped-tests) | 2026-07-02 22:56 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 expected-failure classifications against vanilla's canonical behavior, covering 46 tests. That includes 20 open parity gaps covering 44 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 45 tests. That includes 19 open parity gaps covering 43 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -173,7 +173,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [12](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
-| `roomobject-id-constructor-subclass-unbound` | At pin `d1e3bade` (after #269's `5be5d872`), `new Subclass(id)` where `Subclass extends Creep` now binds the looked-up creep's buffer so id and live fields resolve, but the id-string constructor (`game/object.ts:64-66`) unconditionally resets the instance prototype to the looked-up object's prototype, stripping the user subclass — so `new Subclass(id) instanceof Subclass` is `false`. | Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object. | [1](#xxscreeps-gap-roomobject-id-constructor-subclass-unbound) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
@@ -250,13 +249,6 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
-
-</details>
-
-<details id="xxscreeps-gap-roomobject-id-constructor-subclass-unbound">
-<summary><code>roomobject-id-constructor-subclass-unbound</code> — 1 test</summary>
-
-- `Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new subclass of Creep(id) keeps the subclass prototype and binds live creep fields`
 
 </details>
 
@@ -3954,7 +3946,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2342 tests across 110 files</summary>
+<summary>2343 tests across 110 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6548,7 +6540,7 @@ Click a count to jump to the affected test list.
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
 
-**`tests/27-undocumented/27.11-id-constructors.test.ts`** (9)
+**`tests/27-undocumented/27.11-id-constructors.test.ts`** (10)
 
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Creep(id) reconstructs a Creep view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Structure(id) reconstructs a Structure view with overlay fields
@@ -6559,6 +6551,7 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Mineral(id) reconstructs a Mineral view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
+- Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new subclass of Creep(id) keeps the subclass prototype and binds live creep fields
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (3)
 

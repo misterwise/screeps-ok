@@ -35,11 +35,6 @@
 			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields.",
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
-		"roomobject-id-constructor-subclass-unbound": {
-			"actual": "At pin `d1e3bade` (after #269's `5be5d872`), `new Subclass(id)` where `Subclass extends Creep` now binds the looked-up creep's buffer so id and live fields resolve, but the id-string constructor (`game/object.ts:64-66`) unconditionally resets the instance prototype to the looked-up object's prototype, stripping the user subclass — so `new Subclass(id) instanceof Subclass` is `false`.",
-			"expected": "Vanilla binds subclass id constructors the same way as base constructors: `new Subclass(id)` keeps the subclass prototype and resolves id, room, position, and representative public creep fields from the live object.",
-			"tests": ["UNDOC-IDCTOR-003"]
-		},
 		"look-for-at-unknown-returns-empty": {
 			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
 			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",

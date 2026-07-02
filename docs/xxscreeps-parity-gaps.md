@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-06-25 against pin `d1e3bade`.
+Last refreshed: 2026-07-02 against pin `05be3b2e`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 20 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 19 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
 
@@ -52,13 +52,6 @@ Last refreshed: 2026-06-25 against pin `d1e3bade`.
 - Status: RESIDUAL after pin `15df4bea`; `JSON.stringify()` no longer throws for the matrix, but most object snapshots still omit nested `pos` fields.
 - Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
 - Plan: ensure JSON serialization includes the same representative nested position fields as the live object snapshots. The matrix should stay broad because the missing field shape spans many object classes.
-
-### roomobject-id-constructor-subclass-unbound
-
-- Tests: UNDOC-IDCTOR-003
-- Status: RESIDUAL after #269's `5be5d872` (pin `d1e3bade`) — the failure mode changed but the test still fails. #269 is only partially fixed; re-flag upstream.
-- Cause: `5be5d872` widened the id-string constructor guard (`isSuperClass(object) || isSubClass(object)`) so `new Subclass(id)` now enters the binding branch and resolves id / live fields. But the branch then runs `ObjectSetPrototypeOf(this, ObjectGetPrototypeOf(object))` unconditionally (`game/object.ts:64-66`), resetting the instance to the looked-up object's native prototype and stripping the user subclass — so `new Subclass(id) instanceof Subclass` is now `false` (it was the binding, not the prototype, that broke before).
-- Plan: upstream — skip the prototype reset when `this`'s prototype already derives from the looked-up object's prototype (the subclass case), so the user subclass is preserved while base-class id constructors still normalize.
 
 ### construction-site-foreign-room-wrong-error
 
