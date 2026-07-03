@@ -55,11 +55,6 @@
 			"expected": "Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code).",
 			"tests": ["UNDOC-STALEARG-001:creepPickup"]
 		},
-		"build-blocked-vs-range-inverted": {
-			"actual": "`checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET.",
-			"expected": "Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET.",
-			"tests": ["BUILD-011:rangeBeforeBlockedTarget"]
-		},
 		"legacy-path-cost-callback-false-ignored": {
 			"actual": "Room.findPath ignores a costCallback return value of false and still returns a path.",
 			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
@@ -79,11 +74,6 @@
 			"actual": "For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive.",
 			"expected": "Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order.",
 			"tests": ["STRUCTURE-ACTIVE-005"]
-		},
-		"eventlog-build-energy-spent-uses-progress": {
-			"actual": "EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress.",
-			"expected": "EVENT_BUILD data.energySpent equals the energy spent by the build action.",
-			"tests": ["ROOM-EVENTLOG-013"]
 		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",

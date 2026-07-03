@@ -2913,12 +2913,14 @@ Coverage Notes
   `EVENT_HARVEST` is emitted when a creep harvests a source, with
   `objectId` set to the creep, `data.targetId` set to the source, and
   `data.amount` set to the energy harvested this tick.
-- `ROOM-EVENTLOG-013` `behavior` `needs_vanilla_verification`
+- `ROOM-EVENTLOG-013` `behavior` `verified_vanilla`
   `EVENT_BUILD` is emitted when a creep builds a construction site, with
   `objectId` set to the creep, `data.targetId` set to the site,
-  `data.amount` equal to the progress added this tick, `data.energySpent`
-  equal to the energy spent this tick, and `data.incomplete` reflecting
-  whether the site still has work remaining.
+  `data.amount` equal to the progress added this tick, and `data.incomplete`
+  reflecting whether the site still has work remaining — all matching stable
+  vanilla. `data.energySpent` is a docs-vs-engine divergence: `docs.screeps.com`
+  documents it as the energy the build action spent, but stable vanilla omits
+  the field from the payload, while xxscreeps ships it.
 - `ROOM-EVENTLOG-014` `behavior` `verified_vanilla`
   `EVENT_REPAIR` is emitted when a creep repairs a structure, with
   `objectId` set to the creep, `data.targetId` set to the structure, and

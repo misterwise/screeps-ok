@@ -19,6 +19,7 @@ import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
 import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
+import { Nuke } from 'xxscreeps/mods/nuker/nuke.js';
 import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
@@ -416,6 +417,26 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 	if (obj instanceof Deposit) return snapshotDeposit(obj);
 	if (obj.structureType) return snapshotStructure(obj, resolver);
 	return null;
+}
+
+// The single position-key kind an object registers under (see the placeXxx
+// keys in index.ts), or undefined if it isn't position-keyed (creeps key by
+// name). The ID-map rebuild probes only this kind so co-located objects — a
+// creep standing on a construction site, a mineral under an extractor — can't
+// steal each other's handle. ConstructionSite/Ruin carry a `structureType`
+// (the target/former type), so their instanceof checks must precede the
+// structure fallback.
+export function posKeyKind(obj: any): string | undefined {
+	if (obj instanceof Creep) return undefined;
+	if (obj instanceof ConstructionSite) return 'constructionSite';
+	if (obj instanceof Tombstone) return 'tombstone';
+	if (obj instanceof Ruin) return 'ruin';
+	if (obj instanceof Resource) return 'resource';
+	if (obj instanceof Source) return 'source';
+	if (obj instanceof Mineral) return 'mineral';
+	if (obj instanceof Deposit) return 'deposit';
+	if (obj instanceof Nuke) return 'nuke';
+	return getStructureType(obj);
 }
 
 export function snapshotRoom(room: any, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {

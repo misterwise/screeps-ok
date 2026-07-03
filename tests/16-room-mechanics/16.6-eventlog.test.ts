@@ -576,7 +576,8 @@ describe('room.getEventLog()', () => {
 			e => e.event === EVENT_BUILD && e.objectId === ids.builder);
 		expect(build.data.targetId).toBe(ids.site);
 		expect(build.data.amount).toBe(BUILD_POWER);
-		expect(build.data.energySpent).toBe(1);
+		// Unboosted build spends energy 1:1 with progress, so energySpent == BUILD_POWER too.
+		expect(build.data.energySpent).toBe(BUILD_POWER);
 		// One swing is far below a road's progressTotal, so the site stays incomplete.
 		expect(build.data.incomplete).toBe(true);
 	});

@@ -38,7 +38,7 @@ import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
 import { loadTerrain } from 'xxscreeps/driver/pathfinder/pathfinder.js';
 import * as MapSchema from 'xxscreeps/game/map.js';
 import { makeWriter } from 'xxscreeps/schema/write.js';
-import { snapshotObject, snapshotRoom, getStructureType } from './snapshots.js';
+import { snapshotObject, snapshotRoom, posKeyKind } from './snapshots.js';
 import {
 	insertRoomObject, removeRoomObject, iterateRoomObjects,
 	setRoomLevel, getRoomLevel, setRoomOwner, setControllerOwner,
@@ -914,28 +914,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
 						idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
 					}
-					// Match by pos+type for structures/sites/sources/minerals
-					// Try multiple key formats since type identification varies
+					// Match by pos + the object's own kind. Probing only its
+					// actual kind keeps co-located objects (a creep on a
+					// construction site, a mineral under an extractor) from
+					// stealing each other's handle.
 					const x = obj.pos?.x;
 					const y = obj.pos?.y;
-					if (x !== undefined && y !== undefined) {
-						// Build keys specific to the object's actual type to avoid
-						// co-located objects (e.g. mineral + extractor) cross-matching.
-						const keys: string[] = [];
-						if (obj.structureType) {
-							keys.push(`${roomName}:${x}:${y}:${obj.structureType}`);
-						} else if (obj.mineralType !== undefined) {
-							keys.push(`${roomName}:${x}:${y}:mineral`);
-						} else if (obj.energyCapacity !== undefined) {
-							keys.push(`${roomName}:${x}:${y}:source`);
-						} else {
-							keys.push(`${roomName}:${x}:${y}:${obj.constructor?.name}`);
-							keys.push(`${roomName}:${x}:${y}:constructionSite`);
-						}
-						for (const key of keys) {
-							if (this.posToSyntheticId.has(key)) {
-								idMap.set(this.posToSyntheticId.get(key)!, obj.id);
-							}
+					const kind = posKeyKind(obj);
+					if (x !== undefined && y !== undefined && kind !== undefined) {
+						const key = `${roomName}:${x}:${y}:${kind}`;
+						if (this.posToSyntheticId.has(key)) {
+							idMap.set(this.posToSyntheticId.get(key)!, obj.id);
 						}
 					}
 				}
@@ -976,19 +965,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					if (obj.name && this.nameToSyntheticId.has(obj.name)) {
 						this.idMap.set(this.nameToSyntheticId.get(obj.name)!, obj.id);
 					}
+					// Probe only the object's own kind so co-located objects
+					// can't overwrite each other's handle (see the ID-map
+					// rebuild in ensureSimulation and posKeyKind).
 					const x = obj.pos?.x;
 					const y = obj.pos?.y;
-					if (x !== undefined && y !== undefined) {
-						const keys = [
-							`${roomName}:${x}:${y}:${getStructureType(obj)}`,
-							`${roomName}:${x}:${y}:constructionSite`,
-							`${roomName}:${x}:${y}:source`,
-							`${roomName}:${x}:${y}:mineral`,
-						];
-						for (const key of keys) {
-							if (this.posToSyntheticId.has(key)) {
-								this.idMap.set(this.posToSyntheticId.get(key)!, obj.id);
-							}
+					const kind = posKeyKind(obj);
+					if (x !== undefined && y !== undefined && kind !== undefined) {
+						const key = `${roomName}:${x}:${y}:${kind}`;
+						if (this.posToSyntheticId.has(key)) {
+							this.idMap.set(this.posToSyntheticId.get(key)!, obj.id);
 						}
 					}
 				}

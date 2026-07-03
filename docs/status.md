@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2421%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2423%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-02 23:48 UTC |
-| 🟡 | **xxscreeps** | [2421](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-07-02 23:43 UTC |
+| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-03 00:30 UTC |
+| 🟡 | **xxscreeps** | [2423](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-07-03 00:24 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 20 open parity gaps covering 53 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 18 open parity gaps covering 51 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -177,12 +177,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
-| `build-blocked-vs-range-inverted` | `checkBuild` evaluates the obstacle/blocked-target check before `checkRange`, so a blocked target out of range returns ERR_INVALID_TARGET. | Vanilla returns ERR_NOT_IN_RANGE before the blocked-target ERR_INVALID_TARGET. | [1](#xxscreeps-gap-build-blocked-vs-range-inverted) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
-| `eventlog-build-energy-spent-uses-progress` | EVENT_BUILD data.energySpent is reported as 5 for a one-WORK build action that spends 1 energy and adds BUILD_POWER progress. | EVENT_BUILD data.energySpent equals the energy spent by the build action. | [1](#xxscreeps-gap-eventlog-build-energy-spent-uses-progress) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
@@ -282,13 +280,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-build-blocked-vs-range-inverted">
-<summary><code>build-blocked-vs-range-inverted</code> — 1 test</summary>
-
-- `creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code`
-
-</details>
-
 <details id="xxscreeps-gap-legacy-path-cost-callback-false-ignored">
 <summary><code>legacy-path-cost-callback-false-ignored</code> — 1 test</summary>
 
@@ -323,13 +314,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>structure-active-equal-distance-scan-order</code> — 1 test</summary>
 
 - `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
-
-</details>
-
-<details id="xxscreeps-gap-eventlog-build-energy-spent-uses-progress">
-<summary><code>eventlog-build-energy-spent-uses-progress</code> — 1 test</summary>
-
-- `room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added`
 
 </details>
 
@@ -3851,7 +3835,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2421 tests across 113 files</summary>
+<summary>2423 tests across 113 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4549,7 +4533,7 @@ Click a count to jump to the affected test list.
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (37)
+**`tests/05-construction-repair/5.1-build.test.ts`** (38)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
@@ -4587,6 +4571,7 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:notEnoughBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeRange build() validation returns the canonical code
 - creep.build() BUILD-011:invalidTargetBeforeBlockedTarget build() validation returns the canonical code
+- creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target
 
 **`tests/05-construction-repair/5.2-repair.test.ts`** (31)
@@ -6142,7 +6127,7 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
 - Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (32)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (33)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
@@ -6157,6 +6142,7 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-010 EVENT_RESERVE_CONTROLLER amount equals CLAIM-parts × CONTROLLER_RESERVE
 - room.getEventLog() ROOM-EVENTLOG-011 EVENT_UPGRADE_CONTROLLER carries amount and energySpent matching the energy applied
 - room.getEventLog() ROOM-EVENTLOG-012 EVENT_HARVEST is emitted with creep objectId, source targetId, and amount harvested
+- room.getEventLog() ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added
 - room.getEventLog() ROOM-EVENTLOG-014 EVENT_REPAIR carries amount and energySpent matching hits restored
 - room.getEventLog() ROOM-EVENTLOG-015 EVENT_ATTACK from rangedAttack carries attackType=RANGED and damage=RANGED_ATTACK_POWER
 - room.getEventLog() ROOM-EVENTLOG-016 basic EVENT_ATTACK from rangedMassAttack emits one entry per target with attackType=RANGED_MASS and damage scaled by distance
