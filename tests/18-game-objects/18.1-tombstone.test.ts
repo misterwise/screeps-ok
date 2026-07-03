@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, ATTACK_POWER, BODYPART_HITS, BODYPART_COST, TOMBSTONE_DECAY_PER_PART, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, FIND_TOMBSTONES, RESOURCE_ENERGY } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, ATTACK_POWER, BODYPART_HITS, BODYPART_COST, TOMBSTONE_DECAY_PER_PART, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CARRY_CAPACITY, FIND_TOMBSTONES, RESOURCE_ENERGY } from '../../src/index.js';
 
 describe('Tombstone', () => {
 	test('TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store', async ({ shard }) => {
@@ -180,8 +180,8 @@ describe('Tombstone', () => {
 		expect(t2.ticksToDecay).toBeLessThan(t1.ticksToDecay);
 	});
 
-	// TOMBSTONE-006..009: deceased-creep field exposure on tombstone.creep.
-	// Set up a single natural-death scenario shared across the four rows.
+	// TOMBSTONE-006..017: deceased-creep field exposure on tombstone.creep.
+	// Set up a single natural-death scenario shared across the rows below.
 	// The owner-username assertion compares post-death to the live creep's
 	// owner.username captured pre-death (both resolve through the engine's
 	// user registry, so the value is engine-specific but self-consistent).
@@ -207,9 +207,9 @@ describe('Tombstone', () => {
 		const live = await shard.runPlayer('p2', code`
 			(() => {
 				const c = Game.getObjectById(${targetId});
-				return { id: c.id, owner: c.owner.username };
+				return { id: c.id, owner: c.owner.username, ttl: c.ticksToLive };
 			})()
-		`) as { id: string; owner: string };
+		`) as { id: string; owner: string; ttl: number };
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 		`);
@@ -221,15 +221,31 @@ describe('Tombstone', () => {
 		const fields = await shard.runPlayer('p1', code`
 			(() => {
 				const t = Game.getObjectById(${tomb!.id});
+				const c = t.creep;
+				const read = (fn) => { try { const v = fn(); return v === undefined ? null : v; } catch (err) { return 'THREW:' + (err && err.message); } };
 				return {
-					sameId: t.creep.id === t.id,
-					creepId: t.creep.id,
-					creepName: t.creep.name,
-					owner: t.creep.owner.username,
-					bodyTypes: t.creep.body.map(part => part.type),
+					sameId: c.id === t.id,
+					creepId: c.id,
+					creepName: c.name,
+					owner: c.owner.username,
+					bodyTypes: c.body.map(part => part.type),
+					spawning: read(() => c.spawning),
+					my: read(() => c.my),
+					ticksToLive: read(() => c.ticksToLive),
+					fatigue: read(() => c.fatigue),
+					hits: read(() => c.hits),
+					hitsMax: read(() => c.hitsMax),
+					carryCapacity: read(() => c.carryCapacity),
+					storeUsed: read(() => c.store.getUsedCapacity()),
+					storeCap: read(() => c.store.getCapacity()),
+					carryUsed: read(() => c.carry.getUsedCapacity()),
 				};
 			})()
-		`) as { sameId: boolean; creepId: string; creepName: string; owner: string; bodyTypes: string[] };
+		`) as {
+			sameId: boolean; creepId: string; creepName: string; owner: string; bodyTypes: string[];
+			spawning: unknown; my: unknown; ticksToLive: unknown; fatigue: unknown; hits: unknown;
+			hitsMax: unknown; carryCapacity: unknown; storeUsed: unknown; storeCap: unknown; carryUsed: unknown;
+		};
 		return { tomb: tomb!, targetId, targetBody, live, fields };
 	}
 
@@ -253,5 +269,87 @@ describe('Tombstone', () => {
 	test('TOMBSTONE-009 tombstone.creep.name matches deceased name', async ({ shard }) => {
 		const { fields } = await killAndReadTombstone(shard);
 		expect(fields.creepName).toBe('fallen');
+	});
+
+	test('TOMBSTONE-010 tombstone.creep.spawning is false', async ({ shard }) => {
+		const { fields } = await killAndReadTombstone(shard);
+		expect(fields.spawning).toBe(false);
+	});
+
+	test('TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer', async ({ shard }) => {
+		const { fields } = await killAndReadTombstone(shard);
+		expect(fields.my).toBe(false);
+	});
+
+	test('TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL', async ({ shard }) => {
+		const { fields, live } = await killAndReadTombstone(shard);
+		// The exact tick depends on the engine's Game.time vs processor-time
+		// offset, so pin that the tombstone preserves the creep's final live
+		// TTL to within one tick rather than an exact value.
+		const ttl = fields.ticksToLive as number;
+		expect(ttl).toBeGreaterThan(0);
+		expect(ttl).toBeLessThanOrEqual(live.ttl);
+		expect(ttl).toBeGreaterThanOrEqual(live.ttl - 2);
+	});
+
+	test('TOMBSTONE-013 tombstone.creep.fatigue is 0', async ({ shard }) => {
+		const { fields } = await killAndReadTombstone(shard);
+		expect(fields.fatigue).toBe(0);
+	});
+
+	test('TOMBSTONE-014 tombstone.creep.hits is 0', async ({ shard }) => {
+		const { fields } = await killAndReadTombstone(shard);
+		expect(fields.hits).toBe(0);
+	});
+
+	test('TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100', async ({ shard }) => {
+		const { fields, targetBody } = await killAndReadTombstone(shard);
+		expect(fields.hitsMax).toBe(targetBody.length * 100);
+	});
+
+	test('TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY', async ({ shard }) => {
+		const { fields, targetBody } = await killAndReadTombstone(shard);
+		const carryParts = targetBody.filter(part => part === CARRY).length;
+		expect(fields.carryCapacity).toBe(carryParts * CARRY_CAPACITY);
+	});
+
+	test('TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity', async ({ shard }) => {
+		const { fields, targetBody } = await killAndReadTombstone(shard);
+		const carryParts = targetBody.filter(part => part === CARRY).length;
+		expect(fields.storeUsed).toBe(0);
+		expect(fields.carryUsed).toBe(0);
+		expect(fields.storeCap).toBe(carryParts * CARRY_CAPACITY);
+	});
+
+	test('TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			name: 'sayer',
+		});
+		await shard.tick();
+		await shard.runPlayer('p1', code`
+			(() => {
+				const c = Game.getObjectById(${creepId});
+				c.say('bye', true);
+				c.suicide();
+			})()
+		`);
+		await shard.tick();
+		await shard.tick();
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		const tomb = tombstones.find((t: any) => t.creepName === 'sayer');
+		expect(tomb).toBeDefined();
+		const saying = await shard.runPlayer('p1', code`
+			(() => {
+				try { return Game.getObjectById(${tomb!.id}).creep.saying ?? null; }
+				catch (err) { return 'THREW:' + (err && err.message); }
+			})()
+		`);
+		expect(saying).toBe('bye');
 	});
 });

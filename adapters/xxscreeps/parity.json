@@ -5,6 +5,21 @@
 			"expected": "Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape.",
 			"tests": ["TOMBSTONE-006"]
 		},
+		"tombstone-creep-spawning-true": {
+			"actual": "`tombstone.creep.spawning` returns `true`: the synthesized `Creep` has a zero-initialized `#ageTime` and `Creep.spawning` tests `#ageTime === 0`.",
+			"expected": "Vanilla `tombstones.js` returns `false` for `tombstone.creep.spawning`.",
+			"tests": ["TOMBSTONE-010"]
+		},
+		"tombstone-creep-store-wired-to-tombstone": {
+			"actual": "`tombstone.creep.store`/`carry` return the tombstone's own store (corpse resources, no fixed capacity), so `getUsedCapacity()` is non-zero and `carryCapacity`/`getCapacity()` read that store instead of the deceased body's CARRY capacity.",
+			"expected": "Vanilla exposes an empty store whose capacity equals `carryCapacity` (active CARRY parts × CARRY_CAPACITY); the corpse resources live on the outer `tombstone.store`.",
+			"tests": ["TOMBSTONE-016", "TOMBSTONE-017"]
+		},
+		"tombstone-creep-saying-not-exposed": {
+			"actual": "`tombstone.creep.saying` returns `undefined`: the synthesized `Creep`'s saying getter requires `#saying.time === Game.time`, which never holds for a past death tick.",
+			"expected": "Vanilla exposes the message the creep was publicly saying at the moment of death.",
+			"tests": ["TOMBSTONE-018"]
+		},
 		"controller-my-reset-returns-undefined": {
 			"actual": "After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral.",
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",

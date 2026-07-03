@@ -3139,6 +3139,31 @@ Coverage Notes
   username.
 - `TOMBSTONE-009` `behavior` `verified_vanilla`
   `tombstone.creep.name` equals the deceased creep's name.
+- `TOMBSTONE-010` `behavior` `verified_vanilla`
+  `tombstone.creep.spawning` is always `false`.
+- `TOMBSTONE-011` `behavior` `verified_vanilla`
+  `tombstone.creep.my` reflects the observer: `false` for a player who did
+  not own the deceased creep, `true` for its owner.
+- `TOMBSTONE-012` `behavior` `verified_vanilla`
+  `tombstone.creep.ticksToLive` preserves the deceased creep's remaining TTL
+  from the moment of death, tracking its final live TTL to within one tick
+  (the exact value follows each engine's `Game.time`/processor-time offset).
+- `TOMBSTONE-013` `behavior` `verified_vanilla`
+  `tombstone.creep.fatigue` is `0`.
+- `TOMBSTONE-014` `behavior` `verified_vanilla`
+  `tombstone.creep.hits` is `0`.
+- `TOMBSTONE-015` `behavior` `verified_vanilla`
+  `tombstone.creep.hitsMax` equals `body.length * 100`.
+- `TOMBSTONE-016` `behavior` `verified_vanilla`
+  `tombstone.creep.carryCapacity` equals the deceased creep's active `CARRY`
+  parts times `CARRY_CAPACITY`.
+- `TOMBSTONE-017` `behavior` `verified_vanilla`
+  `tombstone.creep.store` and `tombstone.creep.carry` are an empty store whose
+  capacity equals `carryCapacity`, distinct from the tombstone's own `store`
+  which holds the corpse resources.
+- `TOMBSTONE-018` `behavior` `verified_vanilla`
+  `tombstone.creep.saying` exposes the message the deceased creep was publicly
+  saying at the moment of death.
 
 Coverage Notes
 - Power creep tombstone decay dropped: requires `capability: powerCreeps`,
