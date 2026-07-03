@@ -1,4 +1,11 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import {
+	describe, test, expect, code,
+	ATTACK, MOVE,
+	EFFECT_COLLAPSE_TIMER,
+	FIND_STRUCTURES, FIND_RUINS,
+	STRUCTURE_CONTROLLER,
+} from '../../src/index.js';
+import type { ControllerSnapshot } from '../../src/index.js';
 
 describe('Keeper lair', () => {
 	test('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick', async ({ shard }) => {
@@ -136,19 +143,79 @@ describe('Invader core', () => {
 
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 			pos: [25, 25],
-			level: 1,
+			level: 2,
+			spawning: { name: 'defender1', body: [ATTACK, MOVE], needTime: 12, remainingTicks: 6 },
 		});
 		await shard.tick();
 
-		// Verify the invader core exists and has the right type.
-		const result = await shard.runPlayer('p1', code`
+		// Incubation exposes the public spawning state on the core.
+		const pendingName = await shard.runPlayer('p1', code`
 			const core = Game.getObjectById(${coreId});
-			core ? core.structureType : null
+			core && core.spawning ? core.spawning.name : null
 		`);
-		expect(result).toBe('invaderCore');
+		expect(pendingName).toBe('defender1');
+
+		// Each runPlayer call advances a tick; poll until the defender is born.
+		let born: { x: number; y: number; coreSpawning: boolean } | null = null;
+		for (let i = 0; i < 10 && !born; i++) {
+			born = await shard.runPlayer('p1', code`
+				const core = Game.getObjectById(${coreId});
+				const creep = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)
+					.find(c => c.name === 'defender1' && !c.spawning);
+				creep
+					? { x: creep.pos.x, y: creep.pos.y, coreSpawning: !!(core && core.spawning) }
+					: null
+			`) as { x: number; y: number; coreSpawning: boolean } | null;
+		}
+		expect(born).not.toBeNull();
+		// The defender is born on a tile adjacent to the core, and the core's
+		// spawning state clears in the same tick.
+		const range = Math.max(Math.abs(born!.x - 25), Math.abs(born!.y - 25));
+		expect(range).toBe(1);
+		expect(born!.coreSpawning).toBe(false);
 	});
 
 	test('INVADER-CORE-004 invader core collapse timer clears the room controller', async ({ shard }) => {
+		shard.requires('invaderCore');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+
+		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
+			pos: [25, 25],
+			level: 0,
+			collapseTime: 6,
+		});
+		await shard.tick();
+
+		// The pending collapse is exposed as EFFECT_COLLAPSE_TIMER.
+		const pending = await shard.runPlayer('p1', code`
+			const core = Game.getObjectById(${coreId});
+			const collapse = ((core && core.effects) || [])
+				.find(e => e.effect === ${EFFECT_COLLAPSE_TIMER});
+			collapse ? collapse.ticksRemaining : null
+		`) as number | null;
+		expect(pending).not.toBeNull();
+		expect(pending!).toBeGreaterThan(0);
+
+		// Run past collapse expiry, then inspect via snapshots — the player
+		// loses room visibility once its controller is cleared.
+		for (let i = 0; i < 8; i++) await shard.tick();
+
+		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
+		const controller = structures.find(
+			(s): s is ControllerSnapshot => s.structureType === STRUCTURE_CONTROLLER,
+		);
+		expect(controller).toBeDefined();
+		expect(controller!.owner ?? null).toBeNull();
+		expect(controller!.level).toBe(0);
+		expect(controller!.progress).toBe(0);
+		expect(controller!.isPowerEnabled).toBe(false);
+		expect(controller!.safeMode).toBeUndefined();
+	});
+
+	test('INVADER-CORE-005 expired collapse timer removes the invader core without a ruin', async ({ shard }) => {
 		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
@@ -156,16 +223,19 @@ describe('Invader core', () => {
 		});
 
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
-			pos: [25, 25],
+			pos: [30, 30],
 			level: 0,
+			collapseTime: 6,
 		});
 		await shard.tick();
+		expect(await shard.getObject(coreId)).not.toBeNull();
 
-		// Verify the invader core is placed.
-		const exists = await shard.runPlayer('p1', code`
-			!!Game.getObjectById(${coreId})
-		`);
-		expect(exists).toBe(true);
+		for (let i = 0; i < 8; i++) await shard.tick();
+
+		// Collapse removal is silent: no core, no ruin left behind.
+		expect(await shard.getObject(coreId)).toBeNull();
+		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
+		expect(ruins.filter(r => r.pos.x === 30 && r.pos.y === 30)).toHaveLength(0);
 	});
 });
 

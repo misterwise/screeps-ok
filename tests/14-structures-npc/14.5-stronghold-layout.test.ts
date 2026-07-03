@@ -9,7 +9,7 @@ describe('Stronghold layout', () => {
 		test(
 			`STRONGHOLD-LAYOUT-001 deploying invader core (${template.name}) places the canonical structure layout`,
 			async ({ shard }) => {
-				shard.requires('invaderCore');
+				shard.requires('strongholdDeploy');
 				await shard.createShard({
 					players: ['p1'],
 					rooms: [{ name: 'W1N1' }],

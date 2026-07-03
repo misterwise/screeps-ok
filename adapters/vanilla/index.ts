@@ -611,6 +611,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		roomStatus: true,
 		portals: true,
 		invaderCore: true,
+		// The engine's stronghold pretick (`processor/intents/invader-core/
+		// stronghold/stronghold.js`) runs the deploy trigger in-process, so
+		// layout placement and the stronghold-only core fields are testable
+		// without the backend strongholds cronjob.
+		strongholdDeploy: true,
 		invaderRaidSpawner: true,
 		// The open-source `@screeps/engine` ships no InterShardMemory
 		// module (the MMO server provides it closed-source) and does
@@ -1513,21 +1518,71 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				? gameTime + (spec.deployTime as number)
 				: null;
 			const C = this.server.constants;
+			const user = (spec.user as string) ?? '2';
+			const effects = [...((spec.effects as Record<string, unknown>[]) ?? [])];
 			const insert: Record<string, unknown> = {
 				room: roomName,
 				type: 'invaderCore',
 				x: pos[0],
 				y: pos[1],
 				level,
-				user: (spec.user as string) ?? '2',
+				user,
 				hits: (spec.hits as number) ?? (C.INVADER_CORE_HITS ?? 100000),
 				hitsMax: (spec.hitsMax as number) ?? (C.INVADER_CORE_HITS ?? 100000),
 				deployTime,
-				effects: spec.effects ?? [],
+				effects,
 			};
+			// `collapseTime` (relative ticks) seeds the deployed-stronghold
+			// collapse state: the EFFECT_COLLAPSE_TIMER effect plus the
+			// matching `decayTime` that `deployStronghold` would have set.
+			if (typeof spec.collapseTime === 'number') {
+				const endTime = gameTime + (spec.collapseTime as number);
+				effects.push({
+					effect: C.EFFECT_COLLAPSE_TIMER,
+					power: C.EFFECT_COLLAPSE_TIMER,
+					endTime,
+					duration: spec.collapseTime,
+				});
+				insert.decayTime = endTime;
+			}
+			// `spawning` seeds an in-progress defender spawn: the core's
+			// spawning record plus the incubating creep doc the engine's
+			// createCreep intent would have inserted on the core tile.
+			const spawningSpec = spec.spawning as
+				| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
+				| undefined;
+			const body = (spawningSpec?.body ?? ['move']).map(part => ({ type: part, hits: 100 }));
+			if (spawningSpec) {
+				insert.spawning = {
+					name: spawningSpec.name,
+					needTime: spawningSpec.needTime
+						?? (C.INVADER_CORE_CREEP_SPAWN_TIME?.[level] ?? 0) * body.length,
+					spawnTime: gameTime + spawningSpec.remainingTicks,
+				};
+			}
 			if (spec.templateName !== undefined) insert.templateName = spec.templateName;
 			if (spec.strongholdId !== undefined) insert.strongholdId = spec.strongholdId;
 			const result = await this.db['rooms.objects'].insert(insert);
+			if (spawningSpec) {
+				await this.db['rooms.objects'].insert({
+					room: roomName,
+					type: 'creep',
+					name: spawningSpec.name,
+					x: pos[0],
+					y: pos[1],
+					user,
+					body,
+					store: { energy: 0 },
+					storeCapacity: 0,
+					hits: body.length * 100,
+					hitsMax: body.length * 100,
+					spawning: true,
+					fatigue: 0,
+					notifyWhenAttacked: false,
+					ageTime: insert.decayTime ?? gameTime + (C.CREEP_LIFE_TIME ?? 1500),
+					actionLog: {},
+				});
+			}
 			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
 			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
 			return result._id;

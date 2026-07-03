@@ -2452,12 +2452,15 @@ cross-shard `destination` values.
   An invader core exposes its `level` as a public property.
 - `INVADER-CORE-003` `behavior` `verified_vanilla`
   When an invader core has an active `spawning` state, the named creep is born
-  on the invader core tile when `spawning.spawnTime` completes, and the core's
-  `spawning` state clears in the same tick.
+  on a tile adjacent to the invader core when the spawning timer completes,
+  and the core's `spawning` state clears in the same tick.
 - `INVADER-CORE-004` `behavior` `verified_vanilla`
-  When an invader core's `EFFECT_COLLAPSE_TIMER` expires, the room controller it
-  governs becomes unowned level 0 in the same tick, and its progress, safe
-  mode, power enablement, and controller effects are cleared.
+  When an invader core's `EFFECT_COLLAPSE_TIMER` expires, the room's controller
+  becomes unowned level 0 in the same tick, and its progress, safe mode, power
+  enablement, and controller effects are cleared.
+- `INVADER-CORE-005` `behavior` `verified_vanilla`
+  When an invader core's `EFFECT_COLLAPSE_TIMER` expires, the invader core is
+  removed from the room in the same tick, leaving no ruin behind.
 
 Coverage Notes
 - Stronghold orchestration began splitting into concrete observable behaviors
@@ -2493,7 +2496,7 @@ Coverage Notes
 - This family is limited to public ownership query properties, not owner-gated
   API behavior.
 
-### 14.5 Stronghold Layout `capability: invaderCore`
+### 14.5 Stronghold Layout `capability: strongholdDeploy`
 - `STRONGHOLD-LAYOUT-001` `matrix` `verified_vanilla`
   When a deploying invader core's deploy timer reaches its trigger
   (`core.deployTime <= gameTime + 1`), the engine places the canonical

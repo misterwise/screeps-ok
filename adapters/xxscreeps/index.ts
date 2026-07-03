@@ -50,13 +50,14 @@ import {
 	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime, setDepositState,
+	setInvaderCoreCollapseTime, primeInvaderCoreSpawning,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
 	initializeRoomIndices,
 } from './engine-internals.js';
 
 // Object creation imports
 import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/creep.js';
-import { create as createSpawn } from 'xxscreeps/mods/spawn/spawn.js';
+import { create as createSpawn, Spawning } from 'xxscreeps/mods/spawn/spawn.js';
 import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
 import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
 import { structureFactories } from 'xxscreeps/mods/construction/symbols.js';
@@ -73,6 +74,7 @@ import { create as createContainer } from 'xxscreeps/mods/resource/container.js'
 import { create as createRoad } from 'xxscreeps/mods/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
+import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
 import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
 import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/mineral/constants.js';
 import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
@@ -204,9 +206,15 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// the dynamic import result so PORTAL-* tests skip cleanly when
 		// the mod is absent and run when it lands upstream.
 		portals: !!createPortal,
-		// xxscreeps has no invader-core mod — `StructureInvaderCore` is a
-		// bare stub at game/runtime.ts:13.
-		invaderCore: false,
+		// Pinned xxscreeps ships the full invader-core mod
+		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
+		// processors, defender spawn, and collapse removal.
+		invaderCore: true,
+		// No stronghold deployment: `create()` in mods/invader/invader-core.ts
+		// has no deploy-layout caller and the schema has no templateName /
+		// strongholdId fields, so layout placement and the stronghold-only
+		// core fields are untestable.
+		strongholdDeploy: false,
 		invaderRaidSpawner: false,
 		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
 		// and no Game.cpu.shardLimits / setShardLimits. See
@@ -739,6 +747,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		switch (type) {
 			case 'keeperLair':
 				return this.placeKeeperLair(roomName, spec);
+			case 'invaderCore':
+				return this.placeInvaderCore(roomName, spec);
 			case 'portal':
 				return this.placePortal(roomName, spec);
 			case 'deposit':
@@ -746,7 +756,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair, portal, deposit.`,
+					`Supported types: keeperLair, invaderCore, portal, deposit.`,
 				);
 		}
 	}
@@ -785,6 +795,45 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, nextSpawnTime);
 			}
 			insertRoomObject(room, lair);
+		});
+
+		return id;
+	}
+
+	private async placeInvaderCore(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:invaderCore`, id);
+		const level = (spec.level as number) ?? 0;
+		const spawningSpec = spec.spawning as
+			| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
+			| undefined;
+
+		this.queueOp(roomName, room => {
+			const time = this.simulation!.shard.time;
+			// Engine create() takes an absolute deploy tick; 0 = deployed.
+			const deployTime = typeof spec.deployTime === 'number' ? time + spec.deployTime : 0;
+			const core = createInvaderCore(new RoomPosition(pos[0], pos[1], roomName), level, deployTime);
+			core.id = id;
+			if (typeof spec.collapseTime === 'number') {
+				setInvaderCoreCollapseTime(core, time, spec.collapseTime);
+			}
+			insertRoomObject(room, core);
+			if (spawningSpec) {
+				const body = (spawningSpec.body ?? [C.MOVE]) as any;
+				const creep = createCreep(
+					new RoomPosition(pos[0], pos[1], roomName),
+					body, spawningSpec.name, '2',
+				);
+				const spawning = new Spawning();
+				spawning.needTime = spawningSpec.needTime
+					?? ((C.INVADER_CORE_CREEP_SPAWN_TIME as any)?.[level] ?? 0) * body.length;
+				primeInvaderCoreSpawning(core, creep, spawning, time, spawningSpec.remainingTicks);
+				insertRoomObject(room, creep);
+			}
+			// Engine contract (invader-core.ts create() comment): callers wake
+			// the invader NPC that drives the core.
+			activateNPC(room, '2');
 		});
 
 		return id;

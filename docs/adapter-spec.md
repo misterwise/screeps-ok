@@ -373,6 +373,7 @@ Current capability flags are:
 - `roomStatus`
 - `portals`
 - `invaderCore`
+- `strongholdDeploy`
 - `invaderRaidSpawner`
 - `multiShard`
 - `interShardMemory`

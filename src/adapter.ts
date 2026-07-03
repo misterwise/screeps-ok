@@ -258,6 +258,10 @@ export interface AdapterCapabilities {
 	portals: boolean;
 	/** Invader core structures (level, deploy timer, collapse lifecycle). */
 	invaderCore: boolean;
+	/** Engine-driven stronghold deployment: the deploy trigger placing the
+	 *  canonical template layout, and the stronghold-only invader-core
+	 *  fields (`templateName`, `strongholdId`, arbitrary seeded effects). */
+	strongholdDeploy: boolean;
 	/** Per-room inactive Invader raid spawning orchestration. */
 	invaderRaidSpawner: boolean;
 	/** Two or more shards orchestrated within a single test (createShard with

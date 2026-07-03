@@ -330,6 +330,7 @@ const CAPABILITY_DESCRIPTIONS = {
 	roomStatus: 'Room status fixture setup',
 	portals: 'Portal structures and teleport mechanics',
 	invaderCore: 'Invader core structures',
+	strongholdDeploy: 'Engine-driven stronghold deployment',
 	invaderRaidSpawner: 'Inactive-room Invader raid spawning',
 };
 

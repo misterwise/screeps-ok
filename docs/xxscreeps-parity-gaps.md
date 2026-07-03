@@ -5,7 +5,7 @@ For the full generated list and current counts, see `docs/status.md`.
 
 Last refreshed: 2026-07-02 against pin `05be3b2e`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 20 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
 
@@ -88,6 +88,13 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
 
+### invader-core-collapse-controller-not-reset
+
+- Tests: INVADER-CORE-004
+- Status: CONFIRMED at pin `05be3b2e`; first exposed by un-skipping the invader-core family (INVADER-CORE-001..003/005 pass, including defender spawn and collapse removal).
+- Cause: the invader-core object tick processor (`mods/invader/processor.ts`) handles collapse expiry as a silent `#removeObject(core)` and leaves the room controller untouched, with an in-source TODO to reset an NPC-owned controller once stronghold deployment can create one. Vanilla (`processor/intents/invader-core/tick.js`) clears the room's controller unconditionally in the collapse tick: user null, level 0, progress 0, downgrade/safe-mode timers cleared, `isPowerEnabled` false, effects null.
+- Plan: reset the room controller in the collapse branch to match vanilla. Vanilla does not require an NPC-owned controller — any controller in the room is cleared — so the reset need not wait for stronghold deployment.
+
 ## Accepted divergences
 
 Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but blocked on an upstream substrate stay in `parity.json` as expected failures (factory power effect below).
@@ -126,3 +133,10 @@ These rows do not run on xxscreeps because the adapter declares a capability una
 - Tests skipped: MAP-ROOM-004:adminClosed, MAP-ROOM-004:novice, MAP-ROOM-004:respawn, NUKE-LAUNCH-014, NUKE-LAUNCH-015, NUKE-LAUNCH-016, NUKE-LAUNCH-017.
 - Status: INTENTIONAL.
 - Decision: PR [laverdet/xxscreeps#236](https://github.com/laverdet/xxscreeps/pull/236) proposed modeling room-status data (admin-closed/novice/respawn) and was rejected. laverdet self-patched `Game.map.getRoomStatus` in commit `2cf66aaf` to return only `{status:'normal', timestamp:null}` for accessible rooms and `{status:'closed', timestamp:null}` for everything off-world, with no `roomStatusData` storage; the [#245](https://github.com/laverdet/xxscreeps/pull/245) follow-up finalizes the empty-set behavior. xxscreeps therefore never exposes a non-null timestamp, a `novice`/`respawn`/admin-`closed` status, or the novice/respawn launch guards that consult it. These rows assert the vanilla side only and stay capability-skipped on xxscreeps; MAP-ROOM-004's invalid-format, accessible-`normal`, and off-world-`closed` branches still run on both adapters.
+
+### strongholdDeploy — stronghold deployment not implemented
+
+- Capability: `strongholdDeploy` (declared `false` in `adapters/xxscreeps/index.ts`; split out of `invaderCore` when the pinned engine gained the invader-core mod at `05be3b2e`).
+- Tests skipped: STRONGHOLD-LAYOUT-001 (all five bunker templates) and the adapter-contract inspection test `invader core snapshot includes deploy and stronghold fields`.
+- Status: INTENTIONAL — engine-missing.
+- Decision: the pinned invader-core mod (laverdet/xxscreeps#274) ships the structure, its intent processors, defender spawn, and collapse removal, but `create()` has no deploy caller: nothing places the stronghold template layout at deploy time, and the schema has no `templateName`/`strongholdId` fields (effects are derived from the deploy/collapse timers, so arbitrary seeded effects are also unrepresentable). The basic invader-core family runs under `invaderCore: true`; stronghold-deployment rows stay capability-skipped until an upstream deploy slice lands.

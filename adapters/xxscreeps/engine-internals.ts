@@ -176,6 +176,30 @@ export function setKeeperLairNextSpawnTime(
 	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
 }
 
+/** SETUP — mods/invader/invader-core.ts: `#collapseTime` is the absolute tick the
+ *  core collapses; the effects getter exposes it as EFFECT_COLLAPSE_TIMER and the
+ *  object tick processor removes the core once it elapses. */
+export function setInvaderCoreCollapseTime(
+	core: any, gameTime: number, ticksRemaining: number,
+): void {
+	core['#collapseTime'] = gameTime + ticksRemaining;
+}
+
+/** SETUP — mods/invader/processor.ts createCreep intent: an in-progress defender
+ *  spawn is an incubating creep at `#ageTime === 0` plus a Spawning record wired
+ *  to the core and creep ids; `#spawnTime` is the absolute birth tick. Mirrors
+ *  the state the intent processor seeds so the object tick processor completes
+ *  the spawn. */
+export function primeInvaderCoreSpawning(
+	core: any, creep: any, spawning: any, gameTime: number, ticksRemaining: number,
+): void {
+	creep['#ageTime'] = 0;
+	spawning['#spawnId'] = core.id;
+	spawning['#spawningCreepId'] = creep.id;
+	spawning['#spawnTime'] = gameTime + ticksRemaining;
+	core.spawning = spawning;
+}
+
 /** SETUP — mods/deposit/deposit.ts: cooldown getter derives from `#cooldownTime`;
  *  ticksToDecay wraps `#nextDecayTime` in `requiredExpiryTime`, which throws on
  *  a stale tick, so `decayTicks` is mandatory. `#harvested` feeds the

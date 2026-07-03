@@ -5,7 +5,7 @@ import type {
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
 	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
-	KeeperLairSnapshot, PortalSnapshot, WallSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PortalSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
@@ -292,6 +292,22 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'keeperLair',
 				ticksToSpawn: obj.ticksToSpawn ?? null,
 			} satisfies KeeperLairSnapshot;
+
+		case 'invaderCore':
+			return {
+				...base,
+				structureType: 'invaderCore',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				level: obj.level ?? 0,
+				spawning: obj.spawning ? {
+					name: obj.spawning.name,
+					needTime: obj.spawning.needTime,
+					remainingTime: obj.spawning.remainingTime,
+				} : null,
+				ticksToDeploy: obj.ticksToDeploy ?? null,
+				effects: obj.effects ?? [],
+			} satisfies InvaderCoreSnapshot;
 
 		case 'portal':
 			return {

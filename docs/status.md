@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2636%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2423%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2646%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2433%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2636](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-03 00:30 UTC |
-| 🟡 | **xxscreeps** | [2423](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-07-03 00:24 UTC |
+| 🟡 | **vanilla** | [2646](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-03 04:26 UTC |
+| 🟡 | **xxscreeps** | [2433](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-03 04:21 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 18 open parity gaps covering 51 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 23 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 22 open parity gaps covering 56 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,6 +167,9 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
+| `tombstone-creep-spawning-true` | `tombstone.creep.spawning` returns `true`: the synthesized `Creep` has a zero-initialized `#ageTime` and `Creep.spawning` tests `#ageTime === 0`. | Vanilla `tombstones.js` returns `false` for `tombstone.creep.spawning`. | [1](#xxscreeps-gap-tombstone-creep-spawning-true) |
+| `tombstone-creep-store-wired-to-tombstone` | `tombstone.creep.store`/`carry` return the tombstone's own store (corpse resources, no fixed capacity), so `getUsedCapacity()` is non-zero and `carryCapacity`/`getCapacity()` read that store instead of the deceased body's CARRY capacity. | Vanilla exposes an empty store whose capacity equals `carryCapacity` (active CARRY parts × CARRY_CAPACITY); the corpse resources live on the outer `tombstone.store`. | [2](#xxscreeps-gap-tombstone-creep-store-wired-to-tombstone) |
+| `tombstone-creep-saying-not-exposed` | `tombstone.creep.saying` returns `undefined`: the synthesized `Creep`'s saying getter requires `#saying.time === Game.time`, which never holds for a past death tick. | Vanilla exposes the message the creep was publicly saying at the moment of death. | [1](#xxscreeps-gap-tombstone-creep-saying-not-exposed) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
@@ -184,6 +187,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `invader-core-collapse-controller-not-reset` | Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level. | Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null. | [1](#xxscreeps-gap-invader-core-collapse-controller-not-reset) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -191,6 +195,28 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>tombstone-creep-body-types-not-objects</code> — 1 test</summary>
 
 - `Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order`
+
+</details>
+
+<details id="xxscreeps-gap-tombstone-creep-spawning-true">
+<summary><code>tombstone-creep-spawning-true</code> — 1 test</summary>
+
+- `Tombstone TOMBSTONE-010 tombstone.creep.spawning is false`
+
+</details>
+
+<details id="xxscreeps-gap-tombstone-creep-store-wired-to-tombstone">
+<summary><code>tombstone-creep-store-wired-to-tombstone</code> — 2 tests</summary>
+
+- `Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY`
+- `Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity`
+
+</details>
+
+<details id="xxscreeps-gap-tombstone-creep-saying-not-exposed">
+<summary><code>tombstone-creep-saying-not-exposed</code> — 1 test</summary>
+
+- `Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death`
 
 </details>
 
@@ -346,6 +372,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-invader-core-collapse-controller-not-reset">
+<summary><code>invader-core-collapse-controller-not-reset</code> — 1 test</summary>
+
+- `Invader core INVADER-CORE-004 invader core collapse timer clears the room controller`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -392,7 +425,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2636 tests across 135 files</summary>
+<summary>2646 tests across 135 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2613,7 +2646,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (9)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
@@ -2622,6 +2655,7 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
 - Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
+- Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
 **`tests/14-structures-npc/14.3-power-bank.test.ts`** (4)
@@ -2919,7 +2953,7 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (9)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (18)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
@@ -2930,6 +2964,15 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id
 - Tombstone TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner
 - Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
+- Tombstone TOMBSTONE-010 tombstone.creep.spawning is false
+- Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
+- Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
+- Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
+- Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
+- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100
+- Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY
+- Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity
+- Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
@@ -3439,16 +3482,16 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 190 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 185 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerCreeps` | Power creeps and powers | [103](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [33](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
-| capability | `invaderCore` | Invader core structures | [11](#xxscreeps-skip-capability-invadercore) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
+| capability | `strongholdDeploy` | Engine-driven stronghold deployment | [6](#xxscreeps-skip-capability-strongholddeploy) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
@@ -3729,34 +3772,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-invadercore">
-<summary><code>capability:invaderCore</code> — 11 tests across 4 files</summary>
-
-**`tests/00-adapter-contract/inspection.test.ts`** (1)
-
-- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
-
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
-
-- Invader core INVADER-CORE-001 ticksToDeploy counts down
-- Invader core INVADER-CORE-002 invader core exposes its level
-- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
-
-**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
-
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
-
-- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
-
-</details>
-
 <details id="xxscreeps-skip-capability-roomstatus">
 <summary><code>capability:roomStatus</code> — 7 tests across 2 files</summary>
 
@@ -3799,6 +3814,23 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-strongholddeploy">
+<summary><code>capability:strongholdDeploy</code> — 6 tests across 2 files</summary>
+
+**`tests/00-adapter-contract/inspection.test.ts`** (1)
+
+- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
+
+**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
+
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
+
+</details>
+
 <details id="xxscreeps-skip-capability-intershardmemory">
 <summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
 
@@ -3835,7 +3867,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2423 tests across 113 files</summary>
+<summary>2433 tests across 113 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6001,11 +6033,15 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (4)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
 - Keeper lair KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes
+- Invader core INVADER-CORE-001 ticksToDeploy counts down
+- Invader core INVADER-CORE-002 invader core exposes its level
+- Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (19)
@@ -6226,7 +6262,7 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (8)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (13)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
@@ -6236,6 +6272,11 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id
 - Tombstone TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner
 - Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
+- Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
+- Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
+- Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
+- Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
+- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
@@ -6438,7 +6479,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (40)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (41)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
@@ -6470,6 +6511,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:powerSpawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-001 keeperLair data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-NPC-002 invaderCore data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-NPC-004 portal data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-SOURCE-001 source data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-MINERAL-001 mineral data-property surface matches canonical shape
