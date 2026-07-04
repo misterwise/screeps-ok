@@ -66,6 +66,8 @@ export interface CreepSpec {
 	name?: string;
 	store?: Record<string, number>;
 	ticksToLive?: number;
+	/** Seed the creep already damaged (hits < hitsMax). Defaults to full hits. */
+	hits?: number;
 	/**
 	 * Pre-apply boosts to body parts. Map key is the body-part index (0-based,
 	 * matching the order in `body`); value is the boost mineral type (e.g. 'UH').
@@ -87,6 +89,12 @@ export interface StructureSpec {
 	cooldown?: number;
 	/** Pre-set factory level for tests that need exact factory validation state. */
 	level?: number;
+	/**
+	 * Attach a stronghold id (invader-core deploy grouping). A stronghold road
+	 * with a matching `strongholdId` is repairable by the core's towers
+	 * (invader-core towersMaintenance).
+	 */
+	strongholdId?: string;
 }
 
 export interface SiteSpec {

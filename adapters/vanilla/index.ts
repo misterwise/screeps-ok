@@ -1075,6 +1075,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			return sum + carryCapacity * boostMult;
 		}, 0);
 
+		const hitsMax = body.length * 100;
+		const hits = spec.hits !== undefined ? spec.hits : hitsMax;
 		const result = await this.db['rooms.objects'].insert({
 			room: roomName,
 			type: 'creep',
@@ -1083,8 +1085,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			user: userId,
 			name,
 			body,
-			hits: body.length * 100,
-			hitsMax: body.length * 100,
+			hits,
+			hitsMax,
 			fatigue: 0,
 			spawning: false,
 			store: spec.store ?? {},
@@ -1122,6 +1124,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		if (userId) attrs.user = userId;
 		if (spec.hits !== undefined) attrs.hits = spec.hits;
 		if (spec.level !== undefined) attrs.level = spec.level;
+		// A stronghold road carries the core's strongholdId so the invader-core
+		// pretick recognizes it as a damaged stronghold road eligible for repair.
+		if (spec.strongholdId !== undefined) attrs.strongholdId = spec.strongholdId;
 		if (spec.store) {
 			attrs.store = spec.store;
 			// Lab: if the spec store contains a mineral, register it in
@@ -1526,6 +1531,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			};
 			if (spec.templateName !== undefined) insert.templateName = spec.templateName;
 			if (spec.strongholdId !== undefined) insert.strongholdId = spec.strongholdId;
+			// A deployed (non-deploying) core reads `strongholdBehavior` to pick its
+			// per-tick behavior dispatch (bunker1..5 / default). Tests place an
+			// already-deployed stronghold by supplying the behavior directly.
+			if (spec.strongholdBehavior !== undefined) insert.strongholdBehavior = spec.strongholdBehavior;
+			if (spec.population !== undefined) insert.population = spec.population;
 			const result = await this.db['rooms.objects'].insert(insert);
 			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
 			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
