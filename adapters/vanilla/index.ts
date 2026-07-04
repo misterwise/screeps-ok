@@ -1095,6 +1095,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			ageTime: gameTime + (spec.ticksToLive ?? 1500),
 			actionLog: {},
 			notifyWhenAttacked: true,
+			...(spec.strongholdId !== undefined ? { strongholdId: spec.strongholdId } : {}),
 		});
 
 		// Activate room if not already active

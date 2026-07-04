@@ -69,6 +69,12 @@ export interface CreepSpec {
 	/** Seed the creep already damaged (hits < hitsMax). Defaults to full hits. */
 	hits?: number;
 	/**
+	 * Attach a stronghold id (a deployed invader core's defender). A stronghold
+	 * defender is managed by its core and is exempt from the idle NPC-invader
+	 * disband.
+	 */
+	strongholdId?: string;
+	/**
 	 * Pre-apply boosts to body parts. Map key is the body-part index (0-based,
 	 * matching the order in `body`); value is the boost mineral type (e.g. 'UH').
 	 * The adapter must set `body[index].boost = mineralType` and extend

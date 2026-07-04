@@ -195,6 +195,7 @@ describe('Stronghold defense', () => {
 				pos: [cx, cy],
 				level: 2,
 				user: '2',
+				strongholdId: 'sh-default',
 				strongholdBehavior: 'default',
 			});
 			// A born melee defender (owner '2') adjacent to the hostile.
@@ -203,6 +204,7 @@ describe('Stronghold defense', () => {
 				owner: 'sk',
 				name: 'defender0',
 				body: [ATTACK, ATTACK, MOVE],
+				strongholdId: 'sh-default',
 			});
 			// The hostile is nearest-to-core (range 3) and range 1 from the defender.
 			const hostileId = await shard.placeCreep('W1N1', {
@@ -261,6 +263,7 @@ describe('Stronghold defense', () => {
 				name: 'defender0',
 				body: [ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE],
 				hits: 300,
+				strongholdId: 'sh-bunker4',
 			});
 
 			const d0 = await shard.expectObject(defId, 'creep');
