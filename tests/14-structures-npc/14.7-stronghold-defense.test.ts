@@ -327,4 +327,77 @@ describe('Stronghold defense', () => {
 			expect(r1.hits).toBeGreaterThan(r0.hits);
 		},
 	);
+
+	test(
+		'STRONGHOLD-DEFENSE-007 a simple-melee defender walks toward an approaching hostile',
+		async ({ shard }) => {
+			shard.requires('invaderCore');
+			await shard.createShard({ players: ['p1'], rooms: [{ name: 'W1N1' }] });
+
+			const cx = 25, cy = 25;
+			// bunker3 runs the 'simple-melee' behavior: a defender that is NOT yet in
+			// melee range of the nearest hostile walks toward it (across the
+			// stronghold's own ramparts — the only walkable substrate per the engine's
+			// safe cost matrix). Seed the population so no shuffle/spawn interferes.
+			await shard.placeObject('W1N1', 'invaderCore', {
+				pos: [cx, cy],
+				level: 3,
+				user: '2',
+				strongholdId: 'sh-bunker3',
+				strongholdBehavior: 'bunker3',
+				population: [
+					{ body: 'fullDefender', behavior: 'simple-melee' },
+					{ body: 'fullDefender', behavior: 'simple-melee' },
+				],
+			});
+			// A contiguous rampart lane from the defender to the hostile so the
+			// engine's ramparts-only path lets the defender advance.
+			for (let x = cx + 2; x <= cx + 6; x++) {
+				await shard.placeStructure('W1N1', {
+					structureType: STRUCTURE_RAMPART,
+					pos: [x, cy],
+					owner: 'sk',
+					hits: 1000000,
+				});
+			}
+			// A born melee defender on the near end of the lane (range 4 from the
+			// hostile — too far to attack, so it must MOVE).
+			const defId = await shard.placeCreep('W1N1', {
+				pos: [cx + 2, cy],
+				owner: 'sk',
+				name: 'defender0',
+				body: [ATTACK, ATTACK, MOVE, MOVE],
+				strongholdId: 'sh-bunker3',
+			});
+			// The hostile sits at the far end of the lane, nearest-to-core along it.
+			const hostileId = await shard.placeCreep('W1N1', {
+				pos: [cx + 6, cy],
+				owner: 'p1',
+				name: 'raider',
+				body: [MOVE, MOVE],
+			});
+
+			const d0 = await shard.expectObject(defId, 'creep');
+			const h0 = await shard.expectObject(hostileId, 'creep');
+			const range0 = Math.max(
+				Math.abs(d0.pos.x - h0.pos.x),
+				Math.abs(d0.pos.y - h0.pos.y),
+			);
+			expect(range0).toBe(4); // starts out of melee range
+
+			await shard.tick();
+
+			const d1 = await shard.expectObject(defId, 'creep');
+			// The defender stepped along the rampart lane toward the hostile: its x
+			// advanced and it closed distance (it does not teleport into melee — it
+			// takes one step per tick).
+			expect(d1.pos.x).toBe(d0.pos.x + 1);
+			expect(d1.pos.y).toBe(d0.pos.y);
+			const range1 = Math.max(
+				Math.abs(d1.pos.x - h0.pos.x),
+				Math.abs(d1.pos.y - h0.pos.y),
+			);
+			expect(range1).toBeLessThan(range0);
+		},
+	);
 });
