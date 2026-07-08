@@ -33,6 +33,7 @@ import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
+import { computeRoomMeta } from 'xxscreeps/game/room/sector.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
 import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
 import { loadTerrain } from 'xxscreeps/driver/pathfinder/pathfinder.js';
@@ -87,7 +88,7 @@ import { activateNPC } from 'xxscreeps/mods/npc/processor.js';
 import { instantiate } from 'xxscreeps/utility/utility.js';
 import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
-import { create as createObject } from 'xxscreeps/game/object.js';
+import { createRoomObject as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/controller/controller.js';
 import { asUnion } from 'xxscreeps/utility/utility.js';
@@ -1434,15 +1435,24 @@ async function createSimulation(
 		await shard.data.sAdd('rooms', Object.keys(terrainOverrides));
 	}
 
+	// The World schema flattened per-room metadata (sectors/sectorControl) into
+	// each entry; derive it from the room-name universe the same way
+	// xxscreeps/test/import.ts does.
+	function buildWorldBlob() {
+		const roomNames = new Set(terrainMap.keys());
+		return makeWriter(MapSchema.schema)(new Map(Fn.map(terrainMap.entries(),
+			([name, entry]) => [name, { ...entry, ...computeRoomMeta(name, roomNames) }])));
+	}
+
 	// Build world from terrain map
-	let blob = makeWriter(MapSchema.schema)(terrainMap);
+	let blob = buildWorldBlob();
 	let world = new MapSchema.World('test', blob);
 	loadTerrain(world);
 	await shard.data.set('terrain', blob);
 
 	// Rebuild world after terrain map mutation
 	async function rebuildWorld() {
-		blob = makeWriter(MapSchema.schema)(terrainMap);
+		blob = buildWorldBlob();
 		world = new MapSchema.World('test', blob);
 		loadTerrain(world);
 		await shard.data.set('terrain', blob);
