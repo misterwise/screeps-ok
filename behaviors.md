@@ -930,6 +930,13 @@ Coverage Notes
   `CONSTRUCTION_COST` types, and short-circuits otherwise. Same-type
   stacking (e.g. tower-on-tower) is owned by utils.js:172 and is out of
   scope; site-on-site is owned by `CONSTRUCTION-SITE-007`.
+- `CONSTRUCTION-SITE-018` `behavior` `verified_vanilla`
+  A player's own construction site surfaces through both owner-scoped
+  APIs: `room.find(FIND_MY_CONSTRUCTION_SITES)` returns it (with
+  `my === true` and the placed `structureType`), and it appears in the
+  global `Game.constructionSites` id-keyed collection. Distinct from
+  `CONSTRUCTION-SITE-001`, which covers placement via the unscoped
+  `FIND_CONSTRUCTION_SITES`.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
@@ -3504,6 +3511,10 @@ Notes
   `{status:'normal', timestamp:null}`; and valid-format rooms outside the world
   are `{status:'closed', timestamp:null}`. The two `closed` outcomes are
   distinguished only by the timestamp (admin-closed → number, off-world → null).
+  Status is world-scoped and visibility-independent: an in-world room the
+  caller has no vision of still reports its true status (a plain neutral
+  room reads `normal`, not `closed`). Route planners that avoid `closed`
+  rooms depend on this to path scouts into unseen neighbours.
 - `MAP-ROOM-005` `behavior` `verified_vanilla`
   `Game.map.getWorldSize()` returns the inclusive count of rooms along the
   longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`
@@ -3641,6 +3652,13 @@ Coverage Notes
   `store.getCapacity(type)`, `store.getUsedCapacity(type)`, and
   `store.getFreeCapacity(type)` return `null` when the store cannot hold that
   resource type.
+- `STORE-ACCESS-003` `behavior` `verified_vanilla`
+  Enumerating a store (`for..in`, `Object.keys`) yields only the stored
+  resource types, each mapping to a numeric amount — the store methods
+  (`getCapacity`/`getUsedCapacity`/`getFreeCapacity`) are non-enumerable
+  but remain callable. Bots sum assets by iterating stores; an engine that
+  leaks the methods as enumerable keys hands them a function where a
+  number is expected.
 
 ### 23.2 Open Stores
 - `STORE-OPEN-001` `matrix` `verified_vanilla`
@@ -4408,7 +4426,7 @@ emits `Could not find an object with ID...`; xxscreeps releases all
 `Accessed a released object from a previous tick`. Engines that block stale
 access more aggressively than vanilla (e.g. by also rejecting cross-tick
 access to a *live* object) still satisfy this matrix; that broader behavior
-is its own undocumented gap and out of scope here.
+is owned by `UNDOC-STALERECV-002`.
 
 - `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
   Public methods in the stale cached receiver matrix throw a runtime error
@@ -4419,6 +4437,16 @@ is its own undocumented gap and out of scope here.
   `Accessed a released object from a previous tick`;
   `StructureSpawn.recycleCreep` on vanilla throws a TypeError because that
   one method bypasses the `data()` helper).
+- `UNDOC-STALERECV-002` `behavior` `verified_vanilla`
+  A cached `RoomObject` wrapper whose backing object still exists on a
+  later tick remains usable: read methods resolve against the wrapper's
+  data without throwing, and action methods dispatch intents that execute
+  normally (a `move()` on a creep cached the previous tick returns `OK`
+  and the creep is displaced next tick). Only a genuinely dangling
+  reference — backing object gone — triggers the `UNDOC-STALERECV-001`
+  rejection. Bots cache creep/structure wrappers across ticks and rely on
+  this; an engine that invalidates all wrappers at end-of-tick breaks
+  them even though it passes the stale matrix.
 
 Stale-receiver parity tracking lands in three buckets: (1) both engines
 throw — parity, no gap; (2) one engine surfaces an ungraceful error

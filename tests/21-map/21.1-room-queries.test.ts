@@ -56,6 +56,29 @@ describe('Game.map room queries', () => {
 		expect(result.timestamp).toBeNull();
 	});
 
+	// Route planners avoid 'closed' rooms; a normal room misreported as closed
+	// because the caller lacks vision blocks scouting into unseen neighbours.
+	test('MAP-ROOM-004:normalUnseen getRoomStatus returns {status:"normal"} for an in-world room the caller has no vision of', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 3, owner: 'p1' },
+				{ name: 'W3N3' }, // in-world, neutral, p1 has no presence there
+			],
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				return [
+					Game.rooms['W3N3'] ? 'visible' : 'no-vision',
+					Game.map.getRoomStatus('W3N3').status,
+				];
+			})()
+		`);
+		expect(result).toEqual(['no-vision', 'normal']);
+	});
+
 	test('MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room', async ({ shard }) => {
 		shard.requires('roomStatus');
 		await shard.createShard({

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2652%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2657%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2446%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-56-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2652](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 12:36 UTC |
-| 🔴 | **xxscreeps** | [2442](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [185](#xxscreeps-skipped-tests) | 2026-07-13 12:31 UTC |
+| 🟡 | **vanilla** | [2657](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 13:14 UTC |
+| 🟡 | **xxscreeps** | [2446](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-13 13:09 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## xxscreeps unexpected failures
-
-- `RoomPosition find helpers ROOMPOS-FIND-001 findClosestByPath() returns a target already on the same tile before considering other targets`
 
 ## vanilla expected failures
 
@@ -162,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 17 open parity gaps covering 52 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 56 tests. That includes 18 open parity gaps covering 54 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -186,6 +182,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `pathfinder-0-4-1-incomplete-for-solvable-searches` | Regression at pin c5fd1522 (new `@xxscreeps/pathfinder@0.4.1` algorithm: upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`): PathFinder.search over multiple goals returns an incomplete result with no `last` instead of the closest goal, and RoomPosition.findClosestByPath returns null for reachable targets — both for a target reachable at range and when a costCallback walls off the cheapest route but leaves a valid detour. | PathFinder.search finds the closest of several goals and returns a complete path; findClosestByPath returns the reachable target and honors costCallback re-routing. | [3](#xxscreeps-gap-pathfinder-0-4-1-incomplete-for-solvable-searches) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 | `invader-core-collapse-controller-not-reset` | Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level. | Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null. | [1](#xxscreeps-gap-invader-core-collapse-controller-not-reset) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -337,6 +334,14 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-live-cached-receiver-released">
+<summary><code>live-cached-receiver-released</code> — 2 tests</summary>
+
+- `cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)`
+- `cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes`
+
+</details>
+
 <details id="xxscreeps-gap-invader-core-collapse-controller-not-reset">
 <summary><code>invader-core-collapse-controller-not-reset</code> — 1 test</summary>
 
@@ -390,7 +395,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2652 tests across 138 files</summary>
+<summary>2657 tests across 140 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1271,6 +1276,10 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+
+**`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
+
+- owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (107)
 
@@ -3042,12 +3051,13 @@ Click a count to jump to the affected test list.
 - Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
-**`tests/21-map/21.1-room-queries.test.ts`** (11)
+**`tests/21-map/21.1-room-queries.test.ts`** (12)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
+- Game.map room queries MAP-ROOM-004:normalUnseen getRoomStatus returns {status:"normal"} for an in-world room the caller has no vision of
 - Game.map room queries MAP-ROOM-004:adminClosed getRoomStatus returns {status:"closed"} for an admin-closed in-world room
 - Game.map room queries MAP-ROOM-004:novice getRoomStatus returns {status:"novice", timestamp:<number>} for a novice-area room
 - Game.map room queries MAP-ROOM-004:respawn getRoomStatus returns {status:"respawn", timestamp:<number>} for a respawn-area room
@@ -3143,10 +3153,11 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
 - Timer gating TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (2)
+**`tests/23-store-api/23.6-store-access.test.ts`** (3)
 
 - store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
 - store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
+- store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 
 **`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (28)
 
@@ -3325,6 +3336,11 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-001 new Source(id) reconstructs a Source view with overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-002 new Creep(Memory.targetId) in a later tick exposes live overlay fields
 - Undocumented API Surface — id constructors UNDOC-IDCTOR-003 new subclass of Creep(id) keeps the subclass prototype and binds live creep fields
+
+**`tests/27-undocumented/27.12-cached-live-receiver.test.ts`** (2)
+
+- cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)
+- cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (18)
 
@@ -3847,7 +3863,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2442 tests across 116 files</summary>
+<summary>2446 tests across 117 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4717,6 +4733,10 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+
+**`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
+
+- owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
 **`tests/06-controller/6.1-6.3-controller.test.ts`** (107)
 
@@ -6292,12 +6312,13 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
 - Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
 
-**`tests/21-map/21.1-room-queries.test.ts`** (8)
+**`tests/21-map/21.1-room-queries.test.ts`** (9)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
 - Game.map room queries MAP-ROOM-002 getRoomLinearDistance returns the room-grid Manhattan distance between two rooms
 - Game.map room queries MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges
 - Game.map room queries MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set
+- Game.map room queries MAP-ROOM-004:normalUnseen getRoomStatus returns {status:"normal"} for an in-world room the caller has no vision of
 - Game.map room queries MAP-ROOM-004:offWorld getRoomStatus returns {status:"closed", timestamp:null} for a valid-format room name that does not exist on the world
 - Game.map room queries MAP-ROOM-004:invalid getRoomStatus returns undefined for an invalid-format room name
 - Game.map room queries MAP-ROOM-006 getRoomStatus returns undefined for non-string arguments
@@ -6317,9 +6338,10 @@ Click a count to jump to the affected test list.
 - Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
 - Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
 
-**`tests/22-roomposition/22.0-basics.test.ts`** (3)
+**`tests/22-roomposition/22.0-basics.test.ts`** (4)
 
 - RoomPosition basics ROOMPOS-001 RoomPosition exposes x, y, and roomName
+- RoomPosition find helpers ROOMPOS-FIND-001 findClosestByPath() returns a target already on the same tile before considering other targets
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
@@ -6385,10 +6407,11 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
 - Timer gating TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (2)
+**`tests/23-store-api/23.6-store-access.test.ts`** (3)
 
 - store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
 - store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
+- store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 
 **`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (28)
 

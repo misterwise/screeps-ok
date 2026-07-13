@@ -87,6 +87,11 @@
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
 			"tests": ["MOVE-COLLISION-007"]
 		},
+		"live-cached-receiver-released": {
+			"actual": "xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw.",
+			"expected": "Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001).",
+			"tests": ["UNDOC-STALERECV-002"]
+		},
 		"invader-core-collapse-controller-not-reset": {
 			"actual": "Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level.",
 			"expected": "Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null.",
