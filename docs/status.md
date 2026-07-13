@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2657%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2446%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-56-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2657%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2449%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2657](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 13:14 UTC |
-| 🟡 | **xxscreeps** | [2446](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-13 13:09 UTC |
+| 🟡 | **vanilla** | [2657](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 23:38 UTC |
+| 🟡 | **xxscreeps** | [2449](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-13 23:32 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 56 tests. That includes 18 open parity gaps covering 54 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 17 open parity gaps covering 51 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -179,7 +179,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
-| `pathfinder-0-4-1-incomplete-for-solvable-searches` | Regression at pin c5fd1522 (new `@xxscreeps/pathfinder@0.4.1` algorithm: upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`): PathFinder.search over multiple goals returns an incomplete result with no `last` instead of the closest goal, and RoomPosition.findClosestByPath returns null for reachable targets — both for a target reachable at range and when a costCallback walls off the cheapest route but leaves a valid detour. | PathFinder.search finds the closest of several goals and returns a complete path; findClosestByPath returns the reachable target and honors costCallback re-routing. | [3](#xxscreeps-gap-pathfinder-0-4-1-incomplete-for-solvable-searches) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
@@ -300,15 +299,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
 
 - `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
-
-</details>
-
-<details id="xxscreeps-gap-pathfinder-0-4-1-incomplete-for-solvable-searches">
-<summary><code>pathfinder-0-4-1-incomplete-for-solvable-searches</code> — 3 tests</summary>
-
-- `PathFinder PATHFINDER-006 PathFinder.search accepts multiple goal positions and finds the closest`
-- `RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets`
-- `RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route`
 
 </details>
 
@@ -3863,7 +3853,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2446 tests across 117 files</summary>
+<summary>2449 tests across 117 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4145,13 +4135,14 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (19)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
 - PathFinder PATHFINDER-003 PathFinder.search returns { path, ops, cost, incomplete }
 - PathFinder PATHFINDER-004 roomCallback returning a CostMatrix influences routing
 - PathFinder PATHFINDER-005 roomCallback returning false excludes a room from search
+- PathFinder PATHFINDER-006 PathFinder.search accepts multiple goal positions and finds the closest
 - PathFinder PATHFINDER-007 PathFinder.search plainCost option overrides the default cost of plains tiles
 - PathFinder PATHFINDER-008 PathFinder.search swampCost option overrides the default cost of swamp tiles
 - PathFinder PATHFINDER-009 PathFinder.search maxOps option limits the number of pathfinding operations
@@ -6345,16 +6336,18 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (16)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (18)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
 - RoomPosition spatial queries ROOMPOS-SPATIAL-003 isNearTo returns true when target is within range 1
 - RoomPosition spatial queries ROOMPOS-SPATIAL-004 isEqualTo returns true when target is on the same tile
 - RoomPosition spatial queries ROOMPOS-SPATIAL-006 getRangeTo returns Infinity for a target in another room
+- RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets
 - RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
 - RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
 - RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists
+- RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route
 - RoomPosition find helpers ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall
 - RoomPosition find helpers ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty
 - RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set

@@ -65,11 +65,6 @@
 			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
 			"tests": ["ROOMPOS-FIND-010"]
 		},
-		"pathfinder-0-4-1-incomplete-for-solvable-searches": {
-			"actual": "Regression at pin c5fd1522 (new `@xxscreeps/pathfinder@0.4.1` algorithm: upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`): PathFinder.search over multiple goals returns an incomplete result with no `last` instead of the closest goal, and RoomPosition.findClosestByPath returns null for reachable targets — both for a target reachable at range and when a costCallback walls off the cheapest route but leaves a valid detour.",
-			"expected": "PathFinder.search finds the closest of several goals and returns a complete path; findClosestByPath returns the reachable target and honors costCallback re-routing.",
-			"tests": ["PATHFINDER-006", "ROOMPOS-FIND-002", "ROOMPOS-FIND-009"]
-		},
 		"factory-power-effect-not-implemented": {
 			"intentional": true,
 			"why": "`mods/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional.",
