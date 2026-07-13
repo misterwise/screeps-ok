@@ -139,6 +139,8 @@ const SIMULATE_FAMILIES = ['FLAG', 'RAWMEMORY', 'RAWMEMORY-FOREIGN'];
 // create the world state needed for an executable adapter test.
 const FIXTURE_BLOCKED_IDS = new Set([
 	'UNDOC-SYSUSER-002',
+	// halt() disposes the cached sandbox; needs adapter sandbox-recreation
+	'CPU-HALT-001',
 ]);
 // Capabilities that neither adapter currently supports
 const BLOCKED_CAPABILITIES = new Set([

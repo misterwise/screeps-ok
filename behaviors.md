@@ -4115,7 +4115,8 @@ Notes
   of scope for catalog entries.
 - `Game.cpu.getHeapStatistics()` is documented API; its use as a
   reset-prediction heuristic is a user-space pattern, not an engine
-  contract, and does not belong in this catalog.
+  contract, and stays out of this catalog. The method's surface contract
+  itself is cataloged as `CPU-HEAP-001` (§30.1).
 
 ### 27.3 Memory Serialization Fidelity
 - `UNDOC-MEMJSON-001` `behavior` `verified_vanilla`
@@ -4539,6 +4540,30 @@ Framework Notes
   live object. It does not pin the complete serialized object shape or
   engine-private backing fields.
 
+### 27.15 Player Prototype Extensions
+
+Real bots extend the global game classes at module top level
+(`Creep.prototype.role = ...`, `RoomObject.prototype.cacheKey = ...`) and
+rely on the extensions applying to every live object the engine hands back.
+This requires the exposed global classes to be the real prototype chain of
+live instances and — because top-level code does not re-execute per tick
+(`UNDOC-GLOBAL-002`) — the extensions to survive tick boundaries.
+
+- `UNDOC-PROTO-001` `behavior` `verified_vanilla`
+  A member added to a leaf game-class prototype (`Creep.prototype`,
+  `Structure.prototype`) is callable on live instances obtained from
+  `Game.creeps` and room lookups in the same tick.
+- `UNDOC-PROTO-002` `behavior` `verified_vanilla`
+  A member added to `RoomObject.prototype` is inherited by live instances
+  of derived classes (creeps and structures), and live objects are
+  `instanceof` their global classes — the exposed classes are the real
+  prototype chain of engine-returned objects.
+- `UNDOC-PROTO-003` `behavior` `verified_vanilla`
+  Prototype extensions installed in one tick still apply to live objects on
+  subsequent ticks within the same VM instance: the classes persist across
+  ticks even though per-tick instances are discarded
+  (`UNDOC-IDENTITY-005`).
+
 ---
 
 ## 28. Deprecation Notices
@@ -4833,13 +4858,61 @@ Framework Notes
 
 ---
 
+## 30. CPU & Runtime
+
+Documented `Game.cpu` runtime surface. Heap and CPU metric *values* are
+engine-specific and deliberately excluded (see Summary non-goals); entries
+here pin the surface contract only — method presence, field shape, and
+internal consistency.
+
+### 30.1 Heap Statistics
+- `CPU-HEAP-001` `behavior` `verified_vanilla`
+  `Game.cpu.getHeapStatistics()` is callable and returns an object with
+  numeric `used_heap_size` and `heap_size_limit` fields, where
+  `heap_size_limit > 0` and `0 <= used_heap_size <= heap_size_limit`.
+
+### 30.2 Used CPU
+- `CPU-USED-001` `behavior` `verified_vanilla`
+  `Game.cpu.getUsed()` is callable and returns a finite non-negative
+  number.
+- `CPU-USED-002` `behavior` `verified_vanilla`
+  `Game.cpu.getUsed()` is monotonically non-decreasing within a tick, and
+  strictly increases after measurable synchronous work. (What the meter
+  counts is engine-specific — vanilla meters CPU time, xxscreeps wall
+  time — so only monotonicity is pinned, never values.)
+
+### 30.3 Halt
+- `CPU-HALT-001` `behavior` `needs_vanilla_verification`
+  `Game.cpu.halt()` terminates execution at the call site (code after it
+  does not run) and destroys the player VM: the next tick starts in a
+  fresh VM with all persistent globals gone.
+
+Notes
+- `getHeapStatistics` and `halt` are isolated-vm runtime surface. Vanilla
+  attaches them only when the driver provides the hooks and omits them
+  otherwise; xxscreeps's nodejs sandbox stubs `getHeapStatistics` to return
+  `{}`. Both adapters in this repo run isolated sandboxes, so the entries
+  are asserted unconditionally; a non-IVM adapter would need capability
+  flags here.
+- `CPU-HALT-001` is harness-blocked: both adapters cache one sandbox per
+  simulation, so after `halt()` disposes it every subsequent `runPlayer`
+  fails instead of observing the fresh-VM state. Testing it needs
+  sandbox-recreation support in the adapters.
+- `Game.cpu.generatePixel()`, `Game.cpu.unlock()`, and the
+  `unlocked`/`unlockedTime` fields are MMO-backend surface absent from the
+  open-source engine and are out of scope (see also `SHAPE-GAME-002`, which
+  pins the data-property surface).
+
+---
+
 ## Summary
 
 Coverage counts are temporarily omitted. The facet and behavior totals need to
 be recomputed after the current normalization pass is complete.
 
 ### Deliberately excluded (per spec.md non-goals):
-- CPU/heap metrics (engine-specific values)
+- CPU/heap metric values (engine-specific numbers; the surface contract —
+  method presence, field shape, internal consistency — is in scope, see §30)
 - Seasonal/event-specific scoring
 - Server administration (auth, scaling)
 - Visual APIs (RoomVisual, MapVisual) — no gameplay effect

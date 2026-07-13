@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2646%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2437%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2652%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2646](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 11:19 UTC |
-| 🟡 | **xxscreeps** | [2437](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-13 11:14 UTC |
+| 🟡 | **vanilla** | [2652](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 12:36 UTC |
+| 🔴 | **xxscreeps** | [2442](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [185](#xxscreeps-skipped-tests) | 2026-07-13 12:31 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `RoomPosition find helpers ROOMPOS-FIND-001 findClosestByPath() returns a target already on the same tile before considering other targets`
 
 ## vanilla expected failures
 
@@ -386,7 +390,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2646 tests across 135 files</summary>
+<summary>2652 tests across 138 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3343,6 +3347,12 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
 
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (3)
+
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
+
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (4)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
@@ -3438,6 +3448,15 @@ Click a count to jump to the affected test list.
 **`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
 
 - PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
+
+**`tests/30-cpu-runtime/30.1-heap-statistics.test.ts`** (1)
+
+- CPU & Runtime — heap statistics CPU-HEAP-001 getHeapStatistics is callable and returns numeric heap fields
+
+**`tests/30-cpu-runtime/30.2-get-used.test.ts`** (2)
+
+- CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
+- CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
 
 </details>
 
@@ -3828,7 +3847,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2437 tests across 113 files</summary>
+<summary>2442 tests across 116 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6298,10 +6317,9 @@ Click a count to jump to the affected test list.
 - Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
 - Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
 
-**`tests/22-roomposition/22.0-basics.test.ts`** (4)
+**`tests/22-roomposition/22.0-basics.test.ts`** (3)
 
 - RoomPosition basics ROOMPOS-001 RoomPosition exposes x, y, and roomName
-- RoomPosition find helpers ROOMPOS-FIND-001 findClosestByPath() returns a target already on the same tile before considering other targets
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
@@ -6544,6 +6562,12 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
 
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (3)
+
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
+
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
@@ -6605,6 +6629,15 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
+
+**`tests/30-cpu-runtime/30.1-heap-statistics.test.ts`** (1)
+
+- CPU & Runtime — heap statistics CPU-HEAP-001 getHeapStatistics is callable and returns numeric heap fields
+
+**`tests/30-cpu-runtime/30.2-get-used.test.ts`** (2)
+
+- CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
+- CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
 
 </details>
 
