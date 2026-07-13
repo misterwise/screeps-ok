@@ -36,6 +36,7 @@ if (showHelp) {
 }
 
 const targets = adapters.length > 0 ? adapters : ['xxscreeps', 'vanilla'];
+console.log(`Running the FULL test suite (adapters: ${targets.join(', ')}) — this takes minutes, not seconds.`);
 const reportsDir = path.join(packageRoot, 'reports');
 mkdirSync(reportsDir, { recursive: true });
 

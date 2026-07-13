@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { readFileSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -109,7 +109,63 @@ export function runPreflight(target, options = {}) {
 	return result.status ?? 1;
 }
 
+// Suite runs share one test database; concurrent runs corrupt each other
+// with mass Database.connect failures. The lock is per-process and PID-based,
+// so sequential runSuite calls from one parity run reuse it, a crashed
+// holder's stale lock is reclaimed, and a second live process fails loudly.
+const suiteLockPath = path.join(packageRoot, '.test-output', '.suite.lock');
+
+function acquireSuiteLock() {
+	mkdirSync(path.dirname(suiteLockPath), { recursive: true });
+	for (let attempt = 0; attempt < 2; attempt++) {
+		try {
+			writeFileSync(suiteLockPath, String(process.pid), { flag: 'wx' });
+			return true;
+		} catch (err) {
+			if (err.code !== 'EEXIST') throw err;
+			const holder = Number(readFileSync(suiteLockPath, 'utf8'));
+			if (holder === process.pid) return true;
+			if (holder && isProcessAlive(holder)) {
+				console.error(
+					`Another suite run is already active (PID ${holder}).\n` +
+					'Concurrent runs corrupt the shared test database — wait for it to finish\n' +
+					`or kill it, then remove ${suiteLockPath} if it lingers.`,
+				);
+				return false;
+			}
+			try { unlinkSync(suiteLockPath); } catch {}
+		}
+	}
+	return false;
+}
+
+function releaseSuiteLock() {
+	try {
+		if (Number(readFileSync(suiteLockPath, 'utf8')) === process.pid) {
+			unlinkSync(suiteLockPath);
+		}
+	} catch {}
+}
+
+function isProcessAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (err) {
+		return err.code === 'EPERM';
+	}
+}
+
 export function runSuite(options = {}) {
+	if (!acquireSuiteLock()) return 1;
+	try {
+		return runSuiteLocked(options);
+	} finally {
+		releaseSuiteLock();
+	}
+}
+
+function runSuiteLocked(options = {}) {
 	const invokerCwd = options.invokerCwd ?? process.cwd();
 	const env = options.env ?? process.env;
 	const stdio = options.stdio ?? 'inherit';
