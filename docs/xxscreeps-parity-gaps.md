@@ -3,20 +3,13 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-02 against pin `05be3b2e`.
+Last refreshed: 2026-07-13 against pin `c5fd1522`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 17 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`c5fd1522` bump fixed seven registered gaps (four `tombstone.creep` surfaces, foreign-segment clear-request, construction-site foreign-room error) and surfaced three new `@xxscreeps/pathfinder@0.4.1` regressions (see below). Full counts regenerate in `docs/status.md` on the next full run.
 
-> Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
+> Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry ships `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regresses three previously-passing searches — PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009 (see `pathfinder-0-4-1-incomplete-for-solvable-searches` below). With the vendor build retired these cannot ride a vendored fix; they need an upstream source fix and a subsequent prebuild bump.
 
 ## Open parity gaps
-
-### tombstone-creep-body-types-not-objects
-
-- Tests: TOMBSTONE-006
-- Status: CONFIRMED.
-- Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
-- Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
 
 ### rawmemory-set-invalidates-parsed-memhack
 
@@ -24,13 +17,6 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Status: RESIDUAL after pin `15df4bea`; the RawMemory.set mutation-preservation rows now pass.
 - Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object.
 - Plan: mirror vanilla's first-access descriptor flip so `Object.getOwnPropertyDescriptor(global, 'Memory')` reports a configurable enumerable value descriptor after `Memory` is read.
-
-### foreign-segment-clear-request
-
-- Tests: RAWMEMORY-FOREIGN-006
-- Status: CONFIRMED.
-- Cause: `setActiveForeignSegment(null)` does not clear the pending foreign-segment request, so `RawMemory.foreignSegment` remains populated on the following tick.
-- Plan: clear the pending request slot on `null` and verify the next-tick fallback to `undefined`.
 
 ### memory-parsed-json-not-refreshed-across-ticks
 
@@ -52,13 +38,6 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Status: RESIDUAL after pin `15df4bea`; `JSON.stringify()` no longer throws for the matrix, but most object snapshots still omit nested `pos` fields.
 - Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, deposits, nukes, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
 - Plan: ensure JSON serialization includes the same representative nested position fields as the live object snapshots. The matrix should stay broad because the missing field shape spans many object classes.
-
-### construction-site-foreign-room-wrong-error
-
-- Tests: CONSTRUCTION-SITE-014.
-- Status: RESIDUAL after pin `15df4bea`.
-- Cause: the hostile-owned and validation-precedence rows now match vanilla, but hostile reservations still do not return `ERR_NOT_OWNER` ahead of the RCL/type checks for every structure type.
-- Plan: keep the four-case split narrow now: hostile reservation returns ERR_NOT_OWNER; otherwise let the existing ownership/RCL/type path handle the already-fixed cases.
 
 ### stale-pickup-target-allowed
 
@@ -94,6 +73,13 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Status: CONFIRMED at pin `05be3b2e`; first exposed by un-skipping the invader-core family (INVADER-CORE-001..003/005 pass, including defender spawn and collapse removal).
 - Cause: the invader-core object tick processor (`mods/invader/processor.ts`) handles collapse expiry as a silent `#removeObject(core)` and leaves the room controller untouched, with an in-source TODO to reset an NPC-owned controller once stronghold deployment can create one. Vanilla (`processor/intents/invader-core/tick.js`) clears the room's controller unconditionally in the collapse tick: user null, level 0, progress 0, downgrade/safe-mode timers cleared, `isPowerEnabled` false, effects null.
 - Plan: reset the room controller in the collapse branch to match vanilla. Vanilla does not require an NPC-owned controller — any controller in the room is cleared — so the reset need not wait for stronghold deployment.
+
+### pathfinder-0-4-1-incomplete-for-solvable-searches
+
+- Tests: PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009
+- Status: REGRESSION at pin `c5fd1522` — all three passed at the prior pin; introduced by the `@xxscreeps/pathfinder@0.4.1` algorithm rewrite (`pf: algorithm delegates`, `pf: fix cost for incomplete paths`). Deterministic on re-run in isolation. Not observed on vanilla, which uses a different pathfinder (`@screeps/driver/native`).
+- Cause: `PathFinder.search` over multiple goal positions returns an incomplete result with no `last` instead of routing to the closest goal, and `RoomPosition.findClosestByPath` returns `null` for reachable targets — both for a target reachable at the requested range and when a `costCallback` walls off the cheapest route but leaves a valid detour. Common thread: the new algorithm gives up on searches the previous build solved.
+- Plan: fix in the pathfinder source upstream and cut a new `@xxscreeps/pathfinder` prebuild, then bump the pin. The vendor override is retired, so there is no vendored-build shortcut this time.
 
 ## Accepted divergences
 

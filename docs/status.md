@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2646%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2433%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2646%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2437%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2646](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-03 04:26 UTC |
-| 🟡 | **xxscreeps** | [2433](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-03 04:21 UTC |
+| 🟡 | **vanilla** | [2646](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-13 11:19 UTC |
+| 🟡 | **xxscreeps** | [2437](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-13 11:14 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 23 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 22 open parity gaps covering 56 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 17 open parity gaps covering 52 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -166,59 +166,25 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `tombstone-creep-body-types-not-objects` | `tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged. | Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape. | [1](#xxscreeps-gap-tombstone-creep-body-types-not-objects) |
-| `tombstone-creep-spawning-true` | `tombstone.creep.spawning` returns `true`: the synthesized `Creep` has a zero-initialized `#ageTime` and `Creep.spawning` tests `#ageTime === 0`. | Vanilla `tombstones.js` returns `false` for `tombstone.creep.spawning`. | [1](#xxscreeps-gap-tombstone-creep-spawning-true) |
-| `tombstone-creep-store-wired-to-tombstone` | `tombstone.creep.store`/`carry` return the tombstone's own store (corpse resources, no fixed capacity), so `getUsedCapacity()` is non-zero and `carryCapacity`/`getCapacity()` read that store instead of the deceased body's CARRY capacity. | Vanilla exposes an empty store whose capacity equals `carryCapacity` (active CARRY parts × CARRY_CAPACITY); the corpse resources live on the outer `tombstone.store`. | [2](#xxscreeps-gap-tombstone-creep-store-wired-to-tombstone) |
-| `tombstone-creep-saying-not-exposed` | `tombstone.creep.saying` returns `undefined`: the synthesized `Creep`'s saying getter requires `#saying.time === Game.time`, which never holds for a past death tick. | Vanilla exposes the message the creep was publicly saying at the moment of death. | [1](#xxscreeps-gap-tombstone-creep-saying-not-exposed) |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `foreign-segment-clear-request` | `setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick | Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick | [1](#xxscreeps-gap-foreign-segment-clear-request) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
-| `construction-site-foreign-room-wrong-error` | `Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check. | Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks. | [1](#xxscreeps-gap-construction-site-foreign-room-wrong-error) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
+| `pathfinder-0-4-1-incomplete-for-solvable-searches` | Regression at pin c5fd1522 (new `@xxscreeps/pathfinder@0.4.1` algorithm: upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`): PathFinder.search over multiple goals returns an incomplete result with no `last` instead of the closest goal, and RoomPosition.findClosestByPath returns null for reachable targets — both for a target reachable at range and when a costCallback walls off the cheapest route but leaves a valid detour. | PathFinder.search finds the closest of several goals and returns a complete path; findClosestByPath returns the reachable target and honors costCallback re-routing. | [3](#xxscreeps-gap-pathfinder-0-4-1-incomplete-for-solvable-searches) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `invader-core-collapse-controller-not-reset` | Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level. | Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null. | [1](#xxscreeps-gap-invader-core-collapse-controller-not-reset) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-tombstone-creep-body-types-not-objects">
-<summary><code>tombstone-creep-body-types-not-objects</code> — 1 test</summary>
-
-- `Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order`
-
-</details>
-
-<details id="xxscreeps-gap-tombstone-creep-spawning-true">
-<summary><code>tombstone-creep-spawning-true</code> — 1 test</summary>
-
-- `Tombstone TOMBSTONE-010 tombstone.creep.spawning is false`
-
-</details>
-
-<details id="xxscreeps-gap-tombstone-creep-store-wired-to-tombstone">
-<summary><code>tombstone-creep-store-wired-to-tombstone</code> — 2 tests</summary>
-
-- `Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY`
-- `Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity`
-
-</details>
-
-<details id="xxscreeps-gap-tombstone-creep-saying-not-exposed">
-<summary><code>tombstone-creep-saying-not-exposed</code> — 1 test</summary>
-
-- `Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death`
-
-</details>
 
 <details id="xxscreeps-gap-controller-my-reset-returns-undefined">
 <summary><code>controller-my-reset-returns-undefined</code> — 2 tests</summary>
@@ -232,13 +198,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
 
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
-
-</details>
-
-<details id="xxscreeps-gap-foreign-segment-clear-request">
-<summary><code>foreign-segment-clear-request</code> — 1 test</summary>
-
-- `Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request`
 
 </details>
 
@@ -292,13 +251,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-construction-site-foreign-room-wrong-error">
-<summary><code>construction-site-foreign-room-wrong-error</code> — 1 test</summary>
-
-- `room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type`
-
-</details>
-
 <details id="xxscreeps-gap-stale-pickup-target-allowed">
 <summary><code>stale-pickup-target-allowed</code> — 1 test</summary>
 
@@ -347,6 +299,15 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
 
 - `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="xxscreeps-gap-pathfinder-0-4-1-incomplete-for-solvable-searches">
+<summary><code>pathfinder-0-4-1-incomplete-for-solvable-searches</code> — 3 tests</summary>
+
+- `PathFinder PATHFINDER-006 PathFinder.search accepts multiple goal positions and finds the closest`
+- `RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets`
+- `RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route`
 
 </details>
 
@@ -3867,7 +3828,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2433 tests across 113 files</summary>
+<summary>2437 tests across 113 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4149,14 +4110,13 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (19)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
 - PathFinder PATHFINDER-003 PathFinder.search returns { path, ops, cost, incomplete }
 - PathFinder PATHFINDER-004 roomCallback returning a CostMatrix influences routing
 - PathFinder PATHFINDER-005 roomCallback returning false excludes a room from search
-- PathFinder PATHFINDER-006 PathFinder.search accepts multiple goal positions and finds the closest
 - PathFinder PATHFINDER-007 PathFinder.search plainCost option overrides the default cost of plains tiles
 - PathFinder PATHFINDER-008 PathFinder.search swampCost option overrides the default cost of swamp tiles
 - PathFinder PATHFINDER-009 PathFinder.search maxOps option limits the number of pathfinding operations
@@ -4667,7 +4627,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (68)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (69)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4720,6 +4680,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
+- room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type
 - room.createConstructionSite() CONSTRUCTION-SITE-015 Array prototype pollution does not affect edge-adjacent site validation
 - room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
@@ -6262,21 +6223,26 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (13)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (18)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
+- Tombstone TOMBSTONE-006 tombstone.creep.body preserves deceased body part order
 - Tombstone TOMBSTONE-007 tombstone.creep.id equals deceased id and differs from tombstone.id
 - Tombstone TOMBSTONE-008 tombstone.creep.owner.username matches deceased owner
 - Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
+- Tombstone TOMBSTONE-010 tombstone.creep.spawning is false
 - Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
 - Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
 - Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
 - Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
 - Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100
+- Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY
+- Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity
+- Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death
 
 **`tests/18-game-objects/18.2-ruin.test.ts`** (7)
 
@@ -6339,18 +6305,16 @@ Click a count to jump to the affected test list.
 - RoomPosition find helpers ROOMPOS-FIND-004 findInRange() returns all matching objects within the given range
 - Room look APIs ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position
 
-**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (18)
+**`tests/22-roomposition/22.1-22.4-roomposition.test.ts`** (16)
 
 - RoomPosition spatial queries ROOMPOS-SPATIAL-001 getRangeTo returns Chebyshev distance in the same room
 - RoomPosition spatial queries ROOMPOS-SPATIAL-002 inRangeTo returns true when target is within the specified range
 - RoomPosition spatial queries ROOMPOS-SPATIAL-003 isNearTo returns true when target is within range 1
 - RoomPosition spatial queries ROOMPOS-SPATIAL-004 isEqualTo returns true when target is on the same tile
 - RoomPosition spatial queries ROOMPOS-SPATIAL-006 getRangeTo returns Infinity for a target in another room
-- RoomPosition find helpers ROOMPOS-FIND-002 findClosestByPath ignores unreachable targets
 - RoomPosition find helpers ROOMPOS-FIND-003 findClosestByRange returns the target with the smallest linear range
 - RoomPosition find helpers ROOMPOS-FIND-005 findPathTo returns a path from this position to the target
 - RoomPosition find helpers ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists
-- RoomPosition find helpers ROOMPOS-FIND-009 findClosestByPath honors costCallback when it walls off the cheapest route
 - RoomPosition find helpers ROOMPOS-FIND-011 findPathTo passes opts through cross-room exit selection so the path does not dead-end at a wall
 - RoomPosition find helpers ROOMPOS-FIND-008 findClosestByRange returns null when the candidate set is empty
 - RoomPosition find helpers ROOMPOS-FIND-006 opts.filter applies to the candidate set
@@ -6457,7 +6421,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (19)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (20)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
@@ -6475,6 +6439,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed
 - Foreign segments RAWMEMORY-FOREIGN-004 setDefaultPublicSegment sets the default for foreign readers
 - Foreign segments RAWMEMORY-FOREIGN-005 foreign segment request persists across ticks
+- Foreign segments RAWMEMORY-FOREIGN-006 setActiveForeignSegment(null) clears the pending request
 - Foreign segments RAWMEMORY-FOREIGN-007 setActiveForeignSegment with unknown username fails gracefully
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined

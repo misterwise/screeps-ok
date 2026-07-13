@@ -1,25 +1,5 @@
 {
 	"expected_failures": {
-		"tombstone-creep-body-types-not-objects": {
-			"actual": "`tombstone.creep.body` returns an array of body part type strings (e.g. `['carry', 'move']`). The `#creep` schema in `mods/creep/tombstone.ts` stores body as `vector(enumerated(...BODYPARTS_ALL))` and the `creep` getter returns it unchanged.",
-			"expected": "Vanilla `tombstones.js` exposes `tombstone.creep.body` as `body.map(type => ({ type, hits: 0 }))` — an array of `{type, hits}` objects matching `Creep.body` shape.",
-			"tests": ["TOMBSTONE-006"]
-		},
-		"tombstone-creep-spawning-true": {
-			"actual": "`tombstone.creep.spawning` returns `true`: the synthesized `Creep` has a zero-initialized `#ageTime` and `Creep.spawning` tests `#ageTime === 0`.",
-			"expected": "Vanilla `tombstones.js` returns `false` for `tombstone.creep.spawning`.",
-			"tests": ["TOMBSTONE-010"]
-		},
-		"tombstone-creep-store-wired-to-tombstone": {
-			"actual": "`tombstone.creep.store`/`carry` return the tombstone's own store (corpse resources, no fixed capacity), so `getUsedCapacity()` is non-zero and `carryCapacity`/`getCapacity()` read that store instead of the deceased body's CARRY capacity.",
-			"expected": "Vanilla exposes an empty store whose capacity equals `carryCapacity` (active CARRY parts × CARRY_CAPACITY); the corpse resources live on the outer `tombstone.store`.",
-			"tests": ["TOMBSTONE-016", "TOMBSTONE-017"]
-		},
-		"tombstone-creep-saying-not-exposed": {
-			"actual": "`tombstone.creep.saying` returns `undefined`: the synthesized `Creep`'s saying getter requires `#saying.time === Game.time`, which never holds for a past death tick.",
-			"expected": "Vanilla exposes the message the creep was publicly saying at the moment of death.",
-			"tests": ["TOMBSTONE-018"]
-		},
 		"controller-my-reset-returns-undefined": {
 			"actual": "After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral.",
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
@@ -29,11 +9,6 @@
 			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
 			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",
 			"tests": ["UNDOC-MEMHACK-012"]
-		},
-		"foreign-segment-clear-request": {
-			"actual": "`setActiveForeignSegment(null)` does not clear the pending foreign-segment request — the stale request keeps `RawMemory.foreignSegment` populated on the following tick",
-			"expected": "Passing `null` to `setActiveForeignSegment` clears the request so `RawMemory.foreignSegment` is `undefined` next tick",
-			"tests": ["RAWMEMORY-FOREIGN-006"]
 		},
 		"memory-parsed-json-not-refreshed-across-ticks": {
 			"actual": "xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse.",
@@ -59,11 +34,6 @@
 			"actual": "The direct user-code `exports` global is not the same object as `module.exports`; assigning through `module.exports` can runtime-error because the sandbox global alias is not wired to the executing main module record.",
 			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick.",
 			"tests": ["UNDOC-GLOBAL-003"]
-		},
-		"construction-site-foreign-room-wrong-error": {
-			"actual": "`Room.createConstructionSite` still fails to reject hostile reservations with `ERR_NOT_OWNER` ahead of the RCL check.",
-			"expected": "Vanilla returns ERR_NOT_OWNER for hostile-reserved rooms before RCL or structure-cap checks.",
-			"tests": ["CONSTRUCTION-SITE-014"]
 		},
 		"stale-pickup-target-allowed": {
 			"actual": "`Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops.",
@@ -94,6 +64,11 @@
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
 			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
 			"tests": ["ROOMPOS-FIND-010"]
+		},
+		"pathfinder-0-4-1-incomplete-for-solvable-searches": {
+			"actual": "Regression at pin c5fd1522 (new `@xxscreeps/pathfinder@0.4.1` algorithm: upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`): PathFinder.search over multiple goals returns an incomplete result with no `last` instead of the closest goal, and RoomPosition.findClosestByPath returns null for reachable targets — both for a target reachable at range and when a costCallback walls off the cheapest route but leaves a valid detour.",
+			"expected": "PathFinder.search finds the closest of several goals and returns a complete path; findClosestByPath returns the reachable target and honors costCallback re-routing.",
+			"tests": ["PATHFINDER-006", "ROOMPOS-FIND-002", "ROOMPOS-FIND-009"]
 		},
 		"factory-power-effect-not-implemented": {
 			"intentional": true,
