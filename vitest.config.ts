@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 import path from 'node:path';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -35,7 +36,20 @@ export default defineConfig({
 	},
 	test: {
 		testTimeout: 15000,
-		fileParallelism: false,
+		// Both built-in adapters are parallel-safe: vanilla boots one mockup
+		// server per worker fork on a dynamically-probed port under a
+		// pid+port-keyed tmp root, and xxscreeps gets a per-process database
+		// lock from register-loader.ts so each fork hosts its own in-memory
+		// local:// stores. Unknown custom adapters stay serial by default.
+		fileParallelism: adapter.includes('vanilla') || adapter.includes('xxscreeps'),
+		// Each vanilla worker runs 3 engine subprocesses (storage, runner,
+		// processor); cap the fork count so a full run doesn't oversubscribe
+		// dev machines or CI runners with few cores.
+		maxWorkers: Math.min(6, os.availableParallelism()),
+		// Reusing workers across files lets xxscreeps load the engine once per
+		// fork instead of once per file (measured 4x). Vanilla measured slightly
+		// slower without isolation, so it keeps the default fresh-fork-per-file.
+		isolate: !adapter.includes('xxscreeps'),
 		// xxscreeps' mods-resolution overhaul serves the engine's virtual
 		// `xxscreeps:mods/*` modules via a `register()`-based Node loader; load
 		// it before any test pulls the engine in.
