@@ -46,7 +46,7 @@
     "parity": "node scripts/parity-report.js",
     "coverage": "node scripts/generate-coverage.js",
     "status": "node scripts/generate-status.js",
-    "status:refresh": "node scripts/parity-report.js && node scripts/generate-status.js",
+    "status:refresh": "node scripts/generate-status.js && node scripts/generate-coverage.js",
     "build": "tsc",
     "lint": "tsc --noEmit",
     "validate:capabilities": "node scripts/validate-capabilities.js",

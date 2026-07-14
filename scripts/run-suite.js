@@ -195,7 +195,7 @@ function runSuiteLocked(options = {}) {
 		env: {
 			...env,
 			SCREEPS_OK_ADAPTER: resolved.adapterPath,
-			SCREEPS_OK_REPORT_NAME: sanitizeReportName(resolved.label),
+			SCREEPS_OK_REPORT_NAME: options.reportName ?? sanitizeReportName(resolved.label),
 			SCREEPS_OK_PROJECT_ROOT: invokerCwd,
 			SCREEPS_OK_PARITY_VERDICT: verdictPath,
 		},

@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -36,7 +37,10 @@ if (showHelp) {
 }
 
 const targets = adapters.length > 0 ? adapters : ['xxscreeps', 'vanilla'];
-console.log(`Running the FULL test suite (adapters: ${targets.join(', ')}) — this takes minutes, not seconds.`);
+// A filtered run is a partial sample: it must not overwrite the full-run
+// reports the doc generators read, and must not regenerate the docs.
+const filtered = vitestArgs.length > 0;
+console.log(`Running the ${filtered ? 'FILTERED' : 'FULL'} test suite (adapters: ${targets.join(', ')}) — this takes minutes, not seconds.`);
 const reportsDir = path.join(packageRoot, 'reports');
 mkdirSync(reportsDir, { recursive: true });
 
@@ -44,14 +48,26 @@ let overallStatus = 0;
 
 for (const adapter of targets) {
 	console.log(`\n== ${adapter} ==`);
-	const reportPath = path.join(reportsDir, `${adapter}.json`);
+	const reportName = filtered ? `${adapter}-partial` : adapter;
+	const reportPath = path.join(reportsDir, `${reportName}.json`);
 	const status = runSuite({
 		adapter,
+		reportName,
 		env: { ...process.env, CI: '1' },
 		vitestArgs,
 	});
 	overallStatus = overallStatus || status;
 	printReportSummary(adapter, reportPath, status);
+}
+
+if (filtered) {
+	console.log('\nFiltered run: JSON written to reports/<adapter>-partial.json; full-run reports and generated docs untouched.');
+} else {
+	console.log('\nRegenerating docs/status.md and coverage.html from the fresh reports (npm run status:refresh redoes this without re-running tests).');
+	for (const script of ['generate-status.js', 'generate-coverage.js']) {
+		const result = spawnSync(process.execPath, [path.join(packageRoot, 'scripts', script)], { stdio: 'inherit' });
+		overallStatus = overallStatus || (result.status ?? 1);
+	}
 }
 
 process.exit(overallStatus);
@@ -82,7 +98,14 @@ function printHelp() {
 	console.log(`Usage: npm run parity [adapter...] [-- <vitest-args>]
 
 Runs the suite against xxscreeps and vanilla by default, writing JSON reports to
-the local reports/ directory. You may limit the run to one adapter by naming it.
+the local reports/ directory and regenerating docs/status.md + coverage.html at
+the end. You may limit the run to one adapter by naming it.
+
+Filtered runs (any vitest args) write reports/<adapter>-partial.json instead and
+leave the full-run reports and generated docs untouched.
+
+To regenerate the docs from existing reports without running any tests, use
+npm run status:refresh.
 
 Examples:
   npm run parity

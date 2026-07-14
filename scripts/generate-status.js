@@ -9,9 +9,9 @@
  * or parity.json files change.
  *
  * Usage:
- *   npm run parity       # produces reports/<adapter>.json
- *   npm run status       # reads reports + parity.json, writes docs/status.md
- *   npm run status:refresh   # does both in one step
+ *   npm run parity           # full suite; runs this script (and coverage) at the end
+ *   npm run status:refresh   # regenerates status + coverage from existing reports, no tests
+ *   npm run status           # this script alone (status.md + README badges)
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
