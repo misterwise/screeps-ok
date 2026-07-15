@@ -10,13 +10,15 @@ Last refreshed: 2026-07-15 (pin `427f8677`).
 
 | PR | Title | Relevance |
 |---|---|---|
-| _None currently tracked_ | n/a | [#317](https://github.com/laverdet/xxscreeps/pull/317) (pathfinder multi-goal lifetime) merged, shipped as `@xxscreeps/pathfinder@0.4.2`, consumed at pin `427f8677`. |
+| [#318](https://github.com/laverdet/xxscreeps/pull/318) | invader: reset room controller on core collapse expiry | Closes `invader-core-collapse-controller-not-reset` (INVADER-CORE-004). Centralizes the `isPowerEnabled`/`safeModeAvailable` resets into `release()`, also fixing latent unclaim/downgrade/unspawn divergences that have no catalog rows yet (candidate CTRL rows queued; the safeModeCooldown-after-unclaim divergence is NOT covered by this PR). |
+
+[#317](https://github.com/laverdet/xxscreeps/pull/317) (pathfinder multi-goal lifetime) merged, shipped as `@xxscreeps/pathfinder@0.4.2`, consumed at pin `427f8677`.
 
 ## Active submission queue
 
 `parity.json` currently registers 17 open parity gaps (35 tests) plus 1 intentional expected failure (2 tests). The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
-1. **`invader-core-collapse-controller-not-reset`** (INVADER-CORE-004) — reset the room controller in the collapse branch of `mods/invader/processor.ts` to match vanilla (user null, level 0, progress 0, timers cleared, `isPowerEnabled` false, effects null). The in-source TODO overstates the prerequisite: vanilla clears any controller in the room, so the fix does not wait for stronghold deployment.
+1. **`invader-core-collapse-controller-not-reset`** (INVADER-CORE-004) — SUBMITTED as [#318](https://github.com/laverdet/xxscreeps/pull/318). The gap turned out narrower than the analysis above assumed (upstream `main` already released NPC-owned controllers on collapse via the #285 chained pre-tick); the actual fix drops the NPC-owner gate and centralizes the `isPowerEnabled`/`safeModeAvailable` resets into `release()`. On merge + pin bump: prune from `parity.json`, and note the pin will cross the upstream `mods/classic/**` reorg, which needs an adapter import-path follow-up in this repo.
 2. **`controller-my-reset-returns-undefined`** (CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001) — `OwnedStructure.my` returns `undefined` instead of `false` after a claimed controller goes neutral via unclaim or RCL 1 downgrade.
 3. **`commonjs-main-exports-alias-missing`** (UNDOC-GLOBAL-003) — wire the direct main-path `exports` global as an alias of `module.exports`, mirroring how `driver/runtime/module.ts` executes CommonJS modules.
 4. **`structure-active-equal-distance-scan-order`** (STRUCTURE-ACTIVE-005) — break `isActive` ties between equal-distance same-type structures by vanilla object scan order.
