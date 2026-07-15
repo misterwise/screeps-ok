@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-13 against pin `427f8677`.
+Last refreshed: 2026-07-15 against pin `427f8677`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 17 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`427f8677` bump cleared the three `@xxscreeps/pathfinder@0.4.1` regressions (`pathfinder-0-4-1-incomplete-for-solvable-searches`) along with its darwin/linux platform divergence and the intermittent ROOMPOS-FIND-001 failures. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 19 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two `controller-unclaim-*` safe-mode gaps were added 2026-07-15 with the controller-neutralization field-reset rows (CTRL-UNCLAIM-004/-005/-006, CTRL-DOWNGRADE-009/-010/-011); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`427f8677` bump cleared the three `@xxscreeps/pathfinder@0.4.1` regressions (`pathfinder-0-4-1-incomplete-for-solvable-searches`) along with its darwin/linux platform divergence and the intermittent ROOMPOS-FIND-001 failures. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry shipped `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regressed three previously-passing searches (PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009) with a darwin/linux platform divergence and intermittent ROOMPOS-FIND-001 failures — a goal-lifetime use-after-free. Fixed upstream in `@xxscreeps/pathfinder@0.4.2` (laverdet/xxscreeps#317, `pf: keep multi-goal storage alive during search`), consumed at pin `427f8677`; all four searches pass deterministically again.
 
@@ -73,6 +73,20 @@ Last refreshed: 2026-07-13 against pin `427f8677`.
 - Status: CONFIRMED.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
+
+### controller-unclaim-keeps-safe-mode-charges
+
+- Tests: CTRL-UNCLAIM-004
+- Status: CONFIRMED at pin `427f8677`.
+- Cause: the unclaim intent processor delegates to the shared `release()` helper (`mods/controller/processor.ts`), which clears user/progress/downgrade state but never touches `safeModeAvailable`, so charges held before the unclaim survive neutralization. Vanilla's unclaim step (`processor/intents/controllers/unclaim.js`) zeroes the field. The non-terminal downgrade path already matches vanilla — the downgrade tick zeroes `safeModeAvailable` on every step before `release()` is reached, so CTRL-DOWNGRADE-009 passes.
+- Plan: an in-flight upstream PR centralizes the `safeModeAvailable`/`isPowerEnabled` resets into `release()`. When it merges and the pin bumps, this flips to unexpected-pass; prune the `parity.json` entry and this note. (`isPowerEnabled` itself is untestable on xxscreeps today — CTRL-UNCLAIM-006/CTRL-DOWNGRADE-011 skip on the `powerCreeps` capability because power-creep `enableRoom` is the only in-game path to set the flag.)
+
+### controller-unclaim-clears-safe-mode-cooldown
+
+- Tests: CTRL-UNCLAIM-005
+- Status: CONFIRMED at pin `427f8677`.
+- Cause: `release()` zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. Vanilla instead STARTS a fresh cooldown on unclaim — `safeModeCooldown = gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms. The same `release()` path runs on the terminal (level-0) downgrade step, so that step shares the divergence, though no catalog row pins it yet; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).
+- Plan: set a fresh `#safeModeCooldownTime` in `release()` (or its callers) to match vanilla. NOT fixed by the in-flight safe-mode/power resets PR — needs its own upstream change.
 
 ### invader-core-collapse-controller-not-reset
 

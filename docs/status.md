@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2657%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2449%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2451%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2657](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-14 00:39 UTC |
-| 🟡 | **xxscreeps** | [2449](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [185](#xxscreeps-skipped-tests) | 2026-07-14 00:38 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-15 12:09 UTC |
+| 🟡 | **xxscreeps** | [2451](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [187](#xxscreeps-skipped-tests) | 2026-07-15 12:09 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -82,6 +82,10 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="vanilla-gap-attack-notify-getter-api-missing">
 <summary><code>attack-notify-getter-api-missing</code> — 11 tests</summary>
 
+- `StructureSpawn ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state`
+- `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
+- `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
+- `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
@@ -89,10 +93,6 @@ Click a test count above to jump to the affected test list for that gap.
 - `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
 - `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 - `Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY`
-- `StructureSpawn ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state`
-- `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
-- `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
-- `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
 
 </details>
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 17 open parity gaps covering 51 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 19 open parity gaps covering 53 tests and 1 intentional divergence covering 2 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,6 +167,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
+| `controller-unclaim-keeps-safe-mode-charges` | The unclaim intent processor delegates to the shared `release()` helper (`mods/controller/processor.ts`), which clears user/progress/downgrade state but never touches `safeModeAvailable`, so charges held before the unclaim survive neutralization. The non-terminal downgrade path is unaffected: the downgrade tick zeroes `safeModeAvailable` before calling `release()`, so CTRL-DOWNGRADE-009 passes. | Vanilla's unclaim processor step (`processor/intents/controllers/unclaim.js`) zeroes `safeModeAvailable` along with the ownership reset. | [1](#xxscreeps-gap-controller-unclaim-keeps-safe-mode-charges) |
+| `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
@@ -191,6 +193,20 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
+
+</details>
+
+<details id="xxscreeps-gap-controller-unclaim-keeps-safe-mode-charges">
+<summary><code>controller-unclaim-keeps-safe-mode-charges</code> — 1 test</summary>
+
+- `StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0`
+
+</details>
+
+<details id="xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown">
+<summary><code>controller-unclaim-clears-safe-mode-cooldown</code> — 1 test</summary>
+
+- `StructureController.unclaim() CTRL-UNCLAIM-005 unclaim() starts a fresh safe-mode cooldown rather than clearing it`
 
 </details>
 
@@ -385,7 +401,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2657 tests across 140 files</summary>
+<summary>2663 tests across 140 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1476,7 +1492,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (7)
+**`tests/06-controller/6.7-downgrade.test.ts`** (10)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
@@ -1485,6 +1501,9 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
+- Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
+- Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 
 **`tests/06-controller/6.8-safemode.test.ts`** (24)
 
@@ -1513,9 +1532,12 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+**`tests/06-controller/6.9-unclaim.test.ts`** (4)
 
 - StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact
+- StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0
+- StructureController.unclaim() CTRL-UNCLAIM-005 unclaim() starts a fresh safe-mode cooldown rather than clearing it
+- StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
 **`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
@@ -3468,11 +3490,11 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 185 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 187 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [103](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerCreeps` | Power creeps and powers | [105](#xxscreeps-skip-capability-powercreeps) |
 | capability | `market` | Market and terminal | [33](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
@@ -3485,7 +3507,7 @@ xxscreeps has 185 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 103 tests across 25 files</summary>
+<summary><code>capability:powerCreeps</code> — 105 tests across 27 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -3504,6 +3526,14 @@ Click a count to jump to the affected test list.
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
 - creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
+
+**`tests/06-controller/6.7-downgrade.test.ts`** (1)
+
+- Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
+
+**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+
+- StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
 **`tests/07-combat/7.13-7.14-nukes.test.ts`** (1)
 
@@ -3853,7 +3883,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2449 tests across 117 files</summary>
+<summary>2451 tests across 117 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4932,7 +4962,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (6)
+**`tests/06-controller/6.7-downgrade.test.ts`** (8)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
@@ -4940,6 +4970,8 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
+- Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
+- Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
 
 **`tests/06-controller/6.8-safemode.test.ts`** (24)
 

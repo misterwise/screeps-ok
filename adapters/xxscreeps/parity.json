@@ -5,6 +5,18 @@
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
 			"tests": ["CTRL-DOWNGRADE-002", "CTRL-UNCLAIM-001"]
 		},
+		"controller-unclaim-keeps-safe-mode-charges": {
+			"actual": "The unclaim intent processor delegates to the shared `release()` helper (`mods/controller/processor.ts`), which clears user/progress/downgrade state but never touches `safeModeAvailable`, so charges held before the unclaim survive neutralization. The non-terminal downgrade path is unaffected: the downgrade tick zeroes `safeModeAvailable` before calling `release()`, so CTRL-DOWNGRADE-009 passes.",
+			"expected": "Vanilla's unclaim processor step (`processor/intents/controllers/unclaim.js`) zeroes `safeModeAvailable` along with the ownership reset.",
+			"why": "An in-flight upstream PR centralizes the `safeModeAvailable`/`isPowerEnabled` resets into `release()`; when it merges and the pin bumps, this entry flips to unexpected-pass — prune it then.",
+			"tests": ["CTRL-UNCLAIM-004"]
+		},
+		"controller-unclaim-clears-safe-mode-cooldown": {
+			"actual": "`release()` (`mods/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).",
+			"expected": "Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick.",
+			"why": "Distinct from controller-unclaim-keeps-safe-mode-charges: the in-flight resets PR does NOT change the cooldown handling, so this entry stays after that PR lands and needs its own upstream fix.",
+			"tests": ["CTRL-UNCLAIM-005"]
+		},
 		"rawmemory-set-invalidates-parsed-memhack": {
 			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
 			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",

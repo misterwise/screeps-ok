@@ -1117,11 +1117,29 @@ Coverage Notes
   drops to level 0 (unowned).
 - `CTRL-DOWNGRADE-007` `behavior` `verified_vanilla`
   The controller can downgrade through multiple levels if neglected.
+- `CTRL-DOWNGRADE-009` `behavior` `verified_vanilla`
+  A downgrade step that lands on a level ≥ 1 resets the controller's
+  `safeModeAvailable` to 0.
+- `CTRL-DOWNGRADE-010` `behavior` `verified_vanilla`
+  A downgrade step that lands on a level ≥ 1 starts a fresh safe-mode
+  cooldown in a room without novice-area protection: `safeModeCooldown` was
+  absent before the step and reads just under SAFE_MODE_COOLDOWN immediately
+  after the level loss.
+- `CTRL-DOWNGRADE-011` `behavior` `verified_vanilla`
+  A downgrade that reaches level 0 resets `isPowerEnabled` to false on a
+  previously power-enabled room.
 
 Coverage Notes
 - Structures becoming inactive above the RCL limit is owned by
   `CTRL-STRUCTLIMIT-002` (section 6.10). Former CTRL-DOWNGRADE-007 dropped;
-  CTRL-DOWNGRADE-008 renumbered to 007.
+  CTRL-DOWNGRADE-008 renumbered to 007. The number 008 is retired by that
+  renumbering (its historical content lives at 007) and is not reused; new
+  rows continue at 009.
+- The safe-mode field resets on the terminal (level-0) downgrade step are not
+  yet catalogued: vanilla also zeroes `safeModeAvailable` and starts a fresh
+  cooldown there, but only the ≥ 1 step is pinned by CTRL-DOWNGRADE-009/-010.
+  The unclaim rows (CTRL-UNCLAIM-004/-005) pin the same processor fields on
+  the other neutralization path.
 
 ### 6.8 Safe Mode Mechanics
 - `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
@@ -1164,13 +1182,25 @@ Notes
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
   `StructureController.unclaim()` resets the controller to level 0 (unowned),
-  clearing `user` (set to `null`), `progress`, `downgradeTime`, `safeMode`, and
-  `safeModeAvailable` in a single processor step. After unclaim, `controller.my`
-  is `false` (the previously-owned sentinel — distinct from never-owned
-  `undefined`, covered by CTRL-CLAIM-007). Owned structures in the room are
-  **not** destroyed by unclaim itself; they remain present and simply become
-  inactive because every `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered
-  by `CTRL-STRUCTLIMIT-002`).
+  clearing `user` (set to `null`), `progress`, `downgradeTime`, and `safeMode`
+  in a single processor step (the safe-mode charge/cooldown and power-enable
+  resets in the same step are owned by CTRL-UNCLAIM-004/-005/-006). After
+  unclaim, `controller.my` is `false` (the previously-owned sentinel —
+  distinct from never-owned `undefined`, covered by CTRL-CLAIM-007). Owned
+  structures in the room are **not** destroyed by unclaim itself; they remain
+  present and simply become inactive because every
+  `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered by
+  `CTRL-STRUCTLIMIT-002`).
+- `CTRL-UNCLAIM-004` `behavior` `verified_vanilla`
+  After `unclaim()` resolves, the controller's `safeModeAvailable` is 0.
+- `CTRL-UNCLAIM-005` `behavior` `verified_vanilla`
+  After `unclaim()` resolves in a room without novice-area protection, a
+  fresh safe-mode cooldown is started rather than cleared: `safeModeCooldown`
+  was absent before the unclaim and reads just under SAFE_MODE_COOLDOWN on
+  the following tick.
+- `CTRL-UNCLAIM-006` `behavior` `verified_vanilla`
+  After `unclaim()` resolves on a power-enabled room, `isPowerEnabled` is
+  false.
 
 Coverage Notes
 - Original CTRL-UNCLAIM-002 ("All owned structures in the room are
@@ -1179,6 +1209,10 @@ Coverage Notes
   (`@screeps/engine/src/processor/intents/controllers/unclaim.js`), which
   only updates the controller object and leaves room structures intact.
   The inactive-above-RCL-limit outcome is owned by `CTRL-STRUCTLIMIT-002`.
+  The retired numbers are not reused; new rows continue at 004.
+- Split: the `safeModeAvailable` reset was moved out of CTRL-UNCLAIM-001's
+  cleared-field list into its own row (CTRL-UNCLAIM-004) so the safe-mode
+  and power-enable field resets are independently tracked per divergence.
 
 ### 6.10 Structure Limits per RCL
 - `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
