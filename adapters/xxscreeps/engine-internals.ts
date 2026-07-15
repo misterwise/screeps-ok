@@ -14,7 +14,7 @@
  */
 
 import type { Room } from 'xxscreeps/game/room/index.js';
-import type { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import type { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 
 // ── INJECT ───────────────────────────────────────────────────────────
 

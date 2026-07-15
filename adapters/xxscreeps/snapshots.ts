@@ -11,15 +11,15 @@ import type {
 	PortalDestinationSnapshot,
 } from '../../src/snapshots/common.js';
 import * as C from 'xxscreeps/game/constants/index.js';
-import { Creep } from 'xxscreeps/mods/creep/creep.js';
-import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.js';
-import { Resource } from 'xxscreeps/mods/resource/resource.js';
-import { Source } from 'xxscreeps/mods/source/source.js';
-import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
-import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
-import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
-import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
-import { Nuke } from 'xxscreeps/mods/nuker/nuke.js';
+import { Creep } from 'xxscreeps/mods/classic/creep/creep.js';
+import { ConstructionSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
+import { Resource } from 'xxscreeps/mods/classic/resource/resource.js';
+import { Source } from 'xxscreeps/mods/classic/source/source.js';
+import { Mineral } from 'xxscreeps/mods/classic/mineral/mineral.js';
+import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
+import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
+import { Nuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
 import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {

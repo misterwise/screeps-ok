@@ -57,47 +57,46 @@ import {
 } from './engine-internals.js';
 
 // Object creation imports
-import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/creep.js';
-import { create as createSpawn, Spawning } from 'xxscreeps/mods/spawn/spawn.js';
-import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
-import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
-import { structureFactories } from 'xxscreeps/mods/construction/symbols.js';
-import { Source } from 'xxscreeps/mods/source/source.js';
-import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
-import { create as createLab } from 'xxscreeps/mods/chemistry/lab.js';
-import { create as createObserver } from 'xxscreeps/mods/observer/observer.js';
-import { create as createTower } from 'xxscreeps/mods/defense/tower.js';
-import { create as createRampart } from 'xxscreeps/mods/defense/rampart.js';
-import { create as createWall } from 'xxscreeps/mods/defense/wall.js';
-import { create as createStorage } from 'xxscreeps/mods/logistics/storage.js';
-import { create as createLink } from 'xxscreeps/mods/logistics/link.js';
-import { create as createContainer } from 'xxscreeps/mods/resource/container.js';
-import { create as createRoad } from 'xxscreeps/mods/road/road.js';
-import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
-import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
+import { create as createCreep, calculateCarry } from 'xxscreeps/mods/classic/creep/creep.js';
+import { create as createSpawn, Spawning } from 'xxscreeps/mods/classic/spawn/spawn.js';
+import { create as createExtension } from 'xxscreeps/mods/classic/spawn/extension.js';
+import { create as createSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
+import { structureFactories } from 'xxscreeps/mods/classic/construction/symbols.js';
+import { Source } from 'xxscreeps/mods/classic/source/source.js';
+import { Mineral } from 'xxscreeps/mods/classic/mineral/mineral.js';
+import { create as createLab } from 'xxscreeps/mods/classic/chemistry/lab.js';
+import { create as createObserver } from 'xxscreeps/mods/modern/observer/observer.js';
+import { create as createTower } from 'xxscreeps/mods/classic/defense/tower.js';
+import { create as createRampart } from 'xxscreeps/mods/classic/defense/rampart.js';
+import { create as createWall } from 'xxscreeps/mods/classic/defense/wall.js';
+import { create as createStorage } from 'xxscreeps/mods/classic/logistics/storage.js';
+import { create as createLink } from 'xxscreeps/mods/classic/logistics/link.js';
+import { create as createContainer } from 'xxscreeps/mods/classic/resource/container.js';
+import { create as createRoad } from 'xxscreeps/mods/classic/road/road.js';
+import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extractor.js';
+import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
 import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
-import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
-import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/mineral/constants.js';
-import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
-import { create as createNuke } from 'xxscreeps/mods/nuker/nuke.js';
-import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
-import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
-import { Flag } from 'xxscreeps/mods/flag/flag.js';
-import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/flag/model.js';
+import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
+import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/classic/mineral/constants.js';
+import { create as createNuker } from 'xxscreeps/mods/modern/nuker/nuker.js';
+import { create as createNuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
+import { create as createResource } from 'xxscreeps/mods/classic/resource/resource.js';
+import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/meta/flag/game.js';
+import { Flag } from 'xxscreeps/mods/meta/flag/flag.js';
+import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/meta/flag/model.js';
 import { activateNPC } from 'xxscreeps/mods/npc/processor.js';
 import { instantiate } from 'xxscreeps/utility/utility.js';
-import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
-import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
+import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
 import { createRoomObject as createObject } from 'xxscreeps/game/object.js';
-import { OpenStore } from 'xxscreeps/mods/resource/store.js';
-import { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import { OpenStore } from 'xxscreeps/mods/classic/resource/store.js';
+import { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 import { asUnion } from 'xxscreeps/utility/utility.js';
 
 // Optional mods — not all xxscreeps builds include these exports.
 // Use variable-named dynamic imports so TS doesn't statically require the
 // module, and so a missing named export degrades to `undefined` instead of
-// a type error. Factory is an optional mod; terminal.js in the pinned
-// xxscreeps build defines `create` locally but does not export it.
+// a type error.
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
 let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
@@ -105,10 +104,10 @@ let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | un
 // dynamic import result so older pins skip cleanly and current main runs it.
 let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
 for (const [name, assign] of [
-	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
-	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
+	['xxscreeps/mods/modern/factory/factory.js', (m: any) => { createFactory = m.create; }],
+	['xxscreeps/mods/classic/brokerage/terminal.js', (m: any) => { createTerminal = m.create; }],
 	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
-	['xxscreeps/mods/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
+	['xxscreeps/mods/modern/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
