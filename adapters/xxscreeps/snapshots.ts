@@ -5,7 +5,7 @@ import type {
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
 	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
-	KeeperLairSnapshot, InvaderCoreSnapshot, PortalSnapshot, WallSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot, PortalSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
@@ -308,6 +308,16 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToDeploy: obj.ticksToDeploy ?? null,
 				effects: obj.effects ?? [],
 			} satisfies InvaderCoreSnapshot;
+
+		case 'powerBank':
+			return {
+				...base,
+				structureType: 'powerBank',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				power: obj.power ?? obj.store?.[C.RESOURCE_POWER] ?? 0,
+				ticksToDecay: obj.ticksToDecay ?? null,
+			} satisfies PowerBankSnapshot;
 
 		case 'portal':
 			return {

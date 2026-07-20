@@ -363,12 +363,16 @@ Current capability flags are:
 
 - `chemistry`
 - `powerCreeps`
+- `powerSpawn`
 - `factory`
+- `terminal`
+- `marketBasics`
 - `market`
 - `terminalSend`
 - `observer`
 - `nuke`
 - `deposit`
+- `powerBank`
 - `terrain`
 - `roomStatus`
 - `portals`
@@ -382,6 +386,22 @@ Current capability flags are:
 - `actionLogCapture`
 - `randomInjection`
 - `deprecationNotices`
+
+The terminal and market flags intentionally describe separate surfaces:
+
+- `terminal` covers the structure itself: placement, construction, store,
+  `Room.terminal`, and its public object shape
+- `terminalSend` covers `StructureTerminal.send()` processing and transaction
+  recording
+- `marketBasics` covers the self-contained `Game.market` surface that requires
+  no seeded order book: its public data shape, `calcTransactionCost()`, and
+  invalid-resource filtering in `getAllOrders()`
+- `market` covers the full order lifecycle, deals, history, and adapter-side
+  order placement
+
+`powerBank` is likewise independent of `powerCreeps`: it covers Power Bank
+placement, shape, combat, decay, and destruction loot without claiming a
+functional Power Creep runtime.
 
 Rules:
 

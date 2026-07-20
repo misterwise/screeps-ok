@@ -342,7 +342,7 @@ describe('adapter contract: inspection', () => {
 		});
 
 		test('power bank snapshot includes power and decay fields', async ({ shard }) => {
-			shard.requires('powerCreeps');
+			shard.requires('powerBank');
 			await shard.ownedRoom('p1');
 			const id = await shard.placeObject('W1N1', STRUCTURE_POWER_BANK, {
 				pos: [25, 25],

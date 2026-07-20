@@ -217,7 +217,7 @@ export const structureShapes: readonly StructureShapeEntry[] = [
 		),
 	},
 	{
-		structureType: STRUCTURE_TERMINAL, rcl: 6, owned: true, cap: 'market',
+		structureType: STRUCTURE_TERMINAL, rcl: 6, owned: true, cap: 'terminal',
 		shape: shape(
 			'cooldown', 'hits', 'hitsMax', 'id', 'my', 'owner', 'pos',
 			'room', 'store', 'storeCapacity', 'structureType',
@@ -302,7 +302,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	},
 	{
 		catalogId: 'SHAPE-NPC-003',
-		objectType: 'powerBank', cap: 'powerCreeps',
+		objectType: 'powerBank', cap: 'powerBank',
 		spec: { pos: [25, 25], store: { power: 1000 }, hits: 10000000, hitsMax: 10000000, decayTime: 50000 },
 		shape: shape(
 			'hits', 'hitsMax', 'id', 'my', 'owner', 'pos', 'power',

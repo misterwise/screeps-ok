@@ -20,7 +20,6 @@ const PWR_GENERATE_OPS = 1;
 
 describe('PWR_GENERATE_OPS', () => {
 	test('POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level', async ({ shard }) => {
-		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

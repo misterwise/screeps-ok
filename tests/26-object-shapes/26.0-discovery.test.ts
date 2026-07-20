@@ -331,7 +331,7 @@ describe('26.0 Object Shape Conformance', () => {
 	});
 
 	test('SHAPE-GAME-007 Game.market matches canonical shape', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('marketBasics');
 		await shard.ownedRoom('p1');
 		await shard.tick();
 

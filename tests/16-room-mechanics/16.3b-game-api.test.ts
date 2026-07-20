@@ -269,7 +269,7 @@ describe('room structure shortcuts', () => {
 	});
 
 	test('ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined', async ({ shard }) => {
-		shard.requires('market');
+		shard.requires('terminal');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

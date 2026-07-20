@@ -86,6 +86,16 @@
 			"expected": "Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks.",
 			"tests": ["TERMINAL-SEND-005", "TERMINAL-SEND-013:invalidRoom", "TERMINAL-SEND-013:invalidRoomBeforeInvalidResource", "TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount", "TERMINAL-SEND-013:invalidRoomBeforeCooldown", "TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost", "TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription", "TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost", "TERMINAL-SEND-013:cooldownBeforeInvalidDescription"]
 		},
+		"power-bank-ruin-spills-one-tick-late": {
+			"actual": "A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction.",
+			"expected": "Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount.",
+			"tests": ["POWER-BANK-004"]
+		},
+		"power-bank-shape-exposes-store-extension": {
+			"actual": "xxscreeps declares `StructurePowerBank.store` as a public schema field and enumerates it alongside the canonical power-bank properties.",
+			"expected": "The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property.",
+			"tests": ["SHAPE-NPC-003"]
+		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",

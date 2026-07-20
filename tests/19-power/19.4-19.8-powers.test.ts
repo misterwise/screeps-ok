@@ -343,7 +343,6 @@ describe('Combat powers', () => {
 	});
 
 	test('POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays', async ({ shard }) => {
-		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

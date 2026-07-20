@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2453%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2471%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-20 09:27 UTC |
-| 🟡 | **xxscreeps** | [2453](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [187](#xxscreeps-skipped-tests) | 2026-07-20 09:27 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-20 10:08 UTC |
+| 🟡 | **xxscreeps** | [2471](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-20 10:08 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 16 open parity gaps covering 49 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 18 open parity gaps covering 51 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -180,6 +180,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `structure-active-equal-distance-scan-order` | For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive. | Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/classic/brokerage/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
+| `power-bank-ruin-spills-one-tick-late` | A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction. | Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount. | [1](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
+| `power-bank-shape-exposes-store-extension` | xxscreeps declares `StructurePowerBank.store` as a public schema field and enumerates it alongside the canonical power-bank properties. | The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property. | [1](#xxscreeps-gap-power-bank-shape-exposes-store-extension) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 
@@ -312,6 +314,20 @@ Click a test count above to jump to the affected test list for that gap.
 - `Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription send() validation returns the canonical code`
 - `Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code`
 - `Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-power-bank-ruin-spills-one-tick-late">
+<summary><code>power-bank-ruin-spills-one-tick-late</code> — 1 test</summary>
+
+- `Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile`
+
+</details>
+
+<details id="xxscreeps-gap-power-bank-shape-exposes-store-extension">
+<summary><code>power-bank-shape-exposes-store-extension</code> — 1 test</summary>
+
+- `26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape`
 
 </details>
 
@@ -3474,28 +3490,23 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 187 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 167 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [105](#xxscreeps-skip-capability-powercreeps) |
-| capability | `market` | Market and terminal | [33](#xxscreeps-skip-capability-market) |
+| capability | `powerCreeps` | Power creeps and powers | [97](#xxscreeps-skip-capability-powercreeps) |
+| capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `strongholdDeploy` | Engine-driven stronghold deployment | [6](#xxscreeps-skip-capability-strongholddeploy) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
-| limitation | `pullSelfHang` | pull(self) hangs the runner | [1](#xxscreeps-skip-limitation-pullselfhang) |
 
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 105 tests across 27 files</summary>
-
-**`tests/00-adapter-contract/inspection.test.ts`** (1)
-
-- adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
+<summary><code>capability:powerCreeps</code> — 97 tests across 25 files</summary>
 
 **`tests/00-adapter-contract/setup.test.ts`** (3)
 
@@ -3558,13 +3569,6 @@ Click a count to jump to the affected test list.
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (1)
 
 - StructureObserver OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit
-
-**`tests/14-structures-npc/14.3-power-bank.test.ts`** (4)
-
-- Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
-- Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
-- Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
-- Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile
 
 **`tests/15-structure-common/15.5-effects-substrate.test.ts`** (5)
 
@@ -3637,7 +3641,7 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (18)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
@@ -3648,7 +3652,6 @@ Click a count to jump to the affected test list.
 - Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
 - Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
-- Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
 - Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
 - Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
@@ -3658,16 +3661,14 @@ Click a count to jump to the affected test list.
 - Power creep renew POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
 - Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (3)
+**`tests/19-power/19.9-generate-ops.test.ts`** (2)
 
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (3)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
 
 - 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-NPC-003 powerBank data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (2)
@@ -3682,26 +3683,9 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 33 tests across 8 files</summary>
+<summary><code>capability:market</code> — 22 tests across 2 files</summary>
 
-**`tests/06-controller/6.10-structlimit.test.ts`** (2)
-
-- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
-- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
-
-**`tests/15-structure-common/15.1-hits.test.ts`** (1)
-
-- Structure hits STRUCTURE-HITS-001:terminal initializes with 3000 hits
-
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (1)
-
-- Construction costs CONSTRUCTION-COST-001:terminal costs 100000
-
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (1)
-
-- room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
-
-**`tests/20-market/20.2-20.4-market.test.ts`** (22)
+**`tests/20-market/20.2-20.4-market.test.ts`** (20)
 
 - Market orders MARKET-ORDER-001 createOrder creates orders with requested parameters and public credit units
 - Market orders MARKET-ORDER-002 createOrder fails with exact validation codes
@@ -3718,28 +3702,16 @@ Click a count to jump to the affected test list.
 - Market deal MARKET-DEAL-004 partial deal reduces the target order remaining amount and public amount
 - Market deal MARKET-DEAL-005 deal that fills the order sets remainingAmount to 0 and removes it from public queries
 - Market deal MARKET-DEAL-003 deal fails with exact validation codes
-- Market queries MARKET-QUERY-001 calcTransactionCost returns the formula-based cost
 - Market queries MARKET-QUERY-002 getAllOrders returns only active orders matching the supplied filter
 - Market queries MARKET-QUERY-003 getOrderById returns public active orders, owner orders, or null
 - Market queries MARKET-QUERY-004 getHistory returns scoped history containers deterministically
 - Market queries MARKET-QUERY-006 getHistory invalid resources and valid resources with no history return empty arrays
-- Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
-
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (2)
-
-- Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
-- Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
 
 **`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (2)
 
 - Per-tick intent limits INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table
 - Per-tick intent limits INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
-
-- 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
-- 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
 
 </details>
 
@@ -3854,20 +3826,11 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-limitation-pullselfhang">
-<summary><code>limitation:pullSelfHang</code> — 1 test across 1 file</summary>
-
-**`tests/01-movement/1.5-pulling.test.ts`** (1)
-
-- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
-
-</details>
-
 
 ## xxscreeps passing tests
 
 <details>
-<summary>2453 tests across 118 files</summary>
+<summary>2471 tests across 122 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3941,7 +3904,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (22)
+**`tests/00-adapter-contract/inspection.test.ts`** (23)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -3961,6 +3924,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots observer snapshot includes cooldown
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
+- adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
@@ -4112,7 +4076,7 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (24)
+**`tests/01-movement/1.5-pulling.test.ts`** (25)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
@@ -4120,6 +4084,7 @@ Click a count to jump to the affected test list.
 - creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
+- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
 - creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
 - creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
@@ -4853,7 +4818,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:rangeBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeCooldown attackController() validation returns the canonical code
 
-**`tests/06-controller/6.10-structlimit.test.ts`** (16)
+**`tests/06-controller/6.10-structlimit.test.ts`** (18)
 
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === true at required RCL
@@ -4867,6 +4832,8 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extractor extractor reports isActive() === true at required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:lab lab reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:lab lab reports isActive() === true at required RCL
+- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === false below required RCL
+- CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:terminal terminal reports isActive() === true at required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === true at required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
@@ -6056,7 +6023,13 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
-**`tests/15-structure-common/15.1-hits.test.ts`** (19)
+**`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
+
+- Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
+- Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
+- Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
+
+**`tests/15-structure-common/15.1-hits.test.ts`** (20)
 
 - Structure hits STRUCTURE-HITS-001:spawn initializes with 5000 hits
 - Structure hits STRUCTURE-HITS-001:extension initializes with 1000 hits
@@ -6070,6 +6043,7 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-001:powerSpawn initializes with 5000 hits
 - Structure hits STRUCTURE-HITS-001:extractor initializes with 500 hits
 - Structure hits STRUCTURE-HITS-001:lab initializes with 500 hits
+- Structure hits STRUCTURE-HITS-001:terminal initializes with 3000 hits
 - Structure hits STRUCTURE-HITS-001:container initializes with 250000 hits
 - Structure hits STRUCTURE-HITS-001:nuker initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
@@ -6085,7 +6059,7 @@ Click a count to jump to the affected test list.
 - Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (18)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (19)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -6099,6 +6073,7 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:powerSpawn costs 100000
 - Construction costs CONSTRUCTION-COST-001:extractor costs 5000
 - Construction costs CONSTRUCTION-COST-001:lab costs 50000
+- Construction costs CONSTRUCTION-COST-001:terminal costs 100000
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
 - Construction costs CONSTRUCTION-COST-001:nuker costs 100000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
@@ -6130,7 +6105,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (19)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (20)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -6141,6 +6116,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
+- room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
@@ -6324,6 +6300,19 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
 - Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
 
+**`tests/19-power/19.4-19.8-powers.test.ts`** (1)
+
+- Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
+
+**`tests/19-power/19.9-generate-ops.test.ts`** (1)
+
+- PWR_GENERATE_OPS POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level
+
+**`tests/20-market/20.2-20.4-market.test.ts`** (2)
+
+- Market queries MARKET-QUERY-001 calcTransactionCost returns the formula-based cost
+- Market queries MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array
+
 **`tests/21-map/21.1-room-queries.test.ts`** (9)
 
 - Game.map room queries MAP-ROOM-001 describeExits returns exit directions for valid rooms and null for invalid
@@ -6389,12 +6378,14 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [LEFT] getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005 [TOP_LEFT] getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (24)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (26)
 
 - Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
+- Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
 - Store STORE-OPEN-001:container getCapacity() returns total capacity for container
 - Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
 - Store STORE-OPEN-002:storage getCapacity(RESOURCE_ENERGY) returns total capacity for storage
+- Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
 - Store STORE-OPEN-002:container getCapacity(RESOURCE_ENERGY) returns total capacity for container
 - Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
 - Store STORE-OPEN-003 getUsedCapacity and getFreeCapacity reflect mixed contents
@@ -6499,7 +6490,7 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (41)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (43)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
@@ -6514,6 +6505,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-GAME-004 Game.shard matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-005 Game.gcl matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-GAME-006 Game.gpl matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-GAME-007 Game.market matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:spawn structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extension structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:road structure data-property surface matches canonical shape
@@ -6524,6 +6516,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:tower structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:extractor structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:lab structure data-property surface matches canonical shape
+- 26.0 Object Shape Conformance SHAPE-STRUCT-001:terminal structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:container structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:observer structure data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-STRUCT-001:factory structure data-property surface matches canonical shape

@@ -239,7 +239,15 @@ export interface AdapterCapabilities {
 	powerSpawn: boolean;
 	/** Factory structure and production APIs. */
 	factory: boolean;
-	/** Market and terminal-driven market interactions. */
+	/** Terminal structure placement, construction, store, room shortcut, and
+	 *  public object shape. */
+	terminal: boolean;
+	/** Self-contained Game.market surface that needs no seeded order book:
+	 *  public object shape, calcTransactionCost(), and invalid-resource query
+	 *  filtering. */
+	marketBasics: boolean;
+	/** Full market order lifecycle, deals, history, and adapter-side order
+	 *  placement. */
 	market: boolean;
 	/** StructureTerminal.send: energy cost, cooldown, delivery, and
 	 *  transaction recording — independent of the market order book. */
@@ -250,6 +258,8 @@ export interface AdapterCapabilities {
 	nuke: boolean;
 	/** Deposit objects and harvest cooldown lifecycle. */
 	deposit: boolean;
+	/** Power Bank placement, public shape, combat, decay, and destruction loot. */
+	powerBank: boolean;
 	/** Custom terrain setup through RoomSpec.terrain / setTerrain. */
 	terrain: boolean;
 	/** Public room-status setup through RoomSpec.status. */

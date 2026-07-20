@@ -2508,7 +2508,7 @@ Coverage Notes
   in `14.5`; further family entries (rampart hits, effect propagation, reward
   contents) are still pending.
 
-### 14.3 Power Bank `capability: powerCreeps`
+### 14.3 Power Bank `capability: powerBank`
 - `POWER-BANK-001` `behavior` `verified_vanilla`
   When a power bank is attacked, it deals `POWER_BANK_HIT_BACK` of the received
   damage back to the attacker in the same tick.
@@ -3253,20 +3253,20 @@ Coverage Notes
 
 ---
 
-## 19. Power Creeps `capability: powerCreeps`
+## 19. Power Creeps
 
-### 19.0 Game.gpl
+### 19.0 Account GPL `capability: powerSpawn`
 - `GPL-001` `behavior` `verified_vanilla`
-  `capability: powerSpawn`
   With zero processed account power, `Game.gpl` reports level `0`, progress `0`,
   and `POWER_LEVEL_MULTIPLY` progress required for the next level.
 - `GPL-002` `matrix` `verified_vanilla`
-  `capability: powerSpawn`
   `Game.gpl.level`, `progress`, and `progressTotal` follow the vanilla account
   power formula at threshold edges:
   `level = floor((power / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW))`,
   `progress = power - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`, and
   `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`.
+
+### 19.0 Power Creep Allocation `capability: powerCreeps`
 - `GPL-003` `behavior` `verified_vanilla`
   `PowerCreep.create(name, POWER_CLASS.OPERATOR)` returns
   `ERR_NOT_ENOUGH_RESOURCES` when GPL level is `0`.
@@ -3278,7 +3278,7 @@ Coverage Notes
   Creating or upgrading power creeps consumes free allocated power levels but
   does not change `Game.gpl`, which reflects total processed account power.
 
-### 19.1 Lifecycle
+### 19.1 Lifecycle `capability: powerCreeps`
 - `POWERCREEP-CREATE-001` `behavior` `verified_vanilla`
   A successful `PowerCreep.create(name, className)` returns `OK` and queues a
   new unspawned power creep with that name and class.
@@ -3333,7 +3333,7 @@ Coverage Notes
   for ownership, free power levels, max level, invalid power selection, and
   unmet level requirements.
 
-### 19.2 Movement & Actions
+### 19.2 Movement & Actions `capability: powerCreeps`
 - `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
   A successful power creep move generates no fatigue on plain, swamp, or road
   terrain.
@@ -3352,7 +3352,7 @@ Coverage Notes
   as `attack()`, `heal()`, `harvest()`, `build()`, `repair()`,
   `dismantle()`, and `claimController()` on their public API.
 
-### 19.3 Enable Room
+### 19.3 Enable Room `capability: powerCreeps`
 - `POWERCREEP-ENABLE-001` `behavior` `verified_vanilla`
   A successful `powerCreep.enableRoom(controller)` returns `OK` and sets
   `controller.isPowerEnabled` to `true` on the next tick.
@@ -3361,7 +3361,7 @@ Coverage Notes
   matrix for invalid target, safe-mode-blocked hostile controller, range,
   busy, and ownership.
 
-### 19.4 Operate Powers
+### 19.4 Operate Powers `capability: powerCreeps`
 - `POWER-OPERATE-001` `matrix` `verified_vanilla`
   Operate power effect magnitudes match `POWER_INFO[power].effect[level]` for
   all numeric operate powers and supported power levels.
@@ -3385,7 +3385,7 @@ Coverage Notes
 - The production consequences of `PWR_OPERATE_FACTORY` are owned by `11.5
   Factory Commodity Chains`.
 
-### 19.5 Disrupt Powers
+### 19.5 Disrupt Powers `capability: powerCreeps`
 - `POWER-DISRUPT-001` `matrix` `verified_vanilla`
   Disrupt power effect values and durations match `POWER_INFO` for each disrupt
   power and supported power level.
@@ -3396,7 +3396,7 @@ Coverage Notes
   For disrupt powers with structure targets, target acceptance and
   invalid-target behavior match the canonical power-to-target matrix.
 
-### 19.6 Regen Powers
+### 19.6 Regen Powers `capability: powerCreeps`
 - `POWER-REGEN-001` `matrix` `verified_vanilla`
   Regen power effect amount, period, and duration match `POWER_INFO` for each
   regen power and supported power level.
@@ -3404,10 +3404,12 @@ Coverage Notes
   Regen power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   regen power.
 
-### 19.7 Combat Powers
+### 19.7 Combat POWER_INFO
 - `POWER-COMBAT-001` `matrix` `verified_vanilla`
   `PWR_SHIELD` and `PWR_FORTIFY` effect magnitudes match `POWER_INFO` for each
   supported power level.
+
+### 19.7 Combat Runtime `capability: powerCreeps`
 - `POWER-COMBAT-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
   rampart at the power creep's position in the same tick.
@@ -3415,10 +3417,12 @@ Coverage Notes
   The rampart created by `PWR_SHIELD` is removed when the shield effect
   expires.
 
-### 19.8 Generate Ops
+### 19.8 Generate Ops POWER_INFO
 - `POWER-GENERATE-OPS-001` `matrix` `verified_vanilla`
   `PWR_GENERATE_OPS` amount, cooldown, and ops cost match `POWER_INFO` for
   each supported power level.
+
+### 19.8 Generate Ops Runtime `capability: powerCreeps`
 - `POWER-GENERATE-OPS-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_GENERATE_OPS)` returns `OK` and adds ops to the
   power creep's store in the same tick.
@@ -3428,14 +3432,14 @@ Coverage Notes
 
 ---
 
-## 20. Market `capability: market`
+## 20. Market
 
 ### 20.1 Terminal Send
 Coverage Notes
 - Terminal `send()` behavior is owned by `13.3 Terminal`.
 - `Game.market.calcTransactionCost()` is covered under `20.4 Queries`.
 
-### 20.2 Orders
+### 20.2 Orders `capability: market`
 - `MARKET-ORDER-001` `matrix` `verified_vanilla`
   Successful `createOrder()` cases create an order with the requested type,
   resource type, price, amount, and room for the canonical order-creation
@@ -3472,7 +3476,7 @@ Notes
 - Order lifetime and expiry should be specified through observable query
   behavior rather than only by restating MARKET_ORDER_LIFE_TIME.
 
-### 20.3 Deal
+### 20.3 Deal `capability: market`
 - `MARKET-DEAL-001` `behavior` `verified_vanilla`
   A successful `Game.market.deal()` returns `OK` and executes a trade against
   the specified order.
@@ -3497,11 +3501,16 @@ Notes
 - Market fees are owned by order creation, price change, and extension, not by
   `deal()`.
 
-### 20.4 Queries
+### 20.4 Self-Contained Queries `capability: marketBasics`
 - `MARKET-QUERY-001` `behavior` `verified_vanilla`
   `Game.market.calcTransactionCost(amount, roomName1, roomName2)` returns
   `ceil(amount * (1 - exp(-distance / 30)))`, where `distance` is the room
   distance between the two rooms.
+- `MARKET-QUERY-007` `behavior` `verified_vanilla`
+  `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
+  array (`[]`).
+
+### 20.5 Seeded-Order And History Queries `capability: market`
 - `MARKET-QUERY-002` `behavior` `verified_vanilla`
   `Game.market.getAllOrders(filter?)` returns orders matching the supplied
   filter.
@@ -3517,10 +3526,6 @@ Notes
 - `MARKET-QUERY-006` `behavior` `needs_vanilla_verification`
   `Game.market.getHistory(invalidResource)` and valid resources with no
   history return an empty array (`[]`), not an empty object.
-- `MARKET-QUERY-007` `behavior` `verified_vanilla`
-  `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
-  array (`[]`).
-
 ---
 
 ## 21. Map
@@ -3949,6 +3954,8 @@ Coverage Notes
   `Game.gcl` exposes exactly `level`, `progress`, and `progressTotal`.
 - `SHAPE-GAME-006` `behavior` `verified_vanilla`
   `Game.gpl` exposes exactly `level`, `progress`, and `progressTotal`.
+
+### 26.4a Market Global Shape `capability: marketBasics`
 - `SHAPE-GAME-007` `behavior` `verified_vanilla`
   `Game.market` exposes exactly `credits`, `incomingTransactions`,
   `orders`, and `outgoingTransactions`.
@@ -3967,12 +3974,18 @@ Coverage Notes
 - `SHAPE-NPC-001` `behavior` `verified_vanilla`
   A keeper lair's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6a Invader Core Shape `capability: invaderCore`
 - `SHAPE-NPC-002` `behavior` `verified_vanilla`
   An invader core's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6b Power Bank Shape `capability: powerBank`
 - `SHAPE-NPC-003` `behavior` `verified_vanilla`
   A power bank's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6c Portal Shape `capability: portals`
 - `SHAPE-NPC-004` `behavior` `verified_vanilla`
   A portal's public data-property surface matches the canonical Screeps
   API exactly.

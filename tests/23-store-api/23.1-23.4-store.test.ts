@@ -30,7 +30,7 @@ const minRcl: Record<string, number> = {
 
 // Capability required to place each structure type (undefined = always available).
 const requiredCapability: Record<string, string | undefined> = {
-	[STRUCTURE_TERMINAL]: 'market',
+	[STRUCTURE_TERMINAL]: 'terminal',
 	[STRUCTURE_FACTORY]: 'factory',
 	[STRUCTURE_NUKER]: 'nuke',
 	[STRUCTURE_POWER_SPAWN]: 'powerSpawn',

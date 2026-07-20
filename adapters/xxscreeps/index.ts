@@ -76,6 +76,7 @@ import { create as createRoad } from 'xxscreeps/mods/classic/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
 import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
+import { create as createPowerBank } from 'xxscreeps/mods/modern/powerbank/powerbank.js';
 import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
 import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/modern/deposit/constants.js';
 import { create as createNuker } from 'xxscreeps/mods/modern/nuker/nuker.js';
@@ -195,11 +196,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		powerCreeps: false,
 		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
+		terminal: !!createTerminal,
+		marketBasics: true,
 		market: false,
 		terminalSend: true,
 		observer: true,
 		nuke: true,
 		deposit: true,
+		powerBank: true,
 		terrain: true,
 		roomStatus: false,
 		// Portal mod is optional in pinned xxscreeps. Capability tracks
@@ -210,11 +214,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
 		invaderCore: true,
-		// No stronghold deployment: `create()` in mods/invader/invader-core.ts
-		// has no deploy-layout caller and the schema has no templateName /
-		// strongholdId fields, so layout placement and the stronghold-only
-		// core fields are untestable.
+		// The deploy caller currently places only a stub tower/rampart/container/
+		// road layout. It lacks the five canonical bunker templates, reward
+		// contents, and templateName / strongholdId fields.
 		strongholdDeploy: false,
+		// The room tick processor can generate a fixed small Invader group in an
+		// already-active room. It does not implement the canonical inactive-room
+		// backend sweep, sector policy, or raid composition matrix.
 		invaderRaidSpawner: false,
 		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
 		// and no Game.cpu.shardLimits / setShardLimits. See
@@ -236,12 +242,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// deprecated Game.map / PathFinder / findPath / renewCreep APIs cataloged
 		// in §28.
 		deprecationNotices: false,
-	};
-
-	readonly limitations = {
-		// xxscreeps pull(self) enters an infinite loop in the recursive
-		// circular-pull check, hanging the test runner.
-		pullSelfHang: true,
 	};
 
 	readonly shapeDivergences = {
@@ -753,12 +753,38 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				return this.placePortal(roomName, spec);
 			case 'deposit':
 				return this.placeDeposit(roomName, spec);
+			case 'powerBank':
+				return this.placePowerBank(roomName, spec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair, invaderCore, portal, deposit.`,
+					`Supported types: keeperLair, invaderCore, portal, deposit, powerBank.`,
 				);
 		}
+	}
+
+	private async placePowerBank(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:powerBank`, id);
+
+		this.queueOp(roomName, room => {
+			const store = spec.store as Record<string, number> | undefined;
+			const power = (spec.power as number | undefined)
+				?? store?.[C.RESOURCE_POWER]
+				?? 1000;
+			const bank = createPowerBank(
+				new RoomPosition(pos[0], pos[1], roomName),
+				power,
+			);
+			bank.id = id;
+			if (typeof spec.hits === 'number') bank.hits = spec.hits;
+			const decayTicks = (spec.decayTime as number | undefined) ?? C.POWER_BANK_DECAY;
+			setStructureNextDecayTime(bank, this.simulation!.shard.time, decayTicks);
+			insertRoomObject(room, bank);
+		});
+
+		return id;
 	}
 
 	private async placeDeposit(roomName: string, spec: Record<string, unknown>): Promise<string> {

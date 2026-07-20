@@ -268,6 +268,12 @@ than honest skips because they turn missing features into misleading failures.
 In this repository, capability-gated tests use `shard.requires('capability')`
 rather than silently returning from the test body.
 
+Keep independently implemented surfaces separate. In particular, `terminal`
+covers the structure, `terminalSend` covers its send processor,
+`marketBasics` covers self-contained read-only `Game.market` behavior, and
+`market` covers the complete order/deal/history lifecycle. `powerBank` is
+independent of functional `powerCreeps` support.
+
 Adapter-specific skips should be rare. In this repository, narrow built-in
 exceptions are centralized in `src/limitations.ts` rather than
 scattered as raw adapter-name checks throughout the suite.
@@ -362,8 +368,8 @@ wrong things.
 
 ### Hiding unsupported features instead of capability-gating them
 
-If market, power creeps, terrain editing, or some structure class is not ready,
-report that cleanly via capabilities.
+If a market slice, power creeps, terrain editing, or some structure class is
+not ready, report that cleanly via the narrowest matching capability.
 
 ### Wrapping all errors as runtime
 

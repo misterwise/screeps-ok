@@ -23,8 +23,8 @@ import { resolve } from 'node:path';
 import type { ScreepsOkAdapter } from './adapter.js';
 
 export type AdapterLimitation =
-	/** `pull(self)` enters an infinite loop in the recursive circular-pull
-	 *  check, hanging the test runner. Must be skipped, not asserted-to-fail.
+	/** Closed 2026-07-20: xxscreeps now rejects `pull(self)` with
+	 *  `ERR_INVALID_TARGET` before circular-pull processing.
 	 */
 	| 'pullSelfHang'
 	/** Closed 2026-04-14: xxscreeps adapter now honors
