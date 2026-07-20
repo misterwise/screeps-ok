@@ -77,7 +77,7 @@ import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extrac
 import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
 import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
 import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
-import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/classic/mineral/constants.js';
+import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/modern/deposit/constants.js';
 import { create as createNuker } from 'xxscreeps/mods/modern/nuker/nuker.js';
 import { create as createNuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
 import { create as createResource } from 'xxscreeps/mods/classic/resource/resource.js';

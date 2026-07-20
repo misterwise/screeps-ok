@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2451%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2453%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-15 12:25 UTC |
-| 🟡 | **xxscreeps** | [2451](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [187](#xxscreeps-skipped-tests) | 2026-07-15 12:24 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-20 09:27 UTC |
+| 🟡 | **xxscreeps** | [2453](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [187](#xxscreeps-skipped-tests) | 2026-07-20 09:27 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 18 open parity gaps covering 51 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 16 open parity gaps covering 49 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -166,7 +166,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
-| `controller-unclaim-keeps-safe-mode-charges` | The unclaim intent processor delegates to the shared `release()` helper (`mods/classic/controller/processor.ts`), which clears user/progress/downgrade state but never touches `safeModeAvailable`, so charges held before the unclaim survive neutralization. The non-terminal downgrade path is unaffected: the downgrade tick zeroes `safeModeAvailable` before calling `release()`, so CTRL-DOWNGRADE-009 passes. | Vanilla's unclaim processor step (`processor/intents/controllers/unclaim.js`) zeroes `safeModeAvailable` along with the ownership reset. | [1](#xxscreeps-gap-controller-unclaim-keeps-safe-mode-charges) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
@@ -183,16 +182,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/classic/brokerage/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
-| `invader-core-collapse-controller-not-reset` | Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level. | Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null. | [1](#xxscreeps-gap-invader-core-collapse-controller-not-reset) |
 
 Click a test count above to jump to the affected test list for that gap.
-
-<details id="xxscreeps-gap-controller-unclaim-keeps-safe-mode-charges">
-<summary><code>controller-unclaim-keeps-safe-mode-charges</code> — 1 test</summary>
-
-- `StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0`
-
-</details>
 
 <details id="xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown">
 <summary><code>controller-unclaim-clears-safe-mode-cooldown</code> — 1 test</summary>
@@ -336,13 +327,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)`
 - `cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes`
-
-</details>
-
-<details id="xxscreeps-gap-invader-core-collapse-controller-not-reset">
-<summary><code>invader-core-collapse-controller-not-reset</code> — 1 test</summary>
-
-- `Invader core INVADER-CORE-004 invader core collapse timer clears the room controller`
 
 </details>
 
@@ -3883,7 +3867,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2451 tests across 117 files</summary>
+<summary>2453 tests across 118 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5000,6 +4984,10 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
 
+**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+
+- StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0
+
 **`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
@@ -6056,7 +6044,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (8)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (9)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
@@ -6064,6 +6052,7 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-001 ticksToDeploy counts down
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 

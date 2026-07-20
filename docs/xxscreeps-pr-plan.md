@@ -2,27 +2,26 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus the selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-07-20 (pin `a5677188`).
+Last refreshed: 2026-07-20 (pin `f01f0a23`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
 ## Current upstream PRs to track
 
-| PR | Title | Relevance |
-|---|---|---|
-| [#318](https://github.com/laverdet/xxscreeps/pull/318) | invader: reset room controller on core collapse expiry | MERGED 2026-07-17, not yet consumed — pin `a5677188` predates the merge. On the next pin bump: prune `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004; the centralized `release()` resets cover it). The safeModeCooldown-after-unclaim divergence (CTRL-UNCLAIM-005) is NOT covered. |
+None currently open.
+
+[#318](https://github.com/laverdet/xxscreeps/pull/318) (invader: reset room controller on core collapse expiry) merged 2026-07-17, consumed at pin `f01f0a23` — pruned `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004). The safeModeCooldown-after-unclaim divergence (CTRL-UNCLAIM-005) is NOT covered and stays queued below. The bump also crossed the shared-runner-context and constants-audit work, absorbed as adapter wiring (`acquireRunnerContext` second hook argument; `DEPOSIT_DECAY_TIME` moved to `mods/modern/deposit/constants.js`).
 
 [#317](https://github.com/laverdet/xxscreeps/pull/317) (pathfinder multi-goal lifetime) merged, shipped as `@xxscreeps/pathfinder@0.4.2`, consumed at pin `427f8677`.
 
 ## Active submission queue
 
-`parity.json` currently registers 18 open parity gaps (35 tests) plus 2 intentional expected failures (4 tests). The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
+`parity.json` currently registers 16 open parity gaps (33 tests) plus 2 intentional expected failures (4 tests). The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
-1. **Pin bump past the #318 merge** — #318 merged 2026-07-17 but the pin predates it. Bump to current upstream `main`, prune `invader-core-collapse-controller-not-reset` and `controller-unclaim-keeps-safe-mode-charges`, and watch for adapter fallout: the bump crosses the branded-constants work, the constants audit, and the brokerage/wallstreet market split.
-2. **`memory-parsed-json-not-refreshed-across-ticks`** (UNDOC-MEMJSON-001/-003/-004, UNDOC-MEMHACK-011) — promoted 2026-07-20 on the real-replication bar: re-parse `Memory` from raw at the tick boundary (`mods/memory/memory.ts`) instead of reusing the cached mutated `json` object. Memhack and `RawMemory._parsed` manipulation are widespread real bot patterns, and laverdet himself flagged the user expectation in his #131 review ("Users will muck with `RawMemory._parsed` and expect certain behavior to follow") — cite that, not vanilla conformance. Largest single-PR test payoff currently unblocked (4 tests).
-3. **`structure-active-equal-distance-scan-order`** (STRUCTURE-ACTIVE-005) — break `isActive` ties between equal-distance same-type structures by vanilla object scan order.
-4. **`game-object-json-room-tojson-null-crash`** residual (UNDOC-JSONOBJ-001) — parsed JSON snapshots omit nested `pos.x`/`pos.y`/`pos.roomName` for most object classes; include the same representative nested position fields as the live snapshots.
-5. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
+1. **`memory-parsed-json-not-refreshed-across-ticks`** (UNDOC-MEMJSON-001/-003/-004, UNDOC-MEMHACK-011) — promoted 2026-07-20 on the real-replication bar: re-parse `Memory` from raw at the tick boundary (`mods/memory/memory.ts`) instead of reusing the cached mutated `json` object. Memhack and `RawMemory._parsed` manipulation are widespread real bot patterns, and laverdet himself flagged the user expectation in his #131 review ("Users will muck with `RawMemory._parsed` and expect certain behavior to follow") — cite that, not vanilla conformance. Largest single-PR test payoff currently unblocked (4 tests).
+2. **`structure-active-equal-distance-scan-order`** (STRUCTURE-ACTIVE-005) — break `isActive` ties between equal-distance same-type structures by vanilla object scan order.
+3. **`game-object-json-room-tojson-null-crash`** residual (UNDOC-JSONOBJ-001) — parsed JSON snapshots omit nested `pos.x`/`pos.y`/`pos.roomName` for most object classes; include the same representative nested position fields as the live snapshots.
+4. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
 
 `controller-my-reset-returns-undefined` (CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001) was removed from this queue 2026-07-20 — accepted as an intentional divergence per laverdet's undefined-shapes rulings (#128, #193, #215); see Accepted divergences below.
 
@@ -37,7 +36,7 @@ Last refreshed: 2026-07-20 (pin `a5677188`).
 
 ## Deferred
 
-- **`terminal-send-check-order-diverges`** (9 test rows) — the fix is a straightforward `checkSend` reorder in `mods/market/terminal.ts`, but that file sits inside laverdet's in-progress market implementation work. Deferred until the market work settles to avoid colliding with it; largest single-PR payoff in the queue once unblocked.
+- **`terminal-send-check-order-diverges`** (9 test rows) — the fix is a straightforward `checkSend` reorder in `mods/classic/brokerage/terminal.ts`, but that file sits inside laverdet's in-progress market implementation work (the wallstreet order book landed in the `f01f0a23` bump range and is still moving). Deferred until the market work settles to avoid colliding with it; largest single-PR payoff in the queue once unblocked.
 
 ## Needs upstream design conversation first
 
@@ -61,13 +60,12 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 
 ## Feature queue coordination
 
-Portal (#159), Game.notify queueing (#161), shard-tick processor (#165), PowerSpawn / `Game.gpl` (#260), and the invader-core mod (#274) have all landed. The clean next Tier 1 feature area remains **`RoomObject.effects`** — it unlocks power and InvaderCore/stronghold work, and prior art exists on the `feature/effects-substrate` / `feature/invader-core` branches. Market is laverdet's active territory; steer clear of `mods/market` until that work lands (see the terminal deferral above).
+Portal (#159), Game.notify queueing (#161), shard-tick processor (#165), PowerSpawn / `Game.gpl` (#260), and the invader-core mod (#274) have all landed. The clean next Tier 1 feature area remains **`RoomObject.effects`** — it unlocks power and InvaderCore/stronghold work, and prior art exists on the `feature/effects-substrate` / `feature/invader-core` branches. Market is laverdet's active territory; steer clear of `mods/classic/brokerage` and `mods/mmo/wallstreet` until that work lands (see the terminal deferral above).
 
 ## Summary
 
 | Stage | Gaps | Tests |
 |---|---:|---:|
-| Merged upstream, pending pin bump | 2 | 2 |
 | Active submission queue | 4 | 7 |
 | Next-up areas | 8 | 10 |
 | Deferred (market in flight) | 1 | 9 |

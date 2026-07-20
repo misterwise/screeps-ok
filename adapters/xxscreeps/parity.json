@@ -7,16 +7,10 @@
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",
 			"tests": ["CTRL-DOWNGRADE-002", "CTRL-UNCLAIM-001"]
 		},
-		"controller-unclaim-keeps-safe-mode-charges": {
-			"actual": "The unclaim intent processor delegates to the shared `release()` helper (`mods/classic/controller/processor.ts`), which clears user/progress/downgrade state but never touches `safeModeAvailable`, so charges held before the unclaim survive neutralization. The non-terminal downgrade path is unaffected: the downgrade tick zeroes `safeModeAvailable` before calling `release()`, so CTRL-DOWNGRADE-009 passes.",
-			"expected": "Vanilla's unclaim processor step (`processor/intents/controllers/unclaim.js`) zeroes `safeModeAvailable` along with the ownership reset.",
-			"why": "An in-flight upstream PR centralizes the `safeModeAvailable`/`isPowerEnabled` resets into `release()`; when it merges and the pin bumps, this entry flips to unexpected-pass — prune it then.",
-			"tests": ["CTRL-UNCLAIM-004"]
-		},
 		"controller-unclaim-clears-safe-mode-cooldown": {
 			"actual": "`release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).",
 			"expected": "Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick.",
-			"why": "Distinct from controller-unclaim-keeps-safe-mode-charges: the in-flight resets PR does NOT change the cooldown handling, so this entry stays after that PR lands and needs its own upstream fix.",
+			"why": "NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix.",
 			"tests": ["CTRL-UNCLAIM-005"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
@@ -101,11 +95,6 @@
 			"actual": "xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw.",
 			"expected": "Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001).",
 			"tests": ["UNDOC-STALERECV-002"]
-		},
-		"invader-core-collapse-controller-not-reset": {
-			"actual": "Collapse expiry only removes the core: the object tick processor in `mods/invader/processor.ts` calls `#removeObject(core)` and leaves the room controller untouched (in-source TODO: reset an NPC-owned controller once stronghold deployment can create one), so the room's controller keeps its owner and level.",
-			"expected": "Vanilla `processor/intents/invader-core/tick.js` clears the room's controller in the collapse tick: user null, level 0, progress 0, downgrade and safe-mode timers cleared, isPowerEnabled false, effects null.",
-			"tests": ["INVADER-CORE-004"]
 		}
 	}
 }

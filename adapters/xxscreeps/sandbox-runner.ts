@@ -23,6 +23,7 @@ import type { Effect } from 'xxscreeps/utility/types.js';
 import { config } from 'xxscreeps/config/index.js';
 import { createSandbox } from 'xxscreeps/driver/sandbox/index.js';
 import { hooks as runnerHooks } from 'xxscreeps/engine/runner/index.js';
+import { acquireRunnerContext } from 'xxscreeps/engine/runner/instance.js';
 import * as Code from 'xxscreeps/engine/db/user/code.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
 import { acquireWith } from 'xxscreeps/utility/async.js';
@@ -105,19 +106,27 @@ export class UserSandbox {
 		// visual, controller) only read { shard, userId, world } from the
 		// passed-in context, so a minimal object satisfies the interface.
 		const context = { shard, userId, world } as any;
+		// Shared worker context (0fac669e): runnerWorker hooks populate per-runner
+		// resources that connectors read via the second hook argument (wallstreet's
+		// `runner.marketWatcher`). Upstream shares one context per runner worker;
+		// one per sandbox is equivalent here since each user gets its own.
+		const runner = await acquireRunnerContext(shard);
 		// `acquireWith` replaces the removed `acquire` helper (xxscreeps async-
 		// disposables refactor, 5af3d0ae). Each runnerConnector hook resolves to
 		// `[effect, connector]`; gather the effects into one cleanup and keep the
 		// connector objects. Inlines `engine/runner/instance.ts`'s acquireConnectors
 		// without pulling DisposableStack in for this single call site.
-		const connectorPromises = [...runnerHooks.map('runnerConnector', hook => hook(context))];
+		const connectorPromises = [...runnerHooks.map('runnerConnector', hook => hook(context, runner))];
 		const effects: Effect[] = [];
 		const resolved = await acquireWith(value => {
 			const cleanup = value?.[0];
 			if (cleanup) effects.push(cleanup);
 		}, ...connectorPromises.map(hook => Promise.resolve(hook)));
 		const connectors = [...Fn.filter(Fn.map(resolved, value => value?.[1]))];
-		const effect: Effect = () => { for (const fn of effects) fn(); };
+		const effect: Effect = () => {
+			for (const fn of effects) fn();
+			void runner[Symbol.asyncDispose]();
+		};
 		const initialize = [...Fn.filter(Fn.map(connectors, c => c.initialize))];
 		const refresh = [...Fn.filter(Fn.map(connectors, c => c.refresh))];
 		const save = [...Fn.filter(Fn.map(connectors, c => c.save))].reverse();
