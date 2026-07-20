@@ -2,7 +2,7 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus the selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-07-15 (pin `427f8677`).
+Last refreshed: 2026-07-20 (pin `a5677188`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
@@ -10,25 +10,28 @@ Last refreshed: 2026-07-15 (pin `427f8677`).
 
 | PR | Title | Relevance |
 |---|---|---|
-| [#318](https://github.com/laverdet/xxscreeps/pull/318) | invader: reset room controller on core collapse expiry | Closes `invader-core-collapse-controller-not-reset` (INVADER-CORE-004). Centralizes the `isPowerEnabled`/`safeModeAvailable` resets into `release()`, also fixing latent unclaim/downgrade/unspawn divergences that have no catalog rows yet (candidate CTRL rows queued; the safeModeCooldown-after-unclaim divergence is NOT covered by this PR). |
+| [#318](https://github.com/laverdet/xxscreeps/pull/318) | invader: reset room controller on core collapse expiry | MERGED 2026-07-17, not yet consumed — pin `a5677188` predates the merge. On the next pin bump: prune `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004; the centralized `release()` resets cover it). The safeModeCooldown-after-unclaim divergence (CTRL-UNCLAIM-005) is NOT covered. |
 
 [#317](https://github.com/laverdet/xxscreeps/pull/317) (pathfinder multi-goal lifetime) merged, shipped as `@xxscreeps/pathfinder@0.4.2`, consumed at pin `427f8677`.
 
 ## Active submission queue
 
-`parity.json` currently registers 17 open parity gaps (35 tests) plus 1 intentional expected failure (2 tests). The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
+`parity.json` currently registers 18 open parity gaps (35 tests) plus 2 intentional expected failures (4 tests). The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
-1. **`invader-core-collapse-controller-not-reset`** (INVADER-CORE-004) — SUBMITTED as [#318](https://github.com/laverdet/xxscreeps/pull/318). The gap turned out narrower than the analysis above assumed (upstream `main` already released NPC-owned controllers on collapse via the #285 chained pre-tick); the actual fix drops the NPC-owner gate and centralizes the `isPowerEnabled`/`safeModeAvailable` resets into `release()`. On merge + pin bump: prune from `parity.json`, and note the pin will cross the upstream `mods/classic/**` reorg, which needs an adapter import-path follow-up in this repo.
-2. **`controller-my-reset-returns-undefined`** (CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001) — `OwnedStructure.my` returns `undefined` instead of `false` after a claimed controller goes neutral via unclaim or RCL 1 downgrade.
-3. **`commonjs-main-exports-alias-missing`** (UNDOC-GLOBAL-003) — wire the direct main-path `exports` global as an alias of `module.exports`, mirroring how `driver/runtime/module.ts` executes CommonJS modules.
-4. **`structure-active-equal-distance-scan-order`** (STRUCTURE-ACTIVE-005) — break `isActive` ties between equal-distance same-type structures by vanilla object scan order.
-5. **`game-object-json-room-tojson-null-crash`** residual (UNDOC-JSONOBJ-001) — parsed JSON snapshots omit nested `pos.x`/`pos.y`/`pos.roomName` for most object classes; include the same representative nested position fields as the live snapshots.
+1. **Pin bump past the #318 merge** — #318 merged 2026-07-17 but the pin predates it. Bump to current upstream `main`, prune `invader-core-collapse-controller-not-reset` and `controller-unclaim-keeps-safe-mode-charges`, and watch for adapter fallout: the bump crosses the branded-constants work, the constants audit, and the brokerage/wallstreet market split.
+2. **`memory-parsed-json-not-refreshed-across-ticks`** (UNDOC-MEMJSON-001/-003/-004, UNDOC-MEMHACK-011) — promoted 2026-07-20 on the real-replication bar: re-parse `Memory` from raw at the tick boundary (`mods/memory/memory.ts`) instead of reusing the cached mutated `json` object. Memhack and `RawMemory._parsed` manipulation are widespread real bot patterns, and laverdet himself flagged the user expectation in his #131 review ("Users will muck with `RawMemory._parsed` and expect certain behavior to follow") — cite that, not vanilla conformance. Largest single-PR test payoff currently unblocked (4 tests).
+3. **`structure-active-equal-distance-scan-order`** (STRUCTURE-ACTIVE-005) — break `isActive` ties between equal-distance same-type structures by vanilla object scan order.
+4. **`game-object-json-room-tojson-null-crash`** residual (UNDOC-JSONOBJ-001) — parsed JSON snapshots omit nested `pos.x`/`pos.y`/`pos.roomName` for most object classes; include the same representative nested position fields as the live snapshots.
+5. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
+
+`controller-my-reset-returns-undefined` (CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001) was removed from this queue 2026-07-20 — accepted as an intentional divergence per laverdet's undefined-shapes rulings (#128, #193, #215); see Accepted divergences below.
 
 ## Next-up areas (not currently queued)
 
-- **Memory subsystem** (3 gaps, 6 tests) — cohesive slice in `mods/memory/memory.ts`: re-parse `Memory` at the tick boundary (`memory-parsed-json-not-refreshed-across-ticks`, 4 tests), cycle protection in `crunch` (`memory-circular-ref-crash`), and vanilla's first-access descriptor flip on `global.Memory` (`rawmemory-set-invalidates-parsed-memhack`).
+- **`commonjs-main-exports-alias-missing`** (UNDOC-GLOBAL-003) — demoted from the queue 2026-07-20: no player-bot replication (row came from the 2026-05-02 systematic vanilla-coverage sweep, no upstream reports), failing the real-replication bar. Root cause reframed after code inspection: module execution is fine (`makeRequire` already aliases `exports` to `module.exports`); the gap is the eval channel (player console + adapter delivery), where the isolated sandbox leaks build plumbing — global `exports` is the webpack bootstrap `{}`, global `module` is the runtime library — so `module.exports.x =` throws TypeError. Reported upstream as an encapsulation-leak observation in [#328](https://github.com/laverdet/xxscreeps/issues/328); wait for laverdet's read before spending a PR slot. If a PR does happen: delete the plumbing globals after boot, give eval expressions a fresh throwaway `module = { exports: {} }`/aliased `exports` pair per command, and do NOT wire eval to the main module record (vanilla's console doesn't expose it).
+
+- **Memory subsystem residual** (2 gaps, 2 tests) — the re-parse slice is queued above; remaining in `mods/memory/memory.ts`: cycle protection in `crunch` (`memory-circular-ref-crash` — also real-replication-worthy: a bot accidentally storing a circular ref stack-overflows the player runtime where vanilla degrades gracefully) and vanilla's first-access descriptor flip on `global.Memory` (`rawmemory-set-invalidates-parsed-memhack`).
 - **`stale-pickup-target-allowed`** (UNDOC-STALEARG-001:creepPickup) — make `checkTarget` read a schema-backed field so released wrappers trip the guard uniformly; closes the whole stale-argument axis rather than just pickup.
-- **`attack-notify-getter-api-missing`** (5 tests) — `notifiesWhenAttacked` getter plus `notifyWhenAttacked` return-code fixes.
 - **`renew-creep-energy-structures-option-missing`** (3 tests) — validate the options argument and honor `options.energyStructures`.
 - **Pathfinding behavior** — three independent gaps: `legacy-path-cost-callback-false-ignored` (LEGACY-PATH-010), `roomposition-find-closest-by-path-range-ignored` (ROOMPOS-FIND-010), `moveto-all-routes-blocked-walks-into-creeps` (MOVE-COLLISION-007; adjacent to screeps/engine#63 — re-verify canonical behavior before drafting).
 
@@ -44,6 +47,7 @@ Last refreshed: 2026-07-15 (pin `427f8677`).
 
 - **`look-for-at-unknown-returns-empty`** (ROOM-LOOK-006) — blocked on registering all canonical LOOK_* constants (e.g. `LOOK_POWER_CREEPS`); hardening the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases.
 - **`factory-power-effect-not-implemented`** (2 tests, intentional expected failure) — blocked until power-creep/effects substrate exists upstream.
+- **`attack-notify-getter-api-missing`** (5 tests) — pulled from PR consideration 2026-07-20: the `notifiesWhenAttacked()` getter does not exist in stable vanilla either (the gap is registered on BOTH adapters; vanilla's `parity.json` documents the engine-source check), so the ATTACK-NOTIFY-001..004 / STRUCTURE-API-006 rows are aspirational `needs_vanilla_verification` claims. An upstream PR adding the getter would rightly get the "not even Screeps does this" response (cf. #213). Blocked on re-triaging the catalog rows against real vanilla. The one PR-able slice hiding here is different and smaller: xxscreeps's `Creep.notifyWhenAttacked` reportedly returns `null` where vanilla's setter returns `OK` (real bot pattern) — that needs its own `verified_vanilla` catalog row + test before any upstream PR.
 
 ## Accepted divergences
 
@@ -53,6 +57,7 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - **`shape-body-part-always-has-boost`** (declared divergence) — #163 was closed as not desired by upstream.
 - **`shape-controller-effects-always-enumerable`** (declared divergence) — deliberate `@enumerable` override on the controller's `effects` getter; empty-case key presence only.
 - **`factory-power-effect-not-implemented`** (expected failure) — see Blocked above.
+- **`controller-my-reset-returns-undefined`** (intentional expected failure) — accepted 2026-07-20. `controller.my` reads `undefined` instead of `false` after a claimed controller goes neutral; truthiness identical, only strict `=== false` diverges. laverdet ruled against exact undefined-shape conformance (#215 review), called vanilla's `controller.my === undefined` "a dumb quirk" (#128 review), and steered `structure.my` to `undefined` for null users (#193). Not shape-foldable (runtime value, not key presence), so it stays in `parity.json` with `intentional: true`; rows run as regression traps.
 
 ## Feature queue coordination
 
@@ -62,9 +67,10 @@ Portal (#159), Game.notify queueing (#161), shard-tick processor (#165), PowerSp
 
 | Stage | Gaps | Tests |
 |---|---:|---:|
-| Open PRs expected to close current gaps | 0 | 0 |
-| Active submission queue | 5 | 6 |
-| Next-up areas | 9 | 18 |
+| Merged upstream, pending pin bump | 2 | 2 |
+| Active submission queue | 4 | 7 |
+| Next-up areas | 8 | 10 |
 | Deferred (market in flight) | 1 | 9 |
 | Needs design conversation | 1 | 1 |
-| Blocked (open gap + intentional) | 2 | 3 |
+| Blocked (open gaps + intentional) | 3 | 8 |
+| Accepted divergence (intentional expected failure) | 1 | 2 |

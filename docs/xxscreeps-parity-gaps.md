@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-15 against pin `427f8677`.
+Last refreshed: 2026-07-20 against pin `a5677188`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 19 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the two `controller-unclaim-*` safe-mode gaps were added 2026-07-15 with the controller-neutralization field-reset rows (CTRL-UNCLAIM-004/-005/-006, CTRL-DOWNGRADE-009/-010/-011); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`427f8677` bump cleared the three `@xxscreeps/pathfinder@0.4.1` regressions (`pathfinder-0-4-1-incomplete-for-solvable-searches`) along with its darwin/linux platform divergence and the intermittent ROOMPOS-FIND-001 failures. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 18 open gaps registered in `parity.json` plus two expected failures held intentional (`factory-power-effect-not-implemented`, `controller-my-reset-returns-undefined`, the latter accepted 2026-07-20 per laverdet's undefined-shapes rulings); the two `controller-unclaim-*` safe-mode gaps were added 2026-07-15 with the controller-neutralization field-reset rows (CTRL-UNCLAIM-004/-005/-006, CTRL-DOWNGRADE-009/-010/-011); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`427f8677` bump cleared the three `@xxscreeps/pathfinder@0.4.1` regressions (`pathfinder-0-4-1-incomplete-for-solvable-searches`) along with its darwin/linux platform divergence and the intermittent ROOMPOS-FIND-001 failures. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry shipped `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regressed three previously-passing searches (PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009) with a darwin/linux platform divergence and intermittent ROOMPOS-FIND-001 failures — a goal-lifetime use-after-free. Fixed upstream in `@xxscreeps/pathfinder@0.4.2` (laverdet/xxscreeps#317, `pf: keep multi-goal storage alive during search`), consumed at pin `427f8677`; all four searches pass deterministically again.
 
@@ -97,7 +97,7 @@ Last refreshed: 2026-07-15 against pin `427f8677`.
 
 ## Accepted divergences
 
-Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but blocked on an upstream substrate stay in `parity.json` as expected failures (factory power effect below).
+Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but not shape-foldable — blocked on an upstream substrate, or accepted value divergences in behavior tests — stay in `parity.json` as expected failures with `intentional: true` (factory power effect and the controller `.my` reset below).
 
 ### shape-flag-extra-id
 
@@ -122,6 +122,12 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Tests: FACTORY-PRODUCE-011:powerEffect, FACTORY-PRODUCE-011:powerEffectBeforeNotEnough
 - Status: INTENTIONAL — expected failure, blocked on upstream substrate.
 - Decision: `mods/factory/factory.ts` documents the `PWR_OPERATE_FACTORY` branch as blocked until power creeps/effects exist upstream. screeps-ok keeps those rows as expected failures until that substrate lands.
+
+### controller-my-reset-returns-undefined
+
+- Tests: CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001
+- Status: INTENTIONAL — expected failure, accepted value divergence.
+- Decision (2026-07-20): xxscreeps returns `undefined` where vanilla returns `false` for `controller.my` after a claimed controller goes neutral (unclaim or RCL 1 downgrade). Truthiness is identical; only strict `=== false` checks diverge. Accepted on three upstream rulings: laverdet called vanilla's `controller.my === undefined` shape "a dumb quirk" ([#128](https://github.com/laverdet/xxscreeps/pull/128) review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix ([#193](https://github.com/laverdet/xxscreeps/issues/193)), and rejected codifying strict conformance to vanilla's exact undefined-in shapes ([#215](https://github.com/laverdet/xxscreeps/pull/215) review, 2026-06-03). Not shape-foldable — the divergence is a runtime value in behavior tests, not key presence — so it stays in `parity.json` and the rows run as regression traps. Do not re-queue an upstream fix.
 
 ## Capability skips
 
