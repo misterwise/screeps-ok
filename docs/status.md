@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 18 open parity gaps covering 51 tests and 2 intentional divergences covering 4 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 17 open parity gaps covering 47 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -168,7 +168,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/meta/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
@@ -198,16 +197,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
 
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
-
-</details>
-
-<details id="xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks">
-<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 4 tests</summary>
-
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save`
-- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick`
-- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick`
-- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick`
 
 </details>
 
@@ -354,6 +343,7 @@ These are known vanilla differences that the engine maintainers have decided not
 | Gap | Why | Actual | Vanilla behavior | Tests |
 | --- | --- | --- | --- | :-: |
 | `controller-my-reset-returns-undefined` | Accepted `undefined`-vs-`false` value divergence: truthiness is identical, so only strict `=== false` checks diverge. laverdet called vanilla's `controller.my === undefined` shape 'a dumb quirk' (xxscreeps#128 review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix (xxscreeps#193), and rejected codifying strict conformance to vanilla's exact undefined-in shapes (xxscreeps#215 review, 2026-06-03). Do not re-queue an upstream fix; the rows stay as regression traps. | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/classic/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
+| `memory-parsed-json-not-refreshed-across-ticks` | Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps. | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `factory-power-effect-not-implemented` | `mods/modern/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional. | `checkProduce` (`packages/xxscreeps/mods/modern/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -363,6 +353,16 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
+
+</details>
+
+<details id="xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks">
+<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 4 tests</summary>
+
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save`
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick`
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick`
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick`
 
 </details>
 

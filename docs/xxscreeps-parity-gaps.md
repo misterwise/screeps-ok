@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-20 against pin `f01f0a23`.
+Last refreshed: 2026-07-21 against pin `f01f0a23`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 18 open gaps registered in `parity.json` plus two expected failures held intentional (`factory-power-effect-not-implemented`, `controller-my-reset-returns-undefined`, the latter accepted 2026-07-20 per laverdet's undefined-shapes rulings); the newly exposed Power Bank surface accounts for the two additional ordinary gaps. The three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`f01f0a23` bump consumed xxscreeps#318's centralized `release()` resets, clearing `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004); the cooldown half (`controller-unclaim-clears-safe-mode-cooldown`, CTRL-UNCLAIM-005) remains open. The same bump crossed the upstream shared-runner-context and constants-audit work, which needed adapter wiring only (runnerConnector second argument via `acquireRunnerContext`; `DEPOSIT_DECAY_TIME` import moved to `mods/modern/deposit/constants.js`). Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 17 open gaps registered in `parity.json` plus three expected failures held intentional (`factory-power-effect-not-implemented`; `controller-my-reset-returns-undefined`, accepted 2026-07-20 per laverdet's undefined-shapes rulings; `memory-parsed-json-not-refreshed-across-ticks`, accepted 2026-07-21 per laverdet's #329 spec-chasing bar); the newly exposed Power Bank surface accounts for the two additional ordinary gaps. The three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`f01f0a23` bump consumed xxscreeps#318's centralized `release()` resets, clearing `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004); the cooldown half (`controller-unclaim-clears-safe-mode-cooldown`, CTRL-UNCLAIM-005) remains open. The same bump crossed the upstream shared-runner-context and constants-audit work, which needed adapter wiring only (runnerConnector second argument via `acquireRunnerContext`; `DEPOSIT_DECAY_TIME` import moved to `mods/modern/deposit/constants.js`). Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry shipped `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regressed three previously-passing searches (PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009) with a darwin/linux platform divergence and intermittent ROOMPOS-FIND-001 failures — a goal-lifetime use-after-free. Fixed upstream in `@xxscreeps/pathfinder@0.4.2` (laverdet/xxscreeps#317, `pf: keep multi-goal storage alive during search`), consumed at pin `427f8677`; all four searches pass deterministically again.
 
@@ -18,19 +18,12 @@ Last refreshed: 2026-07-20 against pin `f01f0a23`.
 - Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object.
 - Plan: mirror vanilla's first-access descriptor flip so `Object.getOwnPropertyDescriptor(global, 'Memory')` reports a configurable enumerable value descriptor after `Memory` is read.
 
-### memory-parsed-json-not-refreshed-across-ticks
-
-- Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011
-- Status: CONFIRMED.
-- Cause: xxscreeps caches parsed Memory in module-level state and does not invalidate it across ticks. Tick-end serialization normalizes functions, `NaN`, and `Infinity`, but next-tick `Memory` reads still see the stale live object instead of a fresh parse of raw memory.
-- Plan: reset parsed Memory state at the tick boundary so the next access re-parses `RawMemory.get()`.
-
 ### memory-circular-ref-crash
 
 - Tests: UNDOC-MEMJSON-005
-- Status: CONFIRMED.
+- Status: CONFIRMED; fix submitted upstream as [#329](https://github.com/laverdet/xxscreeps/pull/329) (2026-07-21, trimmed after review to exactly the smaller-diff option below).
 - Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
-- Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
+- Plan: #329 moves the normalizer under the existing serialization error handling and drops the cached parse in the catch, so a failed save surfaces as vanilla-style next-tick data loss instead of staying masked until an isolate reset. Consume at the pin that includes it.
 
 ### game-object-json-room-tojson-null-crash
 
@@ -97,7 +90,7 @@ Last refreshed: 2026-07-20 against pin `f01f0a23`.
 
 ## Accepted divergences
 
-Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but not shape-foldable — blocked on an upstream substrate, or accepted value divergences in behavior tests — stay in `parity.json` as expected failures with `intentional: true` (factory power effect and the controller `.my` reset below).
+Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but not shape-foldable — blocked on an upstream substrate, or accepted value divergences in behavior tests — stay in `parity.json` as expected failures with `intentional: true` (factory power effect, the controller `.my` reset, and the memory cached-parse rows below).
 
 ### shape-flag-extra-id
 
@@ -128,6 +121,12 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Tests: CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001
 - Status: INTENTIONAL — expected failure, accepted value divergence.
 - Decision (2026-07-20): xxscreeps returns `undefined` where vanilla returns `false` for `controller.my` after a claimed controller goes neutral (unclaim or RCL 1 downgrade). Truthiness is identical; only strict `=== false` checks diverge. Accepted on three upstream rulings: laverdet called vanilla's `controller.my === undefined` shape "a dumb quirk" ([#128](https://github.com/laverdet/xxscreeps/pull/128) review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix ([#193](https://github.com/laverdet/xxscreeps/issues/193)), and rejected codifying strict conformance to vanilla's exact undefined-in shapes ([#215](https://github.com/laverdet/xxscreeps/pull/215) review, 2026-06-03). Not shape-foldable — the divergence is a runtime value in behavior tests, not key presence — so it stays in `parity.json` and the rows run as regression traps. Do not re-queue an upstream fix.
+
+### memory-parsed-json-not-refreshed-across-ticks
+
+- Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011
+- Status: INTENTIONAL — expected failure, accepted behavior divergence.
+- Decision (2026-07-21): submitted in [#329](https://github.com/laverdet/xxscreeps/pull/329) and withdrawn per laverdet's review bar — "Have you observed these values (NaN, Infinity) causing problems with user scripts? ... So if this is just a matter of chasing a spec then I don't want to do it. If it's a matter of fixing something that actually broke then we can figure it out." No observed breakage exists on either half: functions/`NaN`/`Infinity` surviving in the cached parse has no corpus repro, and the skip-save half (UNDOC-MEMHACK-011) has no coherent victim — every real bot deleting `RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse, while mutate-then-bare-delete loses its mutations on vanilla itself, so nobody ships it (the one coherent bare-delete shape, a dirty-flag save skip, mutates nothing and so cannot leak). laverdet's cached-parse design (`32c9fdb`, which superseded the #140 cross-tick re-parse proposal in 2021) deliberately trades exact per-tick-re-parse semantics for CPU and already diverges on prototypes, `toJSON`, getters, Dates, circular flattening, and sparse arrays; these four rows pin the same accepted class. Not shape-foldable, so the rows stay in `parity.json` as regression traps. Do not re-queue an upstream fix without an actual user-script report.
 
 ## Capability skips
 
