@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2471%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2472%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-20 10:08 UTC |
-| 🟡 | **xxscreeps** | [2471](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-20 10:08 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-22 00:53 UTC |
+| 🟡 | **xxscreeps** | [2472](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-22 00:53 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 17 open parity gaps covering 47 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 16 open parity gaps covering 46 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -168,7 +168,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
-| `memory-circular-ref-crash` | A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/meta/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught. | Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick. | [1](#xxscreeps-gap-memory-circular-ref-crash) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
@@ -197,13 +196,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
 
 - `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
-
-</details>
-
-<details id="xxscreeps-gap-memory-circular-ref-crash">
-<summary><code>memory-circular-ref-crash</code> — 1 test</summary>
-
-- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
 
 </details>
 
@@ -3830,7 +3822,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2471 tests across 122 files</summary>
+<summary>2472 tests across 122 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6604,9 +6596,10 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry
 
-**`tests/27-undocumented/27.3-memjson.test.ts`** (1)
+**`tests/27-undocumented/27.3-memjson.test.ts`** (2)
 
 - Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-002 undefined-valued Memory keys are dropped on the next tick
+- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist
 
 **`tests/27-undocumented/27.4-costmatrix-bits.test.ts`** (4)
 

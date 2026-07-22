@@ -25,12 +25,6 @@
 			"expected": "`Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics.",
 			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004", "UNDOC-MEMHACK-011"]
 		},
-		"memory-circular-ref-crash": {
-			"why": "Fix submitted upstream as laverdet/xxscreeps#329 (trimmed 2026-07-21 to the smaller-diff option: `crunch` moved under the existing serialization catch, which also drops the cached parse so a failed save surfaces as vanilla-style next-tick data loss instead of staying masked until an isolate reset).",
-			"actual": "A circular reference in `Memory` causes xxscreeps's `crunch` normalizer (`mods/meta/memory/memory.ts`) to recurse until stack overflow (`RangeError: Maximum call stack size exceeded`), crashing the player runtime. `crunch` has no cycle detection; the subsequent `JSON.stringify` would also throw, but `crunch` runs first and its throw is not caught.",
-			"expected": "Circular references fail gracefully — the unserializable subtree does not persist, but the player runtime stays alive and other Memory keys that do not participate in the cycle remain readable on the next tick.",
-			"tests": ["UNDOC-MEMJSON-005"]
-		},
 		"game-object-json-room-tojson-null-crash": {
 			"actual": "`JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON.",
 			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields.",

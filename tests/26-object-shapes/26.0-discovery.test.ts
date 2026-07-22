@@ -362,7 +362,7 @@ describe('26.0 Object Shape Conformance', () => {
 				s ? dataProps(s) : null
 			`) as string[] | null;
 
-			expect(keys).toEqual([...entry.shape]);
+			expect(keys).toEqual(await expectedShape('structure', entry.shape));
 		});
 	}
 
@@ -421,7 +421,7 @@ describe('26.0 Object Shape Conformance', () => {
 				o ? dataProps(o) : null
 			`) as string[] | null;
 
-			expect(keys).toEqual([...entry.shape]);
+			expect(keys).toEqual(await expectedShape('structure', entry.shape));
 		});
 	}
 

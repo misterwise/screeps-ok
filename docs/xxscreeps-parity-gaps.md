@@ -3,9 +3,9 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-21 against pin `f01f0a23`.
+Last refreshed: 2026-07-22 against pin `d2268ac5`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 17 open gaps registered in `parity.json` plus three expected failures held intentional (`factory-power-effect-not-implemented`; `controller-my-reset-returns-undefined`, accepted 2026-07-20 per laverdet's undefined-shapes rulings; `memory-parsed-json-not-refreshed-across-ticks`, accepted 2026-07-21 per laverdet's #329 spec-chasing bar); the newly exposed Power Bank surface accounts for the two additional ordinary gaps. The three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. The pin-`f01f0a23` bump consumed xxscreeps#318's centralized `release()` resets, clearing `invader-core-collapse-controller-not-reset` (INVADER-CORE-004) and `controller-unclaim-keeps-safe-mode-charges` (CTRL-UNCLAIM-004); the cooldown half (`controller-unclaim-clears-safe-mode-cooldown`, CTRL-UNCLAIM-005) remains open. The same bump crossed the upstream shared-runner-context and constants-audit work, which needed adapter wiring only (runnerConnector second argument via `acquireRunnerContext`; `DEPOSIT_DECAY_TIME` import moved to `mods/modern/deposit/constants.js`). Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 16 open gaps registered in `parity.json` plus three expected failures held intentional (`factory-power-effect-not-implemented`; `controller-my-reset-returns-undefined`, accepted 2026-07-20 per laverdet's undefined-shapes rulings; `memory-parsed-json-not-refreshed-across-ticks`, accepted 2026-07-21 per laverdet's #329 spec-chasing bar); the Power Bank surface accounts for two ordinary gaps. Four intentional shape divergences (flag `id`, body-part `boost`, controller `effects`, structure `effects`) are declared on the adapter. The `d2268ac5` bump consumes xxscreeps#329, clearing `memory-circular-ref-crash` (UNDOC-MEMJSON-005), and consumes #311's deliberate invader-owned `Structure.effects` getter for stronghold collapse timers. The upstream sector-mod extraction also moves `computeRoomMeta` from `game/room/sector.js` to `mods/modern/sector/sector.js`, requiring an adapter import update. Full counts regenerate in `docs/status.md` on the next full run.
 
 > Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry shipped `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regressed three previously-passing searches (PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009) with a darwin/linux platform divergence and intermittent ROOMPOS-FIND-001 failures — a goal-lifetime use-after-free. Fixed upstream in `@xxscreeps/pathfinder@0.4.2` (laverdet/xxscreeps#317, `pf: keep multi-goal storage alive during search`), consumed at pin `427f8677`; all four searches pass deterministically again.
 
@@ -17,13 +17,6 @@ Last refreshed: 2026-07-21 against pin `f01f0a23`.
 - Status: RESIDUAL after pin `15df4bea`; the RawMemory.set mutation-preservation rows now pass.
 - Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object.
 - Plan: mirror vanilla's first-access descriptor flip so `Object.getOwnPropertyDescriptor(global, 'Memory')` reports a configurable enumerable value descriptor after `Memory` is read.
-
-### memory-circular-ref-crash
-
-- Tests: UNDOC-MEMJSON-005
-- Status: CONFIRMED; fix submitted upstream as [#329](https://github.com/laverdet/xxscreeps/pull/329) (2026-07-21, trimmed after review to exactly the smaller-diff option below).
-- Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
-- Plan: #329 moves the normalizer under the existing serialization error handling and drops the cached parse in the catch, so a failed save surfaces as vanilla-style next-tick data loss instead of staying masked until an isolate reset. Consume at the pin that includes it.
 
 ### game-object-json-room-tojson-null-crash
 
@@ -109,6 +102,12 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Tests: SHAPE-CTRL-001 (passes; `effects` folded into the expected key set via `expectedShape('controller', ...)`).
 - Status: INTENTIONAL — declared divergence (`controller: { extra: ['effects'] }`).
 - Decision: appeared at pin `d1e3bade`. `mods/controller/controller.ts:62` declares an `@enumerable override get effects()` (safe-mode invulnerability / `PWR_OPERATE_CONTROLLER`), the same deliberate treatment as `StructureInvaderCore` (`mods/invader/invader-core.ts:29`, already canonical in SHAPE-NPC-002). The base `RoomObject.effects` getter is non-enumerable, so this is an intentional per-object choice to surface controller effects, not an accident — accepted like `boost` / `flag.id`. Vanilla `screeps-engine/src/game/rooms.js:1651` assigns `effects` only when an effect is active, so its no-effect controller omits the key; the divergence is empty-case key presence only.
+
+### shape-structure-effects-always-enumerable
+
+- Tests: the SHAPE-STRUCT-001 matrix plus SHAPE-NPC-001/003/004 (`effects` is folded into the expected key set via `expectedShape('structure', ...)`; SHAPE-NPC-003 remains an expected failure only for its independent `store` extension).
+- Status: INTENTIONAL — declared divergence (`structure: { extra: ['effects'] }`).
+- Decision: laverdet/xxscreeps#215 explicitly rejected exact undefined-vs-absent shape parity: "we should not be bending over backwards to adhere to Screeps' exact undefined-in shapes." The stronghold template work in #311 deliberately has the invader mod extend base `Structure` with an enumerable derived getter so every peer type can expose its collapse timer. Vanilla only assigns an enumerable `effects` property when backing effect data exists, so ordinary structures differ only by an inherited key whose value is `undefined`. This is the designed producer-owned effects surface, not an adapter gap; do not re-queue an upstream fix.
 
 ### factory-power-effect-not-implemented
 

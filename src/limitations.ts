@@ -83,7 +83,9 @@ export type ShapeDivergenceTarget =
 	/** Creep body part entries (`{type, hits[, boost]}`). */
 	| 'bodyPart'
 	/** Controller data-property surface (`effects` always enumerable). */
-	| 'controller';
+	| 'controller'
+	/** Structure data-property surfaces, including NPC structures. */
+	| 'structure';
 
 export interface ShapeDivergence {
 	/** Property keys present on this engine beyond the canonical shape. */
@@ -103,5 +105,5 @@ export async function expectedShape(
 ): Promise<string[]> {
 	const adapter = await loadAdapter();
 	const extra = adapter.shapeDivergences?.[target]?.extra ?? [];
-	return [...canonical, ...extra].sort();
+	return [...new Set([...canonical, ...extra])].sort();
 }
