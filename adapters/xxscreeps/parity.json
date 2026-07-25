@@ -14,6 +14,8 @@
 			"tests": ["CTRL-UNCLAIM-005"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
+			"intentional": true,
+			"why": "Accepted 2026-07-25: the row asserts an engine mechanism, not a player-observable behavior. UNDOC-MEMHACK-012 reads `Object.getOwnPropertyDescriptor(global, 'Memory')` and asserts value-vs-accessor shape; the row's own text says the descriptor flip 'is what pins the in-tick reference for MEMORY-002 and UNDOC-MEMHACK-007/008/009/010' — and every one of those rows PASSES on xxscreeps, which achieves the same pinning without flipping the descriptor. So the observable consequences are already covered and green, and what remains is introspection of how the engine implements them, which cuts against this repo's rule that tests assert observable player behavior rather than engine internals. The MemHack bot pattern itself is unaffected: the accessor descriptor is configurable, so `delete global.Memory` plus reassignment still works (proven by the sibling rows). Do not queue an upstream fix; the row stays as a regression trap.",
 			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
 			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",
 			"tests": ["UNDOC-MEMHACK-012"]
@@ -26,8 +28,8 @@
 			"tests": ["UNDOC-MEMJSON-001", "UNDOC-MEMJSON-003", "UNDOC-MEMJSON-004", "UNDOC-MEMHACK-011"]
 		},
 		"game-object-json-room-tojson-null-crash": {
-			"actual": "`JSON.stringify()` now succeeds for the matrix, but most live game-object snapshots omit nested `pos` fields such as `pos.x`, `pos.y`, and `pos.roomName` from the parsed JSON.",
-			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields.",
+			"actual": "`JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The cause is the object model, not position handling: xxscreeps exposes the public surface as NON-ENUMERABLE prototype accessors from its overlay/schema system (`pos` is an own property but non-enumerable), and `JSON.stringify` serializes only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct — `JSON.stringify(creep.pos)` alone yields `{\"x\":25,\"y\":25,\"roomName\":\"W1N1\"}` — so nested position fields are collateral, not the defect.",
+			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`.",
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
 		"look-for-at-unknown-returns-empty": {
@@ -48,12 +50,12 @@
 		},
 		"legacy-path-cost-callback-false-ignored": {
 			"actual": "Room.findPath ignores a costCallback return value of false and still returns a path.",
-			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path.",
+			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path. Canonical claim is PR-derived: screeps/engine#113 (open, needs-testing) proposes supporting a false return from the costCallback option, mirroring PathFinder.roomCallback's documented semantics. Stable vanilla ignores any non-CostMatrix return, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["LEGACY-PATH-010"]
 		},
 		"renew-creep-energy-structures-option-missing": {
 			"actual": "StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources.",
-			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set.",
+			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. Canonical claim is PR-derived: screeps/engine#153 (open) proposes adding the energyStructures option to Spawn.renewCreep. Stable vanilla's renewCreep takes no options parameter at all, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["RENEW-CREEP-012", "RENEW-CREEP-013", "RENEW-CREEP-014"]
 		},
 		"attack-notify-getter-api-missing": {
@@ -62,13 +64,15 @@
 			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
 		},
 		"structure-active-equal-distance-scan-order": {
-			"actual": "For equal-distance same-type structures over the active limit, xxscreeps selected a later extension id as active and left an earlier id inactive.",
-			"expected": "Same-type owned structures at equal controller distance break isActive ties by vanilla object scan order.",
+			"intentional": true,
+			"why": "Both engines break the tie by their room-object collection order; neither order is specified. Vanilla's is the enumeration order of the id-keyed `objectsByRoom` hash the driver rebuilds from an unsorted storage query, so 'first built wins' holds by accident of insertion, not by contract. xxscreeps batch-computes an `#active` flag per room and stably sorts by range, so ties inherit `room['#objects']` order — deterministic but not creation-ordered, because `Room['#flushObjects']` removes by swap-with-last compaction. Critically, that batch-compute design is what screeps/engine#150 and #107 propose FOR vanilla (move `checkStructureAgainstController` into room processing and set an `off` flag), and #150 cites vanilla issue #140 — engine-vs-user-access disagreement on isActive — as the real defect in this area. xxscreeps has already implemented the upstream-proposed design, and a batch sort inherently loses vanilla's incidental per-object scan order; this row therefore penalizes xxscreeps for shipping the fix vanilla has not merged. xxscreeps also cannot recover creation order (no timestamp on room objects, and `Id.generateId` is random, so an id tie-break would match creation order only under this harness's sequential ids). Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (633718e). Do not queue an upstream fix; revisit only if #150/#107 lands and defines an explicit tie order. The row stays as a regression trap.",
+			"actual": "xxscreeps `checkActiveStructures` (`mods/structure/structure.ts:182-208`) groups owned structures by type and stably sorts by range to the controller, so ties inherit `room['#objects']` order. That array is not creation-ordered: `Room['#flushObjects']` (`game/room/room.ts:125-145`) fills each removed slot from the end (`objects[ii] = objects[cursor--]`), so removals flushed alongside inserts rotate tail objects to the front. With the harness room's four pre-existing objects removed by the adapter's canonical-layout reset, six extensions sort as 3,4,5,6,1,2 — the second-placed extension is the one left inactive.",
+			"expected": "Vanilla's `checkStructureAgainstController` (`@screeps/engine/src/utils.js:456-506`) never sorts: it scans `objectsByRoom` with a `foundSelf` sentinel so equal-distance same-type structures enumerated before the subject count as closer, making the earliest-inserted (in practice earliest-built) structures the active ones.",
 			"tests": ["STRUCTURE-ACTIVE-005"]
 		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
-			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["ROOMPOS-FIND-010"]
 		},
 		"factory-power-effect-not-implemented": {
@@ -89,13 +93,13 @@
 			"tests": ["POWER-BANK-004"]
 		},
 		"power-bank-shape-exposes-store-extension": {
-			"actual": "xxscreeps declares `StructurePowerBank.store` as a public schema field and enumerates it alongside the canonical power-bank properties.",
-			"expected": "The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property.",
+			"actual": "xxscreeps declares the bank's loot as a public schema field — `struct(structureFormat, { …, store: powerBankStoreFormat })` in `mods/powerbank/powerbank.ts:14-17` — and `withOverlay` publishes schema fields, so the backing storage leaks onto the player-facing surface next to the canonical `power` projection (`@enumerable get power() { return this.store[C.RESOURCE_POWER]; }`). Not a deliberate API choice: it is the storage representation showing through.",
+			"expected": "The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property. Vanilla keeps the same internal representation and publishes only the projection (`power: (o) => o.store.power`, `@screeps/engine/src/game/structures.js:585`), and is deliberate about the distinction — `StructurePowerSpawn` twenty lines later does declare `store: _storeGetter`.",
 			"tests": ["SHAPE-NPC-003"]
 		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
-			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
+			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["MOVE-COLLISION-007"]
 		},
 		"live-cached-receiver-released": {

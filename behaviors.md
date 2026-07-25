@@ -2648,7 +2648,9 @@ Coverage Notes
   from `isActive()`.
 - `STRUCTURE-ACTIVE-005` `behavior` `verified_vanilla`
   When same-type owned structures are at equal controller distance, `isActive()`
-  breaks the tie by the engine's object scan order.
+  breaks the tie by the room's object scan order, so the earliest-inserted
+  structures are the active ones. The order itself is an engine storage artifact
+  rather than a specified contract.
 
 ### 15.3 Construction Costs
 - `CONSTRUCTION-COST-001` `matrix` `verified_vanilla`
