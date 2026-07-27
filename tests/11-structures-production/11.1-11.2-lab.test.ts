@@ -300,6 +300,7 @@ describe('Lab runReaction', () => {
 	test('LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('chemistry');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];
@@ -722,6 +723,7 @@ describe('Lab reverseReaction', () => {
 	test('LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('chemistry');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];

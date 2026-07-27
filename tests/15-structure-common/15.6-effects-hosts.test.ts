@@ -65,6 +65,7 @@ describe('15.5 Effects Host Matrix', () => {
 	for (const row of effectHostCases) {
 		test(`EFFECT-HOST-001 [${row.label}] target exposes active effects entry`, async ({ shard }) => {
 			shard.requires('powerCreeps');
+			shard.requires('powerEffects');
 			if (row.capability) shard.requires(row.capability);
 
 			const roomName = 'W1N1';

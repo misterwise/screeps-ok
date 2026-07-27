@@ -587,6 +587,7 @@ describe('26.0 Object Shape Conformance', () => {
 
 	test('SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',

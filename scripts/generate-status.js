@@ -320,7 +320,9 @@ function renderGapDetails(adapterName, summary, gapIds) {
 
 const CAPABILITY_DESCRIPTIONS = {
 	chemistry: 'Lab/boost mechanics',
-	powerCreeps: 'Power creeps and powers',
+	powerCreeps: 'Power creeps as room objects',
+	powerCreepAccountApi: 'PowerCreep create/rename/upgrade/delete',
+	powerEffects: 'usePower applying PWR_* effects',
 	powerSpawn: 'Power spawn and account GPL',
 	factory: 'Factory commodities',
 	terminal: 'Terminal structure surface',

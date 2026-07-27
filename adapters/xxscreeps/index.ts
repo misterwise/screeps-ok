@@ -53,6 +53,7 @@ import {
 	setKeeperLairNextSpawnTime, setDepositState,
 	setInvaderCoreCollapseTime, setInvaderCoreTemplateName, primeInvaderCoreSpawning,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	setPowerCreepPowers, powerCreepRosterKey,
 	initializeRoomIndices,
 } from './engine-internals.js';
 
@@ -105,11 +106,26 @@ let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | un
 // powerspawn is optional across pins; gate the PowerSpawn/GPL surface on the
 // dynamic import result so older pins skip cleanly and current main runs it.
 let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
+// Power creeps arrived with the mods/mmo/powercreep mod (laverdet/xxscreeps#335).
+// A spawned creep is two objects — the account roster entry and the room copy —
+// so the adapter needs both factories plus the roster blob codec.
+let createRosterPowerCreep: ((id: string, name: string, className: string, owner: string) => any) | undefined;
+let createSpawnedPowerCreep: ((pos: any, entry: any) => any) | undefined;
+let readPowerCreepRoster: ((blob: Readonly<Uint8Array>) => any[]) | undefined;
+let writePowerCreepRoster: ((roster: any[]) => Readonly<Uint8Array>) | undefined;
+let loadPowerCreepRosterBlob: ((db: any, userId: string) => Promise<Readonly<Uint8Array> | null>) | undefined;
 for (const [name, assign] of [
 	['xxscreeps/mods/modern/factory/factory.js', (m: any) => { createFactory = m.create; }],
 	['xxscreeps/mods/classic/brokerage/terminal.js', (m: any) => { createTerminal = m.create; }],
 	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
 	['xxscreeps/mods/modern/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
+	['xxscreeps/mods/mmo/powercreep/powercreep.js', (m: any) => {
+		createRosterPowerCreep = m.createPowerCreep;
+		createSpawnedPowerCreep = m.createSpawnedPowerCreep;
+		readPowerCreepRoster = m.read;
+		writePowerCreepRoster = m.write;
+	}],
+	['xxscreeps/mods/mmo/powercreep/model.js', (m: any) => { loadPowerCreepRosterBlob = m.loadPowerCreepsBlob; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
@@ -194,9 +210,15 @@ const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
-		// TODO: re-triage — pin 38ee6170 enables the power-creep mod (#335/#338)
-		// with PWR_GENERATE_OPS, so the family may be partially runnable now.
-		powerCreeps: false,
+		powerCreeps: !!createRosterPowerCreep,
+		// xxscreeps mutates the account roster only through the backend's
+		// `/api/game/power-creeps/*` routes (`mods/mmo/powercreep/backend.ts`).
+		// The runtime `PowerCreep` class has no create/rename/upgrade/delete.
+		powerCreepAccountApi: false,
+		// `usePower` validates every power but only `PWR_GENERATE_OPS` has a
+		// processor branch (`mods/mmo/powercreep/processor.ts`); the rest return
+		// OK and drop without applying an effect or charging ops.
+		powerEffects: false,
 		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
 		terminal: !!createTerminal,
@@ -732,8 +754,92 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	async placePowerCreep(_room: string, _spec: PowerCreepSpec): Promise<string> {
-		throw new Error('placePowerCreep not yet implemented for xxscreeps');
+	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
+		if (!createRosterPowerCreep) {
+			throw new Error('placePowerCreep: pinned xxscreeps has no mods/mmo/powercreep');
+		}
+		const id = this.nextId();
+		const userId = this.resolvePlayer(spec.owner);
+		const name = spec.name ?? `power-creep-${id}`;
+		const powers = Object.entries(spec.powers).map(([power, entry]) => ({
+			power: Number(power),
+			level: typeof entry === 'number' ? entry : entry.level,
+			cooldown: typeof entry === 'number' ? 0 : entry.cooldown ?? 0,
+		}));
+
+		// A spawned power creep is two objects: the account-roster entry that owns
+		// identity and the spawned marker (`#ageTime`), and the room copy the player
+		// acts through. `spawnPowerCreep` writes both, so seed both — without the
+		// roster entry the creep would vanish from Game.powerCreeps on death instead
+		// of reverting to unspawned.
+		this.deferredPowerCreepOps.push({ owner: spec.owner, id, name, powers });
+
+		this.queueOp(roomName, room => {
+			const gameTime = this.simulation!.shard.time;
+			const entry = this.buildPowerCreepRosterEntry(id, name, userId, powers, gameTime);
+			const creep = createSpawnedPowerCreep!(
+				new RoomPosition(spec.pos[0], spec.pos[1], roomName), entry);
+			// The room copy carries the live cooldowns; roster copies never do.
+			setPowerCreepPowers(creep, powers.map(({ power, level, cooldown }) => ({
+				power, level, cooldownTime: cooldown > 0 ? gameTime + cooldown : 0,
+			})));
+			for (const [resource, amount] of Object.entries(spec.store ?? {})) {
+				if (amount > 0) storeAdd(creep.store, resource, amount);
+			}
+			insertRoomObject(room, creep);
+			// Powers are inert in a controlled room until it is power-enabled, so a
+			// placed creep would be unable to act. Matches the vanilla adapter.
+			if (room.controller) room.controller.isPowerEnabled = true;
+		});
+
+		return id;
+	}
+
+	private buildPowerCreepRosterEntry(
+		id: string, name: string, userId: string,
+		powers: Array<{ power: number; level: number }>, gameTime: number,
+	): any {
+		const entry = createRosterPowerCreep!(id, name, C.POWER_CLASS.OPERATOR, userId);
+		setPowerCreepPowers(entry, powers.map(({ power, level }) => ({ power, level, cooldownTime: 0 })));
+		setCreepAgeTime(entry, gameTime, C.POWER_CREEP_LIFE_TIME);
+		return entry;
+	}
+
+	private deferredPowerCreepOps: Array<{
+		owner: string;
+		id: string;
+		name: string;
+		powers: Array<{ power: number; level: number; cooldown: number }>;
+	}> = [];
+
+	// The roster is a per-user blob loaded once at sandbox init (mods/mmo/powercreep/
+	// driver.ts) and refreshed only when the mutation channel fires. Same shape as
+	// flags: write the blob, then dispose the owner's sandbox so the next runPlayer
+	// re-initializes against it.
+	private async flushDeferredPowerCreeps(): Promise<void> {
+		if (this.deferredPowerCreepOps.length === 0) return;
+		const ops = this.deferredPowerCreepOps;
+		this.deferredPowerCreepOps = [];
+		const { db, time } = this.simulation!.shard;
+
+		const byOwner = new Map<string, typeof ops>();
+		for (const op of ops) {
+			const list = byOwner.get(op.owner) ?? [];
+			list.push(op);
+			byOwner.set(op.owner, list);
+		}
+
+		for (const [ownerHandle, ownerOps] of byOwner) {
+			const engineUserId = this.resolvePlayer(ownerHandle);
+			const existingBlob = await loadPowerCreepRosterBlob!(db, engineUserId);
+			const roster = existingBlob ? readPowerCreepRoster!(existingBlob) : [];
+			for (const op of ownerOps) {
+				roster.push(this.buildPowerCreepRosterEntry(
+					op.id, op.name, engineUserId, op.powers, time));
+			}
+			await db.data.set(powerCreepRosterKey(engineUserId), writePowerCreepRoster!(roster));
+			await this.simulation!.disposeUserSandbox(engineUserId);
+		}
 	}
 
 	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
@@ -1086,6 +1192,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 		const engineUserId = this.resolvePlayer(userId);
@@ -1119,6 +1226,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 
@@ -1172,6 +1280,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async tick(count = 1, options: TickOptions = {}): Promise<void> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 
 		const sequence = options.random;
@@ -1359,6 +1468,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.pendingSetup.clear();
 		this.pokeQueue.length = 0;
 		this.deferredFlagOps.length = 0;
+		this.deferredPowerCreepOps.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.playerGcl.clear();

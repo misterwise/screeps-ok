@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2473%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2499%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-66-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 12:33 UTC |
-| 🟡 | **xxscreeps** | [2473](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [162](#xxscreeps-skipped-tests) | 2026-07-27 12:33 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 13:17 UTC |
+| 🟡 | **xxscreeps** | [2499](#xxscreeps-passing-tests) | [66](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-07-27 13:17 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 13 open parity gaps covering 47 tests and 6 intentional divergences covering 11 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 23 expected-failure classifications against vanilla's canonical behavior, covering 66 tests. That includes 18 open parity gaps covering 57 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,18 +167,23 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
-| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The cause is the object model, not position handling: xxscreeps exposes the public surface as NON-ENUMERABLE prototype accessors from its overlay/schema system (`pos` is an own property but non-enumerable), and `JSON.stringify` serializes only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral, not the defect. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
+| `game-object-json-room-tojson-null-crash` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The cause is the object model, not position handling: xxscreeps exposes the public surface as NON-ENUMERABLE prototype accessors from its overlay/schema system (`pos` is an own property but non-enumerable), and `JSON.stringify` serializes only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral, not the defect. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`. | [15](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/classic/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. Canonical claim is PR-derived: screeps/engine#113 (open, needs-testing) proposes supporting a false return from the costCallback option, mirroring PathFinder.roomCallback's documented semantics. Stable vanilla ignores any non-CostMatrix return, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
 | `renew-creep-energy-structures-option-missing` | StructureSpawn.renewCreep ignores a second options argument: non-object options are accepted, and options.energyStructures does not restrict or filter renewal energy sources. | renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. Canonical claim is PR-derived: screeps/engine#153 (open) proposes adding the energyStructures option to Spawn.renewCreep. Stable vanilla's renewCreep takes no options parameter at all, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [3](#xxscreeps-gap-renew-creep-energy-structures-option-missing) |
-| `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [8](#xxscreeps-gap-attack-notify-getter-api-missing) |
+| `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. `PowerCreep` (`mods/mmo/powercreep/powercreep.ts`) declares neither half, so both calls throw TypeError there. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [10](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
+| `factory-power-effect-not-implemented` | `checkProduce` (`packages/xxscreeps/mods/modern/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/classic/brokerage/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `power-bank-ruin-spills-one-tick-late` | A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction. | Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount. | [1](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `stronghold-deploy-trigger-one-tick-late` | The invader-core object tick processor (`mods/modern/stronghold/processor.ts`) deploys when `#deployTime < Game.time`, so a core seeded with `deployTime: 1` still holds its template at the first processed tick and spawns it at the second. The core also publishes `ticksToDeploy === 0` for a full tick before deploying — its own mod test pins that as intended (`invulnerable through Game.time === deployTime`). The five bunker layouts themselves match the matrix exactly once the trigger fires (probed 2026-07-27 at pin 38ee6170, all five templates). | Vanilla's stronghold pretick deploys when `core.deployTime <= gameTime + 1` (`processor/intents/invader-core/stronghold/stronghold.js:26`), so the layout is present one tick after placement and the player never observes `ticksToDeploy === 0` — the countdown runs 4, 3, 2, 1, then deployed. | [5](#xxscreeps-gap-stronghold-deploy-trigger-one-tick-late) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
+| `power-creep-wins-movement-ties` | The power-creep move processor (`mods/mmo/powercreep/processor.ts`) commits at a fixed `1 + (isHostileInSafeMode ? -500 : 0)`, so an undisturbed power creep bids priority 1 — the same value a `[MOVE]` creep derives from `basePriority = weight ? -weight / power : power` (`mods/classic/creep/processor.ts`, weight 0 → power 1). The contested tile then resolves in the power creep's favour and the regular creep stays put. | Vanilla ranks candidates for a contested tile by `rate4 = moves / weight` and hardcodes `moves = 0` for a power creep with `weight` floored to 1 (`processor/intents/movement.js:117-123`), so a power creep bids 0 and loses every tie against a creep carrying at least one MOVE part. | [1](#xxscreeps-gap-power-creep-wins-movement-ties) |
+| `power-creep-survives-nuke-impact` | `PowerCreep` never overrides `#applyNukeImpact`, so it inherits the `RoomObject.prototype` no-op (`mods/modern/nuker/processor.ts:21`) and the room-wide immediate-destruction sweep at impact walks straight past it. A power creep anywhere in a nuked room is untouched. | Vanilla's nuke tick zeroes every power creep in the room at impact — `if (target.type == 'powerCreep') bulk.update(target, {hits: 0})` (`processor/intents/nukes/tick.js:25`) — alongside the creep, construction-site, dropped-resource, tombstone and ruin removals in the same room-wide loop, so the power creep is gone from the room the following tick. | [1](#xxscreeps-gap-power-creep-survives-nuke-impact) |
+| `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
+| `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -190,7 +195,7 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-room-tojson-null-crash">
-<summary><code>game-object-json-room-tojson-null-crash</code> — 13 tests</summary>
+<summary><code>game-object-json-room-tojson-null-crash</code> — 15 tests</summary>
 
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
@@ -205,6 +210,8 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot`
 
 </details>
 
@@ -239,7 +246,7 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-attack-notify-getter-api-missing">
-<summary><code>attack-notify-getter-api-missing</code> — 8 tests</summary>
+<summary><code>attack-notify-getter-api-missing</code> — 10 tests</summary>
 
 - `StructureSpawn ATTACK-NOTIFY-001 owned creep notifiesWhenAttacked() returns current boolean state`
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
@@ -249,6 +256,8 @@ Click a test count above to jump to the affected test list for that gap.
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 
 </details>
 
@@ -256,6 +265,14 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>roomposition-find-closest-by-path-range-ignored</code> — 1 test</summary>
 
 - `RoomPosition find helpers ROOMPOS-FIND-010 findClosestByPath range option uses goal range`
+
+</details>
+
+<details id="xxscreeps-gap-factory-power-effect-not-implemented">
+<summary><code>factory-power-effect-not-implemented</code> — 2 tests</summary>
+
+- `Factory production FACTORY-PRODUCE-011:powerEffect produce() validation returns the canonical code`
+- `Factory production FACTORY-PRODUCE-011:powerEffectBeforeNotEnough produce() validation returns the canonical code`
 
 </details>
 
@@ -307,6 +324,34 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-power-creep-wins-movement-ties">
+<summary><code>power-creep-wins-movement-ties</code> — 1 test</summary>
+
+- `Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep`
+
+</details>
+
+<details id="xxscreeps-gap-power-creep-survives-nuke-impact">
+<summary><code>power-creep-survives-nuke-impact</code> — 1 test</summary>
+
+- `Nuke impact — section 7.14 NUKE-IMPACT-008:powerCreepRoomwideRemoved object-type outcome at nuke impact matches the matrix`
+
+</details>
+
+<details id="xxscreeps-gap-creep-attack-cannot-target-power-creep">
+<summary><code>creep-attack-cannot-target-power-creep</code> — 1 test</summary>
+
+- `Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again`
+
+</details>
+
+<details id="xxscreeps-gap-power-creep-renew-stamps-next-tick-age">
+<summary><code>power-creep-renew-stamps-next-tick-age</code> — 1 test</summary>
+
+- `Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -318,7 +363,6 @@ These are known vanilla differences that the engine maintainers have decided not
 | `rawmemory-set-invalidates-parsed-memhack` | Accepted 2026-07-25: the row asserts an engine mechanism, not a player-observable behavior. UNDOC-MEMHACK-012 reads `Object.getOwnPropertyDescriptor(global, 'Memory')` and asserts value-vs-accessor shape; the row's own text says the descriptor flip 'is what pins the in-tick reference for MEMORY-002 and UNDOC-MEMHACK-007/008/009/010' — and every one of those rows PASSES on xxscreeps, which achieves the same pinning without flipping the descriptor. So the observable consequences are already covered and green, and what remains is introspection of how the engine implements them, which cuts against this repo's rule that tests assert observable player behavior rather than engine internals. The MemHack bot pattern itself is unaffected: the accessor descriptor is configurable, so `delete global.Memory` plus reassignment still works (proven by the sibling rows). Do not queue an upstream fix; the row stays as a regression trap. | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `memory-parsed-json-not-refreshed-across-ticks` | Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps. | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `structure-active-equal-distance-scan-order` | Both engines break the tie by their room-object collection order; neither order is specified. Vanilla's is the enumeration order of the id-keyed `objectsByRoom` hash the driver rebuilds from an unsorted storage query, so 'first built wins' holds by accident of insertion, not by contract. xxscreeps batch-computes an `#active` flag per room and stably sorts by range, so ties inherit `room['#objects']` order — deterministic but not creation-ordered, because `Room['#flushObjects']` removes by swap-with-last compaction. Critically, that batch-compute design is what screeps/engine#150 and #107 propose FOR vanilla (move `checkStructureAgainstController` into room processing and set an `off` flag), and #150 cites vanilla issue #140 — engine-vs-user-access disagreement on isActive — as the real defect in this area. xxscreeps has already implemented the upstream-proposed design, and a batch sort inherently loses vanilla's incidental per-object scan order; this row therefore penalizes xxscreeps for shipping the fix vanilla has not merged. xxscreeps also cannot recover creation order (no timestamp on room objects, and `Id.generateId` is random, so an id tie-break would match creation order only under this harness's sequential ids). Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (633718e). Do not queue an upstream fix; revisit only if #150/#107 lands and defines an explicit tie order. The row stays as a regression trap. | xxscreeps `checkActiveStructures` (`mods/structure/structure.ts:182-208`) groups owned structures by type and stably sorts by range to the controller, so ties inherit `room['#objects']` order. That array is not creation-ordered: `Room['#flushObjects']` (`game/room/room.ts:125-145`) fills each removed slot from the end (`objects[ii] = objects[cursor--]`), so removals flushed alongside inserts rotate tail objects to the front. With the harness room's four pre-existing objects removed by the adapter's canonical-layout reset, six extensions sort as 3,4,5,6,1,2 — the second-placed extension is the one left inactive. | Vanilla's `checkStructureAgainstController` (`@screeps/engine/src/utils.js:456-506`) never sorts: it scans `objectsByRoom` with a `foundSelf` sentinel so equal-distance same-type structures enumerated before the subject count as closer, making the earliest-inserted (in practice earliest-built) structures the active ones. | [1](#xxscreeps-gap-structure-active-equal-distance-scan-order) |
-| `factory-power-effect-not-implemented` | `mods/modern/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional. | `checkProduce` (`packages/xxscreeps/mods/modern/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 | `power-bank-shape-exposes-store-extension` | Accepted 2026-07-25: upstream documents this member as a deliberate xxscreeps extension, and the rename that would remove it is not viable. laverdet's `035d70bf` ("docs: sync with Screeps API", 2026-07-14) annotated the field `@public` with "this member is an xxscreeps extension; the official API only exposes the amount via `power`" — in that 97-file sweep the phrase "xxscreeps extension" appears exactly twice, here and on `getTerrain`'s `version` param, so the field was audited against the official API and kept on purpose rather than leaking unnoticed. Three findings from prototyping the `store` → `'#store'` rename against `upstream/main`: (1) `createRuin` (`mods/classic/structure/ruin.ts:68-76`) duck-types the loot out of the public name — `structure as never as Record<'store', Store | undefined>` — so hiding the field empties the ruin a destroyed bank leaves behind, defeating the structure's purpose; (2) the blob upgrader migrates by reading with the old layout and writing with the new (`engine/schema/build/index.ts:66-92`), and members are looked up by name (`schema/write.ts:39`), so a renamed composed member arrives `undefined` and the room load THROWS — verified by replicating `makeUpgrader` against the real schema primitives, where renaming or adding a composed member throws while absent primitives merely default to 0; (3) the rename is lossy even with that fixed, since a rename is a drop plus an add. Not shape-foldable into `shapeDivergences`: that declaration's `structure` target is global to every NPC structure row (correct for `effects`, which all structures inherit), whereas `store` is power-bank-only, so folding it would stop walls and roads being asserted against a store-free surface. Do not queue an upstream fix; the row stays as a regression trap so an upstream removal surfaces as an unexpected pass. | xxscreeps declares the bank's loot as a public schema field — `store: powerBankStoreFormat` in the `powerBankShape` struct (`mods/modern/powerbank/schema.ts`) — and `withOverlay` publishes schema fields, with enumerability keyed off the `#` prefix (`schema/overlay.ts:65`), so the backing storage appears on the player-facing surface next to the canonical `power` projection (`@enumerable get power() { return this.store[C.RESOURCE_POWER]; }`). Upstream documents it as an intentional extension rather than treating it as a leak. | The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property. Vanilla keeps the same internal representation and publishes only the projection (`power: (o) => o.store.power`, `@screeps/engine/src/game/structures.js:585`), and is deliberate about the distinction — `StructurePowerSpawn` twenty lines later does declare `store: _storeGetter`. | [1](#xxscreeps-gap-power-bank-shape-exposes-store-extension) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -352,14 +396,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>structure-active-equal-distance-scan-order</code> — 1 test</summary>
 
 - `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
-
-</details>
-
-<details id="xxscreeps-gap-factory-power-effect-not-implemented">
-<summary><code>factory-power-effect-not-implemented</code> — 2 tests</summary>
-
-- `Factory production FACTORY-PRODUCE-011:powerEffect produce() validation returns the canonical code`
-- `Factory production FACTORY-PRODUCE-011:powerEffectBeforeNotEnough produce() validation returns the canonical code`
 
 </details>
 
@@ -1677,14 +1713,14 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:powerCreepRoomwideRemoved object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:spawningSpawnRoomwideCancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controllerAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:sourceAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineralAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:depositAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flagAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portalAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
@@ -3486,13 +3522,14 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 162 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 128 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerCreeps` | Power creeps and powers | [97](#xxscreeps-skip-capability-powercreeps) |
+| capability | `powerEffects` | usePower applying PWR_* effects | [45](#xxscreeps-skip-capability-powereffects) |
 | capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
+| capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [18](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
@@ -3501,34 +3538,12 @@ xxscreeps has 162 skipped tests, grouped by the mechanism that gated them. **Cap
 
 Click a count to jump to the affected test list.
 
-<details id="xxscreeps-skip-capability-powercreeps">
-<summary><code>capability:powerCreeps</code> — 97 tests across 25 files</summary>
-
-**`tests/00-adapter-contract/setup.test.ts`** (3)
-
-- adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
-- adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
-- adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
-
-**`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
-
-- Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
+<details id="xxscreeps-skip-capability-powereffects">
+<summary><code>capability:powerEffects</code> — 45 tests across 15 files</summary>
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
 - creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
-
-**`tests/06-controller/6.7-downgrade.test.ts`** (1)
-
-- Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
-
-**`tests/06-controller/6.9-unclaim.test.ts`** (1)
-
-- StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
-
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (1)
-
-- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
 
 **`tests/07-combat/7.17-tower-power.test.ts`** (2)
 
@@ -3552,15 +3567,13 @@ Click a count to jump to the affected test list.
 
 - StructurePowerSpawn processPower POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power
 
-**`tests/12-structures-military/12.4-rampart-power.test.ts`** (2)
+**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
 
-- Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (2)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (1)
 
 - Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
-- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
 
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (1)
 
@@ -3598,83 +3611,25 @@ Click a count to jump to the affected test list.
 
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 
-**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (3)
+**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (1)
 
 - Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
-- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
-- Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
 
-**`tests/19-power/19.0-gpl.test.ts`** (3)
-
-- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
-- Game.gpl GPL-004 one GPL level allows one allocated power creep level
-- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
-
-**`tests/19-power/19.1-lifecycle.test.ts`** (24)
-
-- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
-- Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
-- Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name
-- Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name
-- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
-- Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive
-- Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state
-- Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state
-- Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY
-- Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
-- Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
-- Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again
-- Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
-- Power creep lifecycle POWERCREEP-ACTION-003 power creeps do not expose body-part action methods
-- Power creep lifecycle POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true
-- Power creep lifecycle POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range
-- Power creep lifecycle POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile
-- Power creep lifecycle POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep
-- Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
-- Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
-- Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
-- Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
-- Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
-- Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
-
-**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (9)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
-- Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
 - Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
 - Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
 - Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
-- Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
 - Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
-- Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
-- Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
-- Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive
-- Power creep renew POWERCREEP-RENEW-002 renew fails for invalid target or out of range
-- Power creep renew POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
-- Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (2)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
 
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
-
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (2)
-
-- 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
-
-**`tests/27-undocumented/27.14-json-objects.test.ts`** (2)
-
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
-
-**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
-
-- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
 
 </details>
 
@@ -3737,6 +3692,41 @@ Click a count to jump to the affected test list.
 - Invader raid spawning INVADER-RAID-009 non-center owned RCL 4 first escalation uses big bodies without boosts
 - Invader raid spawning INVADER-RAID-009 center owned RCL 4 can assign a big Healer and still has zero boost chance
 - Invader raid spawning INVADER-RAID-010 successful raid resets harvested budget for the next spawner pass
+
+</details>
+
+<details id="xxscreeps-skip-capability-powercreepaccountapi">
+<summary><code>capability:powerCreepAccountApi</code> — 18 tests across 4 files</summary>
+
+**`tests/19-power/19.0-gpl.test.ts`** (3)
+
+- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
+- Game.gpl GPL-004 one GPL level allows one allocated power creep level
+- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
+
+**`tests/19-power/19.1-lifecycle.test.ts`** (13)
+
+- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
+- Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
+- Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
+- Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive
+- Power creep lifecycle ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY
+- Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
+- Power creep lifecycle POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile
+- Power creep lifecycle POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep
+- Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
+- Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
+- Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
+
+**`tests/19-power/19.4-19.8-powers.test.ts`** (1)
+
+- Power creep renew POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
+
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+
+- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
 
 </details>
 
@@ -3818,7 +3808,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2473 tests across 122 files</summary>
+<summary>2499 tests across 125 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3918,7 +3908,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (63)
+**`tests/00-adapter-contract/setup.test.ts`** (66)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -3969,6 +3959,8 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeFlag places a flag retrievable by name in player code
 - adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
+- adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeStructure + runPlayer advances exactly 1 tick
@@ -3979,6 +3971,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placeTombstone + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeRuin + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeDroppedResource + runPlayer advances exactly 1 tick
+- adapter contract: setup setup helpers do not inject extra ticks placePowerCreep + runPlayer advances exactly 1 tick
 - adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
@@ -4901,7 +4894,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (8)
+**`tests/06-controller/6.7-downgrade.test.ts`** (9)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
@@ -4911,6 +4904,7 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 - Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 
 **`tests/06-controller/6.8-safemode.test.ts`** (24)
 
@@ -4939,9 +4933,10 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.9-unclaim.test.ts`** (1)
+**`tests/06-controller/6.9-unclaim.test.ts`** (2)
 
 - StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0
+- StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
 **`tests/07-combat/7.1-melee-attack.test.ts`** (90)
 
@@ -5081,13 +5076,13 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:spawningSpawnRoomwideCancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controllerAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:sourceAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineralAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:depositAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flagAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portalAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
@@ -5909,6 +5904,10 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
+**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
+
+- Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
+
 **`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
@@ -5926,10 +5925,11 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (38)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (39)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
+- Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
 - Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
 - Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
 - Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
@@ -6212,6 +6212,11 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
+**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (2)
+
+- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
+- Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
+
 **`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0
@@ -6289,13 +6294,32 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
 - Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (1)
+**`tests/19-power/19.1-lifecycle.test.ts`** (8)
 
+- Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
+- Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
+- Power creep lifecycle POWERCREEP-ACTION-003 power creeps do not expose body-part action methods
+- Power creep lifecycle POWERCREEP-ENABLE-001 enableRoom sets controller.isPowerEnabled to true
+- Power creep lifecycle POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range
+- Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
+- Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
+- Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
+
+**`tests/19-power/19.4-19.8-powers.test.ts`** (7)
+
+- Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
+- Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
+- Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
+- Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
+- Power creep renew POWERCREEP-RENEW-002 renew fails for invalid target or out of range
+- Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (1)
+**`tests/19-power/19.9-generate-ops.test.ts`** (3)
 
 - PWR_GENERATE_OPS POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
+- PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
 
 **`tests/20-market/20.2-20.4-market.test.ts`** (2)
 
@@ -6479,11 +6503,12 @@ Click a count to jump to the affected test list.
 - Foreign segments RAWMEMORY-FOREIGN-008 revocation via setPublicSegments takes effect next tick
 - Foreign segments RAWMEMORY-FOREIGN-009 explicit id without a matching public grant yields undefined
 
-**`tests/26-object-shapes/26.0-discovery.test.ts`** (43)
+**`tests/26-object-shapes/26.0-discovery.test.ts`** (44)
 
 - 26.0 Object Shape Conformance SHAPE-CREEP-001 creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CREEP-002 creep nested sub-objects match canonical shapes
 - 26.0 Object Shape Conformance SHAPE-CREEP-003 unboosted body part has hits and type; boosted adds boost
+- 26.0 Object Shape Conformance SHAPE-POWERCREEP-001 power creep data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-ROOM-001 room data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-001 controller data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-CTRL-002 controller.sign sub-object matches canonical shape

@@ -51,6 +51,7 @@ describe('StructurePowerSpawn processPower', () => {
 	test('POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power', async ({ shard }) => {
 		shard.requires('powerSpawn');
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

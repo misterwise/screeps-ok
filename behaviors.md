@@ -2718,7 +2718,7 @@ Coverage Notes
   `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` for an unowned
   structure in another player's controlled room.
 
-### 15.5 Effects Substrate `capability: powerCreeps`
+### 15.5 Effects Substrate `capability: powerEffects`
 - `EFFECT-DECAY-001` `behavior` `verified_vanilla`
   An entry's `ticksRemaining` decrements by exactly 1 each subsequent tick
   while the host RoomObject remains alive.
@@ -4021,7 +4021,7 @@ Coverage Notes
   An in-flight nuke's public data-property surface matches the canonical
   Screeps API exactly.
 
-### 26.8 Effects Substrate Shape `capability: powerCreeps`
+### 26.8 Effects Substrate Shape `capability: powerEffects`
 - `SHAPE-EFFECT-001` `behavior` `verified_vanilla`
   Each entry of a RoomObject's `effects` array exposes exactly `effect`,
   `level`, `power`, and `ticksRemaining` — no missing and no extra

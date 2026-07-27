@@ -7,6 +7,7 @@ import { describe, test, expect, code,
 describe('Tower power effects', () => {
 	test('TOWER-POWER-001 PWR_OPERATE_TOWER modifies tower power', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -41,6 +42,7 @@ describe('Tower power effects', () => {
 
 	test('TOWER-POWER-002 PWR_OPERATE_TOWER and PWR_DISRUPT_TOWER can coexist on same tower', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

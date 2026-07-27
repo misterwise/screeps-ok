@@ -6,6 +6,7 @@ import { describe, test, expect, code,
 describe('Source power effects', () => {
 	test('SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

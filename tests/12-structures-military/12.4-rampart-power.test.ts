@@ -33,6 +33,7 @@ describe('Rampart power effects', () => {
 
 	test('RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

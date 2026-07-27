@@ -142,12 +142,12 @@ const FIXTURE_BLOCKED_IDS = new Set([
 	// halt() disposes the cached sandbox; needs adapter sandbox-recreation
 	'CPU-HALT-001',
 ]);
-// Capabilities that neither adapter currently supports
+// Capabilities no adapter fully covers, so an untested entry behind one stays untested
 const BLOCKED_CAPABILITIES = new Set([
-	'powerCreeps', 'factory', 'market', 'nuke', 'deposit',
+	'factory', 'market', 'nuke', 'deposit',
 	'actionLogCapture',
 ]);
-// Power-effect IDs that need powerCreeps even though their section isn't tagged
+// Power-effect IDs that need powerEffects even though their section isn't tagged
 const POWER_EFFECT_RE = /^(TOWER-POWER|RAMPART-DECAY-00[45]|SOURCE-POWER|MINERAL-POWER|SPAWN-TIMING-005)/;
 
 function categorizeUntested(entry) {
@@ -158,7 +158,7 @@ function categorizeUntested(entry) {
 		return `capability: ${entry.capability}`;
 	}
 	if (POWER_EFFECT_RE.test(entry.id)) {
-		return 'capability: powerCreeps';
+		return 'capability: powerEffects';
 	}
 	const family = entry.id.replace(/-[0-9]{3}$/, '');
 	if (SIMULATE_FAMILIES.some(f => family === f || family.startsWith(f + '-'))) {

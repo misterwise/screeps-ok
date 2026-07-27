@@ -104,9 +104,20 @@ export function bindObjectPos(obj: any, pos: any): void {
 
 // ── SETUP: lifecycle timers ──────────────────────────────────────────
 
-/** SETUP — mods/creep/creep.ts: ticksToLive getter returns `#ageTime - Game.time`. */
+/** SETUP — mods/classic/creep/creep.ts: ticksToLive getter returns `#ageTime - Game.time`.
+ *  mods/mmo/powercreep/powercreep.ts reuses the field with the same absolute-tick
+ *  meaning, where a non-zero value additionally marks the roster entry as spawned. */
 export function setCreepAgeTime(creep: any, gameTime: number, ticksToLive: number): void {
 	creep['#ageTime'] = gameTime + ticksToLive;
+}
+
+/** SETUP — mods/mmo/powercreep/schema.ts: `#powers` is the packed power vector behind
+ *  the `powers` getter and `level`. `cooldownTime` is an absolute tick (`0` = ready);
+ *  the public `powers` getter resolves it against `Game.time`. */
+export function setPowerCreepPowers(
+	creep: any, powers: Array<{ power: number; level: number; cooldownTime: number }>,
+): void {
+	creep['#powers'] = powers;
 }
 
 /** SETUP — mods/source/source.ts: ticksToRegeneration getter derives from
@@ -250,6 +261,16 @@ export function storeEntries(store: any): Iterable<[string, number]> {
  *  resize `#capacity` to the recomputed body-based capacity. */
 export function setStoreCapacity(store: any, capacity: number): void {
 	(store as any)['#capacity'] = capacity;
+}
+
+// ── SETUP: account keyspace ──────────────────────────────────────────
+
+/** SETUP — mods/mmo/powercreep/model.ts: the account power-creep roster is one blob per
+ *  user. The mod exports a loader (`loadPowerCreepsBlob`) but no writer — its own writes
+ *  go through the check-gated `mutate`, which would reject seeded states a player would
+ *  have to reach over many GPL levels. */
+export function powerCreepRosterKey(userId: string): string {
+	return `user/${userId}/powerCreeps`;
 }
 
 // ── SNAPSHOT ─────────────────────────────────────────────────────────

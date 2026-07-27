@@ -54,7 +54,7 @@
 			"tests": ["RENEW-CREEP-012", "RENEW-CREEP-013", "RENEW-CREEP-014"]
 		},
 		"attack-notify-getter-api-missing": {
-			"actual": "notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK.",
+			"actual": "notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. `PowerCreep` (`mods/mmo/powercreep/powercreep.ts`) declares neither half, so both calls throw TypeError there.",
 			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state.",
 			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
 		},
@@ -71,8 +71,7 @@
 			"tests": ["ROOMPOS-FIND-010"]
 		},
 		"factory-power-effect-not-implemented": {
-			"intentional": true,
-			"why": "`mods/modern/factory/factory.ts:96-108` carries an in-source comment: the PWR_OPERATE_FACTORY-blocking branch requires the effects substrate to observe and cannot be implemented until power creeps exist. Effects substrate is staged on the `feature/effects-substrate` and `feature/invader-core` branches; until merged, this gap is held intentional.",
+			"why": "Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`.",
 			"actual": "`checkProduce` (`packages/xxscreeps/mods/modern/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY.",
 			"expected": "Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe.",
 			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
@@ -109,6 +108,30 @@
 			"actual": "xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw.",
 			"expected": "Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001).",
 			"tests": ["UNDOC-STALERECV-002"]
+		},
+		"power-creep-wins-movement-ties": {
+			"actual": "The power-creep move processor (`mods/mmo/powercreep/processor.ts`) commits at a fixed `1 + (isHostileInSafeMode ? -500 : 0)`, so an undisturbed power creep bids priority 1 — the same value a `[MOVE]` creep derives from `basePriority = weight ? -weight / power : power` (`mods/classic/creep/processor.ts`, weight 0 → power 1). The contested tile then resolves in the power creep's favour and the regular creep stays put.",
+			"expected": "Vanilla ranks candidates for a contested tile by `rate4 = moves / weight` and hardcodes `moves = 0` for a power creep with `weight` floored to 1 (`processor/intents/movement.js:117-123`), so a power creep bids 0 and loses every tie against a creep carrying at least one MOVE part.",
+			"why": "Engine-side priority value, not adapter translation. Small, self-contained upstream fix: bid 0 rather than 1 for the power creep's own move.",
+			"tests": ["MOVE-POWER-001"]
+		},
+		"power-creep-survives-nuke-impact": {
+			"actual": "`PowerCreep` never overrides `#applyNukeImpact`, so it inherits the `RoomObject.prototype` no-op (`mods/modern/nuker/processor.ts:21`) and the room-wide immediate-destruction sweep at impact walks straight past it. A power creep anywhere in a nuked room is untouched.",
+			"expected": "Vanilla's nuke tick zeroes every power creep in the room at impact — `if (target.type == 'powerCreep') bulk.update(target, {hits: 0})` (`processor/intents/nukes/tick.js:25`) — alongside the creep, construction-site, dropped-resource, tombstone and ruin removals in the same room-wide loop, so the power creep is gone from the room the following tick.",
+			"why": "Engine-side omission from the room-wide sweep. The plumbing already exists — `PowerCreep['#applyDamage']` defers to `tickRawDamage` and the object tick processor kills at `hits <= 0` — so the fix is an `#applyNukeImpact` override, matching `Creep`'s.",
+			"tests": ["NUKE-IMPACT-008:powerCreepRoomwideRemoved"]
+		},
+		"creep-attack-cannot-target-power-creep": {
+			"actual": "`checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`.",
+			"expected": "Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`.",
+			"why": "Engine-side target-check omission, not adapter translation. Small upstream fix: admit `PowerCreep` to the combat target union. POWERCREEP-DEATH-002 is also a vanilla expected-failure (for the unrelated NaN-TTL reason in screeps/engine#148); the two adapters fail it for different causes.",
+			"tests": ["POWERCREEP-DEATH-002"]
+		},
+		"power-creep-renew-stamps-next-tick-age": {
+			"actual": "`RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew.",
+			"expected": "Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks.",
+			"why": "Engine-side clock convention: xxscreeps power creeps outlive vanilla's by one tick per renew. Not adapter-fixable — the adapter seeds and reads the same absolute tick on both sides; compensating would mean rewriting the observed value.",
+			"tests": ["POWERCREEP-RENEW-001"]
 		}
 	}
 }

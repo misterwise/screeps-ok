@@ -108,11 +108,18 @@ implementation-coupled framing the catalog rejects.
 
 ## Tier 5 — Power system
 
-Tracked upstream as #53 (draft). Self-contained subsystem; can slot in any time after Tier 1's `effects` surface lands.
+Tracked upstream as #53 (draft). Landing incrementally: xxscreeps#335/#338 shipped
+the `mods/mmo/powercreep` mod at pin `38ee6170`, closing the `powerCreeps`
+capability. Two narrower surfaces remain — see the capability-skip notes in
+`docs/xxscreeps-parity-gaps.md`.
 
-- `PowerCreep` (currently stubbed via `Game.powerCreeps = {}`)
-- `StructurePowerBank`
-- Power-creep abilities and boosted power flows (`PWR_OPERATE_POWER`, `PWR_OPERATE_FACTORY`, etc.)
+- `PowerCreep` as a room object — **done** (roster, spawn, verbs, `PWR_GENERATE_OPS`)
+- `StructurePowerBank` — **done**
+- Account-roster mutation from game code (`PowerCreep.create` / `rename` /
+  `upgrade` / `delete`); today only the backend's `/api/game/power-creeps/*` routes
+- Powers beyond `PWR_GENERATE_OPS` and the effects they apply
+  (`PWR_OPERATE_POWER`, `PWR_OPERATE_FACTORY`, etc.), which need Tier 1's
+  `effects` surface
 
 ## Tier 6 — Cross-shard / InterShardMemory
 

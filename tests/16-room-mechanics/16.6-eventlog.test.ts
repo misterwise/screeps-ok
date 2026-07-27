@@ -1176,6 +1176,7 @@ describe('room.getEventLog()', () => {
 
 	test('ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

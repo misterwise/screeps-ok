@@ -192,6 +192,7 @@ describe('creep.withdraw()', () => {
 		// returns ERR_INVALID_TARGET (the terminal behaves as if it is not a
 		// valid withdraw target while disrupted).
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

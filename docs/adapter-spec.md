@@ -363,6 +363,8 @@ Current capability flags are:
 
 - `chemistry`
 - `powerCreeps`
+- `powerCreepAccountApi`
+- `powerEffects`
 - `powerSpawn`
 - `factory`
 - `terminal`
@@ -403,6 +405,18 @@ The terminal and market flags intentionally describe separate surfaces:
 `powerBank` is likewise independent of `powerCreeps`: it covers Power Bank
 placement, shape, combat, decay, and destruction loot without claiming a
 functional Power Creep runtime.
+
+The three power-creep flags split one family into surfaces an engine can land
+separately:
+
+- `powerCreeps` covers a spawned power creep as a room object — `placePowerCreep`,
+  `Game.powerCreeps`, FIND/LOOK, its own verbs, and `usePower(PWR_GENERATE_OPS)`
+- `powerCreepAccountApi` covers the account-roster mutations `PowerCreep.create`
+  / `rename` / `upgrade` / `delete` and the unspawned states only they reach; an
+  engine may implement the roster but expose it solely out of game
+- `powerEffects` covers `usePower` actually applying a `PWR_*` effect — the
+  target's `effects` entry, the gameplay consequence, and the ops and cooldown
+  the use costs
 
 The two stronghold flags split behavior from bookkeeping:
 

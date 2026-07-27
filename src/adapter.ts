@@ -233,8 +233,20 @@ export interface TickOptions {
 export interface AdapterCapabilities {
 	/** Labs, reactions, minerals in labs, and related chemistry APIs. */
 	chemistry: boolean;
-	/** Power creeps and their public gameplay APIs. */
+	/** A spawned power creep exists in a room and acts through its own verbs:
+	 *  placement, `Game.powerCreeps`, FIND/LOOK, move, say, resource transfer,
+	 *  renew, suicide, enableRoom, and `usePower(PWR_GENERATE_OPS)`. */
 	powerCreeps: boolean;
+	/** Account-level power-creep management from game code: `PowerCreep.create`
+	 *  plus the `rename` / `upgrade` / `delete` instance methods, and the
+	 *  unspawned-roster states only they can reach. An engine may implement the
+	 *  roster but expose it solely through an out-of-game account API. */
+	powerCreepAccountApi: boolean;
+	/** `usePower` applies its `PWR_*` effect to the target: the `effects` array
+	 *  on the host, the gameplay consequence, and the ops/cooldown the use
+	 *  costs. Distinct from `powerCreeps` because `PWR_GENERATE_OPS` needs no
+	 *  effect substrate and an engine may land the powers one at a time. */
+	powerEffects: boolean;
 	/** Power spawn structure, processPower(), and Game.gpl account power. */
 	powerSpawn: boolean;
 	/** Factory structure and production APIs. */

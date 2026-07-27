@@ -8,6 +8,7 @@ import { describe, test, expect, code,
 describe('Power creep lifecycle', () => {
 	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -32,6 +33,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -53,6 +55,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -74,6 +77,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -98,6 +102,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -115,6 +120,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -175,6 +181,7 @@ describe('Power creep lifecycle', () => {
 
 	test('ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -221,6 +228,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -395,6 +403,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -433,6 +442,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -508,6 +518,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -530,6 +541,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-UPGRADE-001 upgrade increases power level and stats', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -551,6 +563,7 @@ describe('Power creep lifecycle', () => {
 
 	test('POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

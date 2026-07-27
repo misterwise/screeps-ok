@@ -9,13 +9,15 @@
  * name and updating after portal traversal) is gated on `multiShard` and
  * not covered here.
  *
- * Gated on `powerCreeps`: skips on xxscreeps (no PowerCreep class).
+ * Gated on `powerCreepAccountApi`: reaching the unspawned state needs
+ * `PowerCreep.create`, which xxscreeps exposes only through its backend.
  */
 import { describe, test, expect, code, OK } from '../../src/index.js';
 
 describe('PowerCreep shard home', () => {
 	test('SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

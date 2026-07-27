@@ -28,6 +28,7 @@ describe('Operate powers', () => {
 	// Verify a representative operate power's effect in-game matches POWER_INFO.
 	test('POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -65,6 +66,7 @@ describe('Operate powers', () => {
 	// POWER-OPERATE-002: cooldown, range, ops cost match POWER_INFO
 	test('POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -132,6 +134,7 @@ describe('Operate powers', () => {
 	// POWER-OPERATE-004: PWR_OPERATE_FACTORY changes production level (already tested in FACTORY-COMMODITY-003)
 	test('POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
@@ -167,6 +170,7 @@ describe('Disrupt powers', () => {
 	// POWER-DISRUPT-001: effect values match POWER_INFO
 	test('POWER-DISRUPT-001 disrupt power effect values match POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -200,6 +204,7 @@ describe('Disrupt powers', () => {
 	// POWER-DISRUPT-002: cooldown, range, ops match POWER_INFO
 	test('POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -240,6 +245,7 @@ describe('Disrupt powers', () => {
 describe('Regen powers', () => {
 	test('POWER-REGEN-001 regen source effect amount matches POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -313,6 +319,7 @@ describe('Regen powers', () => {
 describe('Combat powers', () => {
 	test('POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -368,6 +375,7 @@ describe('Combat powers', () => {
 
 	test('POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -407,6 +415,7 @@ describe('Combat powers', () => {
 describe('Operate powers — additional', () => {
 	test('POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -564,6 +573,7 @@ describe('Power creep renew', () => {
 
 	test('POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerCreepAccountApi');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
