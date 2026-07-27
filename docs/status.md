@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2472%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-54-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2473%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-25 15:12 UTC |
-| 🟡 | **xxscreeps** | [2472](#xxscreeps-passing-tests) | [54](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-25 15:11 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 11:52 UTC |
+| 🟡 | **xxscreeps** | [2473](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-27 11:52 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 54 tests. That includes 13 open parity gaps covering 43 tests and 6 intentional divergences covering 11 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 12 open parity gaps covering 42 tests and 6 intentional divergences covering 11 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -168,7 +168,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | :-: |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The cause is the object model, not position handling: xxscreeps exposes the public surface as NON-ENUMERABLE prototype accessors from its overlay/schema system (`pos` is an own property but non-enumerable), and `JSON.stringify` serializes only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral, not the defect. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`. | [13](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
-| `look-for-at-unknown-returns-empty` | `Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. | Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant. | [1](#xxscreeps-gap-look-for-at-unknown-returns-empty) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`packages/xxscreeps/mods/classic/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `checkRange(creep, target, 1)` against `target.pos`, neither of which triggers the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` (a class field, not schema-backed) and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `legacy-path-cost-callback-false-ignored` | Room.findPath ignores a costCallback return value of false and still returns a path. | Room.findPath treats costCallback returning false as blocking the room and returns an empty path. Canonical claim is PR-derived: screeps/engine#113 (open, needs-testing) proposes supporting a false return from the costCallback option, mirroring PathFinder.roomCallback's documented semantics. Stable vanilla ignores any non-CostMatrix return, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-legacy-path-cost-callback-false-ignored) |
@@ -205,13 +204,6 @@ Click a test count above to jump to the affected test list for that gap.
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
 - `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
-
-</details>
-
-<details id="xxscreeps-gap-look-for-at-unknown-returns-empty">
-<summary><code>look-for-at-unknown-returns-empty</code> — 1 test</summary>
-
-- `Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type`
 
 </details>
 
@@ -3822,7 +3814,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2472 tests across 122 files</summary>
+<summary>2473 tests across 122 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6120,13 +6112,14 @@ Click a count to jump to the affected test list.
 - Room.find ROOM-FIND-002:objectPatternFilter Room.find(type, { filter: pattern }) returns only matching items
 - Room.find ROOM-FIND-005 FIND_SOURCES returns every source; FIND_SOURCES_ACTIVE only those with energy > 0
 
-**`tests/16-room-mechanics/16.4-look.test.ts`** (12)
+**`tests/16-room-mechanics/16.4-look.test.ts`** (13)
 
 - Room look API ROOM-LOOK-001 lookAt returns terrain plus creeps and structures on the tile
 - Room look API ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile
 - Room look API ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile
 - Room look API ROOM-LOOK-004 lookForAt(LOOK_TERRAIN) returns the terrain string at the tile
 - Room look API ROOM-LOOK-005 lookForAtArea filters to objects inside the bounding box
+- Room look API ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type
 - Room look API ROOM-LOOK-007 lookForAt(LOOK_ENERGY) returns the same Resource as LOOK_RESOURCES
 - Room look API ROOM-LOOK-008 lookForAtArea(LOOK_ENERGY) returns the same Resource shaped under the energy key
 - Room look API ROOM-LOOK-009 lookAt yields both energy and resource entries on a dropped-resource tile

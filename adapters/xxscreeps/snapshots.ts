@@ -10,7 +10,7 @@ import type {
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
 } from '../../src/snapshots/common.js';
-import * as C from 'xxscreeps/game/constants/index.js';
+import * as C from 'xxscreeps:mods/constants';
 import { Creep } from 'xxscreeps/mods/classic/creep/creep.js';
 import { ConstructionSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
 import { Resource } from 'xxscreeps/mods/classic/resource/resource.js';

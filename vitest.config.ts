@@ -70,6 +70,9 @@ export default defineConfig({
 				//    vite resolves the node_modules/xxscreeps -> .. symlink.
 				inline: [/adapters/],
 				external: [
+					// Engine's virtual `xxscreeps:mods/*` modules, served by the
+					// register-loader at Node level (see setupFiles below).
+					/^xxscreeps:/,
 					// Install-tree layout (our own CI): node_modules/xxscreeps/...
 					/node_modules\/(?:@[^/]+\/)?xxscreeps\//,
 					// Workspace self-link layout (consumer runs our suite inside

@@ -176,7 +176,7 @@ export function setKeeperLairNextSpawnTime(
 	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
 }
 
-/** SETUP — mods/invader/invader-core.ts: `#collapseTime` is the absolute tick the
+/** SETUP — mods/modern/stronghold/invader-core.ts: `#collapseTime` is the absolute tick the
  *  core collapses; the effects getter exposes it as EFFECT_COLLAPSE_TIMER and the
  *  object tick processor removes the core once it elapses. */
 export function setInvaderCoreCollapseTime(
@@ -185,7 +185,7 @@ export function setInvaderCoreCollapseTime(
 	core['#collapseTime'] = gameTime + ticksRemaining;
 }
 
-/** SETUP — mods/invader/processor.ts createCreep intent: an in-progress defender
+/** SETUP — mods/modern/stronghold/processor.ts createCreep intent: an in-progress defender
  *  spawn is an incubating creep at `#ageTime === 0` plus a Spawning record wired
  *  to the core and creep ids; `#spawnTime` is the absolute birth tick. Mirrors
  *  the state the intent processor seeds so the object tick processor completes

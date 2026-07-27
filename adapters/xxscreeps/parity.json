@@ -32,11 +32,6 @@
 			"expected": "Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`.",
 			"tests": ["UNDOC-JSONOBJ-001"]
 		},
-		"look-for-at-unknown-returns-empty": {
-			"actual": "`Room.lookForAt(<unrecognized>, x, y)` returns `[]`. `lookForAt` (`game/room/look.ts:148-152`) short-circuits to `[]` when the type is not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented.",
-			"expected": "Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10) regardless of whether the type happens to be a real LOOK_* constant.",
-			"tests": ["ROOM-LOOK-006"]
-		},
 		"commonjs-main-exports-alias-missing": {
 			"why": "Reported upstream as an encapsulation-leak observation in laverdet/xxscreeps#328 (2026-07-20). No player-bot replication, so it is not queued for a PR; the gap stays open pending laverdet's read.",
 			"actual": "The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works.",

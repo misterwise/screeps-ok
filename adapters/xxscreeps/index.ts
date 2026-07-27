@@ -17,7 +17,7 @@ import { withCornerWalls } from '../../src/terrain-fixture.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { Render } from 'xxscreeps/backend/symbols.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
-import * as C from 'xxscreeps/game/constants/index.js';
+import * as C from 'xxscreeps:mods/constants';
 
 // Build synthetic PathFinder object matching the Screeps global API.
 // `use` is a no-op mirroring xxscreeps/game/pathfinder/index.js —
@@ -33,7 +33,7 @@ import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
-import { computeRoomMeta } from 'xxscreeps/mods/modern/sector/sector.js';
+import { computeRoomMeta } from 'xxscreeps/mods/modern/sector/terrain.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
 import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
 import { loadTerrain } from 'xxscreeps/driver/pathfinder/pathfinder.js';
@@ -75,7 +75,7 @@ import { create as createContainer } from 'xxscreeps/mods/classic/resource/conta
 import { create as createRoad } from 'xxscreeps/mods/classic/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
-import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
+import { create as createInvaderCore } from 'xxscreeps/mods/modern/stronghold/invader-core.js';
 import { create as createPowerBank } from 'xxscreeps/mods/modern/powerbank/powerbank.js';
 import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
 import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/modern/deposit/constants.js';
@@ -172,7 +172,7 @@ const playerSlots = ['100', '101', '102', '103'];
 // hit the rate=0 tombstone path (CREEP-DEATH-011) through placeCreep's
 // existing `owner: string` contract. Placing a creep with an NPC handle also
 // `activateNPC`s the room so the matching NPC loop runs (e.g. the Invader
-// AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
+// AI at mods/classic/invader/loop/find-attack.ts auto-suicides in owned rooms).
 const NPC_HANDLES: Record<string, string> = {
 	sk: '2',
 	srcKeeper: '3',
@@ -193,6 +193,8 @@ const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
+		// TODO: re-triage — pin 38ee6170 enables the power-creep mod (#335/#338)
+		// with PWR_GENERATE_OPS, so the family may be partially runnable now.
 		powerCreeps: false,
 		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
@@ -214,9 +216,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
 		invaderCore: true,
-		// The deploy caller currently places only a stub tower/rampart/container/
-		// road layout. It lacks the five canonical bunker templates, reward
-		// contents, and templateName / strongholdId fields.
+		// TODO: re-triage — pin 38ee6170's stronghold mod (#337/#330) ships the
+		// five bunker templates and a `#templateName` field; the adapter still
+		// has to seed it at placement and surface it in the snapshot.
 		strongholdDeploy: false,
 		// The room tick processor can generate a fixed small Invader group in an
 		// already-active room. It does not implement the canonical inactive-room

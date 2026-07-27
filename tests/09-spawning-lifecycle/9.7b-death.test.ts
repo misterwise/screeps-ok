@@ -149,7 +149,7 @@ describe('creep death', () => {
 		//
 		// The adapter seeds `'sk' → '2'` independent of `spec.players`, and on
 		// xxscreeps also `activateNPC`s the room so the built-in Invader loop
-		// (`mods/invader/loop/find-attack.ts:60`) runs. With no hostiles, no
+		// (`mods/classic/invader/loop/find-attack.ts:60`) runs. With no hostiles, no
 		// spawns, and a player-owned controller in the room, both engines
 		// auto-emit a suicide intent for the NPC creep on the next tick.
 		await shard.ownedRoom('p1');

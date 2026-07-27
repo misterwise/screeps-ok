@@ -38,6 +38,7 @@ const cacheDir = join(repoRoot, 'node_modules/.cache/screeps-ok/xxscreeps-src');
 const vendorDir = join(repoRoot, 'vendor/pathfinder');
 const stampFile = join(xxscreepsDir, '.screeps-ok-pin');
 const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
+const mmoTsconfig = 'tsconfig.mmo.json';
 
 // Bump when the build pipeline gains a step that prior stamps wouldn't
 // have produced (e.g. v2 added applyUpstreamPatches for lodash-es; v3
@@ -52,8 +53,9 @@ const repoUrl = 'https://github.com/laverdet/xxscreeps.git';
 // v9 applies the vendored pathfinder build when newer than the registry
 // prebuild (see applyVendorPathfinder); v10 drops the pathfinder-entrypoint
 // and sandbox `#pf` externalization patches after upstream's napi/sandbox
-// refactor (pin db0d77e) self-resolves both.
-const stampSchema = 'v10';
+// refactor (pin db0d77e) self-resolves both; v11 builds tsconfig.mmo.json as a
+// second tsc pass after upstream split mods/mmo into its own project.
+const stampSchema = 'v11';
 
 function stampContent(token) {
 	// Include the vendor manifest in the stamp so adding, refreshing, or
@@ -216,6 +218,21 @@ function inlineTsconfigBase(srcDir) {
 		.replace(/^\s*\{\s*"path":\s*"\.\.\/lodash3"\s*\},?\s*$\n?/m, '')
 		.replace(/^\s*\{\s*"path":\s*"\.\.\/pathfinder"\s*\},?\s*$\n?/m, '');
 	writeFileSync(configPath, patched);
+
+	// `mods/mmo` is excluded from the main tsconfig and built as a referencing
+	// project instead, so its extends needs the same rewrite.
+	const mmoPath = join(xxscreepsDir, mmoTsconfig);
+	if (existsSync(mmoPath)) {
+		const originalMmo = readFileSync(mmoPath, 'utf8');
+		const patchedMmo = originalMmo.replace(
+			/"extends":\s*"[^"]*tsconfig\.base\.json"/,
+			'"extends": "./tsconfig.base.json"',
+		);
+		if (patchedMmo === originalMmo) {
+			throw new Error(`Failed to rewrite extends in xxscreeps ${mmoTsconfig}`);
+		}
+		writeFileSync(mmoPath, patchedMmo);
+	}
 }
 
 function rewriteWorkspaceRefs() {
@@ -352,17 +369,21 @@ function applyUpstreamPatches(srcDir) {
 }
 
 function buildTypeScript() {
+	// The mmo project references the default one, so it has to build second.
+	const projects = [[], ...existsSync(join(xxscreepsDir, mmoTsconfig)) ? [['-p', mmoTsconfig]] : []];
 	let tscError = null;
-	try {
-		execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
-			cwd: xxscreepsDir,
-			stdio: 'inherit',
-		});
-	} catch (err) {
-		// tsc exits non-zero on type errors but still emits JS. Harmless
-		// type drift shouldn't block the build as long as the expected
-		// output exists — verified below.
-		tscError = err;
+	for (const project of projects) {
+		try {
+			execFileSync(process.execPath, [tscBin, ...project, '--noEmitOnError', 'false'], {
+				cwd: xxscreepsDir,
+				stdio: 'inherit',
+			});
+		} catch (err) {
+			// tsc exits non-zero on type errors but still emits JS. Harmless
+			// type drift shouldn't block the build as long as the expected
+			// output exists — verified below.
+			tscError = err;
+		}
 	}
 	if (!existsSync(join(xxscreepsDir, 'dist/test/simulate.js'))) {
 		console.error('[screeps-ok] xxscreeps build failed:', tscError ? tscError.message : 'dist/test/simulate.js was not emitted');
