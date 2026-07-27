@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2473%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-53-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2473%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 11:52 UTC |
-| 🟡 | **xxscreeps** | [2473](#xxscreeps-passing-tests) | [53](#xxscreeps-expected-failures) | — | [167](#xxscreeps-skipped-tests) | 2026-07-27 11:52 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 12:33 UTC |
+| 🟡 | **xxscreeps** | [2473](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [162](#xxscreeps-skipped-tests) | 2026-07-27 12:33 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 18 expected-failure classifications against vanilla's canonical behavior, covering 53 tests. That includes 12 open parity gaps covering 42 tests and 6 intentional divergences covering 11 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 19 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 13 open parity gaps covering 47 tests and 6 intentional divergences covering 11 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -177,6 +177,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `terminal-send-check-order-diverges` | `checkSend` (`mods/classic/brokerage/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `power-bank-ruin-spills-one-tick-late` | A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction. | Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount. | [1](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
+| `stronghold-deploy-trigger-one-tick-late` | The invader-core object tick processor (`mods/modern/stronghold/processor.ts`) deploys when `#deployTime < Game.time`, so a core seeded with `deployTime: 1` still holds its template at the first processed tick and spawns it at the second. The core also publishes `ticksToDeploy === 0` for a full tick before deploying — its own mod test pins that as intended (`invulnerable through Game.time === deployTime`). The five bunker layouts themselves match the matrix exactly once the trigger fires (probed 2026-07-27 at pin 38ee6170, all five templates). | Vanilla's stronghold pretick deploys when `core.deployTime <= gameTime + 1` (`processor/intents/invader-core/stronghold/stronghold.js:26`), so the layout is present one tick after placement and the player never observes `ticksToDeploy === 0` — the countdown runs 4, 3, 2, 1, then deployed. | [5](#xxscreeps-gap-stronghold-deploy-trigger-one-tick-late) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -284,6 +285,17 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
+
+</details>
+
+<details id="xxscreeps-gap-stronghold-deploy-trigger-one-tick-late">
+<summary><code>stronghold-deploy-trigger-one-tick-late</code> — 5 tests</summary>
+
+- `Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout`
+- `Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout`
+- `Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout`
+- `Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout`
+- `Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout`
 
 </details>
 
@@ -3474,7 +3486,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 167 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 162 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -3483,9 +3495,9 @@ xxscreeps has 167 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
-| capability | `strongholdDeploy` | Engine-driven stronghold deployment | [6](#xxscreeps-skip-capability-strongholddeploy) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
+| capability | `strongholdMetadata` | Stronghold bookkeeping fields on a seeded invader core | [1](#xxscreeps-skip-capability-strongholdmetadata) |
 
 Click a count to jump to the affected test list.
 
@@ -3770,23 +3782,6 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-strongholddeploy">
-<summary><code>capability:strongholdDeploy</code> — 6 tests across 2 files</summary>
-
-**`tests/00-adapter-contract/inspection.test.ts`** (1)
-
-- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
-
-**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
-
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker1) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker2) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker3) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker4) places the canonical structure layout
-- Stronghold layout STRONGHOLD-LAYOUT-001 deploying invader core (bunker5) places the canonical structure layout
-
-</details>
-
 <details id="xxscreeps-skip-capability-intershardmemory">
 <summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
 
@@ -3807,6 +3802,15 @@ Click a count to jump to the affected test list.
 - CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits maps shard names to non-negative integers
 - CPU shard limits CPU-SHARD-002 sum of shardLimits values equals the daily allowance
 - CPU shard limits CPU-SHARD-003 setShardLimits sync error branches
+
+</details>
+
+<details id="xxscreeps-skip-capability-strongholdmetadata">
+<summary><code>capability:strongholdMetadata</code> — 1 test across 1 file</summary>
+
+**`tests/00-adapter-contract/inspection.test.ts`** (1)
+
+- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
 
 </details>
 

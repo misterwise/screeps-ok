@@ -51,7 +51,7 @@ import {
 	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime, setDepositState,
-	setInvaderCoreCollapseTime, primeInvaderCoreSpawning,
+	setInvaderCoreCollapseTime, setInvaderCoreTemplateName, primeInvaderCoreSpawning,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
 	initializeRoomIndices,
 } from './engine-internals.js';
@@ -76,6 +76,7 @@ import { create as createRoad } from 'xxscreeps/mods/classic/road/road.js';
 import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extractor.js';
 import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
 import { create as createInvaderCore } from 'xxscreeps/mods/modern/stronghold/invader-core.js';
+import { templates as strongholdTemplates } from 'xxscreeps/mods/modern/stronghold/templates.js';
 import { create as createPowerBank } from 'xxscreeps/mods/modern/powerbank/powerbank.js';
 import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
 import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/modern/deposit/constants.js';
@@ -216,10 +217,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
 		invaderCore: true,
-		// TODO: re-triage — pin 38ee6170's stronghold mod (#337/#330) ships the
-		// five bunker templates and a `#templateName` field; the adapter still
-		// has to seed it at placement and surface it in the snapshot.
-		strongholdDeploy: false,
+		// Pin 38ee6170's stronghold mod (laverdet/xxscreeps#337/#330) ships the
+		// five canonical bunker templates; the adapter seeds `#templateName` at
+		// placement and the deploy processor spawns that layout.
+		strongholdDeploy: true,
+		// xxscreeps has no `strongholdId`, and its `effects` is derived from the
+		// deploy/collapse timers rather than a stored array the adapter can seed.
+		strongholdMetadata: false,
 		// The room tick processor can generate a fixed small Invader group in an
 		// already-active room. It does not implement the canonical inactive-room
 		// backend sweep, sector policy, or raid composition matrix.
@@ -842,6 +846,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const spawningSpec = spec.spawning as
 			| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
 			| undefined;
+		// The schema enumerates the five canonical bunker names, so an unknown one
+		// breaks serialization and crashes deployStronghold on a missing template.
+		const templateName = spec.templateName as string | undefined;
+		if (templateName !== undefined && !(templateName in strongholdTemplates)) {
+			throw new Error(
+				`placeInvaderCore: unknown stronghold template '${templateName}'; ` +
+				`xxscreeps models ${Object.keys(strongholdTemplates).join(', ')}.`,
+			);
+		}
+		// `spec.strongholdId` is dropped: xxscreeps groups stronghold peers by ownership
+		// plus the core's `#ownedNeutralStructureIds`. See the strongholdMetadata capability.
 
 		this.queueOp(roomName, room => {
 			const time = this.simulation!.shard.time;
@@ -849,6 +864,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const deployTime = typeof spec.deployTime === 'number' ? time + spec.deployTime : 0;
 			const core = createInvaderCore(new RoomPosition(pos[0], pos[1], roomName), level, deployTime);
 			core.id = id;
+			if (templateName !== undefined) {
+				setInvaderCoreTemplateName(core, templateName);
+			}
 			if (typeof spec.collapseTime === 'number') {
 				setInvaderCoreCollapseTime(core, time, spec.collapseTime);
 			}

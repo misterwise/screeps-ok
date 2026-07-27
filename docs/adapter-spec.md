@@ -378,6 +378,7 @@ Current capability flags are:
 - `portals`
 - `invaderCore`
 - `strongholdDeploy`
+- `strongholdMetadata`
 - `invaderRaidSpawner`
 - `multiShard`
 - `interShardMemory`
@@ -402,6 +403,15 @@ The terminal and market flags intentionally describe separate surfaces:
 `powerBank` is likewise independent of `powerCreeps`: it covers Power Bank
 placement, shape, combat, decay, and destruction loot without claiming a
 functional Power Creep runtime.
+
+The two stronghold flags split behavior from bookkeeping:
+
+- `strongholdDeploy` covers the engine-driven deploy: a core seeded with a
+  `templateName` places that bunker's canonical structure layout when its
+  deploy timer elapses
+- `strongholdMetadata` covers the invader-core fields an engine may keep purely
+  for its own peer bookkeeping — `strongholdId`, and `effects` entries the
+  adapter seeds rather than ones the engine derives from its own timers
 
 Rules:
 

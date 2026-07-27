@@ -315,9 +315,10 @@ describe('adapter contract: inspection', () => {
 		});
 
 		test('invader core snapshot includes deploy and stronghold fields', async ({ shard }) => {
-			// Arbitrary seeded effects and the templateName/strongholdId
-			// fields only exist for deployed strongholds.
-			shard.requires('strongholdDeploy');
+			// Arbitrary seeded effects and the templateName/strongholdId fields
+			// only exist for deployed strongholds; `strongholdId` and seeded
+			// effects are the half an engine may keep purely for bookkeeping.
+			shard.requires('strongholdMetadata');
 			await shard.ownedRoom('p1');
 			const effects = [{ effect: 1001, level: 1, ticksRemaining: 50 }];
 			const id = await shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, {

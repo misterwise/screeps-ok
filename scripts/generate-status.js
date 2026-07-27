@@ -336,6 +336,7 @@ const CAPABILITY_DESCRIPTIONS = {
 	portals: 'Portal structures and teleport mechanics',
 	invaderCore: 'Invader core structures',
 	strongholdDeploy: 'Engine-driven stronghold deployment',
+	strongholdMetadata: 'Stronghold bookkeeping fields on a seeded invader core',
 	invaderRaidSpawner: 'Inactive-room Invader raid spawning',
 };
 
