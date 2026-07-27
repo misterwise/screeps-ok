@@ -112,7 +112,7 @@
 		"power-creep-wins-movement-ties": {
 			"actual": "The power-creep move processor (`mods/mmo/powercreep/processor.ts`) commits at a fixed `1 + (isHostileInSafeMode ? -500 : 0)`, so an undisturbed power creep bids priority 1 — the same value a `[MOVE]` creep derives from `basePriority = weight ? -weight / power : power` (`mods/classic/creep/processor.ts`, weight 0 → power 1). The contested tile then resolves in the power creep's favour and the regular creep stays put.",
 			"expected": "Vanilla ranks candidates for a contested tile by `rate4 = moves / weight` and hardcodes `moves = 0` for a power creep with `weight` floored to 1 (`processor/intents/movement.js:117-123`), so a power creep bids 0 and loses every tie against a creep carrying at least one MOVE part.",
-			"why": "Engine-side priority value, not adapter translation. Small, self-contained upstream fix: bid 0 rather than 1 for the power creep's own move.",
+			"why": "Engine-side priority value, not adapter translation. The faithful bid is `-Infinity`, not `0`: xxscreeps's expression is two-regime — an unladen creep bids positive `power`, a laden one bids negative `-weight / power` — so a power creep at 0 would still beat every laden creep, which vanilla never allows (its `rate4` is positive for anything that can move). Vanilla treats a power creep as `moves = 0, weight = 1`, and those values in xxscreeps's own expression evaluate to `-1 / 0`. MOVE-POWER-001 pins only the unladen tie, so a fix validated against it alone would leave the laden case open.",
 			"tests": ["MOVE-POWER-001"]
 		},
 		"power-creep-survives-nuke-impact": {
