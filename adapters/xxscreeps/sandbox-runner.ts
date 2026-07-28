@@ -42,6 +42,9 @@ config.runner.sandbox = 'isolated';
 const kMainCode = 'module.exports.loop = () => {};';
 const kBranchName = 'main';
 
+// CPU regime for player ticks. Fixed so a real CPU regression surfaces as a timeout.
+const kTickCpu = { bucket: 10000, limit: 20, tickLimit: 500 };
+
 type Connectors = {
 	initialize: (payload: any) => Promise<unknown>;
 	refresh: (payload: any) => Promise<unknown>;
@@ -146,14 +149,36 @@ export class UserSandbox {
 		initPayload.codeBlob = await Code.loadBlobs(shard.db, userId, kBranchName);
 
 		const sandbox = await createSandbox(userId, initPayload);
-		return new UserSandbox(shard, sandbox, handlers, effect);
+		const instance = new UserSandbox(shard, sandbox, handlers, effect);
+		await instance.warmSourceMap();
+		return instance;
+	}
+
+	// TODO: drop when the pin carries laverdet/xxscreeps#350 — `source-map-support` decodes the runtime
+	// bundle's map on the first `error.stack` read, and isolated-vm bills it to that tick's `tickLimit`.
+	private async warmSourceMap(): Promise<void> {
+		const payload: any = {
+			cpu: { ...kTickCpu, tickLimit: 5000 },
+			time: 0,
+			roomBlobs: [],
+			eval: [{ expr: '(() => { try { null.x } catch (e) { return String(e.stack) } })()', ack: 'w' }],
+			usernames: {},
+			gcl: 0,
+			controlledRoomCount: 0,
+		};
+		await this.connectors.refresh(payload);
+		const result = await this.sandbox.run(payload);
+		// Loud on failure: a silently skipped warmup puts the decode back inside a measured tick.
+		if (result.result !== 'success') {
+			throw new RunPlayerError('runtime', `sandbox warmup ${result.result}`);
+		}
 	}
 
 	async run(codeSource: string, opts: RunOptions): Promise<RunResult> {
 		const ackId = 'r';
 		const usernames = opts.usernames ?? await this.loadUsernames();
 		const tickPayload: any = {
-			cpu: { bucket: 10000, limit: 20, tickLimit: 500 },
+			cpu: { ...kTickCpu },
 			time: opts.time,
 			roomBlobs: opts.roomBlobs,
 			eval: [{ expr: buildWrappedExpr(codeSource), ack: ackId }],
