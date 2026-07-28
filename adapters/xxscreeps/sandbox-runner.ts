@@ -153,7 +153,9 @@ export class UserSandbox {
 		const ackId = 'r';
 		const usernames = opts.usernames ?? await this.loadUsernames();
 		const tickPayload: any = {
-			cpu: { bucket: 10000, limit: 20, tickLimit: 500 },
+			// `tickLimit` is isolated-vm's wall-clock watchdog, not a CPU budget: a tight value trips on
+			// honest work whenever CI is contended. Stays under vitest's 15s so a real hang still reports.
+			cpu: { bucket: 10000, limit: 20, tickLimit: 5000 },
 			time: opts.time,
 			roomBlobs: opts.roomBlobs,
 			eval: [{ expr: buildWrappedExpr(codeSource), ack: ackId }],
