@@ -1,0 +1,18 @@
+{
+	"expected_failures": {
+		"moveto-all-routes-blocked-walks-into-creeps": {
+			"actual": "The Rust engine mirrors stable vanilla: `Creep.moveTo` runs `pos.findPathTo` (`_findPath2` semantics) and moves on whatever path comes back, with no destination-occupancy check. PathFinder returns a PARTIAL path when the goal range is unreachable — the origin is not a fallback candidate — so the creep steps one tile toward the goal and moveTo returns OK (screeps/engine#63).",
+			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
+			"tests": [
+				"MOVE-COLLISION-007"
+			]
+		},
+		"roomposition-find-closest-by-path-range-ignored": {
+			"actual": "The Rust engine mirrors stable vanilla's `_findClosestByPath2`: it never reads `opts.range`, hardcoding `{range: 1, pos: i}` on every PathFinder goal and post-filtering reachability with `lastPos.isNearTo(obj)`.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"tests": [
+				"ROOMPOS-FIND-010"
+			]
+		}
+	}
+}
