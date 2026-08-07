@@ -382,6 +382,14 @@ Coverage Notes
   and goal are in different rooms.
 
 ### 2.2 CostMatrix
+- `PF-CROSSROOM-001` `behavior` `verified_vanilla`
+  A goal two rooms away completes well inside the default op budget: the search
+  is heuristic-directed, not a uniform-cost flood.
+- `PF-CROSSROOM-002` `behavior` `verified_vanilla`
+  An adjacent-room goal completes rather than exhausting `maxOps` and returning
+  `incomplete`.
+- `PF-CROSSROOM-003` `behavior` `verified_vanilla`
+  `roomCallback` is not consulted for rooms behind the origin, relative to the goal.
 - `COSTMATRIX-001` `behavior` `verified_vanilla`
   `new CostMatrix()` creates a matrix with all values 0.
 - `COSTMATRIX-002` `behavior` `verified_vanilla`
@@ -3702,6 +3710,28 @@ Coverage Notes
   number is expected.
 
 ### 23.2 Open Stores
+- `ROOM-SHORTCUT-SITE-001` `behavior` `verified_vanilla`
+  `room.storage` / `room.terminal` never resolve to a `ConstructionSite`, which
+  carries `structureType` too. The same holds for `room.energyAvailable` and
+  `room.energyCapacityAvailable`.
+- `ROOM-API-001` `behavior` `verified_vanilla`
+  `Room.getPositionAt` returns a `RoomPosition` in that room, and
+  `Room.findExitTo` agrees with `Game.map.describeExits`.
+- `GAME-NOTIFY-001` `behavior` `verified_vanilla`
+  `Game.notify` accepts a message, an optional `groupInterval`, and no arguments
+  at all, returning `OK`.
+- `GAME-NOTIFY-002` `behavior` `verified_vanilla`
+  `Game.notify` returns `ERR_FULL` past 20 notify intents in a single tick; the
+  counter resets each tick.
+- `GAME-MAPVISUAL-001` `behavior` `verified_vanilla`
+  `Game.map.visual` exposes the chainable visual API and `getSize`/`export`/
+  `import`, rather than being an empty object.
+- `PROTO-METHODS-001` `behavior` `verified_vanilla`
+  Engine methods live on the class prototype, not as own properties of each
+  object, so a bot's `Creep.prototype.<method>` wrapper is actually invoked.
+- `PROTO-METHODS-002` `behavior` `verified_vanilla`
+  Capturing `const orig = Creep.prototype.<method>` yields a function, and the
+  global class objects are not replaced between ticks.
 - `STORE-OPEN-001` `matrix` `verified_vanilla`
   For open stores, all stored resources share one total capacity pool.
 - `STORE-OPEN-002` `matrix` `verified_vanilla`
