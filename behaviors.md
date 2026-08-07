@@ -3689,6 +3689,10 @@ Coverage Notes
 - `STORE-ACCESS-001` `behavior` `verified_vanilla`
   `store[RESOURCE_TYPE]` returns the stored amount for that resource, or `0`
   when the store currently holds none of it.
+- `STORE-ABSENT-001` `behavior` `verified_vanilla`
+  Reading a `RESOURCES_ALL` key the store does not hold returns `0`, not
+  `undefined`, while a non-resource key still returns `undefined`. Enumeration
+  is unaffected: the absent key does not appear in `Object.keys`/`for...in`.
 - `STORE-ACCESS-002` `behavior` `verified_vanilla`
   `store.getCapacity(type)`, `store.getUsedCapacity(type)`, and
   `store.getFreeCapacity(type)` return `null` when the store cannot hold that
