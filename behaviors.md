@@ -3790,6 +3790,11 @@ Coverage Notes
 - `INTENT-CREEP-003` `matrix` `verified_vanilla`
   For creep methods that support `cancelOrder(methodName)`, canceling a queued
   same-tick intent prevents that method's intent from resolving.
+- `INTENT-CREEP-004` `behavior` `verified_vanilla`
+  A creep's actions resolve in the engine's own fixed order, not in the order the
+  player's code called them. `drop`, `transfer`, `withdraw` and `pickup` all
+  resolve before `harvest`, so a creep that empties and refills in one tick always
+  sees the emptying first whatever the call order was.
 
 Coverage Notes
 - `move()` and `heal()` compatibility with the blocking creep action priority
