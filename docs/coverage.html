@@ -58,8 +58,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">1095</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1088</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">1096</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">1089</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">5</div><div class="label">feasible untested</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
@@ -225,7 +225,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="23. Store API">23. Store API</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">19/19</span>
+    <span class="bar-text">20/20</span>
   </div>
 </div>
 <div class="bar-row">
@@ -8561,7 +8561,16 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/23-store-api/23.6-store-access.test.ts</small></td>
+  <td><small>tests/23-store-api/23.6-store-access.test.ts, tests/23-store-api/23.8-store-absent-resource.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-ABSENT-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/23-store-api/23.8-store-absent-resource.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>STORE-ACCESS-002</code></td>
@@ -10150,6 +10159,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 </tbody>
 </table>
 
+
+<h2 class="red">Orphaned test IDs</h2>
+<p>These IDs appear in test files but not in the catalog. They need catalog entries or renaming.</p>
+<table>
+<thead><tr><th>ID</th><th>File(s)</th></tr></thead>
+<tbody>
+<tr><td><code>STORE-ENUM-001</code></td><td><small>tests/23-store-api/23.8-store-absent-resource.test.ts</small></td></tr>
+</tbody>
+</table>
 
 
 <footer>
