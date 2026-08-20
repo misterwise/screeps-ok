@@ -2,11 +2,13 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus the selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-07-25 (pin `d2268ac5`).
+Last refreshed: 2026-08-19 (pin `6d0ffb7e`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
 ## Current upstream PRs to track
+
+[#349](https://github.com/laverdet/xxscreeps/pull/349) (terminal: reorder checkSend validation precedence) and [#352](https://github.com/laverdet/xxscreeps/pull/352) (powercreep: lose movement ties and die at nuke impact) merged, consumed at pin `6d0ffb7e` (2026-08-19) — pruned `terminal-send-check-order-diverges` (TERMINAL-SEND-005 + 8 TERMINAL-SEND-013 rows), `power-creep-wins-movement-ties` (MOVE-POWER-001), and `power-creep-survives-nuke-impact` (NUKE-IMPACT-008:powerCreepRoomwideRemoved). The same bump consumed [#350](https://github.com/laverdet/xxscreeps/pull/350) (driver: decode the runtime source map with trace-mapping) — no parity rows, but it removes the 33-40ms first-`error.stack` decode that made UNDOC-MEMJSON-005 graze the tick wall-clock deadline on CI (now 7-10ms; the test passes in ~45ms locally at this pin). Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
 
 [#329](https://github.com/laverdet/xxscreeps/pull/329) (memory: skip the save when Memory fails to serialize) merged, consumed at pin `d2268ac5` — pruned `memory-circular-ref-crash` (UNDOC-MEMJSON-005). Trimmed 2026-07-21 before merge to just that fix (`crunch` under the serialization catch + cache drop) after laverdet's spec-chasing pushback; the withdrawn halves became the intentional `memory-parsed-json-not-refreshed-across-ticks` acceptance. The same bump consumed #311's invader-owned `Structure.effects` getter (folded into the adapter's `shapeDivergences`).
 
@@ -16,7 +18,7 @@ Last refreshed: 2026-07-25 (pin `d2268ac5`).
 
 ## Active submission queue
 
-`parity.json` currently registers 13 open parity gaps (43 tests) plus 6 intentional expected failures (11 tests). Test counts here are test rows as generated in `docs/status.md`, not catalog IDs — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
+`parity.json` currently registers 15 open parity gaps (22 catalog IDs) plus 5 intentional expected failures (9 catalog IDs), 55 expected-failure test rows in all as generated in `docs/status.md` — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
 1. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
 

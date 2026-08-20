@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2499%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-66-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2663%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2510%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-55-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-28 13:43 UTC |
-| 🟡 | **xxscreeps** | [2499](#xxscreeps-passing-tests) | [66](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-07-28 13:43 UTC |
+| 🟡 | **vanilla** | [2663](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-07-27 11:46 UTC |
+| 🟡 | **xxscreeps** | [2510](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-08-20 00:09 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 23 expected-failure classifications against vanilla's canonical behavior, covering 66 tests. That includes 18 open parity gaps covering 57 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 20 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 15 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -175,13 +175,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `attack-notify-getter-api-missing` | notifyWhenAttacked is present on some object kinds but the notifiesWhenAttacked getter API is missing; Creep.notifyWhenAttacked currently returns null instead of OK. `PowerCreep` (`mods/mmo/powercreep/powercreep.ts`) declares neither half, so both calls throw TypeError there. | notifiesWhenAttacked returns the current attack-notification state and failure codes, and notifyWhenAttacked returns OK while updating the next-tick getter state. | [10](#xxscreeps-gap-attack-notify-getter-api-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `factory-power-effect-not-implemented` | `checkProduce` (`packages/xxscreeps/mods/modern/factory/factory.ts:111-141`) returns OK (or NOT_ENOUGH from a downstream branch) when an active PWR_OPERATE_FACTORY effect with a mismatched level should yield ERR_BUSY. | Vanilla returns ERR_BUSY when an active PWR_OPERATE_FACTORY effect has a level mismatched with the recipe. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
-| `terminal-send-check-order-diverges` | `checkSend` (`mods/classic/brokerage/terminal.ts`) computes the transaction energy cost before validating any arguments and orders its checks owner → active → resources → description → room name → cooldown. An invalid destination room name makes `Game.map.getRoomLinearDistance` return NaN, so the NaN energy cost fails the resource check first and `send` returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS. A terminal on cooldown returns the energy-cost or description failure instead of ERR_TIRED because cooldown is checked last. | Vanilla `StructureTerminal.send` validates owner → RCL → room name → resource type → amount → cooldown → energy cost → description: an invalid room name returns ERR_INVALID_ARGS regardless of store contents, and an on-cooldown terminal returns ERR_TIRED ahead of the energy-cost and description checks. | [9](#xxscreeps-gap-terminal-send-check-order-diverges) |
 | `power-bank-ruin-spills-one-tick-late` | A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction. | Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount. | [1](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
 | `stronghold-deploy-trigger-one-tick-late` | The invader-core object tick processor (`mods/modern/stronghold/processor.ts`) deploys when `#deployTime < Game.time`, so a core seeded with `deployTime: 1` still holds its template at the first processed tick and spawns it at the second. The core also publishes `ticksToDeploy === 0` for a full tick before deploying — its own mod test pins that as intended (`invulnerable through Game.time === deployTime`). The five bunker layouts themselves match the matrix exactly once the trigger fires (probed 2026-07-27 at pin 38ee6170, all five templates). | Vanilla's stronghold pretick deploys when `core.deployTime <= gameTime + 1` (`processor/intents/invader-core/stronghold/stronghold.js:26`), so the layout is present one tick after placement and the player never observes `ticksToDeploy === 0` — the countdown runs 4, 3, 2, 1, then deployed. | [5](#xxscreeps-gap-stronghold-deploy-trigger-one-tick-late) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
-| `power-creep-wins-movement-ties` | The power-creep move processor (`mods/mmo/powercreep/processor.ts`) commits at a fixed `1 + (isHostileInSafeMode ? -500 : 0)`, so an undisturbed power creep bids priority 1 — the same value a `[MOVE]` creep derives from `basePriority = weight ? -weight / power : power` (`mods/classic/creep/processor.ts`, weight 0 → power 1). The contested tile then resolves in the power creep's favour and the regular creep stays put. | Vanilla ranks candidates for a contested tile by `rate4 = moves / weight` and hardcodes `moves = 0` for a power creep with `weight` floored to 1 (`processor/intents/movement.js:117-123`), so a power creep bids 0 and loses every tie against a creep carrying at least one MOVE part. | [1](#xxscreeps-gap-power-creep-wins-movement-ties) |
-| `power-creep-survives-nuke-impact` | `PowerCreep` never overrides `#applyNukeImpact`, so it inherits the `RoomObject.prototype` no-op (`mods/modern/nuker/processor.ts:21`) and the room-wide immediate-destruction sweep at impact walks straight past it. A power creep anywhere in a nuked room is untouched. | Vanilla's nuke tick zeroes every power creep in the room at impact — `if (target.type == 'powerCreep') bulk.update(target, {hits: 0})` (`processor/intents/nukes/tick.js:25`) — alongside the creep, construction-site, dropped-resource, tombstone and ruin removals in the same room-wide loop, so the power creep is gone from the room the following tick. | [1](#xxscreeps-gap-power-creep-survives-nuke-impact) |
 | `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
 | `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
 
@@ -276,21 +273,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-terminal-send-check-order-diverges">
-<summary><code>terminal-send-check-order-diverges</code> — 9 tests</summary>
-
-- `Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments`
-- `Terminal send TERMINAL-SEND-013:invalidRoom send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidResource send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeCooldown send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code`
-- `Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code`
-
-</details>
-
 <details id="xxscreeps-gap-power-bank-ruin-spills-one-tick-late">
 <summary><code>power-bank-ruin-spills-one-tick-late</code> — 1 test</summary>
 
@@ -321,20 +303,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)`
 - `cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes`
-
-</details>
-
-<details id="xxscreeps-gap-power-creep-wins-movement-ties">
-<summary><code>power-creep-wins-movement-ties</code> — 1 test</summary>
-
-- `Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep`
-
-</details>
-
-<details id="xxscreeps-gap-power-creep-survives-nuke-impact">
-<summary><code>power-creep-survives-nuke-impact</code> — 1 test</summary>
-
-- `Nuke impact — section 7.14 NUKE-IMPACT-008:powerCreepRoomwideRemoved object-type outcome at nuke impact matches the matrix`
 
 </details>
 
@@ -1713,14 +1681,14 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
-- Nuke impact — section 7.14 NUKE-IMPACT-008:powerCreepRoomwideRemoved object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:spawningSpawnRoomwideCancelled object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:controllerAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:sourceAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:mineralAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:depositAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:flagAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
-- Nuke impact — section 7.14 NUKE-IMPACT-008:portalAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:power-creep-roomwide-room-object-removed object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:actively-spawning-spawn-roomwide-cancelled object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:controller-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:source-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:mineral-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:deposit-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:flag-at-blast-center-survives object-type outcome at nuke impact matches the matrix
+- Nuke impact — section 7.14 NUKE-IMPACT-008:portal-at-blast-center-survives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-009 active controller safe mode ends when a nuke lands
 - Nuke impact — section 7.14 NUKE-IMPACT-010 safe mode does not prevent nuke damage, creep kills, or cleanup
 - Nuke impact — section 7.14 NUKE-IMPACT-011 nuke impact does not refresh an active controller upgradeBlocked window
@@ -3808,7 +3776,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2499 tests across 125 files</summary>
+<summary>2510 tests across 126 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4094,6 +4062,10 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
+
+**`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
+
+- Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
 
 **`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
 
@@ -5039,7 +5011,7 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (96)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (97)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
@@ -5076,6 +5048,7 @@ Click a count to jump to the affected test list.
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
+- Nuke impact — section 7.14 NUKE-IMPACT-008:powerCreepRoomwideRemoved object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:spawningSpawnRoomwideCancelled object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:controllerAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
 - Nuke impact — section 7.14 NUKE-IMPACT-008:sourceAtBlastCenterSurvives object-type outcome at nuke impact matches the matrix
@@ -5925,11 +5898,12 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (39)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (48)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
 - Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
+- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
 - Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
 - Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
 - Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
@@ -5939,6 +5913,7 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
 - Terminal send TERMINAL-SEND-013:notOwner send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:rcl send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoom send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:invalidResource send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughAmount send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:cooldown send() validation returns the canonical code
@@ -5957,6 +5932,11 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:rclBeforeCooldown send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:rclBeforeNotEnoughEnergyCost send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:rclBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidResource send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughAmount send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoomBeforeCooldown send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:invalidRoomBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughAmount send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:invalidResourceBeforeCooldown send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:invalidResourceBeforeNotEnoughEnergyCost send() validation returns the canonical code
@@ -5964,6 +5944,8 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeCooldown send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeNotEnoughEnergyCost send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughAmountBeforeInvalidDescription send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost send() validation returns the canonical code
+- Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
