@@ -153,9 +153,14 @@ export class UserSandbox {
 		const ackId = 'r';
 		const usernames = opts.usernames ?? await this.loadUsernames();
 		const tickPayload: any = {
-			// `tickLimit` is isolated-vm's wall-clock watchdog, not a CPU budget: a tight value trips on
-			// honest work whenever CI is contended. Stays under vitest's 15s so a real hang still reports.
-			cpu: { bucket: 10000, limit: 20, tickLimit: 5000 },
+			// `tickLimit` is isolated-vm's wall-clock watchdog, not a CPU budget: a contended CI runner
+			// multiplies honest wall time, so the limit needs headroom over the worst honest tick. At
+			// 500 that margin was too thin while the runtime's first `error.stack` read cost 33-40ms
+			// (tripped on CI, raised to 5000 in 76396fb); xxscreeps#350 cut that read to 7-10ms, so 1000
+			// re-arms the per-tick cost regression trap with ~4x the old headroom. One CI trip at this
+			// value means going back to 5000, not ratcheting. Stays under vitest's 15s timeout so a real
+			// hang still reports.
+			cpu: { bucket: 10000, limit: 20, tickLimit: 1000 },
 			time: opts.time,
 			roomBlobs: opts.roomBlobs,
 			eval: [{ expr: buildWrappedExpr(codeSource), ack: ackId }],
