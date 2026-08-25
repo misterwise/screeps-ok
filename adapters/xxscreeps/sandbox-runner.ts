@@ -21,7 +21,7 @@ import type { World } from 'xxscreeps/game/map.js';
 import type { Sandbox } from 'xxscreeps/driver/sandbox/index.js';
 import type { Effect } from 'xxscreeps/utility/types.js';
 import { config } from 'xxscreeps/config/index.js';
-import { createSandbox } from 'xxscreeps/driver/sandbox/index.js';
+import { bootstrapSandbox, createSandbox } from 'xxscreeps/driver/sandbox/index.js';
 import { hooks as runnerHooks } from 'xxscreeps/engine/runner/index.js';
 import { acquireRunnerContext } from 'xxscreeps/engine/runner/instance.js';
 import * as Code from 'xxscreeps/engine/db/user/code.js';
@@ -36,6 +36,19 @@ import type { PlayerReturnValue } from '../../src/adapter.js';
 // on the runner; isolated mode is self-contained once the native
 // binding is built (handled in scripts/build-xxscreeps.js).
 config.runner.sandbox = 'isolated';
+
+/**
+ * Webpack-compile the isolated runtime bundle before any test needs it.
+ * `createSandbox` memoizes the compile per process, so the first sandbox in a
+ * vitest worker otherwise pays ~2.4s of it inside whichever test got there
+ * first — and a contended CI runner multiplies that past the 15s `testTimeout`.
+ * Upstream's runner service does the same at worker startup
+ * (`engine/service/runner.ts`). Importing this module is what pins the sandbox
+ * mode above, so the warm-up belongs here rather than in the setup file.
+ */
+export function warmRuntimeBundle(): Promise<void> {
+	return bootstrapSandbox();
+}
 
 // Shared main.js: empty loop. Per-call test code is delivered via
 // `TickPayload.eval` and returned via `evalAck`.
@@ -154,13 +167,11 @@ export class UserSandbox {
 		const usernames = opts.usernames ?? await this.loadUsernames();
 		const tickPayload: any = {
 			// `tickLimit` is isolated-vm's wall-clock watchdog, not a CPU budget: a contended CI runner
-			// multiplies honest wall time, so the limit needs headroom over the worst honest tick. At
-			// 500 that margin was too thin while the runtime's first `error.stack` read cost 33-40ms
-			// (tripped on CI, raised to 5000 in 76396fb); xxscreeps#350 cut that read to 7-10ms, so 1000
-			// re-arms the per-tick cost regression trap with ~4x the old headroom. One CI trip at this
-			// value means going back to 5000, not ratcheting. Stays under vitest's 15s timeout so a real
-			// hang still reports.
-			cpu: { bucket: 10000, limit: 20, tickLimit: 1000 },
+			// multiplies honest wall time, so a tight value trips on honest work. 13844a7 tried 1000
+			// once #350 shrank the worst tick and said one CI trip meant going back to 5000 — CI then
+			// tripped UNDOC-MEMJSON-005 twice with `sandbox timedOut`, so 5000 it is. Stays under
+			// vitest's 15s timeout so a real hang still reports.
+			cpu: { bucket: 10000, limit: 20, tickLimit: 5000 },
 			time: opts.time,
 			roomBlobs: opts.roomBlobs,
 			eval: [{ expr: buildWrappedExpr(codeSource), ack: ackId }],

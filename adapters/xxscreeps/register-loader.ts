@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from 'xxscreeps/config/index.js';
+import { warmRuntimeBundle } from './sandbox-runner.js';
 
 // xxscreeps gates hosting its in-process local:// stores behind the file lock
 // at config.database.lock (default ./screeps/.lock — one path shared by every
@@ -17,3 +18,7 @@ import { config } from 'xxscreeps/config/index.js';
 config.database.lock = pathToFileURL(
 	path.join(tmpdir(), `screeps-ok-xxscreeps-${process.pid}.lock`),
 ).href;
+
+// Pay the isolated sandbox's one-time runtime compile here, not inside the
+// first test that calls `player()`.
+await warmRuntimeBundle();
