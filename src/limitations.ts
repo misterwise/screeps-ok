@@ -78,14 +78,21 @@ export async function hasDocumentedAdapterLimitation(
 // until the declaration is updated).
 
 export type ShapeDivergenceTarget =
+	/** The shared RoomObject surface every room object inherits. */
+	| 'roomObject'
 	/** Flag object data-property surface. */
 	| 'flag'
 	/** Creep body part entries (`{type, hits[, boost]}`). */
 	| 'bodyPart'
-	/** Controller data-property surface (`effects` always enumerable). */
+	/** Controller data-property surface. */
 	| 'controller'
 	/** Structure data-property surfaces, including NPC structures. */
 	| 'structure';
+
+/** Targets whose objects are room objects, and so inherit `roomObject` extras. */
+const roomObjectTargets = new Set<ShapeDivergenceTarget>([
+	'roomObject', 'flag', 'controller', 'structure',
+]);
 
 export interface ShapeDivergence {
 	/** Property keys present on this engine beyond the canonical shape. */
@@ -97,13 +104,16 @@ export type ShapeDivergences = Partial<Record<ShapeDivergenceTarget, ShapeDiverg
 /**
  * The canonical shape adjusted for the active adapter's declared
  * intentional divergences: the sorted key set a shape test should assert
- * exact equality against.
+ * exact equality against. A room-object target also folds in whatever the
+ * adapter declares on the shared `roomObject` surface.
  */
 export async function expectedShape(
 	target: ShapeDivergenceTarget,
 	canonical: readonly string[],
 ): Promise<string[]> {
 	const adapter = await loadAdapter();
-	const extra = adapter.shapeDivergences?.[target]?.extra ?? [];
-	return [...new Set([...canonical, ...extra])].sort();
+	const divergences = adapter.shapeDivergences ?? {};
+	const inherited = roomObjectTargets.has(target) ? divergences.roomObject?.extra ?? [] : [];
+	const extra = divergences[target]?.extra ?? [];
+	return [...new Set([...canonical, ...inherited, ...extra])].sort();
 }

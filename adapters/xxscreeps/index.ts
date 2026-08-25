@@ -283,17 +283,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// `boost: undefined` property; upstream closed the PR that stripped
 		// it to match vanilla's boost-only-when-boosted shape.
 		bodyPart: { extra: ['boost'] },
-		// Controller declares an `@enumerable` `effects` getter (safe-mode
-		// invulnerability / PWR_OPERATE_CONTROLLER), like StructureInvaderCore,
-		// so the key is always present; vanilla sets `effects` only when an
-		// effect is active.
-		controller: { extra: ['effects'] },
-		// laverdet/xxscreeps#215 explicitly accepts exact undefined-vs-absent
-		// shape differences. The invader mod deliberately extends Structure
-		// with an enumerable `effects` getter so every stronghold peer type can
-		// expose its collapse timer (#311); ordinary structures inherit the key
-		// even when the getter returns undefined.
-		structure: { extra: ['effects'] },
+		// laverdet/xxscreeps#374 gave RoomObject the cached `effects` getter so
+		// any mod can contribute entries over the shared `#effects` chain, so
+		// every room object inherits the key even when the getter returns
+		// undefined; vanilla assigns `effects` only when an effect is active.
+		roomObject: { extra: ['effects'] },
 	};
 
 	private playerMap = new Map<string, string>();

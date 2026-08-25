@@ -2,11 +2,13 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus the selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-08-19 (pin `6d0ffb7e`).
+Last refreshed: 2026-08-24 (pin `e9380f4d`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
 ## Current upstream PRs to track
+
+[#374](https://github.com/laverdet/xxscreeps/pull/374) (game: compose effects and renderers across mods) merged, consumed at pin `e9380f4d` (2026-08-24) — no parity rows, but it moves the cached `effects` getter onto `RoomObject` over a `'#effects'` generator chain, so the accepted structure/controller `effects` divergence widens to every room object and the adapter now declares it once as `roomObject: { extra: ['effects'] }`. This closes out the `RoomObject.effects` substrate that the feature queue below had held as the next Tier 1 area. The same bump consumed #370/#371/#372/#373/#375/#376/#378, none of which move parity rows. Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
 
 [#349](https://github.com/laverdet/xxscreeps/pull/349) (terminal: reorder checkSend validation precedence) and [#352](https://github.com/laverdet/xxscreeps/pull/352) (powercreep: lose movement ties and die at nuke impact) merged, consumed at pin `6d0ffb7e` (2026-08-19) — pruned `terminal-send-check-order-diverges` (TERMINAL-SEND-005 + 8 TERMINAL-SEND-013 rows), `power-creep-wins-movement-ties` (MOVE-POWER-001), and `power-creep-survives-nuke-impact` (NUKE-IMPACT-008:powerCreepRoomwideRemoved). The same bump consumed [#350](https://github.com/laverdet/xxscreeps/pull/350) (driver: decode the runtime source map with trace-mapping) — no parity rows, but it removes the 33-40ms first-`error.stack` decode that made UNDOC-MEMJSON-005 graze the tick wall-clock deadline on CI (now 7-10ms; the test passes in ~45ms locally at this pin). Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
 
@@ -39,6 +41,13 @@ Last refreshed: 2026-08-19 (pin `6d0ffb7e`).
 - **`power-bank-ruin-spills-one-tick-late`** (POWER-BANK-004) — the ruin processor waits for `ticksToDecay === 0` while vanilla spills at `gameTime >= decayTime - 1`, so the dropped-power observation lands a tick late. Small and self-contained; the readiest one-tick timing fix in the set.
 - **`stale-pickup-target-allowed`** (UNDOC-STALEARG-001:creepPickup) — make `checkTarget` read a schema-backed field so released wrappers trip the guard uniformly; closes the whole stale-argument axis rather than just pickup.
 
+Three residual rows from the `38ee6170` bump that opened the `strongholdDeploy` and `powerCreeps` capabilities. #349/#352 already took the other two from that set; these are diagnosed in the gaps doc and unqueued only for lack of a slot:
+
+- **`stronghold-deploy-trigger-one-tick-late`** (STRONGHOLD-LAYOUT-001, 5 rows) — the deploy processor fires a tick after vanilla's trigger boundary.
+- **`creep-attack-cannot-target-power-creep`** (POWERCREEP-DEATH-002) — `checkTarget` rejects a `PowerCreep` as an attack target.
+- **`power-creep-renew-stamps-next-tick-age`** (POWERCREEP-RENEW-001) — intent processors run with `Game.time` already advanced, so `renew` stamps `#ageTime` one tick beyond vanilla's. The only exact-value row pinning that convention; check whether other processors stamp absolute ticks the same way before proposing a fix.
+- **`factory-power-effect-not-implemented`** (FACTORY-PRODUCE-011:powerEffect, :powerEffectBeforeNotEnough) — the `PWR_OPERATE_FACTORY` branch is unimplemented. The 38ee6170 re-triage dropped its intentional hold: the rows never needed a live power creep, only `checkProduce` reading the factory's stored level.
+
 ## PR-derived rows — pending upstream vanilla, NOT xxscreeps work
 
 The 2026-05-07 catalog sweep (`633718e`, "Add PR-derived behavior catalog coverage") mined open screeps/engine PRs and wrote canonical rows for the behavior those PRs propose, registering vanilla expected-failures in the same commit. The provenance citations were lost from most entries over time, which made these read like ordinary xxscreeps gaps; both adapters' `parity.json` entries now carry the source PR in their `expected` text. **These are not xxscreeps bugs — never queue them as upstream xxscreeps work.** They resolve when stable vanilla ships the PR (then the row becomes `verified_vanilla` and both adapters are re-checked), or when a row is retired as never-shipping.
@@ -52,20 +61,14 @@ Registered on both adapters (4 gaps, 6 xxscreeps tests):
 
 Same class, tracked elsewhere: `structure-active-equal-distance-scan-order` (screeps/engine#150/#107, now an accepted divergence — see below) and `attack-notify-getter-api-missing` (no matching upstream PR found; see Blocked). Vanilla-only rows from the same sweep carry their citations in `adapters/vanilla/parity.json` — #112 (EVENT_BUILD `energySpent`), #131 (`Game.market.getHistory` return types), #152 (fatigued `moveTo` with `visualizePathStyle`), #148 (unspawned power-creep TTL); three rows there have unrecovered provenance and say so.
 
-## Deferred
-
-- **`terminal-send-check-order-diverges`** (9 test rows) — the fix is a straightforward `checkSend` reorder in `mods/classic/brokerage/terminal.ts`, but that file sits inside laverdet's in-progress market implementation work (the wallstreet order book landed in the `f01f0a23` bump range and is still moving). Deferred until the market work settles to avoid colliding with it; largest single-PR payoff in the queue once unblocked.
-
 ## Needs upstream design conversation first
 
 - **`live-cached-receiver-released`** (2 tests, UNDOC-STALERECV-002) — end-of-tick wrapper invalidation is a blanket shared-memory buffer release, not per-object liveness. Any fix is architecturally deep (re-attach live wrappers to the new tick's buffer, or route schema access through id re-resolution), so open a design conversation with laverdet before writing code.
-- **`game-object-json-room-tojson-null-crash`** (13 tests, UNDOC-JSONOBJ-001) — `JSON.stringify(creep)` yields `{room, id, name}` on xxscreeps versus vanilla's full public surface, because xxscreeps's overlay system exposes properties as non-enumerable prototype accessors while vanilla installs own enumerable per-instance accessors. Satisfying the row means making every object's public surface own-and-enumerable — a rework of the object model for serialization ergonomics, with no upstream report behind it. Discuss with laverdet before writing code; do not pitch it as the nested-`pos` fix the entry used to describe.
+- **`game-object-json-room-tojson-null-crash`** (15 tests, UNDOC-JSONOBJ-001) — `JSON.stringify(creep)` yields `{room, id, name}` on xxscreeps versus vanilla's full public surface, because xxscreeps's overlay system exposes properties as non-enumerable prototype accessors while vanilla installs own enumerable per-instance accessors. Satisfying the row means making every object's public surface own-and-enumerable — a rework of the object model for serialization ergonomics, with no upstream report behind it. Discuss with laverdet before writing code; do not pitch it as the nested-`pos` fix the entry used to describe.
 
 ## Blocked
 
-- **`look-for-at-unknown-returns-empty`** (ROOM-LOOK-006) — blocked on registering all canonical LOOK_* constants (e.g. `LOOK_POWER_CREEPS`); hardening the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases.
-- **`factory-power-effect-not-implemented`** (2 tests, intentional expected failure) — blocked until power-creep/effects substrate exists upstream.
-- **`attack-notify-getter-api-missing`** (8 tests) — pulled from PR consideration 2026-07-20: the `notifiesWhenAttacked()` getter does not exist in stable vanilla either (the gap is registered on BOTH adapters; vanilla's `parity.json` documents the engine-source check), so the ATTACK-NOTIFY-001..004 / STRUCTURE-API-006 rows are aspirational `needs_vanilla_verification` claims. An upstream PR adding the getter would rightly get the "not even Screeps does this" response (cf. #213). Blocked on re-triaging the catalog rows against real vanilla. The one PR-able slice hiding here is different and smaller: xxscreeps's `Creep.notifyWhenAttacked` reportedly returns `null` where vanilla's setter returns `OK` (real bot pattern) — that needs its own `verified_vanilla` catalog row + test before any upstream PR.
+- **`attack-notify-getter-api-missing`** (10 test rows across 5 catalog IDs) — pulled from PR consideration 2026-07-20: the `notifiesWhenAttacked()` getter does not exist in stable vanilla either (the gap is registered on BOTH adapters; vanilla's `parity.json` documents the engine-source check), so the ATTACK-NOTIFY-001..004 / STRUCTURE-API-006 rows are aspirational `needs_vanilla_verification` claims. An upstream PR adding the getter would rightly get the "not even Screeps does this" response (cf. #213). Blocked on re-triaging the catalog rows against real vanilla. The one PR-able slice hiding here is different and smaller: xxscreeps's `Creep.notifyWhenAttacked` reportedly returns `null` where vanilla's setter returns `OK` (real bot pattern) — that needs its own `verified_vanilla` catalog row + test before any upstream PR.
 
 ## Accepted divergences
 
@@ -73,8 +76,7 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 
 - **`shape-flag-extra-id`** (declared divergence) — accepted 2026-06-11 per laverdet/xxscreeps#215's shape rule; `flag.id` is always `null` at runtime, so only property presence diverges.
 - **`shape-body-part-always-has-boost`** (declared divergence) — #163 was closed as not desired by upstream.
-- **`shape-controller-effects-always-enumerable`** (declared divergence) — deliberate `@enumerable` override on the controller's `effects` getter; empty-case key presence only.
-- **`shape-structure-effects-always-enumerable`** (declared divergence) — #311's stronghold work extends base `Structure` with an enumerable derived `effects` getter so every peer type can expose its collapse timer; empty-case key presence only.
+- **`shape-room-object-effects-always-present`** (declared divergence) — started with #311's stronghold work extending base `Structure` with a derived `effects` getter, and widened at pin `e9380f4d` when #374 moved the cached getter onto `RoomObject`; the getter returns `undefined` on an empty chain, so this is empty-case key presence only.
 - **`factory-power-effect-not-implemented`** (expected failure) — see Blocked above.
 - **`memory-parsed-json-not-refreshed-across-ticks`** (intentional expected failure) — accepted 2026-07-21 per laverdet's #329 spec-chasing bar; see the queue-removal note above and the gaps doc.
 - **`rawmemory-set-invalidates-parsed-memhack`** (intentional expected failure) — accepted 2026-07-25. UNDOC-MEMHACK-012 asserts the `global.Memory` descriptor flip, an engine mechanism; the player-observable consequences it protects (MEMORY-002, UNDOC-MEMHACK-007/008/009/010) all pass on xxscreeps, which pins the in-tick reference another way, and the MemHack pattern still works because the accessor descriptor is configurable. Row stays as a regression trap.
@@ -83,17 +85,16 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 
 ## Feature queue coordination
 
-Portal (#159), Game.notify queueing (#161), shard-tick processor (#165), PowerSpawn / `Game.gpl` (#260), and the invader-core mod (#274) have all landed. The clean next Tier 1 feature area remains **`RoomObject.effects`** — it unlocks power and InvaderCore/stronghold work, and prior art exists on the `feature/effects-substrate` / `feature/invader-core` branches. Market is laverdet's active territory; steer clear of `mods/classic/brokerage` and `mods/mmo/wallstreet` until that work lands (see the terminal deferral above).
+Portal (#159), Game.notify queueing (#161), shard-tick processor (#165), PowerSpawn / `Game.gpl` (#260), the invader-core mod (#274), and now the `RoomObject.effects` substrate (#374) have all landed, which clears the Tier 1 feature list this section tracked; the remaining parity work is the per-row queue above rather than a feature area. Market is laverdet's active territory; steer clear of `mods/classic/brokerage` and `mods/mmo/wallstreet` until that work lands.
 
 ## Summary
 
 | Stage | Gaps | Tests |
 |---|---:|---:|
-| Active submission queue | 2 | 2 |
-| Next-up areas | 3 | 3 |
+| Active submission queue | 1 | 1 |
+| Next-up areas | 7 | 12 |
 | PR-derived (pending upstream vanilla) | 4 | 6 |
-| Deferred (market in flight) | 1 | 9 |
-| Needs design conversation | 2 | 15 |
-| Blocked (open gaps + intentional) | 3 | 11 |
-| Accepted divergence (intentional expected failures) | 4 | 8 |
-| **Total** | **19** | **54** |
+| Needs design conversation | 2 | 17 |
+| Blocked | 1 | 10 |
+| Accepted divergence (intentional expected failures) | 5 | 9 |
+| **Total** | **20** | **55** |
