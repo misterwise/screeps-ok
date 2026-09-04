@@ -20,6 +20,11 @@
 			"expected": "Vanilla exposes the message the creep was publicly saying at the moment of death.",
 			"tests": ["TOMBSTONE-018"]
 		},
+		"reserve-renewal-credits-one-extra-tick": {
+			"actual": "The renewal branch of `reserveController` in `mods/classic/controller/processor.ts` sets `endTime` to `reservationEndTime + power + 1`, so an existing reservation gains one tick beyond what the CLAIM parts pay for on every renewing tick. A one-CLAIM reserver banks a tick per tick instead of standing still, and a two-CLAIM reserver gains two.",
+			"expected": "Vanilla `processor/intents/creeps/reserveController.js:35-49` renews with `reservation.endTime += effect` and nothing else; the `gameTime + 1` base applies only when there is no reservation yet.",
+			"tests": ["CTRL-RESERVE-009"]
+		},
 		"controller-my-reset-returns-undefined": {
 			"actual": "After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral.",
 			"expected": "Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0.",

@@ -991,6 +991,14 @@ Coverage Notes
   `creep.reserveController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
   requirements, target validity, and range.
+- `CTRL-RESERVE-009` `behavior` `verified_vanilla`
+  Renewing an existing reservation credits exactly `CONTROLLER_RESERVE` (1)
+  tick per CLAIM part and nothing else, so against the 1-per-tick decay of
+  `CTRL-RESERVE-006` a one-CLAIM reserver holds `ticksToEnd` unchanged tick over
+  tick and a two-CLAIM reserver gains exactly one tick per tick. (Engine
+  `processor/intents/creeps/reserveController.js:35-49` renews with
+  `reservation.endTime += effect`; the `gameTime + 1` base applies only when
+  there is no reservation yet.)
 
 ### 6.3 Attack Controller
 - `CTRL-ATTACK-001` `behavior` `verified_vanilla`
