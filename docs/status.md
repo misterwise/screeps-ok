@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2668%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2512%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2671%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2515%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2668](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:43 UTC |
-| 🟡 | **xxscreeps** | [2512](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:43 UTC |
+| 🟡 | **vanilla** | [2671](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:52 UTC |
+| 🟡 | **xxscreeps** | [2515](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:51 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -418,7 +418,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2668 tests across 141 files</summary>
+<summary>2671 tests across 141 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3185,9 +3185,12 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
 - Timer gating TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (3)
+**`tests/23-store-api/23.6-store-access.test.ts`** (6)
 
 - store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
+- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 for a resource key the store never carried
+- store access STORE-ACCESS-001 creep.store[RESOURCE_TYPE] returns 0 for an empty creep
+- store access STORE-ACCESS-004 store[nonResourceKey] returns undefined, not 0
 - store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
 - store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 
@@ -3801,7 +3804,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2512 tests across 127 files</summary>
+<summary>2515 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6432,9 +6435,12 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
 - Timer gating TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (3)
+**`tests/23-store-api/23.6-store-access.test.ts`** (6)
 
 - store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
+- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 for a resource key the store never carried
+- store access STORE-ACCESS-001 creep.store[RESOURCE_TYPE] returns 0 for an empty creep
+- store access STORE-ACCESS-004 store[nonResourceKey] returns undefined, not 0
 - store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
 - store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 

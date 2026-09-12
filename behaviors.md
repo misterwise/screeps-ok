@@ -3708,10 +3708,6 @@ Coverage Notes
 - `STORE-ACCESS-001` `behavior` `verified_vanilla`
   `store[RESOURCE_TYPE]` returns the stored amount for that resource, or `0`
   when the store currently holds none of it.
-- `STORE-ABSENT-001` `behavior` `verified_vanilla`
-  Reading a `RESOURCES_ALL` key the store does not hold returns `0`, not
-  `undefined`, while a non-resource key still returns `undefined`. Enumeration
-  is unaffected: the absent key does not appear in `Object.keys`/`for...in`.
 - `STORE-ACCESS-002` `behavior` `verified_vanilla`
   `store.getCapacity(type)`, `store.getUsedCapacity(type)`, and
   `store.getFreeCapacity(type)` return `null` when the store cannot hold that
@@ -3723,6 +3719,9 @@ Coverage Notes
   but remain callable. Bots sum assets by iterating stores; an engine that
   leaks the methods as enumerable keys hands them a function where a
   number is expected.
+- `STORE-ACCESS-004` `behavior` `verified_vanilla`
+  The `0` default is scoped to resource types: `store[name]` for a name that
+  is not a resource type returns `undefined`, not `0`.
 
 ### 23.2 Open Stores
 - `STORE-OPEN-001` `matrix` `verified_vanilla`
