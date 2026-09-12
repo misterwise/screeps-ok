@@ -8,6 +8,8 @@ Last refreshed: 2026-08-24 (pin `e9380f4d`).
 
 ## Current upstream PRs to track
 
+[#388](https://github.com/laverdet/xxscreeps/pull/388) (controller: credit a renewed reservation by the creep's CLAIM power, not power + 1) OPEN, external contributor — registered `reserve-renewal-credits-one-extra-tick` (CTRL-RESERVE-009, 2 rows) at pin `e9380f4d` on 2026-09-12 via screeps-ok PR #8 from the same author. Renewal adds `power + 1` where vanilla adds `power`, so a one-CLAIM reserver's `ticksToEnd` climbs 1 per tick instead of holding. Prune the gap on the bump that consumes it.
+
 [#374](https://github.com/laverdet/xxscreeps/pull/374) (game: compose effects and renderers across mods) merged, consumed at pin `e9380f4d` (2026-08-24) — no parity rows, but it moves the cached `effects` getter onto `RoomObject` over a `'#effects'` generator chain, so the accepted structure/controller `effects` divergence widens to every room object and the adapter now declares it once as `roomObject: { extra: ['effects'] }`. This closes out the `RoomObject.effects` substrate that the feature queue below had held as the next Tier 1 area. The same bump consumed #370/#371/#372/#373/#375/#376/#378, none of which move parity rows. Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
 
 [#349](https://github.com/laverdet/xxscreeps/pull/349) (terminal: reorder checkSend validation precedence) and [#352](https://github.com/laverdet/xxscreeps/pull/352) (powercreep: lose movement ties and die at nuke impact) merged, consumed at pin `6d0ffb7e` (2026-08-19) — pruned `terminal-send-check-order-diverges` (TERMINAL-SEND-005 + 8 TERMINAL-SEND-013 rows), `power-creep-wins-movement-ties` (MOVE-POWER-001), and `power-creep-survives-nuke-impact` (NUKE-IMPACT-008:powerCreepRoomwideRemoved). The same bump consumed [#350](https://github.com/laverdet/xxscreeps/pull/350) (driver: decode the runtime source map with trace-mapping) — no parity rows, but it removes the 33-40ms first-`error.stack` decode that made UNDOC-MEMJSON-005 graze the tick wall-clock deadline on CI (now 7-10ms; the test passes in ~45ms locally at this pin). Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
@@ -20,7 +22,7 @@ Last refreshed: 2026-08-24 (pin `e9380f4d`).
 
 ## Active submission queue
 
-`parity.json` currently registers 15 open parity gaps (22 catalog IDs) plus 5 intentional expected failures (9 catalog IDs), 55 expected-failure test rows in all as generated in `docs/status.md` — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
+`parity.json` currently registers 16 open parity gaps (23 catalog IDs) plus 5 intentional expected failures (9 catalog IDs), 57 expected-failure test rows in all as generated in `docs/status.md` — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
 1. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
 
