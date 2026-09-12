@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2665%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2510%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-57-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2668%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2512%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2665](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:34 UTC |
-| 🟡 | **xxscreeps** | [2510](#xxscreeps-passing-tests) | [57](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:33 UTC |
+| 🟡 | **vanilla** | [2668](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:43 UTC |
+| 🟡 | **xxscreeps** | [2512](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:43 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 21 expected-failure classifications against vanilla's canonical behavior, covering 57 tests. That includes 16 open parity gaps covering 48 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 22 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 17 open parity gaps covering 49 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,6 +167,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | Gap | Actual | Expected | Tests |
 | --- | --- | --- | :-: |
 | `reserve-renewal-credits-one-extra-tick` | The renewal branch of `reserveController` in `mods/classic/controller/processor.ts` sets `endTime` to `reservationEndTime + power + 1`, so an existing reservation gains one tick beyond what the CLAIM parts pay for on every renewing tick. A one-CLAIM reserver banks a tick per tick instead of standing still, and a two-CLAIM reserver gains two. | Vanilla `processor/intents/creeps/reserveController.js:35-49` renews with `reservation.endTime += effect` and nothing else; the `gameTime + 1` base applies only when there is no reservation yet. | [2](#xxscreeps-gap-reserve-renewal-credits-one-extra-tick) |
+| `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power + 1)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `game-object-json-room-tojson-null-crash` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The cause is the object model, not position handling: xxscreeps exposes the public surface as NON-ENUMERABLE prototype accessors from its overlay/schema system (`pos` is an own property but non-enumerable), and `JSON.stringify` serializes only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral, not the defect. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON snapshots whose representative public fields match the live object, including nested position fields. Vanilla achieves this because `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors on each instance, backed by own `_name`/`_body`/`_hits` cache slots, so the whole public surface falls into `JSON.stringify`. | [15](#xxscreeps-gap-game-object-json-room-tojson-null-crash) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
@@ -190,6 +191,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged`
 - `controller mechanics CTRL-RESERVE-009 renewing a reservation with two CLAIM parts adds one tick per tick`
+
+</details>
+
+<details id="xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting">
+<summary><code>reserve-cap-clamps-instead-of-rejecting</code> — 1 test</summary>
+
+- `controller mechanics CTRL-RESERVE-010 a renewal that would overshoot CONTROLLER_RESERVE_MAX is dropped, not clamped`
 
 </details>
 
@@ -410,7 +418,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2665 tests across 140 files</summary>
+<summary>2668 tests across 141 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1296,7 +1304,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (109)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (110)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -1343,6 +1351,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with two CLAIM parts adds one tick per tick
+- controller mechanics CTRL-RESERVE-010 a renewal that would overshoot CONTROLLER_RESERVE_MAX is dropped, not clamped
 - controller mechanics CTRL-RESERVE-008:notOwner reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busy reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTarget reserveController() validation returns the canonical code
@@ -3219,6 +3228,11 @@ Click a count to jump to the affected test list.
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
 
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (2)
+
+- Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
+
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 
 - Same-tick resource intent visibility INTENT-RESOURCE-001 withdraw does not make resources available to same-tick actions
@@ -3787,7 +3801,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2510 tests across 126 files</summary>
+<summary>2512 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6460,6 +6474,11 @@ Click a count to jump to the affected test list.
 - Intent overwrite and cancel INTENT-CREEP-002 repeated same-tick calls keep only the last intent
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
+
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (2)
+
+- Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
 
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 

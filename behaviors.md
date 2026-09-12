@@ -974,7 +974,9 @@ Coverage Notes
 
 ### 6.2 Reserve Controller
 - `CTRL-RESERVE-001` `behavior` `verified_vanilla`
-  Adds 1 tick per CLAIM part per tick to the reservation timer.
+  `reserveController()` on an unreserved controller returns `OK` and, on the
+  next tick, exposes a `reservation` owned by the caller with a positive
+  `ticksToEnd`. (The per-CLAIM credit arithmetic is `CTRL-RESERVE-009`.)
 - `CTRL-RESERVE-002` `behavior` `verified_vanilla`
   `reserveController()` requires at least one CLAIM body part.
 - `CTRL-RESERVE-003` `behavior` `verified_vanilla`
@@ -1006,6 +1008,15 @@ Coverage Notes
   `processor/intents/creeps/reserveController.js:35-49` renews with
   `reservation.endTime += effect`; the `gameTime + 1` base applies only when
   there is no reservation yet.)
+- `CTRL-RESERVE-010` `behavior` `verified_vanilla`
+  The `CONTROLLER_RESERVE_MAX` cap rejects rather than clamps: a reserve
+  intent whose full credit would push `endTime` past
+  `gameTime + CONTROLLER_RESERVE_MAX` is dropped entirely (no `endTime`
+  change, no actionLog entry, no event), and the timer decays that tick. So
+  player-visible `ticksToEnd` never reads `CONTROLLER_RESERVE_MAX` itself, and
+  a renewer crediting more than 1 per tick cannot hold the timer flat at the
+  ceiling — it sawtooths (`4999, 4998, 4999, …` for two CLAIM parts). (Engine
+  `processor/intents/creeps/reserveController.js:39-41`.)
 
 ### 6.3 Attack Controller
 - `CTRL-ATTACK-001` `behavior` `verified_vanilla`

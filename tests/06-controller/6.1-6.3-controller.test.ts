@@ -648,6 +648,61 @@ describe('controller mechanics', () => {
 		expect(readings).toEqual(rising);
 	});
 
+	test('CTRL-RESERVE-010 a renewal that would overshoot CONTROLLER_RESERVE_MAX is dropped, not clamped', async ({ shard }) => {
+		// Engine reserveController.js:39-41 returns before touching endTime when
+		// `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so at the ceiling
+		// a two-CLAIM renewer is refused every other tick and the timer decays.
+		// Player-visible: readings never reach MAX and fall at least once.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		const bigBody = Array.from({ length: 50 }, () => CLAIM);
+		const saturatorIds = await Promise.all([
+			[ctrlPos!.x + 1, ctrlPos!.y] as [number, number],
+			[ctrlPos!.x, ctrlPos!.y + 1] as [number, number],
+		].map(pos => shard.placeCreep('W2N1', { pos, owner: 'p1', body: bigBody })));
+		const renewerId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y + 1],
+			owner: 'p1',
+			body: [CLAIM, CLAIM, MOVE],
+		});
+		await shard.tick();
+
+		// Two 50-CLAIM reservers add up to 100 per tick against 1 decay, so 52
+		// reserve ticks saturate the reservation from zero.
+		for (let i = 0; i < 52; i++) {
+			await shard.runPlayer('p1', code`
+				const controller = Game.rooms['W2N1'].controller;
+				for (const id of ${saturatorIds}) {
+					Game.getObjectById(id).reserveController(controller);
+				}
+			`);
+		}
+
+		// Only the two-CLAIM renewer keeps reserving; read before each renewal.
+		const readings: number[] = [];
+		for (let i = 0; i < 6; i++) {
+			const probe = await shard.runPlayer('p1', code`
+				const controller = Game.rooms['W2N1'].controller;
+				const ticksToEnd = controller.reservation.ticksToEnd;
+				const rc = Game.getObjectById(${renewerId}).reserveController(controller);
+				({ ticksToEnd, rc })
+			`) as { ticksToEnd: number; rc: number };
+			expect(probe.rc).toBe(OK);
+			readings.push(probe.ticksToEnd);
+		}
+		// Saturated: the ceiling is reached, but never MAX itself.
+		expect(Math.max(...readings)).toBe(CONTROLLER_RESERVE_MAX - 1);
+		// At least one refused renewal shows up as a decay between readings.
+		const drops = readings.filter((value, i) => i > 0 && value < readings[i - 1]);
+		expect(drops.length).toBeGreaterThan(0);
+	}, 60_000);
+
 	for (const row of ctrlReserveValidationCases) {
 		test(`CTRL-RESERVE-008:${row.label} reserveController() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
