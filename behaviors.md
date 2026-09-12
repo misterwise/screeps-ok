@@ -380,11 +380,14 @@ Coverage Notes
 - `PATHFINDER-020` `behavior` `verified_vanilla`
   `PathFinder.search()` can return a path spanning multiple rooms when origin
   and goal are in different rooms.
+- `PATHFINDER-021` `behavior` `verified_vanilla`
+  `PathFinder.search()` is directed toward the goal: the `ops` reported for an
+  open same-room path stay on the order of the path length, far below the
+  room's tile count, so the `maxOps` budget is spent on progress rather than
+  on a uniform-cost flood. A flood returns the same path but exhausts the
+  default budget on longer searches and reports reachable goals `incomplete`.
 
 ### 2.2 CostMatrix
-- `PATHFINDER-021` `behavior` `verified_vanilla`
-  `PathFinder.search` is heuristic-guided: a same-room goal is reached in ops
-  proportional to the path length, not to the reachable area.
 - `COSTMATRIX-001` `behavior` `verified_vanilla`
   `new CostMatrix()` creates a matrix with all values 0.
 - `COSTMATRIX-002` `behavior` `verified_vanilla`

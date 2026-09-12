@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2671%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2515%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2672%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2516%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2671](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:52 UTC |
-| 🟡 | **xxscreeps** | [2515](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:51 UTC |
+| 🟡 | **vanilla** | [2672](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:56 UTC |
+| 🟡 | **xxscreeps** | [2516](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:56 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -266,12 +266,12 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
 - `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
 - `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
-- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
-- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 
 </details>
 
@@ -418,7 +418,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2671 tests across 141 files</summary>
+<summary>2672 tests across 141 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -709,7 +709,7 @@ Click a count to jump to the affected test list.
 
 - Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (21)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
@@ -731,6 +731,7 @@ Click a count to jump to the affected test list.
 - PathFinder PATHFINDER-018 consecutive path positions are at Chebyshev distance 1
 - PathFinder PATHFINDER-019 range > 0 terminates within range, not necessarily on goal
 - PathFinder PATHFINDER-020 multi-room path crosses room boundary with continuous positions
+- PathFinder PATHFINDER-021 search is heuristic-guided (A*), not a uniform-cost flood
 
 **`tests/02-pathfinding/2.2-costmatrix.test.ts`** (8)
 
@@ -3804,7 +3805,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2515 tests across 127 files</summary>
+<summary>2516 tests across 127 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4095,7 +4096,7 @@ Click a count to jump to the affected test list.
 
 - Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (21)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
@@ -4117,6 +4118,7 @@ Click a count to jump to the affected test list.
 - PathFinder PATHFINDER-018 consecutive path positions are at Chebyshev distance 1
 - PathFinder PATHFINDER-019 range > 0 terminates within range, not necessarily on goal
 - PathFinder PATHFINDER-020 multi-room path crosses room boundary with continuous positions
+- PathFinder PATHFINDER-021 search is heuristic-guided (A*), not a uniform-cost flood
 
 **`tests/02-pathfinding/2.2-costmatrix.test.ts`** (8)
 
