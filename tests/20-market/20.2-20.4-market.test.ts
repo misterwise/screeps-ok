@@ -749,7 +749,12 @@ describe('Market deal', () => {
 
 describe('Market queries', () => {
 	test('MARKET-QUERY-001 calcTransactionCost returns the formula-based cost', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
+		shard.requires('marketBasics');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
+		});
+		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
 			const sameRoom = Game.market.calcTransactionCost(1000, 'W1N1', 'W1N1');
@@ -946,7 +951,12 @@ describe('Market queries', () => {
 	});
 
 	test('MARKET-QUERY-007 getAllOrders invalid resource filter returns an empty array', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
+		shard.requires('marketBasics');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
+		});
+		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
 			const orders = Game.market.getAllOrders({ resourceType: 'not-a-resource' });

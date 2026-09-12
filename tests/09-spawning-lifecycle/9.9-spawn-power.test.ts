@@ -7,6 +7,7 @@ import { describe, test, expect, code,
 describe('Spawn power effects', () => {
 	test('SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],

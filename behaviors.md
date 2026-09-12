@@ -930,6 +930,13 @@ Coverage Notes
   `CONSTRUCTION_COST` types, and short-circuits otherwise. Same-type
   stacking (e.g. tower-on-tower) is owned by utils.js:172 and is out of
   scope; site-on-site is owned by `CONSTRUCTION-SITE-007`.
+- `CONSTRUCTION-SITE-018` `behavior` `verified_vanilla`
+  A player's own construction site surfaces through both owner-scoped
+  APIs: `room.find(FIND_MY_CONSTRUCTION_SITES)` returns it (with
+  `my === true` and the placed `structureType`), and it appears in the
+  global `Game.constructionSites` id-keyed collection. Distinct from
+  `CONSTRUCTION-SITE-001`, which covers placement via the unscoped
+  `FIND_CONSTRUCTION_SITES`.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
@@ -1118,11 +1125,29 @@ Coverage Notes
   drops to level 0 (unowned).
 - `CTRL-DOWNGRADE-007` `behavior` `verified_vanilla`
   The controller can downgrade through multiple levels if neglected.
+- `CTRL-DOWNGRADE-009` `behavior` `verified_vanilla`
+  A downgrade step that lands on a level ≥ 1 resets the controller's
+  `safeModeAvailable` to 0.
+- `CTRL-DOWNGRADE-010` `behavior` `verified_vanilla`
+  A downgrade step that lands on a level ≥ 1 starts a fresh safe-mode
+  cooldown in a room without novice-area protection: `safeModeCooldown` was
+  absent before the step and reads just under SAFE_MODE_COOLDOWN immediately
+  after the level loss.
+- `CTRL-DOWNGRADE-011` `behavior` `verified_vanilla`
+  A downgrade that reaches level 0 resets `isPowerEnabled` to false on a
+  previously power-enabled room.
 
 Coverage Notes
 - Structures becoming inactive above the RCL limit is owned by
   `CTRL-STRUCTLIMIT-002` (section 6.10). Former CTRL-DOWNGRADE-007 dropped;
-  CTRL-DOWNGRADE-008 renumbered to 007.
+  CTRL-DOWNGRADE-008 renumbered to 007. The number 008 is retired by that
+  renumbering (its historical content lives at 007) and is not reused; new
+  rows continue at 009.
+- The safe-mode field resets on the terminal (level-0) downgrade step are not
+  yet catalogued: vanilla also zeroes `safeModeAvailable` and starts a fresh
+  cooldown there, but only the ≥ 1 step is pinned by CTRL-DOWNGRADE-009/-010.
+  The unclaim rows (CTRL-UNCLAIM-004/-005) pin the same processor fields on
+  the other neutralization path.
 
 ### 6.8 Safe Mode Mechanics
 - `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
@@ -1165,13 +1190,25 @@ Notes
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
   `StructureController.unclaim()` resets the controller to level 0 (unowned),
-  clearing `user` (set to `null`), `progress`, `downgradeTime`, `safeMode`, and
-  `safeModeAvailable` in a single processor step. After unclaim, `controller.my`
-  is `false` (the previously-owned sentinel — distinct from never-owned
-  `undefined`, covered by CTRL-CLAIM-007). Owned structures in the room are
-  **not** destroyed by unclaim itself; they remain present and simply become
-  inactive because every `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered
-  by `CTRL-STRUCTLIMIT-002`).
+  clearing `user` (set to `null`), `progress`, `downgradeTime`, and `safeMode`
+  in a single processor step (the safe-mode charge/cooldown and power-enable
+  resets in the same step are owned by CTRL-UNCLAIM-004/-005/-006). After
+  unclaim, `controller.my` is `false` (the previously-owned sentinel —
+  distinct from never-owned `undefined`, covered by CTRL-CLAIM-007). Owned
+  structures in the room are **not** destroyed by unclaim itself; they remain
+  present and simply become inactive because every
+  `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered by
+  `CTRL-STRUCTLIMIT-002`).
+- `CTRL-UNCLAIM-004` `behavior` `verified_vanilla`
+  After `unclaim()` resolves, the controller's `safeModeAvailable` is 0.
+- `CTRL-UNCLAIM-005` `behavior` `verified_vanilla`
+  After `unclaim()` resolves in a room without novice-area protection, a
+  fresh safe-mode cooldown is started rather than cleared: `safeModeCooldown`
+  was absent before the unclaim and reads just under SAFE_MODE_COOLDOWN on
+  the following tick.
+- `CTRL-UNCLAIM-006` `behavior` `verified_vanilla`
+  After `unclaim()` resolves on a power-enabled room, `isPowerEnabled` is
+  false.
 
 Coverage Notes
 - Original CTRL-UNCLAIM-002 ("All owned structures in the room are
@@ -1180,6 +1217,10 @@ Coverage Notes
   (`@screeps/engine/src/processor/intents/controllers/unclaim.js`), which
   only updates the controller object and leaves room structures intact.
   The inactive-above-RCL-limit outcome is owned by `CTRL-STRUCTLIMIT-002`.
+  The retired numbers are not reused; new rows continue at 004.
+- Split: the `safeModeAvailable` reset was moved out of CTRL-UNCLAIM-001's
+  cleared-field list into its own row (CTRL-UNCLAIM-004) so the safe-mode
+  and power-enable field resets are independently tracked per divergence.
 
 ### 6.10 Structure Limits per RCL
 - `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
@@ -2475,7 +2516,7 @@ Coverage Notes
   in `14.5`; further family entries (rampart hits, effect propagation, reward
   contents) are still pending.
 
-### 14.3 Power Bank `capability: powerCreeps`
+### 14.3 Power Bank `capability: powerBank`
 - `POWER-BANK-001` `behavior` `verified_vanilla`
   When a power bank is attacked, it deals `POWER_BANK_HIT_BACK` of the received
   damage back to the attacker in the same tick.
@@ -2615,7 +2656,9 @@ Coverage Notes
   from `isActive()`.
 - `STRUCTURE-ACTIVE-005` `behavior` `verified_vanilla`
   When same-type owned structures are at equal controller distance, `isActive()`
-  breaks the tie by the engine's object scan order.
+  breaks the tie by the room's object scan order, so the earliest-inserted
+  structures are the active ones. The order itself is an engine storage artifact
+  rather than a specified contract.
 
 ### 15.3 Construction Costs
 - `CONSTRUCTION-COST-001` `matrix` `verified_vanilla`
@@ -2683,7 +2726,7 @@ Coverage Notes
   `notifyWhenAttacked(enabled)` returns `ERR_NOT_OWNER` for an unowned
   structure in another player's controlled room.
 
-### 15.5 Effects Substrate `capability: powerCreeps`
+### 15.5 Effects Substrate `capability: powerEffects`
 - `EFFECT-DECAY-001` `behavior` `verified_vanilla`
   An entry's `ticksRemaining` decrements by exactly 1 each subsequent tick
   while the host RoomObject remains alive.
@@ -3220,20 +3263,20 @@ Coverage Notes
 
 ---
 
-## 19. Power Creeps `capability: powerCreeps`
+## 19. Power Creeps
 
-### 19.0 Game.gpl
+### 19.0 Account GPL `capability: powerSpawn`
 - `GPL-001` `behavior` `verified_vanilla`
-  `capability: powerSpawn`
   With zero processed account power, `Game.gpl` reports level `0`, progress `0`,
   and `POWER_LEVEL_MULTIPLY` progress required for the next level.
 - `GPL-002` `matrix` `verified_vanilla`
-  `capability: powerSpawn`
   `Game.gpl.level`, `progress`, and `progressTotal` follow the vanilla account
   power formula at threshold edges:
   `level = floor((power / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW))`,
   `progress = power - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`, and
   `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`.
+
+### 19.0 Power Creep Allocation `capability: powerCreeps`
 - `GPL-003` `behavior` `verified_vanilla`
   `PowerCreep.create(name, POWER_CLASS.OPERATOR)` returns
   `ERR_NOT_ENOUGH_RESOURCES` when GPL level is `0`.
@@ -3245,7 +3288,7 @@ Coverage Notes
   Creating or upgrading power creeps consumes free allocated power levels but
   does not change `Game.gpl`, which reflects total processed account power.
 
-### 19.1 Lifecycle
+### 19.1 Lifecycle `capability: powerCreeps`
 - `POWERCREEP-CREATE-001` `behavior` `verified_vanilla`
   A successful `PowerCreep.create(name, className)` returns `OK` and queues a
   new unspawned power creep with that name and class.
@@ -3300,7 +3343,7 @@ Coverage Notes
   for ownership, free power levels, max level, invalid power selection, and
   unmet level requirements.
 
-### 19.2 Movement & Actions
+### 19.2 Movement & Actions `capability: powerCreeps`
 - `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
   A successful power creep move generates no fatigue on plain, swamp, or road
   terrain.
@@ -3319,7 +3362,7 @@ Coverage Notes
   as `attack()`, `heal()`, `harvest()`, `build()`, `repair()`,
   `dismantle()`, and `claimController()` on their public API.
 
-### 19.3 Enable Room
+### 19.3 Enable Room `capability: powerCreeps`
 - `POWERCREEP-ENABLE-001` `behavior` `verified_vanilla`
   A successful `powerCreep.enableRoom(controller)` returns `OK` and sets
   `controller.isPowerEnabled` to `true` on the next tick.
@@ -3328,7 +3371,7 @@ Coverage Notes
   matrix for invalid target, safe-mode-blocked hostile controller, range,
   busy, and ownership.
 
-### 19.4 Operate Powers
+### 19.4 Operate Powers `capability: powerCreeps`
 - `POWER-OPERATE-001` `matrix` `verified_vanilla`
   Operate power effect magnitudes match `POWER_INFO[power].effect[level]` for
   all numeric operate powers and supported power levels.
@@ -3352,7 +3395,7 @@ Coverage Notes
 - The production consequences of `PWR_OPERATE_FACTORY` are owned by `11.5
   Factory Commodity Chains`.
 
-### 19.5 Disrupt Powers
+### 19.5 Disrupt Powers `capability: powerCreeps`
 - `POWER-DISRUPT-001` `matrix` `verified_vanilla`
   Disrupt power effect values and durations match `POWER_INFO` for each disrupt
   power and supported power level.
@@ -3363,7 +3406,7 @@ Coverage Notes
   For disrupt powers with structure targets, target acceptance and
   invalid-target behavior match the canonical power-to-target matrix.
 
-### 19.6 Regen Powers
+### 19.6 Regen Powers `capability: powerCreeps`
 - `POWER-REGEN-001` `matrix` `verified_vanilla`
   Regen power effect amount, period, and duration match `POWER_INFO` for each
   regen power and supported power level.
@@ -3371,10 +3414,12 @@ Coverage Notes
   Regen power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   regen power.
 
-### 19.7 Combat Powers
+### 19.7 Combat POWER_INFO
 - `POWER-COMBAT-001` `matrix` `verified_vanilla`
   `PWR_SHIELD` and `PWR_FORTIFY` effect magnitudes match `POWER_INFO` for each
   supported power level.
+
+### 19.7 Combat Runtime `capability: powerCreeps`
 - `POWER-COMBAT-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
   rampart at the power creep's position in the same tick.
@@ -3382,10 +3427,12 @@ Coverage Notes
   The rampart created by `PWR_SHIELD` is removed when the shield effect
   expires.
 
-### 19.8 Generate Ops
+### 19.8 Generate Ops POWER_INFO
 - `POWER-GENERATE-OPS-001` `matrix` `verified_vanilla`
   `PWR_GENERATE_OPS` amount, cooldown, and ops cost match `POWER_INFO` for
   each supported power level.
+
+### 19.8 Generate Ops Runtime `capability: powerCreeps`
 - `POWER-GENERATE-OPS-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_GENERATE_OPS)` returns `OK` and adds ops to the
   power creep's store in the same tick.
@@ -3395,14 +3442,14 @@ Coverage Notes
 
 ---
 
-## 20. Market `capability: market`
+## 20. Market
 
 ### 20.1 Terminal Send
 Coverage Notes
 - Terminal `send()` behavior is owned by `13.3 Terminal`.
 - `Game.market.calcTransactionCost()` is covered under `20.4 Queries`.
 
-### 20.2 Orders
+### 20.2 Orders `capability: market`
 - `MARKET-ORDER-001` `matrix` `verified_vanilla`
   Successful `createOrder()` cases create an order with the requested type,
   resource type, price, amount, and room for the canonical order-creation
@@ -3439,7 +3486,7 @@ Notes
 - Order lifetime and expiry should be specified through observable query
   behavior rather than only by restating MARKET_ORDER_LIFE_TIME.
 
-### 20.3 Deal
+### 20.3 Deal `capability: market`
 - `MARKET-DEAL-001` `behavior` `verified_vanilla`
   A successful `Game.market.deal()` returns `OK` and executes a trade against
   the specified order.
@@ -3464,11 +3511,16 @@ Notes
 - Market fees are owned by order creation, price change, and extension, not by
   `deal()`.
 
-### 20.4 Queries
+### 20.4 Self-Contained Queries `capability: marketBasics`
 - `MARKET-QUERY-001` `behavior` `verified_vanilla`
   `Game.market.calcTransactionCost(amount, roomName1, roomName2)` returns
   `ceil(amount * (1 - exp(-distance / 30)))`, where `distance` is the room
   distance between the two rooms.
+- `MARKET-QUERY-007` `behavior` `verified_vanilla`
+  `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
+  array (`[]`).
+
+### 20.5 Seeded-Order And History Queries `capability: market`
 - `MARKET-QUERY-002` `behavior` `verified_vanilla`
   `Game.market.getAllOrders(filter?)` returns orders matching the supplied
   filter.
@@ -3484,10 +3536,6 @@ Notes
 - `MARKET-QUERY-006` `behavior` `needs_vanilla_verification`
   `Game.market.getHistory(invalidResource)` and valid resources with no
   history return an empty array (`[]`), not an empty object.
-- `MARKET-QUERY-007` `behavior` `verified_vanilla`
-  `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
-  array (`[]`).
-
 ---
 
 ## 21. Map
@@ -3512,6 +3560,10 @@ Notes
   `{status:'normal', timestamp:null}`; and valid-format rooms outside the world
   are `{status:'closed', timestamp:null}`. The two `closed` outcomes are
   distinguished only by the timestamp (admin-closed → number, off-world → null).
+  Status is world-scoped and visibility-independent: an in-world room the
+  caller has no vision of still reports its true status (a plain neutral
+  room reads `normal`, not `closed`). Route planners that avoid `closed`
+  rooms depend on this to path scouts into unseen neighbours.
 - `MAP-ROOM-005` `behavior` `verified_vanilla`
   `Game.map.getWorldSize()` returns the inclusive count of rooms along the
   longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`
@@ -3649,6 +3701,13 @@ Coverage Notes
   `store.getCapacity(type)`, `store.getUsedCapacity(type)`, and
   `store.getFreeCapacity(type)` return `null` when the store cannot hold that
   resource type.
+- `STORE-ACCESS-003` `behavior` `verified_vanilla`
+  Enumerating a store (`for..in`, `Object.keys`) yields only the stored
+  resource types, each mapping to a numeric amount — the store methods
+  (`getCapacity`/`getUsedCapacity`/`getFreeCapacity`) are non-enumerable
+  but remain callable. Bots sum assets by iterating stores; an engine that
+  leaks the methods as enumerable keys hands them a function where a
+  number is expected.
 
 ### 23.2 Open Stores
 - `STORE-OPEN-001` `matrix` `verified_vanilla`
@@ -3905,6 +3964,8 @@ Coverage Notes
   `Game.gcl` exposes exactly `level`, `progress`, and `progressTotal`.
 - `SHAPE-GAME-006` `behavior` `verified_vanilla`
   `Game.gpl` exposes exactly `level`, `progress`, and `progressTotal`.
+
+### 26.4a Market Global Shape `capability: marketBasics`
 - `SHAPE-GAME-007` `behavior` `verified_vanilla`
   `Game.market` exposes exactly `credits`, `incomingTransactions`,
   `orders`, and `outgoingTransactions`.
@@ -3923,12 +3984,18 @@ Coverage Notes
 - `SHAPE-NPC-001` `behavior` `verified_vanilla`
   A keeper lair's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6a Invader Core Shape `capability: invaderCore`
 - `SHAPE-NPC-002` `behavior` `verified_vanilla`
   An invader core's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6b Power Bank Shape `capability: powerBank`
 - `SHAPE-NPC-003` `behavior` `verified_vanilla`
   A power bank's public data-property surface matches the canonical
   Screeps API exactly.
+
+### 26.6c Portal Shape `capability: portals`
 - `SHAPE-NPC-004` `behavior` `verified_vanilla`
   A portal's public data-property surface matches the canonical Screeps
   API exactly.
@@ -3962,7 +4029,7 @@ Coverage Notes
   An in-flight nuke's public data-property surface matches the canonical
   Screeps API exactly.
 
-### 26.8 Effects Substrate Shape `capability: powerCreeps`
+### 26.8 Effects Substrate Shape `capability: powerEffects`
 - `SHAPE-EFFECT-001` `behavior` `verified_vanilla`
   Each entry of a RoomObject's `effects` array exposes exactly `effect`,
   `level`, `power`, and `ticksRemaining` — no missing and no extra
@@ -4123,7 +4190,8 @@ Notes
   of scope for catalog entries.
 - `Game.cpu.getHeapStatistics()` is documented API; its use as a
   reset-prediction heuristic is a user-space pattern, not an engine
-  contract, and does not belong in this catalog.
+  contract, and stays out of this catalog. The method's surface contract
+  itself is cataloged as `CPU-HEAP-001` (§30.1).
 
 ### 27.3 Memory Serialization Fidelity
 - `UNDOC-MEMJSON-001` `behavior` `verified_vanilla`
@@ -4415,7 +4483,7 @@ emits `Could not find an object with ID...`; xxscreeps releases all
 `Accessed a released object from a previous tick`. Engines that block stale
 access more aggressively than vanilla (e.g. by also rejecting cross-tick
 access to a *live* object) still satisfy this matrix; that broader behavior
-is its own undocumented gap and out of scope here.
+is owned by `UNDOC-STALERECV-002`.
 
 - `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
   Public methods in the stale cached receiver matrix throw a runtime error
@@ -4426,6 +4494,16 @@ is its own undocumented gap and out of scope here.
   `Accessed a released object from a previous tick`;
   `StructureSpawn.recycleCreep` on vanilla throws a TypeError because that
   one method bypasses the `data()` helper).
+- `UNDOC-STALERECV-002` `behavior` `verified_vanilla`
+  A cached `RoomObject` wrapper whose backing object still exists on a
+  later tick remains usable: read methods resolve against the wrapper's
+  data without throwing, and action methods dispatch intents that execute
+  normally (a `move()` on a creep cached the previous tick returns `OK`
+  and the creep is displaced next tick). Only a genuinely dangling
+  reference — backing object gone — triggers the `UNDOC-STALERECV-001`
+  rejection. Bots cache creep/structure wrappers across ticks and rely on
+  this; an engine that invalidates all wrappers at end-of-tick breaks
+  them even though it passes the stale matrix.
 
 Stale-receiver parity tracking lands in three buckets: (1) both engines
 throw — parity, no gap; (2) one engine surfaces an ungraceful error
@@ -4546,6 +4624,30 @@ Framework Notes
   parseable object output, and representative scalar fields matching the
   live object. It does not pin the complete serialized object shape or
   engine-private backing fields.
+
+### 27.15 Player Prototype Extensions
+
+Real bots extend the global game classes at module top level
+(`Creep.prototype.role = ...`, `RoomObject.prototype.cacheKey = ...`) and
+rely on the extensions applying to every live object the engine hands back.
+This requires the exposed global classes to be the real prototype chain of
+live instances and — because top-level code does not re-execute per tick
+(`UNDOC-GLOBAL-002`) — the extensions to survive tick boundaries.
+
+- `UNDOC-PROTO-001` `behavior` `verified_vanilla`
+  A member added to a leaf game-class prototype (`Creep.prototype`,
+  `Structure.prototype`) is callable on live instances obtained from
+  `Game.creeps` and room lookups in the same tick.
+- `UNDOC-PROTO-002` `behavior` `verified_vanilla`
+  A member added to `RoomObject.prototype` is inherited by live instances
+  of derived classes (creeps and structures), and live objects are
+  `instanceof` their global classes — the exposed classes are the real
+  prototype chain of engine-returned objects.
+- `UNDOC-PROTO-003` `behavior` `verified_vanilla`
+  Prototype extensions installed in one tick still apply to live objects on
+  subsequent ticks within the same VM instance: the classes persist across
+  ticks even though per-tick instances are discarded
+  (`UNDOC-IDENTITY-005`).
 
 ---
 
@@ -4841,13 +4943,61 @@ Framework Notes
 
 ---
 
+## 30. CPU & Runtime
+
+Documented `Game.cpu` runtime surface. Heap and CPU metric *values* are
+engine-specific and deliberately excluded (see Summary non-goals); entries
+here pin the surface contract only — method presence, field shape, and
+internal consistency.
+
+### 30.1 Heap Statistics
+- `CPU-HEAP-001` `behavior` `verified_vanilla`
+  `Game.cpu.getHeapStatistics()` is callable and returns an object with
+  numeric `used_heap_size` and `heap_size_limit` fields, where
+  `heap_size_limit > 0` and `0 <= used_heap_size <= heap_size_limit`.
+
+### 30.2 Used CPU
+- `CPU-USED-001` `behavior` `verified_vanilla`
+  `Game.cpu.getUsed()` is callable and returns a finite non-negative
+  number.
+- `CPU-USED-002` `behavior` `verified_vanilla`
+  `Game.cpu.getUsed()` is monotonically non-decreasing within a tick, and
+  strictly increases after measurable synchronous work. (What the meter
+  counts is engine-specific — vanilla meters CPU time, xxscreeps wall
+  time — so only monotonicity is pinned, never values.)
+
+### 30.3 Halt
+- `CPU-HALT-001` `behavior` `needs_vanilla_verification`
+  `Game.cpu.halt()` terminates execution at the call site (code after it
+  does not run) and destroys the player VM: the next tick starts in a
+  fresh VM with all persistent globals gone.
+
+Notes
+- `getHeapStatistics` and `halt` are isolated-vm runtime surface. Vanilla
+  attaches them only when the driver provides the hooks and omits them
+  otherwise; xxscreeps's nodejs sandbox stubs `getHeapStatistics` to return
+  `{}`. Both adapters in this repo run isolated sandboxes, so the entries
+  are asserted unconditionally; a non-IVM adapter would need capability
+  flags here.
+- `CPU-HALT-001` is harness-blocked: both adapters cache one sandbox per
+  simulation, so after `halt()` disposes it every subsequent `runPlayer`
+  fails instead of observing the fresh-VM state. Testing it needs
+  sandbox-recreation support in the adapters.
+- `Game.cpu.generatePixel()`, `Game.cpu.unlock()`, and the
+  `unlocked`/`unlockedTime` fields are MMO-backend surface absent from the
+  open-source engine and are out of scope (see also `SHAPE-GAME-002`, which
+  pins the data-property surface).
+
+---
+
 ## Summary
 
 Coverage counts are temporarily omitted. The facet and behavior totals need to
 be recomputed after the current normalization pass is complete.
 
 ### Deliberately excluded (per spec.md non-goals):
-- CPU/heap metrics (engine-specific values)
+- CPU/heap metric values (engine-specific numbers; the surface contract —
+  method presence, field shape, internal consistency — is in scope, see §30)
 - Seasonal/event-specific scoring
 - Server administration (auth, scaling)
 - Visual APIs (RoomVisual, MapVisual) — no gameplay effect

@@ -5,22 +5,25 @@ import type {
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
 	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
-	KeeperLairSnapshot, InvaderCoreSnapshot, PortalSnapshot, WallSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot, PortalSnapshot, WallSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
 } from '../../src/snapshots/common.js';
-import * as C from 'xxscreeps/game/constants/index.js';
-import { Creep } from 'xxscreeps/mods/creep/creep.js';
-import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.js';
-import { Resource } from 'xxscreeps/mods/resource/resource.js';
-import { Source } from 'xxscreeps/mods/source/source.js';
-import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
-import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
-import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
-import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
-import { Nuke } from 'xxscreeps/mods/nuker/nuke.js';
-import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
+import * as C from 'xxscreeps:mods/constants';
+import { Creep } from 'xxscreeps/mods/classic/creep/creep.js';
+import { ConstructionSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
+import { Resource } from 'xxscreeps/mods/classic/resource/resource.js';
+import { Source } from 'xxscreeps/mods/classic/source/source.js';
+import { Mineral } from 'xxscreeps/mods/classic/mineral/mineral.js';
+import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
+import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
+import { Nuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
+import {
+	iterateRoomObjects, readInvaderCoreTemplateName, readRawOwnerId,
+	readRawReservation, readRawSign,
+} from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
@@ -92,7 +95,9 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 	};
 
 	switch (obj.structureType) {
-		case 'controller':
+		case 'controller': {
+			const reservation = readRawReservation(obj);
+			const sign = readRawSign(obj);
 			return {
 				...base,
 				structureType: 'controller',
@@ -106,20 +111,21 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				safeModeAvailable: obj.safeModeAvailable ?? 0,
 				safeModeCooldown: obj.safeModeCooldown ?? 0,
 				isPowerEnabled: obj.isPowerEnabled ?? false,
-				...(obj.reservation ? {
+				...(reservation ? {
 					reservation: {
-						owner: resolver.resolvePlayerReverse(obj.reservation.username),
-						ticksToEnd: obj.reservation.ticksToEnd,
+						owner: resolver.resolvePlayerReverse(reservation.userId),
+						ticksToEnd: reservation.ticksToEnd,
 					},
 				} : {}),
-				...(obj.sign ? {
+				...(sign ? {
 					sign: {
-						owner: resolver.resolvePlayerReverse(obj.sign.username),
-						text: obj.sign.text,
-						time: obj.sign.time,
+						owner: resolver.resolvePlayerReverse(sign.userId),
+						text: sign.text,
+						time: sign.time,
 					},
 				} : {}),
 			} satisfies ControllerSnapshot;
+		}
 
 		case 'spawn':
 			return {
@@ -293,7 +299,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToSpawn: obj.ticksToSpawn ?? null,
 			} satisfies KeeperLairSnapshot;
 
-		case 'invaderCore':
+		case 'invaderCore': {
+			const templateName = readInvaderCoreTemplateName(obj);
 			return {
 				...base,
 				structureType: 'invaderCore',
@@ -307,7 +314,20 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				} : null,
 				ticksToDeploy: obj.ticksToDeploy ?? null,
 				effects: obj.effects ?? [],
+				// `strongholdId` has no engine counterpart; see strongholdMetadata.
+				...(templateName !== undefined ? { templateName } : {}),
 			} satisfies InvaderCoreSnapshot;
+		}
+
+		case 'powerBank':
+			return {
+				...base,
+				structureType: 'powerBank',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				power: obj.power ?? obj.store?.[C.RESOURCE_POWER] ?? 0,
+				ticksToDecay: obj.ticksToDecay ?? null,
+			} satisfies PowerBankSnapshot;
 
 		case 'portal':
 			return {

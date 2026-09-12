@@ -363,17 +363,24 @@ Current capability flags are:
 
 - `chemistry`
 - `powerCreeps`
+- `powerCreepAccountApi`
+- `powerEffects`
+- `powerSpawn`
 - `factory`
+- `terminal`
+- `marketBasics`
 - `market`
 - `terminalSend`
 - `observer`
 - `nuke`
 - `deposit`
+- `powerBank`
 - `terrain`
 - `roomStatus`
 - `portals`
 - `invaderCore`
 - `strongholdDeploy`
+- `strongholdMetadata`
 - `invaderRaidSpawner`
 - `multiShard`
 - `interShardMemory`
@@ -382,6 +389,43 @@ Current capability flags are:
 - `actionLogCapture`
 - `randomInjection`
 - `deprecationNotices`
+
+The terminal and market flags intentionally describe separate surfaces:
+
+- `terminal` covers the structure itself: placement, construction, store,
+  `Room.terminal`, and its public object shape
+- `terminalSend` covers `StructureTerminal.send()` processing and transaction
+  recording
+- `marketBasics` covers the self-contained `Game.market` surface that requires
+  no seeded order book: its public data shape, `calcTransactionCost()`, and
+  invalid-resource filtering in `getAllOrders()`
+- `market` covers the full order lifecycle, deals, history, and adapter-side
+  order placement
+
+`powerBank` is likewise independent of `powerCreeps`: it covers Power Bank
+placement, shape, combat, decay, and destruction loot without claiming a
+functional Power Creep runtime.
+
+The three power-creep flags split one family into surfaces an engine can land
+separately:
+
+- `powerCreeps` covers a spawned power creep as a room object — `placePowerCreep`,
+  `Game.powerCreeps`, FIND/LOOK, its own verbs, and `usePower(PWR_GENERATE_OPS)`
+- `powerCreepAccountApi` covers the account-roster mutations `PowerCreep.create`
+  / `rename` / `upgrade` / `delete` and the unspawned states only they reach; an
+  engine may implement the roster but expose it solely out of game
+- `powerEffects` covers `usePower` actually applying a `PWR_*` effect — the
+  target's `effects` entry, the gameplay consequence, and the ops and cooldown
+  the use costs
+
+The two stronghold flags split behavior from bookkeeping:
+
+- `strongholdDeploy` covers the engine-driven deploy: a core seeded with a
+  `templateName` places that bunker's canonical structure layout when its
+  deploy timer elapses
+- `strongholdMetadata` covers the invader-core fields an engine may keep purely
+  for its own peer bookkeeping — `strongholdId`, and `effects` entries the
+  adapter seeds rather than ones the engine derives from its own timers
 
 Rules:
 

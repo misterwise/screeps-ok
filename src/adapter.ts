@@ -233,13 +233,33 @@ export interface TickOptions {
 export interface AdapterCapabilities {
 	/** Labs, reactions, minerals in labs, and related chemistry APIs. */
 	chemistry: boolean;
-	/** Power creeps and their public gameplay APIs. */
+	/** A spawned power creep exists in a room and acts through its own verbs:
+	 *  placement, `Game.powerCreeps`, FIND/LOOK, move, say, resource transfer,
+	 *  renew, suicide, enableRoom, and `usePower(PWR_GENERATE_OPS)`. */
 	powerCreeps: boolean;
+	/** Account-level power-creep management from game code: `PowerCreep.create`
+	 *  plus the `rename` / `upgrade` / `delete` instance methods, and the
+	 *  unspawned-roster states only they can reach. An engine may implement the
+	 *  roster but expose it solely through an out-of-game account API. */
+	powerCreepAccountApi: boolean;
+	/** `usePower` applies its `PWR_*` effect to the target: the `effects` array
+	 *  on the host, the gameplay consequence, and the ops/cooldown the use
+	 *  costs. Distinct from `powerCreeps` because `PWR_GENERATE_OPS` needs no
+	 *  effect substrate and an engine may land the powers one at a time. */
+	powerEffects: boolean;
 	/** Power spawn structure, processPower(), and Game.gpl account power. */
 	powerSpawn: boolean;
 	/** Factory structure and production APIs. */
 	factory: boolean;
-	/** Market and terminal-driven market interactions. */
+	/** Terminal structure placement, construction, store, room shortcut, and
+	 *  public object shape. */
+	terminal: boolean;
+	/** Self-contained Game.market surface that needs no seeded order book:
+	 *  public object shape, calcTransactionCost(), and invalid-resource query
+	 *  filtering. */
+	marketBasics: boolean;
+	/** Full market order lifecycle, deals, history, and adapter-side order
+	 *  placement. */
 	market: boolean;
 	/** StructureTerminal.send: energy cost, cooldown, delivery, and
 	 *  transaction recording — independent of the market order book. */
@@ -250,6 +270,8 @@ export interface AdapterCapabilities {
 	nuke: boolean;
 	/** Deposit objects and harvest cooldown lifecycle. */
 	deposit: boolean;
+	/** Power Bank placement, public shape, combat, decay, and destruction loot. */
+	powerBank: boolean;
 	/** Custom terrain setup through RoomSpec.terrain / setTerrain. */
 	terrain: boolean;
 	/** Public room-status setup through RoomSpec.status. */
@@ -259,9 +281,12 @@ export interface AdapterCapabilities {
 	/** Invader core structures (level, deploy timer, collapse lifecycle). */
 	invaderCore: boolean;
 	/** Engine-driven stronghold deployment: the deploy trigger placing the
-	 *  canonical template layout, and the stronghold-only invader-core
-	 *  fields (`templateName`, `strongholdId`, arbitrary seeded effects). */
+	 *  canonical template layout for a seeded `templateName`. */
 	strongholdDeploy: boolean;
+	/** Stronghold bookkeeping on a seeded invader core that the harness can read
+	 *  back from the snapshot: `strongholdId`, and arbitrary `effects` entries
+	 *  rather than the ones the engine derives from its own timers. */
+	strongholdMetadata: boolean;
 	/** Per-room inactive Invader raid spawning orchestration. */
 	invaderRaidSpawner: boolean;
 	/** Two or more shards orchestrated within a single test (createShard with

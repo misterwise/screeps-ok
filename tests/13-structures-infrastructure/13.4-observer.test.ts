@@ -108,6 +108,7 @@ describe('StructureObserver', () => {
 
 	test('OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		shard.requires('observer');
 		// W1N1 to W12N1 is 11 rooms apart — beyond OBSERVER_RANGE (10).
 		await shard.createShard({

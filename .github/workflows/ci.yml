@@ -14,25 +14,22 @@ on:
       - 'docs/**'
       - 'LICENSE'
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Check out screeps-ok
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24.14.1
           cache: npm
 
       - name: Restore node_modules
         id: node-modules-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', '.xxscreeps-pin') }}
@@ -60,17 +57,17 @@ jobs:
 
     steps:
       - name: Check out screeps-ok
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24.14.1
           cache: npm
 
       - name: Restore node_modules
         id: node-modules-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', 'scripts/setup.js', '.xxscreeps-pin') }}
@@ -90,7 +87,7 @@ jobs:
 
       - name: Upload ${{ matrix.adapter }}-${{ matrix.shard }} report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports-${{ matrix.adapter }}-${{ matrix.shard }}
           path: reports/${{ matrix.adapter }}.json
@@ -102,15 +99,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out screeps-ok
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24.14.1
 
       - name: Download shard reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: reports-*
           path: downloaded
@@ -120,7 +117,7 @@ jobs:
 
       - name: Upload merged per-adapter reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports-merged
           path: reports/

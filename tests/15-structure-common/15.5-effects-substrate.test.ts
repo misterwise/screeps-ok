@@ -27,6 +27,7 @@ describe('15.5 Effects Substrate', () => {
 	// observations.
 	test('EFFECT-DECAY-001 entry ticksRemaining decrements by exactly 1 per tick', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -89,6 +90,7 @@ describe('15.5 Effects Substrate', () => {
 	// === 0.
 	test('EFFECT-DECAY-002 entry is removed the tick its remaining duration reaches zero', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -151,6 +153,7 @@ describe('15.5 Effects Substrate', () => {
 	// on the very first apply.
 	test('EFFECT-APPLY-001 re-applying an active power refreshes the entry without stacking', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -215,6 +218,7 @@ describe('15.5 Effects Substrate', () => {
 	// must not affect any other entry.
 	test('EFFECT-APPLY-002 distinct powers coexist on a target with independent timers', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
@@ -286,6 +290,7 @@ describe('15.5 Effects Substrate', () => {
 	// those effects. Effects are bound to the host object's lifetime.
 	test('EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.ownedRoom('p1', 'W1N1', 8);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',

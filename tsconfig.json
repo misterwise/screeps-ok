@@ -18,5 +18,11 @@
       ]
     }
   },
-  "include": ["src/**/*", "adapters/**/*", "tests/**/*"]
+  "include": [
+    "src/**/*",
+    "adapters/**/*",
+    "tests/**/*",
+    "node_modules/xxscreeps/**/xx.d.ts"
+  ],
+  "exclude": ["dist"]
 }

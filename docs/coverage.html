@@ -58,10 +58,10 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">1080</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1074</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">1096</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">1089</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">5</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">1</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
 </div>
@@ -99,14 +99,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="5. Construction &amp; Repair">5. Construction &amp; Repair</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">47/47</span>
+    <span class="bar-text">48/48</span>
   </div>
 </div>
 <div class="bar-row">
   <span class="bar-label" title="6. Controller">6. Controller</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">66/66</span>
+    <span class="bar-text">72/72</span>
   </div>
 </div>
 <div class="bar-row">
@@ -225,7 +225,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="23. Store API">23. Store API</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">18/18</span>
+    <span class="bar-text">19/19</span>
   </div>
 </div>
 <div class="bar-row">
@@ -253,7 +253,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="27. Undocumented API Surface">27. Undocumented API Surface</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:98%;background:var(--yellow)"></div>
-    <span class="bar-text">61/62</span>
+    <span class="bar-text">65/66</span>
   </div>
 </div>
 <div class="bar-row">
@@ -270,13 +270,20 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
     <span class="bar-text">15/19</span>
   </div>
 </div>
+<div class="bar-row">
+  <span class="bar-label" title="30. CPU &amp; Runtime">30. CPU &amp; Runtime</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:75%;background:var(--yellow)"></div>
+    <span class="bar-text">3/4</span>
+  </div>
+</div>
 
 <h2>Untested by blocker</h2>
 <table>
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
 <tr><td><span class="badge badge-yellow">feasible</span></td><td>5</td><td><code>STRUCTURE-API-008</code> <code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code></td></tr>
-<tr><td><span class="badge badge-muted">fixture-blocked</span></td><td>1</td><td><code>UNDOC-SYSUSER-002</code></td></tr>
+<tr><td><span class="badge badge-muted">fixture-blocked</span></td><td>2</td><td><code>UNDOC-SYSUSER-002</code> <code>CPU-HALT-001</code></td></tr>
 </tbody>
 </table>
 
@@ -2464,6 +2471,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>CONSTRUCTION-SITE-018</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/05-construction-repair/5.5-my-construction-sites.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>CTRL-CLAIM-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
@@ -2950,6 +2966,33 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-009</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-010</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>CTRL-SAFEMODE-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
@@ -3038,6 +3081,33 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/06-controller/6.1-6.3-controller.test.ts, tests/06-controller/6.9-unclaim.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UNCLAIM-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.9-unclaim.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UNCLAIM-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.9-unclaim.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UNCLAIM-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.9-unclaim.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>CTRL-STRUCTLIMIT-001</code></td>
@@ -6015,7 +6085,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>14. Structures — NPC</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerBank</td>
   <td><small>tests/14-structures-npc/14.3-power-bank.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6024,7 +6094,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>14. Structures — NPC</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerBank</td>
   <td><small>tests/14-structures-npc/14.3-power-bank.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6033,7 +6103,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>14. Structures — NPC</td>
   <td>matrix</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerBank</td>
   <td><small>tests/14-structures-npc/14.3-power-bank.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6042,7 +6112,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>14. Structures — NPC</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerBank</td>
   <td><small>tests/14-structures-npc/14.3-power-bank.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6402,7 +6472,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.5-effects-substrate.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6411,7 +6481,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.5-effects-substrate.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6420,7 +6490,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.5-effects-substrate.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6429,7 +6499,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.5-effects-substrate.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6438,7 +6508,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.5-effects-substrate.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -6447,7 +6517,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>15. Structure Common</td>
   <td>matrix</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/15-structure-common/15.6-effects-hosts.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -7545,7 +7615,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>19. Power Creeps</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerSpawn</td>
   <td><small>tests/19-power/19.0-gpl.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -7554,7 +7624,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>19. Power Creeps</td>
   <td>matrix</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerSpawn</td>
   <td><small>tests/19-power/19.0-gpl.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -7914,7 +7984,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>19. Power Creeps</td>
   <td>matrix</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td></td>
   <td><small>tests/19-power/19.4-19.8-powers.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -7941,7 +8011,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>19. Power Creeps</td>
   <td>matrix</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td></td>
   <td><small>tests/19-power/19.9-generate-ops.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -8094,7 +8164,16 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>20. Market</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>market</td>
+  <td>marketBasics</td>
+  <td><small>tests/20-market/20.2-20.4-market.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>MARKET-QUERY-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>20. Market</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td>marketBasics</td>
   <td><small>tests/20-market/20.2-20.4-market.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -8139,15 +8218,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>20. Market</td>
   <td>behavior</td>
   <td>needs_vanilla_verification</td>
-  <td>market</td>
-  <td><small>tests/20-market/20.2-20.4-market.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>MARKET-QUERY-007</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>20. Market</td>
-  <td>behavior</td>
-  <td>verified_vanilla</td>
   <td>market</td>
   <td><small>tests/20-market/20.2-20.4-market.test.ts</small></td>
 </tr>
@@ -8504,6 +8574,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>STORE-ACCESS-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>23. Store API</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/23-store-api/23.6-store-access.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>STORE-ACCESS-003</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>23. Store API</td>
   <td>behavior</td>
@@ -9066,7 +9145,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
+  <td>marketBasics</td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -9102,7 +9181,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
+  <td>invaderCore</td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -9111,7 +9190,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
+  <td>powerBank</td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -9120,7 +9199,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
+  <td>portals</td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -9210,7 +9289,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>26. Object Shape Conformance</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td>powerCreeps</td>
+  <td>powerEffects</td>
   <td><small>tests/26-object-shapes/26.0-discovery.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
@@ -9499,7 +9578,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>behavior</td>
   <td>verified_vanilla</td>
   <td></td>
-  <td><small>tests/27-undocumented/27.6-identity.test.ts</small></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts, tests/27-undocumented/27.6-identity.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>UNDOC-CTOR-001</code></td>
@@ -9754,6 +9833,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts, tests/07-combat/7.9-7.11-tower.test.ts, tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts, tests/09-spawning-lifecycle/9.4-renew.test.ts, tests/09-spawning-lifecycle/9.5-recycle.test.ts, tests/10-structures-energy/10.4-link.test.ts, tests/15-structure-common/15.4-structure-api.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-STALERECV-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.12-cached-live-receiver.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>UNDOC-STALEARG-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>27. Undocumented API Surface</td>
@@ -9770,6 +9858,33 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/27-undocumented/27.14-json-objects.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-PROTO-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-PROTO-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-PROTO-003</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>DEPRECATED-MAP-001</code></td>
@@ -10004,6 +10119,42 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>needs_vanilla_verification</td>
   <td>powerCreeps</td>
   <td><small>tests/29-multi-shard/29.6-shard-pcreep.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-HEAP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>30. CPU &amp; Runtime</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/30-cpu-runtime/30.1-heap-statistics.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-USED-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>30. CPU &amp; Runtime</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/30-cpu-runtime/30.2-get-used.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CPU-USED-002</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>30. CPU &amp; Runtime</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/30-cpu-runtime/30.2-get-used.test.ts</small></td>
+</tr>
+<tr data-status="untested" data-blocker="fixture-blocked">
+  <td><code>CPU-HALT-001</code></td>
+  <td><span class="badge badge-muted">fixture-blocked</span></td>
+  <td>30. CPU &amp; Runtime</td>
+  <td>behavior</td>
+  <td>needs_vanilla_verification</td>
+  <td></td>
+  <td><small></small></td>
 </tr>
 </tbody>
 </table>

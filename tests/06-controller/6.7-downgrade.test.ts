@@ -1,5 +1,6 @@
 import { describe, test, expect, code,
-	CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS,
+	CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, SAFE_MODE_COOLDOWN,
+	OK, MOVE,
 	limitationGated,
 } from '../../src/index.js';
 
@@ -207,5 +208,110 @@ describe('Controller downgrade', () => {
 		// Half of CONTROLLER_DOWNGRADE[2] is 5000; allow a wide margin.
 		expect(ttdAfter).toBeGreaterThan(0);
 		expect(ttdAfter).toBeLessThanOrEqual(CONTROLLER_DOWNGRADE[2]);
+	});
+
+	downgradeTest('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5, safeModeAvailable: 2 }],
+		});
+		await shard.tick();
+
+		const before = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			safeModeAvailable: Game.rooms['W1N1'].controller.safeModeAvailable,
+		})`) as { level: number; safeModeAvailable: number };
+		expect(before.level).toBe(2);
+		expect(before.safeModeAvailable).toBe(2);
+
+		// Advance past the downgrade timer.
+		await shard.tick(10);
+
+		const after = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			safeModeAvailable: Game.rooms['W1N1'].controller.safeModeAvailable,
+		})`) as { level: number; safeModeAvailable: number };
+		expect(after.level).toBe(1);
+		expect(after.safeModeAvailable).toBe(0);
+	});
+
+	downgradeTest('CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5 }],
+		});
+		await shard.tick();
+
+		// No cooldown before the level loss — the fresh one must come from it.
+		const before = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			cooldown: Game.rooms['W1N1'].controller.safeModeCooldown ?? null,
+		})`) as { level: number; cooldown: number | null };
+		expect(before.level).toBe(2);
+		expect(before.cooldown).toBeNull();
+
+		// Advance past the downgrade timer.
+		await shard.tick(10);
+
+		const after = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			cooldown: Game.rooms['W1N1'].controller.safeModeCooldown ?? null,
+		})`) as { level: number; cooldown: number | null };
+		expect(after.level).toBe(1);
+		// A fresh SAFE_MODE_COOLDOWN-length cooldown, minus the ticks elapsed
+		// between the level loss and this read (timer seed + polling ticks).
+		expect(after.cooldown).not.toBeNull();
+		expect(after.cooldown!).toBeGreaterThan(SAFE_MODE_COOLDOWN - 30);
+		expect(after.cooldown!).toBeLessThanOrEqual(SAFE_MODE_COOLDOWN);
+	});
+
+	downgradeTest('CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				// Timer large enough to survive the enableRoom setup ticks, small
+				// enough to tick through.
+				{ name: 'W1N1', rcl: 1, owner: 'p1', ticksToDowngrade: 25 },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' }, // keep p1 active
+			],
+		});
+		// Place a creep in W1N1 for visibility after losing ownership.
+		await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE],
+		});
+		// Power-enable the room first — the only in-game path is enableRoom.
+		await shard.placePowerCreep('W1N1', {
+			pos: [1, 1], owner: 'p1', // Adjacent to controller at [1,1]
+			powers: {},
+			store: { ops: 10 },
+		});
+		await shard.tick();
+
+		const enableRc = await shard.runPlayer('p1', code`
+			const pc = Object.values(Game.powerCreeps)[0];
+			pc.enableRoom(Game.rooms['W1N1'].controller)
+		`);
+		expect(enableRc).toBe(OK);
+
+		// The room must still be owned when power is enabled.
+		const mid = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			enabled: Game.rooms['W1N1'].controller.isPowerEnabled,
+			ttd: Game.rooms['W1N1'].controller.ticksToDowngrade,
+		})`) as { level: number; enabled: boolean; ttd: number };
+		expect(mid.level).toBe(1);
+		expect(mid.enabled).toBe(true);
+
+		// Advance past the downgrade timer.
+		await shard.tick(mid.ttd + 2);
+
+		const after = await shard.runPlayer('p1', code`
+			const ctrl = Game.rooms['W1N1']?.controller;
+			ctrl ? ({ level: ctrl.level, isPowerEnabled: ctrl.isPowerEnabled }) : null
+		`) as { level: number; isPowerEnabled: boolean } | null;
+		expect(after).not.toBeNull();
+		expect(after!.level).toBe(0);
+		expect(after!.isPowerEnabled).toBe(false);
 	});
 });

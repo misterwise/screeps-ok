@@ -14,7 +14,8 @@
  */
 
 import type { Room } from 'xxscreeps/game/room/index.js';
-import type { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import type { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
+import { optionalExpiryTime } from 'xxscreeps/game/object.js';
 
 // ── INJECT ───────────────────────────────────────────────────────────
 
@@ -176,6 +177,55 @@ export function setKeeperLairNextSpawnTime(
 	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
 }
 
+/** SETUP — mods/modern/stronghold/invader-core.ts: `#collapseTime` is the absolute tick the
+ *  core collapses; the effects getter exposes it as EFFECT_COLLAPSE_TIMER and the
+ *  object tick processor removes the core once it elapses. */
+export function setInvaderCoreCollapseTime(
+	core: any, gameTime: number, ticksRemaining: number,
+): void {
+	core['#collapseTime'] = gameTime + ticksRemaining;
+}
+
+/** SETUP — mods/modern/stronghold/schema.ts: `#templateName` is the bunker layout
+ *  `deployStronghold` spawns when the deploy timer elapses; it throws when unset. */
+export function setInvaderCoreTemplateName(core: any, templateName: string): void {
+	core['#templateName'] = templateName;
+}
+
+/** SNAPSHOT — mods/modern/stronghold/schema.ts: `#templateName` has no public getter;
+ *  vanilla's invader-core doc carries the equivalent `templateName` field. */
+export function readInvaderCoreTemplateName(core: any): string | undefined {
+	return core['#templateName'];
+}
+
+/** SETUP — mods/modern/stronghold/processor.ts createCreep intent: an in-progress defender
+ *  spawn is an incubating creep at `#ageTime === 0` plus a Spawning record wired
+ *  to the core and creep ids; `#spawnTime` is the absolute birth tick. Mirrors
+ *  the state the intent processor seeds so the object tick processor completes
+ *  the spawn. */
+export function primeInvaderCoreSpawning(
+	core: any, creep: any, spawning: any, gameTime: number, ticksRemaining: number,
+): void {
+	creep['#ageTime'] = 0;
+	spawning['#spawnId'] = core.id;
+	spawning['#spawningCreepId'] = creep.id;
+	spawning['#spawnTime'] = gameTime + ticksRemaining;
+	core.spawning = spawning;
+}
+
+/** SETUP — mods/deposit/deposit.ts: cooldown getter derives from `#cooldownTime`;
+ *  ticksToDecay wraps `#nextDecayTime` in `requiredExpiryTime`, which throws on
+ *  a stale tick, so `decayTicks` is mandatory. `#harvested` feeds the
+ *  exhaust-cooldown growth in the harvest processor. */
+export function setDepositState(
+	deposit: any, gameTime: number,
+	state: { cooldownTicks?: number; decayTicks: number; harvested?: number },
+): void {
+	if (state.cooldownTicks !== undefined) deposit['#cooldownTime'] = gameTime + state.cooldownTicks;
+	if (state.harvested !== undefined) deposit['#harvested'] = state.harvested;
+	deposit['#nextDecayTime'] = gameTime + state.decayTicks;
+}
+
 // ── SETUP: store manipulation ────────────────────────────────────────
 
 /** SETUP — game/store.ts: `#add` adds resource amount to the store. Mirrors what
@@ -208,6 +258,24 @@ export function setStoreCapacity(store: any, capacity: number): void {
  *  empty during peekRoom; `#user` is the raw engine userId. */
 export function readRawOwnerId(obj: any): string | undefined {
 	return obj['#user'] ?? obj.owner?.username;
+}
+
+/** SNAPSHOT — mods/classic/controller/controller.ts:85 the `reservation` getter resolves the
+ *  reserving player through `userInfo`, which is empty during peekRoom. The controller's
+ *  `#reservationEndTime` and its room's `#user` carry the same state. */
+export function readRawReservation(
+	controller: StructureController,
+): { userId: string; ticksToEnd: number } | undefined {
+	const ticksToEnd = optionalExpiryTime((controller as any)['#reservationEndTime']);
+	return ticksToEnd === undefined ? undefined : { userId: controller.room['#user']!, ticksToEnd };
+}
+
+/** SNAPSHOT — mods/classic/controller/controller.ts:102 the `sign` getter resolves the signing
+ *  player through `userInfo`; `#sign` on the room is the stored record. */
+export function readRawSign(
+	controller: StructureController,
+): { userId: string; text: string; time: number } | undefined {
+	return (controller.room as any)['#sign'];
 }
 
 /** SNAPSHOT — game/room/room.ts:44 `#initialize` materializes RoomObject

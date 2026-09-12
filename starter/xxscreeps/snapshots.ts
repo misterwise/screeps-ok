@@ -5,20 +5,25 @@ import type {
 	TerminalSnapshot, FactorySnapshot, ExtensionSnapshot,
 	ContainerSnapshot, ExtractorSnapshot, RoadSnapshot,
 	NukerSnapshot, PowerSpawnSnapshot, ObserverSnapshot,
-	KeeperLairSnapshot, PortalSnapshot, WallSnapshot,
-	SiteSnapshot, SourceSnapshot, MineralSnapshot,
+	KeeperLairSnapshot, InvaderCoreSnapshot, PowerBankSnapshot, PortalSnapshot, WallSnapshot,
+	SiteSnapshot, SourceSnapshot, MineralSnapshot, DepositSnapshot,
 	TombstoneSnapshot, RuinSnapshot, DroppedResourceSnapshot,
 	PortalDestinationSnapshot,
 } from 'screeps-ok';
-import * as C from 'xxscreeps/game/constants/index.js';
-import { Creep } from 'xxscreeps/mods/creep/creep.js';
-import { ConstructionSite } from 'xxscreeps/mods/construction/construction-site.js';
-import { Resource } from 'xxscreeps/mods/resource/resource.js';
-import { Source } from 'xxscreeps/mods/source/source.js';
-import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
-import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
-import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
-import { iterateRoomObjects, readRawOwnerId } from './engine-internals.js';
+import * as C from 'xxscreeps:mods/constants';
+import { Creep } from 'xxscreeps/mods/classic/creep/creep.js';
+import { ConstructionSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
+import { Resource } from 'xxscreeps/mods/classic/resource/resource.js';
+import { Source } from 'xxscreeps/mods/classic/source/source.js';
+import { Mineral } from 'xxscreeps/mods/classic/mineral/mineral.js';
+import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
+import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
+import { Nuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
+import {
+	iterateRoomObjects, readInvaderCoreTemplateName, readRawOwnerId,
+	readRawReservation, readRawSign,
+} from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
@@ -90,7 +95,9 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 	};
 
 	switch (obj.structureType) {
-		case 'controller':
+		case 'controller': {
+			const reservation = readRawReservation(obj);
+			const sign = readRawSign(obj);
 			return {
 				...base,
 				structureType: 'controller',
@@ -104,20 +111,21 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				safeModeAvailable: obj.safeModeAvailable ?? 0,
 				safeModeCooldown: obj.safeModeCooldown ?? 0,
 				isPowerEnabled: obj.isPowerEnabled ?? false,
-				...(obj.reservation ? {
+				...(reservation ? {
 					reservation: {
-						owner: resolver.resolvePlayerReverse(obj.reservation.username),
-						ticksToEnd: obj.reservation.ticksToEnd,
+						owner: resolver.resolvePlayerReverse(reservation.userId),
+						ticksToEnd: reservation.ticksToEnd,
 					},
 				} : {}),
-				...(obj.sign ? {
+				...(sign ? {
 					sign: {
-						owner: resolver.resolvePlayerReverse(obj.sign.username),
-						text: obj.sign.text,
-						time: obj.sign.time,
+						owner: resolver.resolvePlayerReverse(sign.userId),
+						text: sign.text,
+						time: sign.time,
 					},
 				} : {}),
 			} satisfies ControllerSnapshot;
+		}
 
 		case 'spawn':
 			return {
@@ -291,6 +299,36 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToSpawn: obj.ticksToSpawn ?? null,
 			} satisfies KeeperLairSnapshot;
 
+		case 'invaderCore': {
+			const templateName = readInvaderCoreTemplateName(obj);
+			return {
+				...base,
+				structureType: 'invaderCore',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				level: obj.level ?? 0,
+				spawning: obj.spawning ? {
+					name: obj.spawning.name,
+					needTime: obj.spawning.needTime,
+					remainingTime: obj.spawning.remainingTime,
+				} : null,
+				ticksToDeploy: obj.ticksToDeploy ?? null,
+				effects: obj.effects ?? [],
+				// `strongholdId` has no engine counterpart; see strongholdMetadata.
+				...(templateName !== undefined ? { templateName } : {}),
+			} satisfies InvaderCoreSnapshot;
+		}
+
+		case 'powerBank':
+			return {
+				...base,
+				structureType: 'powerBank',
+				hits: obj.hits,
+				hitsMax: obj.hitsMax,
+				power: obj.power ?? obj.store?.[C.RESOURCE_POWER] ?? 0,
+				ticksToDecay: obj.ticksToDecay ?? null,
+			} satisfies PowerBankSnapshot;
+
 		case 'portal':
 			return {
 				...base,
@@ -347,6 +385,18 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 	};
 }
 
+export function snapshotDeposit(obj: any): DepositSnapshot {
+	return {
+		kind: 'deposit',
+		id: obj.id,
+		pos: snapPos(obj),
+		depositType: obj.depositType,
+		lastCooldown: obj.lastCooldown ?? 0,
+		cooldown: obj.cooldown ?? 0,
+		ticksToDecay: obj.ticksToDecay ?? null,
+	};
+}
+
 export function getStructureType(obj: any): string | undefined {
 	try {
 		return obj.structureType;
@@ -400,8 +450,29 @@ export function snapshotObject(obj: any, resolver: PlayerResolver): ObjectSnapsh
 	if (obj instanceof Resource) return snapshotDroppedResource(obj);
 	if (obj instanceof Source) return snapshotSource(obj);
 	if (obj instanceof Mineral) return snapshotMineral(obj);
+	if (obj instanceof Deposit) return snapshotDeposit(obj);
 	if (obj.structureType) return snapshotStructure(obj, resolver);
 	return null;
+}
+
+// The single position-key kind an object registers under (see the placeXxx
+// keys in index.ts), or undefined if it isn't position-keyed (creeps key by
+// name). The ID-map rebuild probes only this kind so co-located objects — a
+// creep standing on a construction site, a mineral under an extractor — can't
+// steal each other's handle. ConstructionSite/Ruin carry a `structureType`
+// (the target/former type), so their instanceof checks must precede the
+// structure fallback.
+export function posKeyKind(obj: any): string | undefined {
+	if (obj instanceof Creep) return undefined;
+	if (obj instanceof ConstructionSite) return 'constructionSite';
+	if (obj instanceof Tombstone) return 'tombstone';
+	if (obj instanceof Ruin) return 'ruin';
+	if (obj instanceof Resource) return 'resource';
+	if (obj instanceof Source) return 'source';
+	if (obj instanceof Mineral) return 'mineral';
+	if (obj instanceof Deposit) return 'deposit';
+	if (obj instanceof Nuke) return 'nuke';
+	return getStructureType(obj);
 }
 
 export function snapshotRoom(room: any, findType: string, resolver: PlayerResolver): ObjectSnapshot[] {
@@ -423,6 +494,9 @@ export function snapshotRoom(room: any, findType: string, resolver: PlayerResolv
 				break;
 			case 'minerals':
 				match = obj instanceof Mineral;
+				break;
+			case 'deposits':
+				match = obj instanceof Deposit;
 				break;
 			case 'tombstones':
 				match = obj instanceof Tombstone;

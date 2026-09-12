@@ -226,6 +226,30 @@ function patchData(module, filename) {
 		"        });\\n" +
 		"}";
 	source = source.slice(0, start) + replacement + source.slice(end);
+	// Same 60s-cache problem for ACCESSIBLE_ROOMS: getRoomStatus reports
+	// 'closed' for rooms added by a later createShard until the runner's
+	// cache expires. Key it on the same revision as the status data, which
+	// publishRoomStatusData bumps in the same write.
+	const accessStart = source.indexOf('function getAccessibleRooms() {');
+	const accessEnd = source.indexOf('\\n\\nfunction getRoomStatusData() {', accessStart);
+	if (accessStart === -1 || accessEnd === -1) {
+		throw new Error('screeps-ok vanilla sandbox patch: data.js accessible rooms cache block not found');
+	}
+	const accessReplacement = "function getAccessibleRooms() {\\n" +
+		"    return env.get(" + JSON.stringify(roomStatusRevisionKey) + ")\\n" +
+		"        .catch(() => null)\\n" +
+		"        .then((revision) => {\\n" +
+		"            if(accessibleRoomsCache.data && accessibleRoomsCache.revision === revision) {\\n" +
+		"                return accessibleRoomsCache.data;\\n" +
+		"            }\\n" +
+		"            return env.get(env.keys.ACCESSIBLE_ROOMS).then(data => {\\n" +
+		"                accessibleRoomsCache.data = data;\\n" +
+		"                accessibleRoomsCache.revision = revision;\\n" +
+		"                return accessibleRoomsCache.data;\\n" +
+		"            });\\n" +
+		"        });\\n" +
+		"}";
+	source = source.slice(0, accessStart) + accessReplacement + source.slice(accessEnd);
 	module._compile(source, filename);
 	patchedData = true;
 	maybeRestore();
@@ -600,22 +624,29 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
 		powerCreeps: true,
+		powerCreepAccountApi: true,
+		powerEffects: true,
 		powerSpawn: true,
 		factory: true,
+		terminal: true,
+		marketBasics: true,
 		market: true,
 		terminalSend: true,
 		observer: true,
 		nuke: true,
 		deposit: true,
+		powerBank: true,
 		terrain: true,
 		roomStatus: true,
 		portals: true,
 		invaderCore: true,
 		// The engine's stronghold pretick (`processor/intents/invader-core/
 		// stronghold/stronghold.js`) runs the deploy trigger in-process, so
-		// layout placement and the stronghold-only core fields are testable
-		// without the backend strongholds cronjob.
+		// layout placement is testable without the backend strongholds cronjob.
 		strongholdDeploy: true,
+		// `strongholdId` and `effects` are plain fields on the invader-core
+		// document, so seeding them round-trips through the snapshot.
+		strongholdMetadata: true,
 		invaderRaidSpawner: true,
 		// The open-source `@screeps/engine` ships no InterShardMemory
 		// module (the MMO server provides it closed-source) and does

@@ -21,8 +21,9 @@ import type { World } from 'xxscreeps/game/map.js';
 import type { Sandbox } from 'xxscreeps/driver/sandbox/index.js';
 import type { Effect } from 'xxscreeps/utility/types.js';
 import { config } from 'xxscreeps/config/index.js';
-import { createSandbox } from 'xxscreeps/driver/sandbox/index.js';
+import { bootstrapSandbox, createSandbox } from 'xxscreeps/driver/sandbox/index.js';
 import { hooks as runnerHooks } from 'xxscreeps/engine/runner/index.js';
+import { acquireRunnerContext } from 'xxscreeps/engine/runner/instance.js';
 import * as Code from 'xxscreeps/engine/db/user/code.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
 import { acquireWith } from 'xxscreeps/utility/async.js';
@@ -35,6 +36,19 @@ import type { PlayerReturnValue } from '../../src/adapter.js';
 // on the runner; isolated mode is self-contained once the native
 // binding is built (handled in scripts/build-xxscreeps.js).
 config.runner.sandbox = 'isolated';
+
+/**
+ * Webpack-compile the isolated runtime bundle before any test needs it.
+ * `createSandbox` memoizes the compile per process, so the first sandbox in a
+ * vitest worker otherwise pays ~2.4s of it inside whichever test got there
+ * first — and a contended CI runner multiplies that past the 15s `testTimeout`.
+ * Upstream's runner service does the same at worker startup
+ * (`engine/service/runner.ts`). Importing this module is what pins the sandbox
+ * mode above, so the warm-up belongs here rather than in the setup file.
+ */
+export function warmRuntimeBundle(): Promise<void> {
+	return bootstrapSandbox();
+}
 
 // Shared main.js: empty loop. Per-call test code is delivered via
 // `TickPayload.eval` and returned via `evalAck`.
@@ -105,19 +119,27 @@ export class UserSandbox {
 		// visual, controller) only read { shard, userId, world } from the
 		// passed-in context, so a minimal object satisfies the interface.
 		const context = { shard, userId, world } as any;
+		// Shared worker context (0fac669e): runnerWorker hooks populate per-runner
+		// resources that connectors read via the second hook argument (wallstreet's
+		// `runner.marketWatcher`). Upstream shares one context per runner worker;
+		// one per sandbox is equivalent here since each user gets its own.
+		const runner = await acquireRunnerContext(shard);
 		// `acquireWith` replaces the removed `acquire` helper (xxscreeps async-
 		// disposables refactor, 5af3d0ae). Each runnerConnector hook resolves to
 		// `[effect, connector]`; gather the effects into one cleanup and keep the
 		// connector objects. Inlines `engine/runner/instance.ts`'s acquireConnectors
 		// without pulling DisposableStack in for this single call site.
-		const connectorPromises = [...runnerHooks.map('runnerConnector', hook => hook(context))];
+		const connectorPromises = [...runnerHooks.map('runnerConnector', hook => hook(context, runner))];
 		const effects: Effect[] = [];
 		const resolved = await acquireWith(value => {
 			const cleanup = value?.[0];
 			if (cleanup) effects.push(cleanup);
 		}, ...connectorPromises.map(hook => Promise.resolve(hook)));
 		const connectors = [...Fn.filter(Fn.map(resolved, value => value?.[1]))];
-		const effect: Effect = () => { for (const fn of effects) fn(); };
+		const effect: Effect = () => {
+			for (const fn of effects) fn();
+			void runner[Symbol.asyncDispose]();
+		};
 		const initialize = [...Fn.filter(Fn.map(connectors, c => c.initialize))];
 		const refresh = [...Fn.filter(Fn.map(connectors, c => c.refresh))];
 		const save = [...Fn.filter(Fn.map(connectors, c => c.save))].reverse();
@@ -144,7 +166,12 @@ export class UserSandbox {
 		const ackId = 'r';
 		const usernames = opts.usernames ?? await this.loadUsernames();
 		const tickPayload: any = {
-			cpu: { bucket: 10000, limit: 20, tickLimit: 500 },
+			// `tickLimit` is isolated-vm's wall-clock watchdog, not a CPU budget: a contended CI runner
+			// multiplies honest wall time, so a tight value trips on honest work. 13844a7 tried 1000
+			// once #350 shrank the worst tick and said one CI trip meant going back to 5000 — CI then
+			// tripped UNDOC-MEMJSON-005 twice with `sandbox timedOut`, so 5000 it is. Stays under
+			// vitest's 15s timeout so a real hang still reports.
+			cpu: { bucket: 10000, limit: 20, tickLimit: 5000 },
 			time: opts.time,
 			roomBlobs: opts.roomBlobs,
 			eval: [{ expr: buildWrappedExpr(codeSource), ack: ackId }],

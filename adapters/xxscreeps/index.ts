@@ -17,7 +17,7 @@ import { withCornerWalls } from '../../src/terrain-fixture.js';
 import { RoomPosition } from 'xxscreeps/game/position.js';
 import { Render } from 'xxscreeps/backend/symbols.js';
 import { search as pfSearch, CostMatrix } from 'xxscreeps/game/pathfinder/index.js';
-import * as C from 'xxscreeps/game/constants/index.js';
+import * as C from 'xxscreeps:mods/constants';
 
 // Build synthetic PathFinder object matching the Screeps global API.
 // `use` is a no-op mirroring xxscreeps/game/pathfinder/index.js —
@@ -33,6 +33,7 @@ import { runShardTickProcessors } from 'xxscreeps/engine/processor/shard.js';
 import * as User from 'xxscreeps/engine/db/user/index.js';
 import { Fn } from 'xxscreeps/functional/fn.js';
 import { flushUsers } from 'xxscreeps/game/room/room.js';
+import { computeRoomMeta } from 'xxscreeps/mods/modern/sector/terrain.js';
 import { getOrSet } from 'xxscreeps/utility/utility.js';
 import { TerrainWriter, packExits } from 'xxscreeps/game/terrain.js';
 import { loadTerrain } from 'xxscreeps/driver/pathfinder/pathfinder.js';
@@ -50,64 +51,81 @@ import {
 	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
 	setKeeperLairNextSpawnTime, setDepositState,
-	setInvaderCoreCollapseTime, primeInvaderCoreSpawning,
+	setInvaderCoreCollapseTime, setInvaderCoreTemplateName, primeInvaderCoreSpawning,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	setPowerCreepPowers, powerCreepRosterKey,
 	initializeRoomIndices,
 } from './engine-internals.js';
 
 // Object creation imports
-import { create as createCreep, calculateCarry } from 'xxscreeps/mods/creep/creep.js';
-import { create as createSpawn, Spawning } from 'xxscreeps/mods/spawn/spawn.js';
-import { create as createExtension } from 'xxscreeps/mods/spawn/extension.js';
-import { create as createSite } from 'xxscreeps/mods/construction/construction-site.js';
-import { structureFactories } from 'xxscreeps/mods/construction/symbols.js';
-import { Source } from 'xxscreeps/mods/source/source.js';
-import { Mineral } from 'xxscreeps/mods/mineral/mineral.js';
-import { create as createLab } from 'xxscreeps/mods/chemistry/lab.js';
-import { create as createObserver } from 'xxscreeps/mods/observer/observer.js';
-import { create as createTower } from 'xxscreeps/mods/defense/tower.js';
-import { create as createRampart } from 'xxscreeps/mods/defense/rampart.js';
-import { create as createWall } from 'xxscreeps/mods/defense/wall.js';
-import { create as createStorage } from 'xxscreeps/mods/logistics/storage.js';
-import { create as createLink } from 'xxscreeps/mods/logistics/link.js';
-import { create as createContainer } from 'xxscreeps/mods/resource/container.js';
-import { create as createRoad } from 'xxscreeps/mods/road/road.js';
-import { create as createExtractor } from 'xxscreeps/mods/mineral/extractor.js';
-import { create as createKeeperLair } from 'xxscreeps/mods/source/keeper-lair.js';
-import { create as createInvaderCore } from 'xxscreeps/mods/invader/invader-core.js';
-import { Deposit } from 'xxscreeps/mods/deposit/deposit.js';
-import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/mineral/constants.js';
-import { create as createNuker } from 'xxscreeps/mods/nuker/nuker.js';
-import { create as createNuke } from 'xxscreeps/mods/nuker/nuke.js';
-import { create as createResource } from 'xxscreeps/mods/resource/resource.js';
-import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/flag/game.js';
-import { Flag } from 'xxscreeps/mods/flag/flag.js';
-import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/flag/model.js';
+import { create as createCreep, calculateCarry } from 'xxscreeps/mods/classic/creep/creep.js';
+import { create as createSpawn, Spawning } from 'xxscreeps/mods/classic/spawn/spawn.js';
+import { create as createExtension } from 'xxscreeps/mods/classic/spawn/extension.js';
+import { create as createSite } from 'xxscreeps/mods/classic/construction/construction-site.js';
+import { structureFactories } from 'xxscreeps/mods/classic/construction/symbols.js';
+import { Source } from 'xxscreeps/mods/classic/source/source.js';
+import { Mineral } from 'xxscreeps/mods/classic/mineral/mineral.js';
+import { create as createLab } from 'xxscreeps/mods/classic/chemistry/lab.js';
+import { create as createObserver } from 'xxscreeps/mods/modern/observer/observer.js';
+import { create as createTower } from 'xxscreeps/mods/classic/defense/tower.js';
+import { create as createRampart } from 'xxscreeps/mods/classic/defense/rampart.js';
+import { create as createWall } from 'xxscreeps/mods/classic/defense/wall.js';
+import { create as createStorage } from 'xxscreeps/mods/classic/logistics/storage.js';
+import { create as createLink } from 'xxscreeps/mods/classic/logistics/link.js';
+import { create as createContainer } from 'xxscreeps/mods/classic/resource/container.js';
+import { create as createRoad } from 'xxscreeps/mods/classic/road/road.js';
+import { create as createExtractor } from 'xxscreeps/mods/classic/mineral/extractor.js';
+import { create as createKeeperLair } from 'xxscreeps/mods/classic/source/keeper-lair.js';
+import { create as createInvaderCore } from 'xxscreeps/mods/modern/stronghold/invader-core.js';
+import { templates as strongholdTemplates } from 'xxscreeps/mods/modern/stronghold/templates.js';
+import { create as createPowerBank } from 'xxscreeps/mods/modern/powerbank/powerbank.js';
+import { Deposit } from 'xxscreeps/mods/modern/deposit/deposit.js';
+import { DEPOSIT_DECAY_TIME } from 'xxscreeps/mods/modern/deposit/constants.js';
+import { create as createNuker } from 'xxscreeps/mods/modern/nuker/nuker.js';
+import { create as createNuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
+import { create as createResource } from 'xxscreeps/mods/classic/resource/resource.js';
+import { read as readFlagBlob, write as writeFlagBlob } from 'xxscreeps/mods/meta/flag/game.js';
+import { Flag } from 'xxscreeps/mods/meta/flag/flag.js';
+import { loadUserFlagBlob, saveUserFlagBlobForNextTick } from 'xxscreeps/mods/meta/flag/model.js';
 import { activateNPC } from 'xxscreeps/mods/npc/processor.js';
 import { instantiate } from 'xxscreeps/utility/utility.js';
-import { Tombstone } from 'xxscreeps/mods/creep/tombstone.js';
-import { Ruin } from 'xxscreeps/mods/structure/ruin.js';
-import { create as createObject } from 'xxscreeps/game/object.js';
-import { OpenStore } from 'xxscreeps/mods/resource/store.js';
-import { StructureController } from 'xxscreeps/mods/controller/controller.js';
+import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
+import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
+import { createRoomObject as createObject } from 'xxscreeps/game/object.js';
+import { OpenStore } from 'xxscreeps/mods/classic/resource/store.js';
+import { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 import { asUnion } from 'xxscreeps/utility/utility.js';
 
 // Optional mods — not all xxscreeps builds include these exports.
 // Use variable-named dynamic imports so TS doesn't statically require the
 // module, and so a missing named export degrades to `undefined` instead of
-// a type error. Factory is an optional mod; terminal.js in the pinned
-// xxscreeps build defines `create` locally but does not export it.
+// a type error.
 let createFactory: ((pos: any, owner: string) => any) | undefined;
 let createTerminal: ((pos: any, owner: string) => any) | undefined;
 let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
 // powerspawn is optional across pins; gate the PowerSpawn/GPL surface on the
 // dynamic import result so older pins skip cleanly and current main runs it.
 let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
+// Power creeps arrived with the mods/mmo/powercreep mod (laverdet/xxscreeps#335).
+// A spawned creep is two objects — the account roster entry and the room copy —
+// so the adapter needs both factories plus the roster blob codec.
+let createRosterPowerCreep: ((id: string, name: string, className: string, owner: string) => any) | undefined;
+let createSpawnedPowerCreep: ((pos: any, entry: any) => any) | undefined;
+let readPowerCreepRoster: ((blob: Readonly<Uint8Array>) => any[]) | undefined;
+let writePowerCreepRoster: ((roster: any[]) => Readonly<Uint8Array>) | undefined;
+let loadPowerCreepRosterBlob: ((db: any, userId: string) => Promise<Readonly<Uint8Array> | null>) | undefined;
 for (const [name, assign] of [
-	['xxscreeps/mods/factory/factory.js', (m: any) => { createFactory = m.create; }],
-	['xxscreeps/mods/market/terminal.js', (m: any) => { createTerminal = m.create; }],
+	['xxscreeps/mods/modern/factory/factory.js', (m: any) => { createFactory = m.create; }],
+	['xxscreeps/mods/classic/brokerage/terminal.js', (m: any) => { createTerminal = m.create; }],
 	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
-	['xxscreeps/mods/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
+	['xxscreeps/mods/modern/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
+	['xxscreeps/mods/mmo/powercreep/powercreep.js', (m: any) => {
+		createRosterPowerCreep = m.createPowerCreep;
+		createSpawnedPowerCreep = m.createSpawnedPowerCreep;
+		readPowerCreepRoster = m.read;
+		writePowerCreepRoster = m.write;
+	}],
+	['xxscreeps/mods/mmo/powercreep/model.js', (m: any) => { loadPowerCreepRosterBlob = m.loadPowerCreepsBlob; }],
 ] as const) {
 	try { assign(await import(name)); } catch {}
 }
@@ -171,7 +189,7 @@ const playerSlots = ['100', '101', '102', '103'];
 // hit the rate=0 tombstone path (CREEP-DEATH-011) through placeCreep's
 // existing `owner: string` contract. Placing a creep with an NPC handle also
 // `activateNPC`s the room so the matching NPC loop runs (e.g. the Invader
-// AI at mods/invader/loop/find-attack.ts auto-suicides in owned rooms).
+// AI at mods/classic/invader/loop/find-attack.ts auto-suicides in owned rooms).
 const NPC_HANDLES: Record<string, string> = {
 	sk: '2',
 	srcKeeper: '3',
@@ -192,14 +210,25 @@ const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
-		powerCreeps: false,
+		powerCreeps: !!createRosterPowerCreep,
+		// xxscreeps mutates the account roster only through the backend's
+		// `/api/game/power-creeps/*` routes (`mods/mmo/powercreep/backend.ts`).
+		// The runtime `PowerCreep` class has no create/rename/upgrade/delete.
+		powerCreepAccountApi: false,
+		// `usePower` validates every power but only `PWR_GENERATE_OPS` has a
+		// processor branch (`mods/mmo/powercreep/processor.ts`); the rest return
+		// OK and drop without applying an effect or charging ops.
+		powerEffects: false,
 		powerSpawn: !!createPowerSpawn,
 		factory: !!createFactory,
+		terminal: !!createTerminal,
+		marketBasics: true,
 		market: false,
 		terminalSend: true,
 		observer: true,
 		nuke: true,
 		deposit: true,
+		powerBank: true,
 		terrain: true,
 		roomStatus: false,
 		// Portal mod is optional in pinned xxscreeps. Capability tracks
@@ -210,11 +239,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
 		invaderCore: true,
-		// No stronghold deployment: `create()` in mods/invader/invader-core.ts
-		// has no deploy-layout caller and the schema has no templateName /
-		// strongholdId fields, so layout placement and the stronghold-only
-		// core fields are untestable.
-		strongholdDeploy: false,
+		// Pin 38ee6170's stronghold mod (laverdet/xxscreeps#337/#330) ships the
+		// five canonical bunker templates; the adapter seeds `#templateName` at
+		// placement and the deploy processor spawns that layout.
+		strongholdDeploy: true,
+		// xxscreeps has no `strongholdId`, and its `effects` is derived from the
+		// deploy/collapse timers rather than a stored array the adapter can seed.
+		strongholdMetadata: false,
+		// The room tick processor can generate a fixed small Invader group in an
+		// already-active room. It does not implement the canonical inactive-room
+		// backend sweep, sector policy, or raid composition matrix.
 		invaderRaidSpawner: false,
 		// xxscreeps has no multi-shard runtime, no InterShardMemory module,
 		// and no Game.cpu.shardLimits / setShardLimits. See
@@ -238,12 +272,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		deprecationNotices: false,
 	};
 
-	readonly limitations = {
-		// xxscreeps pull(self) enters an infinite loop in the recursive
-		// circular-pull check, hanging the test runner.
-		pullSelfHang: true,
-	};
-
 	readonly shapeDivergences = {
 		// laverdet/xxscreeps#215: behavioral parity is the contract, not
 		// object-shape parity — "we should not be bending over backwards to
@@ -255,11 +283,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// `boost: undefined` property; upstream closed the PR that stripped
 		// it to match vanilla's boost-only-when-boosted shape.
 		bodyPart: { extra: ['boost'] },
-		// Controller declares an `@enumerable` `effects` getter (safe-mode
-		// invulnerability / PWR_OPERATE_CONTROLLER), like StructureInvaderCore,
-		// so the key is always present; vanilla sets `effects` only when an
-		// effect is active.
-		controller: { extra: ['effects'] },
+		// laverdet/xxscreeps#374 gave RoomObject the cached `effects` getter so
+		// any mod can contribute entries over the shared `#effects` chain, so
+		// every room object inherits the key even when the getter returns
+		// undefined; vanilla assigns `effects` only when an effect is active.
+		roomObject: { extra: ['effects'] },
 	};
 
 	private playerMap = new Map<string, string>();
@@ -720,8 +748,92 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	async placePowerCreep(_room: string, _spec: PowerCreepSpec): Promise<string> {
-		throw new Error('placePowerCreep not yet implemented for xxscreeps');
+	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
+		if (!createRosterPowerCreep) {
+			throw new Error('placePowerCreep: pinned xxscreeps has no mods/mmo/powercreep');
+		}
+		const id = this.nextId();
+		const userId = this.resolvePlayer(spec.owner);
+		const name = spec.name ?? `power-creep-${id}`;
+		const powers = Object.entries(spec.powers).map(([power, entry]) => ({
+			power: Number(power),
+			level: typeof entry === 'number' ? entry : entry.level,
+			cooldown: typeof entry === 'number' ? 0 : entry.cooldown ?? 0,
+		}));
+
+		// A spawned power creep is two objects: the account-roster entry that owns
+		// identity and the spawned marker (`#ageTime`), and the room copy the player
+		// acts through. `spawnPowerCreep` writes both, so seed both — without the
+		// roster entry the creep would vanish from Game.powerCreeps on death instead
+		// of reverting to unspawned.
+		this.deferredPowerCreepOps.push({ owner: spec.owner, id, name, powers });
+
+		this.queueOp(roomName, room => {
+			const gameTime = this.simulation!.shard.time;
+			const entry = this.buildPowerCreepRosterEntry(id, name, userId, powers, gameTime);
+			const creep = createSpawnedPowerCreep!(
+				new RoomPosition(spec.pos[0], spec.pos[1], roomName), entry);
+			// The room copy carries the live cooldowns; roster copies never do.
+			setPowerCreepPowers(creep, powers.map(({ power, level, cooldown }) => ({
+				power, level, cooldownTime: cooldown > 0 ? gameTime + cooldown : 0,
+			})));
+			for (const [resource, amount] of Object.entries(spec.store ?? {})) {
+				if (amount > 0) storeAdd(creep.store, resource, amount);
+			}
+			insertRoomObject(room, creep);
+			// Powers are inert in a controlled room until it is power-enabled, so a
+			// placed creep would be unable to act. Matches the vanilla adapter.
+			if (room.controller) room.controller.isPowerEnabled = true;
+		});
+
+		return id;
+	}
+
+	private buildPowerCreepRosterEntry(
+		id: string, name: string, userId: string,
+		powers: Array<{ power: number; level: number }>, gameTime: number,
+	): any {
+		const entry = createRosterPowerCreep!(id, name, C.POWER_CLASS.OPERATOR, userId);
+		setPowerCreepPowers(entry, powers.map(({ power, level }) => ({ power, level, cooldownTime: 0 })));
+		setCreepAgeTime(entry, gameTime, C.POWER_CREEP_LIFE_TIME);
+		return entry;
+	}
+
+	private deferredPowerCreepOps: Array<{
+		owner: string;
+		id: string;
+		name: string;
+		powers: Array<{ power: number; level: number; cooldown: number }>;
+	}> = [];
+
+	// The roster is a per-user blob loaded once at sandbox init (mods/mmo/powercreep/
+	// driver.ts) and refreshed only when the mutation channel fires. Same shape as
+	// flags: write the blob, then dispose the owner's sandbox so the next runPlayer
+	// re-initializes against it.
+	private async flushDeferredPowerCreeps(): Promise<void> {
+		if (this.deferredPowerCreepOps.length === 0) return;
+		const ops = this.deferredPowerCreepOps;
+		this.deferredPowerCreepOps = [];
+		const { db, time } = this.simulation!.shard;
+
+		const byOwner = new Map<string, typeof ops>();
+		for (const op of ops) {
+			const list = byOwner.get(op.owner) ?? [];
+			list.push(op);
+			byOwner.set(op.owner, list);
+		}
+
+		for (const [ownerHandle, ownerOps] of byOwner) {
+			const engineUserId = this.resolvePlayer(ownerHandle);
+			const existingBlob = await loadPowerCreepRosterBlob!(db, engineUserId);
+			const roster = existingBlob ? readPowerCreepRoster!(existingBlob) : [];
+			for (const op of ownerOps) {
+				roster.push(this.buildPowerCreepRosterEntry(
+					op.id, op.name, engineUserId, op.powers, time));
+			}
+			await db.data.set(powerCreepRosterKey(engineUserId), writePowerCreepRoster!(roster));
+			await this.simulation!.disposeUserSandbox(engineUserId);
+		}
 	}
 
 	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
@@ -753,12 +865,38 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				return this.placePortal(roomName, spec);
 			case 'deposit':
 				return this.placeDeposit(roomName, spec);
+			case 'powerBank':
+				return this.placePowerBank(roomName, spec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
-					`Supported types: keeperLair, invaderCore, portal, deposit.`,
+					`Supported types: keeperLair, invaderCore, portal, deposit, powerBank.`,
 				);
 		}
+	}
+
+	private async placePowerBank(roomName: string, spec: Record<string, unknown>): Promise<string> {
+		const id = this.nextId();
+		const pos = spec.pos as [number, number];
+		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:powerBank`, id);
+
+		this.queueOp(roomName, room => {
+			const store = spec.store as Record<string, number> | undefined;
+			const power = (spec.power as number | undefined)
+				?? store?.[C.RESOURCE_POWER]
+				?? 1000;
+			const bank = createPowerBank(
+				new RoomPosition(pos[0], pos[1], roomName),
+				power,
+			);
+			bank.id = id;
+			if (typeof spec.hits === 'number') bank.hits = spec.hits;
+			const decayTicks = (spec.decayTime as number | undefined) ?? C.POWER_BANK_DECAY;
+			setStructureNextDecayTime(bank, this.simulation!.shard.time, decayTicks);
+			insertRoomObject(room, bank);
+		});
+
+		return id;
 	}
 
 	private async placeDeposit(roomName: string, spec: Record<string, unknown>): Promise<string> {
@@ -808,6 +946,17 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		const spawningSpec = spec.spawning as
 			| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
 			| undefined;
+		// The schema enumerates the five canonical bunker names, so an unknown one
+		// breaks serialization and crashes deployStronghold on a missing template.
+		const templateName = spec.templateName as string | undefined;
+		if (templateName !== undefined && !(templateName in strongholdTemplates)) {
+			throw new Error(
+				`placeInvaderCore: unknown stronghold template '${templateName}'; ` +
+				`xxscreeps models ${Object.keys(strongholdTemplates).join(', ')}.`,
+			);
+		}
+		// `spec.strongholdId` is dropped: xxscreeps groups stronghold peers by ownership
+		// plus the core's `#ownedNeutralStructureIds`. See the strongholdMetadata capability.
 
 		this.queueOp(roomName, room => {
 			const time = this.simulation!.shard.time;
@@ -815,6 +964,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const deployTime = typeof spec.deployTime === 'number' ? time + spec.deployTime : 0;
 			const core = createInvaderCore(new RoomPosition(pos[0], pos[1], roomName), level, deployTime);
 			core.id = id;
+			if (templateName !== undefined) {
+				setInvaderCoreTemplateName(core, templateName);
+			}
 			if (typeof spec.collapseTime === 'number') {
 				setInvaderCoreCollapseTime(core, time, spec.collapseTime);
 			}
@@ -1034,6 +1186,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 		const engineUserId = this.resolvePlayer(userId);
@@ -1067,6 +1220,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 
@@ -1120,6 +1274,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async tick(count = 1, options: TickOptions = {}): Promise<void> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 
 		const sequence = options.random;
@@ -1307,6 +1462,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.pendingSetup.clear();
 		this.pokeQueue.length = 0;
 		this.deferredFlagOps.length = 0;
+		this.deferredPowerCreepOps.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.playerGcl.clear();
@@ -1434,15 +1590,24 @@ async function createSimulation(
 		await shard.data.sAdd('rooms', Object.keys(terrainOverrides));
 	}
 
+	// The World schema flattened per-room metadata (sectors/sectorControl) into
+	// each entry; derive it from the room-name universe the same way
+	// xxscreeps/test/import.ts does.
+	function buildWorldBlob() {
+		const roomNames = new Set(terrainMap.keys());
+		return makeWriter(MapSchema.schema)(new Map(Fn.map(terrainMap.entries(),
+			([name, entry]) => [name, { ...entry, ...computeRoomMeta(name, roomNames) }])));
+	}
+
 	// Build world from terrain map
-	let blob = makeWriter(MapSchema.schema)(terrainMap);
+	let blob = buildWorldBlob();
 	let world = new MapSchema.World('test', blob);
 	loadTerrain(world);
 	await shard.data.set('terrain', blob);
 
 	// Rebuild world after terrain map mutation
 	async function rebuildWorld() {
-		blob = makeWriter(MapSchema.schema)(terrainMap);
+		blob = buildWorldBlob();
 		world = new MapSchema.World('test', blob);
 		loadTerrain(world);
 		await shard.data.set('terrain', blob);

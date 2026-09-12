@@ -7,7 +7,7 @@ import { constructionCostCases } from '../../src/matrices/construction-cost.js';
 
 // Capability required to place each structure type as a construction site.
 const siteCap: Record<string, string | undefined> = {
-	terminal: 'market',
+	terminal: 'terminal',
 	factory: 'factory',
 	nuker: 'nuke',
 	powerSpawn: 'powerSpawn',

@@ -376,6 +376,7 @@ describe('Factory commodity chains', () => {
 	test('FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production', async ({ shard }) => {
 		shard.requires('factory');
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],

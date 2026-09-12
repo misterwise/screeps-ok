@@ -3,62 +3,20 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-07-02 against pin `05be3b2e`.
+Last refreshed: 2026-08-24 against pin `e9380f4d`.
 
-> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 22 open gaps registered in `parity.json` plus one expected-failure held intentional (`factory-power-effect-not-implemented`); the three intentional shape divergences (flag `id`, body-part `boost`, controller `effects`) are declared on the adapter and their tests pass. Full counts regenerate in `docs/status.md` on the next full run.
+> When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 15 open gaps registered in `parity.json` plus five expected failures held intentional (`controller-my-reset-returns-undefined`, accepted 2026-07-20 per laverdet's undefined-shapes rulings; `memory-parsed-json-not-refreshed-across-ticks`, accepted 2026-07-21 per laverdet's #329 spec-chasing bar; `structure-active-equal-distance-scan-order`, `rawmemory-set-invalidates-parsed-memhack` and `power-bank-shape-exposes-store-extension`, all accepted 2026-07-25 — the first because neither engine's tie order is specified, the second because it asserts an engine mechanism whose observable consequences already pass, the third because upstream documents the member as an intentional xxscreeps extension and the rename that would remove it breaks ruin looting and blob migration). Four open gaps are PR-derived rows awaiting stable vanilla rather than xxscreeps bugs — see `docs/xxscreeps-pr-plan.md`. Three intentional shape divergences (flag `id`, body-part `boost`, room-object `effects`) are declared on the adapter. Pin `38ee6170` → `6d0ffb7e` → `e9380f4d` lands three of our own upstream fixes: xxscreeps#349 (checkSend precedence) closes `terminal-send-check-order-diverges`, and #352 (power-creep movement ties, nuke impact) closes `power-creep-wins-movement-ties` and `power-creep-survives-nuke-impact` — all three dropped from `parity.json`. #350 decodes the runtime source map with trace-mapping, cutting the first `error.stack` read from 33-40ms to 7-10ms and letting the sandbox watchdog drop from 5000ms back to 1000ms. #374 moves the cached `effects` getter onto `RoomObject`, widening the accepted structure/controller `effects` divergence to every room object. The `strongholdDeploy` and `powerCreeps` capabilities opened at `38ee6170` are unchanged; their residual rows and the narrower `strongholdMetadata`, `powerCreepAccountApi` and `powerEffects` skips are documented below. Full counts regenerate in `docs/status.md` on the next full run.
 
-> Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired.
+> Pathfinder note: the engine consumes `@xxscreeps/pathfinder` as a published npm prebuild, which can lag the pinned source (upstream only publishes on a version bump). When that happens, pathfinder fixes at the pin ride the vendored build under `vendor/pathfinder/` — see its README. The pin-`549660784` pathfinder regressions (PATHFINDER-012, COSTMATRIX-007, ROOMPOS-FIND-007) were fixed in source at `e6180170` and pass via the vendor build; only the pre-existing ROOMPOS-FIND-010 range gap remains open. At pin `db0d77e9` the registry prebuild (`@xxscreeps/pathfinder@0.4.0`, now napi-based) supersedes the vendor build, so `vendor/pathfinder/` can be retired. At pin `c5fd1522` the registry shipped `@xxscreeps/pathfinder@0.4.1` (upstream `pf: algorithm delegates`, `pf: fix cost for incomplete paths`), which regressed three previously-passing searches (PATHFINDER-006, ROOMPOS-FIND-002, ROOMPOS-FIND-009) with a darwin/linux platform divergence and intermittent ROOMPOS-FIND-001 failures — a goal-lifetime use-after-free. Fixed upstream in `@xxscreeps/pathfinder@0.4.2` (laverdet/xxscreeps#317, `pf: keep multi-goal storage alive during search`), consumed at pin `427f8677`; all four searches pass deterministically again.
 
 ## Open parity gaps
-
-### tombstone-creep-body-types-not-objects
-
-- Tests: TOMBSTONE-006
-- Status: CONFIRMED.
-- Cause: `mods/creep/tombstone.ts` schemas `#creep.body` as `vector(enumerated(...BODYPARTS_ALL))` and the `Tombstone.creep` getter returns the raw vector unchanged, so `tombstone.creep.body` is `string[]` rather than the `{type, hits}[]` shape every other body surface uses (live `Creep.body`, vanilla `tombstones.js`, ruin/runtime adapters).
-- Plan: in the `creep` getter, wrap the stored types as `creepInfo.body.map(type => ({ type, hits: 0 }))` to match `Creep.body` and the vanilla `_.map(o.creepBody, type => ({type, hits: 0}))` returned by `screeps-engine/src/game/tombstones.js`. Storage stays compact; only the public surface widens.
-
-### rawmemory-set-invalidates-parsed-memhack
-
-- Tests: UNDOC-MEMHACK-012
-- Status: RESIDUAL after pin `15df4bea`; the RawMemory.set mutation-preservation rows now pass.
-- Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object.
-- Plan: mirror vanilla's first-access descriptor flip so `Object.getOwnPropertyDescriptor(global, 'Memory')` reports a configurable enumerable value descriptor after `Memory` is read.
-
-### foreign-segment-clear-request
-
-- Tests: RAWMEMORY-FOREIGN-006
-- Status: CONFIRMED.
-- Cause: `setActiveForeignSegment(null)` does not clear the pending foreign-segment request, so `RawMemory.foreignSegment` remains populated on the following tick.
-- Plan: clear the pending request slot on `null` and verify the next-tick fallback to `undefined`.
-
-### memory-parsed-json-not-refreshed-across-ticks
-
-- Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011
-- Status: CONFIRMED.
-- Cause: xxscreeps caches parsed Memory in module-level state and does not invalidate it across ticks. Tick-end serialization normalizes functions, `NaN`, and `Infinity`, but next-tick `Memory` reads still see the stale live object instead of a fresh parse of raw memory.
-- Plan: reset parsed Memory state at the tick boundary so the next access re-parses `RawMemory.get()`.
-
-### memory-circular-ref-crash
-
-- Tests: UNDOC-MEMJSON-005
-- Status: CONFIRMED.
-- Cause: the memory normalizer recurses through Memory without cycle detection, so circular references stack-overflow before JSON serialization can fail gracefully.
-- Plan: add cycle protection to the normalizer, or move the normalizer under the existing serialization error handling if upstream prefers a smaller diff.
 
 ### game-object-json-room-tojson-null-crash
 
 - Tests: UNDOC-JSONOBJ-001
-- Status: RESIDUAL after pin `15df4bea`; `JSON.stringify()` no longer throws for the matrix, but most object snapshots still omit nested `pos` fields.
-- Cause: live objects expose position fields at runtime, but the parsed JSON snapshots for creeps, structures, resources, tombstones, ruins, sources, minerals, deposits, nukes, controllers, and construction sites lose `pos.x`, `pos.y`, and `pos.roomName`.
-- Plan: ensure JSON serialization includes the same representative nested position fields as the live object snapshots. The matrix should stay broad because the missing field shape spans many object classes.
-
-### construction-site-foreign-room-wrong-error
-
-- Tests: CONSTRUCTION-SITE-014.
-- Status: RESIDUAL after pin `15df4bea`.
-- Cause: the hostile-owned and validation-precedence rows now match vanilla, but hostile reservations still do not return `ERR_NOT_OWNER` ahead of the RCL/type checks for every structure type.
-- Plan: keep the four-case split narrow now: hostile reservation returns ERR_NOT_OWNER; otherwise let the existing ownership/RCL/type path handle the already-fixed cases.
+- Status: CONFIRMED and re-diagnosed 2026-07-25 (was filed as a nested-`pos` residual after pin `15df4bea`). Needs an upstream design conversation before any PR — see the PR plan.
+- Cause: object-model wide, not position-specific. Probing the same creep on both adapters: vanilla emits `{room, pos{x,y,roomName}, id, name, body, my, owner, spawning, ticksToLive, carryCapacity, carry, store, fatigue, hits, hitsMax, …}`; xxscreeps emits `{room, id, name}` and nothing else. Vanilla's `defineGameObjectProperties` (`@screeps/engine/src/utils.js:508+`) installs OWN enumerable accessors per instance (hence its own `_name`/`_body`/`_hits` cache slots), while xxscreeps exposes the public surface as non-enumerable prototype accessors via its overlay/schema system — `pos` is an own property but non-enumerable — and `JSON.stringify` walks only own enumerable keys. `RoomPosition.prototype.toJSON` (`game/position.ts:365`) is present and correct: `JSON.stringify(creep.pos)` on its own returns `{"x":25,"y":25,"roomName":"W1N1"}`. The missing nested position fields the row originally described are a symptom of the parent object not serializing at all.
+- Plan: none queued. Satisfying the row means making every game object's public surface own-and-enumerable — i.e. reworking the overlay/decorator system at the heart of xxscreeps's object model — so `JSON.stringify` prints more keys. The payoff is debug ergonomics (`console.log(JSON.stringify(creep))` is near-empty) plus any bot that round-trips an object through JSON and reads `.pos.x`; no upstream report exists. Open a design conversation with laverdet before writing code, and do not present it as a nested-`pos` fix. The matrix stays broad because the divergence spans every object class.
 
 ### stale-pickup-target-allowed
 
@@ -67,19 +25,12 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Cause: `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads only `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `target.pos` for range, neither of which triggers the guard either. `intents.save(this, 'pickup', resource.id)` then queues the intent against the cached id; the processor finds no backing resource and silently no-ops. The other 17 stale-argument matrix rows reject the call because their per-target checks read schema-backed fields (e.g. `target.store` for transfer/withdraw, `target.hits` for attack/heal/repair) that do trip the guard — `pickup` happens to be the only row whose canonical check chain doesn't.
 - Plan: have `checkTarget` (or `checkPickup` directly) read a schema-backed field of the target so a released wrapper trips the guard uniformly. The architectural fix is to make `checkTarget` raise the released-object error for stale wrappers, which closes the entire stale-argument axis at once rather than per-method.
 
-### look-for-at-unknown-returns-empty
+### live-cached-receiver-released
 
-- Tests: ROOM-LOOK-006
-- Status: CONFIRMED.
-- Cause: `lookForAt` (`game/room/look.ts:148-152`) returns `[]` for any type not in `lookConstants`, with an in-source TODO to switch to `ERR_INVALID_ARGS` once all game-object types are implemented. Vanilla rejects unrecognized LOOK types with `ERR_INVALID_ARGS` (-10).
-- Plan: blocked on the same TODO — flipping the fallback to `ERR_INVALID_ARGS` today would break legitimate aliases like `LOOK_POWER_CREEPS`, which xxscreeps doesn't register (`LOOK_NUKES` and `LOOK_DEPOSITS` are registered as of pin `05be3b2e`). Either register all canonical LOOK_* constants upfront (so the unknown-type fallback is safe to harden) or keep the gap until the broader mod set lands.
-
-### terminal-send-check-order-diverges
-
-- Tests: TERMINAL-SEND-005, TERMINAL-SEND-013:invalidRoom (plus its five ordering rows), TERMINAL-SEND-013:cooldownBeforeNotEnoughEnergyCost, TERMINAL-SEND-013:cooldownBeforeInvalidDescription
-- Status: CONFIRMED at pin `05be3b2e`; first exposed by splitting the `terminalSend` capability out of `market`.
-- Cause: `checkSend` (`mods/market/terminal.ts`) computes the transaction energy cost up front and orders its checks owner → active → resources → description → room name → cooldown. Vanilla validates room name third and cooldown before the energy-cost and description checks. Two visible consequences: an invalid destination room name yields a NaN range, so the NaN energy cost fails the resource check and returns ERR_NOT_ENOUGH_RESOURCES instead of ERR_INVALID_ARGS; and an on-cooldown terminal reports the energy-cost or description failure instead of ERR_TIRED.
-- Plan: reorder `checkSend` to vanilla's sequence — room-name validity before any cost math (which also removes the NaN poisoning), cooldown ahead of the energy-cost and description checks.
+- Tests: UNDOC-STALERECV-002
+- Status: CONFIRMED at pin `c5fd1522`; surfaced by a real bot running against xxscreeps (screeps-ok PR #2).
+- Cause: wrapper invalidation is unconditional, not liveness-based. At end of each tick the runtime releases every room's shared-memory buffer via `detach(room, () => new Error('Accessed a released object from a previous tick'))` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws — even when the backing object (e.g. a creep that is alive and visible) still exists. Vanilla resolves cached wrappers by receiver id against current backing data: reads return values, actions dispatch intents that execute (a `move()` via a last-tick wrapper displaces the creep), and only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001).
+- Plan: needs per-object liveness rather than blanket buffer release — e.g. re-attaching still-live wrappers to the new tick's buffer, or routing schema access through id re-resolution. Architecturally deep (the release keeps shared-memory semantics safe), so a design conversation upstream should precede any PR.
 
 ### commonjs-main-exports-alias-missing
 
@@ -88,16 +39,51 @@ Last refreshed: 2026-07-02 against pin `05be3b2e`.
 - Cause: The direct user-code `exports` global is not wired as an alias to the executing main module's `module.exports` object. The isolated sandbox seeds `exports` separately, while `driver/runtime/module.ts` executes CommonJS modules through `(function(require,module,exports){...})` with the module-local alias. In the direct `runPlayer` main path, writes through `module.exports` are not reliably reflected through bare `exports`.
 - Plan: make the direct main-module globals mirror CommonJS module execution so `exports === module.exports` inside player code.
 
-### invader-core-collapse-controller-not-reset
+### controller-unclaim-clears-safe-mode-cooldown
 
-- Tests: INVADER-CORE-004
-- Status: CONFIRMED at pin `05be3b2e`; first exposed by un-skipping the invader-core family (INVADER-CORE-001..003/005 pass, including defender spawn and collapse removal).
-- Cause: the invader-core object tick processor (`mods/invader/processor.ts`) handles collapse expiry as a silent `#removeObject(core)` and leaves the room controller untouched, with an in-source TODO to reset an NPC-owned controller once stronghold deployment can create one. Vanilla (`processor/intents/invader-core/tick.js`) clears the room's controller unconditionally in the collapse tick: user null, level 0, progress 0, downgrade/safe-mode timers cleared, `isPowerEnabled` false, effects null.
-- Plan: reset the room controller in the collapse branch to match vanilla. Vanilla does not require an NPC-owned controller — any controller in the room is cleared — so the reset need not wait for stronghold deployment.
+- Tests: CTRL-UNCLAIM-005
+- Status: CONFIRMED at pin `427f8677`; still failing at pin `f01f0a23` (NOT covered by xxscreeps#318).
+- Cause: `release()` zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. Vanilla instead STARTS a fresh cooldown on unclaim — `safeModeCooldown = gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms. The same `release()` path runs on the terminal (level-0) downgrade step, so that step shares the divergence, though no catalog row pins it yet; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).
+- Plan: set a fresh `#safeModeCooldownTime` in `release()` (or its callers) to match vanilla. The #318 centralized resets cover `safeModeAvailable`/`isPowerEnabled` only — this needs its own upstream change.
+
+### power-bank-ruin-spills-one-tick-late
+
+- Tests: POWER-BANK-004.
+- Status: CONFIRMED at pin `f01f0a23`; exposed when Power Banks received their own capability and adapter placement path.
+- Cause: xxscreeps creates the canonical 10-tick Power Bank ruin, but its ruin processor waits for `ticksToDecay === 0`. Vanilla spills the ruin store when `gameTime >= decayTime - 1`, so the canonical dropped-power observation occurs one tick earlier.
+- Plan: process ruin spill/removal at the vanilla `decayTime - 1` boundary without changing the public decay value.
+
+### stronghold-deploy-trigger-one-tick-late
+
+- Tests: STRONGHOLD-LAYOUT-001 (all five bunker rows).
+- Status: CONFIRMED at pin `38ee6170`; exposed by enabling `strongholdDeploy` once the stronghold mod (xxscreeps#337/#330) shipped the canonical templates.
+- Cause: the invader-core object tick processor (`mods/modern/stronghold/processor.ts`) deploys when `#deployTime < Game.time`; vanilla's stronghold pretick deploys when `core.deployTime <= gameTime + 1` (`processor/intents/invader-core/stronghold/stronghold.js:26`). Seeding the same absolute deploy tick on both adapters, the observed `ticksToDeploy` countdown is identical (4, 3, 2, 1) and then vanilla is deployed while xxscreeps publishes `ticksToDeploy === 0` for one more tick. The bunker layouts themselves match the matrix exactly for all five templates once the trigger fires, so this is purely the trigger boundary. xxscreeps's own mod test pins the current boundary as intended ("invulnerable through `Game.time === deployTime`"), so the upstream conversation is about which boundary is canonical, not about a slip.
+- Plan: report upstream — one extra invulnerable tick per stronghold, and a `ticksToDeploy === 0` value vanilla never publishes. Not adapter-fixable: both adapters already translate the canonical relative `deployTime` to the same absolute tick, so compensating here would have to shift the observable countdown instead.
+
+### creep-attack-cannot-target-power-creep
+
+- Tests: POWERCREEP-DEATH-002
+- Status: CONFIRMED at pin `38ee6170`; exposed by enabling `powerCreeps`.
+- Cause: `checkAttack` / `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so any attack on a power creep returns ERR_INVALID_TARGET. Vanilla's guard admits power creeps explicitly (`game/creeps.js:607`). Only the check rejects: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`, so the whole damage-to-death path is unreachable from combat intents alone.
+- Plan: admit `PowerCreep` to the combat target union. Note the row is a vanilla expected-failure too, for the unrelated NaN-TTL reason (screeps/engine#148) — the adapters fail it for different causes.
+
+### factory-power-effect-not-implemented
+
+- Tests: FACTORY-PRODUCE-011:powerEffect, FACTORY-PRODUCE-011:powerEffectBeforeNotEnough
+- Status: CONFIRMED. Held as intentional until the `38ee6170` re-triage: the rows never needed a live power creep, only `checkProduce` reading the factory's stored level, so the "blocked on upstream substrate" framing did not survive. #374's effects chain removes the last of that substrate argument.
+- Cause: `mods/factory/factory.ts` documents the `PWR_OPERATE_FACTORY` branch as unimplemented, so a levelled commodity is refused regardless of the factory's level.
+- Plan: implement the level check in `checkProduce`.
+
+### power-creep-renew-stamps-next-tick-age
+
+- Tests: POWERCREEP-RENEW-001
+- Status: CONFIRMED at pin `38ee6170`; exposed by enabling `powerCreeps`.
+- Cause: `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so intent processors run with `Game.time` already advanced to the tick the player observes next. `renew` stamping `#ageTime = Game.time + POWER_CREEP_LIFE_TIME` therefore lands one tick beyond vanilla's, which stamps against the tick being processed (`processor/intents/power-creeps/renew.js`). Observed on the tick after the renew: xxscreeps reads a full `POWER_CREEP_LIFE_TIME`, vanilla reads `POWER_CREEP_LIFE_TIME - 1`, so an xxscreeps power creep gains one extra tick of life per renew.
+- Plan: report upstream. Not adapter-fixable — both adapters seed and read the same absolute tick, so compensating would mean rewriting the observed value. Worth checking whether other intent processors stamp absolute ticks the same way before proposing a fix; this row is the only exact-value assertion in the suite that pins the convention.
 
 ## Accepted divergences
 
-Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but blocked on an upstream substrate stay in `parity.json` as expected failures (factory power effect below).
+Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but not shape-foldable — blocked on an upstream substrate, or accepted value divergences in behavior tests — stay in `parity.json` as expected failures with `intentional: true` (the controller `.my` reset, the two memory rows, the `isActive` tie order, and the power-bank `store` extension below).
 
 ### shape-flag-extra-id
 
@@ -111,17 +97,45 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Status: INTENTIONAL — declared divergence.
 - Decision: PR [laverdet/xxscreeps#163](https://github.com/laverdet/xxscreeps/pull/163) proposed stripping the `boost` property from unboosted body parts to match vanilla and was closed as not desired.
 
-### shape-controller-effects-always-enumerable
+### shape-room-object-effects-always-present
 
-- Tests: SHAPE-CTRL-001 (passes; `effects` folded into the expected key set via `expectedShape('controller', ...)`).
-- Status: INTENTIONAL — declared divergence (`controller: { extra: ['effects'] }`).
-- Decision: appeared at pin `d1e3bade`. `mods/controller/controller.ts:62` declares an `@enumerable override get effects()` (safe-mode invulnerability / `PWR_OPERATE_CONTROLLER`), the same deliberate treatment as `StructureInvaderCore` (`mods/invader/invader-core.ts:29`, already canonical in SHAPE-NPC-002). The base `RoomObject.effects` getter is non-enumerable, so this is an intentional per-object choice to surface controller effects, not an accident — accepted like `boost` / `flag.id`. Vanilla `screeps-engine/src/game/rooms.js:1651` assigns `effects` only when an effect is active, so its no-effect controller omits the key; the divergence is empty-case key presence only.
+- Tests: every room-object shape row — SHAPE-CREEP-001, SHAPE-POWERCREEP-001, SHAPE-CTRL-001, the SHAPE-STRUCT-001 matrix, SHAPE-NPC-001/002/003/004, SHAPE-SOURCE-001, SHAPE-MINERAL-001, SHAPE-DEPOSIT-001, SHAPE-SITE-001, SHAPE-FLAG-001, SHAPE-RESOURCE-001, SHAPE-TOMBSTONE-001, SHAPE-RUIN-001, SHAPE-NUKE-001 (all pass; `effects` folded into the expected key set via `expectedShape('roomObject', ...)`, which every room-object target inherits). SHAPE-NPC-003 remains an expected failure only for its independent `store` extension.
+- Status: INTENTIONAL — declared divergence (`roomObject: { extra: ['effects'] }`).
+- Decision: laverdet/xxscreeps#215 explicitly rejected exact undefined-vs-absent shape parity: "we should not be bending over backwards to adhere to Screeps' exact undefined-in shapes." The divergence started narrow — #311 had the invader mod extend base `Structure` with an enumerable derived getter so every stronghold peer could expose its collapse timer, and the controller declared its own for safe-mode invulnerability — and widened to the whole room-object surface at pin `e9380f4d`, where xxscreeps#374 moved the cached getter onto `RoomObject` over a `'#effects'` generator chain so mods contribute entries instead of shadowing each other's getters. The getter returns `undefined` when the chain yields nothing, so `obj.effects` reads identically on both engines; vanilla (`screeps-engine/src/game/rooms.js:1651`) just assigns the property only when effect data exists, making this empty-case key presence only. This is the designed producer-owned effects surface, not an adapter gap; do not re-queue an upstream fix.
 
-### factory-power-effect-not-implemented
+### controller-my-reset-returns-undefined
 
-- Tests: FACTORY-PRODUCE-011:powerEffect, FACTORY-PRODUCE-011:powerEffectBeforeNotEnough
-- Status: INTENTIONAL — expected failure, blocked on upstream substrate.
-- Decision: `mods/factory/factory.ts` documents the `PWR_OPERATE_FACTORY` branch as blocked until power creeps/effects exist upstream. screeps-ok keeps those rows as expected failures until that substrate lands.
+- Tests: CTRL-DOWNGRADE-002, CTRL-UNCLAIM-001
+- Status: INTENTIONAL — expected failure, accepted value divergence.
+- Decision (2026-07-20): xxscreeps returns `undefined` where vanilla returns `false` for `controller.my` after a claimed controller goes neutral (unclaim or RCL 1 downgrade). Truthiness is identical; only strict `=== false` checks diverge. Accepted on three upstream rulings: laverdet called vanilla's `controller.my === undefined` shape "a dumb quirk" ([#128](https://github.com/laverdet/xxscreeps/pull/128) review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix ([#193](https://github.com/laverdet/xxscreeps/issues/193)), and rejected codifying strict conformance to vanilla's exact undefined-in shapes ([#215](https://github.com/laverdet/xxscreeps/pull/215) review, 2026-06-03). Not shape-foldable — the divergence is a runtime value in behavior tests, not key presence — so it stays in `parity.json` and the rows run as regression traps. Do not re-queue an upstream fix.
+
+### rawmemory-set-invalidates-parsed-memhack
+
+- Tests: UNDOC-MEMHACK-012
+- Status: INTENTIONAL — expected failure, accepted mechanism-level divergence (was filed as a RESIDUAL after pin `15df4bea`, when the RawMemory.set mutation-preservation rows started passing).
+- Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object, so `Object.getOwnPropertyDescriptor(global, 'Memory')` still reports `get`/`set`.
+- Decision (2026-07-25): accepted. The row asserts how the engine implements in-tick `Memory` pinning, not what player code can observe. Its own catalog text names the consequences it exists to protect — MEMORY-002 and UNDOC-MEMHACK-007/008/009/010 — and all of those pass on xxscreeps, which pins the same in-tick reference without flipping the descriptor. The MemHack bot pattern is unaffected because the accessor descriptor is configurable, so `delete global.Memory` followed by reassignment still works (the sibling rows prove it). Asserting the mechanism cuts against the repo rule that tests observe player behavior rather than engine internals, so the row is held intentional and stays a regression trap. Do not re-queue an upstream fix.
+
+### structure-active-equal-distance-scan-order
+
+- Tests: STRUCTURE-ACTIVE-005
+- Status: INTENTIONAL — expected failure, accepted ordering divergence.
+- Cause: both engines break `isActive` ties by their room-object collection order, and neither order is specified. Vanilla's `checkStructureAgainstController` (`@screeps/engine/src/utils.js:456-506`) never sorts — it scans the id-keyed `objectsByRoom` hash with a `foundSelf` sentinel, so equal-distance same-type structures enumerated before the subject count as closer. That hash is rebuilt each tick from an unsorted storage query, so "the extension you built first stays active" holds by accident of insertion order. xxscreeps's `checkActiveStructures` (`mods/structure/structure.ts:182-208`) instead groups by type and stably sorts by range to the controller, so ties inherit `room['#objects']` order — deterministic, but not creation order, because `Room['#flushObjects']` (`game/room/room.ts:125-145`) fills each removed slot from the end (`objects[ii] = objects[cursor--]`). Verified by prediction: with the four pre-existing objects the adapter's canonical-layout reset removes in the same flush as the inserts, the compaction puts six extensions in order 3,4,5,6,1,2 (matching the observed inactive second extension) and seven in order 4,5,6,7,1,2,3 (a 7-extension probe returned exactly the predicted active set, with all seven ranges equal at 20).
+- Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (`633718e`), which mined open screeps/engine PRs. The relevant upstream pair is [screeps/engine#150](https://github.com/screeps/engine/pull/150) and [#107](https://github.com/screeps/engine/pull/107): both propose replacing vanilla's per-object `checkStructureAgainstController` scan with a batch computation during room processing that sets an `off` flag on affected structures. #150 cites vanilla issue #140 — the engine and user-facing code computing `isActive` differently, causing structures to be wrongly active or inactive — as the actual defect in this area.
+- Decision (2026-07-25): accepted. xxscreeps's `checkActiveStructures` already IS the design those PRs propose for vanilla, and a batch sort inherently loses the incidental per-object scan order that vanilla's serial scan produces — so this row penalizes xxscreeps for having shipped the fix vanilla has not merged. On top of that, xxscreeps has no way to recover creation order: room objects carry no creation timestamp, `Id.generateId` (`engine/schema/id.ts:62`) is random so an id tie-break would reproduce creation order only under this harness's sequential adapter ids, and stable removal would turn an engine hot path O(n). A PR would amount to matching the order a storage query happened to return documents in, with no user-script victim — the spec-chasing bar laverdet set in [#329](https://github.com/laverdet/xxscreeps/pull/329). Not shape-foldable, so the row stays in `parity.json` as a regression trap. Do not re-queue an upstream fix; revisit only if #150/#107 lands and defines an explicit tie order.
+
+### memory-parsed-json-not-refreshed-across-ticks
+
+- Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011
+- Status: INTENTIONAL — expected failure, accepted behavior divergence.
+- Decision (2026-07-21): submitted in [#329](https://github.com/laverdet/xxscreeps/pull/329) and withdrawn per laverdet's review bar — "Have you observed these values (NaN, Infinity) causing problems with user scripts? ... So if this is just a matter of chasing a spec then I don't want to do it. If it's a matter of fixing something that actually broke then we can figure it out." No observed breakage exists on either half: functions/`NaN`/`Infinity` surviving in the cached parse has no corpus repro, and the skip-save half (UNDOC-MEMHACK-011) has no coherent victim — every real bot deleting `RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse, while mutate-then-bare-delete loses its mutations on vanilla itself, so nobody ships it (the one coherent bare-delete shape, a dirty-flag save skip, mutates nothing and so cannot leak). laverdet's cached-parse design (`32c9fdb`, which superseded the #140 cross-tick re-parse proposal in 2021) deliberately trades exact per-tick-re-parse semantics for CPU and already diverges on prototypes, `toJSON`, getters, Dates, circular flattening, and sparse arrays; these four rows pin the same accepted class. Not shape-foldable, so the rows stay in `parity.json` as regression traps. Do not re-queue an upstream fix without an actual user-script report.
+
+### power-bank-shape-exposes-store-extension
+
+- Tests: SHAPE-NPC-003
+- Status: INTENTIONAL — expected failure, accepted documented extension.
+- Cause: `store: powerBankStoreFormat` is a public member of the `powerBankShape` struct (`mods/modern/powerbank/schema.ts`), and `withOverlay` publishes schema fields — `schema/overlay.ts:65` decides enumerability purely from the key name (`!key.startsWith('#')`) — so the backing store sits on the player surface beside the canonical `@enumerable get power()` projection. Vanilla keeps the same internal representation and publishes only `power` (`@screeps/engine/src/game/structures.js:585`), and is deliberate about which structures publish a store: `StructurePowerSpawn` declares `store: _storeGetter` twenty lines later.
+- Decision (2026-07-25): accepted; the row was previously queued for a small upstream rename PR, and that plan is withdrawn. Upstream already treats this member as a deliberate extension: laverdet's `035d70bf` ("docs: sync with Screeps API", 2026-07-14) annotated it `@public` with "this member is an xxscreeps extension; the official API only exposes the amount via `power`." Across that 97-file sweep the phrase "xxscreeps extension" appears exactly twice — here and on `getTerrain`'s `version` param — so the field was audited against the official API and kept on purpose, which retires the "storage representation showing through" premise this row was filed under. Prototyping the `store` → `'#store'` rename against `upstream/main` then surfaced two independent blockers. First, `createRuin` (`mods/classic/structure/ruin.ts:68-76`) duck-types the loot out of the public name (`structure as never as Record<'store', Store | undefined>`), so hiding the field leaves a destroyed bank's ruin empty — the structure exists to be destroyed for its power, so this is a functional regression, and closing it means a protocol change in `mods/classic/`, well outside a mod-local rename. Second, persisted blobs cannot survive the rename: `makeUpgrader` (`engine/schema/build/index.ts:66-92`) migrates by reading with the old layout and writing with the new, and members are looked up by name (`schema/write.ts:39`). Replicating that path against the real schema primitives shows renaming *or adding* a composed member throws `Cannot read properties of undefined` — absent primitives merely default to 0 — so every saved world holding a live power bank would throw on room load; and even with the upgrader taught to default composed members, a rename is a drop plus an add, so the bank's power would reset. Not shape-foldable: `shapeDivergences`' `roomObject` target applies to every room-object row (right for `effects`, which every room object inherits) whereas `store` is power-bank-only, so folding it would stop walls and roads being asserted against a store-free surface. The row therefore stays in `parity.json` with `intentional: true` as a regression trap — if upstream ever does remove the member, SHAPE-NPC-003 surfaces as an unexpected pass. Do not re-queue an upstream fix.
 
 ## Capability skips
 
@@ -134,9 +148,30 @@ These rows do not run on xxscreeps because the adapter declares a capability una
 - Status: INTENTIONAL.
 - Decision: PR [laverdet/xxscreeps#236](https://github.com/laverdet/xxscreeps/pull/236) proposed modeling room-status data (admin-closed/novice/respawn) and was rejected. laverdet self-patched `Game.map.getRoomStatus` in commit `2cf66aaf` to return only `{status:'normal', timestamp:null}` for accessible rooms and `{status:'closed', timestamp:null}` for everything off-world, with no `roomStatusData` storage; the [#245](https://github.com/laverdet/xxscreeps/pull/245) follow-up finalizes the empty-set behavior. xxscreeps therefore never exposes a non-null timestamp, a `novice`/`respawn`/admin-`closed` status, or the novice/respawn launch guards that consult it. These rows assert the vanilla side only and stay capability-skipped on xxscreeps; MAP-ROOM-004's invalid-format, accessible-`normal`, and off-world-`closed` branches still run on both adapters.
 
-### strongholdDeploy — stronghold deployment not implemented
+### strongholdMetadata — `strongholdId` and seeded effects are unmodeled
 
-- Capability: `strongholdDeploy` (declared `false` in `adapters/xxscreeps/index.ts`; split out of `invaderCore` when the pinned engine gained the invader-core mod at `05be3b2e`).
-- Tests skipped: STRONGHOLD-LAYOUT-001 (all five bunker templates) and the adapter-contract inspection test `invader core snapshot includes deploy and stronghold fields`.
-- Status: INTENTIONAL — engine-missing.
-- Decision: the pinned invader-core mod (laverdet/xxscreeps#274) ships the structure, its intent processors, defender spawn, and collapse removal, but `create()` has no deploy caller: nothing places the stronghold template layout at deploy time, and the schema has no `templateName`/`strongholdId` fields (effects are derived from the deploy/collapse timers, so arbitrary seeded effects are also unrepresentable). The basic invader-core family runs under `invaderCore: true`; stronghold-deployment rows stay capability-skipped until an upstream deploy slice lands.
+- Capability: `strongholdMetadata` (declared `false` in `adapters/xxscreeps/index.ts`; split out of `strongholdDeploy` at pin `38ee6170` when the stronghold mod closed the deploy gap).
+- Tests skipped: the adapter-contract inspection test `invader core snapshot includes deploy and stronghold fields`.
+- Status: INTENTIONAL — engine-missing, and not worth an upstream ask.
+- Decision: `strongholdDeploy` is now `true`. Pin `38ee6170` splits strongholds into their own mod (xxscreeps#337/#330) shipping the five canonical bunker templates with reward levels, per-bunker defense behaviors, and a `#templateName` field the deploy processor reads, so the adapter seeds `#templateName` at placement and surfaces it in the snapshot; the residual trigger-boundary divergence is registered as `stronghold-deploy-trigger-one-tick-late` rather than skipped. What remains behind this narrower flag is the row's other two requirements. `strongholdId` is unmodeled and should stay that way: it is not player-observable on vanilla either (`src/game/structures.js` exposes only `level`, `spawning`, and `ticksToDeploy` on `StructureInvaderCore`). Vanilla uses it purely as a processor-side tag — matching a core to its own damaged roads (`invader-core/pretick.js:50`), tagging spawned defenders (`create-creep.js:39`), sparing existing stronghold peers when the deploy crushes template tiles (`stronghold/stronghold.js:81`), suppressing room activation and the raid-invader list (`processor.js:68,119`), and skipping the drop-on-death path (`creeps/_die.js:39`). xxscreeps reaches each of those without a shared id: peers are grouped by ownership plus the core's `#ownedNeutralStructureIds`, they co-collapse on the shared `#collapseTime`, and stronghold rooms sleep through the NPC wake guard rather than an activation opt-out. Nothing about the field survives the transposition, so it is not upstream PR material. Seeded `effects` are likewise unavailable: `StructureInvaderCore.effects` is derived from `ticksToDeploy` and `#collapseTime` with no stored array, the same derived-effects design already accepted as `shape-room-object-effects-always-present`.
+
+### powerCreepAccountApi — the roster is mutable only from the backend
+
+- Capability: `powerCreepAccountApi` (declared `false` in `adapters/xxscreeps/index.ts`; split out of `powerCreeps` at pin `38ee6170` when the power-creep mod closed the object gap).
+- Tests skipped: GPL-003/004/005; POWERCREEP-CREATE-001/002/003, RENAME-001/002, LIFETIME-002, DELETE-001/002, ACTION-002, UPGRADE-001/002, SPAWN-001/002; ATTACK-NOTIFY-004 (19.1); SHARD-PCREEP-001.
+- Status: INTENTIONAL — engine-missing surface, not yet reported upstream.
+- Decision: `powerCreeps` is now `true`. xxscreeps#335/#338 ship the roster, the spawned room object, and `Game.powerCreeps` including unspawned entries — but every roster *mutation* lives behind the backend's `/api/game/power-creeps/{create,upgrade,rename,delete,cancel-delete}` routes (`mods/mmo/powercreep/backend.ts`), driven by the official client's power-creep screen. The runtime `PowerCreep` class (`mods/mmo/powercreep/powercreep.ts`) declares no `create` static and no `rename`/`upgrade`/`delete` methods, so game code cannot reach them and cannot reach the unspawned states they produce. On vanilla these are ordinary global intents. The checks themselves are already shared and engine-side (`checkCreatePowerCreep`, `checkUpgradePowerCreep`, `checkRenamePowerCreep`), so the missing piece is runtime plumbing rather than logic — plausible upstream work, but ask before building: laverdet may consider account management deliberately out of the game runtime.
+
+### powerEffects — only PWR_GENERATE_OPS has a processor branch
+
+- Capability: `powerEffects` (declared `false` in `adapters/xxscreeps/index.ts`; split out of `powerCreeps` at pin `38ee6170`).
+- Tests skipped: EFFECT-HOST-001 (all rows), EFFECT-DECAY-001/002, EFFECT-APPLY-001/002, EFFECT-DESTROY-001, SHAPE-EFFECT-001; POWER-OPERATE-001/002/003/004, POWER-DISRUPT-001/002, POWER-REGEN-001, POWER-COMBAT-002/003; TOWER-POWER-001/002, SPAWN-TIMING-005, LAB-RUN-003, LAB-REVERSE-003, FACTORY-COMMODITY-003, POWER-SPAWN-002, RAMPART-DECAY-005, TERMINAL-SEND-002, OBSERVER-003, WITHDRAW-008, ROOM-EVENTLOG-020, SOURCE-POWER-001.
+- Status: INTENTIONAL — staged upstream, landing one power at a time.
+- Decision: `usePower` validates every power correctly — ownership, spawned-ness, power-enabled room, cooldown, ops balance and range all return the canonical codes — but the processor's switch has a single branch, `PWR_GENERATE_OPS`, and its default arm drops the intent without applying an effect, charging ops, or starting a cooldown (`mods/mmo/powercreep/processor.ts`). xxscreeps#335 states the staging explicitly. The rows kept on the broader `powerCreeps` flag are the ones whose assertions stop at the return code (POWER-OPERATE-005/006, POWER-DISRUPT-003, POWER-REGEN-002, SOURCE-POWER-002, MINERAL-POWER-001, RAMPART-DECAY-004, TERMINAL-SEND-004) — xxscreeps genuinely satisfies those. Gating is by what a row asserts, not by whether it currently passes: a row that would pass only because nothing happened is not verification. Flip the flag when the remaining powers land; no gap rows are registered for this surface.
+
+### invaderRaidSpawner — active-room generator is not the canonical backend spawner
+
+- Capability: `invaderRaidSpawner` (declared `false` in `adapters/xxscreeps/index.ts`).
+- Tests skipped: INVADER-RAID-001 through INVADER-RAID-010 (21 rows).
+- Status: INTENTIONAL — engine-missing canonical orchestration.
+- Decision: xxscreeps has a partial room-tick generator that can spawn up to three small Invaders in an already-active room after its harvested-energy threshold is crossed. It does not implement the canonical inactive-room backend sweep, sector/stronghold qualification, active-room suppression, or raid composition and escalation matrix. Keep the capability disabled until those observable behaviors exist.

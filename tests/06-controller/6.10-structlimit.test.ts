@@ -16,7 +16,7 @@ const isActiveCases: readonly { structureType: string; minRcl: number; label: st
 	{ structureType: STRUCTURE_LINK, minRcl: 5, label: 'link' },
 	{ structureType: STRUCTURE_EXTRACTOR, minRcl: 6, label: 'extractor' },
 	{ structureType: STRUCTURE_LAB, minRcl: 6, label: 'lab' },
-	{ structureType: STRUCTURE_TERMINAL, minRcl: 6, label: 'terminal', cap: 'market' },
+	{ structureType: STRUCTURE_TERMINAL, minRcl: 6, label: 'terminal', cap: 'terminal' },
 	{ structureType: STRUCTURE_OBSERVER, minRcl: 8, label: 'observer', cap: 'observer' },
 ];
 

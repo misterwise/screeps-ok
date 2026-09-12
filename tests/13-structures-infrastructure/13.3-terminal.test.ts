@@ -43,6 +43,7 @@ describe('Terminal send', () => {
 	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard }) => {
 		shard.requires('terminalSend');
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [

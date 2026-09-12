@@ -9,9 +9,9 @@
  * or parity.json files change.
  *
  * Usage:
- *   npm run parity       # produces reports/<adapter>.json
- *   npm run status       # reads reports + parity.json, writes docs/status.md
- *   npm run status:refresh   # does both in one step
+ *   npm run parity           # full suite; runs this script (and coverage) at the end
+ *   npm run status:refresh   # regenerates status + coverage from existing reports, no tests
+ *   npm run status           # this script alone (status.md + README badges)
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -320,17 +320,25 @@ function renderGapDetails(adapterName, summary, gapIds) {
 
 const CAPABILITY_DESCRIPTIONS = {
 	chemistry: 'Lab/boost mechanics',
-	powerCreeps: 'Power creeps and powers',
+	powerCreeps: 'Power creeps as room objects',
+	powerCreepAccountApi: 'PowerCreep create/rename/upgrade/delete',
+	powerEffects: 'usePower applying PWR_* effects',
+	powerSpawn: 'Power spawn and account GPL',
 	factory: 'Factory commodities',
-	market: 'Market and terminal',
+	terminal: 'Terminal structure surface',
+	marketBasics: 'Self-contained Game.market surface',
+	market: 'Full market orders, deals, and history',
+	terminalSend: 'Terminal send processing',
 	observer: 'Observer rooms',
 	nuke: 'Nukes',
 	deposit: 'Deposits (highway)',
+	powerBank: 'Power Bank objects and lifecycle',
 	terrain: 'Custom terrain specs',
 	roomStatus: 'Room status fixture setup',
 	portals: 'Portal structures and teleport mechanics',
 	invaderCore: 'Invader core structures',
 	strongholdDeploy: 'Engine-driven stronghold deployment',
+	strongholdMetadata: 'Stronghold bookkeeping fields on a seeded invader core',
 	invaderRaidSpawner: 'Inactive-room Invader raid spawning',
 };
 

@@ -23,8 +23,8 @@ import { resolve } from 'node:path';
 import type { ScreepsOkAdapter } from './adapter.js';
 
 export type AdapterLimitation =
-	/** `pull(self)` enters an infinite loop in the recursive circular-pull
-	 *  check, hanging the test runner. Must be skipped, not asserted-to-fail.
+	/** Closed 2026-07-20: xxscreeps now rejects `pull(self)` with
+	 *  `ERR_INVALID_TARGET` before circular-pull processing.
 	 */
 	| 'pullSelfHang'
 	/** Closed 2026-04-14: xxscreeps adapter now honors
@@ -78,12 +78,21 @@ export async function hasDocumentedAdapterLimitation(
 // until the declaration is updated).
 
 export type ShapeDivergenceTarget =
+	/** The shared RoomObject surface every room object inherits. */
+	| 'roomObject'
 	/** Flag object data-property surface. */
 	| 'flag'
 	/** Creep body part entries (`{type, hits[, boost]}`). */
 	| 'bodyPart'
-	/** Controller data-property surface (`effects` always enumerable). */
-	| 'controller';
+	/** Controller data-property surface. */
+	| 'controller'
+	/** Structure data-property surfaces, including NPC structures. */
+	| 'structure';
+
+/** Targets whose objects are room objects, and so inherit `roomObject` extras. */
+const roomObjectTargets = new Set<ShapeDivergenceTarget>([
+	'roomObject', 'flag', 'controller', 'structure',
+]);
 
 export interface ShapeDivergence {
 	/** Property keys present on this engine beyond the canonical shape. */
@@ -95,13 +104,16 @@ export type ShapeDivergences = Partial<Record<ShapeDivergenceTarget, ShapeDiverg
 /**
  * The canonical shape adjusted for the active adapter's declared
  * intentional divergences: the sorted key set a shape test should assert
- * exact equality against.
+ * exact equality against. A room-object target also folds in whatever the
+ * adapter declares on the shared `roomObject` surface.
  */
 export async function expectedShape(
 	target: ShapeDivergenceTarget,
 	canonical: readonly string[],
 ): Promise<string[]> {
 	const adapter = await loadAdapter();
-	const extra = adapter.shapeDivergences?.[target]?.extra ?? [];
-	return [...canonical, ...extra].sort();
+	const divergences = adapter.shapeDivergences ?? {};
+	const inherited = roomObjectTargets.has(target) ? divergences.roomObject?.extra ?? [] : [];
+	const extra = divergences[target]?.extra ?? [];
+	return [...new Set([...canonical, ...inherited, ...extra])].sort();
 }
