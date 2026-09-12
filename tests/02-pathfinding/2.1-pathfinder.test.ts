@@ -613,4 +613,34 @@ describe('PathFinder', () => {
 		expect(result.continuous).toBe(true);
 		expect(result.lastRoom).toBe(TERRAIN_FIXTURE_NEIGHBOR);
 	});
+
+	// Regression: an implementation that computes a heuristic but never adds it to the
+	// open-set priority is uniform-cost (Dijkstra), not A*. It returns the SAME path at
+	// the SAME cost, so every shape/route assertion above still passes — the only visible
+	// difference is `ops`. That difference is not cosmetic: it burns the caller's `maxOps`
+	// budget, so real multi-room searches come back `incomplete: true` and bots cache live
+	// destinations as unreachable. Found 2026-08-06 in the Rust engine's adapter runtime,
+	// which expanded 2537 nodes for a 38-step cross-room path the real engine did in 33.
+	//
+	// In an open 50x50 room a 40-step straight path costs A* ~40 expansions and Dijkstra
+	// ~2000+ (it floods every tile within cost 40). The bound below sits far above any
+	// plausible tie-breaking/heuristic-weight variation and far below a flood.
+	test('PATHFINDER-021 search is heuristic-guided (A*), not a uniform-cost flood', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			const result = PathFinder.search(
+				new RoomPosition(5, 25, 'W1N1'),
+				{ pos: new RoomPosition(45, 25, 'W1N1'), range: 0 },
+				{ maxOps: 20000, plainCost: 1, swampCost: 5 }
+			);
+			({ incomplete: result.incomplete, pathLength: result.path.length, ops: result.ops, cost: result.cost })
+		`) as { incomplete: boolean; pathLength: number; ops: number; cost: number };
+
+		expect(result.incomplete).toBe(false);
+		expect(result.pathLength).toBe(40);
+		expect(result.cost).toBe(40);
+		expect(result.ops).toBeGreaterThan(0);
+		expect(result.ops).toBeLessThan(400);
+	});
 });

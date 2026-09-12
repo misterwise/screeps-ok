@@ -382,6 +382,9 @@ Coverage Notes
   and goal are in different rooms.
 
 ### 2.2 CostMatrix
+- `PATHFINDER-021` `behavior` `verified_vanilla`
+  `PathFinder.search` is heuristic-guided: a same-room goal is reached in ops
+  proportional to the path length, not to the reachable area.
 - `COSTMATRIX-001` `behavior` `verified_vanilla`
   `new CostMatrix()` creates a matrix with all values 0.
 - `COSTMATRIX-002` `behavior` `verified_vanilla`
