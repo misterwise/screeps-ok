@@ -5,6 +5,7 @@ import { describe, test, expect, code,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 import { ctrlAttackValidationCases } from '../../src/matrices/ctrl-attack-validation.js';
 import { ctrlClaimValidationCases } from '../../src/matrices/ctrl-claim-validation.js';
 import { ctrlReserveValidationCases } from '../../src/matrices/ctrl-reserve-validation.js';
@@ -569,6 +570,82 @@ describe('controller mechanics', () => {
 		const expected = 2 * CONTROLLER_RESERVE;
 		expect(drop).toBeGreaterThanOrEqual(expected);
 		expect(drop).toBeLessThan(expected + 5);
+	});
+
+	// CTRL-RESERVE-009 setup: a reservation seeded well clear of both 0 and
+	// CONTROLLER_RESERVE_MAX, so neither expiry nor the cap can mask the
+	// per-tick renewal arithmetic, plus one renewer of the requested size.
+	// The controller's three non-edge neighbours hold both creeps.
+	async function seedReservation(shard: ShardFixture, renewerClaimParts: number) {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		const seederId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: Array.from({ length: 40 }, () => CLAIM),
+		});
+		const renewerBody: string[] = [];
+		for (let i = 0; i < renewerClaimParts; i++) renewerBody.push(CLAIM);
+		renewerBody.push(MOVE);
+		const renewerId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x, ctrlPos!.y + 1],
+			owner: 'p1',
+			body: renewerBody,
+		});
+		await shard.tick();
+
+		// runPlayer advances one processing tick, so this leaves a reservation of
+		// 40 × CONTROLLER_RESERVE already on the controller.
+		const seedRc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${seederId}).reserveController(
+				Game.rooms['W2N1'].controller
+			)
+		`);
+		expect(seedRc).toBe(OK);
+		return renewerId;
+	}
+
+	// Each runPlayer call reads ticksToEnd for the current tick and then processes
+	// that tick's reserve intent, so reading `i` reflects exactly `i` renewals.
+	async function renewalSeries(shard: ShardFixture, renewerId: string, samples: number) {
+		const readings: number[] = [];
+		for (let i = 0; i < samples; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				const controller = Game.rooms['W2N1'].controller;
+				Game.getObjectById(${renewerId}).reserveController(controller);
+				controller.reservation.ticksToEnd
+			`) as number);
+		}
+		return readings;
+	}
+
+	test('CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged', async ({ shard }) => {
+		// Engine processor/intents/creeps/reserveController.js:35-49 renews with
+		// `reservation.endTime += effect`. One CLAIM part credits CONTROLLER_RESERVE
+		// (1) and the timer spends 1 that same tick, so the reservation stands still.
+		const renewerId = await seedReservation(shard, 1);
+		const readings = await renewalSeries(shard, renewerId, 4);
+		expect(readings[0]).toBeGreaterThan(10);
+		const steady = Array.from({ length: readings.length }, () => readings[0]);
+		expect(readings).toEqual(steady);
+	});
+
+	test('CTRL-RESERVE-009 renewing a reservation with two CLAIM parts adds one tick per tick', async ({ shard }) => {
+		// Two CLAIM parts credit 2 × CONTROLLER_RESERVE against 1 tick of decay, so
+		// ticksToEnd rises by exactly 1 per renewing tick.
+		const renewerId = await seedReservation(shard, 2);
+		const readings = await renewalSeries(shard, renewerId, 4);
+		expect(readings[0]).toBeGreaterThan(10);
+		const gainPerTick = 2 * CONTROLLER_RESERVE - 1;
+		const rising = Array.from({ length: readings.length },
+			(_, i) => readings[0] + i * gainPerTick);
+		expect(readings).toEqual(rising);
 	});
 
 	for (const row of ctrlReserveValidationCases) {
