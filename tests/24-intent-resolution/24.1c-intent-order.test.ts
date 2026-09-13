@@ -1,6 +1,7 @@
 import { describe, test, expect, code, type ContainerSnapshot,
 	OK, WORK, CARRY, MOVE,
 	HARVEST_POWER, CARRY_CAPACITY, UPGRADE_CONTROLLER_POWER, RESOURCE_ENERGY,
+	ENERGY_DECAY, CREEP_CORPSE_RATE, BODYPART_COST,
 	STRUCTURE_CONTAINER, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
 } from '../../src/index.js';
 
@@ -109,10 +110,11 @@ describe('Intent creep resolution order', () => {
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER);
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		// The new pile decays in the same tick it is created (as HARVEST-* pins).
 		const energy = drops.filter(d => d.resourceType === RESOURCE_ENERGY);
 		expect(energy.length).toBe(1);
-		expect(energy[0].amount).toBeLessThanOrEqual(2 * HARVEST_POWER);
-		expect(energy[0].amount).toBeGreaterThan(2 * HARVEST_POWER - 2);
+		const overflow = 2 * HARVEST_POWER;
+		expect(energy[0].amount).toBe(overflow - Math.ceil(overflow / ENERGY_DECAY));
 	});
 
 	// `transfer` resolves before `suicide`: the dump-then-die idiom lands the
@@ -147,6 +149,7 @@ describe('Intent creep resolution order', () => {
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
 		expect(tombstones.length).toBe(1);
 		expect(tombstones[0].creepName).toBe('dumper');
-		expect(tombstones[0].store.energy ?? 0).toBeLessThan(CARRY_CAPACITY);
+		const corpseMax = CREEP_CORPSE_RATE * (BODYPART_COST[CARRY] + BODYPART_COST[MOVE]);
+		expect(tombstones[0].store.energy ?? 0).toBeLessThanOrEqual(corpseMax);
 	});
 });

@@ -1,7 +1,7 @@
 import {
 	describe, test, expect, code,
 	OK,
-	MOVE, BODYPART_COST, CREEP_SPAWN_TIME,
+	MOVE, BODYPART_COST,
 	STRUCTURE_SPAWN,
 	TOP, BOTTOM, LEFT,
 } from '../../src/index.js';
@@ -67,9 +67,11 @@ describe('Spawning duration and direction', () => {
 				};
 			})()
 		`) as { energy: number; spawningName: string; rc: number };
+		// A spawn below capacity in a room below SPAWN_ENERGY_CAPACITY regenerates
+		// 1 energy per tick, starting on the spawn tick itself.
 		expect(cancelled.spawningName).toBe('Cancelled');
 		expect(cancelled.rc).toBe(OK);
-		expect(cancelled.energy).toBeLessThan(300 - cost + CREEP_SPAWN_TIME);
+		expect(cancelled.energy).toBe(300 - cost + 1);
 
 		const after = await shard.runPlayer('p1', code`
 			(function () {
@@ -83,8 +85,7 @@ describe('Spawning duration and direction', () => {
 		`) as { spawning: unknown; creep: string; energy: number };
 		expect(after.spawning).toBe(null);
 		expect(after.creep).toBe('undefined');
-		// A spawn below capacity regenerates 1 energy per tick; a refund would
-		// add the whole body cost on top.
-		expect(after.energy - cancelled.energy).toBeLessThan(cost);
+		// One more tick of regen and nothing else: a refund would add the cost.
+		expect(after.energy).toBe(300 - cost + 2);
 	});
 });

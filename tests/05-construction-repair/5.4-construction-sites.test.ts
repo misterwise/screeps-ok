@@ -633,7 +633,8 @@ describe('room.createConstructionSite()', () => {
 					structures: rm.find(${FIND_STRUCTURES}, { filter: lookalike }).length,
 					myStructures: rm.find(${FIND_MY_STRUCTURES}, { filter: lookalike }).length,
 					mySpawns: rm.find(${FIND_MY_SPAWNS}).length,
-					lookStructures: rm.lookForAt(${LOOK_STRUCTURES}, 25, 25).length,
+					lookStructures: rm.lookForAt(${LOOK_STRUCTURES}, 25, 25).length
+						+ rm.lookForAt(${LOOK_STRUCTURES}, 26, 25).length,
 					gameStructures: Object.values(Game.structures).filter(lookalike).length,
 					gameSpawn: typeof Game.spawns['SiteSpawn'],
 				};

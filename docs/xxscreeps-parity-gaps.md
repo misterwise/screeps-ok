@@ -3,7 +3,7 @@
 Narrative notes for selected expected-failure classifications in `adapters/xxscreeps/parity.json`.
 For the full generated list and current counts, see `docs/status.md`.
 
-Last refreshed: 2026-08-24 against pin `e9380f4d`.
+Last refreshed: 2026-09-12 against pin `e9380f4d`.
 
 > When a gap moves to fixed-upstream, drop it from `parity.json` and remove the entry here. When a gap is accepted as an intentional shape divergence, move it out of `parity.json` into the adapter's `shapeDivergences` declaration (`adapters/xxscreeps/index.ts`) and into the Accepted divergences section below. Current status: 25 open gaps registered in `parity.json` plus five expected failures held intentional (`controller-my-reset-returns-undefined`, accepted 2026-07-20 per laverdet's undefined-shapes rulings; `memory-parsed-json-not-refreshed-across-ticks`, accepted 2026-07-21 per laverdet's #329 spec-chasing bar; `structure-active-equal-distance-scan-order`, `rawmemory-set-invalidates-parsed-memhack` and `power-bank-shape-exposes-store-extension`, all accepted 2026-07-25 — the first because neither engine's tie order is specified, the second because it asserts an engine mechanism whose observable consequences already pass, the third because upstream documents the member as an intentional xxscreeps extension and the rename that would remove it breaks ruin looting and blob migration). Four open gaps are PR-derived rows awaiting stable vanilla rather than xxscreeps bugs — see `docs/xxscreeps-pr-plan.md`. Three intentional shape divergences (flag `id`, body-part `boost`, room-object `effects`) are declared on the adapter. Pin `38ee6170` → `6d0ffb7e` → `e9380f4d` lands three of our own upstream fixes: xxscreeps#349 (checkSend precedence) closes `terminal-send-check-order-diverges`, and #352 (power-creep movement ties, nuke impact) closes `power-creep-wins-movement-ties` and `power-creep-survives-nuke-impact` — all three dropped from `parity.json`. #350 decodes the runtime source map with trace-mapping, cutting the first `error.stack` read from 33-40ms to 7-10ms and letting the sandbox watchdog drop from 5000ms back to 1000ms. #374 moves the cached `effects` getter onto `RoomObject`, widening the accepted structure/controller `effects` divergence to every room object. The `strongholdDeploy` and `powerCreeps` capabilities opened at `38ee6170` are unchanged; their residual rows and the narrower `strongholdMetadata`, `powerCreepAccountApi` and `powerEffects` skips are documented below. Full counts regenerate in `docs/status.md` on the next full run.
 
@@ -22,15 +22,15 @@ Last refreshed: 2026-08-24 against pin `e9380f4d`.
 
 - Tests: CTRL-UPGRADE-015
 - Status: CONFIRMED 2026-09-12 at pin `e9380f4d`.
-- Cause: the `upgradeController` processor (`mods/classic/controller/processor.ts:174-183`) levels up on `#progress >= CONTROLLER_LEVELS[level]` alone. Vanilla (`creeps/upgradeController.js:63-64`) also requires the downgrade timer to be within one `CONTROLLER_DOWNGRADE_RESTORE` of its ceiling, and otherwise lets progress accumulate past the threshold.
+- Cause: the `upgradeController` processor (`mods/classic/controller/processor.ts:174-188`) levels up on `#progress >= CONTROLLER_LEVELS[level]` alone. Vanilla (`creeps/upgradeController.js:63-64`) also requires the downgrade timer to be within one `CONTROLLER_DOWNGRADE_RESTORE` of its ceiling, and otherwise lets progress accumulate past the threshold.
 - Plan: add the timer condition to the level-up branch upstream. Not yet filed.
 
 ### controller-timer-anchors-one-tick-late
 
 - Tests: CTRL-DOWNGRADE-013, CTRL-UPGRADE-016
 - Status: CONFIRMED 2026-09-12 at pin `e9380f4d`.
-- Cause: the controller tick's clamp (`mods/classic/controller/processor.ts:237-239`) and the level-up half-timer (`:183`) are anchored on `Game.time`, which sits one tick ahead of vanilla's `gameTime` during intent processing. The relative `+RESTORE` credit matches vanilla exactly (CTRL-DOWNGRADE-012 passes); only the absolute anchors read one tick high. Same convention as `power-creep-renew-lives-one-tick-longer`.
-- Plan: engine-side clock convention, not adapter-fixable. Flag upstream alongside the level-up gate; the two live in the same processor.
+- Cause: the controller tick's clamp (`mods/classic/controller/processor.ts:237-239`) and the level-up half-timer (`:183`) are anchored on `Game.time`, which sits one tick ahead of vanilla's `gameTime` during intent processing because the processor's `GameState` is built at `nextTime` (`engine/processor/room.ts:97-98`); the `ticksToDowngrade` getter itself is a plain `time - Game.time`. The relative `+RESTORE` credit matches vanilla exactly (CTRL-DOWNGRADE-012 passes); only the absolute anchors read one tick high. Same convention as `power-creep-renew-stamps-next-tick-age`, and the answer to that entry's open question: other processors do stamp absolute ticks the same way.
+- Plan: two-line upstream fix in the same processor, which already compensates with `- 1` on its other absolute anchors (`:61`, `:206-207`, `:258`) and is exact on the `undefined` branch at `:234`: `Game.time + CONTROLLER_DOWNGRADE[level] / 2 - 1` at `:183`, and `Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE + 1, Game.time + CONTROLLER_DOWNGRADE[level])` at `:237-239`. Bundle with the level-up gate above. Not adapter-fixable.
 
 ### harvest-not-ordered-before-upgradecontroller
 
@@ -149,7 +149,7 @@ Last refreshed: 2026-08-24 against pin `e9380f4d`.
 - Tests: POWERCREEP-RENEW-001
 - Status: CONFIRMED at pin `38ee6170`; exposed by enabling `powerCreeps`.
 - Cause: `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so intent processors run with `Game.time` already advanced to the tick the player observes next. `renew` stamping `#ageTime = Game.time + POWER_CREEP_LIFE_TIME` therefore lands one tick beyond vanilla's, which stamps against the tick being processed (`processor/intents/power-creeps/renew.js`). Observed on the tick after the renew: xxscreeps reads a full `POWER_CREEP_LIFE_TIME`, vanilla reads `POWER_CREEP_LIFE_TIME - 1`, so an xxscreeps power creep gains one extra tick of life per renew.
-- Plan: report upstream. Not adapter-fixable — both adapters seed and read the same absolute tick, so compensating would mean rewriting the observed value. Worth checking whether other intent processors stamp absolute ticks the same way before proposing a fix; this row is the only exact-value assertion in the suite that pins the convention.
+- Plan: report upstream. Not adapter-fixable — both adapters seed and read the same absolute tick, so compensating would mean rewriting the observed value. Answered 2026-09-12: the controller processor stamps its absolute anchors the same way (`controller-timer-anchors-one-tick-late` above), so the convention is engine-wide and the fix is per-anchor `- 1`, as that file already does elsewhere.
 
 ## Accepted divergences
 

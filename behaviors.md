@@ -3155,6 +3155,10 @@ Coverage Notes
   `Game.map.describeExits` maps to that neighbor.
 
 ### 16.9 Game Object Lookup & Collections
+`Game.getObjectById` and the id-keyed `Game.*` collections are global rather
+than per-room; they live here because room lookups are their nearest
+neighbors and no better section exists.
+
 - `GAME-LOOKUP-001` `behavior` `verified_vanilla`
   `Game.getObjectById` returns `null`, never throws, for an id that matches
   no object and for an `undefined` or `null` argument, while a live id
@@ -3900,7 +3904,8 @@ Coverage Notes
   other: a full creep that calls `upgradeController` then `harvest` in one
   tick drops the entire harvest on the ground first and only then spends
   `UPGRADE_CONTROLLER_POWER` per WORK from its store, so it ends the tick
-  below capacity with the whole harvest on the tile.
+  below capacity with the whole harvest, less that tick's decay, on the
+  tile.
 - `INTENT-CREEP-006` `behavior` `verified_vanilla`
   `transfer` resolves before `suicide`: a creep that calls `suicide` then
   `transfer` in one tick delivers its whole load to the target, dies, and
@@ -5076,7 +5081,7 @@ Framework Notes
 
 ## 30. CPU & Runtime
 
-Documented `Game.cpu` runtime surface. Heap and CPU metric *values* are
+Documented `Game.cpu` and console runtime surface. Heap and CPU metric *values* are
 engine-specific and deliberately excluded (see Summary non-goals); entries
 here pin the surface contract only — method presence, field shape, and
 internal consistency.

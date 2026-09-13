@@ -159,7 +159,7 @@
 			"tests": ["SPAWN-TIMING-008"]
 		},
 		"controller-level-up-ignores-downgrade-timer": {
-			"actual": "The `upgradeController` processor (`mods/classic/controller/processor.ts:174-183`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade.",
+			"actual": "The `upgradeController` processor (`mods/classic/controller/processor.ts:174-188`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade.",
 			"expected": "Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling.",
 			"why": "Engine-side missing gate, not adapter translation. Upstream fix: add the timer condition to the level-up branch. Surfaced by the coverage sweep that followed screeps-ok PRs #3-#8.",
 			"tests": ["CTRL-UPGRADE-015"]
@@ -167,7 +167,7 @@
 		"controller-timer-anchors-one-tick-late": {
 			"actual": "The controller tick (`mods/classic/controller/processor.ts:237-239`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:183`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up.",
 			"expected": "Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore.",
-			"why": "Same engine-side clock convention as `power-creep-renew-lives-one-tick-longer`: the processor's `Game.time` sits one tick ahead of vanilla's `gameTime`. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines.",
+			"why": "Same engine-side clock convention as `power-creep-renew-stamps-next-tick-age`: the processor's `GameState` is built at `nextTime` (`engine/processor/room.ts:97-98`), so `Game.time` sits one tick ahead of vanilla's `gameTime`. The same file already compensates with `- 1` on its other absolute anchors (`:61`, `:206-207`, `:258`); the two-line upstream fix is `- 1` on the level-up half-timer and moving the `1 +` inside the relative arm of the clamp. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines.",
 			"tests": ["CTRL-DOWNGRADE-013", "CTRL-UPGRADE-016"]
 		},
 		"harvest-not-ordered-before-upgradecontroller": {
