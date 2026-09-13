@@ -2048,6 +2048,19 @@ Coverage Notes
   `6.10 Structure Limits per RCL`.
 - Extension store-type semantics and capacity constants belong in section `23. Store API`.
 
+### 10.1b Spawn Energy
+- `SPAWN-REGEN-001` `behavior` `verified_vanilla`
+  A spawn holding less than `SPAWN_ENERGY_CAPACITY`, in a room whose
+  spawn-plus-extension energy total is also below `SPAWN_ENERGY_CAPACITY`,
+  gains exactly 1 energy per tick, tick after tick, and stops exactly at
+  `SPAWN_ENERGY_CAPACITY`.
+- `SPAWN-REGEN-002` `behavior` `verified_vanilla`
+  The regeneration gate is the room total, not the spawn: a spawn holding
+  100 alongside extensions holding the remaining 200 (room
+  `energyAvailable === SPAWN_ENERGY_CAPACITY`) does not regenerate at all.
+  `SPAWN-TIMING-008` relies on the trickle when reading spawn energy across
+  a cancel.
+
 ### 10.2 Storage
 Coverage Notes
 - Storage durability belongs in section `15.1 Hits & Destruction`.

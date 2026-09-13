@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2705%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2539%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-68-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2707%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2541%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-68-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2705](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 02:43 UTC |
-| 🟡 | **xxscreeps** | [2539](#xxscreeps-passing-tests) | [68](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 02:43 UTC |
+| 🟡 | **vanilla** | [2707](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 02:47 UTC |
+| 🟡 | **xxscreeps** | [2541](#xxscreeps-passing-tests) | [68](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 02:47 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -274,12 +274,12 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
 - `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
 - `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
-- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
-- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 
 </details>
 
@@ -484,7 +484,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2705 tests across 147 files</summary>
+<summary>2707 tests across 148 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2225,6 +2225,11 @@ Click a count to jump to the affected test list.
 - StructureExtension EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable
 - StructureExtension EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable
 
+**`tests/10-structures-energy/10.1b-spawn-energy.test.ts`** (2)
+
+- StructureSpawn energy regeneration SPAWN-REGEN-001 a spawn below capacity in a room below SPAWN_ENERGY_CAPACITY gains exactly 1 energy per tick until full
+- StructureSpawn energy regeneration SPAWN-REGEN-002 the gate is the room total: a spawn below capacity does not regenerate once spawns and extensions hold SPAWN_ENERGY_CAPACITY
+
 **`tests/10-structures-energy/10.3-container.test.ts`** (1)
 
 - StructureContainer CONTAINER-003 a hostile creep adjacent to a container can withdraw from it
@@ -3922,7 +3927,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2539 tests across 133 files</summary>
+<summary>2541 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5638,6 +5643,11 @@ Click a count to jump to the affected test list.
 
 - StructureExtension EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable
 - StructureExtension EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable
+
+**`tests/10-structures-energy/10.1b-spawn-energy.test.ts`** (2)
+
+- StructureSpawn energy regeneration SPAWN-REGEN-001 a spawn below capacity in a room below SPAWN_ENERGY_CAPACITY gains exactly 1 energy per tick until full
+- StructureSpawn energy regeneration SPAWN-REGEN-002 the gate is the room total: a spawn below capacity does not regenerate once spawns and extensions hold SPAWN_ENERGY_CAPACITY
 
 **`tests/10-structures-energy/10.3-container.test.ts`** (1)
 
