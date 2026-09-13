@@ -145,6 +145,12 @@
 			"expected": "Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`.",
 			"why": "Engine-side surface omission, not adapter translation. One-line upstream fix: assign the public property in the constructor.",
 			"tests": ["VISUAL-ROOM-001:roomName"]
+		},
+		"map-visual-accepts-non-roomposition": {
+			"actual": "`extractPositions` (`mods/meta/visual/visual.ts:211`) duck-types on `typeof arg.x === 'number'`: a plain `{ x, y, roomName }` object is encoded like a real position, and a number passes straight through as a coordinate, so `Game.map.visual.circle(5)` and `.text('a', { x: 1, y: 1, roomName: 'W1N1' })` draw instead of throwing. Only a missing argument throws, from `encodeRoomPosition` on `undefined`.",
+			"expected": "Vanilla's map visual `circle`, `line`, `rect`, and `text` (`game/map.js:283-343`) guard every position argument with `instanceof RoomPosition` and throw `Invalid pos, RoomPosition expected` otherwise; `poly` is unguarded on both sides.",
+			"why": "Engine-side validation omission, not adapter translation. Small upstream fix: an `instanceof RoomPosition` check in the map-visual position path. The plain-object half is arguably a leniency, but the numeric half draws at a garbage location and hides a caller bug.",
+			"tests": ["VISUAL-MAP-002"]
 		}
 	}
 }

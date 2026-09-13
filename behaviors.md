@@ -5072,6 +5072,12 @@ recovery path.
   `Game.map.visual` exposes `line`, `circle`, `rect`, `poly`, `text`,
   `clear`, `import` as functions that each return the visual for chaining,
   `getSize()` returning a number, and `export()` returning a string.
+- `VISUAL-MAP-002` `behavior` `verified_vanilla`
+  `circle`, `line`, `rect`, and `text` on `Game.map.visual` throw when a
+  position argument is not a `RoomPosition` instance — a plain
+  `{ x, y, roomName }` object, a number, or a missing argument — rather than
+  drawing at a garbage location. `poly` is exempt: it accepts position-like
+  entries.
 
 ### 31.3 RoomVisual
 - `VISUAL-ROOM-001` `behavior` `verified_vanilla`

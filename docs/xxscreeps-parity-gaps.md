@@ -32,6 +32,13 @@ Last refreshed: 2026-08-24 against pin `e9380f4d`.
 - Cause: `RoomVisual` (`mods/meta/visual/visual.ts:444`) passes the room name into its private description and the shared-state lookup but never assigns a public `roomName`, so `room.visual.roomName` reads `undefined`. Vanilla (`game/rooms.js:1146`) sets `this.roomName = roomName` and the API documents the property.
 - Plan: one-line upstream fix, assign `this.roomName` in the constructor. Not yet filed. Pairs naturally with the `clear()` fix above in one PR.
 
+### map-visual-accepts-non-roomposition
+
+- Tests: VISUAL-MAP-002
+- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`.
+- Cause: `extractPositions` (`mods/meta/visual/visual.ts:211`) duck-types position arguments on `typeof arg.x === 'number'`, so a plain `{ x, y, roomName }` is encoded like a real position and a bare number passes through as a coordinate. Vanilla (`game/map.js:283-343`) guards `circle`, `line`, `rect`, and `text` with `instanceof RoomPosition` and throws; only a missing argument throws on xxscreeps, and `poly` is unguarded on both engines.
+- Plan: add the `instanceof RoomPosition` check to the map-visual position path. The numeric case is the one that matters, since it draws at a garbage location and hides a caller bug. Not yet filed; belongs in the same upstream PR as the two visual gaps above.
+
 ### game-object-json-room-tojson-null-crash
 
 - Tests: UNDOC-JSONOBJ-001

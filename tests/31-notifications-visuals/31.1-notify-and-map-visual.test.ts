@@ -84,4 +84,34 @@ describe('Game.map.visual runtime surface', () => {
 		expect(result.size).toBe('number');
 		expect(result.exported).toBe('string');
 	});
+
+	// A map visual needs a room to draw in, so a bare x,y or a plain object is a
+	// bug in the caller; vanilla refuses it instead of drawing at nowhere.
+	test('VISUAL-MAP-002 circle, line, rect and text throw when a position argument is not a RoomPosition', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				const v = Game.map.visual;
+				const good = new RoomPosition(1, 1, 'W1N1');
+				const bad = { plain: { x: 1, y: 1, roomName: 'W1N1' }, number: 5, missing: undefined };
+				const throws = function (fn) { try { fn(); return false; } catch (e) { return true; } };
+				const out = {};
+				for (const kind in bad) {
+					const b = bad[kind];
+					out[kind] = {
+						circle: throws(function () { v.circle(b); }),
+						lineFirst: throws(function () { v.line(b, good); }),
+						lineSecond: throws(function () { v.line(good, b); }),
+						rect: throws(function () { v.rect(b, 2, 2); }),
+						text: throws(function () { v.text('a', b); }),
+					};
+				}
+				return out;
+			})()
+		`) as Record<string, Record<string, boolean>>;
+
+		const allThrow = { circle: true, lineFirst: true, lineSecond: true, rect: true, text: true };
+		expect(result).toEqual({ plain: allThrow, number: allThrow, missing: allThrow });
+	});
 });

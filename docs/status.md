@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2690%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2530%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2691%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2530%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-63-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2690](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 01:39 UTC |
-| 🟡 | **xxscreeps** | [2530](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 01:39 UTC |
+| 🟡 | **vanilla** | [2691](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 01:52 UTC |
+| 🟡 | **xxscreeps** | [2530](#xxscreeps-passing-tests) | [63](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 01:52 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 25 expected-failure classifications against vanilla's canonical behavior, covering 62 tests. That includes 20 open parity gaps covering 53 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 26 expected-failure classifications against vanilla's canonical behavior, covering 63 tests. That includes 21 open parity gaps covering 54 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -186,6 +186,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `room-getpositionat-out-of-bounds-throws` | `Room.getPositionAt` (`game/room/look.ts:133`) is a bare `new RoomPosition(xx, yy, this.name)`, and the constructor guard (`game/position.ts:79`) throws `TypeError: Invalid arguments in RoomPosition constructor` for any coordinate outside 0..49. | Vanilla `Room.prototype.getPositionAt` (`game/rooms.js:971`) returns `null` when either coordinate is outside 0..49 and only constructs a position otherwise. | [1](#xxscreeps-gap-room-getpositionat-out-of-bounds-throws) |
 | `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method. | [2](#xxscreeps-gap-map-visual-clear-returns-undefined) |
 | `room-visual-roomname-missing` | `RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`. | Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`. | [1](#xxscreeps-gap-room-visual-roomname-missing) |
+| `map-visual-accepts-non-roomposition` | `extractPositions` (`mods/meta/visual/visual.ts:211`) duck-types on `typeof arg.x === 'number'`: a plain `{ x, y, roomName }` object is encoded like a real position, and a number passes straight through as a coordinate, so `Game.map.visual.circle(5)` and `.text('a', { x: 1, y: 1, roomName: 'W1N1' })` draw instead of throwing. Only a missing argument throws, from `encodeRoomPosition` on `undefined`. | Vanilla's map visual `circle`, `line`, `rect`, and `text` (`game/map.js:283-343`) guard every position argument with `instanceof RoomPosition` and throw `Invalid pos, RoomPosition expected` otherwise; `poly` is unguarded on both sides. | [1](#xxscreeps-gap-map-visual-accepts-non-roomposition) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -362,6 +363,13 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-map-visual-accepts-non-roomposition">
+<summary><code>map-visual-accepts-non-roomposition</code> — 1 test</summary>
+
+- `Game.map.visual runtime surface VISUAL-MAP-002 circle, line, rect and text throw when a position argument is not a RoomPosition`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -443,7 +451,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2690 tests across 145 files</summary>
+<summary>2691 tests across 145 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3553,11 +3561,12 @@ Click a count to jump to the affected test list.
 - CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
 - CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
 
-**`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (3)
+**`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (4)
 
 - Game.notify runtime surface GAME-NOTIFY-001 accepts a message, an optional groupInterval, and no arguments at all
 - Game.notify runtime surface GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick
 - Game.map.visual runtime surface VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string
+- Game.map.visual runtime surface VISUAL-MAP-002 circle, line, rect and text throw when a position argument is not a RoomPosition
 
 **`tests/31-notifications-visuals/31.2-room-visual.test.ts`** (8)
 
