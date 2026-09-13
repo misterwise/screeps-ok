@@ -20,10 +20,17 @@ Last refreshed: 2026-08-24 against pin `e9380f4d`.
 
 ### map-visual-clear-returns-undefined
 
-- Tests: VISUAL-MAP-001
-- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`, surfaced by PR #5 (external contributor).
-- Cause: the shared visual class's `clear()` (`mods/meta/visual/visual.ts:397`) resets the buffer but has no `return this`, so a chained `Game.map.visual.clear().text(...)` throws. Every other drawing method returns the visual. `RoomVisual.clear()` shares the code and the bug; no room-visual row pins it yet.
+- Tests: VISUAL-MAP-001, VISUAL-ROOM-002:clear
+- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`, surfaced by PR #5 (external contributor); the room-visual row added the same day pins the shared code path.
+- Cause: the shared visual class's `clear()` (`mods/meta/visual/visual.ts:397`) resets the buffer but has no `return this`, so a chained `visual.clear().text(...)` throws for both `Game.map.visual` and `RoomVisual`. Every other drawing method returns the visual.
 - Plan: one-line upstream fix, `return this`. Not yet filed.
+
+### room-visual-roomname-missing
+
+- Tests: VISUAL-ROOM-001:roomName
+- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`.
+- Cause: `RoomVisual` (`mods/meta/visual/visual.ts:444`) passes the room name into its private description and the shared-state lookup but never assigns a public `roomName`, so `room.visual.roomName` reads `undefined`. Vanilla (`game/rooms.js:1146`) sets `this.roomName = roomName` and the API documents the property.
+- Plan: one-line upstream fix, assign `this.roomName` in the constructor. Not yet filed. Pairs naturally with the `clear()` fix above in one PR.
 
 ### game-object-json-room-tojson-null-crash
 

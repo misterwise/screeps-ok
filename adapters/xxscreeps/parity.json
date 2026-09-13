@@ -135,10 +135,16 @@
 			"tests": ["ROOM-API-001"]
 		},
 		"map-visual-clear-returns-undefined": {
-			"actual": "`clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so `Game.map.visual.clear()` (and `RoomVisual.clear()`) breaks a chained call.",
-			"expected": "Vanilla's map visual `clear` (`game/map.js:350`) and every other drawing method return the visual object for chaining.",
-			"why": "Engine-side omission, not adapter translation. One-line upstream fix: `return this`. Surfaced by the external contributor's PR #5 rows.",
-			"tests": ["VISUAL-MAP-001"]
+			"actual": "`clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call.",
+			"expected": "Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method.",
+			"why": "Engine-side omission, not adapter translation. One-line upstream fix: `return this`. Surfaced by the external contributor's PR #5 rows; the room-visual row pins the same code path.",
+			"tests": ["VISUAL-MAP-001", "VISUAL-ROOM-002:clear"]
+		},
+		"room-visual-roomname-missing": {
+			"actual": "`RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`.",
+			"expected": "Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`.",
+			"why": "Engine-side surface omission, not adapter translation. One-line upstream fix: assign the public property in the constructor.",
+			"tests": ["VISUAL-ROOM-001:roomName"]
 		}
 	}
 }

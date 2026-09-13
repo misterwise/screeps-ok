@@ -5073,6 +5073,40 @@ recovery path.
   `clear`, `import` as functions that each return the visual for chaining,
   `getSize()` returning a number, and `export()` returning a string.
 
+### 31.3 RoomVisual
+- `VISUAL-ROOM-001` `behavior` `verified_vanilla`
+  `room.visual` is a `RoomVisual` whose `roomName` is the room's name, and
+  `new RoomVisual(roomName)` constructs one for any room name, visible or
+  not. Every instance for the same room shares one per-tick buffer: a
+  drawing call through one is reflected in `getSize()` of another.
+- `VISUAL-ROOM-002` `behavior` `verified_vanilla`
+  `line`, `circle`, `rect`, `poly`, `text` accept both bare `x, y`
+  coordinates and position-like objects, and each returns the visual for
+  chaining, as do `clear` and `import`; `getSize()` returns a number and
+  `export()` returns a string.
+
+### 31.4 Size Accounting & Limits
+- `VISUAL-SIZE-001` `behavior` `verified_vanilla`
+  `getSize()` starts at 0 for the tick, grows after every drawing call, and
+  `clear()` resets it to 0. Each room and the map are accounted separately:
+  drawing in one leaves the others' `getSize()` unchanged.
+- `VISUAL-SIZE-002` `behavior` `verified_vanilla`
+  `import(export())` restores the exported drawings: after `clear()`, or on
+  a different room's visual, importing the string brings `getSize()` back to
+  the value the exporting visual reported.
+- `VISUAL-SIZE-003` `behavior` `verified_vanilla`
+  A room visual holds at most 500 KB (`500 * 1024` bytes as reported by
+  `getSize()`) per tick. The drawing call that would exceed it throws, the
+  rejected drawing is not added, and after `clear()` drawing succeeds again.
+- `VISUAL-SIZE-004` `behavior` `verified_vanilla`
+  The map visual holds at most 1000 KB (`1000 * 1024` bytes) per tick, with
+  the same throw-and-reject shape as `VISUAL-SIZE-003`.
+
+Notes
+- The bytes `getSize()` reports per drawing are engine-specific
+  serialization detail and are never pinned; only zero, growth, reset,
+  round-trip equality, and the limit bound are asserted.
+
 ---
 
 ## Summary

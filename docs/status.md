@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2682%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2524%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-60-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2690%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2530%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-62-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2682](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 00:41 UTC |
-| 🟡 | **xxscreeps** | [2524](#xxscreeps-passing-tests) | [60](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 00:40 UTC |
+| 🟡 | **vanilla** | [2690](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 01:39 UTC |
+| 🟡 | **xxscreeps** | [2530](#xxscreeps-passing-tests) | [62](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 01:39 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 60 tests. That includes 19 open parity gaps covering 51 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 25 expected-failure classifications against vanilla's canonical behavior, covering 62 tests. That includes 20 open parity gaps covering 53 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -184,7 +184,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
 | `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
 | `room-getpositionat-out-of-bounds-throws` | `Room.getPositionAt` (`game/room/look.ts:133`) is a bare `new RoomPosition(xx, yy, this.name)`, and the constructor guard (`game/position.ts:79`) throws `TypeError: Invalid arguments in RoomPosition constructor` for any coordinate outside 0..49. | Vanilla `Room.prototype.getPositionAt` (`game/rooms.js:971`) returns `null` when either coordinate is outside 0..49 and only constructs a position otherwise. | [1](#xxscreeps-gap-room-getpositionat-out-of-bounds-throws) |
-| `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so `Game.map.visual.clear()` (and `RoomVisual.clear()`) breaks a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and every other drawing method return the visual object for chaining. | [1](#xxscreeps-gap-map-visual-clear-returns-undefined) |
+| `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method. | [2](#xxscreeps-gap-map-visual-clear-returns-undefined) |
+| `room-visual-roomname-missing` | `RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`. | Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`. | [1](#xxscreeps-gap-room-visual-roomname-missing) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -347,9 +348,17 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-map-visual-clear-returns-undefined">
-<summary><code>map-visual-clear-returns-undefined</code> — 1 test</summary>
+<summary><code>map-visual-clear-returns-undefined</code> — 2 tests</summary>
 
 - `Game.map.visual runtime surface VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string`
+- `RoomVisual runtime surface VISUAL-ROOM-002:clear clear() returns the visual`
+
+</details>
+
+<details id="xxscreeps-gap-room-visual-roomname-missing">
+<summary><code>room-visual-roomname-missing</code> — 1 test</summary>
+
+- `RoomVisual runtime surface VISUAL-ROOM-001:roomName room.visual is a RoomVisual for that room and the constructor works for any room name`
 
 </details>
 
@@ -434,7 +443,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2682 tests across 144 files</summary>
+<summary>2690 tests across 145 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -3550,6 +3559,17 @@ Click a count to jump to the affected test list.
 - Game.notify runtime surface GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick
 - Game.map.visual runtime surface VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string
 
+**`tests/31-notifications-visuals/31.2-room-visual.test.ts`** (8)
+
+- RoomVisual runtime surface VISUAL-ROOM-001:roomName room.visual is a RoomVisual for that room and the constructor works for any room name
+- RoomVisual runtime surface VISUAL-ROOM-001:sharedBuffer instances for the same room share one buffer
+- RoomVisual runtime surface VISUAL-ROOM-002:draw drawing calls accept x,y and position forms and return the visual
+- RoomVisual runtime surface VISUAL-ROOM-002:clear clear() returns the visual
+- Visual size accounting and limits VISUAL-SIZE-001 getSize starts at 0, grows per drawing, resets on clear, and is per room and per map
+- Visual size accounting and limits VISUAL-SIZE-002 import(export()) restores the same getSize in the same visual and in another room
+- Visual size accounting and limits VISUAL-SIZE-003 a room visual rejects the drawing that would exceed 500 KB and recovers after clear
+- Visual size accounting and limits VISUAL-SIZE-004 the map visual rejects the drawing that would exceed 1000 KB and recovers after clear
+
 </details>
 
 ## xxscreeps skipped tests
@@ -3840,7 +3860,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2524 tests across 130 files</summary>
+<summary>2530 tests across 131 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6755,6 +6775,15 @@ Click a count to jump to the affected test list.
 
 - Game.notify runtime surface GAME-NOTIFY-001 accepts a message, an optional groupInterval, and no arguments at all
 - Game.notify runtime surface GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick
+
+**`tests/31-notifications-visuals/31.2-room-visual.test.ts`** (6)
+
+- RoomVisual runtime surface VISUAL-ROOM-001:sharedBuffer instances for the same room share one buffer
+- RoomVisual runtime surface VISUAL-ROOM-002:draw drawing calls accept x,y and position forms and return the visual
+- Visual size accounting and limits VISUAL-SIZE-001 getSize starts at 0, grows per drawing, resets on clear, and is per room and per map
+- Visual size accounting and limits VISUAL-SIZE-002 import(export()) restores the same getSize in the same visual and in another room
+- Visual size accounting and limits VISUAL-SIZE-003 a room visual rejects the drawing that would exceed 500 KB and recovers after clear
+- Visual size accounting and limits VISUAL-SIZE-004 the map visual rejects the drawing that would exceed 1000 KB and recovers after clear
 
 </details>
 
