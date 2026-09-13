@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2672](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-12 23:56 UTC |
-| 🟡 | **xxscreeps** | [2516](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-12 23:56 UTC |
+| 🟡 | **vanilla** | [2672](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 00:30 UTC |
+| 🟡 | **xxscreeps** | [2516](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 00:30 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -266,12 +266,12 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn ATTACK-NOTIFY-002 creep notifyWhenAttacked() changes next-tick getter state`
 - `StructureSpawn ATTACK-NOTIFY-003 spawnCreep notifyWhenAttacked option sets initial creep state`
 - `StructureSpawn ATTACK-NOTIFY-004 notifiesWhenAttacked() returns ERR_BUSY for spawning creeps and ERR_NOT_OWNER for unowned creeps`
-- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
-- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK with valid boolean argument and updates getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-001 structure and spawn notifiesWhenAttacked() return current boolean state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-002 structure notifyWhenAttacked() changes next-tick getter state`
 - `structure.notifyWhenAttacked() ATTACK-NOTIFY-004 invalid structure notifiesWhenAttacked() returns ERR_INVALID_TARGET`
+- `Power creep lifecycle ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state`
+- `Power creep lifecycle ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state`
 
 </details>
 

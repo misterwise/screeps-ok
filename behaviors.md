@@ -4806,10 +4806,11 @@ Framework Notes
   emission is itself the gameplay-adjacent observable; any future
   verification path should be narrowly scoped to this section rather
   than lifted as a general pattern.
-- `Game.notify()` is deliberately excluded from the catalog as a
-  side-effect API (see Summary). Deprecation notices are distinct:
-  emission is engine-mandated and deterministic given the triggering
-  call, not a user-controlled notification.
+- `Game.notify()` is split by the Summary scope rule: its return codes and
+  per-tick intent cap are catalog surface, its delivery is not. Deprecation
+  notices are distinct from both halves: emission is engine-mandated and
+  deterministic given the triggering call, not a user-controlled
+  notification.
 
 ---
 
@@ -5020,10 +5021,28 @@ Notes
 Coverage counts are temporarily omitted. The facet and behavior totals need to
 be recomputed after the current normalization pass is complete.
 
-### Deliberately excluded (per spec.md non-goals):
-- CPU/heap metric values (engine-specific numbers; the surface contract —
-  method presence, field shape, internal consistency — is in scope, see §30)
+### Scope rule: runtime surface in, out-of-band effects out
+
+The catalog line is observability from player code, not gameplay effect. An
+API whose *effect* leaves the runtime (an email, a rendered pixel, a metric
+sampled from the host) still has a *runtime surface* that player code sees:
+method presence, argument validation, return codes, per-tick caps, size
+accounting, chainability, export/import round-trips. That surface is in
+scope and is pinned the same way as any other entry. Only the out-of-band
+half is excluded, because the harness cannot observe it and a test that
+cannot observe an outcome is not a test (`docs/test-authoring.md` §1, §10).
+
+§30 applies this split to `Game.cpu`; `Game.notify` and the visual APIs
+follow the same rule.
+
+### Deliberately excluded
+- CPU/heap metric *values* (engine-specific numbers; the surface contract is
+  in scope, see §30)
+- Notification *delivery* for `Game.notify()` (email transport, grouping
+  windows, recipient); the intent surface — return codes and the per-tick cap
+  — is in scope
+- Visual *rendering* for `RoomVisual` / `MapVisual` (what the client draws);
+  the runtime surface — chainable methods, argument validation, `getSize`
+  accounting and limits, `export`/`import` — is in scope
 - Seasonal/event-specific scoring
 - Server administration (auth, scaling)
-- Visual APIs (RoomVisual, MapVisual) — no gameplay effect
-- `Game.notify()` — side effect, not gameplay

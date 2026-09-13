@@ -38,6 +38,15 @@ test. In particular:
 - do not treat a dependency bundled with one implementation as the source of
   truth for another implementation
 - do use the checked-in canonical constants exported by `src/constants.ts`
+
+Some APIs have an effect that leaves the runtime: `Game.notify` sends an
+email, `RoomVisual` / `MapVisual` draw in the client, `Game.cpu` samples the
+host. The effect is out of scope because no test can observe it. The runtime
+surface is in scope and is tested like anything else: method presence,
+argument validation, return codes, per-tick caps, size accounting,
+chainability, and `export`/`import` round-trips. Write the entry against the
+surface and never against the effect (see the scope rule in the
+`behaviors.md` Summary).
   and the checked-in matrix definitions under `src/matrices/`
 
 Do not assert:
