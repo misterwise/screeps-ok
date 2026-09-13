@@ -151,6 +151,30 @@
 			"expected": "Vanilla's map visual `circle`, `line`, `rect`, and `text` (`game/map.js:283-343`) guard every position argument with `instanceof RoomPosition` and throw `Invalid pos, RoomPosition expected` otherwise; `poly` is unguarded on both sides.",
 			"why": "Engine-side validation omission, not adapter translation. Small upstream fix: an `instanceof RoomPosition` check in the map-visual position path. The plain-object half is arguably a leniency, but the numeric half draws at a garbage location and hides a caller bug.",
 			"tests": ["VISUAL-MAP-002"]
+		},
+		"spawning-cancel-returns-undefined": {
+			"actual": "`StructureSpawn.Spawning.cancel()` (`mods/classic/spawn/spawn.ts:60-64`) runs `chainIntentChecks(...)` without returning its result, so the call evaluates to `undefined`. The `cancelSpawning` intent is still saved and the cancel itself takes effect next tick.",
+			"expected": "Vanilla `game/structures.js:1327-1333` returns `OK` after setting the `cancelSpawning` intent, and `ERR_NOT_OWNER` for a foreign spawn.",
+			"why": "Engine-side omission, not adapter translation. One-line upstream fix: `return chainIntentChecks(...)`. A bot that checks `cancel() === OK` reads every cancel as failed.",
+			"tests": ["SPAWN-TIMING-008"]
+		},
+		"controller-level-up-ignores-downgrade-timer": {
+			"actual": "The `upgradeController` processor (`mods/classic/controller/processor.ts:174-183`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade.",
+			"expected": "Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling.",
+			"why": "Engine-side missing gate, not adapter translation. Upstream fix: add the timer condition to the level-up branch. Surfaced by the coverage sweep that followed screeps-ok PRs #3-#8.",
+			"tests": ["CTRL-UPGRADE-015"]
+		},
+		"controller-timer-anchors-one-tick-late": {
+			"actual": "The controller tick (`mods/classic/controller/processor.ts:237-239`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:183`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up.",
+			"expected": "Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore.",
+			"why": "Same engine-side clock convention as `power-creep-renew-lives-one-tick-longer`: the processor's `Game.time` sits one tick ahead of vanilla's `gameTime`. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines.",
+			"tests": ["CTRL-DOWNGRADE-013", "CTRL-UPGRADE-016"]
+		},
+		"harvest-not-ordered-before-upgradecontroller": {
+			"actual": "Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:154`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground.",
+			"expected": "Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`.",
+			"why": "Engine-side ordering gap, not adapter translation. Upstream fix: `after: 'harvest'` on the `upgradeController` processor, or the equivalent `before` on `harvest`.",
+			"tests": ["INTENT-CREEP-005"]
 		}
 	}
 }

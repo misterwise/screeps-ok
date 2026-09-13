@@ -6,7 +6,7 @@
  * because the classes persist with the VM — survive tick boundaries even
  * though per-tick instances are discarded (UNDOC-IDENTITY-005).
  */
-import { describe, test, expect, code, OK, MOVE, CARRY, WORK, TOP } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, WORK, TOP, STRUCTURE_SPAWN } from '../../src/index.js';
 
 describe('Undocumented API Surface — player prototype extensions', () => {
 	test('UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick', async ({ shard }) => {
@@ -133,5 +133,78 @@ describe('Undocumented API Surface — player prototype extensions', () => {
 		expect(result.captured).toBe(true);
 		expect(result.calls).toBe(1);
 		expect(result.rc).toBe(OK);
+	});
+
+	// UNDOC-PROTO-004 pins the shape for Creep. Bots wrap RoomPosition, Room and
+	// the structure classes just as heavily, and an engine that marshals
+	// positions or rooms as plain objects would pass the Creep row.
+	test('UNDOC-PROTO-006 rooms, positions and spawns expose no own method properties and inherit from their class prototypes', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				function ownMethods(o) {
+					return Object.getOwnPropertyNames(o)
+						.filter(function (k) { return typeof o[k] === 'function'; });
+				}
+				const room = Game.rooms['W1N1'];
+				const pos = new RoomPosition(10, 10, 'W1N1');
+				const spawn = Game.getObjectById(${spawnId});
+				return {
+					room: ownMethods(room),
+					pos: ownMethods(pos),
+					spawn: ownMethods(spawn),
+					roomInherited: room.find === Room.prototype.find,
+					posInherited: pos.getRangeTo === RoomPosition.prototype.getRangeTo,
+					spawnInherited: spawn.spawnCreep === StructureSpawn.prototype.spawnCreep,
+				};
+			})()
+		`) as { room: string[]; pos: string[]; spawn: string[]; roomInherited: boolean; posInherited: boolean; spawnInherited: boolean };
+
+		expect(result).toEqual({
+			room: [], pos: [], spawn: [],
+			roomInherited: true, posInherited: true, spawnInherited: true,
+		});
+	});
+
+	test('UNDOC-PROTO-007 a spawn is an instance of the whole structure chain and a RoomPosition prototype wrapper is the method that runs', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const spawnId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				const spawn = Game.getObjectById(${spawnId});
+				const native = RoomPosition.prototype.getRangeTo;
+				let calls = 0;
+				RoomPosition.prototype.getRangeTo = function () {
+					calls++;
+					return native.apply(this, arguments);
+				};
+				const range = spawn.pos.getRangeTo(new RoomPosition(28, 25, 'W1N1'));
+				RoomPosition.prototype.getRangeTo = native;
+				return {
+					chain: [
+						spawn instanceof StructureSpawn,
+						spawn instanceof OwnedStructure,
+						spawn instanceof Structure,
+						spawn instanceof RoomObject,
+						spawn.pos instanceof RoomPosition,
+					],
+					calls: calls,
+					range: range,
+				};
+			})()
+		`) as { chain: boolean[]; calls: number; range: number };
+
+		expect(result.chain).toEqual([true, true, true, true, true]);
+		expect(result.calls).toBe(1);
+		expect(result.range).toBe(3);
 	});
 });

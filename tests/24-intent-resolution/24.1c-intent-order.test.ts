@@ -1,7 +1,7 @@
 import { describe, test, expect, code, type ContainerSnapshot,
-	WORK, CARRY, MOVE,
-	HARVEST_POWER, CARRY_CAPACITY, RESOURCE_ENERGY,
-	STRUCTURE_CONTAINER, FIND_DROPPED_RESOURCES,
+	OK, WORK, CARRY, MOVE,
+	HARVEST_POWER, CARRY_CAPACITY, UPGRADE_CONTROLLER_POWER, RESOURCE_ENERGY,
+	STRUCTURE_CONTAINER, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
 } from '../../src/index.js';
 
 // A creep's actions resolve in the engine's own fixed order
@@ -75,5 +75,78 @@ describe('Intent creep resolution order', () => {
 		expect((cont as ContainerSnapshot).store?.energy).toBe(CARRY_CAPACITY);
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		expect(drops.filter(d => d.resourceType === RESOURCE_ENERGY).length).toBe(0);
+	});
+
+	// The mirror image: the refill resolves BEFORE the spend. `harvest` sits ahead
+	// of `upgradeController` in the engine order and neither blocks the other, so
+	// a full creep harvesting and upgrading in one tick overflows the whole
+	// harvest onto the ground first and only then spends on the upgrade.
+	test('INTENT-CREEP-005 harvest resolves before upgradeController even when upgradeController is called first', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y], owner: 'p1',
+			body: [WORK, WORK, CARRY, MOVE],
+			store: { energy: CARRY_CAPACITY },
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [ctrlPos!.x, ctrlPos!.y + 1], energy: 3000, energyCapacity: 3000,
+		});
+		await shard.tick();
+
+		const rcs = await shard.runPlayer('p1', code`
+			const c = Game.getObjectById(${creepId});
+			[
+				c.upgradeController(Game.rooms['W1N1'].controller),
+				c.harvest(Game.getObjectById(${srcId})),
+			]
+		`);
+		expect(rcs).toEqual([OK, OK]);
+
+		// Harvest first: the store is still full, so the whole harvest drops.
+		// Then the upgrade spends from the store. Spend-first would leave the
+		// store full and drop only the excess.
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER);
+		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		const energy = drops.filter(d => d.resourceType === RESOURCE_ENERGY);
+		expect(energy.length).toBe(1);
+		expect(energy[0].amount).toBeLessThanOrEqual(2 * HARVEST_POWER);
+		expect(energy[0].amount).toBeGreaterThan(2 * HARVEST_POWER - 2);
+	});
+
+	// `transfer` resolves before `suicide`: the dump-then-die idiom lands the
+	// load in the target, not in the tombstone.
+	test('INTENT-CREEP-006 transfer resolves before suicide even when suicide is called first', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', name: 'dumper',
+			body: [CARRY, MOVE],
+			store: { energy: CARRY_CAPACITY },
+		});
+		const contId = await shard.placeStructure('W1N1', {
+			pos: [26, 25], structureType: STRUCTURE_CONTAINER,
+			store: { energy: 0 },
+		});
+		await shard.tick();
+
+		const rcs = await shard.runPlayer('p1', code`
+			const c = Game.getObjectById(${creepId});
+			[
+				c.suicide(),
+				c.transfer(Game.getObjectById(${contId}), RESOURCE_ENERGY),
+			]
+		`);
+		expect(rcs).toEqual([OK, OK]);
+
+		// The whole load reached the container. The tombstone holds only the
+		// body's corpse energy (processor/intents/creeps/_die.js), never the load.
+		expect(await shard.getObject(creepId)).toBeNull();
+		const cont = await shard.expectObject(contId, 'structure');
+		expect((cont as ContainerSnapshot).store?.energy).toBe(CARRY_CAPACITY);
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		expect(tombstones.length).toBe(1);
+		expect(tombstones[0].creepName).toBe('dumper');
+		expect(tombstones[0].store.energy ?? 0).toBeLessThan(CARRY_CAPACITY);
 	});
 });

@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, ERR_INVALID_TARGET,
 	WORK, CARRY, MOVE, CLAIM, UPGRADE_CONTROLLER_POWER,
 	CONTROLLER_LEVELS, CONTROLLER_MAX_UPGRADE_PER_TICK,
-	CONTROLLER_NUKE_BLOCKED_UPGRADE,
+	CONTROLLER_NUKE_BLOCKED_UPGRADE, CONTROLLER_DOWNGRADE, CONTROLLER_DOWNGRADE_RESTORE,
 	EVENT_UPGRADE_CONTROLLER,
 } from '../../src/index.js';
 import { body } from '../../src/helpers/body.js';
@@ -341,6 +341,75 @@ describe('creep.upgradeController()', () => {
 		// progress after advance is the overflow past the L1 threshold (0 or small).
 		expect(result.progress).toBeGreaterThanOrEqual(0);
 		expect(result.progress).toBeLessThan(CONTROLLER_LEVELS[1]);
+	});
+
+	test('CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold', async ({ shard }) => {
+		// Engine upgradeController.js:63-64 gates the level-up on
+		// downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level].
+		// When the gate fails, progress keeps accumulating past the threshold. Bots
+		// see a controller stuck at RCL 1 with progress > 200 and no explanation.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', ticksToDowngrade: 500 }],
+		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: body(25, WORK, CARRY, MOVE),
+			store: { energy: 500 },
+		});
+		await shard.tick();
+
+		// 9 upgrades of 25 = 225 progress, past the RCL 1 threshold of 200, while
+		// the timer only climbs from ~500 to ~1400: nowhere near 20000 - 100.
+		for (let i = 0; i < 9; i++) {
+			await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgradeController(
+					Game.rooms['W1N1'].controller
+				)
+			`);
+		}
+
+		const result = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			progress: Game.rooms['W1N1'].controller.progress,
+			ttd: Game.rooms['W1N1'].controller.ticksToDowngrade,
+		})`) as { level: number; progress: number; ttd: number };
+		expect(result.level).toBe(1);
+		expect(result.progress).toBe(9 * 25 * UPGRADE_CONTROLLER_POWER);
+		expect(result.ttd).toBeLessThan(CONTROLLER_DOWNGRADE[1] - CONTROLLER_DOWNGRADE_RESTORE);
+	});
+
+	test('CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick\'s restore', async ({ shard }) => {
+		// Engine upgradeController.js:68 sets downgradeTime = gameTime +
+		// CONTROLLER_DOWNGRADE[newLevel] / 2 on level-up; the controller's own tick
+		// (controllers/tick.js:38-42) then applies the ordinary upgraded-tick
+		// restore on top, so the next read is half the ceiling + RESTORE.
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: body(25, WORK, CARRY, MOVE),
+			store: { energy: 500 },
+		});
+		await shard.tick();
+
+		for (let i = 0; i < 8; i++) {
+			await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgradeController(
+					Game.rooms['W1N1'].controller
+				)
+			`);
+		}
+
+		const result = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			ttd: Game.rooms['W1N1'].controller.ticksToDowngrade,
+		})`) as { level: number; ttd: number };
+		expect(result.level).toBe(2);
+		expect(result.ttd).toBe(CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE);
 	});
 
 	test('CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event', async ({ shard }) => {

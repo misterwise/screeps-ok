@@ -1,7 +1,8 @@
 import { describe, test, expect, code, body,
 	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS, ERR_NOT_OWNER,
 	WORK, CARRY, MOVE, CLAIM,
-	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES,
+	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES, FIND_MY_CONSTRUCTION_SITES,
+	FIND_MY_STRUCTURES, FIND_MY_SPAWNS, LOOK_STRUCTURES,
 	STRUCTURE_ROAD, STRUCTURE_TOWER, STRUCTURE_EXTENSION, STRUCTURE_SPAWN,
 	STRUCTURE_CONTAINER, STRUCTURE_WALL, TERRAIN_WALL,
 	TERRAIN_PLAIN,
@@ -609,4 +610,44 @@ describe('room.createConstructionSite()', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
+
+	// A site carries the built structure's structureType, so an engine that keys
+	// its structure collections on that field hands the bot a site with no store,
+	// no isActive, no spawnCreep. Every structure-scoped lookup must exclude it.
+	test('CONSTRUCTION-SITE-019 a construction site never surfaces through a structure-scoped lookup', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		await shard.placeSite('W1N1', { pos: [25, 25], owner: 'p1', structureType: STRUCTURE_SPAWN, name: 'SiteSpawn' });
+		await shard.placeSite('W1N1', { pos: [26, 25], owner: 'p1', structureType: STRUCTURE_EXTENSION });
+		await shard.tick();
+
+		// The room's controller is itself a structure, so count only the two
+		// types the sites impersonate.
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				const rm = Game.rooms['W1N1'];
+				const lookalike = function (s) {
+					return s.structureType === ${STRUCTURE_SPAWN} || s.structureType === ${STRUCTURE_EXTENSION};
+				};
+				return {
+					sites: rm.find(${FIND_MY_CONSTRUCTION_SITES}).length,
+					structures: rm.find(${FIND_STRUCTURES}, { filter: lookalike }).length,
+					myStructures: rm.find(${FIND_MY_STRUCTURES}, { filter: lookalike }).length,
+					mySpawns: rm.find(${FIND_MY_SPAWNS}).length,
+					lookStructures: rm.lookForAt(${LOOK_STRUCTURES}, 25, 25).length,
+					gameStructures: Object.values(Game.structures).filter(lookalike).length,
+					gameSpawn: typeof Game.spawns['SiteSpawn'],
+				};
+			})()
+		`) as Record<string, number | string>;
+
+		expect(result).toEqual({
+			sites: 2,
+			structures: 0,
+			myStructures: 0,
+			mySpawns: 0,
+			lookStructures: 0,
+			gameStructures: 0,
+			gameSpawn: 'undefined',
+		});
+	});
 });

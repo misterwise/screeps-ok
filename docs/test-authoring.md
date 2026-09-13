@@ -223,6 +223,38 @@ Do not use a matrix only to hide unclear scope. If the applicability set is not
 stable, keep the catalog item as `needs_vanilla_verification` or a note until
 the family is explicit.
 
+## Write From the Idiom, Not Only the Method
+
+Every gap a real bot has found in this suite passed a test that called the
+method directly with valid arguments. The bot reached the same API through an
+idiom the method-shaped test never exercised. When a new entry is written for
+a method, check the entry against how bots actually reach it:
+
+- **Wrapped natives.** `const orig = Creep.prototype.x; Creep.prototype.x =
+  function () { … orig.apply(this, arguments) }`. Fails silently if the
+  method is an own property (`UNDOC-PROTO-004`..`007`).
+- **Stale references.** Ids and names read back out of `Memory` that no
+  longer resolve (`GAME-LOOKUP-001`, section 27.12-27.13).
+- **Empty-state comparisons.** `store[RESOURCE] === 0`, `!room.storage`,
+  `spawn.spawning === null` on objects that have never held the key or the
+  structure (`STORE-ACCESS-001`, `ROOM-STRUCTURE-002`).
+- **Lookalikes.** A construction site carries the built structure's
+  `structureType`; a tombstone or ruin carries a `store`. Any lookup keyed on
+  the shared field must exclude the lookalike (`CONSTRUCTION-SITE-019`,
+  `ROOM-ENERGY-004`).
+- **Same-tick call order.** Bots call intents in whatever order their logic
+  produces; the engine resolves them in its own fixed order
+  (`INTENT-CREEP-004`..`006`).
+- **Budgets and caps.** A right answer at the wrong cost (`ops` against
+  `maxOps`, `PATHFINDER-021`..`023`), and a cap that rejects versus one that
+  clamps (`CTRL-RESERVE-010`, `CTRL-DOWNGRADE-013`).
+- **Recovery paths.** `Game.notify`, `console.log`, and cancel/clear calls
+  run from inside error handlers, so a missing or non-returning surface
+  takes down the handler (section 31, `CONSOLE-001`, `SPAWN-TIMING-008`).
+
+If the entry only survives the direct call, add the idiom-shaped row next to
+it rather than widening the existing one.
+
 ## Review Checklist
 
 Before a canonical test is accepted, it should be possible to answer “yes” to

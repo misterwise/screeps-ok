@@ -2,7 +2,7 @@ import {
 	describe, test, expect, code, OK,
 	MOVE, CARRY,
 	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES,
-	FIND_SOURCES, FIND_SOURCES_ACTIVE,
+	FIND_SOURCES, FIND_SOURCES_ACTIVE, FIND_MY_CONSTRUCTION_SITES,
 	LOOK_CREEPS,
 	STRUCTURE_EXTENSION, STRUCTURE_FACTORY, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_WALL,
 	RESOURCE_ENERGY,
@@ -238,6 +238,34 @@ describe('room energy tracking', () => {
 		expect(result.ownEnergy).toBeGreaterThan(0);
 		expect(result.hostileEnergy).toBeGreaterThan(0);
 		expect(result.hostileCapacity).toBeGreaterThan(0);
+	});
+
+	// A spawn or extension construction site carries the same structureType as
+	// the built structure. Bots size spawn bodies from energyCapacityAvailable, so
+	// a site counted in leaves every spawnCreep at ERR_NOT_ENOUGH_ENERGY.
+	test('ROOM-ENERGY-004 spawn and extension construction sites contribute nothing to the room energy sums', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			store: { energy: 20 },
+		});
+		await shard.placeSite('W1N1', { pos: [26, 25], owner: 'p1', structureType: STRUCTURE_EXTENSION });
+		await shard.placeSite('W1N1', { pos: [27, 25], owner: 'p1', structureType: STRUCTURE_SPAWN, name: 'SiteSpawn' });
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			({
+				sites: Game.rooms['W1N1'].find(${FIND_MY_CONSTRUCTION_SITES}).length,
+				energyAvailable: Game.rooms['W1N1'].energyAvailable,
+				energyCapacityAvailable: Game.rooms['W1N1'].energyCapacityAvailable,
+			})
+		`) as { sites: number; energyAvailable: number; energyCapacityAvailable: number };
+
+		expect(result).toEqual({
+			sites: 2,
+			energyAvailable: 20,
+			energyCapacityAvailable: EXTENSION_ENERGY_CAPACITY[2],
+		});
 	});
 });
 

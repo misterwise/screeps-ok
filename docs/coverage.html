@@ -58,8 +58,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">1117</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1110</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">1131</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">1124</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">5</div><div class="label">feasible untested</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
@@ -99,14 +99,14 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="5. Construction &amp; Repair">5. Construction &amp; Repair</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">48/48</span>
+    <span class="bar-text">49/49</span>
   </div>
 </div>
 <div class="bar-row">
   <span class="bar-label" title="6. Controller">6. Controller</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">73/73</span>
+    <span class="bar-text">77/77</span>
   </div>
 </div>
 <div class="bar-row">
@@ -127,7 +127,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="9. Spawning &amp; Creep Lifecycle">9. Spawning &amp; Creep Lifecycle</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">75/75</span>
+    <span class="bar-text">76/76</span>
   </div>
 </div>
 <div class="bar-row">
@@ -176,7 +176,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="16. Room Mechanics">16. Room Mechanics</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">70/70</span>
+    <span class="bar-text">73/73</span>
   </div>
 </div>
 <div class="bar-row">
@@ -232,7 +232,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="24. Intent Resolution">24. Intent Resolution</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">12/12</span>
+    <span class="bar-text">14/14</span>
   </div>
 </div>
 <div class="bar-row">
@@ -253,7 +253,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="27. Undocumented API Surface">27. Undocumented API Surface</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:99%;background:var(--yellow)"></div>
-    <span class="bar-text">67/68</span>
+    <span class="bar-text">69/70</span>
   </div>
 </div>
 <div class="bar-row">
@@ -273,8 +273,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="30. CPU &amp; Runtime">30. CPU &amp; Runtime</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:75%;background:var(--yellow)"></div>
-    <span class="bar-text">3/4</span>
+    <div class="bar-fill" style="width:80%;background:var(--yellow)"></div>
+    <span class="bar-text">4/5</span>
   </div>
 </div>
 <div class="bar-row">
@@ -2514,6 +2514,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/05-construction-repair/5.5-my-construction-sites.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>CONSTRUCTION-SITE-019</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>5. Construction &amp; Repair</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>CTRL-CLAIM-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
@@ -2865,6 +2874,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/06-controller/6.4-upgrade.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-015</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.4-upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-UPGRADE-016</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.4-upgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>CTRL-SIGN-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
@@ -3028,6 +3055,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>CTRL-DOWNGRADE-011</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-012</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>6. Controller</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/06-controller/6.7-downgrade.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CTRL-DOWNGRADE-013</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>6. Controller</td>
   <td>behavior</td>
@@ -4504,6 +4549,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SPAWN-TIMING-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>9. Spawning &amp; Creep Lifecycle</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/09-spawning-lifecycle/9.2-duration-direction.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>SPAWN-TIMING-008</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
   <td>behavior</td>
@@ -6627,6 +6681,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/16-room-mechanics/16.3b-game-api.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>ROOM-ENERGY-004</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/16-room-mechanics/16.3b-game-api.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>ROOM-FIND-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>16. Room Mechanics</td>
@@ -7192,6 +7255,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/16-room-mechanics/16.8-room-helpers.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>GAME-LOOKUP-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/16-room-mechanics/16.9-game-collections.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>GAME-STRUCTURES-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>16. Room Mechanics</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/16-room-mechanics/16.9-game-collections.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>SOURCE-REGEN-001</code></td>
@@ -8850,6 +8931,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/24-intent-resolution/24.1c-intent-order.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-005</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/24-intent-resolution/24.1c-intent-order.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>INTENT-CREEP-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>24. Intent Resolution</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/24-intent-resolution/24.1c-intent-order.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>INTENT-RESOURCE-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>24. Intent Resolution</td>
@@ -9993,6 +10092,24 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-PROTO-006</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>UNDOC-PROTO-007</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>27. Undocumented API Surface</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/27-undocumented/27.15-prototype-extensions.test.ts</small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
   <td><code>DEPRECATED-MAP-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>28. Deprecation Notices</td>
@@ -10261,6 +10378,15 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>needs_vanilla_verification</td>
   <td></td>
   <td><small></small></td>
+</tr>
+<tr data-status="tested" data-blocker="">
+  <td><code>CONSOLE-001</code></td>
+  <td><span class="badge badge-green">tested</span></td>
+  <td>30. CPU &amp; Runtime</td>
+  <td>behavior</td>
+  <td>verified_vanilla</td>
+  <td></td>
+  <td><small>tests/30-cpu-runtime/30.4-console.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>GAME-NOTIFY-001</code></td>

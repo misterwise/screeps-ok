@@ -954,6 +954,13 @@ Coverage Notes
   global `Game.constructionSites` id-keyed collection. Distinct from
   `CONSTRUCTION-SITE-001`, which covers placement via the unscoped
   `FIND_CONSTRUCTION_SITES`.
+- `CONSTRUCTION-SITE-019` `behavior` `verified_vanilla`
+  A construction site never surfaces through a structure-scoped lookup even
+  though it carries the built structure's `structureType`: with a named
+  spawn site and an extension site in the room, `FIND_STRUCTURES`,
+  `FIND_MY_STRUCTURES`, `FIND_MY_SPAWNS`, `lookForAt(LOOK_STRUCTURES)`,
+  `Game.structures`, and `Game.spawns[name]` all exclude them, and only
+  `FIND_MY_CONSTRUCTION_SITES` returns them.
 
 Coverage Notes
 - Stale cached `ConstructionSite.remove()` receiver behavior is owned by
@@ -1100,6 +1107,17 @@ Coverage Notes
   `ERR_NOT_ENOUGH_RESOURCES`; controller `progress` is unchanged and no
   `EVENT_UPGRADE_CONTROLLER` is emitted. Fences the `undefined <= 0`
   coercion bypass that would otherwise produce `NaN` progress.
+- `CTRL-UPGRADE-015` `behavior` `verified_vanilla`
+  A level-up is gated on the downgrade timer: when `ticksToDowngrade` is
+  more than `CONTROLLER_DOWNGRADE_RESTORE` below `CONTROLLER_DOWNGRADE[level]`,
+  progress crossing the threshold does not advance the level. Progress
+  keeps accumulating past the threshold (an RCL 1 controller seeded at 500
+  ticks reads level 1 with progress 225 after nine 25-progress upgrades).
+- `CTRL-UPGRADE-016` `behavior` `verified_vanilla`
+  A level-up sets `ticksToDowngrade` to half the new level's ceiling, and
+  the upgrading tick's ordinary restore applies on top: the first read
+  after reaching RCL 2 is `CONTROLLER_DOWNGRADE[2] / 2 +
+  CONTROLLER_DOWNGRADE_RESTORE`.
 
 Coverage Notes
 - Upgrade boost magnitudes and zero-extra-cost are owned by
@@ -1164,6 +1182,16 @@ Coverage Notes
 - `CTRL-DOWNGRADE-011` `behavior` `verified_vanilla`
   A downgrade that reaches level 0 resets `isPowerEnabled` to false on a
   previously power-enabled room.
+- `CTRL-DOWNGRADE-012` `behavior` `verified_vanilla`
+  Each tick in which the controller is upgraded credits exactly
+  `CONTROLLER_DOWNGRADE_RESTORE` (100) to `ticksToDowngrade` net of that
+  tick's own decay: sampled once per upgrading tick from a timer well
+  inside its range, the reads rise by exactly 100 per tick. Narrows
+  `CTRL-DOWNGRADE-003`, which only claims the timer moves.
+- `CTRL-DOWNGRADE-013` `behavior` `verified_vanilla`
+  The restore is clamped at the level ceiling: an upgrading tick that would
+  carry `ticksToDowngrade` past `CONTROLLER_DOWNGRADE[level]` lands it
+  exactly on the ceiling, and further upgrading ticks hold it there.
 
 Coverage Notes
 - Structures becoming inactive above the RCL limit is owned by
@@ -1807,6 +1835,10 @@ Coverage Notes
   directions wholesale: a subsequent read of `spawn.spawning.directions`
   returns exactly `dirs`, regardless of how many directions were supplied
   to the original `spawnCreep()` or to prior `setDirections()` calls.
+- `SPAWN-TIMING-008` `behavior` `verified_vanilla`
+  `StructureSpawn.Spawning.cancel()` returns `OK`; on the next tick
+  `spawn.spawning` is `null`, the creep never appears in `Game.creeps`,
+  and the energy spent to start the spawn is not refunded.
 
 ### 9.3 Spawn Stomping
 - `SPAWN-STOMP-001` `behavior` `verified_vanilla`
@@ -2845,6 +2877,11 @@ Coverage Notes
   owned spawns/extensions present in the room contribute zero, even when
   the hostile owner's RCL would mark them active from the hostile's
   perspective.
+- `ROOM-ENERGY-004` `behavior` `verified_vanilla`
+  Spawn and extension construction sites contribute nothing to
+  `room.energyAvailable` or `room.energyCapacityAvailable`: with one built
+  extension plus an extension site and a spawn site in the room, the sums
+  read the built extension alone.
 
 ### 16.3 Find
 - `ROOM-FIND-001` `matrix` `verified_vanilla`
@@ -3116,6 +3153,18 @@ Coverage Notes
 - `ROOM-API-002` `behavior` `verified_vanilla`
   `Room.findExitTo(roomName)` returns the same exit direction constant that
   `Game.map.describeExits` maps to that neighbor.
+
+### 16.9 Game Object Lookup & Collections
+- `GAME-LOOKUP-001` `behavior` `verified_vanilla`
+  `Game.getObjectById` returns `null`, never throws, for an id that matches
+  no object and for an `undefined` or `null` argument, while a live id
+  still resolves. Bots resolve ids straight out of `Memory`, where the
+  value is routinely stale or absent.
+- `GAME-STRUCTURES-001` `behavior` `verified_vanilla`
+  `Game.structures` is keyed by id and holds exactly the player's owned
+  structures, the room controller included: hostile-owned structures and
+  unowned roads and walls in the same room are absent, and every entry has
+  `my === true` and an `id` equal to its key.
 
 ---
 
@@ -3846,6 +3895,17 @@ Coverage Notes
   player's code called them. `drop`, `transfer`, `withdraw` and `pickup` all
   resolve before `harvest`, so a creep that empties and refills in one tick always
   sees the emptying first whatever the call order was.
+- `INTENT-CREEP-005` `behavior` `verified_vanilla`
+  `harvest` resolves before `upgradeController`, and neither blocks the
+  other: a full creep that calls `upgradeController` then `harvest` in one
+  tick drops the entire harvest on the ground first and only then spends
+  `UPGRADE_CONTROLLER_POWER` per WORK from its store, so it ends the tick
+  below capacity with the whole harvest on the tile.
+- `INTENT-CREEP-006` `behavior` `verified_vanilla`
+  `transfer` resolves before `suicide`: a creep that calls `suicide` then
+  `transfer` in one tick delivers its whole load to the target, dies, and
+  leaves a tombstone holding only the body's corpse resources, never the
+  load.
 
 Coverage Notes
 - `move()` and `heal()` compatibility with the blocking creep action priority
@@ -4707,6 +4767,17 @@ live instances and — because top-level code does not re-execute per tick
   replacing `Creep.prototype.move` with a wrapper that delegates to `orig`,
   calling `creep.move()` runs the wrapper exactly once and returns the
   native's normal return code.
+- `UNDOC-PROTO-006` `behavior` `verified_vanilla`
+  The own-property rule of `UNDOC-PROTO-004` holds beyond creeps: a live
+  `Room`, a constructed `RoomPosition`, and a live `StructureSpawn` have no
+  own function-valued properties, and `room.find`, `pos.getRangeTo`, and
+  `spawn.spawnCreep` are identical to their class prototype members.
+- `UNDOC-PROTO-007` `behavior` `verified_vanilla`
+  A live spawn is `instanceof` `StructureSpawn`, `OwnedStructure`,
+  `Structure`, and `RoomObject`, and its `pos` is `instanceof`
+  `RoomPosition`; a wrapper installed over `RoomPosition.prototype.getRangeTo`
+  runs exactly once for `spawn.pos.getRangeTo(...)` and returns the native
+  range.
 
 ---
 
@@ -5047,6 +5118,17 @@ Notes
   `unlocked`/`unlockedTime` fields are MMO-backend surface absent from the
   open-source engine and are out of scope (see also `SHAPE-GAME-002`, which
   pins the data-property surface).
+
+### 30.4 Console
+The log line leaves the runtime and is out of scope under the Summary scope
+rule; the call surface is in scope because bots log from every code path,
+error handlers included.
+
+- `CONSOLE-001` `behavior` `verified_vanilla`
+  `console.log` is a function that returns `undefined` and never throws,
+  whatever it is handed: no arguments, strings, numbers, `undefined`,
+  `null`, booleans, arrays, plain objects, a circular object, and live game
+  objects.
 
 ---
 

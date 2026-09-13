@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2691%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2530%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-63-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2705%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2539%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-68-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2691](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 01:52 UTC |
-| 🟡 | **xxscreeps** | [2530](#xxscreeps-passing-tests) | [63](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 01:52 UTC |
+| 🟡 | **vanilla** | [2705](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 02:19 UTC |
+| 🟡 | **xxscreeps** | [2539](#xxscreeps-passing-tests) | [68](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 02:19 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 26 expected-failure classifications against vanilla's canonical behavior, covering 63 tests. That includes 21 open parity gaps covering 54 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 68 tests. That includes 25 open parity gaps covering 59 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -187,6 +187,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method. | [2](#xxscreeps-gap-map-visual-clear-returns-undefined) |
 | `room-visual-roomname-missing` | `RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`. | Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`. | [1](#xxscreeps-gap-room-visual-roomname-missing) |
 | `map-visual-accepts-non-roomposition` | `extractPositions` (`mods/meta/visual/visual.ts:211`) duck-types on `typeof arg.x === 'number'`: a plain `{ x, y, roomName }` object is encoded like a real position, and a number passes straight through as a coordinate, so `Game.map.visual.circle(5)` and `.text('a', { x: 1, y: 1, roomName: 'W1N1' })` draw instead of throwing. Only a missing argument throws, from `encodeRoomPosition` on `undefined`. | Vanilla's map visual `circle`, `line`, `rect`, and `text` (`game/map.js:283-343`) guard every position argument with `instanceof RoomPosition` and throw `Invalid pos, RoomPosition expected` otherwise; `poly` is unguarded on both sides. | [1](#xxscreeps-gap-map-visual-accepts-non-roomposition) |
+| `spawning-cancel-returns-undefined` | `StructureSpawn.Spawning.cancel()` (`mods/classic/spawn/spawn.ts:60-64`) runs `chainIntentChecks(...)` without returning its result, so the call evaluates to `undefined`. The `cancelSpawning` intent is still saved and the cancel itself takes effect next tick. | Vanilla `game/structures.js:1327-1333` returns `OK` after setting the `cancelSpawning` intent, and `ERR_NOT_OWNER` for a foreign spawn. | [1](#xxscreeps-gap-spawning-cancel-returns-undefined) |
+| `controller-level-up-ignores-downgrade-timer` | The `upgradeController` processor (`mods/classic/controller/processor.ts:174-183`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade. | Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling. | [1](#xxscreeps-gap-controller-level-up-ignores-downgrade-timer) |
+| `controller-timer-anchors-one-tick-late` | The controller tick (`mods/classic/controller/processor.ts:237-239`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:183`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up. | Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore. | [2](#xxscreeps-gap-controller-timer-anchors-one-tick-late) |
+| `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:154`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -370,6 +374,35 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-spawning-cancel-returns-undefined">
+<summary><code>spawning-cancel-returns-undefined</code> — 1 test</summary>
+
+- `Spawning duration and direction SPAWN-TIMING-008 spawning.cancel() returns OK, clears the spawn next tick, and does not refund the energy`
+
+</details>
+
+<details id="xxscreeps-gap-controller-level-up-ignores-downgrade-timer">
+<summary><code>controller-level-up-ignores-downgrade-timer</code> — 1 test</summary>
+
+- `creep.upgradeController() CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold`
+
+</details>
+
+<details id="xxscreeps-gap-controller-timer-anchors-one-tick-late">
+<summary><code>controller-timer-anchors-one-tick-late</code> — 2 tests</summary>
+
+- `creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore`
+- `Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there`
+
+</details>
+
+<details id="xxscreeps-gap-harvest-not-ordered-before-upgradecontroller">
+<summary><code>harvest-not-ordered-before-upgradecontroller</code> — 1 test</summary>
+
+- `Intent creep resolution order INTENT-CREEP-005 harvest resolves before upgradeController even when upgradeController is called first`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -451,7 +484,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2691 tests across 145 files</summary>
+<summary>2705 tests across 147 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -1268,7 +1301,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (68)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (69)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -1338,6 +1371,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-019 a construction site never surfaces through a structure-scoped lookup
 
 **`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
 
@@ -1477,7 +1511,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (49)
+**`tests/06-controller/6.4-upgrade.test.ts`** (51)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -1491,6 +1525,8 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold
+- creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore
 - creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
@@ -1551,7 +1587,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (10)
+**`tests/06-controller/6.7-downgrade.test.ts`** (12)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
@@ -1563,6 +1599,8 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
+- Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
+- Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there
 
 **`tests/06-controller/6.8-safemode.test.ts`** (24)
 
@@ -2069,9 +2107,10 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnough spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnough spawnCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (1)
+**`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (2)
 
 - Spawning duration and direction SPAWN-TIMING-007 spawning.setDirections replaces the current direction array
+- Spawning duration and direction SPAWN-TIMING-008 spawning.cancel() returns OK, clears the spawn next tick, and does not refund the energy
 
 **`tests/09-spawning-lifecycle/9.3-spawn-stomp.test.ts`** (6)
 
@@ -2847,7 +2886,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (21)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (22)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -2857,6 +2896,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
+- room energy tracking ROOM-ENERGY-004 spawn and extension construction sites contribute nothing to the room energy sums
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
 - room structure shortcuts ROOM-STRUCTURE-002 a terminal/storage construction site does not populate the shortcut
@@ -2961,6 +3001,11 @@ Click a count to jump to the affected test list.
 
 - Room helpers: getPositionAt and findExitTo ROOM-API-001 getPositionAt returns a RoomPosition in this room and null out of bounds
 - Room helpers: getPositionAt and findExitTo ROOM-API-002 findExitTo agrees with Game.map.describeExits
+
+**`tests/16-room-mechanics/16.9-game-collections.test.ts`** (2)
+
+- Game object lookup and collections GAME-LOOKUP-001 Game.getObjectById returns null for an unknown id and for undefined or null
+- Game object lookup and collections GAME-STRUCTURES-001 Game.structures holds exactly the player's owned structures keyed by id
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -3276,10 +3321,12 @@ Click a count to jump to the affected test list.
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
 
-**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (2)
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (4)
 
 - Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
 - Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-005 harvest resolves before upgradeController even when upgradeController is called first
+- Intent creep resolution order INTENT-CREEP-006 transfer resolves before suicide even when suicide is called first
 
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 
@@ -3448,13 +3495,15 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
 
-**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (5)
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (7)
 
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-004 a creep exposes no own method properties and inherits them from Creep.prototype
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-005 a prototype override wraps the native and is the method that runs
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-006 rooms, positions and spawns expose no own method properties and inherit from their class prototypes
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-007 a spawn is an instance of the whole structure chain and a RoomPosition prototype wrapper is the method that runs
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (4)
 
@@ -3560,6 +3609,10 @@ Click a count to jump to the affected test list.
 
 - CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
 - CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
+
+**`tests/30-cpu-runtime/30.4-console.test.ts`** (1)
+
+- Console CONSOLE-001 console.log accepts any arguments, including circular and game objects, and returns undefined
 
 **`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (4)
 
@@ -3869,7 +3922,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2530 tests across 131 files</summary>
+<summary>2539 tests across 133 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4684,7 +4737,7 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (69)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (70)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
@@ -4755,6 +4808,7 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-019 a construction site never surfaces through a structure-scoped lookup
 
 **`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
 
@@ -4965,7 +5019,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (9)
+**`tests/06-controller/6.7-downgrade.test.ts`** (10)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
@@ -4976,6 +5030,7 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
+- Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
 
 **`tests/06-controller/6.8-safemode.test.ts`** (24)
 
@@ -6174,7 +6229,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (21)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (22)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -6184,6 +6239,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions
 - room energy tracking ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension
 - room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
+- room energy tracking ROOM-ENERGY-004 spawn and extension construction sites contribute nothing to the room energy sums
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
 - room structure shortcuts ROOM-STRUCTURE-002 a terminal/storage construction site does not populate the shortcut
@@ -6288,6 +6344,11 @@ Click a count to jump to the affected test list.
 **`tests/16-room-mechanics/16.8-room-helpers.test.ts`** (1)
 
 - Room helpers: getPositionAt and findExitTo ROOM-API-002 findExitTo agrees with Game.map.describeExits
+
+**`tests/16-room-mechanics/16.9-game-collections.test.ts`** (2)
+
+- Game object lookup and collections GAME-LOOKUP-001 Game.getObjectById returns null for an unknown id and for undefined or null
+- Game object lookup and collections GAME-STRUCTURES-001 Game.structures holds exactly the player's owned structures keyed by id
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -6557,10 +6618,11 @@ Click a count to jump to the affected test list.
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
 - Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
 
-**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (2)
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (3)
 
 - Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
 - Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-006 transfer resolves before suicide even when suicide is called first
 
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 
@@ -6700,13 +6762,15 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
 
-**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (5)
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (7)
 
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-004 a creep exposes no own method properties and inherits them from Creep.prototype
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-005 a prototype override wraps the native and is the method that runs
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-006 rooms, positions and spawns expose no own method properties and inherit from their class prototypes
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-007 a spawn is an instance of the whole structure chain and a RoomPosition prototype wrapper is the method that runs
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
@@ -6779,6 +6843,10 @@ Click a count to jump to the affected test list.
 
 - CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
 - CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
+
+**`tests/30-cpu-runtime/30.4-console.test.ts`** (1)
+
+- Console CONSOLE-001 console.log accepts any arguments, including circular and game objects, and returns undefined
 
 **`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (2)
 

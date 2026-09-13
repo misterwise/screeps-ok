@@ -1,8 +1,9 @@
 import { describe, test, expect, code,
-	CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, SAFE_MODE_COOLDOWN,
-	OK, MOVE,
+	CONTROLLER_DOWNGRADE, CONTROLLER_DOWNGRADE_RESTORE, CONTROLLER_LEVELS, SAFE_MODE_COOLDOWN,
+	OK, MOVE, WORK, CARRY,
 	limitationGated,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 const downgradeTest = limitationGated('controllerDowngrade');
 
@@ -313,5 +314,56 @@ describe('Controller downgrade', () => {
 		expect(after).not.toBeNull();
 		expect(after!.level).toBe(0);
 		expect(after!.isPowerEnabled).toBe(false);
+	});
+
+	// Seed a controller timer well clear of both 0 and the level ceiling (or
+	// deliberately inside the restore window of it), park a one-WORK upgrader
+	// beside it, and sample ticksToDowngrade once per upgrading tick.
+	async function restoreSeries(shard: ShardFixture, ticksToDowngrade: number, samples: number) {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade }],
+		});
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const workerId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y], owner: 'p1',
+			body: [WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		await shard.tick();
+
+		// Each runPlayer reads the timer, then processes that tick's upgrade, so
+		// reading `i` reflects exactly `i` upgraded ticks.
+		const readings: number[] = [];
+		for (let i = 0; i < samples; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				const controller = Game.rooms['W1N1'].controller;
+				Game.getObjectById(${workerId}).upgradeController(controller);
+				controller.ticksToDowngrade
+			`) as number);
+		}
+		return readings;
+	}
+
+	downgradeTest('CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade', async ({ shard }) => {
+		// Engine processor/intents/controllers/tick.js:38-42 — an upgraded tick sets
+		// downgradeTime to downgradeTime + RESTORE + 1 (the +1 cancels that tick's
+		// own decay), so the tick-over-tick read rises by exactly RESTORE.
+		const readings = await restoreSeries(shard, 500, 4);
+		expect(readings[0]).toBeGreaterThan(100);
+		const rising = Array.from({ length: readings.length },
+			(_, i) => readings[0] + i * CONTROLLER_DOWNGRADE_RESTORE);
+		expect(readings).toEqual(rising);
+	});
+
+	downgradeTest('CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there', async ({ shard }) => {
+		// Same code path, Math.min against gameTime + CONTROLLER_DOWNGRADE[level] + 1:
+		// a timer within one restore of the ceiling lands exactly on it and stays.
+		const ceiling = CONTROLLER_DOWNGRADE[2];
+		const readings = await restoreSeries(shard, ceiling - 30, 3);
+		expect(readings[0]).toBeGreaterThan(ceiling - CONTROLLER_DOWNGRADE_RESTORE);
+		expect(readings[0]).toBeLessThan(ceiling);
+		expect(readings[1]).toBe(ceiling);
+		expect(readings[2]).toBe(ceiling);
 	});
 });
