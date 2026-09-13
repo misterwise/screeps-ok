@@ -6,9 +6,8 @@ import { describe, test, expect, code, OK, ERR_FULL } from '../../src/index.js';
 // the missing function throws from INSIDE the bot's exception handler and takes
 // down the caller. The return code is observable: upstream pushes a global `notify`
 // intent capped at 20 per tick, returning OK, then ERR_FULL once the cap is hit.
-// Previously uncovered.
-describe('GAME-NOTIFY-001: Game.notify exists and returns OK', () => {
-	test('accepts a message, an optional groupInterval, and no arguments at all', async ({ shard }) => {
+describe('Game.notify runtime surface', () => {
+	test('GAME-NOTIFY-001 accepts a message, an optional groupInterval, and no arguments at all', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -49,8 +48,8 @@ describe('GAME-NOTIFY-001: Game.notify exists and returns OK', () => {
 // Game.map.visual mirrors RoomVisual: server-side drawing is a no-op, but bots
 // chain the calls and gate on getSize(), so the object must expose the whole
 // chainable surface rather than being an empty placeholder.
-describe('GAME-MAPVISUAL-001: Game.map.visual is a chainable MapVisual', () => {
-	test('every documented method exists, returns the visual, and getSize is numeric', async ({ shard }) => {
+describe('Game.map.visual runtime surface', () => {
+	test('VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
@@ -58,20 +57,30 @@ describe('GAME-MAPVISUAL-001: Game.map.visual is a chainable MapVisual', () => {
 				const v = Game.map.visual;
 				const p1 = new RoomPosition(1, 1, 'W1N1');
 				const p2 = new RoomPosition(2, 2, 'W1N1');
-				return {
-					types: ['line', 'circle', 'rect', 'poly', 'text', 'clear', 'getSize', 'export', 'import']
-						.map(function (m) { return typeof v[m]; }),
-					chains: v.text('a', p1) === v && v.line(p1, p2) === v && v.circle(p1) === v
-						&& v.rect(p1, 2, 2) === v && v.poly([p1, p2]) === v && v.clear() === v
-						&& v.import('') === v,
-					size: typeof v.getSize(),
-					exported: typeof v.export(),
+				const types = {};
+				for (const m of ['line', 'circle', 'rect', 'poly', 'text', 'clear', 'getSize', 'export', 'import']) {
+					types[m] = typeof v[m];
+				}
+				const chains = {
+					text: v.text('a', p1) === v,
+					line: v.line(p1, p2) === v,
+					circle: v.circle(p1) === v,
+					rect: v.rect(p1, 2, 2) === v,
+					poly: v.poly([p1, p2]) === v,
+					clear: v.clear() === v,
+					import: v.import('') === v,
 				};
+				return { types, chains, size: typeof v.getSize(), exported: typeof v.export() };
 			})()
-		`) as { types: string[]; chains: boolean; size: string; exported: string };
+		`) as { types: Record<string, string>; chains: Record<string, boolean>; size: string; exported: string };
 
-		expect(result.types).toEqual(Array(9).fill('function'));
-		expect(result.chains).toBe(true);
+		expect(result.types).toEqual({
+			line: 'function', circle: 'function', rect: 'function', poly: 'function', text: 'function',
+			clear: 'function', getSize: 'function', export: 'function', import: 'function',
+		});
+		expect(result.chains).toEqual({
+			text: true, line: true, circle: true, rect: true, poly: true, clear: true, import: true,
+		});
 		expect(result.size).toBe('number');
 		expect(result.exported).toBe('string');
 	});

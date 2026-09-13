@@ -1,5 +1,5 @@
 import {
-	describe, test, expect, code,
+	describe, test, expect, code, OK,
 	MOVE, CARRY,
 	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES, FIND_HOSTILE_STRUCTURES,
 	FIND_SOURCES, FIND_SOURCES_ACTIVE,
@@ -293,6 +293,42 @@ describe('room structure shortcuts', () => {
 			present: { id: terminalId, structureType: STRUCTURE_TERMINAL },
 			absentType: 'undefined',
 		});
+	});
+
+	// A ConstructionSite carries the same structureType, so an implementation that
+	// scans room objects by structureType alone hands the bot a site with no
+	// isActive/store/send. Every other test builds the structure first, so the
+	// site-present-but-structure-absent window is never exercised there.
+	test('ROOM-STRUCTURE-002 a terminal/storage construction site does not populate the shortcut', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		await shard.tick();
+
+		const placed = await shard.runPlayer('p1', code`
+			[
+				Game.rooms['W1N1'].createConstructionSite(20, 20, ${STRUCTURE_TERMINAL}),
+				Game.rooms['W1N1'].createConstructionSite(22, 20, ${STRUCTURE_STORAGE}),
+			]
+		`);
+		expect(placed).toEqual([OK, OK]);
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			(function () {
+				const rm = Game.rooms['W1N1'];
+				return {
+					terminal: rm.terminal === undefined ? 'undefined' : typeof rm.terminal.isActive,
+					storage: rm.storage === undefined ? 'undefined' : typeof rm.storage.isActive,
+					sites: Object.keys(Game.constructionSites).length,
+				};
+			})()
+		`) as { terminal: string; storage: string; sites: number };
+
+		expect(result.sites).toBe(2);
+		expect(result.terminal).toBe('undefined');
+		expect(result.storage).toBe('undefined');
 	});
 });
 

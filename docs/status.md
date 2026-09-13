@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2672%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2516%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-58-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2682%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2524%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-60-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2672](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 00:30 UTC |
-| 🟡 | **xxscreeps** | [2516](#xxscreeps-passing-tests) | [58](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 00:30 UTC |
+| 🟡 | **vanilla** | [2682](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-13 00:41 UTC |
+| 🟡 | **xxscreeps** | [2524](#xxscreeps-passing-tests) | [60](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-13 00:40 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -158,7 +158,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 22 expected-failure classifications against vanilla's canonical behavior, covering 58 tests. That includes 17 open parity gaps covering 49 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 24 expected-failure classifications against vanilla's canonical behavior, covering 60 tests. That includes 19 open parity gaps covering 51 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -183,6 +183,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:205-208`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 | `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141,152`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
 | `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
+| `room-getpositionat-out-of-bounds-throws` | `Room.getPositionAt` (`game/room/look.ts:133`) is a bare `new RoomPosition(xx, yy, this.name)`, and the constructor guard (`game/position.ts:79`) throws `TypeError: Invalid arguments in RoomPosition constructor` for any coordinate outside 0..49. | Vanilla `Room.prototype.getPositionAt` (`game/rooms.js:971`) returns `null` when either coordinate is outside 0..49 and only constructs a position otherwise. | [1](#xxscreeps-gap-room-getpositionat-out-of-bounds-throws) |
+| `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so `Game.map.visual.clear()` (and `RoomVisual.clear()`) breaks a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and every other drawing method return the visual object for chaining. | [1](#xxscreeps-gap-map-visual-clear-returns-undefined) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -337,6 +339,20 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
+<details id="xxscreeps-gap-room-getpositionat-out-of-bounds-throws">
+<summary><code>room-getpositionat-out-of-bounds-throws</code> — 1 test</summary>
+
+- `Room helpers: getPositionAt and findExitTo ROOM-API-001 getPositionAt returns a RoomPosition in this room and null out of bounds`
+
+</details>
+
+<details id="xxscreeps-gap-map-visual-clear-returns-undefined">
+<summary><code>map-visual-clear-returns-undefined</code> — 1 test</summary>
+
+- `Game.map.visual runtime surface VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string`
+
+</details>
+
 
 ## xxscreeps intentional divergences
 
@@ -418,7 +434,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2672 tests across 141 files</summary>
+<summary>2682 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -755,6 +771,11 @@ Click a count to jump to the affected test list.
 - Legacy Pathfinding LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
 - Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
+
+**`tests/02-pathfinding/2.4-cross-room-search.test.ts`** (2)
+
+- PathFinder.search across rooms is directed, not a flood PATHFINDER-022 a goal two rooms away completes well inside the default op budget
+- PathFinder.search across rooms is directed, not a flood PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters
 
 **`tests/03-harvesting/3.1-source-harvest.test.ts`** (42)
 
@@ -2809,7 +2830,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (20)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (21)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -2821,6 +2842,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
+- room structure shortcuts ROOM-STRUCTURE-002 a terminal/storage construction site does not populate the shortcut
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
@@ -2917,6 +2939,11 @@ Click a count to jump to the affected test list.
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
+
+**`tests/16-room-mechanics/16.8-room-helpers.test.ts`** (2)
+
+- Room helpers: getPositionAt and findExitTo ROOM-API-001 getPositionAt returns a RoomPosition in this room and null out of bounds
+- Room helpers: getPositionAt and findExitTo ROOM-API-002 findExitTo agrees with Game.map.describeExits
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -3404,11 +3431,13 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
 
-**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (3)
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (5)
 
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-004 a creep exposes no own method properties and inherits them from Creep.prototype
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-005 a prototype override wraps the native and is the method that runs
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (4)
 
@@ -3514,6 +3543,12 @@ Click a count to jump to the affected test list.
 
 - CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
 - CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
+
+**`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (3)
+
+- Game.notify runtime surface GAME-NOTIFY-001 accepts a message, an optional groupInterval, and no arguments at all
+- Game.notify runtime surface GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick
+- Game.map.visual runtime surface VISUAL-MAP-001 every documented method exists, each drawing call returns the visual, getSize is numeric and export is a string
 
 </details>
 
@@ -3805,7 +3840,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2516 tests across 127 files</summary>
+<summary>2524 tests across 130 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4142,6 +4177,11 @@ Click a count to jump to the affected test list.
 - Legacy Pathfinding LEGACY-PATH-008 findPath({ serialize: true }) returns a serialized string
 - Legacy Pathfinding LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy
 - Legacy Pathfinding LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing
+
+**`tests/02-pathfinding/2.4-cross-room-search.test.ts`** (2)
+
+- PathFinder.search across rooms is directed, not a flood PATHFINDER-022 a goal two rooms away completes well inside the default op budget
+- PathFinder.search across rooms is directed, not a flood PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters
 
 **`tests/03-harvesting/3.1-source-harvest.test.ts`** (42)
 
@@ -6105,7 +6145,7 @@ Click a count to jump to the affected test list.
 - Room.find exit constants ROOM-FIND-004 FIND_EXIT returns the union (as a set) of the four side-specific exit sets
 - Room.find player-relative perspective ROOM-FIND-006 player-relative FIND constants invert when evaluated from each player's perspective
 
-**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (20)
+**`tests/16-room-mechanics/16.3b-game-api.test.ts`** (21)
 
 - room visibility ROOM-VIS-001 visible room has a Game.rooms entry on that tick
 - room visibility ROOM-VIS-002 non-visible room has no Game.rooms entry on that tick
@@ -6117,6 +6157,7 @@ Click a count to jump to the affected test list.
 - room energy tracking ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions
 - room structure shortcuts ROOM-STRUCTURE-001:storage room.storage exposes the storage object or undefined
 - room structure shortcuts ROOM-STRUCTURE-001:terminal room.terminal exposes the terminal object or undefined
+- room structure shortcuts ROOM-STRUCTURE-002 a terminal/storage construction site does not populate the shortcut
 - Room.find ROOM-FIND-001:findMyCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findHostileCreeps returns exactly the expected set for the current player
 - Room.find ROOM-FIND-001:findStructures returns exactly the expected set for the current player
@@ -6214,6 +6255,10 @@ Click a count to jump to the affected test list.
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
+
+**`tests/16-room-mechanics/16.8-room-helpers.test.ts`** (1)
+
+- Room helpers: getPositionAt and findExitTo ROOM-API-002 findExitTo agrees with Game.map.describeExits
 
 **`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
 
@@ -6626,11 +6671,13 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
 - Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
 
-**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (3)
+**`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (5)
 
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-001 leaf-class prototype members apply to live instances in the same tick
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-002 RoomObject.prototype members are inherited by derived-class instances
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-003 prototype extensions persist across ticks within the same VM
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-004 a creep exposes no own method properties and inherits them from Creep.prototype
+- Undocumented API Surface — player prototype extensions UNDOC-PROTO-005 a prototype override wraps the native and is the method that runs
 
 **`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
 
@@ -6703,6 +6750,11 @@ Click a count to jump to the affected test list.
 
 - CPU & Runtime — used CPU CPU-USED-001 getUsed is callable and returns a finite non-negative number
 - CPU & Runtime — used CPU CPU-USED-002 getUsed is monotonic within a tick and increases after busy work
+
+**`tests/31-notifications-visuals/31.1-notify-and-map-visual.test.ts`** (2)
+
+- Game.notify runtime surface GAME-NOTIFY-001 accepts a message, an optional groupInterval, and no arguments at all
+- Game.notify runtime surface GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick
 
 </details>
 

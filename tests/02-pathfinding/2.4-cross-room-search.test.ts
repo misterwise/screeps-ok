@@ -12,9 +12,10 @@ import { describe, test, expect, code } from '../../src/index.js';
 // hauling all quietly switch off. Measured on an open 3-room corridor, ordering by
 // G alone cost 1371 ops for a one-room hop and blew the whole 10000-op budget
 // (incomplete, 51 of 69 steps) for a two-room hop; with the heuristic the same two
-// searches cost 20 and 70 ops and both complete. Previously uncovered.
-describe('PF-CROSSROOM-001: PathFinder.search is directed, not a flood', () => {
-	test('a goal two rooms away completes well inside the default op budget', async ({ shard }) => {
+// searches cost 20 and 70 ops and both complete. PATHFINDER-021 pins the same
+// property in-room; these two rows pin the cross-room case it cannot reach.
+describe('PathFinder.search across rooms is directed, not a flood', () => {
+	test('PATHFINDER-022 a goal two rooms away completes well inside the default op budget', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -46,28 +47,7 @@ describe('PF-CROSSROOM-001: PathFinder.search is directed, not a flood', () => {
 		expect(result.ops).toBeLessThan(result.len * 20);
 	});
 
-	test('PF-CROSSROOM-002 a one-room hop over open terrain is not explored breadth-first', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1' }],
-		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const r = PathFinder.search(
-				new RoomPosition(10, 25, 'W1N1'),
-				{ pos: new RoomPosition(40, 25, 'W2N1'), range: 1 }
-			);
-			({ incomplete: r.incomplete, ops: r.ops, len: r.path.length })
-		`) as { incomplete: boolean; ops: number; len: number };
-
-		expect(result.incomplete).toBe(false);
-		// Breadth-first expansion over an open corridor visits O(len^2) tiles; a
-		// directed one visits O(len).
-		expect(result.ops).toBeLessThan(result.len * 20);
-	});
-
-	test('PF-CROSSROOM-003 roomCallback is not consulted for rooms behind the origin', async ({ shard }) => {
+	test('PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -78,6 +58,8 @@ describe('PF-CROSSROOM-001: PathFinder.search is directed, not a flood', () => {
 		});
 		await shard.tick();
 
+		// Open terrain, goal in the eastern neighbor: a directed search never
+		// reaches the western exit, so W0N1 is never loaded. A flood loads it.
 		const seen = await shard.runPlayer('p1', code`
 			const seen = [];
 			PathFinder.search(
@@ -88,6 +70,7 @@ describe('PF-CROSSROOM-001: PathFinder.search is directed, not a flood', () => {
 			seen.sort()
 		`) as string[];
 
+		expect(seen).toContain('W1N1');
 		expect(seen).toContain('W2N1');
 		expect(seen).not.toContain('W0N1');
 	});

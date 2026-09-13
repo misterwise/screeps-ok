@@ -11,6 +11,20 @@ Last refreshed: 2026-08-24 against pin `e9380f4d`.
 
 ## Open parity gaps
 
+### room-getpositionat-out-of-bounds-throws
+
+- Tests: ROOM-API-001
+- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`, surfaced by PR #5 (external contributor).
+- Cause: `Room.getPositionAt` (`game/room/look.ts:133`) constructs the position unconditionally and the `RoomPosition` constructor guard (`game/position.ts:79`) throws for coordinates outside 0..49. Vanilla (`game/rooms.js:971`) returns `null` first.
+- Plan: one-line upstream fix, return `null` before constructing. Not yet filed.
+
+### map-visual-clear-returns-undefined
+
+- Tests: VISUAL-MAP-001
+- Status: CONFIRMED 2026-09-12 at pin `e9380f4d`, surfaced by PR #5 (external contributor).
+- Cause: the shared visual class's `clear()` (`mods/meta/visual/visual.ts:397`) resets the buffer but has no `return this`, so a chained `Game.map.visual.clear().text(...)` throws. Every other drawing method returns the visual. `RoomVisual.clear()` shares the code and the bug; no room-visual row pins it yet.
+- Plan: one-line upstream fix, `return this`. Not yet filed.
+
 ### game-object-json-room-tojson-null-crash
 
 - Tests: UNDOC-JSONOBJ-001

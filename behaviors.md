@@ -386,16 +386,19 @@ Coverage Notes
   room's tile count, so the `maxOps` budget is spent on progress rather than
   on a uniform-cost flood. A flood returns the same path but exhausts the
   default budget on longer searches and reports reachable goals `incomplete`.
+- `PATHFINDER-022` `behavior` `verified_vanilla`
+  A cross-room search to a goal two rooms away over open terrain completes
+  (`incomplete: false`, path ends in the goal room) with `ops` on the order of
+  the path length, well inside the default `maxOps`. In-room searches cannot
+  distinguish a directed search from a flood because a room fits inside the
+  budget; a two-room hop does not.
+- `PATHFINDER-023` `behavior` `verified_vanilla`
+  `roomCallback` is only invoked for rooms the directed search actually
+  enters. Over open terrain with the goal in the eastern neighbor, the
+  callback sees the origin room and the goal room and never the western
+  neighbor; a flood would load it.
 
 ### 2.2 CostMatrix
-- `PF-CROSSROOM-001` `behavior` `verified_vanilla`
-  A goal two rooms away completes well inside the default op budget: the search
-  is heuristic-directed, not a uniform-cost flood.
-- `PF-CROSSROOM-002` `behavior` `verified_vanilla`
-  An adjacent-room goal completes rather than exhausting `maxOps` and returning
-  `incomplete`.
-- `PF-CROSSROOM-003` `behavior` `verified_vanilla`
-  `roomCallback` is not consulted for rooms behind the origin, relative to the goal.
 - `COSTMATRIX-001` `behavior` `verified_vanilla`
   `new CostMatrix()` creates a matrix with all values 0.
 - `COSTMATRIX-002` `behavior` `verified_vanilla`
@@ -2877,6 +2880,10 @@ Coverage Notes
   Visible rooms expose `room.storage` and `room.terminal` as the
   corresponding structure object when that structure is present, otherwise
   `undefined`.
+- `ROOM-STRUCTURE-002` `behavior` `verified_vanilla`
+  A storage or terminal `ConstructionSite` does not populate `room.storage` /
+  `room.terminal`: the shortcut stays `undefined` until the structure is
+  built, even though the site carries the same `structureType`.
 
 ### 16.4 Look
 - `ROOM-LOOK-001` `behavior` `verified_vanilla`
@@ -3101,6 +3108,14 @@ Coverage Notes
 - Old FLAG-007 ("player-scoped and referenced by name") dropped: player-scoping
   merged into FLAG-001; "referenced by name" is API shape, not a behavior.
 - `RoomPosition.createFlag()` is owned by ROOMPOS-ACTION-002 in section 22.
+
+### 16.8 Room Helpers
+- `ROOM-API-001` `behavior` `verified_vanilla`
+  `Room.getPositionAt(x, y)` returns a `RoomPosition` with those coordinates
+  in that room, and `null` when either coordinate is outside 0..49.
+- `ROOM-API-002` `behavior` `verified_vanilla`
+  `Room.findExitTo(roomName)` returns the same exit direction constant that
+  `Game.map.describeExits` maps to that neighbor.
 
 ---
 
@@ -3738,28 +3753,6 @@ Coverage Notes
   is not a resource type returns `undefined`, not `0`.
 
 ### 23.2 Open Stores
-- `ROOM-SHORTCUT-SITE-001` `behavior` `verified_vanilla`
-  `room.storage` / `room.terminal` never resolve to a `ConstructionSite`, which
-  carries `structureType` too. The same holds for `room.energyAvailable` and
-  `room.energyCapacityAvailable`.
-- `ROOM-API-001` `behavior` `verified_vanilla`
-  `Room.getPositionAt` returns a `RoomPosition` in that room, and
-  `Room.findExitTo` agrees with `Game.map.describeExits`.
-- `GAME-NOTIFY-001` `behavior` `verified_vanilla`
-  `Game.notify` accepts a message, an optional `groupInterval`, and no arguments
-  at all, returning `OK`.
-- `GAME-NOTIFY-002` `behavior` `verified_vanilla`
-  `Game.notify` returns `ERR_FULL` past 20 notify intents in a single tick; the
-  counter resets each tick.
-- `GAME-MAPVISUAL-001` `behavior` `verified_vanilla`
-  `Game.map.visual` exposes the chainable visual API and `getSize`/`export`/
-  `import`, rather than being an empty object.
-- `PROTO-METHODS-001` `behavior` `verified_vanilla`
-  Engine methods live on the class prototype, not as own properties of each
-  object, so a bot's `Creep.prototype.<method>` wrapper is actually invoked.
-- `PROTO-METHODS-002` `behavior` `verified_vanilla`
-  Capturing `const orig = Creep.prototype.<method>` yields a function, and the
-  global class objects are not replaced between ticks.
 - `STORE-OPEN-001` `matrix` `verified_vanilla`
   For open stores, all stored resources share one total capacity pool.
 - `STORE-OPEN-002` `matrix` `verified_vanilla`
@@ -4703,6 +4696,17 @@ live instances and — because top-level code does not re-execute per tick
   subsequent ticks within the same VM instance: the classes persist across
   ticks even though per-tick instances are discarded
   (`UNDOC-IDENTITY-005`).
+- `UNDOC-PROTO-004` `behavior` `verified_vanilla`
+  Engine methods are inherited from the class prototype, not installed as
+  own properties of each live object: a creep has no own function-valued
+  properties, and `creep.move === Creep.prototype.move`. An own-property
+  method would shadow a bot's `Creep.prototype.<method>` wrapper so the
+  wrapper silently never runs.
+- `UNDOC-PROTO-005` `behavior` `verified_vanilla`
+  Capturing `const orig = Creep.prototype.move` yields a function, and after
+  replacing `Creep.prototype.move` with a wrapper that delegates to `orig`,
+  calling `creep.move()` runs the wrapper exactly once and returns the
+  native's normal return code.
 
 ---
 
@@ -5043,6 +5047,31 @@ Notes
   `unlocked`/`unlockedTime` fields are MMO-backend surface absent from the
   open-source engine and are out of scope (see also `SHAPE-GAME-002`, which
   pins the data-property surface).
+
+---
+
+## 31. Notifications & Visuals
+
+Runtime surface of the APIs whose effect leaves the runtime (see the Summary
+scope rule). Delivery of the notification and rendering of the visual are
+out of scope; everything player code can observe about the call is in scope.
+Bots call `Game.notify` from their own error handlers and gate visual output
+on `getSize`, so an engine missing the surface throws from inside the bot's
+recovery path.
+
+### 31.1 Game.notify
+- `GAME-NOTIFY-001` `behavior` `verified_vanilla`
+  `Game.notify` accepts a message, an optional `groupInterval`, and no
+  arguments at all, returning `OK`.
+- `GAME-NOTIFY-002` `behavior` `verified_vanilla`
+  `Game.notify` returns `ERR_FULL` past 20 notify intents in a single tick;
+  the counter resets each tick.
+
+### 31.2 MapVisual
+- `VISUAL-MAP-001` `behavior` `verified_vanilla`
+  `Game.map.visual` exposes `line`, `circle`, `rect`, `poly`, `text`,
+  `clear`, `import` as functions that each return the visual for chaining,
+  `getSize()` returning a number, and `export()` returning a string.
 
 ---
 
