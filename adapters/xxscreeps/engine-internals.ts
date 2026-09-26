@@ -17,6 +17,17 @@ import type { Room } from 'xxscreeps/game/room/index.js';
 import type { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 import { optionalExpiryTime } from 'xxscreeps/game/object.js';
 
+// A pin bump that renames a field would otherwise take the write as a dead own property.
+function setField(obj: any, key: `#${string}`, value: unknown): void {
+	if (!(key in obj)) throw new Error(`engine-internals: ${obj?.constructor?.name} has no '${key}' at this xxscreeps pin`);
+	obj[key] = value;
+}
+
+function getField(obj: any, key: `#${string}`): any {
+	if (!(key in obj)) throw new Error(`engine-internals: ${obj?.constructor?.name} has no '${key}' at this xxscreeps pin`);
+	return obj[key];
+}
+
 // ── INJECT ───────────────────────────────────────────────────────────
 
 /** INJECT — game/room/room.ts: `#insertObject` appends to the room's object list. */
@@ -40,30 +51,30 @@ export function iterateRoomObjects(room: Room): Iterable<any> {
 /** SETUP — game/room/room.ts: `#level` mirrors the controller's RCL on the room;
  *  consulted by the controller getter and room-energy calculations. */
 export function setRoomLevel(room: Room, level: number): void {
-	(room as any)['#level'] = level;
+	setField(room, '#level', level);
 }
 
 /** SETUP — game/room/room.ts: read `#level` during structure placement to derive
  *  RCL-dependent caps (e.g. extension capacity). */
 export function getRoomLevel(room: Room): number {
-	return (room as any)['#level'] ?? 0;
+	return getField(room, '#level');
 }
 
 /** SETUP — game/room/room.ts: `#user` is the owning engine userId on the room;
  *  mirrors `controller['#user']`. */
 export function setRoomOwner(room: Room, userId: string | null): void {
-	(room as any)['#user'] = userId;
+	setField(room, '#user', userId);
 }
 
 /** SETUP — mods/controller/controller.ts: `#user` is the owning engine userId. */
 export function setControllerOwner(controller: StructureController, userId: string): void {
-	(controller as any)['#user'] = userId;
+	setField(controller, '#user', userId);
 }
 
 /** SETUP — mods/controller/controller.ts:28 safeMode getter returns
  *  `Math.max(0, #safeModeUntil - Game.time)`; `#safeModeUntil` is on the Room. */
 export function setRoomSafeModeUntil(room: Room, gameTime: number, ticksRemaining: number): void {
-	(room as any)['#safeModeUntil'] = gameTime + ticksRemaining;
+	setField(room, '#safeModeUntil', gameTime + ticksRemaining);
 }
 
 /** SETUP — mods/controller/controller.ts: ticksToDowngrade getter returns
@@ -71,26 +82,26 @@ export function setRoomSafeModeUntil(room: Room, gameTime: number, ticksRemainin
 export function setControllerDowngradeTime(
 	controller: StructureController, gameTime: number, ticksRemaining: number,
 ): void {
-	(controller as any)['#downgradeTime'] = gameTime + ticksRemaining;
+	setField(controller, '#downgradeTime', gameTime + ticksRemaining);
 }
 
 /** SETUP — reset all engine-managed controller timers to zero so a canonical
  *  test controller starts from a known state. Used by resetRoomToCanonicalLayout. */
 export function resetControllerTimers(controller: StructureController): void {
 	const c = controller as any;
-	c['#downgradeTime'] = 0;
-	c['#progress'] = 0;
-	c['#reservationEndTime'] = 0;
-	c['#safeModeCooldownTime'] = 0;
-	c['#upgradeBlockedUntil'] = 0;
+	setField(c, '#downgradeTime', 0);
+	setField(c, '#progress', 0);
+	setField(c, '#reservationEndTime', 0);
+	setField(c, '#safeModeCooldownTime', 0);
+	setField(c, '#upgradeBlockedUntil', 0);
 }
 
 /** SETUP — reset Room-level controller flags to canonical zero state. Used by
  *  resetRoomToCanonicalLayout before re-inserting a fresh controller. */
 export function resetRoomControllerFlags(room: Room): void {
 	const r = room as any;
-	r['#safeModeUntil'] = 0;
-	r['#sign'] = undefined;
+	setField(r, '#safeModeUntil', 0);
+	setField(r, '#sign', undefined);
 }
 
 // ── SETUP: object positioning ────────────────────────────────────────
@@ -99,7 +110,7 @@ export function resetRoomControllerFlags(room: Room): void {
  *  index. Must be kept in sync with `.pos` or spatial lookups miss the object. */
 export function bindObjectPos(obj: any, pos: any): void {
 	obj.pos = pos;
-	obj['#posId'] = pos['#id'];
+	setField(obj, '#posId', getField(pos, '#id'));
 }
 
 // ── SETUP: lifecycle timers ──────────────────────────────────────────
@@ -108,7 +119,7 @@ export function bindObjectPos(obj: any, pos: any): void {
  *  mods/mmo/powercreep/powercreep.ts reuses the field with the same absolute-tick
  *  meaning, where a non-zero value additionally marks the roster entry as spawned. */
 export function setCreepAgeTime(creep: any, gameTime: number, ticksToLive: number): void {
-	creep['#ageTime'] = gameTime + ticksToLive;
+	setField(creep, '#ageTime', gameTime + ticksToLive);
 }
 
 /** SETUP — mods/mmo/powercreep/schema.ts: `#powers` is the packed power vector behind
@@ -117,7 +128,7 @@ export function setCreepAgeTime(creep: any, gameTime: number, ticksToLive: numbe
 export function setPowerCreepPowers(
 	creep: any, powers: Array<{ power: number; level: number; cooldownTime: number }>,
 ): void {
-	creep['#powers'] = powers;
+	setField(creep, '#powers', powers);
 }
 
 /** SETUP — mods/source/source.ts: ticksToRegeneration getter derives from
@@ -125,14 +136,14 @@ export function setPowerCreepPowers(
 export function setSourceNextRegenerationTime(
 	source: any, gameTime: number, ticksToRegen: number,
 ): void {
-	source['#nextRegenerationTime'] = gameTime + ticksToRegen;
+	setField(source, '#nextRegenerationTime', gameTime + ticksToRegen);
 }
 
 /** SETUP — mods/mineral/mineral.ts: mineral regen timer, absolute tick. */
 export function setMineralNextRegenerationTime(
 	mineral: any, gameTime: number, ticksToRegen: number,
 ): void {
-	(mineral as any)['#nextRegenerationTime'] = gameTime + ticksToRegen;
+	setField(mineral, '#nextRegenerationTime', gameTime + ticksToRegen);
 }
 
 /** SETUP — mods/{resource,road,defense}/processor.ts: `#nextDecayTime` is the
@@ -141,7 +152,7 @@ export function setMineralNextRegenerationTime(
 export function setStructureNextDecayTime(
 	structure: any, gameTime: number, ticksToDecay: number,
 ): void {
-	(structure as any)['#nextDecayTime'] = gameTime + ticksToDecay;
+	setField(structure, '#nextDecayTime', gameTime + ticksToDecay);
 }
 
 /** SETUP — mods/{logistics/link,chemistry/lab,mineral/extractor,factory/factory}.ts:
@@ -155,7 +166,7 @@ export function setStructureCooldownRemaining(
 	structure: any, gameTime: number, ticksRemaining: number,
 ): boolean {
 	if (!('#cooldownTime' in structure)) return false;
-	(structure as any)['#cooldownTime'] = gameTime + ticksRemaining;
+	structure['#cooldownTime'] = gameTime + ticksRemaining;
 	return true;
 }
 
@@ -163,21 +174,21 @@ export function setStructureCooldownRemaining(
  *  by an OPERATE_FACTORY power; level getter returns `#level === 0 ? undefined : #level`.
  *  Public `level` property is getter-only. */
 export function setFactoryLevel(factory: any, level: number): void {
-	factory['#level'] = level;
+	setField(factory, '#level', level);
 }
 
 /** SETUP — mods/creep/tombstone.ts: `#creep` holds the post-death summary the
  *  tombstone exposes; `#decayTime` is the absolute expiry tick. */
 export function primeTombstoneCorpse(tombstone: any, creepSummary: any, decayTime: number): void {
-	tombstone['#creep'] = creepSummary;
-	tombstone['#decayTime'] = decayTime;
+	setField(tombstone, '#creep', creepSummary);
+	setField(tombstone, '#decayTime', decayTime);
 }
 
 /** SETUP — mods/structure/ruin.ts: `#structure` holds the deceased structure
  *  summary; `#decayTime` is the absolute expiry. */
 export function primeRuinStructure(ruin: any, structureSummary: any, decayTime: number): void {
-	ruin['#structure'] = structureSummary;
-	ruin['#decayTime'] = decayTime;
+	setField(ruin, '#structure', structureSummary);
+	setField(ruin, '#decayTime', decayTime);
 }
 
 /** SETUP — mods/source/keeper-lair.ts:26 ticksToSpawn getter returns
@@ -185,7 +196,7 @@ export function primeRuinStructure(ruin: any, structureSummary: any, decayTime: 
 export function setKeeperLairNextSpawnTime(
 	lair: any, gameTime: number, ticksRemaining: number,
 ): void {
-	lair['#nextSpawnTime'] = gameTime + ticksRemaining;
+	setField(lair, '#nextSpawnTime', gameTime + ticksRemaining);
 }
 
 /** SETUP — mods/modern/stronghold/invader-core.ts: `#collapseTime` is the absolute tick the
@@ -194,19 +205,19 @@ export function setKeeperLairNextSpawnTime(
 export function setInvaderCoreCollapseTime(
 	core: any, gameTime: number, ticksRemaining: number,
 ): void {
-	core['#collapseTime'] = gameTime + ticksRemaining;
+	setField(core, '#collapseTime', gameTime + ticksRemaining);
 }
 
 /** SETUP — mods/modern/stronghold/schema.ts: `#templateName` is the bunker layout
  *  `deployStronghold` spawns when the deploy timer elapses; it throws when unset. */
 export function setInvaderCoreTemplateName(core: any, templateName: string): void {
-	core['#templateName'] = templateName;
+	setField(core, '#templateName', templateName);
 }
 
 /** SNAPSHOT — mods/modern/stronghold/schema.ts: `#templateName` has no public getter;
  *  vanilla's invader-core doc carries the equivalent `templateName` field. */
 export function readInvaderCoreTemplateName(core: any): string | undefined {
-	return core['#templateName'];
+	return getField(core, '#templateName');
 }
 
 /** SETUP — mods/modern/stronghold/processor.ts createCreep intent: an in-progress defender
@@ -217,10 +228,10 @@ export function readInvaderCoreTemplateName(core: any): string | undefined {
 export function primeInvaderCoreSpawning(
 	core: any, creep: any, spawning: any, gameTime: number, ticksRemaining: number,
 ): void {
-	creep['#ageTime'] = 0;
-	spawning['#spawnId'] = core.id;
-	spawning['#spawningCreepId'] = creep.id;
-	spawning['#spawnTime'] = gameTime + ticksRemaining;
+	setField(creep, '#ageTime', 0);
+	setField(spawning, '#spawnId', core.id);
+	setField(spawning, '#spawningCreepId', creep.id);
+	setField(spawning, '#spawnTime', gameTime + ticksRemaining);
 	core.spawning = spawning;
 }
 
@@ -232,9 +243,9 @@ export function setDepositState(
 	deposit: any, gameTime: number,
 	state: { cooldownTicks?: number; decayTicks: number; harvested?: number },
 ): void {
-	if (state.cooldownTicks !== undefined) deposit['#cooldownTime'] = gameTime + state.cooldownTicks;
-	if (state.harvested !== undefined) deposit['#harvested'] = state.harvested;
-	deposit['#nextDecayTime'] = gameTime + state.decayTicks;
+	if (state.cooldownTicks !== undefined) setField(deposit, '#cooldownTime', gameTime + state.cooldownTicks);
+	if (state.harvested !== undefined) setField(deposit, '#harvested', state.harvested);
+	setField(deposit, '#nextDecayTime', gameTime + state.decayTicks);
 }
 
 // ── SETUP: store manipulation ────────────────────────────────────────
@@ -252,15 +263,13 @@ export function storeSubtract(store: any, resource: string, amount: number): voi
 
 /** SETUP — game/store.ts: `#entries` iterates [resource, amount] pairs. */
 export function storeEntries(store: any): Iterable<[string, number]> {
-	return typeof store?.['#entries'] === 'function'
-		? store['#entries']()
-		: Object.entries(store ?? {});
+	return store['#entries']();
 }
 
 /** SETUP — mods/creep/creep.ts: after applying CARRY boosts that extend capacity,
  *  resize `#capacity` to the recomputed body-based capacity. */
 export function setStoreCapacity(store: any, capacity: number): void {
-	(store as any)['#capacity'] = capacity;
+	setField(store, '#capacity', capacity);
 }
 
 // ── SETUP: account keyspace ──────────────────────────────────────────
@@ -288,8 +297,8 @@ export function readRawOwnerId(obj: any): string | undefined {
 export function readRawReservation(
 	controller: StructureController,
 ): { userId: string; ticksToEnd: number } | undefined {
-	const ticksToEnd = optionalExpiryTime((controller as any)['#reservationEndTime']);
-	return ticksToEnd === undefined ? undefined : { userId: controller.room['#user']!, ticksToEnd };
+	const ticksToEnd = optionalExpiryTime(getField(controller, '#reservationEndTime'));
+	return ticksToEnd === undefined ? undefined : { userId: getField(controller.room, '#user'), ticksToEnd };
 }
 
 /** SNAPSHOT — mods/classic/controller/controller.ts:102 the `sign` getter resolves the signing
@@ -297,7 +306,7 @@ export function readRawReservation(
 export function readRawSign(
 	controller: StructureController,
 ): { userId: string; text: string; time: number } | undefined {
-	return (controller.room as any)['#sign'];
+	return getField(controller.room, '#sign');
 }
 
 /** SNAPSHOT — game/room/room.ts:44 `#initialize` materializes RoomObject
@@ -305,5 +314,5 @@ export function readRawSign(
  *  iterate `#objects` and call render hooks need indices populated first;
  *  the call is idempotent (guarded by `#didInitialize`). */
 export function initializeRoomIndices(room: any): void {
-	room['#initialize']?.();
+	room['#initialize']();
 }

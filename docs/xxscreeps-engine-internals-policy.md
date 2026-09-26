@@ -44,6 +44,9 @@ Each `#`-field access must classify as exactly one of:
 - Each helper's docstring carries a `CATEGORY — engine file:line` tag
   citing the xxscreeps source the coupling depends on.
 - `index.ts` and `snapshots.ts` contain **zero** direct `#` accesses.
+- Helpers write and read `#` fields through `setField` / `getField`, which
+  throw when the field is absent at the pinned build, so a pin bump that
+  renames one fails setup instead of writing a property the engine never reads.
 - A pre-commit drift trap greps for violations and fails the commit.
 
 ## Out-of-scope: engine-level orchestration
