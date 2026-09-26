@@ -95,40 +95,19 @@ import { createRoomObject as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/classic/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 import { asUnion } from 'xxscreeps/utility/utility.js';
-
-// Optional mods — not all xxscreeps builds include these exports.
-// Use variable-named dynamic imports so TS doesn't statically require the
-// module, and so a missing named export degrades to `undefined` instead of
-// a type error.
-let createFactory: ((pos: any, owner: string) => any) | undefined;
-let createTerminal: ((pos: any, owner: string) => any) | undefined;
-let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
-// powerspawn is optional across pins; gate the PowerSpawn/GPL surface on the
-// dynamic import result so older pins skip cleanly and current main runs it.
-let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
-// Power creeps arrived with the mods/mmo/powercreep mod (laverdet/xxscreeps#335).
-// A spawned creep is two objects — the account roster entry and the room copy —
-// so the adapter needs both factories plus the roster blob codec.
-let createRosterPowerCreep: ((id: string, name: string, className: string, owner: string) => any) | undefined;
-let createSpawnedPowerCreep: ((pos: any, entry: any) => any) | undefined;
-let readPowerCreepRoster: ((blob: Readonly<Uint8Array>) => any[]) | undefined;
-let writePowerCreepRoster: ((roster: any[]) => Readonly<Uint8Array>) | undefined;
-let loadPowerCreepRosterBlob: ((db: any, userId: string) => Promise<Readonly<Uint8Array> | null>) | undefined;
-for (const [name, assign] of [
-	['xxscreeps/mods/modern/factory/factory.js', (m: any) => { createFactory = m.create; }],
-	['xxscreeps/mods/classic/brokerage/terminal.js', (m: any) => { createTerminal = m.create; }],
-	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
-	['xxscreeps/mods/modern/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
-	['xxscreeps/mods/mmo/powercreep/powercreep.js', (m: any) => {
-		createRosterPowerCreep = m.createPowerCreep;
-		createSpawnedPowerCreep = m.createSpawnedPowerCreep;
-		readPowerCreepRoster = m.read;
-		writePowerCreepRoster = m.write;
-	}],
-	['xxscreeps/mods/mmo/powercreep/model.js', (m: any) => { loadPowerCreepRosterBlob = m.loadPowerCreepsBlob; }],
-] as const) {
-	try { assign(await import(name)); } catch {}
-}
+import { create as createFactory } from 'xxscreeps/mods/modern/factory/factory.js';
+import { create as createTerminal } from 'xxscreeps/mods/classic/brokerage/terminal.js';
+import { create as createPortal } from 'xxscreeps/mods/portal/portal.js';
+import { create as createPowerSpawn } from 'xxscreeps/mods/modern/powerspawn/powerspawn.js';
+// A spawned power creep is two objects — the account roster entry and the room
+// copy — so the adapter needs both factories plus the roster blob codec.
+import {
+	createPowerCreep as createRosterPowerCreep,
+	createSpawnedPowerCreep,
+	read as readPowerCreepRoster,
+	write as writePowerCreepRoster,
+} from 'xxscreeps/mods/mmo/powercreep/powercreep.js';
+import { loadPowerCreepsBlob as loadPowerCreepRosterBlob } from 'xxscreeps/mods/mmo/powercreep/model.js';
 
 // Module-level initialization
 import { mods } from 'xxscreeps/config/mods.js';
@@ -210,7 +189,7 @@ const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
-		powerCreeps: !!createRosterPowerCreep,
+		powerCreeps: true,
 		// xxscreeps mutates the account roster only through the backend's
 		// `/api/game/power-creeps/*` routes (`mods/mmo/powercreep/backend.ts`).
 		// The runtime `PowerCreep` class has no create/rename/upgrade/delete.
@@ -219,9 +198,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// processor branch (`mods/mmo/powercreep/processor.ts`); the rest return
 		// OK and drop without applying an effect or charging ops.
 		powerEffects: false,
-		powerSpawn: !!createPowerSpawn,
-		factory: !!createFactory,
-		terminal: !!createTerminal,
+		powerSpawn: true,
+		factory: true,
+		terminal: true,
 		marketBasics: true,
 		market: false,
 		terminalSend: true,
@@ -231,10 +210,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		powerBank: true,
 		terrain: true,
 		roomStatus: false,
-		// Portal mod is optional in pinned xxscreeps. Capability tracks
-		// the dynamic import result so PORTAL-* tests skip cleanly when
-		// the mod is absent and run when it lands upstream.
-		portals: !!createPortal,
+		portals: true,
 		// Pinned xxscreeps ships the full invader-core mod
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
@@ -749,9 +725,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
-		if (!createRosterPowerCreep) {
-			throw new Error('placePowerCreep: pinned xxscreeps has no mods/mmo/powercreep');
-		}
 		const id = this.nextId();
 		const userId = this.resolvePlayer(spec.owner);
 		const name = spec.name ?? `power-creep-${id}`;
@@ -771,7 +744,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.queueOp(roomName, room => {
 			const gameTime = this.simulation!.shard.time;
 			const entry = this.buildPowerCreepRosterEntry(id, name, userId, powers, gameTime);
-			const creep = createSpawnedPowerCreep!(
+			const creep = createSpawnedPowerCreep(
 				new RoomPosition(spec.pos[0], spec.pos[1], roomName), entry);
 			// The room copy carries the live cooldowns; roster copies never do.
 			setPowerCreepPowers(creep, powers.map(({ power, level, cooldown }) => ({
@@ -793,7 +766,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		id: string, name: string, userId: string,
 		powers: Array<{ power: number; level: number }>, gameTime: number,
 	): any {
-		const entry = createRosterPowerCreep!(id, name, C.POWER_CLASS.OPERATOR, userId);
+		const entry = createRosterPowerCreep(id, name, C.POWER_CLASS.OPERATOR, userId);
 		setPowerCreepPowers(entry, powers.map(({ power, level }) => ({ power, level, cooldownTime: 0 })));
 		setCreepAgeTime(entry, gameTime, C.POWER_CREEP_LIFE_TIME);
 		return entry;
@@ -825,13 +798,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		for (const [ownerHandle, ownerOps] of byOwner) {
 			const engineUserId = this.resolvePlayer(ownerHandle);
-			const existingBlob = await loadPowerCreepRosterBlob!(db, engineUserId);
-			const roster = existingBlob ? readPowerCreepRoster!(existingBlob) : [];
+			const existingBlob = await loadPowerCreepRosterBlob(db, engineUserId);
+			const roster = existingBlob ? readPowerCreepRoster(existingBlob) : [];
 			for (const op of ownerOps) {
 				roster.push(this.buildPowerCreepRosterEntry(
 					op.id, op.name, engineUserId, op.powers, time));
 			}
-			await db.data.set(powerCreepRosterKey(engineUserId), writePowerCreepRoster!(roster));
+			await db.data.set(powerCreepRosterKey(engineUserId), writePowerCreepRoster(roster));
 			await this.simulation!.disposeUserSandbox(engineUserId);
 		}
 	}
@@ -992,12 +965,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	private async placePortal(roomName: string, spec: Record<string, unknown>): Promise<string> {
-		if (!createPortal) {
-			throw new Error(
-				`placePortal: pinned xxscreeps build has no portal mod (xxscreeps/mods/portal/portal.js missing). ` +
-				`PORTAL-* tests are registered as expected failures in parity.json until the mod lands upstream.`,
-			);
-		}
 		const id = this.nextId();
 		const pos = spec.pos as [number, number];
 		const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
@@ -1011,7 +978,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		this.queueOp(roomName, room => {
 			const decayTime = decayTicks > 0 ? this.simulation!.shard.time + decayTicks : 0;
-			const portal = createPortal!(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
+			const portal = createPortal(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
 			portal.id = id;
 			insertRoomObject(room, portal);
 		});
@@ -1489,15 +1456,9 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
 		case 'nuker': return createNuker(pos, owner!);
-		case 'powerSpawn':
-			if (!createPowerSpawn) throw new Error('powerspawn mod not available in this xxscreeps build');
-			return createPowerSpawn(pos, owner!);
-		case 'terminal':
-			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
-			return createTerminal(pos, owner!);
-		case 'factory':
-			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
-			return createFactory(pos, owner!);
+		case 'powerSpawn': return createPowerSpawn(pos, owner!);
+		case 'terminal': return createTerminal(pos, owner!);
+		case 'factory': return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
 		case 'controller': {
 			// xxscreeps' controller mod has no public create() — a freestanding
@@ -1617,9 +1578,9 @@ async function createSimulation(
 		// Initialize rooms (inlined from xxscreeps/src/test/simulate.ts:76-86)
 		await Promise.all(Fn.map(Object.entries(roomInits), async ([roomName, callback]) => {
 			let room;
-			try {
+			if (await shard.data.sIsMember('rooms', roomName)) {
 				room = await shard.loadRoom(roomName, shard.time);
-			} catch {
+			} else {
 				// Room not in shard.json — create a blank room
 				room = new Room();
 				room.name = roomName;

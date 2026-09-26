@@ -1065,17 +1065,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 
 			// Create User object for pubsub (needed for console event listening)
-			// @ts-expect-error -- no type declarations
-			const UserClass = (await import('screeps-server-mockup')).default?.User
-				?? (await import('screeps-server-mockup/dist/src/user.js')).default;
-			let userObj: any;
-			try {
-				userObj = new UserClass(this.server, { _id: user._id, username });
-				await userObj.init();
-			} catch {
-				// User class might not be separately importable — store raw data
-				userObj = { id: user._id, username };
-			}
+			const UserClass = ((await import('screeps-server-mockup/dist/src/user.js')) as any).default;
+			const userObj: any = new UserClass(this.server, { _id: user._id, username });
+			await userObj.init();
 
 			this.playerMap.set(handle, user._id);
 			this.reversePlayerMap.set(user._id, handle);
