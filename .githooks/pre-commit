@@ -14,7 +14,10 @@ if [[ -n "${GIT_INDEX_FILE:-}" && "$GIT_INDEX_FILE" != /* ]]; then
 fi
 
 snapshot="$(mktemp -d)"
-trap 'rm -rf "$snapshot"' EXIT
+# bash 3.2 (macOS) enters this trap with $? 0 after an unbound-variable exit,
+# so only an exit that set `passed` counts as success.
+passed=
+trap 'status=$?; rm -rf "$snapshot"; [[ -n $passed ]] || exit $(( status ? status : 1 ))' EXIT
 git checkout-index --all --prefix="$snapshot/"
 ln -s "$repo_root/node_modules" "$snapshot/node_modules"
 if [[ -d reports ]]; then
@@ -46,7 +49,7 @@ changed=()
 while IFS= read -r f; do
 	changed+=("$f")
 done < <({ in_snapshot diff --name-only -- "${generated[@]}"; in_snapshot ls-files --others -- "${generated[@]}"; })
-(( ${#changed[@]} > 0 )) || exit 0
+(( ${#changed[@]} > 0 )) || { passed=1; exit 0; }
 
 # Where the working copy matches the index, it takes the regenerated file too.
 mirror=()
@@ -56,8 +59,10 @@ for f in "${changed[@]}"; do
 	fi
 done
 in_snapshot add -- "${changed[@]}"
-for f in "${mirror[@]}"; do
+# bash 3.2 treats an empty "${array[@]}" as unbound under set -u.
+for f in ${mirror[@]+"${mirror[@]}"}; do
 	mkdir -p "$(dirname "$f")"
 	cp "$snapshot/$f" "$f"
 done
 echo "pre-commit: staged regenerated ${changed[*]}"
+passed=1
