@@ -251,11 +251,16 @@ describe('adapter contract: setup', () => {
 
 		test('createShard refreshes player-visible terrain after a previous shard', async ({ shard }) => {
 			shard.requires('terrain', 'terrain cache refresh requires terrain capability');
+			const walledTerrain = new Array<0 | 1 | 2>(2500).fill(0);
+			walledTerrain[30 * 50 + 30] = 1;
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1', terrain: walledTerrain },
+				],
 			});
-			await shard.runPlayer('p1', code`Game.map.getRoomTerrain('W1N1').get(30, 30)`);
+			expect(await shard.runPlayer('p1', code`Game.map.getRoomTerrain('W2N1').get(30, 30)`)).toBe(1);
 
 			const plainTerrain = new Array<0 | 1 | 2>(2500).fill(0);
 			await shard.createShard({
