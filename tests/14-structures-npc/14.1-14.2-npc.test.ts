@@ -202,9 +202,9 @@ describe('Invader core', () => {
 		expect(controller).toBeDefined();
 		expect(controller!.owner ?? null).toBeNull();
 		expect(controller!.level).toBe(0);
-		expect(controller!.progress).toBe(0);
+		expect(controller!.progress).toBeNull();
 		expect(controller!.isPowerEnabled).toBe(false);
-		expect(controller!.safeMode).toBeUndefined();
+		expect(controller!.safeMode).toBeNull();
 	});
 
 	test('INVADER-CORE-005 expired collapse timer removes the invader core without a ruin', async ({ shard }) => {

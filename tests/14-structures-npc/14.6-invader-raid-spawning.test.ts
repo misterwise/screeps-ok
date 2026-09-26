@@ -1,6 +1,6 @@
 import {
 	describe, test, expect,
-	CREEP_LIFE_TIME, FIND_CREEPS, INVADERS_ENERGY_GOAL,
+	FIND_CREEPS, INVADERS_ENERGY_GOAL,
 	MOVE, TERRAIN_PLAIN, TERRAIN_WALL,
 } from '../../src/index.js';
 import type {
@@ -102,7 +102,8 @@ function publicBody(creep: CreepSnapshot): Array<{ type: string; boost?: string 
 function expectInvaderCreepBasics(creeps: readonly CreepSnapshot[]): void {
 	for (const creep of creeps) {
 		expect(creep.owner).toBe(INVADER_OWNER);
-		expect(creep.ticksToLive).toBe(CREEP_LIFE_TIME);
+		// The cron inserts raiders without ageTime; the creep tick sets it on their first tick (creeps/tick.js:88).
+		expect(creep.ticksToLive).toBeNull();
 		expect(
 			creep.pos.x === 0 || creep.pos.x === 49 || creep.pos.y === 0 || creep.pos.y === 49,
 		).toBe(true);

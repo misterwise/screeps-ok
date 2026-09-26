@@ -18,7 +18,7 @@ describe('creep lifetime', () => {
 
 		expect(typeof ttl1).toBe('number');
 		expect(typeof ttl2).toBe('number');
-		expect(ttl2).toBe(ttl1 - 1);
+		expect(ttl2).toBe(ttl1! - 1);
 	});
 
 	test('CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive', async ({ shard }) => {

@@ -24,7 +24,7 @@ describe('Road decay', () => {
 		await shard.tick(2);
 		const mid = await shard.expectStructure(id, STRUCTURE_ROAD);
 		expect(mid.hits).toBe(ROAD_HITS);
-		expect(mid.ticksToDecay).toBe(t0 - 2);
+		expect(mid.ticksToDecay).toBe(t0! - 2);
 
 		// Decay fires on the fifth tick and restarts the timer at ROAD_DECAY_TIME
 		// from that tick; one more tick has elapsed at this read.

@@ -4,7 +4,7 @@ import {
 	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
 	STRUCTURE_LAB, STRUCTURE_KEEPER_LAIR,
 	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
-	FIND_DEPOSITS, OK, REACTION_TIME,
+	FIND_DEPOSITS, OK, REACTION_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
 	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
 	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
 } from '../../src/index.js';
@@ -262,7 +262,7 @@ describe('adapter contract: inspection', () => {
 			const id = await shard.placeObject('W1N1', 'deposit', {
 				pos: [20, 20],
 				depositType: RESOURCE_METAL,
-				lastCooldown: 7,
+				harvested: 1600,
 				cooldownTime: 25,
 				decayTime: 100,
 			});
@@ -272,7 +272,8 @@ describe('adapter contract: inspection', () => {
 			expect(obj?.kind).toBe('deposit');
 			expect(obj.id).toBe(id);
 			expect(obj.depositType).toBe(RESOURCE_METAL);
-			expect(obj.lastCooldown).toBe(7);
+			// lastCooldown follows the harvested total, as it does after real harvests.
+			expect(obj.lastCooldown).toBe(Math.ceil(DEPOSIT_EXHAUST_MULTIPLY * 1600 ** DEPOSIT_EXHAUST_POW));
 			// Timers are seeded relative to placement; one tick has elapsed.
 			expect(obj.cooldown).toBe(24);
 			expect(obj.ticksToDecay).toBe(99);
@@ -319,7 +320,8 @@ describe('adapter contract: inspection', () => {
 			expect(obj.structureType).toBe(STRUCTURE_INVADER_CORE);
 			expect(obj.level).toBe(2);
 			expect(obj.ticksToDeploy).toBe(74);
-			expect(obj.effects).toEqual(effects);
+			// Seeded effects count down like the engine's own; one tick has elapsed.
+			expect(obj.effects).toEqual([{ effect: 1001, level: 1, ticksRemaining: 49 }]);
 			expect(obj.templateName).toBe('testTemplate');
 			expect(obj.strongholdId).toBe('testStronghold');
 		});

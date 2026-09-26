@@ -1130,9 +1130,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			fatigue: 0,
 			spawning: false,
 			store: spec.store ?? {},
-			storeCapacityResource: { energy: storeCapacity },
 			storeCapacity,
-			ageTime: gameTime + (spec.ticksToLive ?? 1500),
+			ageTime: gameTime + (spec.ticksToLive ?? C.CREEP_LIFE_TIME),
 			actionLog: {},
 			notifyWhenAttacked: true,
 		});
@@ -1343,7 +1342,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			type: 'ruin',
 			x: spec.pos[0],
 			y: spec.pos[1],
-			structureType: spec.structureType,
 			structure,
 			...(structureUser ? { user: structureUser } : {}),
 			destroyTime,
@@ -1525,7 +1523,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				y: pos[1],
 				depositType: (spec.depositType as string) ?? 'silicon',
 				harvested: (spec.harvested as number) ?? 0,
-				lastCooldown: (spec.lastCooldown as number) ?? 0,
 				cooldownTime: spec.cooldownTime != null ? gameTime + (spec.cooldownTime as number) : null,
 				decayTime: gameTime + decayTicks,
 			});
@@ -1557,7 +1554,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				: null;
 			const C = this.server.constants;
 			const user = (spec.user as string) ?? '2';
-			const effects = [...((spec.effects as Record<string, unknown>[]) ?? [])];
+			// Seeded effects carry a relative `ticksRemaining`; the engine stores an absolute `endTime`.
+			const effects: Record<string, unknown>[] = ((spec.effects as Record<string, unknown>[]) ?? [])
+				.map(({ ticksRemaining, ...rest }) => ({ ...rest, endTime: gameTime + (ticksRemaining as number) }));
 			const insert: Record<string, unknown> = {
 				room: roomName,
 				type: 'invaderCore',
@@ -2049,7 +2048,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				store: {},
 				storeCapacity: C.FACTORY_CAPACITY,
 				cooldown: 0,
-				level: 0,
 			};
 			case 'extractor': return {
 				hits: C.EXTRACTOR_HITS, hitsMax: C.EXTRACTOR_HITS,

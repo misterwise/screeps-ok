@@ -65,7 +65,7 @@ describe('source regeneration', () => {
 		await shard.tick(3);
 
 		const after = await shard.expectObject(srcId, 'source');
-		expect(after.ticksToRegeneration).toBe(ttrBefore - 3);
+		expect(after.ticksToRegeneration).toBe(ttrBefore! - 3);
 	});
 
 	test('SOURCE-REGEN-005 a source at full capacity has no active regeneration timer', async ({ shard }) => {

@@ -146,7 +146,7 @@ export const jsonObjectCases: readonly JsonObjectCase[] = [
 		label: 'Ruin',
 		fields: [
 			'id', 'pos.x', 'pos.y', 'pos.roomName', 'room.name',
-			'structureType', 'destroyTime', 'ticksToDecay', 'structure.structureType',
+			'destroyTime', 'ticksToDecay', 'structure.structureType',
 		],
 	},
 	{

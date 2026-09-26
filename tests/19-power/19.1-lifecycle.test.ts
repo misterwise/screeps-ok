@@ -582,7 +582,7 @@ describe('Power creep lifecycle', () => {
 		// Wear advances the decay timer, not hits: ROAD_WEAROUT_POWER_CREEP plus
 		// the 2 ticks elapsed (move + position read).
 		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT_POWER_CREEP - 2);
+		expect(road.ticksToDecay).toBe(ttdBefore! - ROAD_WEAROUT_POWER_CREEP - 2);
 		expect(road.hits).toBe(5000);
 	});
 });

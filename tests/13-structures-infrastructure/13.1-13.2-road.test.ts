@@ -116,7 +116,7 @@ describe('StructureRoad', () => {
 		// Road wear advances decay timer by ROAD_WEAROUT * body.length.
 		// runPlayer (1 tick) + tick() (1 tick) = 2 ticks elapsed.
 		const expectedDecrease = ROAD_WEAROUT * 3 + 2;
-		expect(roadAfter.ticksToDecay).toBe(ttdBefore - expectedDecrease);
+		expect(roadAfter.ticksToDecay).toBe(ttdBefore! - expectedDecrease);
 	});
 
 	test('ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road', async ({ shard }) => {
@@ -145,7 +145,7 @@ describe('StructureRoad', () => {
 
 		const roadAfter = await shard.expectStructure(roadId, STRUCTURE_ROAD);
 		// Wear (ROAD_WEAROUT * 1) + 2 ticks elapsed (runPlayer + tick).
-		expect(roadAfter.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT * 1 - 2);
+		expect(roadAfter.ticksToDecay).toBe(ttdBefore! - ROAD_WEAROUT * 1 - 2);
 	});
 
 	test('ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road', async ({ shard }) => {
@@ -189,6 +189,6 @@ describe('StructureRoad', () => {
 
 		const roadAfter = await shard.expectStructure(roadId, STRUCTURE_ROAD);
 		// Wear (ROAD_WEAROUT * 3 body parts) + 2 ticks elapsed (runPlayer + tick).
-		expect(roadAfter.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT * 3 - 2);
+		expect(roadAfter.ticksToDecay).toBe(ttdBefore! - ROAD_WEAROUT * 3 - 2);
 	});
 });

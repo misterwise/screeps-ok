@@ -311,6 +311,15 @@ exists.
 Snapshots must expose only public gameplay information. They must not leak
 engine-private fields.
 
+A snapshot field named after a player getter reports that getter's value on
+the tick: no default, no clamp, and `null` where the getter returns
+`undefined` (a full source's `ticksToRegeneration`, an unowned controller's
+`ticksToDowngrade`). `storeCapacity` is `store.getCapacity()`, so it is `null`
+for a store with per-resource limits such as a spawn's; `storeCapacityByResource`
+is `store.getCapacity(resource)`. An adapter that reads raw engine records
+re-derives each getter from the engine's own formula rather than a remembered
+value.
+
 ### `findInRoom`
 
 The current shipped contract uses supported neutral `FIND_*` constants.

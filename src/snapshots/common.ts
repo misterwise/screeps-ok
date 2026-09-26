@@ -1,3 +1,8 @@
+// A snapshot field named after a player getter reports that getter's value on
+// the tick, unclamped and undefaulted; a getter's `undefined` reads `null`.
+// `storeCapacity` is `store.getCapacity()`, `storeCapacityByResource` is
+// `store.getCapacity(resource)`, and `owner` is the owner's test handle.
+
 // ── Position ─────────────────────────────────────────────────
 
 export interface PosSnapshot {
@@ -18,10 +23,10 @@ export interface CreepSnapshot {
 	fatigue: number;
 	body: Array<{ type: string; hits: number; boost?: string }>;
 	owner: string;
-	ticksToLive: number;
+	ticksToLive: number | null;
 	spawning: boolean;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 }
 
 // ── Structures ───────────────────────────────────────────────
@@ -39,15 +44,15 @@ export interface StructureSnapshotBase {
 export interface ControllerSnapshot extends StructureSnapshotBase {
 	structureType: 'controller';
 	level: number;
-	progress: number;
+	progress: number | null;
 	progressTotal: number | null;
-	ticksToDowngrade: number;
-	safeMode?: number;
+	ticksToDowngrade: number | null;
+	safeMode: number | null;
 	safeModeAvailable: number;
-	safeModeCooldown: number;
+	safeModeCooldown: number | null;
 	isPowerEnabled: boolean;
-	reservation?: { owner: string; ticksToEnd: number };
-	sign?: { owner: string; text: string; time: number };
+	reservation: { owner: string; ticksToEnd: number } | null;
+	sign: { owner: string; text: string; time: number } | null;
 }
 
 export interface SpawnSnapshot extends StructureSnapshotBase {
@@ -56,7 +61,7 @@ export interface SpawnSnapshot extends StructureSnapshotBase {
 	hitsMax: number;
 	name: string;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 	spawning: {
 		name: string;
 		needTime: number;
@@ -79,7 +84,7 @@ export interface TowerSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 }
 
 export interface StorageSnapshot extends StructureSnapshotBase {
@@ -87,7 +92,7 @@ export interface StorageSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 }
 
 export interface LinkSnapshot extends StructureSnapshotBase {
@@ -95,7 +100,7 @@ export interface LinkSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 	cooldown: number;
 }
 
@@ -104,7 +109,7 @@ export interface RampartSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	isPublic: boolean;
-	ticksToDecay: number;
+	ticksToDecay: number | null;
 }
 
 export interface TerminalSnapshot extends StructureSnapshotBase {
@@ -112,7 +117,7 @@ export interface TerminalSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 	cooldown: number;
 }
 
@@ -121,9 +126,9 @@ export interface FactorySnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 	cooldown: number;
-	level: number;
+	level: number | null;
 }
 
 export interface ExtensionSnapshot extends StructureSnapshotBase {
@@ -131,7 +136,7 @@ export interface ExtensionSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 }
 
 export interface ContainerSnapshot extends StructureSnapshotBase {
@@ -139,8 +144,8 @@ export interface ContainerSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
-	ticksToDecay: number;
+	storeCapacity: number | null;
+	ticksToDecay: number | null;
 }
 
 export interface ExtractorSnapshot extends StructureSnapshotBase {
@@ -154,7 +159,7 @@ export interface RoadSnapshot extends StructureSnapshotBase {
 	structureType: 'road';
 	hits: number;
 	hitsMax: number;
-	ticksToDecay: number;
+	ticksToDecay: number | null;
 }
 
 export interface NukerSnapshot extends StructureSnapshotBase {
@@ -162,7 +167,7 @@ export interface NukerSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 	cooldown: number;
 }
 
@@ -171,7 +176,7 @@ export interface PowerSpawnSnapshot extends StructureSnapshotBase {
 	hits: number;
 	hitsMax: number;
 	store: Record<string, number>;
-	storeCapacity: number;
+	storeCapacity: number | null;
 }
 
 export interface ObserverSnapshot extends StructureSnapshotBase {
@@ -194,7 +199,7 @@ export interface InvaderCoreSnapshot extends StructureSnapshotBase {
 		remainingTime: number;
 	} | null;
 	ticksToDeploy: number | null;
-	effects: Record<string, unknown>[];
+	effects: Array<{ effect: number; level?: number; power?: number; ticksRemaining: number }> | null;
 	templateName?: unknown;
 	strongholdId?: unknown;
 }
@@ -267,7 +272,7 @@ export interface SourceSnapshot {
 	pos: PosSnapshot;
 	energy: number;
 	energyCapacity: number;
-	ticksToRegeneration: number;
+	ticksToRegeneration: number | null;
 }
 
 export interface MineralSnapshot {
@@ -277,7 +282,7 @@ export interface MineralSnapshot {
 	mineralType: string;
 	mineralAmount: number;
 	density: number;
-	ticksToRegeneration: number;
+	ticksToRegeneration: number | null;
 }
 
 export interface DepositSnapshot {

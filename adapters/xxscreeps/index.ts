@@ -872,7 +872,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const deposit = createObject(new Deposit(), new RoomPosition(pos[0], pos[1], roomName));
 			deposit.id = id;
 			deposit.depositType = (spec.depositType as any) ?? C.RESOURCE_SILICON;
-			if (typeof spec.lastCooldown === 'number') deposit.lastCooldown = spec.lastCooldown;
+			// The harvest processor stores lastCooldown from the running total (deposit/processor.ts:43).
+			if (typeof spec.harvested === 'number') {
+				deposit.lastCooldown = Math.ceil(C.DEPOSIT_EXHAUST_MULTIPLY * spec.harvested ** C.DEPOSIT_EXHAUST_POW);
+			}
 			setDepositState(deposit, this.simulation!.shard.time, {
 				cooldownTicks: typeof spec.cooldownTime === 'number' ? spec.cooldownTime : undefined,
 				decayTicks: typeof spec.decayTime === 'number' ? spec.decayTime : DEPOSIT_DECAY_TIME,

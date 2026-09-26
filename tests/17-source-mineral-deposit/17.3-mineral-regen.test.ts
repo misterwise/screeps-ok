@@ -35,7 +35,7 @@ describe('mineral regeneration', () => {
 		// Tick 3 times and verify it decreased by 3.
 		await shard.tick(3);
 		const after = await shard.expectObject(id, 'mineral');
-		expect(after.ticksToRegeneration).toBe(t0 - 3);
+		expect(after.ticksToRegeneration).toBe(t0! - 3);
 	});
 
 	test('MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount', async ({ shard }) => {
@@ -56,7 +56,8 @@ describe('mineral regeneration', () => {
 		const after = await shard.expectObject(id, 'mineral');
 		// Default density is DENSITY_HIGH → MINERAL_DENSITY[3] = 70000.
 		expect(after.mineralAmount).toBe(MINERAL_DENSITY[DENSITY_HIGH]);
-		expect(after.ticksToRegeneration).toBe(0);
+		// Regeneration clears the timer; the getter reads undefined until the next depletion.
+		expect(after.ticksToRegeneration).toBeNull();
 	});
 
 	test('MINERAL-REGEN-005 mineral type remains the same after regeneration', async ({ shard }) => {
@@ -107,7 +108,7 @@ describe('mineral regeneration', () => {
 
 			const mineral = await shard.expectObject(id, 'mineral');
 			expect(mineral.mineralAmount).toBe(expectedAmount);
-			expect(mineral.ticksToRegeneration).toBe(0);
+			expect(mineral.ticksToRegeneration).toBeNull();
 		});
 	}
 
