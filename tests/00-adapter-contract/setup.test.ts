@@ -233,6 +233,22 @@ describe('adapter contract: setup', () => {
 			expect(result.goesThroughWall).toBe(false);
 		});
 
+		test('createShard discards the previous shard after it has ticked', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const creepId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+			await shard.tick();
+			expect(await shard.getObject(creepId)).not.toBeNull();
+
+			await shard.createShard({ players: ['p2'], rooms: [{ name: 'W1N1', rcl: 1, owner: 'p2' }] });
+			await shard.tick();
+
+			expect(await shard.findInRoom('W1N1', FIND_CREEPS)).toEqual([]);
+			const controller = (await shard.findInRoom('W1N1', FIND_STRUCTURES))
+				.find(s => s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER);
+			expect(controller?.owner).toBe('p2');
+			await expect(shard.runPlayer('p1', code`1`)).rejects.toThrow(/Unknown player/);
+		});
+
 		test('createShard refreshes player-visible terrain after a previous shard', async ({ shard }) => {
 			shard.requires('terrain', 'terrain cache refresh requires terrain capability');
 			await shard.createShard({

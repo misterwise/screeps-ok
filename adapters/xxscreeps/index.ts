@@ -363,6 +363,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async createShard(spec: ShardSpec): Promise<void> {
+		await this.teardown();
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
 

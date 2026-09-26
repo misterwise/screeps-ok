@@ -921,6 +921,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async createShard(spec: ShardSpec): Promise<void> {
+		await this.teardown();
 		this.server = await getServer();
 		await this.server.world.reset();
 		this.firstTickRun = false;
