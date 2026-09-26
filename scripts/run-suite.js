@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { parityExitCode } from './lib/parity.js';
+import { parityExitCode, runPlan } from './lib/parity.js';
 
 const require = createRequire(import.meta.url);
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -191,16 +191,17 @@ function runSuiteLocked(options = {}) {
 	const vitestBin = require.resolve('vitest/vitest.mjs');
 	const commandArgs = isWatch ? vitestArgs : ['run', ...vitestArgs];
 	const verdictPath = path.join(packageRoot, '.parity-verdict.json');
+	const plan = runPlan(sanitizeReportName(resolved.label), vitestArgs);
 	rmSync(verdictPath, { force: true });
 	const result = spawnSync(process.execPath, [vitestBin, ...commandArgs], {
 		cwd: packageRoot,
 		env: {
 			...env,
 			SCREEPS_OK_ADAPTER: resolved.adapterPath,
-			SCREEPS_OK_REPORT_NAME: options.reportName ?? sanitizeReportName(resolved.label),
+			SCREEPS_OK_REPORT_NAME: plan.reportName,
 			SCREEPS_OK_PROJECT_ROOT: invokerCwd,
 			SCREEPS_OK_PARITY_VERDICT: verdictPath,
-			SCREEPS_OK_FULL_RUN: vitestArgs.length === 0 ? '1' : '0',
+			SCREEPS_OK_FULL_RUN: plan.fullRun ? '1' : '0',
 		},
 		stdio,
 	});

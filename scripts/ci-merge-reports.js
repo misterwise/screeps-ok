@@ -6,9 +6,9 @@
  * pattern=reports-*:
  *
  *   <artifacts-dir>/
- *     reports-vanilla-1/vanilla.json
- *     reports-vanilla-2/vanilla.json
- *     reports-xxscreeps-1/xxscreeps.json
+ *     reports-vanilla-1/vanilla-partial.json
+ *     reports-vanilla-2/vanilla-partial.json
+ *     reports-xxscreeps-1/xxscreeps-partial.json
  *     ...
  *
  * Writes merged files to ./reports/<adapter>.json and appends a markdown
@@ -42,7 +42,7 @@ function collectShardFiles(artifactsDir) {
 		const match = entry.name.match(/^reports-(.+)-(\d+)$/);
 		if (!match) continue;
 		const [, adapter] = match;
-		const jsonPath = path.join(artifactsDir, entry.name, `${adapter}.json`);
+		const jsonPath = path.join(artifactsDir, entry.name, `${adapter}-partial.json`);
 		if (!existsSync(jsonPath)) continue;
 		(byAdapter.get(adapter) ?? byAdapter.set(adapter, []).get(adapter)).push(jsonPath);
 	}

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { TestModule } from 'vitest/node';
 import ParityReporter from '../../src/reporters/parity-reporter.js';
-import { judgeReport, loadParity, parityExitCode } from '../../scripts/lib/parity.js';
+import { judgeReport, loadParity, parityExitCode, runPlan } from '../../scripts/lib/parity.js';
 
 type State = 'passed' | 'failed' | 'skipped';
 
@@ -136,6 +136,12 @@ describe('parity reporter', () => {
 			['GAP-001 fails as registered', 'failed'],
 		], false);
 		expect(verdict.orphanedRegistrations).toBe(0);
+	});
+
+	test('only an unfiltered run is full and writes the report the docs and CI read', () => {
+		expect(runPlan('xxscreeps', [])).toEqual({ fullRun: true, reportName: 'xxscreeps' });
+		expect(runPlan('xxscreeps', ['-t', 'HARVEST-001'])).toEqual({ fullRun: false, reportName: 'xxscreeps-partial' });
+		expect(runPlan('xxscreeps', ['--shard=1/4'])).toEqual({ fullRun: false, reportName: 'xxscreeps-partial' });
 	});
 });
 

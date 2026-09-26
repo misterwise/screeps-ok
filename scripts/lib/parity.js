@@ -119,7 +119,15 @@ export function reportResults(report) {
 	return { results, fileErrors };
 }
 
-// A report on disk is a full run: filtered runs write `-partial` reports, and CI merges every shard.
+// Only an unfiltered run is full: it alone judges orphaned registrations and
+// writes `<name>.json`. Any vitest argument, a filter or `--shard`, makes the
+// run partial, reported as `<name>-partial.json`.
+export function runPlan(name, vitestArgs) {
+	const fullRun = vitestArgs.length === 0;
+	return { fullRun, reportName: fullRun ? name : `${name}-partial` };
+}
+
+// A `<name>.json` report on disk is a full run (runPlan), or CI's merge of every shard.
 export function judgeReport(report, parity) {
 	const { results, fileErrors } = reportResults(report);
 	const classified = classifyResults(parity.gapForId, results, { fullRun: true });

@@ -16,10 +16,9 @@ const reportsDir = process.env.SCREEPS_OK_PROJECT_ROOT
 if (!process.env.SCREEPS_OK_ADAPTER) {
 	process.env.SCREEPS_OK_ADAPTER = defaultAdapter;
 }
-const reportName = (
-	process.env.SCREEPS_OK_REPORT_NAME
-	?? adapter.replace(/.*\//, '').replace(/\..*/, '')
-) || 'results';
+// Under CI the runner names the JSON report, full or partial (runPlan in
+// scripts/lib/parity.js); vitest run on its own writes none.
+const reportName = process.env.CI ? process.env.SCREEPS_OK_REPORT_NAME : undefined;
 
 export default defineConfig({
 	resolve: {
@@ -86,12 +85,10 @@ export default defineConfig({
 			},
 		},
 		reporters: [
-			...(process.env.CI ? ['json'] : []),
+			...(reportName ? ['json'] : []),
 			'default',
 			'./src/reporters/parity-reporter.ts',
 		],
-		outputFile: process.env.CI
-			? path.join(reportsDir, `${reportName}.json`)
-			: undefined,
+		outputFile: reportName ? path.join(reportsDir, `${reportName}.json`) : undefined,
 	},
 });

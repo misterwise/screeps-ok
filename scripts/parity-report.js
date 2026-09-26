@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { runPlan } from './lib/parity.js';
 import { packageRoot, runSuite } from './run-suite.js';
 
 const args = process.argv.slice(2);
@@ -37,9 +38,9 @@ if (showHelp) {
 }
 
 const targets = adapters.length > 0 ? adapters : ['xxscreeps', 'vanilla'];
-// A filtered run is a partial sample: it must not overwrite the full-run
-// reports the doc generators read, and must not regenerate the docs.
-const filtered = vitestArgs.length > 0;
+// A filtered run is partial: its reports don't replace the full-run ones the
+// doc generators read, and it doesn't regenerate the docs.
+const filtered = !runPlan(targets[0], vitestArgs).fullRun;
 console.log(`Running the ${filtered ? 'FILTERED' : 'FULL'} test suite (adapters: ${targets.join(', ')}) — this takes minutes, not seconds.`);
 const reportsDir = path.join(packageRoot, 'reports');
 mkdirSync(reportsDir, { recursive: true });
@@ -48,11 +49,9 @@ let overallStatus = 0;
 
 for (const adapter of targets) {
 	console.log(`\n== ${adapter} ==`);
-	const reportName = filtered ? `${adapter}-partial` : adapter;
-	const reportPath = path.join(reportsDir, `${reportName}.json`);
+	const reportPath = path.join(reportsDir, `${runPlan(adapter, vitestArgs).reportName}.json`);
 	const status = runSuite({
 		adapter,
-		reportName,
 		env: { ...process.env, CI: '1' },
 		vitestArgs,
 	});

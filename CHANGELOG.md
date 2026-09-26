@@ -76,6 +76,10 @@ changes since `v0.1.0-alpha` are not itemized.
   matched only tests named with the bare ID.
 - A test under `tests/NN-*/` (other than `00-*`) whose name carries no
   catalog ID, or two, fails the run: nothing could register or cover it.
+- Only an unfiltered run writes `reports/<name>.json`. A filtered or sharded
+  run (any vitest argument, `--shard` included) writes
+  `reports/<name>-partial.json`, and vitest run directly writes no report. A
+  CI that shards the suite collects `<name>-partial.json` from each shard.
 
 ### Catalog IDs your `parity.json` may name
 

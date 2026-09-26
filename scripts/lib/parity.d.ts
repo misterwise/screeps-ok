@@ -47,6 +47,7 @@ export interface ParityVerdict {
 
 export function loadParity(parityPath: string): Parity;
 export function classifyResults(gapForId: Map<string, string>, results: TestResult[], options: { fullRun: boolean }): Classified;
+export function runPlan(name: string, vitestArgs: string[]): { fullRun: boolean; reportName: string };
 export function reportResults(report: unknown): { results: TestResult[]; fileErrors: { file: string; message: string }[] };
 export function judgeReport(report: unknown, parity: Parity): {
 	classified: Classified;
