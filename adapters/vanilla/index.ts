@@ -1108,7 +1108,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 		}
 		const C = this.server.constants;
-		const carryCapacity = C?.CARRY_CAPACITY ?? 50;
+		const carryCapacity = C.CARRY_CAPACITY;
 		const storeCapacity = body.reduce((sum: number, p) => {
 			if (p.type !== 'carry') return sum;
 			const boostMult = p.boost
@@ -1173,7 +1173,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				const C = this.server.constants;
 				for (const res of Object.keys(spec.store)) {
 					if (res !== 'energy' && !attrs.storeCapacityResource[res]) {
-						attrs.storeCapacityResource[res] = C.LAB_MINERAL_CAPACITY ?? 3000;
+						attrs.storeCapacityResource[res] = C.LAB_MINERAL_CAPACITY;
 						attrs.mineralType = res;
 					}
 				}
@@ -1565,8 +1565,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				y: pos[1],
 				level,
 				user,
-				hits: (spec.hits as number) ?? (C.INVADER_CORE_HITS ?? 100000),
-				hitsMax: (spec.hitsMax as number) ?? (C.INVADER_CORE_HITS ?? 100000),
+				hits: (spec.hits as number) ?? C.INVADER_CORE_HITS,
+				hitsMax: (spec.hitsMax as number) ?? C.INVADER_CORE_HITS,
 				deployTime,
 				effects,
 			};
@@ -1617,7 +1617,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					spawning: true,
 					fatigue: 0,
 					notifyWhenAttacked: false,
-					ageTime: insert.decayTime ?? gameTime + (C.CREEP_LIFE_TIME ?? 1500),
+					ageTime: insert.decayTime ?? gameTime + C.CREEP_LIFE_TIME,
 					actionLog: {},
 				});
 			}
@@ -1631,11 +1631,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const gameTime = await this.server.world.gameTime;
 			const store = (spec.store as Record<string, number>) ?? {};
 			const power = (spec.power as number) ?? store.power ?? 1000;
-			const hits = (spec.hits as number) ?? (C.POWER_BANK_HITS ?? 2000000);
+			const hits = (spec.hits as number) ?? C.POWER_BANK_HITS;
 			const hitsMax = (spec.hitsMax as number) ?? hits;
 			const decay = (spec.decayTime as number)
 				? gameTime + (spec.decayTime as number)
-				: gameTime + (C.POWER_BANK_DECAY ?? 5000);
+				: gameTime + C.POWER_BANK_DECAY;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'powerBank',
@@ -1938,8 +1938,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	private getProgressTotal(structureType: string): number {
-		const C = this.server.constants;
-		return C?.CONSTRUCTION_COST?.[structureType] ?? 300;
+		const cost = this.server.constants.CONSTRUCTION_COST[structureType];
+		if (cost === undefined) throw new Error(`placeSite: '${structureType}' has no CONSTRUCTION_COST`);
+		return cost;
 	}
 
 	private async setRoomActive(roomName: string, active: boolean): Promise<void> {
@@ -1989,7 +1990,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			case 'extension': return {
 				hits: C.EXTENSION_HITS, hitsMax: C.EXTENSION_HITS,
 				store: { energy: 0 },
-				storeCapacityResource: { energy: C.EXTENSION_ENERGY_CAPACITY?.[rcl] ?? 50 },
+				storeCapacityResource: { energy: C.EXTENSION_ENERGY_CAPACITY[rcl] },
 			};
 			case 'tower': return {
 				hits: C.TOWER_HITS, hitsMax: C.TOWER_HITS,
@@ -2014,7 +2015,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			case 'container': return {
 				hits: C.CONTAINER_HITS, hitsMax: C.CONTAINER_HITS,
 				store: {},
-				storeCapacity: C.CONTAINER_CAPACITY ?? 2000,
+				storeCapacity: C.CONTAINER_CAPACITY,
 			};
 			case 'road': return {
 				hits: C.ROAD_HITS, hitsMax: C.ROAD_HITS,
@@ -2023,49 +2024,49 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				hits: 1, hitsMax: C.WALL_HITS_MAX,
 			};
 			case 'rampart': return {
-				hits: 1, hitsMax: C.RAMPART_HITS_MAX?.[8] ?? 300000000,
+				hits: 1, hitsMax: C.RAMPART_HITS_MAX[8],
 				isPublic: false,
 			};
 			case 'lab': return {
-				hits: C.LAB_HITS ?? 500, hitsMax: C.LAB_HITS ?? 500,
+				hits: C.LAB_HITS, hitsMax: C.LAB_HITS,
 				store: { energy: 0 },
-				storeCapacityResource: { energy: C.LAB_ENERGY_CAPACITY ?? 2000 },
-				storeCapacity: (C.LAB_ENERGY_CAPACITY ?? 2000) + (C.LAB_MINERAL_CAPACITY ?? 3000),
+				storeCapacityResource: { energy: C.LAB_ENERGY_CAPACITY },
+				storeCapacity: C.LAB_ENERGY_CAPACITY + C.LAB_MINERAL_CAPACITY,
 				cooldown: 0, mineralType: null,
 				actionLog: { runReaction: null },
 			};
 			case 'observer': return {
-				hits: C.OBSERVER_HITS ?? 500, hitsMax: C.OBSERVER_HITS ?? 500,
+				hits: C.OBSERVER_HITS, hitsMax: C.OBSERVER_HITS,
 			};
 			case 'terminal': return {
-				hits: C.TERMINAL_HITS ?? 3000, hitsMax: C.TERMINAL_HITS ?? 3000,
+				hits: C.TERMINAL_HITS, hitsMax: C.TERMINAL_HITS,
 				store: {},
-				storeCapacity: C.TERMINAL_CAPACITY ?? 300000,
+				storeCapacity: C.TERMINAL_CAPACITY,
 				cooldown: 0,
 			};
 			case 'factory': return {
-				hits: C.FACTORY_HITS ?? 1000, hitsMax: C.FACTORY_HITS ?? 1000,
+				hits: C.FACTORY_HITS, hitsMax: C.FACTORY_HITS,
 				store: {},
-				storeCapacity: C.FACTORY_CAPACITY ?? 50000,
+				storeCapacity: C.FACTORY_CAPACITY,
 				cooldown: 0,
 				level: 0,
 			};
 			case 'extractor': return {
-				hits: C.EXTRACTOR_HITS ?? 500, hitsMax: C.EXTRACTOR_HITS ?? 500,
+				hits: C.EXTRACTOR_HITS, hitsMax: C.EXTRACTOR_HITS,
 				cooldown: 0,
 			};
 			case 'nuker': return {
-				hits: C.NUKER_HITS ?? 1000, hitsMax: C.NUKER_HITS ?? 1000,
+				hits: C.NUKER_HITS, hitsMax: C.NUKER_HITS,
 				store: { energy: 0 },
-				storeCapacityResource: { energy: C.NUKER_ENERGY_CAPACITY ?? 300000, G: C.NUKER_GHODIUM_CAPACITY ?? 5000 },
-				storeCapacity: (C.NUKER_ENERGY_CAPACITY ?? 300000) + (C.NUKER_GHODIUM_CAPACITY ?? 5000),
+				storeCapacityResource: { energy: C.NUKER_ENERGY_CAPACITY, G: C.NUKER_GHODIUM_CAPACITY },
+				storeCapacity: C.NUKER_ENERGY_CAPACITY + C.NUKER_GHODIUM_CAPACITY,
 				cooldown: 0,
 			};
 			case 'powerSpawn': return {
-				hits: C.POWER_SPAWN_HITS ?? 5000, hitsMax: C.POWER_SPAWN_HITS ?? 5000,
+				hits: C.POWER_SPAWN_HITS, hitsMax: C.POWER_SPAWN_HITS,
 				store: { energy: 0 },
-				storeCapacityResource: { energy: C.POWER_SPAWN_ENERGY_CAPACITY ?? 5000, power: C.POWER_SPAWN_POWER_CAPACITY ?? 100 },
-				storeCapacity: (C.POWER_SPAWN_ENERGY_CAPACITY ?? 5000) + (C.POWER_SPAWN_POWER_CAPACITY ?? 100),
+				storeCapacityResource: { energy: C.POWER_SPAWN_ENERGY_CAPACITY, power: C.POWER_SPAWN_POWER_CAPACITY },
+				storeCapacity: C.POWER_SPAWN_ENERGY_CAPACITY + C.POWER_SPAWN_POWER_CAPACITY,
 			};
 			default: return {};
 		}
