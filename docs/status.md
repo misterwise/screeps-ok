@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2899%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2640%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2896%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2641%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2899](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 22:27 UTC |
-| 🟡 | **xxscreeps** | [2640](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 22:25 UTC |
+| 🟡 | **vanilla** | [2896](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-26 22:36 UTC |
+| 🟡 | **xxscreeps** | [2641](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 22:34 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -488,13 +488,26 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## vanilla skipped tests
 
-vanilla has 3 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Registered** skips are tests `adapters/vanilla/parity.json` lists under `skips`, which the fixture doesn't run.
+vanilla has 7 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Registered** skips are tests `adapters/vanilla/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
+| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#vanilla-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#vanilla-skip-capability-cpushardlimits) |
 
 Click a count to jump to the affected test list.
+
+<details id="vanilla-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
+
+- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
+- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
+- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
+
+</details>
 
 <details id="vanilla-skip-capability-cpushardlimits">
 <summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
@@ -511,7 +524,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2899 tests across 158 files</summary>
+<summary>2896 tests across 157 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -612,7 +625,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (75)
+**`tests/00-adapter-contract/setup.test.ts`** (76)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -625,7 +638,9 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
 - adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
-- adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
+- adapter contract: setup createShard setTerrain before the first tick is what player code and PathFinder read
+- adapter contract: setup createShard setTerrain after a first tick() throws and leaves the terrain as it was
+- adapter contract: setup createShard setTerrain after a first runPlayer() throws and leaves the terrain as it was
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
@@ -688,7 +703,6 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
-- adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/00-framework/canonical-parity.test.ts`** (4)
 
@@ -3844,13 +3858,6 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
-
-- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
-- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
-- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
-- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
-
 **`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
 
 - PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
@@ -4234,7 +4241,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2640 tests across 142 files</summary>
+<summary>2641 tests across 142 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4335,7 +4342,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (75)
+**`tests/00-adapter-contract/setup.test.ts`** (76)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -4348,7 +4355,9 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
 - adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
-- adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
+- adapter contract: setup createShard setTerrain before the first tick is what player code and PathFinder read
+- adapter contract: setup createShard setTerrain after a first tick() throws and leaves the terrain as it was
+- adapter contract: setup createShard setTerrain after a first runPlayer() throws and leaves the terrain as it was
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
@@ -4411,7 +4420,6 @@ Click a count to jump to the affected test list.
 - adapter contract: setup setup helpers do not inject extra ticks placeNuke + runPlayer advances exactly 1 tick
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
-- adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
 **`tests/00-framework/canonical-parity.test.ts`** (4)
 
