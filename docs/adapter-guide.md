@@ -279,9 +279,6 @@ Adapter-specific skips should be rare, and tests never branch on the
 adapter's name. A test your engine can't run at all goes under `skips` in your
 `parity.json` (see [A test your engine can't run](#a-test-your-engine-cant-run)).
 
-If a test represents planned coverage that the suite cannot exercise yet, use
-`test.todo` instead of `test.skip`.
-
 ## Error Handling
 
 Map player execution failures to `RunPlayerError`.
