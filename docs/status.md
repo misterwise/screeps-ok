@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2834%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2575%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2840%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2581%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2834](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 18:20 UTC |
-| 🟡 | **xxscreeps** | [2575](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 18:20 UTC |
+| 🟡 | **vanilla** | [2840](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 19:55 UTC |
+| 🟡 | **xxscreeps** | [2581](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 19:53 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -503,7 +503,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2834 tests across 153 files</summary>
+<summary>2840 tests across 155 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -685,18 +685,29 @@ Click a count to jump to the affected test list.
 - canonical parity.json vanilla registers every gap with a why
 - canonical parity.json xxscreeps registers every gap with a why
 
-**`tests/00-framework/catalog-id.test.ts`** (3)
+**`tests/00-framework/capability-gates.test.ts`** (2)
+
+- capability gates DEPOSIT-HARVEST-001 fails when the test never calls shard.requires('deposit')
+- capability gates DEPOSIT-HARVEST-001 passes when the gate comes from matrix data
+
+**`tests/00-framework/catalog-id.test.ts`** (4)
 
 - catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
 - catalog ids conforming row ids parse
 - catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
+- catalog ids a report's test file reads from its suite root wherever the run was
+
+**`tests/00-framework/ci-shards.test.ts`** (2)
+
+- CI shard merge a shard that wrote no report is missing, not empty
+- CI shard merge merges every shard's tests into one report
 
 **`tests/00-framework/fixture-fence.test.ts`** (2)
 
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
-**`tests/00-framework/parity-reporter.test.ts`** (19)
+**`tests/00-framework/parity-reporter.test.ts`** (20)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
@@ -707,6 +718,7 @@ Click a count to jump to the affected test list.
 - parity reporter a name that runs on past an id carries no id to register
 - parity reporter a catalog test whose name carries no single id fails the run
 - parity reporter a filtered or sharded run does not count orphans
+- parity reporter only an unfiltered run is full and writes the report the docs and CI read
 - parity file loading a missing parity.json means no registrations
 - parity file loading a malformed parity.json or an unresolvable extends throws
 - parity file loading a parity.json that breaks the schema throws, naming what broke
@@ -3244,34 +3256,34 @@ Click a count to jump to the affected test list.
 - Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
 - Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateSpawnDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateTowerValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateTowerInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateTowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateTower usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateStorageValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateStorageInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateStorageDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateStorage usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateLabValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateLabInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateLabDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateLab usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateExtensionValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateExtensionInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateExtensionDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateExtension usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateObserverValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateObserverInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateObserverDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateObserver usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateTerminalValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateTerminalInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateTerminalDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateTerminal usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operatePowerValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operatePowerInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operatePowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operatePower usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateControllerValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateControllerInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateControllerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateController usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-OPERATE-005:operateFactoryValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateFactoryInvalid usePower on another target type is dropped without cost
-- Power target matrix POWER-OPERATE-005:operateFactoryDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateFactory usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWER-DISRUPT-003:disruptSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-DISRUPT-003:disruptSpawnInvalid usePower on another target type is dropped without cost
 - Power target matrix POWER-DISRUPT-003:disruptTowerValid usePower on its target type charges ops and starts the cooldown
@@ -4156,7 +4168,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2575 tests across 137 files</summary>
+<summary>2581 tests across 139 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4337,18 +4349,29 @@ Click a count to jump to the affected test list.
 - canonical parity.json vanilla registers every gap with a why
 - canonical parity.json xxscreeps registers every gap with a why
 
-**`tests/00-framework/catalog-id.test.ts`** (3)
+**`tests/00-framework/capability-gates.test.ts`** (2)
+
+- capability gates DEPOSIT-HARVEST-001 fails when the test never calls shard.requires('deposit')
+- capability gates DEPOSIT-HARVEST-001 passes when the gate comes from matrix data
+
+**`tests/00-framework/catalog-id.test.ts`** (4)
 
 - catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
 - catalog ids conforming row ids parse
 - catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
+- catalog ids a report's test file reads from its suite root wherever the run was
+
+**`tests/00-framework/ci-shards.test.ts`** (2)
+
+- CI shard merge a shard that wrote no report is missing, not empty
+- CI shard merge merges every shard's tests into one report
 
 **`tests/00-framework/fixture-fence.test.ts`** (2)
 
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
-**`tests/00-framework/parity-reporter.test.ts`** (19)
+**`tests/00-framework/parity-reporter.test.ts`** (20)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
@@ -4359,6 +4382,7 @@ Click a count to jump to the affected test list.
 - parity reporter a name that runs on past an id carries no id to register
 - parity reporter a catalog test whose name carries no single id fails the run
 - parity reporter a filtered or sharded run does not count orphans
+- parity reporter only an unfiltered run is full and writes the report the docs and CI read
 - parity file loading a missing parity.json means no registrations
 - parity file loading a malformed parity.json or an unresolvable extends throws
 - parity file loading a parity.json that breaks the schema throws, naming what broke
@@ -6722,16 +6746,16 @@ Click a count to jump to the affected test list.
 
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
-- Power target matrix POWER-OPERATE-005:operateSpawnDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateTowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateStorageDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateLabDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateExtensionDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateObserverDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateTerminalDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operatePowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateControllerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
-- Power target matrix POWER-OPERATE-005:operateFactoryDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateTower usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateStorage usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateLab usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateExtension usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateObserver usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateTerminal usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operatePower usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateController usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWERCREEP-ENABLE-003:operateFactory usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:invalidTarget powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:rcl powerCreep.renew() validation returns the canonical code
