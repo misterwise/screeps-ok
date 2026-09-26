@@ -53,6 +53,7 @@ import {
 	setKeeperLairNextSpawnTime, setDepositState,
 	setInvaderCoreCollapseTime, setInvaderCoreTemplateName, primeInvaderCoreSpawning,
 	storeAdd, storeSubtract, storeEntries, setStoreCapacity,
+	setPowerCreepPowers, powerCreepRosterKey,
 	initializeRoomIndices,
 } from './engine-internals.js';
 
@@ -94,25 +95,19 @@ import { createRoomObject as createObject } from 'xxscreeps/game/object.js';
 import { OpenStore } from 'xxscreeps/mods/classic/resource/store.js';
 import { StructureController } from 'xxscreeps/mods/classic/controller/controller.js';
 import { asUnion } from 'xxscreeps/utility/utility.js';
-
-// Optional mods — not all xxscreeps builds include these exports.
-// Use variable-named dynamic imports so TS doesn't statically require the
-// module, and so a missing named export degrades to `undefined` instead of
-// a type error.
-let createFactory: ((pos: any, owner: string) => any) | undefined;
-let createTerminal: ((pos: any, owner: string) => any) | undefined;
-let createPortal: ((pos: any, destination: any, decayTime?: number) => any) | undefined;
-// powerspawn is optional across pins; gate the PowerSpawn/GPL surface on the
-// dynamic import result so older pins skip cleanly and current main runs it.
-let createPowerSpawn: ((pos: any, owner: string) => any) | undefined;
-for (const [name, assign] of [
-	['xxscreeps/mods/modern/factory/factory.js', (m: any) => { createFactory = m.create; }],
-	['xxscreeps/mods/classic/brokerage/terminal.js', (m: any) => { createTerminal = m.create; }],
-	['xxscreeps/mods/portal/portal.js', (m: any) => { createPortal = m.create; }],
-	['xxscreeps/mods/modern/powerspawn/powerspawn.js', (m: any) => { createPowerSpawn = m.create; }],
-] as const) {
-	try { assign(await import(name)); } catch {}
-}
+import { create as createFactory } from 'xxscreeps/mods/modern/factory/factory.js';
+import { create as createTerminal } from 'xxscreeps/mods/classic/brokerage/terminal.js';
+import { create as createPortal } from 'xxscreeps/mods/portal/portal.js';
+import { create as createPowerSpawn } from 'xxscreeps/mods/modern/powerspawn/powerspawn.js';
+// A spawned power creep is two objects — the account roster entry and the room
+// copy — so the adapter needs both factories plus the roster blob codec.
+import {
+	createPowerCreep as createRosterPowerCreep,
+	createSpawnedPowerCreep,
+	read as readPowerCreepRoster,
+	write as writePowerCreepRoster,
+} from 'xxscreeps/mods/mmo/powercreep/powercreep.js';
+import { loadPowerCreepsBlob as loadPowerCreepRosterBlob } from 'xxscreeps/mods/mmo/powercreep/model.js';
 
 // Module-level initialization
 import { mods } from 'xxscreeps/config/mods.js';
@@ -194,12 +189,18 @@ const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 class XxscreepsAdapter implements ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities = {
 		chemistry: true,
-		// TODO: re-triage — pin 38ee6170 enables the power-creep mod (#335/#338)
-		// with PWR_GENERATE_OPS, so the family may be partially runnable now.
-		powerCreeps: false,
-		powerSpawn: !!createPowerSpawn,
-		factory: !!createFactory,
-		terminal: !!createTerminal,
+		powerCreeps: true,
+		// xxscreeps mutates the account roster only through the backend's
+		// `/api/game/power-creeps/*` routes (`mods/mmo/powercreep/backend.ts`).
+		// The runtime `PowerCreep` class has no create/rename/upgrade/delete.
+		powerCreepAccountApi: false,
+		// `usePower` validates every power but only `PWR_GENERATE_OPS` has a
+		// processor branch (`mods/mmo/powercreep/processor.ts`); the rest return
+		// OK and drop without applying an effect or charging ops.
+		powerEffects: false,
+		powerSpawn: true,
+		factory: true,
+		terminal: true,
 		marketBasics: true,
 		market: false,
 		terminalSend: true,
@@ -209,10 +210,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		powerBank: true,
 		terrain: true,
 		roomStatus: false,
-		// Portal mod is optional in pinned xxscreeps. Capability tracks
-		// the dynamic import result so PORTAL-* tests skip cleanly when
-		// the mod is absent and run when it lands upstream.
-		portals: !!createPortal,
+		portals: true,
 		// Pinned xxscreeps ships the full invader-core mod
 		// (laverdet/xxscreeps#274): ticksToDeploy/effects, the five intent
 		// processors, defender spawn, and collapse removal.
@@ -261,17 +259,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// `boost: undefined` property; upstream closed the PR that stripped
 		// it to match vanilla's boost-only-when-boosted shape.
 		bodyPart: { extra: ['boost'] },
-		// Controller declares an `@enumerable` `effects` getter (safe-mode
-		// invulnerability / PWR_OPERATE_CONTROLLER), like StructureInvaderCore,
-		// so the key is always present; vanilla sets `effects` only when an
-		// effect is active.
-		controller: { extra: ['effects'] },
-		// laverdet/xxscreeps#215 explicitly accepts exact undefined-vs-absent
-		// shape differences. The invader mod deliberately extends Structure
-		// with an enumerable `effects` getter so every stronghold peer type can
-		// expose its collapse timer (#311); ordinary structures inherit the key
-		// even when the getter returns undefined.
-		structure: { extra: ['effects'] },
+		// laverdet/xxscreeps#374 gave RoomObject the cached `effects` getter so
+		// any mod can contribute entries over the shared `#effects` chain, so
+		// every room object inherits the key even when the getter returns
+		// undefined; vanilla assigns `effects` only when an effect is active.
+		roomObject: { extra: ['effects'] },
 	};
 
 	private playerMap = new Map<string, string>();
@@ -289,7 +281,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private shardSpec: ShardSpec | null = null;
 	private idCounter = 0;
 	private firstTickRun = false;
-	private snapshotCooldownUntil = new Map<string, number>();
 
 	private nextId(): string {
 		return (++this.idCounter).toString(16).padStart(24, '0');
@@ -302,13 +293,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	resolvePlayerReverse(userId: string): string {
-		return this.reversePlayerMap.get(userId) ?? userId;
-	}
-
-	resolveSnapshotCooldown(id: string): number | undefined {
-		const until = this.snapshotCooldownUntil.get(id);
-		if (until === undefined || !this.simulation) return undefined;
-		return Math.max(0, until - this.simulation.shard.time);
+		const handle = this.reversePlayerMap.get(userId);
+		if (handle === undefined) throw new Error(`No player handle for engine user '${userId}'`);
+		return handle;
 	}
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
@@ -376,9 +363,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	async createShard(spec: ShardSpec): Promise<void> {
+		await this.teardown();
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
-		this.snapshotCooldownUntil.clear();
 
 		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
 			this.playerMap.set(handle, engineId);
@@ -400,6 +387,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 
 		for (const roomSpec of spec.rooms) {
+			if (roomSpec.powerEnabled) {
+				this.queueOp(roomSpec.name, room => {
+					room.controller!.isPowerEnabled = true;
+				});
+			}
 			if (roomSpec.owner || roomSpec.rcl) {
 				const owner = roomSpec.owner ? this.resolvePlayer(roomSpec.owner) : undefined;
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
@@ -521,18 +513,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			if (spec.cooldown !== undefined) {
-				// Most cooldown-bearing mods (link/lab/extractor/factory) store it
-				// in #cooldownTime. Observer is the exception: no schema field, so
-				// the snapshot path reads the side-table via resolveSnapshotCooldown.
 				const cooldownStored = setStructureCooldownRemaining(
 					structure, this.simulation!.shard.time, spec.cooldown,
 				);
-				if (!cooldownStored && spec.structureType !== 'observer') {
+				if (!cooldownStored) {
 					throw new Error(
-						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build (mod likely not loaded).`,
+						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build.`,
 					);
 				}
-				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
 			}
 			// Inserting a controller assigns room.controller to the new one; preserve
 			// the room's primary controller so a fixture controller doesn't replace it.
@@ -732,8 +720,86 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	async placePowerCreep(_room: string, _spec: PowerCreepSpec): Promise<string> {
-		throw new Error('placePowerCreep not yet implemented for xxscreeps');
+	async placePowerCreep(roomName: string, spec: PowerCreepSpec): Promise<string> {
+		const id = this.nextId();
+		const userId = this.resolvePlayer(spec.owner);
+		const name = spec.name ?? `power-creep-${id}`;
+		const powers = Object.entries(spec.powers).map(([power, entry]) => ({
+			power: Number(power),
+			level: typeof entry === 'number' ? entry : entry.level,
+			cooldown: typeof entry === 'number' ? 0 : entry.cooldown ?? 0,
+		}));
+
+		// A spawned power creep is two objects: the account-roster entry that owns
+		// identity and the spawned marker (`#ageTime`), and the room copy the player
+		// acts through. `spawnPowerCreep` writes both, so seed both — without the
+		// roster entry the creep would vanish from Game.powerCreeps on death instead
+		// of reverting to unspawned.
+		this.deferredPowerCreepOps.push({ owner: spec.owner, id, name, powers });
+
+		this.queueOp(roomName, room => {
+			const gameTime = this.simulation!.shard.time;
+			const entry = this.buildPowerCreepRosterEntry(id, name, userId, powers, gameTime);
+			const creep = createSpawnedPowerCreep(
+				new RoomPosition(spec.pos[0], spec.pos[1], roomName), entry);
+			// The room copy carries the live cooldowns; roster copies never do.
+			setPowerCreepPowers(creep, powers.map(({ power, level, cooldown }) => ({
+				power, level, cooldownTime: cooldown > 0 ? gameTime + cooldown : 0,
+			})));
+			for (const [resource, amount] of Object.entries(spec.store ?? {})) {
+				if (amount > 0) storeAdd(creep.store, resource, amount);
+			}
+			insertRoomObject(room, creep);
+		});
+
+		return id;
+	}
+
+	private buildPowerCreepRosterEntry(
+		id: string, name: string, userId: string,
+		powers: Array<{ power: number; level: number }>, gameTime: number,
+	): any {
+		const entry = createRosterPowerCreep(id, name, C.POWER_CLASS.OPERATOR, userId);
+		setPowerCreepPowers(entry, powers.map(({ power, level }) => ({ power, level, cooldownTime: 0 })));
+		setCreepAgeTime(entry, gameTime, C.POWER_CREEP_LIFE_TIME);
+		return entry;
+	}
+
+	private deferredPowerCreepOps: Array<{
+		owner: string;
+		id: string;
+		name: string;
+		powers: Array<{ power: number; level: number; cooldown: number }>;
+	}> = [];
+
+	// The roster is a per-user blob loaded once at sandbox init (mods/mmo/powercreep/
+	// driver.ts) and refreshed only when the mutation channel fires. Same shape as
+	// flags: write the blob, then dispose the owner's sandbox so the next runPlayer
+	// re-initializes against it.
+	private async flushDeferredPowerCreeps(): Promise<void> {
+		if (this.deferredPowerCreepOps.length === 0) return;
+		const ops = this.deferredPowerCreepOps;
+		this.deferredPowerCreepOps = [];
+		const { db, time } = this.simulation!.shard;
+
+		const byOwner = new Map<string, typeof ops>();
+		for (const op of ops) {
+			const list = byOwner.get(op.owner) ?? [];
+			list.push(op);
+			byOwner.set(op.owner, list);
+		}
+
+		for (const [ownerHandle, ownerOps] of byOwner) {
+			const engineUserId = this.resolvePlayer(ownerHandle);
+			const existingBlob = await loadPowerCreepRosterBlob(db, engineUserId);
+			const roster = existingBlob ? readPowerCreepRoster(existingBlob) : [];
+			for (const op of ownerOps) {
+				roster.push(this.buildPowerCreepRosterEntry(
+					op.id, op.name, engineUserId, op.powers, time));
+			}
+			await db.data.set(powerCreepRosterKey(engineUserId), writePowerCreepRoster(roster));
+			await this.simulation!.disposeUserSandbox(engineUserId);
+		}
 	}
 
 	async placeNuke(roomName: string, spec: NukeSpec): Promise<string> {
@@ -808,7 +874,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const deposit = createObject(new Deposit(), new RoomPosition(pos[0], pos[1], roomName));
 			deposit.id = id;
 			deposit.depositType = (spec.depositType as any) ?? C.RESOURCE_SILICON;
-			if (typeof spec.lastCooldown === 'number') deposit.lastCooldown = spec.lastCooldown;
+			// The harvest processor stores lastCooldown from the running total (deposit/processor.ts:43).
+			if (typeof spec.harvested === 'number') {
+				deposit.lastCooldown = Math.ceil(C.DEPOSIT_EXHAUST_MULTIPLY * spec.harvested ** C.DEPOSIT_EXHAUST_POW);
+			}
 			setDepositState(deposit, this.simulation!.shard.time, {
 				cooldownTicks: typeof spec.cooldownTime === 'number' ? spec.cooldownTime : undefined,
 				decayTicks: typeof spec.decayTime === 'number' ? spec.decayTime : DEPOSIT_DECAY_TIME,
@@ -892,12 +961,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	private async placePortal(roomName: string, spec: Record<string, unknown>): Promise<string> {
-		if (!createPortal) {
-			throw new Error(
-				`placePortal: pinned xxscreeps build has no portal mod (xxscreeps/mods/portal/portal.js missing). ` +
-				`PORTAL-* tests are registered as expected failures in parity.json until the mod lands upstream.`,
-			);
-		}
 		const id = this.nextId();
 		const pos = spec.pos as [number, number];
 		const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
@@ -911,7 +974,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 		this.queueOp(roomName, room => {
 			const decayTime = decayTicks > 0 ? this.simulation!.shard.time + decayTicks : 0;
-			const portal = createPortal!(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
+			const portal = createPortal(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
 			portal.id = id;
 			insertRoomObject(room, portal);
 		});
@@ -1086,6 +1149,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayer(userId: string, playerCode: PlayerCode): Promise<PlayerReturnValue> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 		const engineUserId = this.resolvePlayer(userId);
@@ -1119,6 +1183,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async runPlayers(codesByUser: Record<string, PlayerCode>): Promise<Record<string, PlayerReturnValue>> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 		await this.seedUserRoomRelationships();
 
@@ -1172,6 +1237,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async tick(count = 1, options: TickOptions = {}): Promise<void> {
 		await this.ensureSimulation();
 		await this.flushDeferredFlags();
+		await this.flushDeferredPowerCreeps();
 		await this.flushPokeQueue();
 
 		const sequence = options.random;
@@ -1196,6 +1262,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		try {
 			for (let i = 0; i < count; i++) {
+				options.signal?.throwIfAborted();
 				await this.seedUserRoomRelationships();
 				await this.simulation!.tick(1);
 			}
@@ -1359,6 +1426,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.pendingSetup.clear();
 		this.pokeQueue.length = 0;
 		this.deferredFlagOps.length = 0;
+		this.deferredPowerCreepOps.length = 0;
 		this.playerMap.clear();
 		this.reversePlayerMap.clear();
 		this.playerGcl.clear();
@@ -1385,15 +1453,9 @@ function buildStructure(structureType: string, pos: any, owner?: string, rcl = 8
 		case 'constructedWall': return createWall(pos);
 		case 'rampart': return createRampart(pos, owner!);
 		case 'nuker': return createNuker(pos, owner!);
-		case 'powerSpawn':
-			if (!createPowerSpawn) throw new Error('powerspawn mod not available in this xxscreeps build');
-			return createPowerSpawn(pos, owner!);
-		case 'terminal':
-			if (!createTerminal) throw new Error('terminal create() not exported by this xxscreeps build');
-			return createTerminal(pos, owner!);
-		case 'factory':
-			if (!createFactory) throw new Error('factory mod not available in this xxscreeps build');
-			return createFactory(pos, owner!);
+		case 'powerSpawn': return createPowerSpawn(pos, owner!);
+		case 'terminal': return createTerminal(pos, owner!);
+		case 'factory': return createFactory(pos, owner!);
 		case 'extractor': return createExtractor(pos, owner!);
 		case 'controller': {
 			// xxscreeps' controller mod has no public create() — a freestanding
@@ -1513,9 +1575,10 @@ async function createSimulation(
 		// Initialize rooms (inlined from xxscreeps/src/test/simulate.ts:76-86)
 		await Promise.all(Fn.map(Object.entries(roomInits), async ([roomName, callback]) => {
 			let room;
-			try {
+			// Not the live set: the terrain overrides above already added every spec room to it.
+			if (existingRooms.includes(roomName)) {
 				room = await shard.loadRoom(roomName, shard.time);
-			} catch {
+			} else {
 				// Room not in shard.json — create a blank room
 				room = new Room();
 				room.name = roomName;

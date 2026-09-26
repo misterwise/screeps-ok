@@ -122,3 +122,6 @@ Also check:
 - Example commands in docs still match real file paths.
 - Internal doc references still match `src/matrices/` and `src/limitations.ts`.
 - Generated files in the diff are intentional.
+- A change a consumer must act on (adapter contract, catalog ID renames or
+  drops, runner or reporter semantics) has an entry under **Unreleased** in
+  `CHANGELOG.md`.

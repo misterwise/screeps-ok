@@ -27,7 +27,6 @@ import {
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
-	resolveSnapshotCooldown?(id: string): number | undefined;
 }
 
 function snapPos(obj: any) {
@@ -52,14 +51,20 @@ function snapStore(obj: any): Record<string, number> {
 }
 
 function snapPortalDestination(dest: any): PortalDestinationSnapshot {
-	if (dest?.shard) {
-		return { shard: dest.shard, room: dest.room ?? '' };
-	}
-	return {
-		x: dest?.x ?? 0,
-		y: dest?.y ?? 0,
-		roomName: dest?.roomName ?? dest?.room ?? '',
-	};
+	return dest.shard
+		? { shard: dest.shard, room: dest.room }
+		: { x: dest.x, y: dest.y, roomName: dest.roomName };
+}
+
+function snapEffects(obj: any): InvaderCoreSnapshot['effects'] {
+	const effects = obj.effects;
+	if (!effects) return null;
+	return effects.map((e: any) => ({
+		effect: e.effect,
+		...(e.level !== undefined ? { level: e.level } : {}),
+		...(e.power !== undefined ? { power: e.power } : {}),
+		ticksRemaining: e.ticksRemaining,
+	}));
 }
 
 export function snapshotCreep(obj: any, resolver: PlayerResolver): CreepSnapshot {
@@ -77,10 +82,10 @@ export function snapshotCreep(obj: any, resolver: PlayerResolver): CreepSnapshot
 			...(part.boost ? { boost: part.boost } : {}),
 		})),
 		owner: snapOwner(obj, resolver)!,
-		ticksToLive: obj.ticksToLive,
-		spawning: obj.spawning ?? false,
+		ticksToLive: obj.ticksToLive ?? null,
+		spawning: obj.spawning,
 		store: snapStore(obj),
-		storeCapacity: obj.store?.getCapacity?.() ?? 0,
+		storeCapacity: obj.store.getCapacity() ?? null,
 	};
 }
 
@@ -102,28 +107,22 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				...base,
 				structureType: 'controller',
 				level: obj.level,
-				progress: obj.progress ?? 0,
-				progressTotal: obj.level > 0 && obj.level < 8
-					? (C.CONTROLLER_LEVELS[obj.level] ?? obj.progressTotal ?? 0)
-					: null,
-				ticksToDowngrade: obj.ticksToDowngrade ?? 0,
-				safeMode: obj.safeMode,
-				safeModeAvailable: obj.safeModeAvailable ?? 0,
-				safeModeCooldown: obj.safeModeCooldown ?? 0,
-				isPowerEnabled: obj.isPowerEnabled ?? false,
-				...(reservation ? {
-					reservation: {
-						owner: resolver.resolvePlayerReverse(reservation.userId),
-						ticksToEnd: reservation.ticksToEnd,
-					},
-				} : {}),
-				...(sign ? {
-					sign: {
-						owner: resolver.resolvePlayerReverse(sign.userId),
-						text: sign.text,
-						time: sign.time,
-					},
-				} : {}),
+				progress: obj.progress ?? null,
+				progressTotal: obj.progressTotal ?? null,
+				ticksToDowngrade: obj.ticksToDowngrade ?? null,
+				safeMode: obj.safeMode ?? null,
+				safeModeAvailable: obj.safeModeAvailable,
+				safeModeCooldown: obj.safeModeCooldown ?? null,
+				isPowerEnabled: obj.isPowerEnabled,
+				reservation: reservation ? {
+					owner: resolver.resolvePlayerReverse(reservation.userId),
+					ticksToEnd: reservation.ticksToEnd,
+				} : null,
+				sign: sign ? {
+					owner: resolver.resolvePlayerReverse(sign.userId),
+					text: sign.text,
+					time: sign.time,
+				} : null,
 			} satisfies ControllerSnapshot;
 		}
 
@@ -135,7 +134,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax,
 				name: obj.name,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
 				spawning: obj.spawning ? {
 					name: obj.spawning.name,
 					needTime: obj.spawning.needTime,
@@ -151,10 +150,10 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
 				storeCapacityByResource: {
-					energy: obj.store?.getCapacity?.('energy') ?? 2000,
-					...(obj.mineralType ? { [obj.mineralType]: obj.store?.getCapacity?.(obj.mineralType) ?? 3000 } : {}),
+					energy: obj.store.getCapacity(C.RESOURCE_ENERGY),
+					...(obj.mineralType ? { [obj.mineralType]: obj.store.getCapacity(obj.mineralType) } : {}),
 				},
-				cooldown: obj.cooldown ?? 0,
+				cooldown: obj.cooldown,
 				mineralType: obj.mineralType ?? null,
 			} satisfies LabSnapshot;
 
@@ -165,7 +164,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
 			} satisfies TowerSnapshot;
 
 		case 'storage':
@@ -175,7 +174,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
 			} satisfies StorageSnapshot;
 
 		case 'link':
@@ -185,8 +184,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
-				cooldown: obj.cooldown ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
+				cooldown: obj.cooldown,
 			} satisfies LinkSnapshot;
 
 		case 'rampart':
@@ -195,8 +194,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'rampart',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				isPublic: obj.isPublic ?? false,
-				ticksToDecay: obj.ticksToDecay ?? 0,
+				isPublic: obj.isPublic,
+				ticksToDecay: obj.ticksToDecay ?? null,
 			} satisfies RampartSnapshot;
 
 		case 'terminal':
@@ -206,8 +205,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
-				cooldown: obj.cooldown ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
+				cooldown: obj.cooldown,
 			} satisfies TerminalSnapshot;
 
 		case 'factory':
@@ -217,9 +216,9 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
-				cooldown: obj.cooldown ?? 0,
-				level: obj.level ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
+				cooldown: obj.cooldown,
+				level: obj.level ?? null,
 			} satisfies FactorySnapshot;
 
 		case 'extension':
@@ -229,7 +228,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
 			} satisfies ExtensionSnapshot;
 
 		case 'container':
@@ -239,8 +238,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
-				ticksToDecay: obj.ticksToDecay ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
+				ticksToDecay: obj.ticksToDecay ?? null,
 			} satisfies ContainerSnapshot;
 
 		case 'extractor':
@@ -249,7 +248,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'extractor',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				cooldown: obj.cooldown ?? 0,
+				cooldown: obj.cooldown,
 			} satisfies ExtractorSnapshot;
 
 		case 'road':
@@ -258,7 +257,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'road',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				ticksToDecay: obj.ticksToDecay ?? 0,
+				ticksToDecay: obj.ticksToDecay ?? null,
 			} satisfies RoadSnapshot;
 
 		case 'nuker':
@@ -268,9 +267,8 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: (obj.store?.getCapacity?.(C.RESOURCE_ENERGY) ?? C.NUKER_ENERGY_CAPACITY)
-					+ (obj.store?.getCapacity?.(C.RESOURCE_GHODIUM) ?? C.NUKER_GHODIUM_CAPACITY),
-				cooldown: obj.cooldown ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
+				cooldown: obj.cooldown,
 			} satisfies NukerSnapshot;
 
 		case 'powerSpawn':
@@ -280,7 +278,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
 				store: snapStore(obj),
-				storeCapacity: obj.store?.getCapacity?.() ?? 0,
+				storeCapacity: obj.store.getCapacity() ?? null,
 			} satisfies PowerSpawnSnapshot;
 
 		case 'observer':
@@ -289,7 +287,6 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'observer',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				cooldown: resolver.resolveSnapshotCooldown?.(obj.id) ?? obj.cooldown ?? 0,
 			} satisfies ObserverSnapshot;
 
 		case 'keeperLair':
@@ -306,14 +303,14 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'invaderCore',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				level: obj.level ?? 0,
+				level: obj.level,
 				spawning: obj.spawning ? {
 					name: obj.spawning.name,
 					needTime: obj.spawning.needTime,
 					remainingTime: obj.spawning.remainingTime,
 				} : null,
 				ticksToDeploy: obj.ticksToDeploy ?? null,
-				effects: obj.effects ?? [],
+				effects: snapEffects(obj),
 				// `strongholdId` has no engine counterpart; see strongholdMetadata.
 				...(templateName !== undefined ? { templateName } : {}),
 			} satisfies InvaderCoreSnapshot;
@@ -325,7 +322,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'powerBank',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				power: obj.power ?? obj.store?.[C.RESOURCE_POWER] ?? 0,
+				power: obj.power,
 				ticksToDecay: obj.ticksToDecay ?? null,
 			} satisfies PowerBankSnapshot;
 
@@ -369,7 +366,7 @@ export function snapshotSource(obj: any): SourceSnapshot {
 		pos: snapPos(obj),
 		energy: obj.energy,
 		energyCapacity: obj.energyCapacity,
-		ticksToRegeneration: obj.ticksToRegeneration ?? 0,
+		ticksToRegeneration: obj.ticksToRegeneration ?? null,
 	};
 }
 
@@ -381,7 +378,7 @@ export function snapshotMineral(obj: any): MineralSnapshot {
 		mineralType: obj.mineralType,
 		mineralAmount: obj.mineralAmount,
 		density: obj.density,
-		ticksToRegeneration: obj.ticksToRegeneration ?? 0,
+		ticksToRegeneration: obj.ticksToRegeneration ?? null,
 	};
 }
 
@@ -391,8 +388,8 @@ export function snapshotDeposit(obj: any): DepositSnapshot {
 		id: obj.id,
 		pos: snapPos(obj),
 		depositType: obj.depositType,
-		lastCooldown: obj.lastCooldown ?? 0,
-		cooldown: obj.cooldown ?? 0,
+		lastCooldown: obj.lastCooldown,
+		cooldown: obj.cooldown,
 		ticksToDecay: obj.ticksToDecay ?? null,
 	};
 }
@@ -410,10 +407,10 @@ function snapshotTombstone(obj: any, resolver: PlayerResolver): TombstoneSnapsho
 		kind: 'tombstone',
 		id: obj.id,
 		pos: snapPos(obj),
-		creepName: obj.creep?.name ?? '',
-		deathTime: obj.deathTime ?? 0,
+		creepName: obj.creep.name,
+		deathTime: obj.deathTime,
 		store: snapStore(obj),
-		ticksToDecay: obj.ticksToDecay ?? 0,
+		ticksToDecay: obj.ticksToDecay,
 	};
 }
 
@@ -422,23 +419,20 @@ function snapshotDroppedResource(obj: any): DroppedResourceSnapshot {
 		kind: 'resource',
 		id: obj.id,
 		pos: snapPos(obj),
-		resourceType: obj.resourceType ?? 'energy',
-		amount: obj.amount ?? 0,
+		resourceType: obj.resourceType,
+		amount: obj.amount,
 	};
 }
 
 function snapshotRuin(obj: any, resolver: PlayerResolver): RuinSnapshot {
-	const structureType = obj.structureType
-		?? obj.structure?.structureType
-		?? '';
 	return {
 		kind: 'ruin',
 		id: obj.id,
 		pos: snapPos(obj),
-		structureType,
-		destroyTime: obj.destroyTime ?? 0,
+		structureType: obj.structure.structureType,
+		destroyTime: obj.destroyTime,
 		store: snapStore(obj),
-		ticksToDecay: obj.ticksToDecay ?? 0,
+		ticksToDecay: obj.ticksToDecay,
 	};
 }
 

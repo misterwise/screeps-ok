@@ -100,6 +100,10 @@ installs with `npm i -D screeps-ok` is tracked as a pre-publish release
 gate — package metadata is not yet a stable installation contract, and
 `"exports"` still resolves to raw TypeScript.
 
+Changes a consumer must act on (adapter contract, catalog IDs, runner
+semantics) are recorded in [`CHANGELOG.md`](CHANGELOG.md) under Unreleased.
+The first versioned release is the beta, cut with the first npm publish.
+
 ## Acknowledgments
 
 The xxscreeps adapter depends on [xxscreeps](https://github.com/laverdet/xxscreeps)
