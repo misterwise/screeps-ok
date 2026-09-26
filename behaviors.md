@@ -653,7 +653,7 @@ Coverage Notes
   `withdraw()` works on tombstones and ruins.
 - `WITHDRAW-007` `behavior` `verified_vanilla`
   `withdraw()` returns ERR_FULL when the creep has no free capacity.
-- `WITHDRAW-008` `behavior` `verified_vanilla`
+- `WITHDRAW-008` `behavior` `verified_vanilla` `capability: powerEffects`
   Terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect.
 - `WITHDRAW-009` `behavior` `verified_vanilla`
   `withdraw()` returns `ERR_NOT_OWNER` when the acting creep is not owned by
@@ -1516,10 +1516,10 @@ Coverage Notes
   the chosen tower action resolves.
 
 ### 7.12 Tower Power Effects
-- `TOWER-POWER-001` `matrix` `verified_vanilla`
+- `TOWER-POWER-001` `matrix` `verified_vanilla` `capability: powerEffects`
   `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` modify tower attack, heal, and
   repair power according to `POWER_INFO` for each supported power level.
-- `TOWER-POWER-002` `behavior` `verified_vanilla`
+- `TOWER-POWER-002` `behavior` `verified_vanilla` `capability: powerEffects`
   `PWR_OPERATE_TOWER` and `PWR_DISRUPT_TOWER` can affect the same tower at the
   same time.
 
@@ -1825,7 +1825,7 @@ Coverage Notes
 - `SPAWN-TIMING-004` `behavior` `verified_vanilla`
   When `opts.directions` is provided, the spawn chooses the first available
   exit tile from that direction order.
-- `SPAWN-TIMING-005` `behavior` `verified_vanilla`
+- `SPAWN-TIMING-005` `behavior` `verified_vanilla` `capability: powerEffects`
   Custom directions are ignored for 1-tick spawns created by single-part creeps
   under `PWR_OPERATE_SPAWN`.
 - `SPAWN-TIMING-006` `behavior` `verified_vanilla`
@@ -2132,7 +2132,7 @@ Coverage Notes
   `LAB_REACTION_AMOUNT` units from `lab1` and `lab2` and adds
   `LAB_REACTION_AMOUNT` units to the lab calling `runReaction()` in the same
   tick.
-- `LAB-RUN-003` `behavior` `verified_vanilla`
+- `LAB-RUN-003` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_LAB` is active on the lab calling `runReaction()`, a successful
   `runReaction(lab1, lab2)` consumes and produces
   `LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB].effect[level-1]` units in
@@ -2183,7 +2183,7 @@ Coverage Notes
   `reverseReaction()` and adds
   `LAB_REACTION_AMOUNT` units of each input mineral to `lab1` and `lab2` in the
   same tick.
-- `LAB-REVERSE-003` `behavior` `verified_vanilla`
+- `LAB-REVERSE-003` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_LAB` is active on the lab calling `reverseReaction()`, a successful
   `reverseReaction(lab1, lab2)` consumes and produces
   `LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB].effect[level-1]` units in
@@ -2275,7 +2275,7 @@ Coverage Notes
 - `FACTORY-COMMODITY-002` `behavior` `verified_vanilla`
   A factory without an active `PWR_OPERATE_FACTORY` effect can produce only
   level 0 commodities.
-- `FACTORY-COMMODITY-003` `behavior` `verified_vanilla`
+- `FACTORY-COMMODITY-003` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_FACTORY` is active at level N, a factory can produce only
   level 0 commodities and level N commodities.
 
@@ -2289,7 +2289,7 @@ Coverage Notes
 - `POWER-SPAWN-001` `behavior` `verified_vanilla`
   A successful `processPower()` returns `OK`, consumes 1 power and
   `POWER_SPAWN_ENERGY_RATIO` energy and adds exactly 1 GPL progress.
-- `POWER-SPAWN-002` `behavior` `verified_vanilla`
+- `POWER-SPAWN-002` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_POWER` is active, a successful `processPower()` returns
   `OK`, consumes and converts
   `1 + POWER_INFO[PWR_OPERATE_POWER].effect[level-1]` power, capped by the
@@ -2354,7 +2354,7 @@ Coverage Notes
 - `RAMPART-DECAY-003` `matrix` `verified_vanilla`
   Owned rampart `hitsMax` by room controller level matches the canonical
   `RAMPART_HITS_MAX` table.
-- `RAMPART-DECAY-004` `behavior` `verified_vanilla`
+- `RAMPART-DECAY-004` `behavior` `verified_vanilla` `capability: powerEffects`
   `PWR_FORTIFY` prevents direct damage to a rampart while the effect is active.
 
 Coverage Notes
@@ -2421,7 +2421,7 @@ Coverage Notes
 - `TERMINAL-SEND-001` `behavior` `verified_vanilla`
   A valid `send(resourceType, amount, targetRoomName)` call returns `OK` and
   queues a terminal transfer intent for later resolution.
-- `TERMINAL-SEND-002` `behavior` `verified_vanilla`
+- `TERMINAL-SEND-002` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_TERMINAL` is active, a successful
   `send(resourceType, amount, targetRoomName)` returns `OK` and sets cooldown
   on the terminal calling `send()` to
@@ -2430,7 +2430,7 @@ Coverage Notes
   When a terminal send resolves, the sending terminal spends
   `calcTerminalEnergyCost(amount, distance)` energy for the source room and
   target room, and the receiving terminal does not pay the transfer cost.
-- `TERMINAL-SEND-004` `behavior` `verified_vanilla`
+- `TERMINAL-SEND-004` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_TERMINAL` is active, terminal send energy cost is
   multiplied by `POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1]` and rounded
   up.
@@ -2488,7 +2488,7 @@ Coverage Notes
 - `OBSERVER-002` `behavior` `verified_vanilla`
   `observeRoom(roomName)` returns `ERR_NOT_IN_RANGE` when the target room is
   beyond `OBSERVER_RANGE`.
-- `OBSERVER-003` `behavior` `verified_vanilla`
+- `OBSERVER-003` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_OBSERVER` is active, `observeRoom(roomName)` ignores the
   normal `OBSERVER_RANGE` limit.
 - `OBSERVER-004` `behavior` `verified_vanilla`
@@ -3069,7 +3069,7 @@ Coverage Notes
   When a nuke lands, `EVENT_ATTACK` is emitted for each damaged structure
   with `data.attackType === EVENT_ATTACK_TYPE_NUKE` and `data.damage`
   matching `NUKE_DAMAGE` for the structure's range from the impact tile.
-- `ROOM-EVENTLOG-020` `behavior` `verified_vanilla`
+- `ROOM-EVENTLOG-020` `behavior` `verified_vanilla` `capability: powerEffects`
   `EVENT_POWER` is emitted when a power creep's `usePower` succeeds, with
   `objectId` set to the power creep, `data.power` equal to the activated
   `PWR_*` constant, and `data.targetId` set to the targeted object.
@@ -3188,10 +3188,10 @@ neighbors and no better section exists.
   capacity updates to the new room-state value on the next regeneration.
 
 ### 17.2 Source Power Effects
-- `SOURCE-POWER-001` `matrix` `verified_vanilla`
+- `SOURCE-POWER-001` `matrix` `verified_vanilla` `capability: powerEffects`
   `PWR_REGEN_SOURCE` adds energy using the canonical effect, period, and
   duration for each supported power level.
-- `SOURCE-POWER-002` `behavior` `verified_vanilla`
+- `SOURCE-POWER-002` `behavior` `verified_vanilla` `capability: powerEffects`
   `PWR_DISRUPT_SOURCE` prevents scheduled source regeneration from restoring
   energy while the effect is active.
 
@@ -3225,7 +3225,7 @@ neighbors and no better section exists.
   (5%); otherwise the density stays unchanged.
 
 ### 17.4 Mineral Power Effects
-- `MINERAL-POWER-001` `matrix` `verified_vanilla`
+- `MINERAL-POWER-001` `matrix` `verified_vanilla` `capability: powerEffects`
   `PWR_REGEN_MINERAL` adds mineral amount using the canonical effect, period,
   and duration for each supported power level.
 
@@ -3460,19 +3460,19 @@ Coverage Notes
   busy, and ownership.
 
 ### 19.4 Operate Powers `capability: powerCreeps`
-- `POWER-OPERATE-001` `matrix` `verified_vanilla`
+- `POWER-OPERATE-001` `matrix` `verified_vanilla` `capability: powerEffects`
   Operate power effect magnitudes match `POWER_INFO[power].effect[level]` for
   all numeric operate powers and supported power levels.
-- `POWER-OPERATE-002` `matrix` `verified_vanilla`
+- `POWER-OPERATE-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Operate power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   operate power.
-- `POWER-OPERATE-003` `behavior` `verified_vanilla`
+- `POWER-OPERATE-003` `behavior` `verified_vanilla` `capability: powerEffects`
   `PWR_OPERATE_OBSERVER` allows `observeRoom()` beyond the observer's normal
   range while the effect is active.
-- `POWER-OPERATE-004` `behavior` `verified_vanilla`
+- `POWER-OPERATE-004` `behavior` `verified_vanilla` `capability: powerEffects`
   `PWR_OPERATE_FACTORY` changes the target factory's effective production level
   according to the power level while the effect is active.
-- `POWER-OPERATE-005` `matrix` `verified_vanilla`
+- `POWER-OPERATE-005` `matrix` `verified_vanilla` `capability: powerEffects`
   For room-bound operate powers, target validity and failure in rooms without
   power enabled match the canonical power-to-target matrix.
 - `POWER-OPERATE-006` `behavior` `verified_vanilla`
@@ -3484,21 +3484,21 @@ Coverage Notes
   Factory Commodity Chains`.
 
 ### 19.5 Disrupt Powers `capability: powerCreeps`
-- `POWER-DISRUPT-001` `matrix` `verified_vanilla`
+- `POWER-DISRUPT-001` `matrix` `verified_vanilla` `capability: powerEffects`
   Disrupt power effect values and durations match `POWER_INFO` for each disrupt
   power and supported power level.
-- `POWER-DISRUPT-002` `matrix` `verified_vanilla`
+- `POWER-DISRUPT-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Disrupt power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for
   each disrupt power.
-- `POWER-DISRUPT-003` `matrix` `verified_vanilla`
+- `POWER-DISRUPT-003` `matrix` `verified_vanilla` `capability: powerEffects`
   For disrupt powers with structure targets, target acceptance and
   invalid-target behavior match the canonical power-to-target matrix.
 
 ### 19.6 Regen Powers `capability: powerCreeps`
-- `POWER-REGEN-001` `matrix` `verified_vanilla`
+- `POWER-REGEN-001` `matrix` `verified_vanilla` `capability: powerEffects`
   Regen power effect amount, period, and duration match `POWER_INFO` for each
   regen power and supported power level.
-- `POWER-REGEN-002` `matrix` `verified_vanilla`
+- `POWER-REGEN-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Regen power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   regen power.
 
@@ -3508,10 +3508,10 @@ Coverage Notes
   supported power level.
 
 ### 19.7 Combat Runtime `capability: powerCreeps`
-- `POWER-COMBAT-002` `behavior` `verified_vanilla`
+- `POWER-COMBAT-002` `behavior` `verified_vanilla` `capability: powerEffects`
   A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
   rampart at the power creep's position in the same tick.
-- `POWER-COMBAT-003` `behavior` `verified_vanilla`
+- `POWER-COMBAT-003` `behavior` `verified_vanilla` `capability: powerEffects`
   The rampart created by `PWR_SHIELD` is removed when the shield effect
   expires.
 

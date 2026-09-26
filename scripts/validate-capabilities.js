@@ -22,12 +22,12 @@ const testsDir = path.join(root, 'tests');
 const TEST_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/g;
 const REQUIRES_RE = /shard\.requires\('(\w+)'/g;
 
-// 1. Parse catalog — build map of catalog ID → required capability
+// 1. Parse catalog — build map of catalog ID → required capabilities
 const catalog = parseCatalog(behaviorsPath);
-const requiredCapability = new Map();
+const requiredCapabilities = new Map();
 for (const entry of catalog) {
-	if (entry.capability) {
-		requiredCapability.set(entry.id, entry.capability);
+	if (entry.capabilities.length > 0) {
+		requiredCapabilities.set(entry.id, entry.capabilities);
 	}
 }
 
@@ -50,7 +50,8 @@ const errors = [];
 const testFiles = walkDir(testsDir);
 
 for (const file of testFiles) {
-	const content = readFileSync(file, 'utf8');
+	// Comments name rows a file deliberately leaves to another; only code claims them.
+	const content = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
 	const relFile = path.relative(root, file);
 
 	// Skip adapter-contract tests — they don't have catalog IDs
@@ -64,9 +65,10 @@ for (const file of testFiles) {
 
 	// Check: each tested ID that needs a capability should have requires()
 	for (const id of testIds) {
-		const needed = requiredCapability.get(id);
-		if (needed && !requiresCalls.has(needed)) {
-			errors.push({ file: relFile, id, capability: needed });
+		for (const needed of requiredCapabilities.get(id) ?? []) {
+			if (!requiresCalls.has(needed)) {
+				errors.push({ file: relFile, id, capability: needed });
+			}
 		}
 	}
 }
@@ -79,5 +81,5 @@ if (errors.length > 0) {
 	}
 	process.exit(1);
 } else {
-	console.log(`All ${requiredCapability.size} capability-gated catalog entries are properly gated in tests.`);
+	console.log(`All ${requiredCapabilities.size} capability-gated catalog entries are properly gated in tests.`);
 }

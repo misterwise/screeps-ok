@@ -4,7 +4,7 @@ import {
 	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
 	STRUCTURE_LAB, STRUCTURE_KEEPER_LAIR,
 	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
-	FIND_DEPOSITS, OK, REACTION_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
+	FIND_DEPOSITS, OK, REACTION_TIME, CREEP_SPAWN_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
 	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
 	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
 } from '../../src/index.js';
@@ -368,6 +368,28 @@ describe('adapter contract: inspection', () => {
 			expect(obj.structureType).toBe(STRUCTURE_PORTAL);
 			expect(obj.destination).toEqual({ x: 30, y: 31, roomName: 'W2N1' });
 			expect(obj.ticksToDecay).toBe(199);
+		});
+	});
+
+	describe('spawn snapshot', () => {
+		test('spawn snapshot exposes the public spawning name, needTime and remainingTime', async ({ shard }) => {
+			await shard.ownedRoom('p1', 'W1N1', 2);
+			const spawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+				store: { energy: 300 },
+			});
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SnapshotRemaining')
+			`);
+			expect(rc).toBe(OK);
+
+			const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+			expect(spawn.spawning).toEqual({
+				name: 'SnapshotRemaining',
+				needTime: CREEP_SPAWN_TIME,
+				remainingTime: CREEP_SPAWN_TIME - 1,
+			});
 		});
 	});
 

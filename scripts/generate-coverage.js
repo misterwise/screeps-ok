@@ -149,17 +149,16 @@ const BLOCKED_CAPABILITIES = new Set([
 	'factory', 'market', 'nuke', 'deposit',
 	'actionLogCapture',
 ]);
-// Power-effect IDs that need powerEffects even though their section isn't tagged
-const POWER_EFFECT_RE = /^(TOWER-POWER|RAMPART-DECAY-00[45]|SOURCE-POWER|MINERAL-POWER|SPAWN-TIMING-005)/;
 
 function categorizeUntested(entry) {
 	if (FIXTURE_BLOCKED_IDS.has(entry.id)) {
 		return 'fixture-blocked';
 	}
-	if (entry.capability && BLOCKED_CAPABILITIES.has(entry.capability)) {
-		return `capability: ${entry.capability}`;
+	const blocked = entry.capabilities.find(capability => BLOCKED_CAPABILITIES.has(capability));
+	if (blocked) {
+		return `capability: ${blocked}`;
 	}
-	if (POWER_EFFECT_RE.test(entry.id)) {
+	if (entry.capabilities.includes('powerEffects')) {
 		return 'capability: powerEffects';
 	}
 	const family = entry.id.replace(/-[0-9]{3}$/, '');
@@ -337,7 +336,7 @@ ${catalog.map(entry => {
   <td>${esc(entry.section)}</td>
   <td>${esc(entry.entryClass || '')}</td>
   <td>${esc(entry.oracle || '')}</td>
-  <td>${esc(entry.capability || '')}</td>
+  <td>${esc(entry.capabilities.join(', '))}</td>
   <td><small>${esc(files)}</small></td>
 </tr>`;
 }).join('\n')}

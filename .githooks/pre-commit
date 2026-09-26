@@ -15,6 +15,12 @@ if ! npx tsc --noEmit; then
 	exit 1
 fi
 
+# Every test of a capability-tagged catalog row must requires() that capability.
+if ! node scripts/validate-capabilities.js >/dev/null; then
+	echo "pre-commit: capability gates missing — see above." >&2
+	exit 1
+fi
+
 # Drift trap: xxscreeps engine-internals access must go through the helper
 # module (adapters/xxscreeps/engine-internals.ts). See
 # docs/xxscreeps-engine-internals-policy.md. Exception: `#flushObjects` in

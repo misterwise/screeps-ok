@@ -10,6 +10,7 @@ const ID_RE = /^-\s+`([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})`\s+`(?:behavior|ma
 const CLASS_RE = /`(behavior|matrix)`/;
 const ORACLE_RE = /`(verified_vanilla|needs_vanilla_verification)`/;
 const CAPABILITY_RE = /`capability:\s*(\w+)`/;
+const ROW_CAPABILITY_RE = /`capability:\s*(\w+)`/g;
 const SECTION_RE = /^(#{1,3})\s+(.+)/;
 
 export function parseCatalog(behaviorsPath) {
@@ -45,11 +46,15 @@ export function parseCatalog(behaviorsPath) {
 		const classMatch = line.match(CLASS_RE);
 		const oracleMatch = line.match(ORACLE_RE);
 
+		// A row tag adds to its section's capability, e.g. `chemistry` plus `powerEffects`.
+		const rowCapabilities = [...line.matchAll(ROW_CAPABILITY_RE)].map(m => m[1]);
+
 		entries.push({
 			id,
 			section: currentSection,
 			subsection: currentSubsection,
 			capability: currentCapability,
+			capabilities: [...new Set([currentCapability, ...rowCapabilities].filter(Boolean))],
 			entryClass: classMatch ? classMatch[1] : null,
 			oracle: oracleMatch ? oracleMatch[1] : null,
 		});
