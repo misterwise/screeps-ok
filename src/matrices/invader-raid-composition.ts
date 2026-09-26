@@ -2,7 +2,7 @@ import {
 	ATTACK, HEAL, MOVE, RANGED_ATTACK, TOUGH, WORK,
 } from '../index.js';
 
-export const invaderRaidBodies = {
+const invaderRaidBodies = {
 	smallMelee: [
 		TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, WORK, ATTACK, MOVE,
 	],
