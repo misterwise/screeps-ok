@@ -507,7 +507,7 @@ export interface ScreepsOkAdapter {
 	 */
 	placeObject<T extends string>(room: string, type: T, spec: PlaceObjectSpec<T>): Promise<string>;
 
-	/** Update room terrain, if the adapter supports post-creation terrain mutation. */
+	/** Replace a room's terrain before the shard's first tick; after it, throw and change nothing. */
 	setTerrain(room: string, terrain: TerrainSpec): Promise<void>;
 
 	/**

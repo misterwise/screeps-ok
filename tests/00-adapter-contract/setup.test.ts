@@ -176,54 +176,43 @@ describe('adapter contract: setup', () => {
 			expect(rc).toBe(ERR_GCL_NOT_ENOUGH);
 		});
 
-		// Spec §Terrain: "setTerrain() is part of the contract, but adapters
-		// may reject it when the engine cannot mutate terrain after shard
-		// creation. If so, the failure must be explicit and actionable."
-		// Silent no-op (resolving without mutating) is a contract violation —
-		// downstream tests would build on stale terrain assumptions.
-		test('setTerrain after first tick either succeeds or throws explicitly', async ({ shard }) => {
-			shard.requires('terrain', 'setTerrain post-tick contract requires terrain capability');
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
-			await shard.tick(); // arm any "first makeRuntime" caches
+		// Spec §Terrain: setTerrain is setup-only. Before the shard's first tick
+		// player code and PathFinder read it; after one it throws and changes nothing.
+		const wx = 25, wy = 25;
+		const walledTerrain = () => {
+			const terrain = new Array<0 | 1 | 2>(2500).fill(0);
+			terrain[wy * 50 + wx] = 1;
+			return terrain;
+		};
+		const readWall = code`
+			const terrain = Game.map.getRoomTerrain('W1N1');
+			const path = PathFinder.search(
+				new RoomPosition(${wx - 1}, ${wy}, 'W1N1'),
+				{ pos: new RoomPosition(${wx + 1}, ${wy}, 'W1N1'), range: 0 },
+				{ maxRooms: 1 },
+			).path;
+			({ terrainMask: terrain.get(${wx}, ${wy}), goesThroughWall: path.some(p => p.x === ${wx} && p.y === ${wy}) })
+		`;
 
-			const wallTerrain = new Array<0 | 1 | 2>(2500).fill(0);
-			const wx = 25, wy = 25;
-			wallTerrain[wy * 50 + wx] = 1; // TERRAIN_WALL
+		test('setTerrain before the first tick is what player code and PathFinder read', async ({ shard }) => {
+			shard.requires('terrain', 'setTerrain requires terrain capability');
+			await shard.ownedRoom('p1');
+			await shard.setTerrain('W1N1', walledTerrain());
 
-			let threw: Error | null = null;
-			try {
-				await shard.setTerrain('W1N1', wallTerrain);
-			} catch (err) {
-				threw = err as Error;
-			}
-
-			if (threw) {
-				expect(threw.message.length).toBeGreaterThan(0);
-				return;
-			}
-
-			// Resolved — must actually be observable via player APIs in the
-			// next tick. PathFinder is the strict probe: a wall must force
-			// a detour. If terrain only landed in the DB but the runtime
-			// cache is stale, the path will go straight through.
-			const result = await shard.runPlayer('p1', code`
-				const wx = ${wx}, wy = ${wy};
-				const terrain = Game.map.getRoomTerrain('W1N1');
-				const result = PathFinder.search(
-					new RoomPosition(wx - 1, wy, 'W1N1'),
-					{ pos: new RoomPosition(wx + 1, wy, 'W1N1'), range: 0 },
-					{ maxRooms: 1 },
-				);
-				const goesThroughWall = result.path.some(p => p.x === wx && p.y === wy);
-				({ terrainMask: terrain.get(wx, wy), goesThroughWall })
-			`) as { terrainMask: number; goesThroughWall: boolean };
-
-			expect(result.terrainMask).toBe(1);
-			expect(result.goesThroughWall).toBe(false);
+			expect(await shard.runPlayer('p1', readWall)).toEqual({ terrainMask: 1, goesThroughWall: false });
 		});
+
+		for (const firstTick of ['tick', 'runPlayer'] as const) {
+			test(`setTerrain after a first ${firstTick}() throws and leaves the terrain as it was`, async ({ shard }) => {
+				shard.requires('terrain', 'setTerrain requires terrain capability');
+				await shard.ownedRoom('p1');
+				if (firstTick === 'tick') await shard.tick();
+				else await shard.runPlayer('p1', code`1`);
+
+				await expect(shard.setTerrain('W1N1', walledTerrain())).rejects.toThrow(/setTerrain/);
+				expect(await shard.runPlayer('p1', readWall)).toEqual({ terrainMask: 0, goesThroughWall: true });
+			});
+		}
 
 		test('terrain spec is honored end-to-end (room.getTerrain and PathFinder)', async ({ shard }) => {
 			shard.requires('terrain', 'createShard.terrain spec is required for this contract test');
@@ -1226,37 +1215,6 @@ describe('adapter contract: setup', () => {
 				else expect(err.message).toMatch(/placeObject/);
 			}
 			expect(accepted).toEqual([]);
-		});
-	});
-
-	describe('setTerrain after runPlayer', () => {
-		// Spec §Terrain: terrain is a setup-only property. Once runPlayer
-		// has started simulating user code, an adapter may have built
-		// player sandboxes, cached world blobs, or otherwise committed to
-		// the current terrain. Late-mutating terrain is not a supported
-		// runtime scenario — tests should not rely on mid-run terrain
-		// changes. Adapters must reject the call with an actionable error
-		// rather than silently accept a mutation that isn't visible to
-		// player code.
-		test('setTerrain after runPlayer throws with an actionable error', async ({ shard }) => {
-			shard.requires('terrain');
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-			});
-			await shard.runPlayer('p1', code`1`);
-
-			const wall = new Array<0 | 1 | 2>(2500).fill(0);
-			wall[25 * 50 + 25] = 1;
-
-			let err: Error | null = null;
-			try {
-				await shard.setTerrain('W1N1', wall);
-			} catch (e) {
-				err = e as Error;
-			}
-			expect(err).not.toBeNull();
-			expect(err!.message.length).toBeGreaterThan(0);
 		});
 	});
 });

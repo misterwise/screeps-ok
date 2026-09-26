@@ -158,9 +158,11 @@ setup.
 
 ### Terrain
 
-`setTerrain()` is part of the contract, but adapters may reject it when the
-engine cannot mutate terrain after shard creation. If so, the failure must be
-explicit and actionable.
+`setTerrain()` is setup-only. Before the shard's first tick (a `tick()`,
+`runPlayer()` or `runPlayers()`) it replaces the room's terrain, walled
+corners included, and player code and `PathFinder` read the new terrain from
+that tick on. After the first tick it throws an actionable error and changes
+nothing, since an engine's player sandboxes may already hold the old terrain.
 
 ### Invader Raid Spawner Setup
 
