@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2774%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2540%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2814%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2555%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2774](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 15:16 UTC |
-| 🟡 | **xxscreeps** | [2540](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [171](#xxscreeps-skipped-tests) | 2026-09-26 15:16 UTC |
+| 🟡 | **vanilla** | [2814](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 15:40 UTC |
+| 🟡 | **xxscreeps** | [2555](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 15:37 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -503,7 +503,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2774 tests across 149 files</summary>
+<summary>2814 tests across 150 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -577,7 +577,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (23)
+**`tests/00-adapter-contract/inspection.test.ts`** (24)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -599,15 +599,17 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
+- adapter contract: inspection spawn snapshot spawn snapshot exposes the public spawning name, needTime and remainingTime
 - adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (71)
+**`tests/00-adapter-contract/setup.test.ts`** (73)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
+- adapter contract: setup createShard creates spec rooms on both sides of the map origin
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
@@ -660,6 +662,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
 - adapter contract: setup placePowerCreep derives level, hits, and store capacity from the placed power levels
+- adapter contract: setup placePowerCreep placement leaves power disabled; RoomSpec.powerEnabled enables it
 - adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
@@ -677,11 +680,19 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
-**`tests/00-framework/parity-reporter.test.ts`** (6)
+**`tests/00-framework/fixture-fence.test.ts`** (2)
+
+- fixture fence a test that times out mid-tick is cut off
+- fixture fence the next test's shard does not advance on its own
+
+**`tests/00-framework/parity-reporter.test.ts`** (9)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
+- parity reporter a file that fails to collect or an unhandled error is a genuine failure
 - parity reporter a filtered or sharded run does not count orphans
+- parity file loading a missing parity.json means no registrations
+- parity file loading a malformed parity.json or an unresolvable extends throws
 - parity exit code forgives failures that are all registered gaps
 - parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
@@ -2092,7 +2103,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (48)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -2109,7 +2120,6 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
-- StructureSpawn SPAWN-TIMING-005 spawn snapshot exposes public spawning remainingTime
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
@@ -2254,7 +2264,7 @@ Click a count to jump to the affected test list.
 
 **`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
 
-- Spawn power effects SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time
+- Spawn power effects SPAWN-TIMING-005 custom directions are ignored for a 1-tick spawn under PWR_OPERATE_SPAWN
 
 **`tests/10-structures-energy/10.1-extension.test.ts`** (2)
 
@@ -2664,10 +2674,9 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
-**`tests/12-structures-military/12.4-rampart-power.test.ts`** (2)
+**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
 
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
-- Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
 **`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
 
@@ -3190,7 +3199,7 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (40)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (74)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
@@ -3204,8 +3213,42 @@ Click a count to jump to the affected test list.
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
 - Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
-- Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
-- Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
+- Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateSpawnDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateTowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateTowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateTowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateStorageValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateStorageInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateStorageDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateLabValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateLabInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateLabDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateExtensionValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateExtensionInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateExtensionDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateObserverValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateObserverInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateObserverDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateTerminalValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateTerminalInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateTerminalDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operatePowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operatePowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operatePowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateControllerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateControllerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateControllerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateFactoryValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateFactoryInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateFactoryDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-DISRUPT-003:disruptSpawnValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptSpawnInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-DISRUPT-003:disruptTowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptTowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-DISRUPT-003:disruptTerminalValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptTerminalInvalid usePower on another target type is dropped without cost
 - Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive
 - Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:busy powerCreep.renew() validation returns the canonical code
@@ -3730,11 +3773,11 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 171 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | usePower applying PWR_* effects | [67](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerEffects` | usePower applying PWR_* effects | [92](#xxscreeps-skip-capability-powereffects) |
 | capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
@@ -3747,7 +3790,7 @@ xxscreeps has 171 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powereffects">
-<summary><code>capability:powerEffects</code> — 67 tests across 15 files</summary>
+<summary><code>capability:powerEffects</code> — 92 tests across 15 files</summary>
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
@@ -3769,7 +3812,7 @@ Click a count to jump to the affected test list.
 
 **`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
 
-- Spawn power effects SPAWN-TIMING-005 PWR_OPERATE_SPAWN modifies spawn time
+- Spawn power effects SPAWN-TIMING-005 custom directions are ignored for a 1-tick spawn under PWR_OPERATE_SPAWN
 
 **`tests/11-structures-production/11.1-11.2-lab.test.ts`** (2)
 
@@ -3784,10 +3827,9 @@ Click a count to jump to the affected test list.
 
 - StructurePowerSpawn processPower POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power
 
-**`tests/12-structures-military/12.4-rampart-power.test.ts`** (2)
+**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
 
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
-- Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
 **`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (2)
 
@@ -3844,7 +3886,7 @@ Click a count to jump to the affected test list.
 - Mineral power effects MINERAL-POWER-001:levelFour PWR_REGEN_MINERAL adds its effect once per period
 - Mineral power effects MINERAL-POWER-001:levelFive PWR_REGEN_MINERAL adds its effect once per period
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (10)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (36)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
@@ -3856,6 +3898,32 @@ Click a count to jump to the affected test list.
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
 - Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
+- Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateTowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateTowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateStorageValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateStorageInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateLabValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateLabInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateExtensionValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateExtensionInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateObserverValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateObserverInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateTerminalValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateTerminalInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operatePowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operatePowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateControllerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateControllerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-OPERATE-005:operateFactoryValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-OPERATE-005:operateFactoryInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-DISRUPT-003:disruptSpawnValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptSpawnInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-DISRUPT-003:disruptTowerValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptTowerInvalid usePower on another target type is dropped without cost
+- Power target matrix POWER-DISRUPT-003:disruptTerminalValid usePower on its target type charges ops and starts the cooldown
+- Power target matrix POWER-DISRUPT-003:disruptTerminalInvalid usePower on another target type is dropped without cost
 
 **`tests/26-object-shapes/26.0-discovery.test.ts`** (1)
 
@@ -4059,7 +4127,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2540 tests across 133 files</summary>
+<summary>2555 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4133,7 +4201,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (22)
+**`tests/00-adapter-contract/inspection.test.ts`** (23)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -4154,15 +4222,17 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
+- adapter contract: inspection spawn snapshot spawn snapshot exposes the public spawning name, needTime and remainingTime
 - adapter contract: inspection snapshot timer relativity controller snapshot ticksToDowngrade matches player-code value
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (71)
+**`tests/00-adapter-contract/setup.test.ts`** (73)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
 - adapter contract: setup createShard creates multiple rooms
+- adapter contract: setup createShard creates spec rooms on both sides of the map origin
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
@@ -4215,6 +4285,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
 - adapter contract: setup placePowerCreep derives level, hits, and store capacity from the placed power levels
+- adapter contract: setup placePowerCreep placement leaves power disabled; RoomSpec.powerEnabled enables it
 - adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
@@ -4232,11 +4303,19 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
-**`tests/00-framework/parity-reporter.test.ts`** (6)
+**`tests/00-framework/fixture-fence.test.ts`** (2)
+
+- fixture fence a test that times out mid-tick is cut off
+- fixture fence the next test's shard does not advance on its own
+
+**`tests/00-framework/parity-reporter.test.ts`** (9)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
+- parity reporter a file that fails to collect or an unhandled error is a genuine failure
 - parity reporter a filtered or sharded run does not count orphans
+- parity file loading a missing parity.json means no registrations
+- parity file loading a malformed parity.json or an unresolvable extends throws
 - parity exit code forgives failures that are all registered gaps
 - parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
@@ -5616,7 +5695,7 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (48)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
@@ -5633,7 +5712,6 @@ Click a count to jump to the affected test list.
 - StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
-- StructureSpawn SPAWN-TIMING-005 spawn snapshot exposes public spawning remainingTime
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
 - StructureSpawn SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise
 - StructureSpawn SPAWN-TIMING-004 opts.directions selects exit tile from the provided order
@@ -6582,12 +6660,20 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (25)
 
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
-- Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
-- Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
+- Power target matrix POWER-OPERATE-005:operateSpawnDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateTowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateStorageDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateLabDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateExtensionDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateObserverDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateTerminalDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operatePowerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateControllerDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power target matrix POWER-OPERATE-005:operateFactoryDisabled usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:invalidTarget powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:rcl powerCreep.renew() validation returns the canonical code

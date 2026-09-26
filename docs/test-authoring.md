@@ -1,53 +1,109 @@
-# screeps-ok Test Authoring Rules
+# Test Authoring Guide
 
-This document defines how canonical conformance tests in `screeps-ok` should be
-written so they are self-verifying, deterministic, and low-maintenance.
+How to write a canonical `screeps-ok` test: one that proves one catalog
+behavior, fails for one clear reason, and runs unchanged on every engine.
 
-It complements:
+Tests implement entries in [`behaviors.md`](../behaviors.md); matrix-backed
+entries also have a scope definition in
+[`behavior-matrices.md`](behavior-matrices.md). Find the entry first, then write
+the test.
 
-- `behaviors.md`, which defines what behavior exists
-- `docs/behavior-matrices.md`, which defines how matrix-backed behavior expands
-  into explicit case families
+## A test, end to end
 
-## Goals
+A trimmed version of `HARVEST-001` from
+`tests/03-harvesting/3.1-source-harvest.test.ts`:
 
-Canonical tests should:
+```typescript
+import { describe, test, expect, code,
+	OK, WORK, CARRY, MOVE, HARVEST_POWER,
+} from '../../src/index.js';
 
-- prove one catalog behavior or one generated matrix family
-- fail for one clear reason
-- assert exact public outcomes rather than requiring manual interpretation
-- avoid implementation-shaped assumptions
+describe('creep.harvest()', () => {
+	// The title starts with the catalog ID. Coverage and parity tracking key on it.
+	test('HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store', async ({ shard }) => {
+		// Setup: the smallest world that proves the behavior.
+		await shard.ownedRoom('p1'); // W1N1, owned by p1, RCL 1
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, CARRY, MOVE],
+		});
+		const srcId = await shard.placeSource('W1N1', {
+			pos: [25, 26], energy: 3000, energyCapacity: 3000,
+		});
 
-## Core Rules
+		// Act: real player code, run inside the engine. `code` interpolates values
+		// safely; the last expression is the return value.
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
+		`);
+
+		// Assert: the return code and the resulting state, both exact.
+		expect(rc).toBe(OK);
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy).toBe(HARVEST_POWER); // canonical constant, not an engine lookup
+	});
+});
+```
+
+Every canonical test has this shape: set up the smallest world, run the exact
+action, advance only the ticks the behavior needs, then assert the exact return
+code and observable state.
+
+### The `shard` fixture
+
+Each test receives a fresh world on whichever adapter is running. The test
+never sees engine objects, only IDs going in and plain JSON snapshots coming
+out.
+
+| Call | What it does | Time |
+| --- | --- | --- |
+| `ownedRoom(player, room?, rcl?)` | One player owning one room (default `W1N1`, RCL 1) | — |
+| `createShard({ players, rooms })` | Full control over players, rooms, and terrain | — |
+| `placeCreep`, `placeStructure`, `placeSource`, `placeSite`, … | Typed setup; each returns an opaque ID | — |
+| ``runPlayer(player, code`…`)`` | Runs code as that player, processes its intents | +1 tick |
+| ``runPlayers({ p1: code`…`, p2: code`…` })`` | Several players against the same state | +1 tick |
+| `tick(n?)` | Advances `n` more ticks (default 1) | +n ticks |
+| `expectObject(id, kind)`, `expectStructure(id, type)` | Reads one snapshot; fails the test if missing or the wrong kind | — |
+| `getObject(id)`, `findInRoom(room, FIND_*)` | Reads snapshots; `getObject` returns `null` for a missing object | — |
+| `expectRunPlayerError(player, code, kind)` | Asserts the code fails with a `syntax`, `runtime`, or `serialization` error | as `runPlayer` |
+| `requires(capability)` | Skips the test if the adapter lacks the capability | — |
+
+> [!IMPORTANT]
+> `runPlayer()` already processes the code's intents within its own tick, so
+> the result is observable as soon as it returns. `runPlayer()` followed by
+> `tick()` advances two ticks. Only add ticks the behavior needs, such as
+> cooldowns, decay, or next-tick visibility.
+
+The full contract, including snapshot shapes, is in
+[`adapter-spec.md`](adapter-spec.md).
+
+### Running it
+
+```bash
+npm test -- tests/03-harvesting/3.1-source-harvest.test.ts   # xxscreeps (default)
+npm test -- vanilla -t "HARVEST-001"                          # vanilla, one test
+```
+
+Every new test must pass on both adapters, or fail only on a gap registered in
+that adapter's `parity.json`.
+
+## Naming
+
+- Start the test title with the catalog ID: `'HARVEST-001 harvest deposits…'`.
+- Matrix rows append `:rowLabel` to the ID: `STRUCTURE-HITS-001:storage`. Keep
+  labels letters-only camelCase so `parity.json` can register a single row.
+- Use constants from `src/index.ts` (`FIND_*`, `STRUCTURE_*`, `ERR_*`, body
+  parts) rather than string or number literals.
+
+## Rules
 
 ### 1. Test only public behavior
 
-A canonical test must assert only player-observable behavior through the public
-game surface, adapter setup helpers, and snapshot/output APIs.
+A canonical test asserts only player-observable behavior through the public
+game surface, adapter setup helpers, and snapshot APIs.
 
-Canonical gameplay tests must not rely on framework-only internals such as
-adapter discriminators, `any` casts to recover missing shape, or test-only
-metadata when the same behavior can be asserted through public Screeps
-properties or typed fixture helpers.
-
-Canonical tests must also avoid self-oracling through the implementation under
-test. In particular:
-
-- do not read gameplay constants, tables, or expected formulas from the engine
-  under test at runtime and then assert that the engine matches them
-- do not treat a dependency bundled with one implementation as the source of
-  truth for another implementation
-- do use the checked-in canonical constants exported by `src/constants.ts`
-
-Some APIs have an effect that leaves the runtime: `Game.notify` sends an
-email, `RoomVisual` / `MapVisual` draw in the client, `Game.cpu` samples the
-host. The effect is out of scope because no test can observe it. The runtime
-surface is in scope and is tested like anything else: method presence,
-argument validation, return codes, per-tick caps, size accounting,
-chainability, and `export`/`import` round-trips. Write the entry against the
-surface and never against the effect (see the scope rule in the
-`behaviors.md` Summary).
-  and the checked-in matrix definitions under `src/matrices/`
+Do not rely on framework-only internals such as adapter discriminators, `any`
+casts to recover missing shape, or test-only metadata when the same behavior
+can be asserted through public Screeps properties or typed fixture helpers.
 
 Do not assert:
 
@@ -56,21 +112,44 @@ Do not assert:
 - implementation helper usage
 - hidden intermediate state that players cannot observe
 - adapter-only snapshot tagging in place of public object properties
-- implementation-provided constants or tables used as the oracle for that same
-  implementation
 
-### 2. One behavior, one reason to fail
+Some APIs have an effect that leaves the runtime: `Game.notify` sends an email,
+`RoomVisual` / `MapVisual` draw in the client, `Game.cpu` samples the host. The
+effect is out of scope because no test can observe it. The runtime surface is
+in scope and is tested like anything else: method presence, argument
+validation, return codes, per-tick caps, size accounting, chainability, and
+`export`/`import` round-trips. Write the entry against the surface and never
+against the effect (see the scope rule in the `behaviors.md` Summary).
 
-A hand-written test should normally prove one `behavior` catalog entry.
+### 2. Never let the engine grade itself
 
-A generated test family should normally prove one `matrix` catalog entry.
+Expected values come from the checked-in canonical constants in
+`src/constants.ts` and the matrix definitions under `src/matrices/`, never from
+the engine under test.
 
-If a test needs unrelated assertions to be meaningful, split the behavior or
-split the test.
+```typescript
+// Bad: asks the engine under test for the expected value.
+const power = await shard.runPlayer('p1', code`HARVEST_POWER`);
+expect(creep.store.energy).toBe(power);
 
-### 3. Assert exact outcomes
+// Good: the checked-in constant is the oracle.
+expect(creep.store.energy).toBe(HARVEST_POWER); // imported from src/index.ts
+```
 
-Prefer exact assertions over qualitative ones.
+The same applies to tables and formulas: do not read them from the engine at
+runtime, and do not treat a dependency bundled with one implementation as the
+source of truth for another.
+
+### 3. One behavior, one reason to fail
+
+A hand-written test proves one `behavior` catalog entry. A generated test
+family proves one `matrix` catalog entry. If a test needs unrelated assertions
+to be meaningful, split the behavior or split the test.
+
+When a behavior has both positive and negative cases, prefer separate tests
+unless they are one tightly coupled matrix family.
+
+### 4. Assert exact outcomes
 
 Good:
 
@@ -83,147 +162,143 @@ Good:
   `undefined -> null`
 - exact public fields from typed snapshots such as `structureType`,
   `resourceType`, `creepName`, `owner`, `pos`, and `store`
-- exact values derived from checked-in canonical constants and tables rather
-  than magic numbers or runtime engine lookups
+- exact values derived from canonical constants rather than magic numbers
 
 Avoid:
 
-- “works correctly”
-- “changed as expected”
+- "works correctly" or "changed as expected"
 - console output inspection
 - manual spot-checking of logs or snapshots
-- filtering or branching on adapter discriminators like `kind` in canonical
-  gameplay tests
+- filtering or branching on adapter discriminators like `kind`
 
-### 4. Assert return value and resulting state when both matter
+If the public contract includes both a return code and a resulting world state,
+assert both unless the catalog entry deliberately scopes to one. Examples:
+`transfer()` returning `OK` and changing both stores; `createConstructionSite()`
+returning `OK` and creating the site on the next tick.
 
-If the public contract includes both an API return code and a resulting world
-state, assert both unless the catalog entry deliberately scopes to only one.
+### 5. Make timing explicit
 
-Examples:
+If a behavior depends on timing, the test states the tick boundary: same tick,
+next tick, current tick only, or when a cooldown reaches `0`.
 
-- `transferEnergy()` returning `OK` and changing both source/target energy
-- `createConstructionSite()` returning `OK` and creating the site on the next
-  tick
-- `observeRoom()` returning `OK` and making the room visible on the next tick
+```typescript
+const harvest = code`Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))`;
 
-### 5. Timing must be explicit
+// Bad: "enough" ticks and a loose bound hide when the effect lands.
+await shard.runPlayer('p1', harvest);
+await shard.tick(5);
+expect((await shard.expectObject(creepId, 'creep')).store.energy).toBeGreaterThan(0);
 
-If a behavior depends on timing, the test must make the tick boundary explicit.
+// Good: the intent resolves inside runPlayer's tick; assert the exact amount then.
+await shard.runPlayer('p1', harvest);
+expect((await shard.expectObject(creepId, 'creep')).store.energy).toBe(HARVEST_POWER);
+```
 
-Examples:
-
-- same tick
-- next tick
-- current tick only
-- becomes available when cooldown reaches `0`
-
-Do not leave timing implicit in setup or helper behavior.
-
-When a behavior depends on same-tick observation from multiple players, use a
-shared-state helper such as `runPlayers(...)` rather than sequential
-single-player reads that may observe different ticks.
+When a behavior depends on same-tick observation from multiple players, use
+`runPlayers(...)` rather than sequential `runPlayer` calls, which observe
+different ticks.
 
 ### 6. Determinism first
 
 A canonical test must not depend on ambiguous tie-breaking, broad random
 sampling, or unstated world assumptions.
 
-If a behavior is important but only expressible through a set of example
-scenarios, write it as:
+If a behavior is only expressible through example scenarios, write a concrete
+`behavior` entry per scenario, or a `matrix` with an explicit case list. Do not
+encode reverse-engineered algorithm prose in the test as a substitute for
+concrete cases.
 
-- a concrete `behavior` entry per scenario, or
-- a `matrix` with an explicit case list in `docs/behavior-matrices.md`
+### 7. Gate missing features on capabilities
 
-Do not encode reverse-engineered algorithm prose in the test as a substitute
-for concrete cases.
+If a test needs a feature area some engines lack, skip it through the
+capability, never by returning early or checking the adapter's name.
 
-### 7. Matrix tests must come from the matrix definition
+```typescript
+// Bad: reports as a pass on engines that never ran the assertions.
+if (!shard.capabilities.chemistry) return;
 
-If a catalog entry is `matrix`-backed, the generated test family must derive its
-cases from `docs/behavior-matrices.md`, the canonical source it references, and
-the checked-in executable case definitions under `src/matrices/` when
-present.
+// Good: reports as skipped, with the capability as the reason.
+shard.requires('chemistry');
+```
 
-Do not:
+The capability list and what each flag covers are in
+[`adapter-spec.md`](adapter-spec.md#capabilities-and-skip-policy).
 
-- hand-pick an undocumented subset
-- silently expand scope beyond the documented applicability set
-- rely on a matrix whose dimensions or exclusions are still unclear
+### 8. Make negative cases explicit
 
-If the matrix definition is incomplete, finish the definition before writing the
-canonical test family.
-
-### 8. Negative cases must be explicit
-
-When behavior depends on rejection, failure, or inapplicability, the test must
-say exactly what is rejected and how that rejection is exposed.
-
-Examples:
-
-- `ERR_NOT_IN_RANGE`
-- `ERR_INVALID_TARGET`
-- `null`
-- `undefined`
-- object absent on that tick
+When behavior depends on rejection, failure, or inapplicability, the test says
+exactly what is rejected and how: `ERR_NOT_IN_RANGE`, `ERR_INVALID_TARGET`,
+`null`, `undefined`, or the object being absent on that tick.
 
 ### 9. Avoid side-effect duplication
 
-Do not write a second canonical test for a side effect already owned by another
-catalog entry unless the second behavior truly needs its own source-specific
-coverage.
+Do not write a second canonical test for a side effect another catalog entry
+already owns, unless the second behavior needs its own source-specific
+coverage. For example, if the death section owns tombstone mechanics, a
+suicide test proves suicide-specific behavior or belongs to a death-source
+matrix.
 
-Example:
+### 10. If it can't verify itself, it isn't ready
 
-- if tombstone mechanics are owned by the death section, a suicide-specific test
-  should prove either suicide-specific behavior or explicitly belong to a
-  death-source matrix
-
-### 10. If a behavior cannot be made self-verifying, it is not ready
-
-If a proposed test still requires a human to decide whether it passed, then one
-of these is still missing:
+If a proposed test still needs a human to decide whether it passed, one of
+these is missing:
 
 - the catalog entry is too vague
 - the matrix definition is incomplete
 - the adapter surface is insufficient
 - the behavior should remain a note instead of a catalog entry
 
-Do not patch around that by writing a vague or inspection-based test.
+Do not patch around that with a vague or inspection-based test.
 
-## Preferred Test Shape
+## Matrix families
 
-For most canonical tests:
+A `matrix` entry is one public rule that expands across a documented case
+family: one row per structure type, reaction, boost, or validation condition.
+The case list lives in `src/matrices/` and the test loops over it:
 
-1. set up the smallest world state that proves the behavior
-2. run the exact action(s) under test
-3. tick only as much as needed
-4. assert the exact return code and exact observable state
+```typescript
+import { structureHitsCases } from '../../src/matrices/structure-hits.js';
 
-When a behavior has both positive and negative cases, prefer separate tests
-unless they are one tightly-coupled matrix family.
+describe('Structure hits', () => {
+	for (const { structureType, expectedHits } of structureHitsCases) {
+		test(`STRUCTURE-HITS-001:${structureType} initializes with ${expectedHits} hits`, async ({ shard }) => {
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType, owner: 'p1',
+			});
+			const struct = await shard.expectObject(id, 'structure');
+			expect(struct.hits).toBe(expectedHits);
+		});
+	}
+});
+```
 
-## Matrix Family Rules
+(The real test also sets the minimum RCL per structure and calls
+`shard.requires` for structures behind a capability.)
 
-A matrix family should be used when:
+Use a matrix when:
 
 - one public rule expands across a documented case family
 - the family is defined by a canonical source or explicit applicability list
 - the cases differ only by bounded input dimensions, not by unrelated mechanics
 
-Examples:
+Examples: `BOOSTS`, `REACTIONS`, `COMMODITIES`, `CONTROLLER_STRUCTURES`, and
+documented target-validity families.
 
-- `BOOSTS`
-- `REACTIONS`
-- `COMMODITIES`
-- `CONTROLLER_STRUCTURES`
-- documented target-validity families
+The generated family must derive its cases from the definition in
+`docs/behavior-matrices.md`, the canonical source it references, and the case
+list in `src/matrices/`. Do not:
 
-Do not use a matrix only to hide unclear scope. If the applicability set is not
-stable, keep the catalog item as `needs_vanilla_verification` or a note until
-the family is explicit.
+- hand-pick an undocumented subset
+- silently expand scope beyond the documented applicability set
+- rely on a matrix whose dimensions or exclusions are still unclear
+- use a matrix only to hide unclear scope
 
-## Write From the Idiom, Not Only the Method
+If the definition is incomplete, finish it before writing the test family. If
+the applicability set is not stable, keep the catalog item as
+`needs_vanilla_verification` or a note until the family is explicit.
+
+## Write from the idiom, not only the method
 
 Every gap a real bot has found in this suite passed a test that called the
 method directly with valid arguments. The bot reached the same API through an
@@ -255,15 +330,16 @@ a method, check the entry against how bots actually reach it:
 If the entry only survives the direct call, add the idiom-shaped row next to
 it rather than widening the existing one.
 
-## Review Checklist
+## Review checklist
 
-Before a canonical test is accepted, it should be possible to answer “yes” to
-all of these:
+Before a canonical test is accepted, each of these should be a "yes":
 
 - Does it map to exactly one catalog behavior or one documented matrix family?
-- Does it assert exact public outcomes?
+- Does the title start with that catalog ID?
+- Does it assert exact public outcomes, using canonical constants?
 - Is tick timing explicit where relevant?
 - Would a failure point to one clear contract break?
 - Is it free of implementation-shaped assertions?
 - If matrix-backed, does it come from the documented matrix definition?
+- Does it pass on both adapters, or fail only on a registered gap?
 - Can another engineer evaluate pass/fail without manual interpretation?

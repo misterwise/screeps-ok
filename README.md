@@ -3,7 +3,7 @@
 > _If your engine agrees, it's Screeps._
 
 <!-- BADGES:START -->
-[![vanilla](https://img.shields.io/badge/vanilla-2774%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2540%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2814%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2555%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](docs/status.md#xxscreeps-expected-failures)
 <!-- BADGES:END -->
 ![status](https://img.shields.io/badge/status-alpha-blue)
 
@@ -48,15 +48,21 @@ npm install
 npm run setup:xxscreeps
 npm run setup:vanilla
 
-# Run the suite
+# Run the suite on one adapter while iterating
 npm test -- xxscreeps
 npm test -- vanilla
+
+# Full run on both adapters: writes fresh reports and regenerates the status docs
+npm run parity
 ```
 
 `npm test` runs a preflight check and exits with a concrete remediation
 message if the active Node or native addons do not match the selected
-adapter. `posttest` regenerates [`docs/status.md`](docs/status.md) and
-[`docs/coverage.html`](docs/coverage.html).
+adapter. Its `posttest` step regenerates [`docs/status.md`](docs/status.md) and
+[`docs/coverage.html`](docs/coverage.html) from the last full-run reports in
+`reports/`; only `npm run parity` writes new ones. A filtered parity run
+(`npm run parity -- <vitest-args>`) writes `reports/<adapter>-partial.json`
+and leaves the docs untouched.
 
 Filter tests by path or name, the same as any vitest invocation:
 

@@ -25,14 +25,14 @@ Start with the fast adapter first. It has the shortest feedback loop.
 nvm use 24
 npm install
 npm run setup:xxscreeps
-npm test xxscreeps -- tests/00-adapter-contract/error-model.test.ts
+npm test -- xxscreeps tests/00-adapter-contract/error-model.test.ts
 ```
 
 Then prove the slower adapter path separately:
 
 ```bash
 npm run setup:vanilla
-npm test vanilla -- tests/16-room-mechanics/16.3b-game-api.test.ts
+npm test -- vanilla tests/16-room-mechanics/16.3b-game-api.test.ts
 ```
 
 ## Contributor Paths
@@ -109,10 +109,13 @@ If you intentionally changed parity declarations or catalog coverage, run
 Before opening a PR, run the smallest useful validation set for your change:
 
 1. `npm run lint`
-2. Targeted `npm test <adapter> -- <file-or-filter>`
+2. Targeted `npm test -- <adapter> <file-or-filter>`
 3. `npm run validate:capabilities` if you changed adapter capabilities
-4. `npm run status:refresh` if you changed parity declarations, catalog
-   coverage, or intentionally updated the published dashboard
+4. `npm run parity` if you changed tests, the catalog, an adapter, or parity
+   declarations: the full suite on both adapters, which also regenerates the
+   status docs
+5. `npm run status:refresh` if you only need the docs regenerated from existing
+   reports (it runs no tests)
 
 Also check:
 

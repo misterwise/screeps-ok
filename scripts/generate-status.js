@@ -192,12 +192,13 @@ function slug(text) {
 		.replace(/\s+/g, '-');
 }
 
-function renderHeaderBadges(summaries) {
+// statusHref is the path from the rendering doc to status.md ('' when rendering status.md itself).
+function renderHeaderBadges(summaries, statusHref) {
 	// One green "N passing" badge per adapter plus a yellow "N expected-fail"
 	// badge for each adapter that has any. Two separate badges so the visual
 	// signal for "fully passing" is distinct from "passing with known gaps".
 	const badges = [];
-	const linkTo = (anchor) => `docs/status.md#${anchor}`;
+	const linkTo = (anchor) => `${statusHref}#${anchor}`;
 	for (const [adapter, data] of Object.entries(summaries)) {
 		const s = data.summary;
 		if (!s.loaded) {
@@ -514,7 +515,7 @@ function render(summaries) {
 	lines.push('');
 	lines.push('> _If your engine agrees, it\'s Screeps._');
 	lines.push('');
-	lines.push(renderHeaderBadges(summaries));
+	lines.push(renderHeaderBadges(summaries, ''));
 	lines.push('');
 	lines.push('> [!NOTE]');
 	lines.push('> This page is generated from the latest vitest run for each adapter');
@@ -599,7 +600,7 @@ function updateReadmeBadges(summaries) {
 	if (!existsSync(readmePath)) return;
 	const current = readFileSync(readmePath, 'utf8');
 	if (!BADGE_MARKER_RE.test(current)) return;
-	const badges = renderHeaderBadges(summaries);
+	const badges = renderHeaderBadges(summaries, 'docs/status.md');
 	const replacement = `$1\n${badges}\n$2`;
 	const next = current.replace(BADGE_MARKER_RE, replacement);
 	if (next === current) return;
