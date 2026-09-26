@@ -54,6 +54,7 @@
 		"stale-pickup-target-allowed": {
 			"actual": "`Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops.",
 			"expected": "Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code).",
+			"why": "Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. The fix belongs in `checkTarget`, which would close the whole stale-argument axis (see docs/xxscreeps-parity-gaps.md).",
 			"tests": ["UNDOC-STALEARG-001:creepPickup"]
 		},
 		"structure-active-equal-distance-scan-order": {
@@ -65,7 +66,8 @@
 		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
-			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"why": "Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["ROOMPOS-FIND-010"]
 		},
 		"factory-power-effect-not-implemented": {
@@ -89,7 +91,8 @@
 		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
-			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
+			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
+			"why": "Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work.",
 			"tests": ["MOVE-COLLISION-007"]
 		},
 		"stronghold-deploy-trigger-one-tick-late": {
@@ -101,6 +104,7 @@
 		"live-cached-receiver-released": {
 			"actual": "xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:212`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw.",
 			"expected": "Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001).",
+			"why": "Surfaced 2026-07-13 by a real bot run against xxscreeps (screeps-ok PR #2). Wrapper release is per tick, not per object, and the release keeps shared memory safe, so a fix needs an upstream design conversation before a PR (see docs/xxscreeps-parity-gaps.md).",
 			"tests": ["UNDOC-STALERECV-002"]
 		},
 		"creep-attack-cannot-target-power-creep": {

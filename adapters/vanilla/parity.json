@@ -8,37 +8,44 @@
 		},
 		"eventlog-structure-destroy-intent-missing": {
 			"actual": "Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`).",
-			"expected": "Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies.",
+			"expected": "Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType.",
+			"why": "Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies.",
 			"tests": ["ROOM-EVENTLOG-027"]
 		},
 		"power-creep-name-truncated-to-50-chars": {
 			"actual": "Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars.",
-			"expected": "Power creeps preserve 100-character names exactly through create and rename. Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.'",
+			"expected": "Power creeps preserve 100-character names exactly through create and rename.",
+			"why": "Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.'",
 			"tests": ["POWERCREEP-CREATE-003", "POWERCREEP-RENAME-001"]
 		},
 		"power-creep-ticks-to-live-not-undefined-when-unspawned": {
 			"actual": "Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`.",
-			"expected": "Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death). Canonical claim is PR-derived: screeps/engine#148 (open) fixes unspawned power creeps returning a weird null value for their TTL. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"expected": "Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death).",
+			"why": "Canonical claim is PR-derived: screeps/engine#148 (open) fixes unspawned power creeps returning a weird null value for their TTL. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
 			"tests": ["POWERCREEP-LIFETIME-002", "POWERCREEP-DEATH-002"]
 		},
 		"market-history-empty-array-missing": {
 			"actual": "Stable vanilla's `Game.market.getHistory` (`@screeps/engine/src/game/market.js:41-52`) returns `{}` for an invalid resource (line 48) and `JSON.parse(JSON.stringify(history[resource] || {}))` for a valid-but-empty resource (line 50) — always an object, never `[]`.",
-			"expected": "Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. Canonical claim is PR-derived: screeps/engine#131 (open) fixes the incorrect return types for Game.market.getHistory(). xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"expected": "Game.market.getHistory returns an empty array for invalid resources and valid resources with no history.",
+			"why": "Canonical claim is PR-derived: screeps/engine#131 (open) fixes the incorrect return types for Game.market.getHistory(). xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
 			"tests": ["MARKET-QUERY-006"]
 		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "Stable vanilla's `_findClosestByPath2` (`@screeps/engine/src/game/rooms.js:304-374`) never reads `opts.range`: it hardcodes `{range: 1, pos: i}` on the PathFinder goal at line 328 and post-filters reachability with `lastPos.isNearTo(obj)` at line 368.",
-			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla has not shipped it, so this row is an expected failure on BOTH adapters until upstream lands — it is not an xxscreeps bug.",
+			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
+			"why": "Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla has not shipped it, so this row is an expected failure on BOTH adapters until upstream lands — it is not an xxscreeps bug.",
 			"tests": ["ROOMPOS-FIND-010"]
 		},
 		"movecache-fatigue-visualization-recomputes": {
 			"actual": "Stable vanilla's `Creep.moveTo` short-circuits `if (fatigue>0 && !opts.visualizePathStyle) return ERR_TIRED` (`@screeps/engine/src/game/creeps.js:173`), so setting `visualizePathStyle` bypasses the early return. The reusable-cache branch (`creeps.js:241-302`) then calls `moveByPath` → `move` (which returns `ERR_TIRED`) and falls through to `findPathTo` at line 283, which re-invokes the supplied `costCallback`.",
-			"expected": "A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path. Canonical claim is PR-derived: screeps/engine#152 (open) stops moveTo recomputing a path when the creep is fatigued, visualizePathStyle is set, and a valid memorized path exists. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"expected": "A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path.",
+			"why": "Canonical claim is PR-derived: screeps/engine#152 (open) stops moveTo recomputing a path when the creep is fatigued, visualizePathStyle is set, and a valid memorized path exists. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
 			"tests": ["UNDOC-MOVECACHE-004"]
 		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "Stable vanilla's `Creep.moveTo` (`@screeps/engine/src/game/creeps.js:283-302`) returns a partial path from `findPathTo` without a destination-occupancy check; if `path.length > 0` it calls `this.move(path[0].direction)` and returns OK, walking the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
-			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is an expected failure on BOTH adapters until upstream does — it is not an xxscreeps bug.",
+			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
+			"why": "Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is an expected failure on BOTH adapters until upstream does — it is not an xxscreeps bug.",
 			"tests": ["MOVE-COLLISION-007"]
 		}
 	}

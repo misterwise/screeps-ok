@@ -536,19 +536,27 @@ Each `expected_failures` entry:
 - **gap id** (the JSON key) — stable, adapter-neutral identifier for the
   divergence. Overlay entries with the same id as a base entry replace it
   (handy for narrowing `tests` rather than fully suppressing).
-- **actual** — short phrase describing the engine's observed behavior.
-- **expected** — short phrase describing the canonical (vanilla) behavior.
+- **actual** — required; short phrase describing the engine's observed
+  behavior.
+- **expected** — required; short phrase describing the canonical (vanilla)
+  behavior.
 - **intentional** — optional boolean. Set to `true` when the adapter or
   upstream engine has explicitly chosen not to match vanilla. The test still
   counts as an expected failure, but `docs/status.md` renders it under
   intentional divergences instead of open parity gaps.
-- **why** — optional short explanation used by `docs/status.md` for intentional
-  divergences. Link the upstream issue/PR or decision record when available.
+- **why** — optional; why the gap is registered: the canonical source, where
+  it was found, the upstream issue/PR or decision record. `docs/status.md`
+  shows it beside every gap, and this repo's own files require it.
 - **tests** — catalog IDs of tests expected to fail due to this gap. When a
   single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
   list either the base ID (gates all variants) or specific suffixed IDs
   (gates only those variants, letting siblings that pass remain ungated). A
   variant's own registration wins over its base ID's.
+
+The loader rejects a file that breaks this shape: an unknown key, a gap
+without `actual`, `expected` or `tests`, a `tests` entry that isn't a catalog
+test ID, a test ID under two gaps, or an `expected_passes` entry the base
+doesn't register.
 
 `extends` accepts any specifier `createRequire` can resolve (package subpath,
 absolute path, relative path). Leave the default unless you're pinning to a

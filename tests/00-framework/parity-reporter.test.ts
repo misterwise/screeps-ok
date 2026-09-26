@@ -22,11 +22,15 @@ function tempDir() {
 
 const TEST_FILE = '/suite/tests/01-section/1.1-some.test.ts';
 
+function gap(tests: string[]) {
+	return { actual: 'the engine does one thing', expected: 'vanilla does another', tests };
+}
+
 // Runs the reporter over fake results against a parity.json holding `tests`.
 function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; unhandled?: string[] } = {}) {
 	const dir = tempDir();
 	writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
-		expected_failures: { 'some-gap': { tests } },
+		expected_failures: { 'some-gap': gap(tests) },
 	}));
 	const verdictPath = path.join(dir, 'verdict.json');
 	const reporter = new ParityReporter({
@@ -95,7 +99,7 @@ describe('parity reporter', () => {
 	test('a row\'s own registration wins over its bare id\'s', () => {
 		const dir = tempDir();
 		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
-			expected_failures: { 'row-gap': { tests: ['GAP-001:rowB'] }, 'base-gap': { tests: ['GAP-001'] } },
+			expected_failures: { 'row-gap': gap(['GAP-001:rowB']), 'base-gap': gap(['GAP-001']) },
 		}));
 		const judged = judgeReport({ testResults: [{
 			name: TEST_FILE,
@@ -150,6 +154,19 @@ describe('parity file loading', () => {
 		expect(() => reporterOver('{ "expected_failures": ').onInit()).toThrow();
 		expect(() => reporterOver('{ "extends": "no-such-package/parity.json" }').onInit()).toThrow(/no-such-package/);
 	});
+
+	test('a parity.json that breaks the schema throws, naming what broke', () => {
+		const throwsOn = (parity: object, pattern: RegExp) =>
+			expect(() => reporterOver(JSON.stringify(parity)).onInit()).toThrow(pattern);
+		throwsOn({ expected_failure: {} }, /expected_failure/);
+		throwsOn({ expected_failures: { 'old-gap': { ...gap(['GAP-001']), summary: 'legacy' } } }, /old-gap.*summary/);
+		throwsOn({ expected_failures: { 'no-gap': { actual: 'a', expected: 'e' } } }, /no-gap.*tests/);
+		throwsOn({ expected_failures: { 'empty-gap': gap([]) } }, /empty-gap.*tests/);
+		throwsOn({ expected_failures: { 'bad-gap': gap(['GAP-002a']) } }, /bad-gap.*GAP-002a/);
+		throwsOn({ expected_failures: { 'vague-gap': { expected: 'e', tests: ['GAP-001'] } } }, /vague-gap.*actual/);
+		throwsOn({ expected_failures: { 'one-gap': gap(['GAP-001']), 'two-gap': gap(['GAP-001']) } }, /GAP-001.*one-gap.*two-gap/);
+		throwsOn({ expected_passes: ['no-such-gap'] }, /no-such-gap/);
+	});
 });
 
 describe('parity exit code', () => {
@@ -195,7 +212,7 @@ describe('JSON reports', () => {
 		];
 		const dir = tempDir();
 		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
-			expected_failures: { 'some-gap': { tests: ['GAP-001', 'GAP-002', 'GAP-003'] } },
+			expected_failures: { 'some-gap': gap(['GAP-001', 'GAP-002', 'GAP-003']) },
 		}));
 		const judged = judgeReport(report([{ tests: results }, { tests: [], message: 'SyntaxError' }]), loadParity(path.join(dir, 'parity.json')));
 		expect(judged.verdict).toEqual(verdictFor(['GAP-001', 'GAP-002', 'GAP-003'], results, true, { module: ['SyntaxError'] }));
@@ -215,11 +232,11 @@ describe('JSON reports', () => {
 	test('a report is judged by the overlay merged onto its base', () => {
 		const dir = tempDir();
 		writeFileSync(path.join(dir, 'base.json'), JSON.stringify({
-			expected_failures: { 'fixed-gap': { tests: ['GAP-001'] }, 'base-gap': { tests: ['GAP-002'] } },
+			expected_failures: { 'fixed-gap': gap(['GAP-001']), 'base-gap': gap(['GAP-002']) },
 		}));
 		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
 			extends: './base.json',
-			expected_failures: { 'own-gap': { tests: ['GAP-003'] } },
+			expected_failures: { 'own-gap': gap(['GAP-003']) },
 			expected_passes: ['fixed-gap'],
 		}));
 		const judged = judgeReport(report([{ tests: [

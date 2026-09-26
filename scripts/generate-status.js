@@ -186,21 +186,9 @@ function gapAnchor(adapterName, gapId) {
 	return slug(`${adapterName} gap ${gapId}`);
 }
 
-function gapBehaviorFields(gap) {
-	// New schema: { actual, expected }. Legacy schema: { summary }.
-	const actual = gap.actual ?? gap.summary ?? '(no description)';
-	const expected = gap.expected ?? '(see test assertion)';
-	return { actual, expected };
-}
-
-function isIntentionalGap(gap) {
-	return gap.intentional === true || gap.status === 'intentional';
-}
-
-function gapWhy(gap) {
-	if (gap.why) return gap.why;
-	if (isIntentionalGap(gap)) return 'Marked as an intentional divergence in parity.json.';
-	return '';
+// GFM splits a table row on any unescaped pipe, code spans included.
+function cell(text) {
+	return text.replace(/\|/g, '\\|');
 }
 
 function renderGapTestList(adapterName, gapId, tests) {
@@ -217,29 +205,17 @@ function renderGapTestList(adapterName, gapId, tests) {
 	return lines.join('\n');
 }
 
-function renderGapSummaryTable(adapterName, gaps, summary, gapIds, { includeWhy = false } = {}) {
+function renderGapSummaryTable(adapterName, gaps, summary, gapIds) {
 	const lines = [];
-	if (includeWhy) {
-		lines.push('| Gap | Why | Actual | Vanilla behavior | Tests |');
-		lines.push('| --- | --- | --- | --- | :-: |');
-	} else {
-		lines.push('| Gap | Actual | Expected | Tests |');
-		lines.push('| --- | --- | --- | :-: |');
-	}
-
+	lines.push('| Gap | Actual | Vanilla behavior | Why | Tests |');
+	lines.push('| --- | --- | --- | --- | :-: |');
 	for (const gapId of gapIds) {
 		const gap = gaps[gapId];
-		const { actual, expected } = gapBehaviorFields(gap);
 		const testCount = (summary.expectedFailureByGap?.[gapId] ?? []).length;
 		const anchor = gapAnchor(adapterName, gapId);
 		const countCell = testCount > 0 ? `[${testCount}](#${anchor})` : `${testCount}`;
-		if (includeWhy) {
-			lines.push(`| \`${gapId}\` | ${gapWhy(gap)} | ${actual} | ${expected} | ${countCell} |`);
-		} else {
-			lines.push(`| \`${gapId}\` | ${actual} | ${expected} | ${countCell} |`);
-		}
+		lines.push(`| \`${gapId}\` | ${cell(gap.actual)} | ${cell(gap.expected)} | ${cell(gap.why ?? '')} | ${countCell} |`);
 	}
-
 	return lines.join('\n');
 }
 
@@ -372,8 +348,8 @@ function renderPerAdapterExpectedFailures(adapterName, data) {
 	const gaps = parity.gaps;
 	const gapIds = Object.keys(gaps);
 	if (gapIds.length === 0) return '';
-	const intentionalGapIds = gapIds.filter(gapId => isIntentionalGap(gaps[gapId]));
-	const openGapIds = gapIds.filter(gapId => !isIntentionalGap(gaps[gapId]));
+	const intentionalGapIds = gapIds.filter(gapId => gaps[gapId].intentional);
+	const openGapIds = gapIds.filter(gapId => !gaps[gapId].intentional);
 
 	const totalTests = gapIds.reduce(
 		(n, gapId) => n + (summary.expectedFailureByGap?.[gapId]?.length ?? 0),
@@ -409,7 +385,7 @@ function renderPerAdapterExpectedFailures(adapterName, data) {
 		lines.push('');
 		lines.push('These are known vanilla differences that the engine maintainers have decided not to implement, or that this adapter deliberately preserves. The tests stay registered as expected failures so consumers can see the divergence and so any future behavior change is visible.');
 		lines.push('');
-		lines.push(renderGapSummaryTable(adapterName, gaps, summary, intentionalGapIds, { includeWhy: true }));
+		lines.push(renderGapSummaryTable(adapterName, gaps, summary, intentionalGapIds));
 		lines.push('');
 		lines.push(renderGapDetails(adapterName, summary, intentionalGapIds));
 		lines.push('');

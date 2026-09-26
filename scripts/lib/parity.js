@@ -19,20 +19,51 @@
  */
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
-import { baseCatalogId, testCatalogId } from './catalog-id.js';
+import { baseCatalogId, TEST_ID_RE, testCatalogId } from './catalog-id.js';
 
-// Only a missing file means no registrations; a malformed one or an unresolvable `extends` throws.
+const FILE_KEYS = new Set(['extends', 'expected_failures', 'expected_passes']);
+const GAP_KEYS = new Set(['actual', 'expected', 'why', 'intentional', 'tests']);
+
+function readParityFile(file) {
+	const parity = JSON.parse(readFileSync(file, 'utf8'));
+	const fail = message => { throw new Error(`${file}: ${message}`); };
+	for (const key of Object.keys(parity)) {
+		if (!FILE_KEYS.has(key)) fail(`unknown key "${key}"`);
+	}
+	for (const [gapId, gap] of Object.entries(parity.expected_failures ?? {})) {
+		for (const key of Object.keys(gap)) {
+			if (!GAP_KEYS.has(key)) fail(`gap "${gapId}" has unknown key "${key}"`);
+		}
+		for (const key of ['actual', 'expected']) {
+			if (typeof gap[key] !== 'string' || gap[key] === '') fail(`gap "${gapId}" needs "${key}"`);
+		}
+		if (gap.why !== undefined && typeof gap.why !== 'string') fail(`gap "${gapId}" has a non-string "why"`);
+		if (gap.intentional !== undefined && typeof gap.intentional !== 'boolean') fail(`gap "${gapId}" has a non-boolean "intentional"`);
+		if (!Array.isArray(gap.tests) || gap.tests.length === 0) fail(`gap "${gapId}" needs non-empty "tests"`);
+		for (const id of gap.tests) {
+			if (typeof id !== 'string' || !TEST_ID_RE.test(id)) fail(`gap "${gapId}" registers "${id}", which is no catalog test id`);
+		}
+	}
+	return parity;
+}
+
+// Only a missing file means no registrations; a malformed one, one that breaks
+// the schema, or an unresolvable `extends` throws.
 export function loadParity(parityPath) {
-	const overlay = existsSync(parityPath) ? JSON.parse(readFileSync(parityPath, 'utf8')) : {};
-	const base = overlay.extends
-		? JSON.parse(readFileSync(createRequire(parityPath).resolve(overlay.extends), 'utf8'))
-		: {};
+	const overlay = existsSync(parityPath) ? readParityFile(parityPath) : {};
+	const base = overlay.extends ? readParityFile(createRequire(parityPath).resolve(overlay.extends)) : {};
 	const gaps = { ...base.expected_failures, ...overlay.expected_failures };
-	for (const gapId of overlay.expected_passes ?? []) delete gaps[gapId];
+	for (const gapId of overlay.expected_passes ?? []) {
+		if (!base.expected_failures?.[gapId]) throw new Error(`${parityPath}: expected_passes names "${gapId}", which the base doesn't register`);
+		delete gaps[gapId];
+	}
 
 	const gapForId = new Map();
 	for (const [gapId, gap] of Object.entries(gaps)) {
-		for (const id of gap.tests) gapForId.set(id, gapId);
+		for (const id of gap.tests) {
+			if (gapForId.has(id)) throw new Error(`${parityPath}: ${id} is registered under both "${gapForId.get(id)}" and "${gapId}"`);
+			gapForId.set(id, gapId);
+		}
 	}
 	return { gaps, gapForId };
 }

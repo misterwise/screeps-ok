@@ -59,6 +59,10 @@ changes since `v0.1.0-alpha` are not itemized.
   failure rather than being forgiven when every failed test is registered.
 - A malformed `parity.json` or an `extends` that doesn't resolve fails the
   run instead of loading no registrations.
+- `parity.json` is checked when it loads. Each gap needs `actual`,
+  `expected` and a non-empty `tests` of catalog test IDs; an unknown key (the
+  legacy `summary` and `status` included), a test ID under two gaps, and an
+  `expected_passes` entry the base doesn't register fail the run.
 - A failing vitest run is forgiven only when it has registered failures to
   forgive; one that fails for a reason the reporter doesn't see (no test file
   matched, say) stays failed.
