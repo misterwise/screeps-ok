@@ -1510,12 +1510,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		if (type === 'deposit') {
 			const C = this.server.constants;
 			const gameTime = await this.server.world.gameTime;
-			// Processor (@screeps/engine/src/processor.js:421-426) decays any
-			// deposit where `gameTime >= decayTime - 1`, and `null - 1` coerces
-			// to -1 — so a null decayTime would delete the deposit on its first
-			// processed tick. Seed a valid future decayTime so the deposit
-			// survives until the spec asks it to expire.
-			const decayTicks = (spec.decayTime as number) ?? (C.DEPOSIT_DECAY_TIME ?? 50000);
+			// An omitted decayTime gets a fresh deposit's timer, as vanilla's deposit cron seeds it
+			// (@screeps/backend/lib/cronjobs.js:638).
+			const decayTicks = (spec.decayTime as number) ?? C.DEPOSIT_DECAY_TIME;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'deposit',
