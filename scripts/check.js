@@ -13,7 +13,8 @@ const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const script = name => path.join(root, 'scripts', name);
 
-// Framework tests that use the shard fixture boot an engine; CI's suite runs those.
+// Framework tests that use the shard fixture boot an engine; CI's suite runs
+// those. The rest run with no adapter, so none pays the engine's startup.
 const frameworkDir = path.join(root, 'tests/00-framework');
 const engineFreeTests = readdirSync(frameworkDir)
 	.filter(name => name.endsWith('.test.ts'))
@@ -24,7 +25,7 @@ const steps = [
 	['typecheck', [require.resolve('typescript/bin/tsc'), '--noEmit']],
 	['capability gates', [script('validate-capabilities.js')]],
 	['engine-internals drift', engineInternalsDrift],
-	['framework tests', [require.resolve('vitest/vitest.mjs'), 'run', ...engineFreeTests]],
+	['framework tests', [require.resolve('vitest/vitest.mjs'), 'run', ...engineFreeTests], { SCREEPS_OK_ADAPTER: 'none' }],
 	['coverage', [script('generate-coverage.js')]],
 	['starter', [script('generate-starter.js')]],
 	// Status reads the local full-run reports, which a fresh clone or CI lacks.
@@ -34,8 +35,8 @@ const steps = [
 ];
 
 const failed = [];
-for (const [name, run] of steps) {
-	const output = typeof run === 'function' ? run() : spawn(run);
+for (const [name, run, env] of steps) {
+	const output = typeof run === 'function' ? run() : spawn(run, env);
 	if (output === null) continue;
 	failed.push(name);
 	console.error(`check: ${name} failed\n${output}`);
@@ -46,8 +47,8 @@ if (failed.length > 0) {
 }
 
 // Null on success, else the step's output.
-function spawn(args) {
-	const result = spawnSync(process.execPath, args, { cwd: root, encoding: 'utf8' });
+function spawn(args, env) {
+	const result = spawnSync(process.execPath, args, { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
 	return result.status === 0 ? null : `${result.stdout}${result.stderr}`.trim();
 }
 

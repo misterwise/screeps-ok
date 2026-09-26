@@ -5,6 +5,7 @@ import path from 'node:path';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const defaultAdapter = path.join(projectRoot, 'adapters/xxscreeps/index.ts');
+// `none` loads no engine, for tests that never touch the shard fixture (scripts/check.js).
 const adapter = process.env.SCREEPS_OK_ADAPTER || defaultAdapter;
 // When run from a consumer's node_modules, write reports to the consumer's cwd
 // so their CI can collect them. Falls back to our own reports/ during local dev.
