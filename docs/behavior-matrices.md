@@ -1131,8 +1131,11 @@ Each definition should include:
 - `Exclusions`
   Table-driven effect magnitudes, cooldowns, ranges, and ops costs
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the per-power target
-  inventories are written explicitly.
+  Vanilla's game-layer `usePower` has no target-type check; the processor's
+  per-power switch drops a mismatched target without ops, cooldown or effect,
+  and a disabled room returns `ERR_INVALID_ARGS`. Valid targets' effect shapes
+  are EFFECT-HOST-001's. The executable case list lives in
+  `src/matrices/power-targets.ts`.
 
 ### EFFECT-HOST
 

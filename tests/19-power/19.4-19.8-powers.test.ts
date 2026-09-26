@@ -10,8 +10,11 @@ import { describe, test, expect, code,
 	STRUCTURE_TOWER, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_TERMINAL,
 	STRUCTURE_POWER_SPAWN, STRUCTURE_SPAWN, STRUCTURE_OBSERVER,
 	ATTACK, MOVE, TOUGH,
-	STRUCTURE_RAMPART,
+	STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_STORAGE, STRUCTURE_EXTENSION,
+	FIND_STRUCTURES,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
+import { powerTargetCases, type PowerTargetCase } from '../../src/matrices/power-targets.js';
 import { powerCreepRenewValidationCases } from '../../src/matrices/power-creep-renew-validation.js';
 import { powerCreepSpawnValidationCases } from '../../src/matrices/power-creep-spawn-validation.js';
 
@@ -450,62 +453,79 @@ describe('Operate powers — additional', () => {
 		`) as number[];
 		expect(effects).toContain(PWR_OPERATE_OBSERVER);
 	});
+});
 
-	test('POWER-OPERATE-005 usePower fails in rooms without power enabled', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
-		});
-
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		// Place power creep — note: placePowerCreep sets isPowerEnabled.
-		// We need to test WITHOUT power enabled. Skip this test if we can't
-		// unset isPowerEnabled.
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_OPERATE_TOWER]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		// Since placePowerCreep auto-enables power, the usePower should work.
-		// The test verifies that with power enabled, usePower succeeds
-		// (the negative case requires disabling power which isn't supported).
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			pc.usePower(PWR_OPERATE_TOWER, Game.getObjectById(${towerId}))
-		`);
-		expect(rc).toBe(OK);
+// Setup for one POWER-TARGETS case: a power creep in range of a single target structure.
+async function placePowerTarget(shard: ShardFixture, row: PowerTargetCase, structureType: string, powerEnabled: boolean) {
+	await shard.createShard({
+		players: ['p1'],
+		rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled }],
 	});
-
-	test('POWER-DISRUPT-003 usePower on valid tower target succeeds', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+	let targetId: string;
+	if (structureType === STRUCTURE_CONTROLLER) {
+		const controller = (await shard.findInRoom('W1N1', FIND_STRUCTURES))
+			.find(s => s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER);
+		if (!controller) throw new Error('W1N1 has no controller');
+		targetId = controller.id;
+	} else {
+		targetId = await shard.placeStructure('W1N1', {
+			pos: [27, 25], structureType, owner: 'p1',
+			...(structureType === STRUCTURE_STORAGE ? { store: { energy: 1000 } } : {}),
 		});
-
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_DISRUPT_TOWER]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			pc.usePower(PWR_DISRUPT_TOWER, Game.getObjectById(${towerId}))
-		`);
-		expect(rc).toBe(OK);
+	}
+	// OPERATE_EXTENSION charges only when it moves energy into an extension.
+	await shard.placeStructure('W1N1', { pos: [30, 30], structureType: STRUCTURE_EXTENSION, owner: 'p1' });
+	const pos: [number, number] = structureType === STRUCTURE_CONTROLLER ? [3, 2] : [25, 25];
+	const creepId = await shard.placePowerCreep('W1N1', {
+		pos, owner: 'p1', powers: { [row.power]: row.powerLevel ?? 1 }, store: { ops: 200 },
 	});
+	await shard.tick();
+	return { targetId, creepId };
+}
+
+describe('Power target matrix', () => {
+	for (const row of powerTargetCases) {
+		const info = PI[row.power];
+		const level = row.powerLevel ?? 1;
+		const cost = Array.isArray(info.ops) ? info.ops[level - 1] : (info.ops ?? 0);
+
+		for (const valid of [true, false]) {
+			test(`${row.catalogId}:${row.key}${valid ? 'Valid' : 'Invalid'} usePower on ${valid ? 'its' : 'another'} target type ${valid ? 'charges ops and starts the cooldown' : 'is dropped without cost'}`, async ({ shard }) => {
+				shard.requires('powerCreeps');
+				shard.requires('powerEffects');
+				const { targetId, creepId } = await placePowerTarget(
+					shard, row, valid ? row.validTarget : row.invalidTarget, true);
+
+				const rc = await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).usePower(${row.power}, Game.getObjectById(${targetId}))
+				`);
+				const after = await shard.runPlayer('p1', code`
+					const pc = Game.getObjectById(${creepId});
+					({
+						ops: pc.store[RESOURCE_OPS],
+						cooldown: pc.powers[${row.power}].cooldown,
+						effects: (Game.getObjectById(${targetId}).effects ?? []).map(e => e.power),
+					})
+				`);
+				// The game layer never checks the target type; the processor does.
+				expect({ rc, ...(after as object) }).toEqual(valid
+					? { rc: OK, ops: 200 - cost, cooldown: Math.max(0, info.cooldown - 1), effects: row.hostsEffect ? [row.power] : [] }
+					: { rc: OK, ops: 200, cooldown: 0, effects: [] });
+			});
+		}
+
+		if (row.catalogId === 'POWER-OPERATE-005') {
+			test(`${row.catalogId}:${row.key}Disabled usePower returns ERR_INVALID_ARGS in a room without power enabled`, async ({ shard }) => {
+				shard.requires('powerCreeps');
+				const { targetId, creepId } = await placePowerTarget(shard, row, row.validTarget, false);
+
+				const rc = await shard.runPlayer('p1', code`
+					Game.getObjectById(${creepId}).usePower(${row.power}, Game.getObjectById(${targetId}))
+				`);
+				expect(rc).toBe(ERR_INVALID_ARGS);
+			});
+		}
+	}
 });
 
 describe('Power creep renew', () => {
