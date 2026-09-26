@@ -525,16 +525,16 @@ verify that adapters classify all three kinds correctly.
 Adapters should preserve the engine's user-facing message in
 `RunPlayerError.engineMessage` where possible.
 
-## Versioning Guidance
+## Versioning
 
-Changes that break existing adapters should be treated as major contract
-changes.
-
-Examples:
+A change to this contract is one an adapter must act on, so it gets an entry
+in [`CHANGELOG.md`](../CHANGELOG.md), which states the versioning policy:
+before 1.0 it ships in a minor release. Examples:
 
 - changing `findInRoom` constant semantics
 - changing snapshot shapes incompatibly
 - changing `runPlayer` error semantics
+- adding a capability flag, since every adapter declares each one
 
-Adding new optional capabilities or new tests gated on those capabilities is
-non-breaking.
+A new test gated on an existing capability is a new catalog row: it ships in
+a patch release, and an engine it fails on registers the gap.
