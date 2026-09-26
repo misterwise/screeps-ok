@@ -19,10 +19,9 @@ describe('Power bank', () => {
 
 		const pbId = await shard.placeObject('W1N1', 'powerBank', {
 			pos: [25, 25],
-			store: { power: 1000 },
+			power: 1000,
 			hits: POWER_BANK_HITS,
-			hitsMax: POWER_BANK_HITS,
-			decayTime: 50000,
+			ticksToDecay: 50000,
 		});
 
 		// Attacker: 1 ATTACK + 4 TOUGH + 1 MOVE = 6 parts = 300 HP.
@@ -59,7 +58,7 @@ describe('Power bank', () => {
 			pos: [25, 25],
 			power: 500,
 			hits: POWER_BANK_HITS,
-			decayTime: 3,
+			ticksToDecay: 3,
 		});
 		await shard.tick();
 
@@ -85,10 +84,9 @@ describe('Power bank', () => {
 		// hits=1 so a single ATTACK kills it (and the hit-back survives the attacker).
 		const pbId = await shard.placeObject('W1N1', 'powerBank', {
 			pos: [25, 25],
-			store: { power: storedPower },
+			power: storedPower,
 			hits: 1,
-			hitsMax: POWER_BANK_HITS,
-			decayTime: 50000,
+			ticksToDecay: 50000,
 		});
 		const attackerId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',

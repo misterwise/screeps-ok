@@ -8,6 +8,7 @@ import type {
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
+	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from '../../src/adapter.js';
 import { gclPoints } from '../../src/adapter.js';
 import type { ObjectSnapshot } from '../../src/snapshots/common.js';
@@ -804,18 +805,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		throw new Error('placeMarketOrder not yet implemented for xxscreeps');
 	}
 
-	async placeObject(roomName: string, type: string, spec: Record<string, unknown>): Promise<string> {
+	async placeObject<T extends string>(roomName: string, type: T, spec: PlaceObjectSpec<T>): Promise<string> {
 		switch (type) {
 			case 'keeperLair':
-				return this.placeKeeperLair(roomName, spec);
+				return this.placeKeeperLair(roomName, spec as KeeperLairSpec);
 			case 'invaderCore':
-				return this.placeInvaderCore(roomName, spec);
+				return this.placeInvaderCore(roomName, spec as InvaderCoreSpec);
 			case 'portal':
-				return this.placePortal(roomName, spec);
+				return this.placePortal(roomName, spec as PortalSpec);
 			case 'deposit':
-				return this.placeDeposit(roomName, spec);
+				return this.placeDeposit(roomName, spec as DepositSpec);
 			case 'powerBank':
-				return this.placePowerBank(roomName, spec);
+				return this.placePowerBank(roomName, spec as PowerBankSpec);
 			default:
 				throw new Error(
 					`placeObject: type '${type}' is not supported by the xxscreeps adapter. ` +
@@ -824,47 +825,39 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 	}
 
-	private async placePowerBank(roomName: string, spec: Record<string, unknown>): Promise<string> {
+	private async placePowerBank(roomName: string, spec: PowerBankSpec): Promise<string> {
 		const id = this.nextId();
-		const pos = spec.pos as [number, number];
+		const pos = spec.pos;
 		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:powerBank`, id);
 
 		this.queueOp(roomName, room => {
-			const store = spec.store as Record<string, number> | undefined;
-			const power = (spec.power as number | undefined)
-				?? store?.[C.RESOURCE_POWER]
-				?? 1000;
-			const bank = createPowerBank(
-				new RoomPosition(pos[0], pos[1], roomName),
-				power,
-			);
+			const bank = createPowerBank(new RoomPosition(pos[0], pos[1], roomName), spec.power);
 			bank.id = id;
-			if (typeof spec.hits === 'number') bank.hits = spec.hits;
-			const decayTicks = (spec.decayTime as number | undefined) ?? C.POWER_BANK_DECAY;
-			setStructureNextDecayTime(bank, this.simulation!.shard.time, decayTicks);
+			if (spec.hits !== undefined) bank.hits = spec.hits;
+			setStructureNextDecayTime(bank, this.simulation!.shard.time, spec.ticksToDecay ?? C.POWER_BANK_DECAY);
 			insertRoomObject(room, bank);
 		});
 
 		return id;
 	}
 
-	private async placeDeposit(roomName: string, spec: Record<string, unknown>): Promise<string> {
+	private async placeDeposit(roomName: string, spec: DepositSpec): Promise<string> {
 		const id = this.nextId();
-		const pos = spec.pos as [number, number];
+		const pos = spec.pos;
 		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:deposit`, id);
 
 		this.queueOp(roomName, room => {
 			const deposit = createObject(new Deposit(), new RoomPosition(pos[0], pos[1], roomName));
 			deposit.id = id;
-			deposit.depositType = (spec.depositType as any) ?? C.RESOURCE_SILICON;
+			deposit.depositType = spec.depositType as any;
 			// The harvest processor stores lastCooldown from the running total (deposit/processor.ts:43).
-			if (typeof spec.harvested === 'number') {
+			if (spec.harvested !== undefined) {
 				deposit.lastCooldown = Math.ceil(C.DEPOSIT_EXHAUST_MULTIPLY * spec.harvested ** C.DEPOSIT_EXHAUST_POW);
 			}
 			setDepositState(deposit, this.simulation!.shard.time, {
-				cooldownTicks: typeof spec.cooldownTime === 'number' ? spec.cooldownTime : undefined,
-				decayTicks: typeof spec.decayTime === 'number' ? spec.decayTime : DEPOSIT_DECAY_TIME,
-				harvested: typeof spec.harvested === 'number' ? spec.harvested : undefined,
+				cooldownTicks: spec.cooldown,
+				decayTicks: spec.ticksToDecay ?? DEPOSIT_DECAY_TIME,
+				harvested: spec.harvested,
 			});
 			insertRoomObject(room, deposit);
 		});
@@ -872,17 +865,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	private async placeKeeperLair(roomName: string, spec: Record<string, unknown>): Promise<string> {
+	private async placeKeeperLair(roomName: string, spec: KeeperLairSpec): Promise<string> {
 		const id = this.nextId();
-		const pos = spec.pos as [number, number];
+		const pos = spec.pos;
 		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:keeperLair`, id);
-		const nextSpawnTime = typeof spec.nextSpawnTime === 'number' ? spec.nextSpawnTime : undefined;
 
 		this.queueOp(roomName, room => {
 			const lair = createKeeperLair(new RoomPosition(pos[0], pos[1], roomName));
 			lair.id = id;
-			if (nextSpawnTime !== undefined) {
-				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, nextSpawnTime);
+			if (spec.ticksToSpawn !== undefined) {
+				setKeeperLairNextSpawnTime(lair, this.simulation!.shard.time, spec.ticksToSpawn);
 			}
 			insertRoomObject(room, lair);
 		});
@@ -890,17 +882,15 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	private async placeInvaderCore(roomName: string, spec: Record<string, unknown>): Promise<string> {
+	private async placeInvaderCore(roomName: string, spec: InvaderCoreSpec): Promise<string> {
 		const id = this.nextId();
-		const pos = spec.pos as [number, number];
+		const pos = spec.pos;
 		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:invaderCore`, id);
-		const level = (spec.level as number) ?? 0;
-		const spawningSpec = spec.spawning as
-			| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
-			| undefined;
+		const level = spec.level;
+		const spawningSpec = spec.spawning;
 		// The schema enumerates the five canonical bunker names, so an unknown one
 		// breaks serialization and crashes deployStronghold on a missing template.
-		const templateName = spec.templateName as string | undefined;
+		const templateName = spec.templateName;
 		if (templateName !== undefined && !(templateName in strongholdTemplates)) {
 			throw new Error(
 				`placeInvaderCore: unknown stronghold template '${templateName}'; ` +
@@ -913,14 +903,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.queueOp(roomName, room => {
 			const time = this.simulation!.shard.time;
 			// Engine create() takes an absolute deploy tick; 0 = deployed.
-			const deployTime = typeof spec.deployTime === 'number' ? time + spec.deployTime : 0;
+			const deployTime = spec.ticksToDeploy !== undefined ? time + spec.ticksToDeploy : 0;
 			const core = createInvaderCore(new RoomPosition(pos[0], pos[1], roomName), level, deployTime);
 			core.id = id;
 			if (templateName !== undefined) {
 				setInvaderCoreTemplateName(core, templateName);
 			}
-			if (typeof spec.collapseTime === 'number') {
-				setInvaderCoreCollapseTime(core, time, spec.collapseTime);
+			if (spec.ticksToCollapse !== undefined) {
+				setInvaderCoreCollapseTime(core, time, spec.ticksToCollapse);
 			}
 			insertRoomObject(room, core);
 			if (spawningSpec) {
@@ -932,7 +922,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				const spawning = new Spawning();
 				spawning.needTime = spawningSpec.needTime
 					?? ((C.INVADER_CORE_CREEP_SPAWN_TIME as any)?.[level] ?? 0) * body.length;
-				primeInvaderCoreSpawning(core, creep, spawning, time, spawningSpec.remainingTicks);
+				primeInvaderCoreSpawning(core, creep, spawning, time, spawningSpec.remainingTime);
 				insertRoomObject(room, creep);
 			}
 			// Engine contract (invader-core.ts create() comment): callers wake
@@ -943,20 +933,18 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		return id;
 	}
 
-	private async placePortal(roomName: string, spec: Record<string, unknown>): Promise<string> {
+	private async placePortal(roomName: string, spec: PortalSpec): Promise<string> {
 		const id = this.nextId();
-		const pos = spec.pos as [number, number];
-		const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
-		if (!dest || !dest.room) throw new Error('placePortal: destination.room is required');
+		const pos = spec.pos;
+		const dest = spec.destination;
 		this.posToSyntheticId.set(`${roomName}:${pos[0]}:${pos[1]}:portal`, id);
-		// Cross-shard: { shard, room }. Same-shard: { room, x, y }.
-		const destination = dest.shard !== undefined
+		const destination = 'shard' in dest
 			? { shard: dest.shard, room: dest.room }
-			: new RoomPosition(dest.x ?? 0, dest.y ?? 0, dest.room);
-		const decayTicks = typeof spec.decayTime === 'number' ? spec.decayTime : 0;
+			: new RoomPosition(dest.x, dest.y, dest.room);
 
 		this.queueOp(roomName, room => {
-			const decayTime = decayTicks > 0 ? this.simulation!.shard.time + decayTicks : 0;
+			// The engine reads a decayTime of 0 as a portal that never decays.
+			const decayTime = spec.ticksToDecay !== undefined ? this.simulation!.shard.time + spec.ticksToDecay : 0;
 			const portal = createPortal(new RoomPosition(pos[0], pos[1], roomName), destination, decayTime);
 			portal.id = id;
 			insertRoomObject(room, portal);

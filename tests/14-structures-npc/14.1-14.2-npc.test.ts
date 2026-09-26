@@ -17,7 +17,7 @@ describe('Keeper lair', () => {
 
 		const lairId = await shard.placeObject('W1N1', 'keeperLair', {
 			pos: [25, 25],
-			nextSpawnTime: 3,
+			ticksToSpawn: 3,
 		});
 		await shard.tick();
 
@@ -62,7 +62,7 @@ describe('Keeper lair', () => {
 		// Place keeper lair with a very short spawn time.
 		await shard.placeObject('W1N1', 'keeperLair', {
 			pos: [25, 25],
-			nextSpawnTime: 2, // Spawn in 2 ticks
+			ticksToSpawn: 2, // Spawn in 2 ticks
 		});
 		await shard.tick();
 		await shard.tick();
@@ -87,7 +87,7 @@ describe('Invader core', () => {
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 			pos: [25, 25],
 			level: 1,
-			deployTime: 20,
+			ticksToDeploy: 20,
 		});
 		await shard.tick();
 
@@ -136,7 +136,7 @@ describe('Invader core', () => {
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 			pos: [25, 25],
 			level: 2,
-			spawning: { name: 'defender1', body: [ATTACK, MOVE], needTime: 12, remainingTicks: 6 },
+			spawning: { name: 'defender1', body: [ATTACK, MOVE], needTime: 12, remainingTime: 6 },
 		});
 		await shard.tick();
 
@@ -177,7 +177,7 @@ describe('Invader core', () => {
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 			pos: [25, 25],
 			level: 0,
-			collapseTime: 6,
+			ticksToCollapse: 6,
 		});
 		await shard.tick();
 
@@ -217,7 +217,7 @@ describe('Invader core', () => {
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 			pos: [30, 30],
 			level: 0,
-			collapseTime: 6,
+			ticksToCollapse: 6,
 		});
 		await shard.tick();
 		expect(await shard.getObject(coreId)).not.toBeNull();

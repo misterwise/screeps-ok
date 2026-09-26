@@ -848,7 +848,6 @@ describe('Nuke impact — section 7.14', () => {
 				placedId = await shard.placeObject('W1N1', 'portal', {
 					pos: [25, 25],
 					destination: { room: 'W2N1', x: 25, y: 25 },
-					decayTime: null,
 				});
 			}
 

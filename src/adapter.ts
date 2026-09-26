@@ -196,6 +196,69 @@ export interface NukeSpec {
 	timeToLand: number;
 }
 
+// `placeObject` specs. Timers are relative ticks named for the getter that reads them.
+
+export interface PortalSpec {
+	pos: [number, number];
+	/** A room position on this shard, or a room on another shard. */
+	destination: { room: string; x: number; y: number } | { shard: string; room: string };
+	/** Omitted, the portal never decays and `ticksToDecay` is undefined. */
+	ticksToDecay?: number;
+}
+
+export interface DepositSpec {
+	pos: [number, number];
+	depositType: string;
+	/** Total harvested so far, which sets the next harvest's cooldown (and `lastCooldown`). Defaults to 0. */
+	harvested?: number;
+	/** Defaults to 0: harvestable now. */
+	cooldown?: number;
+	/** Defaults to `DEPOSIT_DECAY_TIME`, a fresh deposit's timer. */
+	ticksToDecay?: number;
+}
+
+export interface KeeperLairSpec {
+	pos: [number, number];
+	/** Omitted, no spawn is scheduled and `ticksToSpawn` is undefined. */
+	ticksToSpawn?: number;
+}
+
+export interface InvaderCoreSpec {
+	pos: [number, number];
+	level: number;
+	/** Omitted, the core is deployed. */
+	ticksToDeploy?: number;
+	/** The `EFFECT_COLLAPSE_TIMER` effect's `ticksRemaining`. Omitted, the core has none. */
+	ticksToCollapse?: number;
+	/** A defender spawn in progress, as `spawning` reads it. `body` defaults to `[MOVE]`, and
+	 *  `needTime` to `INVADER_CORE_CREEP_SPAWN_TIME[level]` per part. */
+	spawning?: { name: string; body?: string[]; needTime?: number; remainingTime: number };
+	/** The stronghold bunker a deploy places (`strongholdDeploy`). */
+	templateName?: string;
+	/** The engine's tag for a stronghold's structures; an engine that groups them otherwise ignores it. */
+	strongholdId?: string;
+}
+
+export interface PowerBankSpec {
+	pos: [number, number];
+	power: number;
+	/** Defaults to `POWER_BANK_HITS`; `hitsMax` is always `POWER_BANK_HITS`. */
+	hits?: number;
+	/** Defaults to `POWER_BANK_DECAY`. */
+	ticksToDecay?: number;
+}
+
+export interface PlaceObjectSpecs {
+	portal: PortalSpec;
+	deposit: DepositSpec;
+	keeperLair: KeeperLairSpec;
+	invaderCore: InvaderCoreSpec;
+	powerBank: PowerBankSpec;
+}
+
+/** The spec `placeObject` takes for a type: typed for `PlaceObjectSpecs`' types, untyped otherwise. */
+export type PlaceObjectSpec<T extends string> = T extends keyof PlaceObjectSpecs ? PlaceObjectSpecs[T] : Record<string, unknown>;
+
 export interface MarketOrderSpec {
 	owner: string;
 	type: 'buy' | 'sell';
@@ -416,8 +479,12 @@ export interface ScreepsOkAdapter {
 	placePowerCreep(room: string, spec: PowerCreepSpec): Promise<string>;
 	placeNuke(room: string, spec: NukeSpec): Promise<string>;
 	placeMarketOrder(spec: MarketOrderSpec): Promise<string>;
-	/** Escape hatch for uncommon or newly-added public object types. */
-	placeObject(room: string, type: string, spec: Record<string, unknown>): Promise<string>;
+	/**
+	 * Place a public object the typed helpers don't cover, with the spec
+	 * `PlaceObjectSpecs` names for its type. Any other type is an escape hatch
+	 * with an untyped spec, which an adapter may reject.
+	 */
+	placeObject<T extends string>(room: string, type: T, spec: PlaceObjectSpec<T>): Promise<string>;
 
 	/** Update room terrain, if the adapter supports post-creation terrain mutation. */
 	setTerrain(room: string, terrain: TerrainSpec): Promise<void>;

@@ -137,8 +137,14 @@ Examples:
   `RoomSpec.powerEnabled` sets it, so a power creep's `usePower` in a
   controlled room needs that flag.
 
-`placeObject()` is an escape hatch for rare or newly added public objects. It
-must not become the primary path for common gameplay setup.
+`placeObject(room, type, spec)` places public objects the typed helpers don't
+cover. For the types `PlaceObjectSpecs` names (`portal`, `deposit`,
+`keeperLair`, `invaderCore`, `powerBank`) the spec is typed: timers are
+relative ticks named for the getter that reads them (`ticksToDecay`,
+`cooldown`, `ticksToSpawn`, `ticksToDeploy`), and `src/adapter.ts` states each
+default. Any other type is an escape hatch with an untyped spec, which an
+adapter may reject; it must not become the primary path for common gameplay
+setup.
 
 ### Terrain
 

@@ -147,7 +147,7 @@ describe('Portal mechanics', () => {
 		const portalId = await shard.placeObject('W1N1', 'portal', {
 			pos: [25, 25],
 			destination: { room: 'W2N1', x: 25, y: 25 },
-			decayTime: 3,
+			ticksToDecay: 3,
 		});
 		// An idle creep keeps the room active so the decay processor wakes
 		// up — a portal-only room is otherwise eligible to sleep past

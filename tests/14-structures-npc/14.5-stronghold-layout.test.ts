@@ -20,7 +20,7 @@ describe('Stronghold layout', () => {
 				const coreId = await shard.placeObject('W1N1', 'invaderCore', {
 					pos: [coreX, coreY],
 					level: template.coreLevel,
-					deployTime: 1,
+					ticksToDeploy: 1,
 					templateName: template.name,
 					strongholdId: `sh-${template.name}`,
 				});

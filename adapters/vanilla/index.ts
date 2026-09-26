@@ -5,6 +5,7 @@ import type {
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
+	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from '../../src/adapter.js';
 import { gclPoints } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
@@ -1468,51 +1469,44 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return result._id;
 	}
 
-	async placeObject(roomName: string, type: string, spec: Record<string, unknown>): Promise<string> {
+	async placeObject<T extends string>(roomName: string, type: T, spec: PlaceObjectSpec<T>): Promise<string> {
 		const pos = spec.pos as [number, number] | undefined;
 		if (!pos) throw new Error('placeObject: spec.pos is required');
 
 		if (type === 'portal') {
-			const dest = spec.destination as { room?: string; x?: number; y?: number; shard?: string } | undefined;
-			if (!dest) throw new Error('placeObject portal: spec.destination is required');
-			// Cross-shard portal: { shard, room }. Same-shard: { room, x, y }.
-			const destination = dest.shard
-				? { shard: dest.shard, room: dest.room }
-				: { room: dest.room, x: dest.x, y: dest.y };
-			// spec.decayTime is relative ticks (consistent with deposit/powerBank
-			// below). Vanilla persists `decayTime` as the absolute tick of expiry;
-			// null means a permanent portal.
+			const s = spec as PortalSpec;
+			const destination = 'shard' in s.destination
+				? { shard: s.destination.shard, room: s.destination.room }
+				: { room: s.destination.room, x: s.destination.x, y: s.destination.y };
+			// Vanilla persists `decayTime` as the absolute tick of expiry; null means a permanent portal.
 			const gameTime = await this.server.world.gameTime;
-			const decayTime = (spec.decayTime as number)
-				? gameTime + (spec.decayTime as number)
-				: null;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'portal',
 				x: pos[0],
 				y: pos[1],
 				destination,
-				unstableDate: spec.unstableDate ?? null,
-				decayTime,
+				unstableDate: null,
+				decayTime: s.ticksToDecay !== undefined ? gameTime + s.ticksToDecay : null,
 			});
 			return result._id;
 		}
 
 		if (type === 'deposit') {
+			const s = spec as DepositSpec;
 			const C = this.server.constants;
 			const gameTime = await this.server.world.gameTime;
-			// An omitted decayTime gets a fresh deposit's timer, as vanilla's deposit cron seeds it
+			// The default is a fresh deposit's timer, as vanilla's deposit cron seeds it
 			// (@screeps/backend/lib/cronjobs.js:638).
-			const decayTicks = (spec.decayTime as number) ?? C.DEPOSIT_DECAY_TIME;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'deposit',
 				x: pos[0],
 				y: pos[1],
-				depositType: (spec.depositType as string) ?? 'silicon',
-				harvested: (spec.harvested as number) ?? 0,
-				cooldownTime: spec.cooldownTime != null ? gameTime + (spec.cooldownTime as number) : null,
-				decayTime: gameTime + decayTicks,
+				depositType: s.depositType,
+				harvested: s.harvested ?? 0,
+				cooldownTime: s.cooldown !== undefined ? gameTime + s.cooldown : null,
+				decayTime: gameTime + (s.ticksToDecay ?? C.DEPOSIT_DECAY_TIME),
 			});
 			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
 			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);
@@ -1520,31 +1514,25 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		if (type === 'keeperLair') {
+			const s = spec as KeeperLairSpec;
 			const gameTime = await this.server.world.gameTime;
-			const nextSpawn = (spec.nextSpawnTime as number)
-				? gameTime + (spec.nextSpawnTime as number)
-				: null;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'keeperLair',
 				x: pos[0],
 				y: pos[1],
-				nextSpawnTime: nextSpawn,
+				nextSpawnTime: s.ticksToSpawn !== undefined ? gameTime + s.ticksToSpawn : null,
 			});
 			return result._id;
 		}
 
 		if (type === 'invaderCore') {
+			const s = spec as InvaderCoreSpec;
 			const gameTime = await this.server.world.gameTime;
-			const level = (spec.level as number) ?? 0;
-			const deployTime = (spec.deployTime as number)
-				? gameTime + (spec.deployTime as number)
-				: null;
+			const level = s.level;
 			const C = this.server.constants;
-			const user = (spec.user as string) ?? '2';
-			// Seeded effects carry a relative `ticksRemaining`; the engine stores an absolute `endTime`.
-			const effects: Record<string, unknown>[] = ((spec.effects as Record<string, unknown>[]) ?? [])
-				.map(({ ticksRemaining, ...rest }) => ({ ...rest, endTime: gameTime + (ticksRemaining as number) }));
+			const user = '2';
+			const effects: Record<string, unknown>[] = [];
 			const insert: Record<string, unknown> = {
 				room: roomName,
 				type: 'invaderCore',
@@ -1552,41 +1540,39 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				y: pos[1],
 				level,
 				user,
-				hits: (spec.hits as number) ?? C.INVADER_CORE_HITS,
-				hitsMax: (spec.hitsMax as number) ?? C.INVADER_CORE_HITS,
-				deployTime,
+				hits: C.INVADER_CORE_HITS,
+				hitsMax: C.INVADER_CORE_HITS,
+				deployTime: s.ticksToDeploy !== undefined ? gameTime + s.ticksToDeploy : null,
 				effects,
 			};
-			// `collapseTime` (relative ticks) seeds the deployed-stronghold
-			// collapse state: the EFFECT_COLLAPSE_TIMER effect plus the
-			// matching `decayTime` that `deployStronghold` would have set.
-			if (typeof spec.collapseTime === 'number') {
-				const endTime = gameTime + (spec.collapseTime as number);
+			// `ticksToCollapse` seeds the deployed-stronghold collapse state: the
+			// EFFECT_COLLAPSE_TIMER effect plus the matching `decayTime` that
+			// `deployStronghold` would have set.
+			if (s.ticksToCollapse !== undefined) {
+				const endTime = gameTime + s.ticksToCollapse;
 				effects.push({
 					effect: C.EFFECT_COLLAPSE_TIMER,
 					power: C.EFFECT_COLLAPSE_TIMER,
 					endTime,
-					duration: spec.collapseTime,
+					duration: s.ticksToCollapse,
 				});
 				insert.decayTime = endTime;
 			}
 			// `spawning` seeds an in-progress defender spawn: the core's
 			// spawning record plus the incubating creep doc the engine's
 			// createCreep intent would have inserted on the core tile.
-			const spawningSpec = spec.spawning as
-				| { name: string; body?: string[]; needTime?: number; remainingTicks: number }
-				| undefined;
+			const spawningSpec = s.spawning;
 			const body = (spawningSpec?.body ?? ['move']).map(part => ({ type: part, hits: 100 }));
 			if (spawningSpec) {
 				insert.spawning = {
 					name: spawningSpec.name,
 					needTime: spawningSpec.needTime
 						?? (C.INVADER_CORE_CREEP_SPAWN_TIME?.[level] ?? 0) * body.length,
-					spawnTime: gameTime + spawningSpec.remainingTicks,
+					spawnTime: gameTime + spawningSpec.remainingTime,
 				};
 			}
-			if (spec.templateName !== undefined) insert.templateName = spec.templateName;
-			if (spec.strongholdId !== undefined) insert.strongholdId = spec.strongholdId;
+			if (s.templateName !== undefined) insert.templateName = s.templateName;
+			if (s.strongholdId !== undefined) insert.strongholdId = s.strongholdId;
 			const result = await this.db['rooms.objects'].insert(insert);
 			if (spawningSpec) {
 				await this.db['rooms.objects'].insert({
@@ -1614,24 +1600,18 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		}
 
 		if (type === 'powerBank') {
+			const s = spec as PowerBankSpec;
 			const C = this.server.constants;
 			const gameTime = await this.server.world.gameTime;
-			const store = (spec.store as Record<string, number>) ?? {};
-			const power = (spec.power as number) ?? store.power ?? 1000;
-			const hits = (spec.hits as number) ?? C.POWER_BANK_HITS;
-			const hitsMax = (spec.hitsMax as number) ?? hits;
-			const decay = (spec.decayTime as number)
-				? gameTime + (spec.decayTime as number)
-				: gameTime + C.POWER_BANK_DECAY;
 			const result = await this.db['rooms.objects'].insert({
 				room: roomName,
 				type: 'powerBank',
 				x: pos[0],
 				y: pos[1],
-				store: { power },
-				hits,
-				hitsMax,
-				decayTime: decay,
+				store: { power: s.power },
+				hits: s.hits ?? C.POWER_BANK_HITS,
+				hitsMax: C.POWER_BANK_HITS,
+				decayTime: gameTime + (s.ticksToDecay ?? C.POWER_BANK_DECAY),
 			});
 			await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
 			await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);

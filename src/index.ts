@@ -14,6 +14,7 @@ export type {
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec,
+	PlaceObjectSpec, PlaceObjectSpecs, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
 export { gclPoints } from './adapter.js';

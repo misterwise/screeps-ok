@@ -63,6 +63,17 @@ changes since `v0.1.0-alpha` are not itemized.
   them to the user record the engine's claim check reads. The default is the
   rooms the player owns plus one, at least 2 (it was 10,000,000 points, level
   3, on vanilla). `PlayerSpec.power` states its default: 10,000,000 points.
+- `placeObject` takes a typed spec for `portal`, `deposit`, `keeperLair`,
+  `invaderCore` and `powerBank` (`PlaceObjectSpecs`), with timers named for
+  their getters. Renamed: `decayTime` → `ticksToDecay`, `cooldownTime` →
+  `cooldown`, `nextSpawnTime` → `ticksToSpawn`, `deployTime` →
+  `ticksToDeploy`, `collapseTime` → `ticksToCollapse`, `spawning.remainingTicks`
+  → `spawning.remainingTime`; a power bank's `store.power` is `power`.
+  Required now: a deposit's `depositType`, an invader core's `level`, a power
+  bank's `power` (adapters had defaulted them to silicon, 0 and 1000). Gone: a
+  power bank's `hitsMax` (always `POWER_BANK_HITS`), and an invader core's
+  `effects`, `user`, `hits` and `hitsMax`, which no test used. A timer of 0 now
+  means 0 ticks, where it had meant unset.
 
 ### Parity and the runner
 

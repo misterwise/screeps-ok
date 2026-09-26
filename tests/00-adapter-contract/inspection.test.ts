@@ -5,7 +5,7 @@ import {
 	STRUCTURE_LAB, STRUCTURE_KEEPER_LAIR,
 	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
 	FIND_DEPOSITS, OK, REACTION_TIME, CREEP_SPAWN_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
-	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
+	RESOURCE_SILICON, RESOURCE_METAL,
 	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
 } from '../../src/index.js';
 
@@ -263,8 +263,8 @@ describe('adapter contract: inspection', () => {
 				pos: [20, 20],
 				depositType: RESOURCE_METAL,
 				harvested: 1600,
-				cooldownTime: 25,
-				decayTime: 100,
+				cooldown: 25,
+				ticksToDecay: 100,
 			});
 			await shard.tick();
 
@@ -288,7 +288,7 @@ describe('adapter contract: inspection', () => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeObject('W1N1', STRUCTURE_KEEPER_LAIR, {
 				pos: [25, 25],
-				nextSpawnTime: 100,
+				ticksToSpawn: 100,
 			});
 			await shard.tick();
 
@@ -304,7 +304,7 @@ describe('adapter contract: inspection', () => {
 			const id = await shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, {
 				pos: [25, 25],
 				level: 2,
-				deployTime: 75,
+				ticksToDeploy: 75,
 			});
 			await shard.tick();
 
@@ -320,10 +320,9 @@ describe('adapter contract: inspection', () => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeObject('W1N1', STRUCTURE_POWER_BANK, {
 				pos: [25, 25],
-				store: { [RESOURCE_POWER]: 2500 },
+				power: 2500,
 				hits: 1000000,
-				hitsMax: 2000000,
-				decayTime: 500,
+				ticksToDecay: 500,
 			});
 			await shard.tick();
 
@@ -348,7 +347,7 @@ describe('adapter contract: inspection', () => {
 			const id = await shard.placeObject('W1N1', 'portal', {
 				pos: [25, 25],
 				destination: { room: 'W2N1', x: 30, y: 31 },
-				decayTime: 200,
+				ticksToDecay: 200,
 			});
 			await shard.tick();
 

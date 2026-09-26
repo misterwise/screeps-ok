@@ -176,8 +176,9 @@ Examples:
 Do not hide semantics behind vague generic object creation when a typed helper
 exists.
 
-`placeObject()` is an escape hatch for rare or new object types. It should not
-be the primary way canonical tests set up common mechanics.
+`placeObject()` takes a typed spec for each type `PlaceObjectSpecs` names, and
+is an escape hatch for any other type. It should not be the primary way
+canonical tests set up common mechanics.
 
 ### 4. Execute Player Code in the Engine Runtime
 

@@ -18,7 +18,7 @@ import {
 	STRUCTURE_NUKER, STRUCTURE_FACTORY,
 	STRUCTURE_KEEPER_LAIR, STRUCTURE_POWER_BANK, STRUCTURE_INVADER_CORE,
 } from '../index.js';
-import type { CapabilityName } from '../index.js';
+import type { CapabilityName, PlaceObjectSpecs } from '../index.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -269,21 +269,22 @@ export const structureShapes: readonly StructureShapeEntry[] = [
 // These use placeObject() rather than placeStructure(), so they are
 // kept in a separate array with a different placement interface.
 
-export interface NpcShapeEntry {
-	catalogId: string;
-	objectType: string;
-	shape: readonly string[];
-	/** Adapter capability that gates placement. */
-	cap?: CapabilityName;
-	/** Spec fields for placeObject. */
-	spec: Record<string, unknown>;
-}
+export type NpcShapeEntry = {
+	[T in keyof PlaceObjectSpecs]: {
+		catalogId: string;
+		objectType: T;
+		shape: readonly string[];
+		/** Adapter capability that gates placement. */
+		cap?: CapabilityName;
+		spec: PlaceObjectSpecs[T];
+	};
+}[keyof PlaceObjectSpecs];
 
 export const npcShapes: readonly NpcShapeEntry[] = [
 	{
 		catalogId: 'SHAPE-NPC-001',
 		objectType: 'keeperLair',
-		spec: { pos: [25, 25], nextSpawnTime: 100 },
+		spec: { pos: [25, 25], ticksToSpawn: 100 },
 		shape: shape(
 			'hits', 'hitsMax', 'id', 'my', 'owner', 'pos', 'room',
 			'structureType', 'ticksToSpawn',
@@ -292,7 +293,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	{
 		catalogId: 'SHAPE-NPC-002',
 		objectType: 'invaderCore', cap: 'invaderCore',
-		spec: { pos: [25, 25], level: 2, deployTime: 100 },
+		spec: { pos: [25, 25], level: 2, ticksToDeploy: 100 },
 		shape: shape(
 			'effects', 'hits', 'hitsMax', 'id', 'level', 'my', 'owner',
 			'pos', 'room', 'spawning', 'structureType', 'ticksToDeploy',
@@ -301,7 +302,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	{
 		catalogId: 'SHAPE-NPC-003',
 		objectType: 'powerBank', cap: 'powerBank',
-		spec: { pos: [25, 25], store: { power: 1000 }, hits: 10000000, hitsMax: 10000000, decayTime: 50000 },
+		spec: { pos: [25, 25], power: 1000, ticksToDecay: 50000 },
 		shape: shape(
 			'hits', 'hitsMax', 'id', 'my', 'owner', 'pos', 'power',
 			'room', 'structureType', 'ticksToDecay',
@@ -310,7 +311,7 @@ export const npcShapes: readonly NpcShapeEntry[] = [
 	{
 		catalogId: 'SHAPE-NPC-004',
 		objectType: 'portal', cap: 'portals',
-		spec: { pos: [25, 25], destination: { x: 25, y: 25, room: 'W3N3' }, decayTime: 50000 },
+		spec: { pos: [25, 25], destination: { x: 25, y: 25, room: 'W3N3' }, ticksToDecay: 50000 },
 		shape: shape(
 			'destination', 'hits', 'hitsMax', 'id', 'pos', 'room',
 			'structureType', 'ticksToDecay',

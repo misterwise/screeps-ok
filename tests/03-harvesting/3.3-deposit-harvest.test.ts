@@ -54,7 +54,7 @@ describe('creep.harvest(deposit)', () => {
 		await shard.ownedRoom('p1');
 		// Pre-seed deposit with active cooldown (10 ticks into the future).
 		const depositId = await shard.placeObject('W1N1', 'deposit', {
-			pos: [25, 26], depositType: RESOURCE_SILICON, cooldownTime: 10,
+			pos: [25, 26], depositType: RESOURCE_SILICON, cooldown: 10,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -154,7 +154,7 @@ describe('creep.harvest(deposit)', () => {
 				: await shard.placeObject('W1N1', 'deposit', {
 					pos: blockers.has('range') ? [30, 30] : [25, 26],
 					depositType: RESOURCE_SILICON,
-					...(blockers.has('cooldown') ? { cooldownTime: 10 } : {}),
+					...(blockers.has('cooldown') ? { cooldown: 10 } : {}),
 				});
 
 			const rc = await shard.runPlayer('p1', code`

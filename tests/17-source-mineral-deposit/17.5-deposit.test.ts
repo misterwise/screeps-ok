@@ -4,6 +4,8 @@ import { describe, test, expect, code,
 	DEPOSIT_DECAY_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
 } from '../../src/index.js';
 import { depositTypeCases } from '../../src/matrices/deposit-type.js';
+import type { DepositSpec } from '../../src/adapter.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 // Same operation order as the engine, so the float rounds identically.
 const exhaustCooldown = (harvested: number) =>
@@ -14,7 +16,7 @@ const exhaustCooldown = (harvested: number) =>
 const SEEDED_HARVESTED = 1195;
 const WORK_PARTS = 10;
 
-async function placeHarvestedDeposit(shard: any, extra: Record<string, unknown> = {}) {
+async function placeHarvestedDeposit(shard: ShardFixture, extra: Partial<DepositSpec> = {}) {
 	await shard.ownedRoom('p1');
 	const depositId = await shard.placeObject('W1N1', 'deposit', {
 		pos: [25, 26], depositType: RESOURCE_SILICON, harvested: SEEDED_HARVESTED, ...extra,
@@ -80,7 +82,7 @@ describe('Deposit lifecycle', () => {
 
 	test('DEPOSIT-004 a harvest restarts ticksToDecay at DEPOSIT_DECAY_TIME and it then decreases by 1 each tick', async ({ shard }) => {
 		shard.requires('deposit');
-		const { depositId, creepId } = await placeHarvestedDeposit(shard, { decayTime: 100 });
+		const { depositId, creepId } = await placeHarvestedDeposit(shard, { ticksToDecay: 100 });
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${depositId}))
@@ -131,7 +133,7 @@ describe('Deposit lifecycle', () => {
 		shard.requires('deposit');
 		await shard.ownedRoom('p1');
 		const depositId = await shard.placeObject('W1N1', 'deposit', {
-			pos: [25, 25], depositType: RESOURCE_SILICON, decayTime: 3,
+			pos: [25, 25], depositType: RESOURCE_SILICON, ticksToDecay: 3,
 		});
 		await shard.tick();
 
