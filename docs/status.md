@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2751%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2534%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-70-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2755%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2537%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-71-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2751](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 05:17 UTC |
-| 🟡 | **xxscreeps** | [2534](#xxscreeps-passing-tests) | [70](#xxscreeps-expected-failures) | — | [160](#xxscreeps-skipped-tests) | 2026-09-26 05:17 UTC |
+| 🟡 | **vanilla** | [2755](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 05:49 UTC |
+| 🟡 | **xxscreeps** | [2537](#xxscreeps-passing-tests) | [71](#xxscreeps-expected-failures) | — | [160](#xxscreeps-skipped-tests) | 2026-09-26 05:49 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -106,7 +106,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 70 tests. That includes 33 open parity gaps covering 61 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 71 tests. That includes 33 open parity gaps covering 62 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -138,7 +138,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | [1](#xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping) |
-| `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | 0 |
+| `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | [1](#xxscreeps-gap-terminal-send-cost-ignores-world-wrap) |
 | `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | [4](#xxscreeps-gap-bury-creep-stamps-next-tick) |
 | `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | [1](#xxscreeps-gap-deposit-decay-anchors-one-tick-late) |
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | [1](#xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late) |
@@ -345,8 +345,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-terminal-send-cost-ignores-world-wrap">
-<summary><code>terminal-send-cost-ignores-world-wrap</code> — 0 tests</summary>
+<summary><code>terminal-send-cost-ignores-world-wrap</code> — 1 test</summary>
 
+- `Terminal send TERMINAL-SEND-015 send across opposite world edges charges calcTransactionCost at the wrapped distance`
 
 </details>
 
@@ -490,7 +491,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2751 tests across 148 files</summary>
+<summary>2755 tests across 148 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -564,7 +565,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (24)
+**`tests/00-adapter-contract/inspection.test.ts`** (23)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -582,7 +583,6 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
-- adapter contract: inspection special object snapshots observer snapshot includes cooldown
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
@@ -591,7 +591,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (66)
+**`tests/00-adapter-contract/setup.test.ts`** (70)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -603,6 +603,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
+- adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
 - adapter contract: setup default room terrain default rooms have all-plain interior terrain
 - adapter contract: setup default room terrain default rooms have all four exits open
@@ -611,6 +612,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeCreep creep store is initialized
 - adapter contract: setup placeCreep creep name is honored
 - adapter contract: setup placeCreep creep ticksToLive is honored
+- adapter contract: setup placeCreep creep ticksToLive defaults to CREEP_LIFE_TIME
 - adapter contract: setup placeCreep creep is visible to bot code via Game.getObjectById
 - adapter contract: setup placeCreep creep appears in findInRoom
 - adapter contract: setup placeCreep srcKeeper NPC owner handle resolves without ShardSpec.players entry
@@ -631,6 +633,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure cooldown spec is honored for link
 - adapter contract: setup placeStructure cooldown spec is honored for lab
 - adapter contract: setup placeStructure cooldown spec is honored for factory
+- adapter contract: setup placeStructure cooldown spec is rejected for a structure with no public cooldown
 - adapter contract: setup placeStructure factory level spec is honored
 - adapter contract: setup placeStructure default decay schedule does not immediately destroy low-hit placements
 - adapter contract: setup placeSite places a construction site
@@ -643,6 +646,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placePowerCreep derives level, hits, and store capacity from the placed power levels
 - adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
@@ -2660,7 +2664,7 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (49)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (50)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
@@ -2711,6 +2715,7 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:cooldownBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
+- Terminal send TERMINAL-SEND-015 send across opposite world edges charges calcTransactionCost at the wrapped distance
 
 **`tests/13-structures-infrastructure/13.4-observer.test.ts`** (16)
 
@@ -4009,7 +4014,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2534 tests across 134 files</summary>
+<summary>2537 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4083,7 +4088,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (23)
+**`tests/00-adapter-contract/inspection.test.ts`** (22)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -4101,7 +4106,6 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection getGameTime returns a positive number
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
-- adapter contract: inspection special object snapshots observer snapshot includes cooldown
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
@@ -4109,7 +4113,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (66)
+**`tests/00-adapter-contract/setup.test.ts`** (70)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -4121,6 +4125,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
+- adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
 - adapter contract: setup default room terrain default rooms have all-plain interior terrain
 - adapter contract: setup default room terrain default rooms have all four exits open
@@ -4129,6 +4134,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeCreep creep store is initialized
 - adapter contract: setup placeCreep creep name is honored
 - adapter contract: setup placeCreep creep ticksToLive is honored
+- adapter contract: setup placeCreep creep ticksToLive defaults to CREEP_LIFE_TIME
 - adapter contract: setup placeCreep creep is visible to bot code via Game.getObjectById
 - adapter contract: setup placeCreep creep appears in findInRoom
 - adapter contract: setup placeCreep srcKeeper NPC owner handle resolves without ShardSpec.players entry
@@ -4149,6 +4155,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure cooldown spec is honored for link
 - adapter contract: setup placeStructure cooldown spec is honored for lab
 - adapter contract: setup placeStructure cooldown spec is honored for factory
+- adapter contract: setup placeStructure cooldown spec is rejected for a structure with no public cooldown
 - adapter contract: setup placeStructure factory level spec is honored
 - adapter contract: setup placeStructure default decay schedule does not immediately destroy low-hit placements
 - adapter contract: setup placeSite places a construction site
@@ -4161,6 +4168,7 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeFlag rejects flag names containing engine data delimiters
 - adapter contract: setup placeDroppedResource places a dropped resource
 - adapter contract: setup placePowerCreep places a power creep with specified powers accessible via Game.powerCreeps
+- adapter contract: setup placePowerCreep derives level, hits, and store capacity from the placed power levels
 - adapter contract: setup placePowerCreep default power creep names are deterministic and collision-free
 - adapter contract: setup placeNuke places an in-flight nuke visible via FIND_NUKES with specified timeToLand
 - adapter contract: setup setup helpers do not inject extra ticks placeCreep + runPlayer advances exactly 1 tick
