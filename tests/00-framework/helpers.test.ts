@@ -3,6 +3,8 @@ import { describe, expect, test } from 'vitest';
 import { code } from '../../src/code.js';
 import { body } from '../../src/helpers/body.js';
 import { makeValidationCases } from '../../src/matrices/validation-cases.js';
+import { gclPoints } from '../../src/adapter.js';
+import { GCL_MULTIPLY, GCL_POW } from '../../src/constants.js';
 
 describe('code tag', () => {
 	test('a value JSON would change fails instead of interpolating as something else', () => {
@@ -49,5 +51,31 @@ describe('makeValidationCases', () => {
 
 	test('every shipped matrix loads', () => {
 		expect(Object.keys(import.meta.glob('../../src/matrices/*.ts', { eager: true })).length).toBeGreaterThan(0);
+	});
+});
+
+describe('gclPoints', () => {
+	// The level engines derive from their stored points (vanilla game.js:130).
+	const levelOf = (points: number) => Math.floor((points / GCL_MULTIPLY) ** (1 / GCL_POW)) + 1;
+
+	test('every level reads back, at its threshold and just below the next', () => {
+		for (let level = 1; level <= 40; level++) {
+			const room = gclPoints({ level: level + 1 }) - gclPoints({ level });
+			expect(levelOf(gclPoints({ level }))).toBe(level);
+			expect(levelOf(gclPoints({ level, progress: room - 1 }))).toBe(level);
+		}
+	});
+
+	test('progress counts whole points past the rounded-up threshold', () => {
+		expect(gclPoints({ level: 1 })).toBe(0);
+		expect(gclPoints({ level: 2, progress: 5 })).toBe(GCL_MULTIPLY + 5);
+		expect(gclPoints({ level: 3 })).toBe(Math.ceil(GCL_MULTIPLY * 2 ** GCL_POW));
+	});
+
+	test('a level or progress no point total reads back as fails', () => {
+		expect(() => gclPoints({ level: 0 })).toThrow(/PlayerSpec.gcl/);
+		expect(() => gclPoints({ level: 1.5 })).toThrow(/PlayerSpec.gcl/);
+		expect(() => gclPoints({ level: 2, progress: -1 })).toThrow(/PlayerSpec.gcl/);
+		expect(() => gclPoints({ level: 1, progress: GCL_MULTIPLY })).toThrow(/below 1000000/);
 	});
 });

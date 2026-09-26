@@ -126,14 +126,24 @@ describe('adapter contract: setup', () => {
 			await expect(shard.getControllerPos('W9N9')).resolves.toBeNull();
 		});
 
-		test('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
-			// Contract: when a player spec sets a low `gcl`, the adapter must
-			// write that value into the engine's user record so Game.gcl.level
-			// reflects it. The cheapest end-to-end probe is the engine's own
-			// claim cap: with gcl=0 the player can own at most 1 room, so a
-			// second claimController() must return ERR_GCL_NOT_ENOUGH.
+		test('PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim', async ({ shard }) => {
+			// Level 3's threshold isn't whole; level 2's is, so its progress reads back exactly.
 			await shard.createShard({
-				players: [{ name: 'p1', gcl: 0 }],
+				players: [{ name: 'p1', gcl: { level: 3 } }, { name: 'p2', gcl: { level: 2, progress: 5 } }, 'p3'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p3' }, { name: 'W2N1', rcl: 1, owner: 'p3' }],
+			});
+			const readGcl = code`({ level: Game.gcl.level, progress: Game.gcl.progress })`;
+			const gcl = await shard.runPlayers({ p1: readGcl, p2: readGcl, p3: readGcl });
+			expect((gcl.p1 as { level: number }).level).toBe(3);
+			expect(gcl.p2).toEqual({ level: 2, progress: 5 });
+			expect((gcl.p3 as { level: number }).level).toBe(3);
+		});
+
+		test('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
+			// The engine's own claim cap reads the same record: at level 1 the
+			// player owns at most one room, so a second claim is ERR_GCL_NOT_ENOUGH.
+			await shard.createShard({
+				players: [{ name: 'p1', gcl: { level: 1 } }],
 				rooms: [
 					{ name: 'W1N1', rcl: 1, owner: 'p1' },
 					{ name: 'W2N1' },

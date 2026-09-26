@@ -57,6 +57,12 @@ changes since `v0.1.0-alpha` are not itemized.
   `AdapterLimitations` and `limitationGated`: all three limitations were
   closed, and an engine couldn't add one of its own. Drop the field; a test
   your engine can't run goes under `skips` in your `parity.json`.
+- `PlayerSpec.gcl` is `{ level, progress? }` (`GclSpec`), as `Game.gcl` reads
+  it, where it was a number the two reference adapters read as points and as
+  a level. `gclPoints()` converts it to the points your engine stores; write
+  them to the user record the engine's claim check reads. The default is the
+  rooms the player owns plus one, at least 2 (it was 10,000,000 points, level
+  3, on vanilla). `PlayerSpec.power` states its default: 10,000,000 points.
 
 ### Parity and the runner
 

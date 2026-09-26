@@ -312,6 +312,8 @@ export const PWR_DISRUPT_SOURCE: number = C.PWR_DISRUPT_SOURCE;
 export const PWR_DISRUPT_TERMINAL: number = C.PWR_DISRUPT_TERMINAL;
 
 // Power creep / power bank
+export const GCL_MULTIPLY: number = C.GCL_MULTIPLY;
+export const GCL_POW: number = C.GCL_POW;
 export const POWER_LEVEL_MULTIPLY: number = C.POWER_LEVEL_MULTIPLY;
 export const POWER_LEVEL_POW: number = C.POWER_LEVEL_POW;
 export const POWER_CREEP_LIFE_TIME: number = C.POWER_CREEP_LIFE_TIME;

@@ -6,6 +6,7 @@ import type {
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
 } from '../../src/adapter.js';
+import { gclPoints } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -976,12 +977,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const ownedRooms = spec.rooms.filter(r => r.owner === handle);
 			const roomName = ownedRooms[0]?.name ?? spec.rooms[0].name;
 
-			// Default to a high GCL so multi-room claim tests aren't blocked
-			// by the cap; tests that need ERR_GCL_NOT_ENOUGH set this low.
-			const gcl = playerSpec.gcl ?? 10000000;
-			// Default to high processed account power so existing power creep
-			// tests can create and upgrade power creeps. GPL-specific tests set
-			// this explicitly to exercise vanilla's Game.gpl formula.
+			const gcl = gclPoints(playerSpec.gcl ?? { level: Math.max(ownedRooms.length + 1, 2) });
 			const power = playerSpec.power ?? 10000000;
 
 			// Insert user directly

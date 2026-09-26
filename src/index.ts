@@ -10,12 +10,13 @@ export type { ShapeDivergence, ShapeDivergences, ShapeDivergenceTarget } from '.
 export type {
 	ScreepsOkAdapter, AdapterCapabilities, CapabilityName, PlayerReturnValue,
 	ActionLogPayloadValue, ActionLogObjectSnapshot, RoomActionLogCapture,
-	ShardSpec, RoomSpec, RoomStatusSpec, PlayerSpec, TerrainSpec,
+	ShardSpec, RoomSpec, RoomStatusSpec, PlayerSpec, GclSpec, TerrainSpec,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
 	PowerCreepSpec, NukeSpec, MarketOrderSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
+export { gclPoints } from './adapter.js';
 export { withCornerWalls } from './terrain-fixture.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';
@@ -131,7 +132,7 @@ export {
 	PWR_REGEN_SOURCE, PWR_REGEN_MINERAL,
 	PWR_OPERATE_SPAWN, PWR_OPERATE_POWER, PWR_OPERATE_CONTROLLER, PWR_SHIELD, PWR_FORTIFY, PWR_DISRUPT_SOURCE, PWR_DISRUPT_TERMINAL,
 	// Power creep / power bank
-	POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW,
+	GCL_MULTIPLY, GCL_POW, POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW,
 	POWER_CREEP_LIFE_TIME, POWER_SPAWN_ENERGY_RATIO,
 	POWER_BANK_HIT_BACK, POWER_BANK_CAPACITY_MAX, POWER_BANK_CAPACITY_MIN, POWER_BANK_DECAY, POWER_BANK_HITS,
 	TOMBSTONE_DECAY_POWER_CREEP,

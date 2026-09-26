@@ -8,6 +8,7 @@ import type { SupportedFindConstant } from './find.js';
 import {
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
 	FIND_MINERALS, FIND_TOMBSTONES, FIND_DEPOSITS, FIND_RUINS, FIND_DROPPED_RESOURCES,
+	GCL_MULTIPLY, GCL_POW,
 } from './constants.js';
 
 // ── Setup types ──────────────────────────────────────────────
@@ -20,17 +21,35 @@ export interface ShardSpec {
 export interface PlayerSpec {
 	name: string;
 	/**
-	 * Override the player's GCL at user creation. Defaults to a high value
-	 * (~10M) so multi-room claim tests aren't blocked by the cap. Set this
-	 * to a low number to honestly trigger ERR_GCL_NOT_ENOUGH on extra claims.
+	 * The player's GCL, as `Game.gcl` reads it. Defaults to
+	 * `{ level: max(rooms the player owns + 1, 2) }`, room for one more claim.
+	 * The engine stores it as points; `gclPoints` converts.
 	 */
-	gcl?: number;
+	gcl?: GclSpec;
 	/**
-	 * Override the player's processed account power at user creation. Vanilla
-	 * derives Game.gpl from this value. Defaults high enough to allow existing
-	 * power creep tests to create and upgrade power creeps.
+	 * The player's processed account power in points, from which the engine
+	 * derives `Game.gpl`. Defaults to 10,000,000.
 	 */
 	power?: number;
+}
+
+export interface GclSpec {
+	/** `Game.gcl.level`. */
+	level: number;
+	/** Whole points past the level's threshold, `ceil(GCL_MULTIPLY * (level - 1) ** GCL_POW)`. Defaults to 0. */
+	progress?: number;
+}
+
+/** The engine's GCL points for a spec; throws for one no point total reads back as. */
+export function gclPoints({ level, progress = 0 }: GclSpec): number {
+	const threshold = (l: number) => Math.ceil(GCL_MULTIPLY * (l - 1) ** GCL_POW);
+	const points = threshold(level) + progress;
+	const readsBack = Math.floor((points / GCL_MULTIPLY) ** (1 / GCL_POW)) + 1 === level;
+	if (!Number.isInteger(level) || level < 1 || !Number.isInteger(progress) || progress < 0
+		|| points >= threshold(level + 1) || !readsBack) {
+		throw new Error(`PlayerSpec.gcl { level: ${level}, progress: ${progress} }: progress must be a whole number below ${threshold(level + 1) - threshold(level)}`);
+	}
+	return points;
 }
 
 export type RoomStatusSpec = 'normal' | 'novice' | 'respawn' | 'closed';

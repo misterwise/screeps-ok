@@ -70,7 +70,6 @@ export type RunOptions = {
 	// controller mod's gameInitializer produces `Game.gcl.level = desiredLevel`
 	// while `Game.gcl.progress` still reflects the DB delta the processor
 	// maintains (upgradeController increments it).
-	gclBaseline?: number;
 	// Replaces `payload.controlledRoomCount` after refresh. The engine's
 	// `processorHooks.refreshRoom` populates `user/<id>/controlledRooms`
 	// scratch set, but that only fires inside the processor worker — not
@@ -182,11 +181,8 @@ export class UserSandbox {
 		// Mods populate payload fields from shard state (flag/memory blobs,
 		// controller's gcl/controlledRoomCount, etc.). Run refresh first…
 		await this.connectors.refresh(tickPayload);
-		// …then apply adapter-side adjustments. `gclBaseline` is ADDED so the
-		// DB-derived progress (from refresh) is preserved; `controlledRoomCount`
-		// is REPLACED because the processor refresh path that would maintain
-		// `user/<id>/controlledRooms` only fires inside a real processor worker.
-		if (opts.gclBaseline) tickPayload.gcl = opts.gclBaseline + tickPayload.gcl;
+		// …then replace `controlledRoomCount`: the processor refresh path that would
+		// maintain `user/<id>/controlledRooms` only fires inside a real processor worker.
 		if (opts.controlledRoomCount !== undefined) tickPayload.controlledRoomCount = opts.controlledRoomCount;
 
 		const result = await this.sandbox.run(tickPayload);

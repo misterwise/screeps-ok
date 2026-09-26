@@ -227,7 +227,7 @@ describe('controller mechanics', () => {
 		// p1 with gcl=0, give them W1N1, and have them try to claim a second
 		// controller; the engine's claim check rejects with ERR_GCL_NOT_ENOUGH.
 		await shard.createShard({
-			players: [{ name: 'p1', gcl: 0 }],
+			players: [{ name: 'p1', gcl: { level: 1 } }],
 			rooms: [
 				{ name: 'W1N1', rcl: 1, owner: 'p1' },
 				{ name: 'W2N1' },
@@ -309,7 +309,7 @@ describe('controller mechanics', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
-				players: blockers.has('gcl-not-enough') ? [{ name: 'p1', gcl: 0 }, 'p2'] : ['p1', 'p2'],
+				players: blockers.has('gcl-not-enough') ? [{ name: 'p1', gcl: { level: 1 } }, 'p2'] : ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
 			});
 			const ctrlPos = await shard.getControllerPos('W1N1');

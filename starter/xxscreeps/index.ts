@@ -9,6 +9,7 @@ import type {
 	PowerCreepSpec, NukeSpec, MarketOrderSpec, TerrainSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from 'screeps-ok';
+import { gclPoints } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
 import { RunPlayerError } from 'screeps-ok';
@@ -134,17 +135,6 @@ await importMods('processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
 
-// Convert a desired `Game.gcl.level` to the `payload.gcl` progress value the
-// controller mod's gameInitializer consumes to produce that level.
-// Inverse of `mods/controller/game.ts:64`:
-//     level = floor((gcl / GCL_MULTIPLY) ** (1 / GCL_POW))
-//     Game.gcl.level = level + 1
-// So pick gcl = (desiredLevel - 1)^GCL_POW * GCL_MULTIPLY, floored to 0.
-function gclLevelToProgress(desiredLevel: number): number {
-	const floor = Math.max(0, desiredLevel - 1);
-	return Math.floor(floor ** 2.4 * 1_000_000);
-}
-
 function normalizeActionLog(actionLog: unknown): Record<string, ActionLogPayloadValue> {
 	const normalized: Record<string, ActionLogPayloadValue> = {};
 	if (!actionLog || typeof actionLog !== 'object') return normalized;
@@ -265,11 +255,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private playerMap = new Map<string, string>();
 	private reversePlayerMap = new Map<string, string>();
-	// PlayerSpec.gcl overrides, keyed by handle. When set, runPlayer uses
-	// this level for `Game.gcl.level` instead of the `ownedRoomCount+1`
-	// polyfill, so tests with `gcl: 0` can honestly trigger
-	// ERR_GCL_NOT_ENOUGH (see `mods/controller/creep.ts:137` —
-	// `level <= #roomCount` fails).
+	// Account GCL and power points by handle, written to each user's info at createShard.
 	private playerGcl = new Map<string, number>();
 	private playerPower = new Map<string, number>();
 	private pendingSetup = new Map<string, Array<(room: Room) => void>>();
@@ -375,9 +361,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const handle = typeof entry === 'string' ? entry : entry.name;
 			this.playerMap.set(handle, playerSlots[i]);
 			this.reversePlayerMap.set(playerSlots[i], handle);
-			if (typeof entry !== 'string' && entry.gcl !== undefined) {
-				this.playerGcl.set(handle, entry.gcl);
-			}
+			const ownedRooms = spec.rooms.filter(room => room.owner === handle).length;
+			this.playerGcl.set(handle, gclPoints(
+				(typeof entry !== 'string' ? entry.gcl : undefined) ?? { level: Math.max(ownedRooms + 1, 2) }));
 			this.playerPower.set(handle, typeof entry !== 'string' && entry.power !== undefined
 				? entry.power
 				: 10000000);
@@ -1026,10 +1012,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		this.simulation = await createSimulation(bareInits, terrainOverrides);
 		for (const [handle, power] of this.playerPower) {
-			const engineId = this.playerMap.get(handle);
-			if (engineId) {
-				await this.simulation.shard.db.data.hSet(User.infoKey(engineId), 'power', String(power));
-			}
+			const info = User.infoKey(this.resolvePlayer(handle));
+			await this.simulation.shard.db.data.hSet(info, 'power', String(power));
+			await this.simulation.shard.db.data.hSet(info, 'gcl', String(this.playerGcl.get(handle)));
 		}
 		await this.simulation.tick(1);
 
@@ -1159,12 +1144,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-		// Game.gcl.level: PlayerSpec.gcl override if set (honest value for
-		// tests that need ERR_GCL_NOT_ENOUGH), else a generous polyfill so
-		// multi-room claim tests aren't blocked by the cap.
-		const gclLevel = this.playerGcl.get(userId) ?? Math.max(ownedRoomCount + 1, 2);
 		const result = await this.simulation!.player(engineUserId, trimmed, {
-			gclBaseline: gclLevelToProgress(gclLevel),
 			controlledRoomCount: ownedRoomCount,
 		});
 
@@ -1199,10 +1179,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			const trimmed = codeStr.trimEnd().replace(/;$/, '');
 
-			const gclLevel = this.playerGcl.get(userId) ?? Math.max(ownedRoomCount + 1, 2);
 			try {
 				results[userId] = await this.simulation!.player(engineUserId, trimmed, {
-					gclBaseline: gclLevelToProgress(gclLevel),
 					controlledRoomCount: ownedRoomCount,
 				});
 			} catch (err) {
@@ -1626,7 +1604,6 @@ async function createSimulation(
 			},
 
 			async player(userId: string, codeSource: string, opts: {
-				gclBaseline?: number;
 				controlledRoomCount?: number;
 				usernames?: Record<string, string>;
 			} = {}): Promise<PlayerReturnValue> {
@@ -1650,7 +1627,6 @@ async function createSimulation(
 					time: shard.time,
 					roomBlobs,
 					usernames: opts.usernames,
-					gclBaseline: opts.gclBaseline,
 					controlledRoomCount: opts.controlledRoomCount,
 				});
 
