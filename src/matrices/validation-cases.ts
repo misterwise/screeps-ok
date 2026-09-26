@@ -38,6 +38,15 @@ export function makeValidationCases<CatalogId extends string, const Condition ex
 	exclusions: readonly Exclusion<Condition[number]['condition']>[] = [],
 ): readonly ValidationCase<CatalogId, Condition[number]['condition']>[] {
 	type Name = Condition[number]['condition'];
+	const names: string[] = conditions.map(condition => condition.condition);
+	const labels = names.map(toLabelToken);
+	const shared = labels.find((label, i) => labels.indexOf(label) !== i);
+	if (shared) throw new Error(`${catalogId}: two conditions share the label '${shared}'`);
+	for (const [left, right] of exclusions) {
+		if (!(names.indexOf(left) >= 0 && names.indexOf(left) < names.indexOf(right))) {
+			throw new Error(`${catalogId}: exclusion [${left}, ${right}] names no two of its conditions in declaration order`);
+		}
+	}
 	const singles = conditions.map(condition => ({
 		catalogId,
 		label: toLabelToken(condition.condition),

@@ -13,7 +13,10 @@ export function body(...args: (string | number)[]): string[] {
 	while (i < args.length) {
 		if (typeof args[i] === 'number') {
 			const count = args[i] as number;
-			const part = args[i + 1] as string;
+			const part = args[i + 1];
+			if (!Number.isInteger(count) || count < 1 || typeof part !== 'string') {
+				throw new Error(`body(): count ${count} must be a positive integer followed by a part`);
+			}
 			for (let j = 0; j < count; j++) result.push(part);
 			i += 2;
 		} else {
