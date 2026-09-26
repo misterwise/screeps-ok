@@ -25,6 +25,7 @@ const allowedTopLevel = new Set([
 	'parity',
 	'docs',
 	'behaviors.md',
+	'CHANGELOG.md',
 	'package.json',
 	'README.md',
 	'LICENSE',
