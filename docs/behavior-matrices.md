@@ -1103,7 +1103,7 @@ Each definition should include:
 - `Catalog Entries`
   `POWER-OPERATE-001`, `POWER-OPERATE-002`, `POWER-DISRUPT-001`,
   `POWER-DISRUPT-002`, `POWER-REGEN-001`, `POWER-REGEN-002`,
-  `POWER-COMBAT-001`, `POWER-GENERATE-OPS-001`, `TOWER-POWER-001`,
+  `POWER-COMBAT-001`, `POWER-GENERATE-001`, `TOWER-POWER-001`,
   `SOURCE-POWER-001`, `MINERAL-POWER-001`
 - `Canonical Source`
   `POWER_INFO` and the corresponding power processors.

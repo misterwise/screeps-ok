@@ -3519,15 +3519,15 @@ Coverage Notes
   expires.
 
 ### 19.8 Generate Ops POWER_INFO
-- `POWER-GENERATE-OPS-001` `matrix` `verified_vanilla`
+- `POWER-GENERATE-001` `matrix` `verified_vanilla`
   `PWR_GENERATE_OPS` amount, cooldown, and ops cost match `POWER_INFO` for
   each supported power level.
 
 ### 19.8 Generate Ops Runtime `capability: powerCreeps`
-- `POWER-GENERATE-OPS-002` `behavior` `verified_vanilla`
+- `POWER-GENERATE-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_GENERATE_OPS)` returns `OK` and adds ops to the
   power creep's store in the same tick.
-- `POWER-GENERATE-OPS-003` `behavior` `verified_vanilla`
+- `POWER-GENERATE-003` `behavior` `verified_vanilla`
   If generated ops would overflow the power creep's store capacity, the excess
   is dropped on the same tile in the same tick.
 

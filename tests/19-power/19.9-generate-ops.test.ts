@@ -16,31 +16,36 @@ const PI = POWER_INFO as Record<number, {
 }>;
 
 describe('PWR_GENERATE_OPS', () => {
-	test('POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+	// Catalog row suffixes are letters only; GENERATE_OPS costs no ops, so the store gains the full effect.
+	for (const [index, word] of ['One', 'Two', 'Three', 'Four', 'Five'].entries()) {
+		const level = index + 1;
+		test(`POWER-GENERATE-001:level${word} amount, cooldown, and ops cost match POWER_INFO for each supported power level`, async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			});
+			const creepId = await shard.placePowerCreep('W1N1', {
+				pos: [25, 25], owner: 'p1',
+				powers: { [PWR_GENERATE_OPS]: level },
+			});
+			await shard.tick();
+
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).usePower(PWR_GENERATE_OPS)
+			`);
+			expect(rc).toBe(OK);
+
+			const after = await shard.runPlayer('p1', code`
+				const pc = Game.getObjectById(${creepId});
+				({ ops: pc.store[RESOURCE_OPS], cooldown: pc.powers[PWR_GENERATE_OPS].cooldown })
+			`);
+			// The cooldown started on the use tick; this read is one tick later.
+			expect(after).toEqual({ ops: PI[PWR_GENERATE_OPS].effect![index], cooldown: PI[PWR_GENERATE_OPS].cooldown - 1 });
 		});
-		await shard.tick();
+	}
 
-		const result = await shard.runPlayer('p1', code`
-			const info = POWER_INFO[PWR_GENERATE_OPS];
-			({
-				className: info.className,
-				cooldown: info.cooldown,
-				effect: info.effect,
-				ops: info.ops,
-				level: info.level,
-			})
-		`) as { className: string; cooldown: number; effect: number[]; ops: number | undefined; level: number[] };
-
-		const localInfo = PI[PWR_GENERATE_OPS];
-		expect(result.cooldown).toBe(localInfo.cooldown);
-		expect(result.effect).toEqual(localInfo.effect);
-		expect(result.ops).toBe(localInfo.ops);
-	});
-
-	test('POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store', async ({ shard }) => {
+	test('POWER-GENERATE-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -66,7 +71,7 @@ describe('PWR_GENERATE_OPS', () => {
 		expect(ops).toBe(PI[PWR_GENERATE_OPS].effect![0]);
 	});
 
-	test('POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile', async ({ shard }) => {
+	test('POWER-GENERATE-003 overflow ops are dropped on the same tile', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],

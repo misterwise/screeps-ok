@@ -151,6 +151,13 @@ Last refreshed: 2026-09-25 against pin `4795a332`.
 - Cause: `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so intent processors run with `Game.time` already advanced to the tick the player observes next. `renew` stamping `#ageTime = Game.time + POWER_CREEP_LIFE_TIME` therefore lands one tick beyond vanilla's, which stamps against the tick being processed (`processor/intents/power-creeps/renew.js`). Observed on the tick after the renew: xxscreeps reads a full `POWER_CREEP_LIFE_TIME`, vanilla reads `POWER_CREEP_LIFE_TIME - 1`, so an xxscreeps power creep gains one extra tick of life per renew.
 - Plan: report upstream. Not adapter-fixable — both adapters seed and read the same absolute tick, so compensating would mean rewriting the observed value. Answered 2026-09-12: the controller processor stamps its absolute anchors the same way (`controller-timer-anchors-one-tick-late` above), so the convention is engine-wide and the fix is per-anchor `- 1`, as that file already does elsewhere.
 
+### power-cooldown-stamps-next-tick
+
+- Tests: POWER-GENERATE-001, all five level rows.
+- Status: CONFIRMED 2026-09-26 at pin `4795a332`.
+- Cause: the usePower processor stamps `cooldownTime = Game.time + info.cooldown` (`mods/mmo/powercreep/processor.ts:144`) on the advanced processor clock, so the tick after a use reads the full `POWER_INFO` cooldown; vanilla reads `cooldown - 1` (`processor/intents/power-creeps/usePower.js`, getter `game/power-creeps.js:58`).
+- Plan: report upstream with the renew anchor above; the fix is `- 1` on the stamp.
+
 ## Accepted divergences
 
 Intentional shape divergences are declared in the adapter's `shapeDivergences` (`adapters/xxscreeps/index.ts`) rather than registered as expected failures: shape tests fold the declared extras into their expected key sets via `expectedShape()`, so the tests pass, the rest of the surface stays asserted, and dropping a divergence fails the test until the declaration is updated. Gaps that are deliberate but not shape-foldable — blocked on an upstream substrate, or accepted value divergences in behavior tests — stay in `parity.json` as expected failures with `intentional: true` (the controller `.my` reset, the two memory rows, the `isActive` tie order, and the power-bank `store` extension below).
