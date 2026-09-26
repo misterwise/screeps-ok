@@ -4,8 +4,9 @@ import {
 	CONTROLLER_RESERVE,
 	EFFECT_COLLAPSE_TIMER, INVADER_CORE_CONTROLLER_POWER,
 	FIND_STRUCTURES, FIND_RUINS,
-	STRUCTURE_CONTROLLER,
+	STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK, STRUCTURE_INVADER_CORE, POWER_BANK_CAPACITY_MIN,
 } from '../../src/index.js';
+import { npcOwnershipCases } from '../../src/matrices/npc-ownership.js';
 import type { ControllerSnapshot } from '../../src/index.js';
 
 describe('Keeper lair', () => {
@@ -270,23 +271,21 @@ describe('Invader core', () => {
 });
 
 describe('NPC ownership', () => {
-	test('NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+	for (const { structureType, capability, expectedMy, expectedUsername } of npcOwnershipCases) {
+		test(`NPC-OWNERSHIP-001:${structureType} a ${structureType} is not my, and ${expectedUsername} owns it`, async ({ shard }) => {
+			if (capability) shard.requires(capability);
+			await shard.ownedRoom('p1');
+			const pos: [number, number] = [25, 25];
+			const id = structureType === STRUCTURE_POWER_BANK ? await shard.placeObject('W1N1', structureType, { pos, power: POWER_BANK_CAPACITY_MIN })
+				: structureType === STRUCTURE_INVADER_CORE ? await shard.placeObject('W1N1', structureType, { pos, level: 1 })
+				: await shard.placeObject('W1N1', structureType, { pos });
+			await shard.tick();
 
-		const lairId = await shard.placeObject('W1N1', 'keeperLair', {
-			pos: [25, 25],
+			expect(await shard.runPlayer('p1', code`
+				const s = Game.getObjectById(${id});
+				[s.my, s.owner && s.owner.username]
+			`)).toEqual([expectedMy, expectedUsername]);
 		});
-		await shard.tick();
+	}
 
-		const result = await shard.runPlayer('p1', code`
-			const lair = Game.getObjectById(${lairId});
-			lair ? ({ my: lair.my, owner: lair.owner }) : null
-		`) as { my: boolean; owner: any } | null;
-		expect(result).not.toBeNull();
-		// Keeper lairs are not owned by any player.
-		expect(result!.my).toBe(false);
-	});
 });

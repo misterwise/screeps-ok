@@ -146,6 +146,10 @@ changes since `v0.1.0-alpha` are not itemized.
   `STRUCTURE-API-008`, `RAMPART-DECAY-005`.
 - `SOURCE-REGEN-001` is keyed by room state: `:owned`, `:reserved`,
   `:neutral`, `:keeper`.
+- Keyed by row as their tests now run their case lists: `RAWMEMORY-002`
+  (`:activeCount`, `:segmentId`, `:segmentSize`), `NPC-OWNERSHIP-001`
+  (`:keeperLair`, `:powerBank`, `:invaderCore`), `ROAD-WEAR-001`
+  (`:creepBody1`, `:creepBody5`, `:creepBody50`, `:powerCreep`).
 - `CTRL-STRUCTLIMIT-001` covers the types `isActive()` counts (spawn,
   extension, link, tower, lab) and is keyed by type and level
   (`:extensionRcl2`); roads, walls, containers, ramparts and the one-per-room

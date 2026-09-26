@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2840%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2581%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2840%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,15 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2840](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 19:55 UTC |
-| 🟡 | **xxscreeps** | [2581](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 19:53 UTC |
+| 🔴 | **xxscreeps** | [2581](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 19:53 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `segment-over-limit-drops-segment-not-tick` registers `RAWMEMORY-002:segmentSize`, which no test passed or failed
 
 ## vanilla expected failures
 
@@ -106,7 +110,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 34 open parity gaps covering 67 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 35 open parity gaps covering 67 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -138,6 +142,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `controller-timer-anchors-one-tick-late` | The controller tick (`mods/classic/controller/processor.ts:238-240`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:184`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up. | Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore. | Same engine-side clock convention as `power-creep-renew-stamps-next-tick-age`: the processor's `GameState` is built at `nextTime` (`engine/processor/room.ts:97-98`), so `Game.time` sits one tick ahead of vanilla's `gameTime`. The same file already compensates with `- 1` on its other absolute anchors (`:61`, `:207-208`, `:259`); the two-line upstream fix is `- 1` on the level-up half-timer and moving the `1 +` inside the relative arm of the clamp. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines. | [2](#xxscreeps-gap-controller-timer-anchors-one-tick-late) |
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | Engine-side ordering gap, not adapter translation. Upstream fix: `after: 'harvest'` on the `upgradeController` processor, or the equivalent `before` on `harvest`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | Found 2026-09-25: the vanilla adapter used to reset a cyclic `RawMemory` itself, which manufactured the old 'subtree silently dropped' reading of UNDOC-MEMJSON-005 on vanilla. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
+| `segment-over-limit-drops-segment-not-tick` | `flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes. | Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error. | Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes. | 0 |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile. | [1](#xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping) |
 | `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites. | [1](#xxscreeps-gap-terminal-send-cost-ignores-world-wrap) |
 | `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`. | [4](#xxscreeps-gap-bury-creep-stamps-next-tick) |
@@ -346,6 +351,12 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>circular-memory-tick-completes</code> — 1 test</summary>
 
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory fails the tick: its intents and Memory writes are dropped, and the runtime survives`
+
+</details>
+
+<details id="xxscreeps-gap-segment-over-limit-drops-segment-not-tick">
+<summary><code>segment-over-limit-drops-segment-not-tick</code> — 0 tests</summary>
+
 
 </details>
 

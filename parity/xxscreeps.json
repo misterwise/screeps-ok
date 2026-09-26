@@ -179,6 +179,12 @@
 			"why": "Found 2026-09-25: the vanilla adapter used to reset a cyclic `RawMemory` itself, which manufactured the old 'subtree silently dropped' reading of UNDOC-MEMJSON-005 on vanilla.",
 			"tests": ["UNDOC-MEMJSON-005"]
 		},
+		"segment-over-limit-drops-segment-not-tick": {
+			"actual": "`flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes.",
+			"expected": "Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error.",
+			"why": "Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes.",
+			"tests": ["RAWMEMORY-002:segmentSize"]
+		},
 		"costmatrix-set-wraps-instead-of-clamping": {
 			"actual": "`CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default).",
 			"expected": "Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255.",

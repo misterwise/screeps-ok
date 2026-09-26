@@ -1083,8 +1083,9 @@ Each definition should include:
 - `Exclusions`
   Ruin contents and withdraw semantics
 - `Verification Notes`
-  This family covers decay-time mapping only. The executable case list lives in
-  `src/matrices/ruin-decay.ts`.
+  This family covers decay-time mapping only. `RUIN_DECAY_STRUCTURES` has one
+  entry, `powerBank`; RUIN-002 has a test for it and one for a default
+  (a destroyed container).
 
 ### POWERCREEP-VALIDATION
 
@@ -1125,7 +1126,7 @@ Each definition should include:
   Target-validity matrices and non-table side effects
 - `Verification Notes`
   This family is intentionally table-driven; target acceptance stays separate.
-  The executable case list lives in `src/matrices/power-info.ts`.
+  Each row's test reads its power's `POWER_INFO` entry directly.
 
 ### POWER-TARGETS
 
@@ -1317,9 +1318,11 @@ Each definition should include:
 ### RAWMEMORY-SEGMENTS
 
 - `Catalog Entries`
-  `RAWMEMORY-003`
+  `RAWMEMORY-002`
 - `Canonical Source`
-  Official `RawMemory` runtime implementation and memory-segment limits.
+  Official `RawMemory` runtime implementation and memory-segment limits
+  (`@screeps/driver/lib/runtime/runtime.js:129-145` for ids and the active
+  count, `:264` for a segment's length at the end of the tick).
 - `Dimensions`
   segment id validity, per-segment length, active segment count
 - `Applicability`
@@ -1328,7 +1331,7 @@ Each definition should include:
   Foreign segments and main `Memory` parse/serialize behavior
 - `Verification Notes`
   This family covers limit values only; next-tick activation is owned by
-  `RAWMEMORY-004`. The executable case list lives in
+  `RAWMEMORY-003`. The executable case list lives in
   `src/matrices/rawmemory-segments.ts`.
 
 ### SHAPE-STRUCT

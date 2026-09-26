@@ -1,4 +1,5 @@
 import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS } from '../../src/index.js';
+import { rawMemorySegmentLimits } from '../../src/matrices/rawmemory-segments.js';
 
 describe('Memory', () => {
 	test('MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees', async ({ shard }) => {
@@ -128,33 +129,40 @@ describe('RawMemory', () => {
 		expect(result).toBe('{"hello":"world"}');
 	});
 
-	test('RAWMEMORY-002 segment limits match canonical constants', async ({ shard }) => {
+	// Each call returns whether setActiveSegments accepted the ids.
+	const accepts = (ids: number[]) => code`
+		try { RawMemory.setActiveSegments(${ids}); true } catch (e) { false }
+	`;
+	const { maxActiveSegments, validIdRange, maxSegmentSize } = rawMemorySegmentLimits;
+
+	test('RAWMEMORY-002:activeCount setActiveSegments takes at most MAX_ACTIVE_SEGMENTS ids', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-
-		// The engine enforces: max 10 active segments, segment ids 0-99,
-		// each segment up to 100 KB.
-		// Verify setActiveSegments accepts up to 10 ids.
-		const result = await shard.runPlayer('p1', code`
-			try {
-				RawMemory.setActiveSegments([0,1,2,3,4,5,6,7,8,9]);
-				'ok-10'
-			} catch (e) {
-				'error-10'
-			}
-		`);
-		expect(result).toBe('ok-10');
-
-		// Verify setActiveSegments rejects more than 10 ids.
-		const result11 = await shard.runPlayer('p1', code`
-			try {
-				RawMemory.setActiveSegments([0,1,2,3,4,5,6,7,8,9,10]);
-				'ok-11'
-			} catch (e) {
-				'error-11'
-			}
-		`);
-		expect(result11).toBe('error-11');
+		const ids = Array.from({ length: maxActiveSegments + 1 }, (_, i) => i);
+		expect(await shard.runPlayer('p1', accepts(ids.slice(0, maxActiveSegments)))).toBe(true);
+		expect(await shard.runPlayer('p1', accepts(ids))).toBe(false);
 	});
+
+	test('RAWMEMORY-002:segmentId a segment id runs from 0 to MAX_SEGMENT_COUNT - 1', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		expect(await shard.runPlayer('p1', accepts([validIdRange.min, validIdRange.max]))).toBe(true);
+		expect(await shard.runPlayer('p1', accepts([validIdRange.min - 1]))).toBe(false);
+		expect(await shard.runPlayer('p1', accepts([validIdRange.max + 1]))).toBe(false);
+	});
+
+	test('RAWMEMORY-002:segmentSize a segment holds MAX_SEGMENT_SIZE characters, and one more fails the tick', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		await shard.runPlayer('p1', code`
+			RawMemory.setActiveSegments([0]);
+			RawMemory.segments[0] = 'x'.repeat(${maxSegmentSize});
+			null
+		`);
+		expect(await shard.runPlayer('p1', code`RawMemory.segments[0].length`)).toBe(maxSegmentSize);
+		await shard.expectRunPlayerError('p1', code`
+			RawMemory.segments[1] = 'x'.repeat(${maxSegmentSize + 1});
+			null
+		`, 'runtime');
+	});
+
 
 	test('RAWMEMORY-003 setActiveSegments makes those segments active on the next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
