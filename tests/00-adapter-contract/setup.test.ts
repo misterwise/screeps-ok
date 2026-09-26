@@ -284,24 +284,41 @@ describe('adapter contract: setup', () => {
 	});
 
 	describe('default room terrain', () => {
-		// Rooms without explicit RoomSpec.terrain must behave identically
-		// across adapters: all-plain interior, all four exits open.
-		test('default rooms have all-plain interior terrain', async ({ shard }) => {
+		// Spec: every room is walled at its four corners, whatever the terrain source.
+		const cornerWalls = ['0,0:1', '49,0:1', '0,49:1', '49,49:1'];
+		const nonPlainTiles = (room: string) => code`
+			const t = Game.map.getRoomTerrain(${room});
+			const tiles = [];
+			for (let y = 0; y < 50; y++) {
+				for (let x = 0; x < 50; x++) {
+					if (t.get(x, y) !== 0) tiles.push(x + ',' + y + ':' + t.get(x, y));
+				}
+			}
+			tiles
+		`;
+
+		test('default rooms are plain except for walled corners', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.tick();
 
-			const allPlain = await shard.runPlayer('p1', code`
-				const t = Game.map.getRoomTerrain('W1N1');
-				// Sample a grid of interior tiles (not edge tiles)
-				let plain = true;
-				for (const x of [5, 15, 25, 35, 45]) {
-					for (const y of [5, 15, 25, 35, 45]) {
-						if (t.get(x, y) !== 0) plain = false;
-					}
-				}
-				plain
-			`);
-			expect(allPlain).toBe(true);
+			expect(await shard.runPlayer('p1', nonPlainTiles('W1N1'))).toEqual(cornerWalls);
+		});
+
+		test('RoomSpec.terrain and setTerrain get walled corners too', async ({ shard }) => {
+			shard.requires('terrain', 'corner walls over supplied terrain require terrain capability');
+			const plainTerrain = new Array<0 | 1 | 2>(2500).fill(0);
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1', terrain: plainTerrain },
+					{ name: 'W3N1' },
+				],
+			});
+			await shard.setTerrain('W3N1', plainTerrain);
+
+			expect(await shard.runPlayer('p1', nonPlainTiles('W2N1'))).toEqual(cornerWalls);
+			expect(await shard.runPlayer('p1', nonPlainTiles('W3N1'))).toEqual(cornerWalls);
 		});
 
 		test('default rooms have all four exits open', async ({ shard }) => {

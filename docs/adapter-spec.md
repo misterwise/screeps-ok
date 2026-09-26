@@ -90,6 +90,10 @@ That includes:
   plain terrain unless `RoomSpec.terrain` overrides it, exactly one controller
   at `(1,1)`, and no ambient sources, minerals, structures, or other room
   objects
+- wall the four corner tiles `(0,0)`, `(49,0)`, `(0,49)`, and `(49,49)` of
+  every room, over the default terrain, `RoomSpec.terrain`, and
+  `setTerrain()` alike: the map generator never leaves a corner passable, so a
+  plain room has 48 exit tiles per side
 
 If a room has an owner and no explicit `rcl`, adapters should treat it as
 controller level `1`.
