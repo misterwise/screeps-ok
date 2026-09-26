@@ -1,90 +1,44 @@
 /**
- * CI helper: merge vitest shard JSON reports into one report per adapter,
- * then emit a per-adapter summary table to $GITHUB_STEP_SUMMARY.
+ * CI helper: merge each adapter's shard reports (scripts/lib/shards.js) into
+ * ./reports/<adapter>.json, judge each merge as a full run, and write a
+ * summary table to $GITHUB_STEP_SUMMARY (stdout when unset). A shard that
+ * wrote no report fails the merge.
  *
- * Expects the artifacts layout produced by actions/download-artifact with
- * pattern=reports-*:
- *
- *   <artifacts-dir>/
- *     reports-vanilla-1/vanilla-partial.json
- *     reports-vanilla-2/vanilla-partial.json
- *     reports-xxscreeps-1/xxscreeps-partial.json
- *     ...
- *
- * Writes merged files to ./reports/<adapter>.json and appends a markdown
- * table (or writes to stdout when GITHUB_STEP_SUMMARY is unset).
+ *   node scripts/ci-merge-reports.js --adapters=xxscreeps,vanilla --shards=4 --artifacts-dir=downloaded
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, appendFileSync, statSync } from 'node:fs';
+import { writeFileSync, existsSync, mkdirSync, appendFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { suitePath } from './lib/catalog-id.js';
 import { judgeReport, loadParity, verdictIsClean } from './lib/parity.js';
+import { collectShards, mergeShardReports } from './lib/shards.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptsDir, '..');
 const adaptersDir = path.join(packageRoot, 'adapters');
 const reportsOutDir = path.join(packageRoot, 'reports');
 
-
+// The matrix CI ran: each adapter in `shards` shards.
 function parseArgs(argv) {
-	const args = { artifactsDir: '.' };
+	const args = { artifactsDir: '.', adapters: [], shards: 0 };
 	for (const a of argv) {
 		if (a.startsWith('--artifacts-dir=')) args.artifactsDir = a.slice('--artifacts-dir='.length);
+		else if (a.startsWith('--adapters=')) args.adapters = a.slice('--adapters='.length).split(',').filter(Boolean);
+		else if (a.startsWith('--shards=')) args.shards = Number(a.slice('--shards='.length));
+		else throw new Error(`unknown argument ${a}`);
+	}
+	if (args.adapters.length === 0 || !Number.isInteger(args.shards) || args.shards < 1) {
+		throw new Error('usage: ci-merge-reports.js --adapters=<a,b> --shards=<n> [--artifacts-dir=<dir>]');
 	}
 	return args;
 }
 
-function collectShardFiles(artifactsDir) {
-	const byAdapter = new Map();
-	for (const entry of readdirSync(artifactsDir, { withFileTypes: true })) {
-		if (!entry.isDirectory()) continue;
-		const match = entry.name.match(/^reports-(.+)-(\d+)$/);
-		if (!match) continue;
-		const [, adapter] = match;
-		const jsonPath = path.join(artifactsDir, entry.name, `${adapter}-partial.json`);
-		if (!existsSync(jsonPath)) continue;
-		(byAdapter.get(adapter) ?? byAdapter.set(adapter, []).get(adapter)).push(jsonPath);
-	}
-	return byAdapter;
-}
-
-function mergeShardReports(paths) {
-	const merged = {
-		testResults: [],
-		numTotalTestSuites: 0,
-		numPassedTestSuites: 0,
-		numFailedTestSuites: 0,
-		numPendingTestSuites: 0,
-		numTotalTests: 0,
-		numPassedTests: 0,
-		numFailedTests: 0,
-		numPendingTests: 0,
-		startTime: Infinity,
-		success: true,
-	};
-	for (const p of paths) {
-		const r = JSON.parse(readFileSync(p, 'utf8'));
-		merged.testResults.push(...(r.testResults ?? []));
-		merged.numTotalTestSuites += r.numTotalTestSuites ?? 0;
-		merged.numPassedTestSuites += r.numPassedTestSuites ?? 0;
-		merged.numFailedTestSuites += r.numFailedTestSuites ?? 0;
-		merged.numPendingTestSuites += r.numPendingTestSuites ?? 0;
-		merged.numTotalTests += r.numTotalTests ?? 0;
-		merged.numPassedTests += r.numPassedTests ?? 0;
-		merged.numFailedTests += r.numFailedTests ?? 0;
-		merged.numPendingTests += r.numPendingTests ?? 0;
-		if (typeof r.startTime === 'number') merged.startTime = Math.min(merged.startTime, r.startTime);
-		merged.success &&= r.success !== false;
-	}
-	if (!isFinite(merged.startTime)) merged.startTime = Date.now();
-	return merged;
-}
-
 // The runner's reading of the merged shards; shards merge into the full run, so orphans count.
-function summarize(report, parity) {
+function summarize(report, parity, missingShards) {
 	const { classified, fileErrors, verdict } = judgeReport(report, parity);
 	return {
+		missingShards,
 		passed: classified.passed.length,
 		expectedFail: verdict.expectedFailures,
 		unexpected: verdict.genuineFailures + verdict.unexpectedPasses + verdict.untaggedTests,
@@ -92,7 +46,7 @@ function summarize(report, parity) {
 		orphaned: classified.orphans,
 		fileErrors,
 		untagged: classified.untagged,
-		clean: verdictIsClean(verdict),
+		clean: verdictIsClean(verdict) && missingShards.length === 0,
 	};
 }
 
@@ -111,8 +65,11 @@ function renderTable(rows) {
 		lines.push(`| ${statusIcon(s)} | **${adapter}** | ${s.passed} | ${s.expectedFail || '—'} | ${s.unexpected || '—'} | ${s.skipped || '—'} |`);
 	}
 	lines.push('');
-	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, orphaned registrations, or tests without an id');
+	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, orphaned registrations, tests without an id, or shards that wrote no report');
 	for (const { adapter, summary: s } of rows) {
+		if (s.missingShards.length > 0) {
+			lines.push('', `**${adapter}** shard(s) ${s.missingShards.join(', ')} wrote no report: their tests never ran`);
+		}
 		for (const e of s.fileErrors) {
 			lines.push('', `**${adapter}** \`${suitePath(e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
 		}
@@ -127,21 +84,21 @@ function renderTable(rows) {
 }
 
 function main() {
-	const { artifactsDir } = parseArgs(process.argv.slice(2));
+	const { artifactsDir, adapters, shards } = parseArgs(process.argv.slice(2));
 	const absArtifacts = path.resolve(artifactsDir);
 	if (!existsSync(absArtifacts) || !statSync(absArtifacts).isDirectory()) {
 		throw new Error(`artifacts dir not found: ${absArtifacts}`);
 	}
 
 	mkdirSync(reportsOutDir, { recursive: true });
-	const shards = collectShardFiles(absArtifacts);
 	const rows = [];
-	for (const [adapter, files] of [...shards.entries()].sort()) {
-		const merged = mergeShardReports(files);
+	for (const adapter of adapters) {
+		const { found, missing } = collectShards(absArtifacts, adapter, shards);
+		const merged = mergeShardReports(found);
 		const out = path.join(reportsOutDir, `${adapter}.json`);
 		writeFileSync(out, JSON.stringify(merged));
-		console.log(`merged ${files.length} shard(s) → ${path.relative(packageRoot, out)}`);
-		const summary = summarize(merged, loadParity(path.join(adaptersDir, adapter, 'parity.json')));
+		console.log(`merged ${found.length} of ${shards} shard(s) → ${path.relative(packageRoot, out)}`);
+		const summary = summarize(merged, loadParity(path.join(adaptersDir, adapter, 'parity.json')), missing);
 		rows.push({ adapter, summary });
 	}
 

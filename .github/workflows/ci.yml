@@ -106,7 +106,7 @@ jobs:
         with:
           name: reports-${{ matrix.adapter }}-${{ matrix.shard }}
           path: reports/${{ matrix.adapter }}-partial.json
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   summarize:
     needs: test
@@ -128,7 +128,8 @@ jobs:
           path: downloaded
 
       - name: Merge shards and write summary
-        run: node scripts/ci-merge-reports.js --artifacts-dir=downloaded
+        # Keep in step with the test job's matrix.
+        run: node scripts/ci-merge-reports.js --adapters=xxscreeps,vanilla --shards=4 --artifacts-dir=downloaded
 
       - name: Upload merged per-adapter reports
         if: always()
