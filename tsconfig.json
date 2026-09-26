@@ -12,6 +12,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "screeps-ok": ["./src/index.ts"],
       "xxscreeps/*": [
         "./node_modules/xxscreeps/dist/types/*",
         "./node_modules/xxscreeps/dist/*"
@@ -22,6 +23,7 @@
     "src/**/*",
     "adapters/**/*",
     "tests/**/*",
+    "starter/**/*",
     "node_modules/xxscreeps/**/xx.d.ts"
   ],
   "exclude": ["dist"]

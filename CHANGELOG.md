@@ -47,6 +47,8 @@ changes since `v0.1.0-alpha` are not itemized.
   tests read `Game.map.getWorldSize()` under the `liveWorldSize` capability.
   Spec rooms may sit on either side of the map origin (e.g. `E1S1`).
 - A player tick the engine aborts is `RunPlayerError('runtime')`.
+- `screeps-ok` exports `withCornerWalls` and `MarketOrderSpec`, which the
+  starter adapter imports; it had not compiled against the package.
 
 ### Parity and the runner
 

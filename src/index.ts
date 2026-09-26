@@ -15,9 +15,10 @@ export type {
 	ShardSpec, RoomSpec, RoomStatusSpec, PlayerSpec, TerrainSpec,
 	CreepSpec, StructureSpec, SiteSpec, SourceSpec, MineralSpec,
 	FlagSpec, TombstoneSpec, RuinSpec, DroppedResourceSpec,
-	PowerCreepSpec, NukeSpec,
+	PowerCreepSpec, NukeSpec, MarketOrderSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
+export { withCornerWalls } from './terrain-fixture.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';
 
