@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2718%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2523%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-70-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2751%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2534%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-70-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2718](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 04:44 UTC |
-| 🟡 | **xxscreeps** | [2523](#xxscreeps-passing-tests) | [70](#xxscreeps-expected-failures) | — | [138](#xxscreeps-skipped-tests) | 2026-09-26 05:05 UTC |
+| 🟡 | **vanilla** | [2751](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 05:17 UTC |
+| 🟡 | **xxscreeps** | [2534](#xxscreeps-passing-tests) | [70](#xxscreeps-expected-failures) | — | [160](#xxscreeps-skipped-tests) | 2026-09-26 05:17 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -483,7 +483,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2718 tests across 148 files</summary>
+<summary>2751 tests across 148 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -2751,11 +2751,10 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
-**`tests/14-structures-npc/14.3-power-bank.test.ts`** (4)
+**`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
 
 - Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
 - Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
-- Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
 - Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile
 
 **`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
@@ -3117,7 +3116,7 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (17)
+**`tests/19-power/19.1-lifecycle.test.ts`** (29)
 
 - Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
@@ -3134,10 +3133,22 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
 - Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
 - Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
-- Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwner powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevels powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:invalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:levelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeNoFreeLevels powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (18)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (40)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
@@ -3154,8 +3165,30 @@ Click a count to jump to the affected test list.
 - Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
 - Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
 - Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive
-- Power creep renew POWERCREEP-RENEW-002 renew fails for invalid target or out of range
-- Power creep renew POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
+- Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:busy powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:invalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:rcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:range powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeInvalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeRcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:busyBeforeInvalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:busyBeforeRcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:invalidTargetBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:rclBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busy powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:invalidTarget powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwner powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:rcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:cooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeInvalidTarget powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeNotOwner powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeRcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:invalidTargetBeforeCooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwnerBeforeRcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwnerBeforeCooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:rclBeforeCooldown powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
 **`tests/19-power/19.9-generate-ops.test.ts`** (3)
@@ -3651,14 +3684,14 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 138 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 160 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
 | capability | `powerEffects` | usePower applying PWR_* effects | [56](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
-| capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [17](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
@@ -3773,6 +3806,62 @@ Click a count to jump to the affected test list.
 
 </details>
 
+<details id="xxscreeps-skip-capability-powercreepaccountapi">
+<summary><code>capability:powerCreepAccountApi</code> — 39 tests across 4 files</summary>
+
+**`tests/19-power/19.0-gpl.test.ts`** (3)
+
+- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
+- Game.gpl GPL-004 one GPL level allows one allocated power creep level
+- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
+
+**`tests/19-power/19.1-lifecycle.test.ts`** (24)
+
+- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
+- Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
+- Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name
+- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
+- Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive
+- Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
+- Power creep lifecycle POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile
+- Power creep lifecycle POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep
+- Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
+- Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwner powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevels powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:invalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:levelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeNoFreeLevels powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+
+**`tests/19-power/19.4-19.8-powers.test.ts`** (11)
+
+- Power creep renew POWERCREEP-RENEW-002:busy powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:busyBeforeInvalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:busyBeforeRcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:invalidTarget powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwner powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:rcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:cooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:invalidTargetBeforeCooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwnerBeforeRcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:notOwnerBeforeCooldown powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:rclBeforeCooldown powerCreep.spawn() validation returns the canonical code
+
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+
+- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
+
+</details>
+
 <details id="xxscreeps-skip-capability-market">
 <summary><code>capability:market</code> — 22 tests across 2 files</summary>
 
@@ -3832,40 +3921,6 @@ Click a count to jump to the affected test list.
 - Invader raid spawning INVADER-RAID-009 non-center owned RCL 4 first escalation uses big bodies without boosts
 - Invader raid spawning INVADER-RAID-009 center owned RCL 4 can assign a big Healer and still has zero boost chance
 - Invader raid spawning INVADER-RAID-010 successful raid resets harvested budget for the next spawner pass
-
-</details>
-
-<details id="xxscreeps-skip-capability-powercreepaccountapi">
-<summary><code>capability:powerCreepAccountApi</code> — 17 tests across 4 files</summary>
-
-**`tests/19-power/19.0-gpl.test.ts`** (3)
-
-- Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
-- Game.gpl GPL-004 one GPL level allows one allocated power creep level
-- Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
-
-**`tests/19-power/19.1-lifecycle.test.ts`** (12)
-
-- Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
-- Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
-- Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name
-- Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name
-- Power creep lifecycle POWERCREEP-RENAME-002 PowerCreep.rename rejects names longer than 100 characters
-- Power creep lifecycle POWERCREEP-LIFETIME-002 unspawned power creep exposes undefined ticksToLive
-- Power creep lifecycle POWERCREEP-DELETE-002 delete returns ERR_BUSY for a spawned power creep
-- Power creep lifecycle POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile
-- Power creep lifecycle POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep
-- Power creep lifecycle POWERCREEP-ACTION-002 resource methods return ERR_BUSY while unspawned
-- Power creep lifecycle POWERCREEP-UPGRADE-001 upgrade increases power level and stats
-- Power creep lifecycle POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels
-
-**`tests/19-power/19.4-19.8-powers.test.ts`** (1)
-
-- Power creep renew POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions
-
-**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
-
-- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
 
 </details>
 
@@ -3947,7 +4002,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2523 tests across 134 files</summary>
+<summary>2534 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6162,11 +6217,10 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
 
-**`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
+**`tests/14-structures-npc/14.3-power-bank.test.ts`** (2)
 
 - Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
 - Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
-- Power bank POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (20)
 
@@ -6467,13 +6521,25 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
 - Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (5)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (17)
 
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
 - Operate powers — additional POWER-OPERATE-005 usePower fails in rooms without power enabled
 - Operate powers — additional POWER-DISRUPT-003 usePower on valid tower target succeeds
-- Power creep renew POWERCREEP-RENEW-002 renew fails for invalid target or out of range
+- Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:invalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:rcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:range powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeInvalidTarget powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeRcl powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:notOwnerBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:invalidTargetBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-RENEW-002:rclBeforeRange powerCreep.renew() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busy powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeInvalidTarget powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeNotOwner powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-SPAWN-002:busyBeforeRcl powerCreep.spawn() validation returns the canonical code
 
 **`tests/19-power/19.9-generate-ops.test.ts`** (3)
 
