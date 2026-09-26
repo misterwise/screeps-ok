@@ -233,8 +233,9 @@ function describeSkipReason(reason) {
 	if (!reason) return { category: 'uncategorized', key: '(no reason)', description: 'Skip reason not recorded' };
 	const [category, key] = reason.split(':');
 	if (category === 'capability') {
-		const description = CAPABILITY_DESCRIPTIONS.get(key);
-		if (!description) throw new Error(`skip reason names capability "${key}", which AdapterCapabilities doesn't declare`);
+		// capabilityDescriptions() throws for a declared capability with no doc, so an
+		// unknown one comes from a report older than the change that dropped it.
+		const description = CAPABILITY_DESCRIPTIONS.get(key) ?? 'No longer declared by `AdapterCapabilities`; the next full run drops it';
 		return { category, key, description };
 	}
 	if (category === 'limitation') {
