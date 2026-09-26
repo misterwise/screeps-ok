@@ -493,23 +493,34 @@ describe('Power creep lifecycle', () => {
 	test('POWERCREEP-UPGRADE-001 upgrade increases power level and stats', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerCreepAccountApi');
+		// A level 2 creep holds three GPL levels; the upgrade needs a fourth free.
 		await shard.createShard({
-			players: ['p1'],
+			players: [{ name: 'p1', power: POWER_LEVEL_MULTIPLY * 4 ** 2 }],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+		});
+		// Creep level 2 meets GENERATE_OPS' level-2 requirement.
+		const creepId = await shard.placePowerCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			powers: { [PWR_GENERATE_OPS]: 1, [PWR_OPERATE_SPAWN]: 1 },
 		});
 		await shard.tick();
 
-		// Create a power creep.
-		await shard.runPlayer('p1', code`
-			PowerCreep.create('Upgrader', POWER_CLASS.OPERATOR)
-		`);
+		const stats = code`
+			const pc = Game.getObjectById(${creepId});
+			({
+				power: pc.powers[PWR_GENERATE_OPS].level,
+				level: pc.level,
+				hitsMax: pc.hitsMax,
+				storeCapacity: pc.store.getCapacity(),
+			})
+		`;
+		expect(await shard.runPlayer('p1', stats)).toEqual({ power: 1, level: 2, hitsMax: 3000, storeCapacity: 300 });
 
-		// Upgrade a power (PWR_GENERATE_OPS = 1 is level 0 = lowest).
 		const rc = await shard.runPlayer('p1', code`
-			const pc = Game.powerCreeps['Upgrader'];
-			pc ? pc.upgrade(PWR_GENERATE_OPS) : -99
+			Game.getObjectById(${creepId}).upgrade(PWR_GENERATE_OPS)
 		`);
 		expect(rc).toBe(OK);
+		expect(await shard.runPlayer('p1', stats)).toEqual({ power: 2, level: 3, hitsMax: 4000, storeCapacity: 400 });
 	});
 
 	for (const row of powerCreepUpgradeValidationCases) {
