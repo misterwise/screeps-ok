@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_BUSY,
 	MOVE, ATTACK, RANGED_ATTACK, WORK, HEAL, CLAIM, CARRY,
 	STRUCTURE_RAMPART, STRUCTURE_CONTAINER,
-	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD,
+	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
 	limitationGated,
 } from '../../src/index.js';
 import { safeModeBlockedActionCases } from '../../src/matrices/ctrl-safemode-blocked.js';
@@ -32,7 +32,7 @@ describe('Safe mode mechanics', () => {
 			({ safeMode: ctrl.safeMode, safeModeAvailable: ctrl.safeModeAvailable })
 		`) as { safeMode: number; safeModeAvailable: number };
 		expect(after.safeModeAvailable).toBe(1);
-		expect(after.safeMode).toBeGreaterThan(0);
+		expect(after.safeMode).toBe(SAFE_MODE_DURATION - 2);
 	});
 
 	// ---- CTRL-SAFEMODE-002: cooldown period after activation ----
@@ -51,7 +51,7 @@ describe('Safe mode mechanics', () => {
 		const cooldown = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.safeModeCooldown
 		`) as number;
-		expect(cooldown).toBeGreaterThan(0);
+		expect(cooldown).toBe(SAFE_MODE_COOLDOWN - 2);
 	});
 
 	// ---- CTRL-SAFEMODE-003: ERR_NOT_ENOUGH_RESOURCES when no charges ----
@@ -159,7 +159,7 @@ describe('Safe mode mechanics', () => {
 
 		// Second intent processed: W2N1 consumed its charge and entered safe mode.
 		expect(after.w2Available).toBe(0);
-		expect(after.w2SafeMode).toBeGreaterThan(0);
+		expect(after.w2SafeMode).toBe(SAFE_MODE_DURATION - 2);
 	});
 
 	// ---- CTRL-SAFEMODE-005: downgrade timer below threshold ----

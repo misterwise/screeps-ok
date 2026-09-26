@@ -338,9 +338,8 @@ describe('creep.upgradeController()', () => {
 			progress: Game.rooms['W1N1'].controller.progress,
 		})`) as { level: number; progress: number };
 		expect(result.level).toBe(2);
-		// progress after advance is the overflow past the L1 threshold (0 or small).
-		expect(result.progress).toBeGreaterThanOrEqual(0);
-		expect(result.progress).toBeLessThan(CONTROLLER_LEVELS[1]);
+		// Exactly the threshold was spent, so no overflow carries into RCL 2.
+		expect(result.progress).toBe(0);
 	});
 
 	test('CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold', async ({ shard }) => {

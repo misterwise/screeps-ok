@@ -134,9 +134,8 @@ describe('creep death', () => {
 		const tomb = tombstones.find(t => t.creepName === 'decayCheck');
 		expect(tomb).toBeDefined();
 		const expected = bodyParts.length * TOMBSTONE_DECAY_PER_PART;
-		// Allow 1 tick of decrement since we observe after tick resolution
-		expect(tomb!.ticksToDecay).toBeGreaterThanOrEqual(expected - 1);
-		expect(tomb!.ticksToDecay).toBeLessThanOrEqual(expected);
+		// Anchored on the death tick; the snapshot reads one tick later.
+		expect(tomb!.ticksToDecay).toBe(expected - 1);
 	});
 
 	test('CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone', async ({ shard }) => {
@@ -241,12 +240,11 @@ describe('creep death', () => {
 		// Tombstone should be gone
 		expect(tomb).toBeUndefined();
 
-		// If the tombstone had resources, they become dropped resources
+		// An age death reclaims no body energy, so the tombstone held just the
+		// carried 50. It spills in the object-tick pass on death + 4, after that
+		// tick's decay, and the pile decays 1 per tick on death + 5 and + 6.
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		const energyDrop = drops.find(d => d.pos.x === 25 && d.pos.y === 25 && d.resourceType === 'energy');
-		// There should be a dropped resource if the tombstone had any energy
-		if (energyDrop) {
-			expect(energyDrop.amount).toBeGreaterThan(0);
-		}
+		expect(energyDrop?.amount).toBe(48);
 	});
 });

@@ -117,11 +117,8 @@ describe('StructureController.unclaim()', () => {
 		`) as { level: number; cooldown: number | null } | null;
 		expect(after).not.toBeNull();
 		expect(after!.level).toBe(0);
-		// A fresh SAFE_MODE_COOLDOWN-length cooldown, minus the few ticks
-		// elapsed between the processor step and this read.
-		expect(after!.cooldown).not.toBeNull();
-		expect(after!.cooldown!).toBeGreaterThan(SAFE_MODE_COOLDOWN - 20);
-		expect(after!.cooldown!).toBeLessThanOrEqual(SAFE_MODE_COOLDOWN);
+		// A fresh cooldown anchored on the unclaim tick, read two ticks later.
+		expect(after!.cooldown).toBe(SAFE_MODE_COOLDOWN - 2);
 	});
 
 	test('CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false', async ({ shard }) => {

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2711](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 03:43 UTC |
-| 🔴 | **xxscreeps** | [2541](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
+| 🔴 | **xxscreeps** | [2539](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -30,6 +30,8 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 **xxscreeps**
 
 - `CostMatrix COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255`
+- `creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART`
+- `creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources`
 
 ## vanilla expected failures
 
@@ -114,7 +116,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 29 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 24 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 25 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -146,6 +148,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | 0 |
+| `tombstone-decay-anchors-one-tick-late` | The creep death path (`mods/classic/creep/processor.ts:86`) stamps `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART`. Processor `Game.time` already reads one tick past vanilla's `gameTime`, so the tombstone reads `ticksToDecay` one higher on every tick and spills its store (`:478-484`) a tick late: a 4-part tombstone reads 20 on the tick after death, and a spilled 50-energy pile has decayed one tick less (49) at death + 6. | Vanilla `processor/intents/creeps/_die.js` sets `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick, so the next tick reads `ticksToDecay` of `body.length * TOMBSTONE_DECAY_PER_PART - 1`, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -335,6 +338,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping">
 <summary><code>costmatrix-set-wraps-instead-of-clamping</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-tombstone-decay-anchors-one-tick-late">
+<summary><code>tombstone-decay-anchors-one-tick-late</code> — 0 tests</summary>
 
 
 </details>
@@ -3866,7 +3875,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2541 tests across 134 files</summary>
+<summary>2539 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5566,17 +5575,15 @@ Click a count to jump to the affected test list.
 - creep lifetime CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive
 - creep lifetime CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive
 
-**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (9)
+**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (7)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
 - creep death CREEP-DEATH-002 death creates a tombstone at the position of death
 - creep death CREEP-DEATH-003 death resources go into a same-tile container first
 - creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
-- creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
 - creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
 - creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone
-- creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
 
 **`tests/10-structures-energy/10.1-extension.test.ts`** (2)
 

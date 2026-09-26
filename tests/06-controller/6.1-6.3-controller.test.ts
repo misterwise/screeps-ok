@@ -565,11 +565,8 @@ describe('controller mechanics', () => {
 		const after = await shard.runPlayer('p1', code`
 			Game.rooms['W3N1'].controller.reservation.ticksToEnd
 		`) as number;
-		// 2 CLAIM × CONTROLLER_RESERVE + 1 tick of natural decay between observations.
-		const drop = before - after;
-		const expected = 2 * CONTROLLER_RESERVE;
-		expect(drop).toBeGreaterThanOrEqual(expected);
-		expect(drop).toBeLessThan(expected + 5);
+		// 2 CLAIM × CONTROLLER_RESERVE plus 3 ticks of natural decay between observations.
+		expect(before - after).toBe(2 * CONTROLLER_RESERVE + 3);
 	});
 
 	// CTRL-RESERVE-009 setup: a reservation seeded well clear of both 0 and
@@ -696,11 +693,10 @@ describe('controller mechanics', () => {
 			expect(probe.rc).toBe(OK);
 			readings.push(probe.ticksToEnd);
 		}
-		// Saturated: the ceiling is reached, but never MAX itself.
-		expect(Math.max(...readings)).toBe(CONTROLLER_RESERVE_MAX - 1);
-		// At least one refused renewal shows up as a decay between readings.
-		const drops = readings.filter((value, i) => i > 0 && value < readings[i - 1]);
-		expect(drops.length).toBeGreaterThan(0);
+		// Saturated at MAX - 1: each overshooting renewal is refused and the
+		// timer decays, so the next one fits and restores it.
+		const peak = CONTROLLER_RESERVE_MAX - 1;
+		expect(readings).toEqual([peak, peak - 1, peak, peak - 1, peak, peak - 1]);
 	}, 60_000);
 
 	test('CTRL-RESERVE-011 a fresh reservation reads exactly its CLAIM credit as ticksToEnd', async ({ shard }) => {
@@ -818,13 +814,8 @@ describe('controller mechanics', () => {
 			Game.getObjectById(${creepId}).room.controller.ticksToDowngrade
 		`) as number;
 
-		// Two CLAIM parts → drop is 2 * CONTROLLER_CLAIM_DOWNGRADE plus a few
-		// ticks of natural decay during the intervening ticks. The drop must
-		// clearly exceed natural decay alone and match the canonical formula.
-		const drop = probe.before - after;
-		const expected = 2 * CONTROLLER_CLAIM_DOWNGRADE;
-		expect(drop).toBeGreaterThanOrEqual(expected);
-		expect(drop).toBeLessThan(expected + 10);
+		// Two CLAIM parts → 2 * CONTROLLER_CLAIM_DOWNGRADE plus 2 ticks of natural decay.
+		expect(probe.before - after).toBe(2 * CONTROLLER_CLAIM_DOWNGRADE + 2);
 	});
 
 	test('CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part', async ({ shard }) => {
@@ -878,11 +869,8 @@ describe('controller mechanics', () => {
 		const upgradeBlocked = await shard.runPlayer('p1', code`
 			Game.rooms['W2N1'].controller.upgradeBlocked
 		`) as number;
-		// Engine sets upgradeBlocked = CONTROLLER_ATTACK_BLOCKED_UPGRADE (1000).
-		// One tick has elapsed since the intent, so expect close to but no more
-		// than the initial value.
-		expect(upgradeBlocked).toBeGreaterThan(0);
-		expect(upgradeBlocked).toBeLessThanOrEqual(CONTROLLER_ATTACK_BLOCKED_UPGRADE);
+		// Anchored on the intent tick; read two ticks later.
+		expect(upgradeBlocked).toBe(CONTROLLER_ATTACK_BLOCKED_UPGRADE - 2);
 	});
 
 	test('CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
@@ -1062,17 +1050,10 @@ describe('controller mechanics', () => {
 			const ctrl = Game.rooms['W1N1'].controller;
 			({ ttd: ctrl.ticksToDowngrade, upgradeBlocked: ctrl.upgradeBlocked })
 		`) as { ttd: number; upgradeBlocked: number };
-		// One CLAIM part → timer reduced by CONTROLLER_CLAIM_DOWNGRADE (300)
-		// plus a small amount of natural decay for intervening ticks. The
-		// drop must clearly exceed ordinary decay and match the attack effect.
-		const drop = preAttack.before - after.ttd;
-		expect(drop).toBeGreaterThanOrEqual(CONTROLLER_CLAIM_DOWNGRADE);
-		expect(drop).toBeLessThan(CONTROLLER_CLAIM_DOWNGRADE + 10);
-		// upgradeBlocked is initialized to CONTROLLER_ATTACK_BLOCKED_UPGRADE
-		// on the attack tick; observation is one tick later, so the value is
-		// close to but no more than the canonical 1000.
-		expect(after.upgradeBlocked).toBeGreaterThan(0);
-		expect(after.upgradeBlocked).toBeLessThanOrEqual(CONTROLLER_ATTACK_BLOCKED_UPGRADE);
+		// One CLAIM part → CONTROLLER_CLAIM_DOWNGRADE plus 2 ticks of natural decay.
+		expect(preAttack.before - after.ttd).toBe(CONTROLLER_CLAIM_DOWNGRADE + 2);
+		// Anchored on the intent tick; read two ticks later.
+		expect(after.upgradeBlocked).toBe(CONTROLLER_ATTACK_BLOCKED_UPGRADE - 2);
 	});
 
 	for (const row of ctrlAttackValidationCases) {

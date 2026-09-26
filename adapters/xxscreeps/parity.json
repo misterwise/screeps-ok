@@ -173,6 +173,12 @@
 			"expected": "Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255.",
 			"why": "Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile.",
 			"tests": ["COSTMATRIX-005"]
+		},
+		"tombstone-decay-anchors-one-tick-late": {
+			"actual": "The creep death path (`mods/classic/creep/processor.ts:86`) stamps `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART`. Processor `Game.time` already reads one tick past vanilla's `gameTime`, so the tombstone reads `ticksToDecay` one higher on every tick and spills its store (`:478-484`) a tick late: a 4-part tombstone reads 20 on the tick after death, and a spilled 50-energy pile has decayed one tick less (49) at death + 6.",
+			"expected": "Vanilla `processor/intents/creeps/_die.js` sets `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick, so the next tick reads `ticksToDecay` of `body.length * TOMBSTONE_DECAY_PER_PART - 1`, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`.",
+			"why": "Found 2026-09-25 when CREEP-DEATH-006's `[expected - 1, expected]` band and CREEP-DEATH-007's `amount > 0` guard were pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; the upstream fix is `Game.time - 1` on the anchor.",
+			"tests": ["CREEP-DEATH-006", "CREEP-DEATH-007"]
 		}
 	}
 }

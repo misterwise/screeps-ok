@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK,
 	MOVE, TOUGH, body,
 	STRUCTURE_TOWER, STRUCTURE_SPAWN,
-	TOWER_POWER_ATTACK,
+	TOWER_POWER_ATTACK, TOWER_ENERGY_COST,
 	BODYPART_HITS,
 	FIND_CONSTRUCTION_SITES,
 } from '../../src/index.js';
@@ -61,7 +61,7 @@ describe('Safe mode combat effects', () => {
 
 		// Tower spent energy as usual.
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBeLessThan(1000);
+		expect(tower.store.energy).toBe(1000 - TOWER_ENERGY_COST);
 	});
 
 	test('SAFEMODE-COMBAT-002 hostile creeps cannot stomp a player\'s construction sites during safe mode', async ({ shard }) => {

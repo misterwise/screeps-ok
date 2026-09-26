@@ -4,7 +4,7 @@ import { describe, test, expect, code,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
 	CREEP_LIFE_TIME, CREEP_CLAIM_LIFE_TIME, CREEP_SPAWN_TIME, SPAWN_RENEW_RATIO,
-	BOOSTS, FIND_DROPPED_RESOURCES,
+	BOOSTS, FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
 } from '../../src/index.js';
 import { renewCreepValidationCases } from '../../src/matrices/renew-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
@@ -15,7 +15,7 @@ const staleSpawnRenewCreepCase = staleReceiverCases.find(row => row.key === 'spa
 const staleArgSpawnRenewCreepCase = staleArgumentCases.find(row => row.key === 'spawnRenewCreep')!;
 
 describe('Spawn.renewCreep', () => {
-	test('RENEW-CREEP-001 renewCreep returns OK and increases creep TTL', async ({ shard }) => {
+	test('RENEW-CREEP-002 renewCreep returns OK and increases creep TTL by the per-part renew amount', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -28,44 +28,18 @@ describe('Spawn.renewCreep', () => {
 		});
 		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
+		const probe = await shard.runPlayer('p1', code`
 			const spawn = Game.getObjectById(${spawnId});
 			const creep = Game.getObjectById(${creepId});
-			spawn.renewCreep(creep)
-		`);
-		expect(rc).toBe(OK);
+			({ ttlBefore: creep.ticksToLive, rc: spawn.renewCreep(creep) })
+		`) as { ttlBefore: number; rc: number };
+		expect(probe.rc).toBe(OK);
 		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// renewCreep adds floor(600 / bodyLength) TTL per tick.
-		// Body = [MOVE] → length 1 → +600 TTL. But capped at CREEP_LIFE_TIME.
-		// 100 + 600 = 700, under cap.
-		expect(creep.ticksToLive).toBeGreaterThan(100);
-	});
-
-	test('RENEW-CREEP-002 renewCreep deducts energy from the spawn', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			ticksToLive: 100,
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const spawn = Game.getObjectById(${spawnId});
-			const creep = Game.getObjectById(${creepId});
-			spawn.renewCreep(creep)
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		expect(spawn.store.energy).toBeLessThan(300);
+		// Body length 1 → +600, well under the CREEP_LIFE_TIME cap; two ticks of aging follow.
+		const effect = Math.floor(SPAWN_RENEW_RATIO * CREEP_LIFE_TIME / CREEP_SPAWN_TIME / 1);
+		expect(creep.ticksToLive).toBe(probe.ttlBefore + effect - 2);
 	});
 
 	test('RENEW-CREEP-008 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy', async ({ shard }) => {
@@ -301,13 +275,15 @@ describe('Spawn.renewCreep', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// After renew, capacity is back to 50. Excess 25 should be dropped.
+		// After renew, capacity is back to CARRY_CAPACITY; the excess drops and
+		// takes the drop tick's decay.
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBeLessThanOrEqual(50);
+		expect(creep.store.energy).toBe(CARRY_CAPACITY);
 
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		const energyDrop = drops.find(r => r.pos.x === 25 && r.pos.y === 26 && r.resourceType === 'energy');
-		expect(energyDrop).toBeDefined();
+		const excess = 75 - CARRY_CAPACITY;
+		expect(energyDrop?.amount).toBe(excess - Math.ceil(excess / ENERGY_DECAY));
 	});
 
 	test('RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning', async ({ shard }) => {

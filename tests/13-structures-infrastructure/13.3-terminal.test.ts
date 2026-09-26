@@ -33,11 +33,11 @@ describe('Terminal send', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// After the tick, the source terminal should have a cooldown.
+		// Cooldown is anchored on the send tick; read one tick later.
 		const cooldown = await shard.runPlayer('p1', code`
 			Game.getObjectById(${srcId}).cooldown
 		`) as number;
-		expect(cooldown).toBeGreaterThan(0);
+		expect(cooldown).toBe(TERMINAL_COOLDOWN - 1);
 	});
 
 	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard }) => {
@@ -97,7 +97,7 @@ describe('Terminal send', () => {
 			players: ['p1'],
 			rooms: [
 				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+				{ name: 'W2N1', rcl: 6, owner: 'p1' },
 			],
 		});
 
@@ -105,7 +105,7 @@ describe('Terminal send', () => {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
 			store: { energy: 100000 },
 		});
-		const dstId = await shard.placeStructure('W5N1', {
+		const dstId = await shard.placeStructure('W2N1', {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
 			store: { energy: 0 },
 		});
@@ -118,19 +118,15 @@ describe('Terminal send', () => {
 
 		// Send 1000 energy
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 1000, 'W5N1')
+			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 1000, 'W2N1')
 		`);
 		expect(rc).toBe(OK);
 
-		// Check sender deducted at least the sent amount. Transfer cost depends on
-		// room distance (0 on private server with adjacent rooms).
 		const afterSrc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${srcId}).store.energy
 		`) as number;
-		const spent = before - afterSrc;
-		// Sender pays amount + ceil(amount * (1 - exp(-distance/30))).
-		// On private server, distance may be 0 → cost = 0 → spent = amount.
-		expect(spent).toBeGreaterThanOrEqual(1000);
+		// Sender pays amount + ceil(amount * (1 - exp(-distance/30))) for the adjacent room.
+		expect(before - afterSrc).toBe(1000 + Math.ceil(1000 * (1 - Math.exp(-1 / 30))));
 
 		// Receiver should have gained exactly the sent amount (no cost on receiver).
 		const afterDst = await shard.runPlayer('p1', code`
@@ -142,11 +138,12 @@ describe('Terminal send', () => {
 	test('TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost', async ({ shard }) => {
 		shard.requires('terminalSend');
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
 				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+				{ name: 'W2N1', rcl: 6, owner: 'p1' },
 			],
 		});
 
@@ -154,7 +151,7 @@ describe('Terminal send', () => {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
 			store: { energy: 100000 },
 		});
-		await shard.placeStructure('W5N1', {
+		await shard.placeStructure('W2N1', {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
 		});
 
@@ -177,7 +174,7 @@ describe('Terminal send', () => {
 
 		// Send 1000 energy with power effect active.
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 1000, 'W5N1')
+			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 1000, 'W2N1')
 		`);
 		expect(rc).toBe(OK);
 
@@ -185,11 +182,10 @@ describe('Terminal send', () => {
 			Game.getObjectById(${srcId}).store.energy
 		`) as number;
 
-		// The energy cost with power effect should be less than or equal to without.
-		// On private server, distance may be 0 → cost = 0, so power effect doesn't matter.
-		// Verify the send deducted at least the sent amount.
-		const spent = before - after;
-		expect(spent).toBeGreaterThanOrEqual(1000);
+		// Level-1 PWR_OPERATE_TERMINAL scales the adjacent-room transfer cost, rounded up.
+		const baseCost = Math.ceil(1000 * (1 - Math.exp(-1 / 30)));
+		const effect = POWER_INFO[PWR_OPERATE_TERMINAL].effect![0];
+		expect(before - after).toBe(1000 + Math.ceil(baseCost * effect));
 	});
 
 	test('TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments', async ({ shard }) => {

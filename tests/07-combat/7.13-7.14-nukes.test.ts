@@ -5,7 +5,7 @@ import { describe, test, expect, code,
 	STRUCTURE_NUKER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
 	NUKE_LAND_TIME, NUKE_DAMAGE, NUKE_RANGE, NUKER_COOLDOWN,
-	CONTROLLER_NUKE_BLOCKED_UPGRADE,
+	CONTROLLER_NUKE_BLOCKED_UPGRADE, CONTROLLER_ATTACK_BLOCKED_UPGRADE,
 	BODYPART_HITS,
 	FIND_TOMBSTONES, FIND_RUINS, FIND_DROPPED_RESOURCES, FIND_CONSTRUCTION_SITES,
 	FIND_SOURCES, FIND_MINERALS, FIND_NUKES,
@@ -136,13 +136,11 @@ describe('Nuke launch — section 7.13', () => {
 		expect(rc).toBe(OK);
 		await shard.tick();
 
-		// After launch, cooldown is large (close to NUKER_COOLDOWN — exact value
-		// minus a few ticks for the launch processing). Just verify it is positive
-		// and at least an order of magnitude larger than zero.
+		// Cooldown is anchored on the launch tick; read two ticks later.
 		const after = await shard.runPlayer('p1', code`
 			Game.getObjectById(${nukerId}).cooldown
 		`) as number;
-		expect(after).toBeGreaterThan(1000);
+		expect(after).toBe(NUKER_COOLDOWN - 2);
 	});
 
 	test('NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK', async ({ shard }) => {
@@ -199,8 +197,7 @@ describe('Nuke launch — section 7.13', () => {
 		expect(nuke!.x).toBe(15);
 		expect(nuke!.y).toBe(20);
 		expect(nuke!.room).toBe('W2N1');
-		expect(nuke!.ttl).toBeGreaterThan(0);
-		expect(nuke!.ttl).toBeLessThanOrEqual(NUKE_LAND_TIME);
+		expect(nuke!.ttl).toBe(NUKE_LAND_TIME - 2);
 	});
 
 	test('NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient', async ({ shard }) => {
@@ -589,10 +586,8 @@ describe('Nuke launch — section 7.13', () => {
 
 describe('Nuke impact — section 7.14', () => {
 	test('NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch', async ({ shard }) => {
-		// Verifies the launch path's timeToLand is exactly NUKE_LAND_TIME — confirming
-		// the catalog timing constant. We don't tick out the full 50K; we read the
-		// post-launch timeToLand and assert it equals NUKE_LAND_TIME (or NUKE_LAND_TIME-1
-		// if the adapter has already advanced one tick).
+		// Reads timeToLand instead of ticking out the full NUKE_LAND_TIME:
+		// landTime is anchored on the launch tick, so two ticks later it reads - 2.
 		shard.requires('nuke');
 		await shard.createShard({
 			players: ['p1', 'p2'],
@@ -617,10 +612,7 @@ describe('Nuke impact — section 7.14', () => {
 			const nukes = Game.rooms['W2N1'].find(FIND_NUKES);
 			nukes[0] ? nukes[0].timeToLand : null
 		`) as number | null;
-		expect(ttl).not.toBeNull();
-		// Allow for a small adapter-side tick delta but pin to within 5 ticks of the constant.
-		expect(ttl!).toBeLessThanOrEqual(NUKE_LAND_TIME);
-		expect(ttl!).toBeGreaterThanOrEqual(NUKE_LAND_TIME - 5);
+		expect(ttl).toBe(NUKE_LAND_TIME - 2);
 	});
 
 	test('NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]', async ({ shard }) => {
@@ -987,7 +979,8 @@ describe('Nuke impact — section 7.14', () => {
 		const before = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.upgradeBlocked
 		`) as number;
-		expect(before).toBeGreaterThan(CONTROLLER_NUKE_BLOCKED_UPGRADE);
+		// Well above CONTROLLER_NUKE_BLOCKED_UPGRADE, so a refresh would lower it.
+		expect(before).toBe(CONTROLLER_ATTACK_BLOCKED_UPGRADE - 2);
 
 		await shard.placeNuke('W1N1', {
 			pos: [25, 25],
@@ -998,8 +991,7 @@ describe('Nuke impact — section 7.14', () => {
 		const after = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.upgradeBlocked
 		`) as number;
-		expect(after).toBeLessThan(before);
-		expect(after).toBeGreaterThan(CONTROLLER_NUKE_BLOCKED_UPGRADE);
+		expect(after).toBe(before - 3);
 	});
 
 	test('NUKE-IMPACT-012 multiple nukes landing on the same tick apply cumulative structure damage', async ({ shard }) => {
