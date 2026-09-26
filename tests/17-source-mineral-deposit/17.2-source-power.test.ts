@@ -6,7 +6,6 @@ import type { ShardFixture } from '../../src/fixture.js';
 import { sourcePowerCases } from '../../src/matrices/source-power.js';
 import { mineralPowerCases } from '../../src/matrices/mineral-power.js';
 
-// Catalog row suffixes are letters only.
 const LEVEL_WORDS = ['One', 'Two', 'Three', 'Four', 'Five'];
 
 // Reads around the first two pulses; the first lands period - 1 ticks after the use tick.

@@ -10,7 +10,7 @@ export type NukeFlightVisibilityCase = {
 export const nukeFlightVisibilityCases: readonly NukeFlightVisibilityCase[] = [
 	{
 		catalogId: 'NUKE-FLIGHT-004',
-		label: 'target-room-visible-to-target-owner',
+		label: 'targetRoomVisibleToTargetOwner',
 		observer: 'p2',
 		roomName: 'W2N1',
 		expectedHasRoom: true,
@@ -18,7 +18,7 @@ export const nukeFlightVisibilityCases: readonly NukeFlightVisibilityCase[] = [
 	},
 	{
 		catalogId: 'NUKE-FLIGHT-004',
-		label: 'launch-room-does-not-list-target-nuke',
+		label: 'launchRoomDoesNotListTargetNuke',
 		observer: 'p1',
 		roomName: 'W1N1',
 		expectedHasRoom: true,
@@ -26,7 +26,7 @@ export const nukeFlightVisibilityCases: readonly NukeFlightVisibilityCase[] = [
 	},
 	{
 		catalogId: 'NUKE-FLIGHT-004',
-		label: 'target-room-hidden-from-launcher-without-visibility',
+		label: 'targetRoomHiddenFromLauncherWithoutVisibility',
 		observer: 'p1',
 		roomName: 'W2N1',
 		expectedHasRoom: false,

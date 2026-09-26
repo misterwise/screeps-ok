@@ -9,28 +9,28 @@ export type ActionLogTargetCase = {
 export const actionLogTargetCases: readonly ActionLogTargetCase[] = [
 	{
 		catalogId: 'ACTIONLOG-TARGET-001',
-		label: 'creep-damaged-by-creep',
+		label: 'creepDamagedByCreep',
 		scenario: 'meleeAttackCreep',
 		action: 'attacked',
 		expected: { x: 25, y: 25 },
 	},
 	{
 		catalogId: 'ACTIONLOG-TARGET-001',
-		label: 'creep-healed-by-creep',
+		label: 'creepHealedByCreep',
 		scenario: 'meleeHealCreep',
 		action: 'healed',
 		expected: { x: 25, y: 25 },
 	},
 	{
 		catalogId: 'ACTIONLOG-TARGET-001',
-		label: 'creep-damaged-by-tower',
+		label: 'creepDamagedByTower',
 		scenario: 'towerAttackCreep',
 		action: 'attacked',
 		expected: { x: 25, y: 25 },
 	},
 	{
 		catalogId: 'ACTIONLOG-TARGET-001',
-		label: 'creep-healed-by-tower',
+		label: 'creepHealedByTower',
 		scenario: 'towerHealCreep',
 		action: 'healed',
 		expected: { x: 25, y: 25 },

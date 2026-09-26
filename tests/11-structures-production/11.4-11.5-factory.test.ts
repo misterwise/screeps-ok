@@ -10,8 +10,8 @@ import { factoryProduceValidationCases } from '../../src/matrices/factory-produc
 describe('Factory production', () => {
 	// ---- FACTORY-PRODUCE-001 (matrix): produce() consumes components and produces output ----
 	const level0Cases = factoryProduceCases.filter(c => c.requiredLevel === undefined);
-	for (const { resource, expectedAmount, expectedComponents, expectedCooldown } of level0Cases) {
-		test(`FACTORY-PRODUCE-001:${resource} produce(${resource}) consumes components and yields ${expectedAmount}`, async ({ shard }) => {
+	for (const { resource, label, expectedAmount, expectedComponents, expectedCooldown } of level0Cases) {
+		test(`FACTORY-PRODUCE-001:${label} produce(${resource}) consumes components and yields ${expectedAmount}`, async ({ shard }) => {
 			shard.requires('factory');
 			await shard.createShard({
 				players: ['p1'],
@@ -322,8 +322,8 @@ describe('Factory production', () => {
 
 describe('Factory commodity chains', () => {
 	// ---- FACTORY-COMMODITY-001 (matrix): level requirements match COMMODITIES table ----
-	for (const { resource, requiredLevel } of factoryCommodityCases) {
-		test(`FACTORY-COMMODITY-001:${resource} COMMODITIES[${resource}].level is ${requiredLevel ?? 'undefined'}`, async ({ shard }) => {
+	for (const { resource, label, requiredLevel } of factoryCommodityCases) {
+		test(`FACTORY-COMMODITY-001:${label} COMMODITIES[${resource}].level is ${requiredLevel ?? 'undefined'}`, async ({ shard }) => {
 			shard.requires('factory');
 			await shard.createShard({
 				players: ['p1'],

@@ -10,25 +10,25 @@ export type NukerPropCase = {
 export const nukerPropCases: readonly NukerPropCase[] = [
 	{
 		catalogId: 'NUKER-PROPS-001',
-		label: 'energy-alias',
+		label: 'energyAlias',
 		property: 'energy',
 		expected: 12_345,
 	},
 	{
 		catalogId: 'NUKER-PROPS-001',
-		label: 'ghodium-alias',
+		label: 'ghodiumAlias',
 		property: 'ghodium',
 		expected: 678,
 	},
 	{
 		catalogId: 'NUKER-PROPS-001',
-		label: 'energy-capacity-alias',
+		label: 'energyCapacityAlias',
 		property: 'energyCapacity',
 		expected: NUKER_ENERGY_CAPACITY,
 	},
 	{
 		catalogId: 'NUKER-PROPS-001',
-		label: 'ghodium-capacity-alias',
+		label: 'ghodiumCapacityAlias',
 		property: 'ghodiumCapacity',
 		expected: NUKER_GHODIUM_CAPACITY,
 	},

@@ -1,12 +1,12 @@
 // The one catalog id shape every tool reads: FAMILY-001 or FAMILY-SUBFAMILY-001,
-// and in test names and registrations optionally keyed by a letters-only `:row`.
+// and in test names and registrations optionally keyed by a camelCase `:row`.
 const BASE = '[A-Z]+-(?:[A-Z]+-)?[0-9]{3}';
-const KEYED = `${BASE}(?::[a-zA-Z]+)?`;
+const KEYED = `${BASE}(?::[a-zA-Z][a-zA-Z0-9]*)?`;
 
 export const CATALOG_ID_RE = new RegExp(`^${BASE}$`);
 export const TEST_ID_RE = new RegExp(`^${KEYED}$`);
 
-// A token that runs on into more id characters (`-003b`, `-OPS-001`, `:row2`) is no id at all.
+// A token that runs on into more id characters (`-003b`, `-OPS-001`, `:not-owner`) is no id at all.
 const ID_IN_TEXT_RE = new RegExp(`(?<![\\w-])${KEYED}(?![\\w-]|:\\w)`, 'g');
 
 export function catalogIdsIn(text) {

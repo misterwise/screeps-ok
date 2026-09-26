@@ -7,7 +7,6 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 import { towerPowerCases } from '../../src/matrices/tower-power.js';
 
-// Catalog row suffixes are letters only.
 const LEVEL_WORDS = ['One', 'Two', 'Three', 'Four', 'Five'];
 
 describe('Tower power effects', () => {

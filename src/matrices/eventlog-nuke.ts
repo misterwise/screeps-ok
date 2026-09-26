@@ -7,17 +7,17 @@ export type NukeEventLogCase = {
 export const nukeEventLogCases: readonly NukeEventLogCase[] = [
 	{
 		catalogId: 'ROOM-EVENTLOG-026',
-		label: 'attack-object-is-nuke-target-is-structure',
+		label: 'attackObjectIsNukeTargetIsStructure',
 		scenario: 'attackIdDirection',
 	},
 	{
 		catalogId: 'ROOM-EVENTLOG-026',
-		label: 'roomwide-creep-kill-emits-no-attack-event',
+		label: 'roomwideCreepKillEmitsNoAttackEvent',
 		scenario: 'noCreepAttackEvents',
 	},
 	{
 		catalogId: 'ROOM-EVENTLOG-026',
-		label: 'rampart-attack-entry-precedes-covered-structure',
+		label: 'rampartAttackEntryPrecedesCoveredStructure',
 		scenario: 'rampartBeforeCoveredStructure',
 	},
 ];

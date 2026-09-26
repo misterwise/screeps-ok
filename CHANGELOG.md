@@ -79,6 +79,15 @@ changes since `v0.1.0-alpha` are not itemized.
   registration could match), `SOURCE-POWER-001` and `MINERAL-POWER-001` by
   level, `POWER-OPERATE-005` and `POWER-DISRUPT-003`
   by power and case (`…Valid`, `…Invalid`, `…Disabled`).
+- A `:row` key is one camelCase token, a letter then letters or digits
+  (`LAB-REVERSE-001:GH2O`). The reporter used to cut a key at its first
+  digit, `-` or `_`, so these rows only now register as written:
+  `LAB-REVERSE-001` and `NUKE-IMPACT-014` unchanged; `NUKE-LAUNCH-008`,
+  `NUKER-PROPS-001`, `NUKE-FLIGHT-004`, `ROOM-EVENTLOG-026` and
+  `ACTIONLOG-CREEP/TARGET/STRUCT-001` re-keyed from kebab-case
+  (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
+  `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
+  `:ghodiumMelt`).
 - Dropped: `LEGACY-PATH-010`, `RENEW-CREEP-012`..`-014`,
   `ATTACK-NOTIFY-001`..`-004`, `CONSTRUCTION-SITE-015`, `POWER-BANK-003`,
   `STRUCTURE-API-008`, `RAMPART-DECAY-005`.

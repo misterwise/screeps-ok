@@ -1,7 +1,9 @@
 import { COMMODITIES } from '../index.js';
+import { toLabelToken } from './validation-cases.js';
 
 interface FactoryProduceCase {
 	resource: string;
+	label: string;
 	expectedAmount: number;
 	expectedCooldown: number;
 	expectedComponents: Record<string, number>;
@@ -13,6 +15,7 @@ export const factoryProduceCases: readonly FactoryProduceCase[] =
 	Object.entries(COMMODITIES)
 		.map(([resource, recipe]) => ({
 			resource,
+			label: toLabelToken(resource),
 			expectedAmount: recipe.amount,
 			expectedCooldown: recipe.cooldown,
 			expectedComponents: { ...recipe.components },

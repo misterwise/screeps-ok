@@ -20,12 +20,11 @@ function isExcluded<Name extends string>(
 	return exclusions.some(([a, b]) => a === left && b === right);
 }
 
-// Emit labels as a single alpha token (camelCase) so they match the framework's
-// catalog-id regex (`:[a-zA-Z]+`). Conditions stay hyphenated for readability
-// in the matrix definitions and test fixtures; only the generated label is
-// transformed.
-function toLabelToken(condition: string): string {
-	const parts = condition.split('-');
+// Emit labels as one camelCase token, the `:row` shape catalog ids take
+// (scripts/lib/catalog-id.js). Conditions and resource names stay hyphenated
+// or snake_case in the data; only the generated label is transformed.
+export function toLabelToken(condition: string): string {
+	const parts = condition.split(/[-_]/);
 	return parts[0] + parts.slice(1).map(p => p[0].toUpperCase() + p.slice(1)).join('');
 }
 

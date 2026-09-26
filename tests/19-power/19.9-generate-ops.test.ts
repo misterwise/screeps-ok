@@ -16,7 +16,7 @@ const PI = POWER_INFO as Record<number, {
 }>;
 
 describe('PWR_GENERATE_OPS', () => {
-	// Catalog row suffixes are letters only; GENERATE_OPS costs no ops, so the store gains the full effect.
+	// GENERATE_OPS costs no ops, so the store gains the full effect.
 	for (const [index, word] of ['One', 'Two', 'Three', 'Four', 'Five'].entries()) {
 		const level = index + 1;
 		test(`POWER-GENERATE-001:level${word} amount, cooldown, and ops cost match POWER_INFO for each supported power level`, async ({ shard }) => {

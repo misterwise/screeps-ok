@@ -20,7 +20,7 @@ export type NukeLaunchValidationCase = {
 export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'not-owner',
+		label: 'notOwner',
 		capability: 'nuke',
 		caller: 'other',
 		arg: 'roomPosition',
@@ -31,7 +31,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'invalid-argument-shape',
+		label: 'invalidArgumentShape',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'plainObject',
@@ -54,7 +54,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'inactive-rcl',
+		label: 'inactiveRcl',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -65,7 +65,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'out-of-range',
+		label: 'outOfRange',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -76,7 +76,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'missing-energy',
+		label: 'missingEnergy',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -87,7 +87,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'missing-ghodium',
+		label: 'missingGhodium',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -98,7 +98,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'cooldown-before-inactive',
+		label: 'cooldownBeforeInactive',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -110,7 +110,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'cooldown-before-range',
+		label: 'cooldownBeforeRange',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -122,7 +122,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'cooldown-before-resources',
+		label: 'cooldownBeforeResources',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -134,7 +134,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'inactive-before-range',
+		label: 'inactiveBeforeRange',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -145,7 +145,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'inactive-before-resources',
+		label: 'inactiveBeforeResources',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
@@ -156,7 +156,7 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',
-		label: 'range-before-resources',
+		label: 'rangeBeforeResources',
 		capability: 'nuke',
 		caller: 'owner',
 		arg: 'roomPosition',
