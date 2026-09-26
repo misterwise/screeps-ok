@@ -90,7 +90,7 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:belowLevelOne`, `:levelOne`, …; was `GPL-002a`..`e`, which no
   registration could match), `SOURCE-POWER-001` and `MINERAL-POWER-001` by
   level, `POWER-OPERATE-005` and `POWER-DISRUPT-003`
-  by power and case (`…Valid`, `…Invalid`, `…Disabled`).
+  by power and case (`…Valid`, `…Invalid`).
 - A `:row` key is one camelCase token, a letter then letters or digits
   (`LAB-REVERSE-001:GH2O`). The reporter used to cut a key at its first
   digit, `-` or `_`, so these rows only now register as written:
@@ -106,5 +106,9 @@ changes since `v0.1.0-alpha` are not itemized.
 - Re-scoped: `MAP-ROOM-005` covers worlds that straddle the map origin, and
   `SPAWN-TIMING-005`'s test now exercises its row (directions ignored on a
   one-tick `PWR_OPERATE_SPAWN` spawn).
+- Split: `POWER-OPERATE-005` keeps operate-power target validity (under
+  `powerEffects`); `usePower()` returning `ERR_INVALID_ARGS` in a room
+  without power enabled is the new `POWERCREEP-ENABLE-003`, keyed by power
+  (`:operateSpawn`, …), which needs only `powerCreeps`.
 - The starter adapter (`starter/xxscreeps/`) and the shipped
   `parity/xxscreeps.json` base are regenerated for this contract.

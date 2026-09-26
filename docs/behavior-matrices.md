@@ -1121,7 +1121,7 @@ Each definition should include:
 ### POWER-TARGETS
 
 - `Catalog Entries`
-  `POWER-OPERATE-005`, `POWER-DISRUPT-003`
+  `POWER-OPERATE-005`, `POWER-DISRUPT-003`, `POWERCREEP-ENABLE-003`
 - `Canonical Source`
   Official power API validation and target checks.
 - `Dimensions`
@@ -1133,7 +1133,8 @@ Each definition should include:
 - `Verification Notes`
   Vanilla's game-layer `usePower` has no target-type check; the processor's
   per-power switch drops a mismatched target without ops, cooldown or effect,
-  and a disabled room returns `ERR_INVALID_ARGS`. Valid targets' effect shapes
+  and a room without power enabled returns `ERR_INVALID_ARGS` for any power
+  (POWERCREEP-ENABLE-003, operate powers only). Valid targets' effect shapes
   are EFFECT-HOST-001's. The executable case list lives in
   `src/matrices/power-targets.ts`.
 

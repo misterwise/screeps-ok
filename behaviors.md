@@ -3458,6 +3458,9 @@ Coverage Notes
   `powerCreep.enableRoom()` failure codes match the canonical validation
   matrix for invalid target, safe-mode-blocked hostile controller, range,
   busy, and ownership.
+- `POWERCREEP-ENABLE-003` `matrix` `verified_vanilla`
+  `usePower()` in a room whose controller doesn't have power enabled returns
+  `ERR_INVALID_ARGS`, for each power in the canonical power-to-target matrix.
 
 ### 19.4 Operate Powers `capability: powerCreeps`
 - `POWER-OPERATE-001` `matrix` `verified_vanilla` `capability: powerEffects`
@@ -3473,8 +3476,8 @@ Coverage Notes
   `PWR_OPERATE_FACTORY` changes the target factory's effective production level
   according to the power level while the effect is active.
 - `POWER-OPERATE-005` `matrix` `verified_vanilla` `capability: powerEffects`
-  For room-bound operate powers, target validity and failure in rooms without
-  power enabled match the canonical power-to-target matrix.
+  For room-bound operate powers, target validity matches the canonical
+  power-to-target matrix.
 - `POWER-OPERATE-006` `behavior` `verified_vanilla`
   A power creep whose power is still on cooldown gets `ERR_TIRED` from
   `usePower()` for that power.

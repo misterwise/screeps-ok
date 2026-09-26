@@ -515,7 +515,7 @@ describe('Power target matrix', () => {
 		}
 
 		if (row.catalogId === 'POWER-OPERATE-005') {
-			test(`${row.catalogId}:${row.key}Disabled usePower returns ERR_INVALID_ARGS in a room without power enabled`, async ({ shard }) => {
+			test(`POWERCREEP-ENABLE-003:${row.key} usePower returns ERR_INVALID_ARGS in a room without power enabled`, async ({ shard }) => {
 				shard.requires('powerCreeps');
 				const { targetId, creepId } = await placePowerTarget(shard, row, row.validTarget, false);
 
