@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 // Runs the reporter over fake results against a parity.json holding `tests`.
-function verdictFor(tests: string[], results: [string, State][], fullRun: boolean) {
+function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; unhandled?: string[] } = {}) {
 	const dir = mkdtempSync(path.join(tmpdir(), 'screeps-ok-parity-'));
 	dirs.push(dir);
 	writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
@@ -32,7 +32,12 @@ function verdictFor(tests: string[], results: [string, State][], fullRun: boolea
 	reporter.onInit();
 	vi.spyOn(console, 'log').mockImplementation(() => {});
 	const cases = results.map(([fullName, state]) => ({ fullName, result: () => ({ state }) }));
-	reporter.onTestRunEnd([{ children: { allTests: () => cases } } as unknown as TestModule]);
+	const moduleErrors = (errors.module ?? []).map(message => ({ message }));
+	const unhandled = (errors.unhandled ?? []).map(message => ({ message }));
+	reporter.onTestRunEnd(
+		[{ children: { allTests: () => cases }, errors: () => moduleErrors } as unknown as TestModule],
+		unhandled as never,
+	);
 	return JSON.parse(readFileSync(verdictPath, 'utf8'));
 }
 
@@ -54,11 +59,35 @@ describe('parity reporter', () => {
 		expect(verdict.orphanedRegistrations).toBe(1);
 	});
 
+	test('a file that fails to collect or an unhandled error is a genuine failure', () => {
+		const registered: [string, State][] = [['GAP-001 fails as registered', 'failed']];
+		expect(verdictFor(['GAP-001'], registered, true, { module: ['SyntaxError'] }).genuineFailures).toBe(1);
+		expect(verdictFor(['GAP-001'], registered, true, { unhandled: ['TypeError'] }).genuineFailures).toBe(1);
+	});
+
 	test('a filtered or sharded run does not count orphans', () => {
 		const verdict = verdictFor(['GAP-001', 'GAP-002'], [
 			['GAP-001 fails as registered', 'failed'],
 		], false);
 		expect(verdict.orphanedRegistrations).toBe(0);
+	});
+});
+
+describe('parity file loading', () => {
+	function reporterOver(parityText: string | null) {
+		const dir = mkdtempSync(path.join(tmpdir(), 'screeps-ok-parity-'));
+		dirs.push(dir);
+		if (parityText !== null) writeFileSync(path.join(dir, 'parity.json'), parityText);
+		return new ParityReporter({ env: { SCREEPS_OK_ADAPTER: path.join(dir, 'index.ts') } });
+	}
+
+	test('a missing parity.json means no registrations', () => {
+		expect(() => reporterOver(null).onInit()).not.toThrow();
+	});
+
+	test('a malformed parity.json or an unresolvable extends throws', () => {
+		expect(() => reporterOver('{ "expected_failures": ').onInit()).toThrow();
+		expect(() => reporterOver('{ "extends": "no-such-package/parity.json" }').onInit()).toThrow(/no-such-package/);
 	});
 });
 

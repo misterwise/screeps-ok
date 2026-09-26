@@ -10,9 +10,9 @@
  *   - Writes a verdict file the runner reads to reclassify the exit code
  */
 import { createRequire } from 'node:module';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import type { Reporter, TestCase, TestModule } from 'vitest/node';
+import type { Reporter, SerializedError, TestCase, TestModule } from 'vitest/node';
 import type { ParityVerdict } from '../../scripts/lib/parity-verdict.js';
 
 // ── Parity.json schema ────────────────────────────────────────
@@ -62,26 +62,16 @@ function extractCatalogId(testFullName: string): string | null {
 
 // ── Parity file loading ───────────────────────────────────────
 
+// Only a missing file means no registrations; a malformed one fails the run.
 function loadParityFile(path: string): ParityFile | null {
-	try {
-		return JSON.parse(readFileSync(path, 'utf8')) as ParityFile;
-	} catch {
-		return null;
-	}
+	if (!existsSync(path)) return null;
+	return JSON.parse(readFileSync(path, 'utf8')) as ParityFile;
 }
 
-function loadExtends(fromPath: string, spec: string): ParityFile | null {
-	let resolved: string;
-	try {
-		resolved = createRequire(fromPath).resolve(spec);
-	} catch (err) {
-		console.error(`Parity reporter: failed to resolve extends "${spec}" from ${fromPath}:`, err);
-		return null;
-	}
+function loadExtends(fromPath: string, spec: string): ParityFile {
+	const resolved = createRequire(fromPath).resolve(spec);
 	const base = loadParityFile(resolved);
-	if (!base) {
-		console.error(`Parity reporter: could not read base parity file at ${resolved}`);
-	}
+	if (!base) throw new Error(`Parity reporter: extends "${spec}" resolved to ${resolved}, which does not exist`);
 	return base;
 }
 
@@ -124,14 +114,16 @@ export default class ParityReporter implements Reporter {
 		}
 	}
 
-	onTestRunEnd(testModules: ReadonlyArray<TestModule>): void {
+	onTestRunEnd(testModules: ReadonlyArray<TestModule>, unhandledErrors: ReadonlyArray<SerializedError> = []): void {
 		if (this.expectedFailIds.size === 0) return;
 
 		// Collect per-catalog-ID pass/fail counts for expected-fail IDs.
 		const idStats = new Map<string, { passed: number; failed: number; gapId: string }>();
-		let genuineFailures = 0;
+		// A file that failed to collect has no failed tests, and nothing registers an unhandled error.
+		let genuineFailures = unhandledErrors.length;
 
 		for (const mod of testModules) {
+			genuineFailures += mod.errors().length;
 			for (const testCase of this.allTests(mod)) {
 				const catalogId = extractCatalogId(testCase.fullName);
 				if (!catalogId || !this.expectedFailIds.has(catalogId)) {
