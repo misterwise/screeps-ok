@@ -113,7 +113,9 @@ controller level `1`.
 ### Typed placement helpers
 
 Typed helpers are the primary setup path. Their semantics are exact, not
-incremental.
+incremental. A helper creates its own object and touches nothing else: a
+precondition that another object must meet, such as a room with power
+enabled, is set by its own spec field, never granted by a placement.
 
 Examples:
 
@@ -342,8 +344,10 @@ values to cover them.
 `getObject(id)` returns a plain JSON snapshot or `null` if the object no longer
 exists.
 
-Snapshots must expose only public gameplay information. They must not leak
-engine-private fields.
+Snapshots must expose only public gameplay information: apart from its `kind`
+discriminator, a snapshot carries no field that no player getter exposes, so
+engine-private fields and setup-only inputs (an invader core's
+`templateName`, say) stay out.
 
 A snapshot field named after a player getter reports that getter's value on
 the tick: no default, no clamp, and `null` where the getter returns
@@ -406,10 +410,8 @@ action-log payload:
 - `actionLog`, keyed by rendered action name
 
 This method is separate from `Room.getEventLog()`. It must represent the
-room-history/client action-log artifact, not raw engine storage. For example,
-vanilla adapters should normalize the persisted room-history object payload,
-while xxscreeps adapters should normalize backend/client renderer output
-rather than exposing raw `#actionLog` vectors.
+action-log artifact the engine renders for its room history or client, not
+the engine's raw action-log storage.
 
 ### `captureConsoleLogs`
 
@@ -423,37 +425,9 @@ capability flag.
 ## Capabilities And Skip Policy
 
 `capabilities` declares whether an adapter supports a public feature area or
-framework-observable surface.
-
-Current capability flags are:
-
-- `chemistry`
-- `powerCreeps`
-- `powerCreepAccountApi`
-- `powerEffects`
-- `powerSpawn`
-- `factory`
-- `terminal`
-- `marketBasics`
-- `market`
-- `terminalSend`
-- `observer`
-- `nuke`
-- `deposit`
-- `powerBank`
-- `terrain`
-- `roomStatus`
-- `portals`
-- `invaderCore`
-- `strongholdDeploy`
-- `invaderRaidSpawner`
-- `multiShard`
-- `interShardMemory`
-- `cpuShardLimits`
-- `liveWorldSize`
-- `actionLogCapture`
-- `randomInjection`
-- `deprecationNotices`
+framework-observable surface. The flags are the members of
+`AdapterCapabilities` in [`src/adapter.ts`](../src/adapter.ts), each with a
+doc comment saying what it covers; the ones below need more than a sentence.
 
 The terminal and market flags intentionally describe separate surfaces:
 
