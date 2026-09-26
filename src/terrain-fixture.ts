@@ -4,22 +4,20 @@ import type { TerrainSpec } from './adapter.js';
 // observe specific terrain features through player-facing APIs
 // (Room.getTerrain, PathFinder, moveTo pathfinding, findPath).
 //
-// The vanilla adapter pre-loads this room and publishes terrain revisions to
-// its runner patch, so tests that reference it see the same terrain through DB
-// helpers and player-facing APIs. Tests that only need stable terrain
-// landmarks should use this fixture instead of open-coded coordinate layouts.
+// A test that uses it adds the room to its shard with `terrain:
+// TERRAIN_FIXTURE_SPEC`. Tests that only need stable terrain landmarks should
+// use this fixture instead of open-coded coordinate layouts.
 
 /**
- * The room that holds the crafted terrain fixture. Pre-loaded into the
- * vanilla adapter. Pick a name far from W1N1 so it doesn't collide with
- * cross-room neighbor tests.
+ * The room that holds the crafted terrain fixture, far from W1N1 so it doesn't
+ * collide with cross-room neighbor tests.
  */
 export const TERRAIN_FIXTURE_ROOM = 'W5N5';
 
 /**
- * A blank-terrain neighbor of TERRAIN_FIXTURE_ROOM, also pre-loaded into the
- * vanilla adapter. Exists so tests that need cross-room PathFinder behavior
- * (e.g. maxRooms) have a pair of adjacent rooms with known terrain.
+ * A blank-terrain neighbor of TERRAIN_FIXTURE_ROOM, so tests that need
+ * cross-room PathFinder behavior (e.g. maxRooms) have a pair of adjacent rooms
+ * with known terrain.
  */
 export const TERRAIN_FIXTURE_NEIGHBOR = 'W5N6';
 

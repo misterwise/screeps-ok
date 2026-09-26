@@ -47,6 +47,7 @@ Adapters must implement `ScreepsOkAdapter` from
 That includes:
 
 - `capabilities`
+- `shapeDivergences` (optional)
 - `createShard`
 - typed placement helpers
 - `placeObject`
@@ -375,6 +376,16 @@ constants such as `FIND_MY_CREEPS` or `FIND_HOSTILE_CREEPS` through this API.
 
 Tests should query the neutral collection and filter by `snapshot.owner` when
 needed.
+
+### `shapeDivergences`
+
+An engine whose objects carry public properties beyond vanilla's, which its
+maintainers keep on purpose, declares them by surface (`roomObject`, `flag`,
+`bodyPart`, `controller`, `structure`; `src/shape-divergences.ts`). The
+object-shape tests add the declared keys to the shape they expect, so the
+rest of the shape stays exact and the declaration is pinned: a declared key
+the engine no longer has fails its test. A divergence the engine means to fix
+is a gap for `parity.json`, not a declaration.
 
 ### Snapshot ownership and IDs
 
