@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-56%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-56%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2834%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2575%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,130 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🔴 | **vanilla** | [2814](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 16:05 UTC |
-| 🔴 | **xxscreeps** | [2555](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 16:04 UTC |
+| 🟡 | **vanilla** | [2834](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 18:20 UTC |
+| 🟡 | **xxscreeps** | [2575](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 18:20 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## vanilla unexpected failures
-
-- `creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power` carries no single catalog id
-- `Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power` carries no single catalog id
-- `Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power` carries no single catalog id
-- `Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power` carries no single catalog id
-- `Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers` carries no single catalog id
-
-## xxscreeps unexpected failures
-
-- `creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined` carries no single catalog id
-- `Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix` carries no single catalog id
-- `room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective` carries no single catalog id
-- `Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power` carries no single catalog id
-- `Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power` carries no single catalog id
-- `Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power` carries no single catalog id
-- `Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power` carries no single catalog id
-- `Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers` carries no single catalog id
-- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers` carries no single catalog id
 
 ## vanilla expected failures
 
@@ -621,7 +503,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2814 tests across 150 files</summary>
+<summary>2834 tests across 153 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -798,22 +680,51 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
+**`tests/00-framework/canonical-parity.test.ts`** (2)
+
+- canonical parity.json vanilla registers every gap with a why
+- canonical parity.json xxscreeps registers every gap with a why
+
+**`tests/00-framework/catalog-id.test.ts`** (3)
+
+- catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
+- catalog ids conforming row ids parse
+- catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
+
 **`tests/00-framework/fixture-fence.test.ts`** (2)
 
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
-**`tests/00-framework/parity-reporter.test.ts`** (9)
+**`tests/00-framework/parity-reporter.test.ts`** (19)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
 - parity reporter a file that fails to collect or an unhandled error is a genuine failure
+- parity reporter a test's `:row` id wins over its describe's bare id
+- parity reporter a bare id's registration gates every `:row` of it
+- parity reporter a row's own registration wins over its bare id's
+- parity reporter a name that runs on past an id carries no id to register
+- parity reporter a catalog test whose name carries no single id fails the run
 - parity reporter a filtered or sharded run does not count orphans
 - parity file loading a missing parity.json means no registrations
 - parity file loading a malformed parity.json or an unresolvable extends throws
+- parity file loading a parity.json that breaks the schema throws, naming what broke
 - parity exit code forgives failures that are all registered gaps
 - parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
+- parity exit code keeps vitest's failure when the verdict saw nothing to forgive
+- JSON reports a report gets the verdict the reporter gives the same results live
+- JSON reports framework and contract sections need no catalog ids
+- JSON reports a report is judged by the overlay merged onto its base
+
+**`tests/00-framework/test-claims.test.ts`** (5)
+
+- test file claims only code and imported matrices claim an id, and only in catalog sections
+- adapter capabilities reads the literal flags, comments aside
+- adapter capabilities a flag that is not a literal fails the read
+- capability descriptions every declared capability has a first sentence in the interface
+- capability descriptions a capability without a doc comment fails the read
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (45)
 
@@ -927,7 +838,7 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep
 - creep movement collision MOVE-COLLISION-002 two creeps moving to the same empty tile — only one succeeds
 - creep movement collision MOVE-COLLISION-003 two same-owner creeps can swap tiles by moving toward each other
-- creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other
+- creep movement collision MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other
 - creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
@@ -1903,19 +1814,19 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
 - Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
 - Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:notOwner launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalidArgumentShape launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveRcl launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:outOfRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missingEnergy launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missingGhodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeInactive launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeResources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeResources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:rangeBeforeResources launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
 - Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
 - Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
@@ -1925,10 +1836,10 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
 - Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
 - Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energyAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energyCapacityAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
 - Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
 - Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
@@ -2649,22 +2560,22 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-001:condensate produce(condensate) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:energy produce(energy) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:G produce(G) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:ghodiumMelt produce(ghodium_melt) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:H produce(H) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:K produce(K) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:keaniumBar produce(keanium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:L produce(L) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:lemergiumBar produce(lemergium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:O produce(O) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:oxidant produce(oxidant) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:purifier produce(purifier) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:reductant produce(reductant) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:U produce(U) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:utriumBar produce(utrium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:wire produce(wire) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:zynthiumBar produce(zynthium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
 - Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
 - Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
@@ -2724,13 +2635,13 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:fixtures COMMODITIES[fixtures].level is 2
 - Factory commodity chains FACTORY-COMMODITY-001:frame COMMODITIES[frame].level is 3
 - Factory commodity chains FACTORY-COMMODITY-001:G COMMODITIES[G].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:ghodiumMelt COMMODITIES[ghodium_melt].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:H COMMODITIES[H].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:hydraulics COMMODITIES[hydraulics].level is 4
 - Factory commodity chains FACTORY-COMMODITY-001:K COMMODITIES[K].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:keaniumBar COMMODITIES[keanium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:L COMMODITIES[L].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:lemergiumBar COMMODITIES[lemergium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:liquid COMMODITIES[liquid].level is 3
 - Factory commodity chains FACTORY-COMMODITY-001:machine COMMODITIES[machine].level is 5
 - Factory commodity chains FACTORY-COMMODITY-001:microchip COMMODITIES[microchip].level is 3
@@ -2748,11 +2659,11 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:transistor COMMODITIES[transistor].level is 2
 - Factory commodity chains FACTORY-COMMODITY-001:tube COMMODITIES[tube].level is 1
 - Factory commodity chains FACTORY-COMMODITY-001:U COMMODITIES[U].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:utriumBar COMMODITIES[utrium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:wire COMMODITIES[wire].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:zynthiumBar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 - Factory commodity chains FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production
 
@@ -3131,9 +3042,9 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
-- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:attackObjectIsNukeTargetIsStructure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:roomwideCreepKillEmitsNoAttackEvent nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:rampartAttackEntryPrecedesCoveredStructure nuke event-log detail matches the matrix
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 - room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
 - room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
@@ -3268,19 +3179,19 @@ Click a count to jump to the affected test list.
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
 - Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
-- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:targetRoomVisibleToTargetOwner in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:launchRoomDoesNotListTargetNuke in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:targetRoomHiddenFromLauncherWithoutVisibility in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
 **`tests/19-power/19.0-gpl.test.ts`** (9)
 
 - Game.gpl GPL-001 Game.gpl starts at level 0 with 1000 progressTotal when account power is 0
-- Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power
-- Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power
-- Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power
-- Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
-- Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
+- Game.gpl GPL-002:belowLevelOne Game.gpl follows vanilla account-power math at 999 power
+- Game.gpl GPL-002:levelOne Game.gpl follows vanilla account-power math at 1000 power
+- Game.gpl GPL-002:belowLevelTwo Game.gpl follows vanilla account-power math at 3999 power
+- Game.gpl GPL-002:levelTwo Game.gpl follows vanilla account-power math at 4000 power
+- Game.gpl GPL-002:levelThree Game.gpl follows vanilla account-power math at 9000 power
 - Game.gpl GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
@@ -3689,24 +3600,24 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.10-actionlog.test.ts`** (21)
 
-- Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-CREEP-001:attackTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:harvestSourceCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:buildSiteCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:repairStructureCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:healTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:rangedHealTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:upgradeControllerCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:reserveControllerCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-TARGET-001:creepDamagedByCreep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepHealedByCreep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepDamagedByTower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepHealedByTower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerAttackTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerHealTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerRepairTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:linkTransferTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:labRunReactionReagentCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:labReverseReactionOutputCoordinates successful structure actions render source-side markers
 - Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
@@ -4245,7 +4156,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2555 tests across 134 files</summary>
+<summary>2575 tests across 137 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4421,22 +4332,51 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
+**`tests/00-framework/canonical-parity.test.ts`** (2)
+
+- canonical parity.json vanilla registers every gap with a why
+- canonical parity.json xxscreeps registers every gap with a why
+
+**`tests/00-framework/catalog-id.test.ts`** (3)
+
+- catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
+- catalog ids conforming row ids parse
+- catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
+
 **`tests/00-framework/fixture-fence.test.ts`** (2)
 
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
-**`tests/00-framework/parity-reporter.test.ts`** (9)
+**`tests/00-framework/parity-reporter.test.ts`** (19)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
 - parity reporter a file that fails to collect or an unhandled error is a genuine failure
+- parity reporter a test's `:row` id wins over its describe's bare id
+- parity reporter a bare id's registration gates every `:row` of it
+- parity reporter a row's own registration wins over its bare id's
+- parity reporter a name that runs on past an id carries no id to register
+- parity reporter a catalog test whose name carries no single id fails the run
 - parity reporter a filtered or sharded run does not count orphans
 - parity file loading a missing parity.json means no registrations
 - parity file loading a malformed parity.json or an unresolvable extends throws
+- parity file loading a parity.json that breaks the schema throws, naming what broke
 - parity exit code forgives failures that are all registered gaps
 - parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
+- parity exit code keeps vitest's failure when the verdict saw nothing to forgive
+- JSON reports a report gets the verdict the reporter gives the same results live
+- JSON reports framework and contract sections need no catalog ids
+- JSON reports a report is judged by the overlay merged onto its base
+
+**`tests/00-framework/test-claims.test.ts`** (5)
+
+- test file claims only code and imported matrices claim an id, and only in catalog sections
+- adapter capabilities reads the literal flags, comments aside
+- adapter capabilities a flag that is not a literal fails the read
+- capability descriptions every declared capability has a first sentence in the interface
+- capability descriptions a capability without a doc comment fails the read
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (45)
 
@@ -4551,7 +4491,7 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep
 - creep movement collision MOVE-COLLISION-002 two creeps moving to the same empty tile — only one succeeds
 - creep movement collision MOVE-COLLISION-003 two same-owner creeps can swap tiles by moving toward each other
-- creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other
+- creep movement collision MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other
 - creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
 - creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
@@ -5513,28 +5453,28 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
 - Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
 - Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:notOwner launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:invalidArgumentShape launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveRcl launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:outOfRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missingEnergy launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:missingGhodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeInactive launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeResources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeRange launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeResources launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:rangeBeforeResources launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
 - Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
 - Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
 - Nuke launch — section 7.13 NUKE-LAUNCH-012 first player tick after a processed launch shows NUKER_COOLDOWN - 1
 - Nuke launch — section 7.13 NUKE-LAUNCH-013 nuker cooldown decreases by exactly 1 on subsequent ticks
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity
-- Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energyAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:energyCapacityAlias StructureNuker legacy property mirrors store or capacity
+- Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
 - Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
 - Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
@@ -6231,22 +6171,22 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-001:condensate produce(condensate) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:energy produce(energy) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:G produce(G) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:ghodiumMelt produce(ghodium_melt) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:H produce(H) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:K produce(K) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:keaniumBar produce(keanium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:L produce(L) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:lemergiumBar produce(lemergium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:O produce(O) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:oxidant produce(oxidant) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:purifier produce(purifier) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:reductant produce(reductant) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:U produce(U) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:utriumBar produce(utrium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-001:wire produce(wire) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:X produce(X) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
-- Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100
+- Factory production FACTORY-PRODUCE-001:zynthiumBar produce(zynthium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
 - Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
 - Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
@@ -6303,13 +6243,13 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:fixtures COMMODITIES[fixtures].level is 2
 - Factory commodity chains FACTORY-COMMODITY-001:frame COMMODITIES[frame].level is 3
 - Factory commodity chains FACTORY-COMMODITY-001:G COMMODITIES[G].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:ghodiumMelt COMMODITIES[ghodium_melt].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:H COMMODITIES[H].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:hydraulics COMMODITIES[hydraulics].level is 4
 - Factory commodity chains FACTORY-COMMODITY-001:K COMMODITIES[K].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:keaniumBar COMMODITIES[keanium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:L COMMODITIES[L].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:lemergiumBar COMMODITIES[lemergium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:liquid COMMODITIES[liquid].level is 3
 - Factory commodity chains FACTORY-COMMODITY-001:machine COMMODITIES[machine].level is 5
 - Factory commodity chains FACTORY-COMMODITY-001:microchip COMMODITIES[microchip].level is 3
@@ -6327,11 +6267,11 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:transistor COMMODITIES[transistor].level is 2
 - Factory commodity chains FACTORY-COMMODITY-001:tube COMMODITIES[tube].level is 1
 - Factory commodity chains FACTORY-COMMODITY-001:U COMMODITIES[U].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:utriumBar COMMODITIES[utrium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:wire COMMODITIES[wire].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-001:zynthiumBar COMMODITIES[zynthium_bar].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
 **`tests/11-structures-production/11.6-power-spawn.test.ts`** (5)
@@ -6637,9 +6577,9 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-017 EVENT_ATTACK_TYPE_HIT_BACK is emitted from a melee target with ATTACK parts
 - room.getEventLog() ROOM-EVENTLOG-018 EVENT_HEAL from creep heal() carries healType=MELEE and amount=HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-019 EVENT_ATTACK_TYPE_NUKE is emitted for each damaged structure when a nuke lands
-- room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix
-- room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:attackObjectIsNukeTargetIsStructure nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:roomwideCreepKillEmitsNoAttackEvent nuke event-log detail matches the matrix
+- room.getEventLog() ROOM-EVENTLOG-026:rampartAttackEntryPrecedesCoveredStructure nuke event-log detail matches the matrix
 - room.getEventLog() ROOM-EVENTLOG-021 EVENT_ATTACK from creep dismantle() carries attackType=DISMANTLE and damage=DISMANTLE_POWER
 - room.getEventLog() ROOM-EVENTLOG-022 EVENT_HEAL from creep rangedHeal() carries healType=RANGED and amount=RANGED_HEAL_POWER
 - room.getEventLog() ROOM-EVENTLOG-023 EVENT_OBJECT_DESTROYED is emitted exactly once when multiple attackers kill a structure on the same tick
@@ -6753,19 +6693,19 @@ Click a count to jump to the affected test list.
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
 - Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
-- Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:targetRoomVisibleToTargetOwner in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:launchRoomDoesNotListTargetNuke in-flight nuke visibility follows player perspective
+- Nuke flight NUKE-FLIGHT-004:targetRoomHiddenFromLauncherWithoutVisibility in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
 **`tests/19-power/19.0-gpl.test.ts`** (6)
 
 - Game.gpl GPL-001 Game.gpl starts at level 0 with 1000 progressTotal when account power is 0
-- Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power
-- Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power
-- Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power
-- Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power
-- Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power
+- Game.gpl GPL-002:belowLevelOne Game.gpl follows vanilla account-power math at 999 power
+- Game.gpl GPL-002:levelOne Game.gpl follows vanilla account-power math at 1000 power
+- Game.gpl GPL-002:belowLevelTwo Game.gpl follows vanilla account-power math at 3999 power
+- Game.gpl GPL-002:levelTwo Game.gpl follows vanilla account-power math at 4000 power
+- Game.gpl GPL-002:levelThree Game.gpl follows vanilla account-power math at 9000 power
 
 **`tests/19-power/19.1-lifecycle.test.ts`** (8)
 
@@ -7064,24 +7004,24 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.10-actionlog.test.ts`** (21)
 
-- Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers
-- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers
-- Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-CREEP-001:attackTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:harvestSourceCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:buildSiteCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:repairStructureCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:healTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:rangedHealTargetCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:upgradeControllerCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-CREEP-001:reserveControllerCoordinates successful creep actions render source-side action markers
+- Room history action log ACTIONLOG-TARGET-001:creepDamagedByCreep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepHealedByCreep successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepDamagedByTower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-TARGET-001:creepHealedByTower successful incoming effects render target-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerAttackTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerHealTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:towerRepairTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:linkTransferTargetCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:labRunReactionReagentCoordinates successful structure actions render source-side markers
+- Room history action log ACTIONLOG-STRUCT-001:labReverseReactionOutputCoordinates successful structure actions render source-side markers
 - Room history action log ACTIONLOG-SAY-001 say() renders message text and public visibility in the action-log artifact
 - Room history action log ACTIONLOG-TICK-001 action-log capture is scoped to the tick that generated the marker
 - Room history action log ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick
