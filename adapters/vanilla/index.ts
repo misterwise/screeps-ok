@@ -616,6 +616,7 @@ const INTER_SHARD_MEMORY_POLYFILL = `
 
 type ResultCapture = {
 	wait: () => Promise<string | undefined>;
+	tickError: () => string | undefined;
 	logs: () => string[];
 	dispose: () => void;
 };
@@ -703,9 +704,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		const marker = `${RESULT_PREFIX}${nonce}:`;
 		let resultJson: string | undefined;
+		let tickError: string | undefined;
 		const collectedLogs: string[] = [];
-		let resolveSeen: (value: string) => void = () => {};
-		const seen = new Promise<string>(resolve => { resolveSeen = resolve; });
+		let resolveSeen: () => void = () => {};
+		const seen = new Promise<void>(resolve => { resolveSeen = resolve; });
 		const listener = (logs: unknown[], results: unknown[]) => {
 			for (const entry of logs) {
 				const text = this.consoleEventText(entry);
@@ -719,25 +721,31 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				} catch {
 					resultJson = text.slice(marker.length);
 				}
-				resolveSeen(resultJson);
+				resolveSeen();
 				return;
 			}
 		};
+		const errorListener = (error: string) => {
+			tickError = error;
+			resolveSeen();
+		};
 
 		user.on('console', listener);
+		user.on('tickError', errorListener);
 		return {
 			wait: async () => {
-				if (resultJson !== undefined) return resultJson;
+				if (resultJson !== undefined || tickError !== undefined) return resultJson;
 				await Promise.race([
 					seen,
 					new Promise<void>(resolve => setTimeout(resolve, RESULT_TIMEOUT_MS)),
 				]);
 				return resultJson;
 			},
+			tickError: () => tickError,
 			logs: () => collectedLogs.slice(),
 			dispose: () => {
-				if (typeof user.off === 'function') user.off('console', listener);
-				else if (typeof user.removeListener === 'function') user.removeListener('console', listener);
+				user.off('console', listener);
+				user.off('tickError', errorListener);
 			},
 		};
 	}
@@ -751,8 +759,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		return null;
 	}
 
-	private parseRunResult(source: string, handle: string, resultJson: string | undefined): PlayerReturnValue {
+	private parseRunResult(source: string, handle: string, capture: ResultCapture, resultJson: string | undefined): PlayerReturnValue {
 		if (resultJson === undefined) {
+			// No result, but the tick itself failed (e.g. tick-end Memory serialization threw), so none of it was published.
+			const tickError = capture.tickError();
+			if (tickError !== undefined) throw new RunPlayerError('runtime', tickError);
 			throw new Error(
 				`${source}: player '${handle}' code was not executed or no result was captured. ` +
 				`The engine may have skipped this player's main loop.`,
@@ -811,11 +822,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					else _sokErrMsg = String(e);
 				} catch (_) { _sokErrMsg = 'Unknown error'; }
 				_sokResultObj = { ok: false, error: _sokErrMsg, errorType: _sokErrType };
-			}
-			try {
-				if (RawMemory._parsed) JSON.stringify(RawMemory._parsed);
-			} catch (_) {
-				try { RawMemory.set(RawMemory.get()); } catch (_) {}
 			}
 			return ${prefix} + encodeURIComponent(JSON.stringify(_sokResultObj));
 		})()`;
@@ -1068,6 +1074,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const UserClass = ((await import('screeps-server-mockup/dist/src/user.js')) as any).default;
 			const userObj: any = new UserClass(this.server, { _id: user._id, username });
 			await userObj.init();
+			// The mockup User forwards only log/results; a failed tick publishes { error } on the same channel.
+			this.server.common.storage.pubsub.subscribe(`user:${user._id}/console`, (event: string) => {
+				const { error } = JSON.parse(event);
+				if (error) userObj.emit('tickError', String(error));
+			});
 
 			this.playerMap.set(handle, user._id);
 			this.reversePlayerMap.set(user._id, handle);
@@ -1675,7 +1686,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			});
 			await guardedTick(this.server);
 			this.firstTickRun = true;
-			const parsed = this.parseRunResult('runPlayer', handle, await capture.wait());
+			const parsed = this.parseRunResult('runPlayer', handle, capture, await capture.wait());
 			this.playerLogs.set(handle, capture.logs());
 			return parsed;
 		} finally {
@@ -1713,7 +1724,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 			const results: Record<string, PlayerReturnValue> = {};
 			for (const handle of handles) {
-				results[handle] = this.parseRunResult('runPlayers', handle, resultJsonByHandle.get(handle));
+				results[handle] = this.parseRunResult('runPlayers', handle, captures.get(handle)!, resultJsonByHandle.get(handle));
 				this.playerLogs.set(handle, captures.get(handle)!.logs());
 			}
 			return results;

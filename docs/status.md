@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2708%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2543%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-67-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2708%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-27-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,19 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2708](#vanilla-passing-tests) | [27](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 03:15 UTC |
-| 🟡 | **xxscreeps** | [2543](#xxscreeps-passing-tests) | [67](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-26 03:15 UTC |
+| 🔴 | **xxscreeps** | [2542](#xxscreeps-passing-tests) | [67](#xxscreeps-expected-failures) | — | [128](#xxscreeps-skipped-tests) | 2026-09-26 03:15 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## 🚨 Regression traps triggered
+
+Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
+
+**xxscreeps**
+
+- `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist`
 
 ## vanilla expected failures
 
@@ -158,7 +166,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 67 tests. That includes 25 open parity gaps covering 58 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 31 expected-failure classifications against vanilla's canonical behavior, covering 67 tests. That includes 26 open parity gaps covering 58 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -191,6 +199,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `controller-level-up-ignores-downgrade-timer` | The `upgradeController` processor (`mods/classic/controller/processor.ts:174-188`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade. | Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling. | [1](#xxscreeps-gap-controller-level-up-ignores-downgrade-timer) |
 | `controller-timer-anchors-one-tick-late` | The controller tick (`mods/classic/controller/processor.ts:237-239`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:183`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up. | Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore. | [2](#xxscreeps-gap-controller-timer-anchors-one-tick-late) |
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:154`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
+| `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -399,6 +408,12 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>harvest-not-ordered-before-upgradecontroller</code> — 1 test</summary>
 
 - `Intent creep resolution order INTENT-CREEP-005 harvest resolves before upgradeController even when upgradeController is called first`
+
+</details>
+
+<details id="xxscreeps-gap-circular-memory-tick-completes">
+<summary><code>circular-memory-tick-completes</code> — 0 tests</summary>
+
 
 </details>
 
@@ -3927,7 +3942,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2543 tests across 134 files</summary>
+<summary>2542 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6790,10 +6805,9 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry
 
-**`tests/27-undocumented/27.3-memjson.test.ts`** (2)
+**`tests/27-undocumented/27.3-memjson.test.ts`** (1)
 
 - Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-002 undefined-valued Memory keys are dropped on the next tick
-- Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist
 
 **`tests/27-undocumented/27.4-costmatrix-bits.test.ts`** (4)
 

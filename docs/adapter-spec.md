@@ -183,7 +183,9 @@ Mapping all caught errors to `'runtime'` is a spec violation.
   type.
 - **`runtime`**: errors thrown during code execution — `ReferenceError`,
   `TypeError`, explicit `throw`, and any other error that occurs after parsing
-  succeeds.
+  succeeds. This includes an engine failure that aborts the player's tick
+  after the code ran (e.g. vanilla's tick-end `Memory` serialization): the
+  engine's error is the result, not a missing-result infrastructure error.
 - **`serialization`**: the code executed successfully but its return value is
   not JSON-safe, or is a live game object (see below).
 

@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, MOVE } from '../../src/index.js';
 
 describe('Undocumented API Surface — Memory serialization fidelity', () => {
 	test('UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick', async ({ shard }) => {
@@ -97,42 +97,28 @@ describe('Undocumented API Surface — Memory serialization fidelity', () => {
 		expect(result.negIsNull).toBe(true);
 	});
 
-	test('UNDOC-MEMJSON-005 a circular reference in Memory does not crash the player runtime; the unserializable subtree does not persist', async ({ shard }) => {
+	test('UNDOC-MEMJSON-005 a circular reference in Memory fails the tick: its intents and Memory writes are dropped, and the runtime survives', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE],
+		});
+		await shard.runPlayer('p1', code`Memory.kept = 'yes'; 'ok'`);
 
-		await shard.runPlayer('p1', code`
+		await shard.expectRunPlayerError('p1', code`
 			Memory.preCirc = 'before';
 			const obj = { label: 'inside' };
 			obj.self = obj;
 			Memory.circ = obj;
-			Memory.postCirc = 'after';
+			Game.getObjectById(${creepId}).move(TOP);
 			'ok'
-		`);
+		`, 'runtime');
 
 		const result = await shard.runPlayer('p1', code`
-			let circIsSelfReferencing = false;
-			try {
-				circIsSelfReferencing = Boolean(Memory.circ && Memory.circ.self === Memory.circ);
-			} catch (e) {
-				circIsSelfReferencing = 'threw:' + (e && e.message);
-			}
-			({
-				runtimeAlive: true,
-				circAbsent: !('circ' in Memory) || Memory.circ === null,
-				circIsSelfReferencing,
-				preCirc: Memory.preCirc,
-				postCirc: Memory.postCirc,
-			})
-		`) as {
-			runtimeAlive: boolean;
-			circAbsent: boolean;
-			circIsSelfReferencing: unknown;
-			preCirc: unknown;
-			postCirc: unknown;
-		};
+			({ circPresent: 'circ' in Memory, preCirc: Memory.preCirc ?? null, kept: Memory.kept ?? null })
+		`);
+		expect(result).toEqual({ circPresent: false, preCirc: null, kept: 'yes' });
 
-		expect(result.runtimeAlive).toBe(true);
-		expect(result.circAbsent).toBe(true);
-		expect(result.circIsSelfReferencing).toBe(false);
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.pos.y).toBe(25);
 	});
 });

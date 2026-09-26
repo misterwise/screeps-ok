@@ -4350,17 +4350,17 @@ Notes
   An `Infinity` value assigned to a `Memory` property reads as `null` on the
   next tick.
 - `UNDOC-MEMJSON-005` `behavior` `verified_vanilla`
-  A circular reference introduced into `Memory` during a tick causes tick-end
-  serialization to fail; the failure does not crash the player runtime but
-  does not persist the unserializable subtree.
+  A circular reference introduced into `Memory` during a tick fails that
+  tick: the player's code reports a runtime error, none of the tick's
+  intents or `Memory` writes persist, previously saved `Memory` is intact,
+  and the runtime runs normally on the next tick.
 
 Notes
-- `UNDOC-MEMJSON-005` was verified against vanilla as a *silent* subtree
-  drop — the runtime stays alive and unrelated Memory keys are not
-  observed to be affected. The entry asserts absence of the circular
-  subtree and runtime liveness; it deliberately does not assert anything
-  about "other keys in the same Memory root survive" because the vanilla
-  serializer's partial-write behavior has not been fully pinned.
+- `UNDOC-MEMJSON-005`: vanilla serializes `RawMemory._parsed` outside any
+  try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw
+  escapes the runtime run before intents are collected. An earlier reading
+  ("silent subtree drop") came from the vanilla adapter resetting a cyclic
+  `RawMemory` itself.
 
 ### 27.4 PathFinder CostMatrix Direct Access
 - `UNDOC-COSTMATRIX-001` `behavior` `verified_vanilla`
