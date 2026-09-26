@@ -276,9 +276,10 @@ export function powerCreepRosterKey(userId: string): string {
 // ── SNAPSHOT ─────────────────────────────────────────────────────────
 
 /** SNAPSHOT — mods/creep/creep.ts:76 `obj.owner` depends on `userInfo` which is
- *  empty during peekRoom; `#user` is the raw engine userId. */
+ *  empty during peekRoom; `#user` is the raw engine userId. A power bank has no
+ *  user, only a fixed `owner.username`. */
 export function readRawOwnerId(obj: any): string | undefined {
-	return obj['#user'] ?? obj.owner?.username;
+	return obj['#user'];
 }
 
 /** SNAPSHOT — mods/classic/controller/controller.ts:85 the `reservation` getter resolves the

@@ -293,7 +293,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	}
 
 	resolvePlayerReverse(userId: string): string {
-		return this.reversePlayerMap.get(userId) ?? userId;
+		const handle = this.reversePlayerMap.get(userId);
+		if (handle === undefined) throw new Error(`No player handle for engine user '${userId}'`);
+		return handle;
 	}
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
