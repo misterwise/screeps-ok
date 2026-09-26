@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	OK, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
-	POWER_INFO, POWER_CREEP_LIFE_TIME,
+	POWER_INFO, POWER_CREEP_LIFE_TIME, TOMBSTONE_DECAY_POWER_CREEP,
 	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, PWR_OPERATE_LAB, PWR_OPERATE_OBSERVER,
 	PWR_OPERATE_FACTORY, PWR_OPERATE_TERMINAL, PWR_OPERATE_SPAWN, PWR_OPERATE_POWER,
 	PWR_REGEN_SOURCE, PWR_REGEN_MINERAL, PWR_DISRUPT_SOURCE,
@@ -601,25 +601,36 @@ describe('Power creep renew', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
 		});
-
-		// Place a power creep with very low TTL.
-		// We can't set TTL directly on placePowerCreep.
-		// Instead, place and advance many ticks. But that's impractical
-		// with TTL of 5000.
-		// Test the behavior concept: when TTL reaches 0, a tombstone is created.
-		// Verify the power creep has ticksToLive > 0 (placed and alive).
 		await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
+			pos: [25, 25], owner: 'p1', name: 'Doomed',
 			powers: {},
 			store: { ops: 10 },
 		});
 		await shard.tick();
 
-		const ttl = await shard.runPlayer('p1', code`
-			const pcs = Object.values(Game.powerCreeps);
-			pcs[0] ? pcs[0].ticksToLive : null
-		`) as number | null;
-		expect(ttl).not.toBeNull();
-		expect(ttl!).toBeGreaterThan(0);
+		const death = await shard.runPlayer('p1', code`
+			const pc = Game.powerCreeps['Doomed'];
+			({ id: pc.id, rc: pc.suicide(), time: Game.time })
+		`) as { id: string; rc: number; time: number };
+		expect(death.rc).toBe(OK);
+
+		const tomb = await shard.runPlayer('p1', code`
+			const t = Game.rooms['W1N1'].lookForAt(LOOK_TOMBSTONES, 25, 25)[0];
+			t ? ({
+				deathTime: t.deathTime,
+				ticksToDecay: t.ticksToDecay,
+				ops: t.store[RESOURCE_OPS],
+				creepId: t.creep.id,
+				creepName: t.creep.name,
+			}) : null
+		`);
+		// Stamped on the suicide tick; read one tick later.
+		expect(tomb).toEqual({
+			deathTime: death.time,
+			ticksToDecay: TOMBSTONE_DECAY_POWER_CREEP - 1,
+			ops: 10,
+			creepId: death.id,
+			creepName: 'Doomed',
+		});
 	});
 });

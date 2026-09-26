@@ -33,13 +33,14 @@ describe('Container decay', () => {
 
 			const before = await shard.expectStructure(id, STRUCTURE_CONTAINER);
 			expect(before.hits).toBe(CONTAINER_HITS);
-			expect(before.ticksToDecay).toBeGreaterThan(0);
+			expect(before.ticksToDecay).toBe(3);
 
-			// Tick past the decay point.
+			// The third tick decays it and restarts the timer from that tick.
 			await shard.tick(3);
 
 			const after = await shard.expectStructure(id, STRUCTURE_CONTAINER);
 			expect(after.hits).toBe(CONTAINER_HITS - expectedDecayAmount);
+			expect(after.ticksToDecay).toBe(expectedDecayInterval - 1);
 		});
 	}
 

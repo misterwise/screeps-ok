@@ -172,11 +172,6 @@ describe('Controller downgrade', () => {
 	});
 
 	downgradeTest('CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected', async ({ shard }) => {
-		// RCL 3 with a tiny ticksToDowngrade. After expiry, the downgrade
-		// timer resets to CONTROLLER_DOWNGRADE[2] — but since the controller
-		// is still neglected and CONTROLLER_DOWNGRADE[2] is 10000, simulating
-		// another pass takes too long. So seed ticksToDowngrade low, allow
-		// one pass, then observe at least one step.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1', ticksToDowngrade: 3 }],
@@ -203,7 +198,21 @@ describe('Controller downgrade', () => {
 			Game.rooms['W1N1'].controller.ticksToDowngrade
 		`) as number;
 		expect(ttdAfter).toBe(2 + CONTROLLER_DOWNGRADE[2] / 2 + 1 - 12);
-	});
+
+		// Still neglected: run the RCL 2 timer down to its last tick, which
+		// loses the second level.
+		await shard.tick(ttdAfter - 2);
+		const lastTick = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			ttd: Game.rooms['W1N1'].controller.ticksToDowngrade,
+		})`);
+		expect(lastTick).toEqual({ level: 2, ttd: 1 });
+		const afterSecond = await shard.runPlayer('p1', code`({
+			level: Game.rooms['W1N1'].controller.level,
+			ttd: Game.rooms['W1N1'].controller.ticksToDowngrade,
+		})`);
+		expect(afterSecond).toEqual({ level: 1, ttd: CONTROLLER_DOWNGRADE[1] / 2 + 1 });
+	}, 60_000);
 
 	downgradeTest('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
 		await shard.createShard({

@@ -17,7 +17,7 @@ describe('Road decay', () => {
 
 		const before = await shard.expectStructure(id, STRUCTURE_ROAD);
 		expect(before.hits).toBe(ROAD_HITS);
-		expect(before.ticksToDecay).toBeGreaterThan(0);
+		expect(before.ticksToDecay).toBe(5);
 		const t0 = before.ticksToDecay;
 
 		// Tick 2 times — hits should be unchanged, ticksToDecay should decrease.
@@ -26,10 +26,12 @@ describe('Road decay', () => {
 		expect(mid.hits).toBe(ROAD_HITS);
 		expect(mid.ticksToDecay).toBe(t0 - 2);
 
-		// Tick past the decay point — hits should decrease by ROAD_DECAY_AMOUNT.
+		// Decay fires on the fifth tick and restarts the timer at ROAD_DECAY_TIME
+		// from that tick; one more tick has elapsed at this read.
 		await shard.tick(4);
 		const after = await shard.expectStructure(id, STRUCTURE_ROAD);
 		expect(after.hits).toBe(ROAD_HITS - ROAD_DECAY_AMOUNT);
+		expect(after.ticksToDecay).toBe(ROAD_DECAY_TIME - 2);
 	});
 
 	// ---- ROAD-DECAY-001: terrain-specific decay amounts ----

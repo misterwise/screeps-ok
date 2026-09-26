@@ -209,6 +209,12 @@
 			"expected": "Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys.",
 			"why": "Found 2026-09-25 when PATHFINDER-014's either-outcome test (accepting a throw) was made unconditional. The empty-array case (PATHFINDER-013) passes because it never enters the map callback.",
 			"tests": ["PATHFINDER-014"]
+		},
+		"bury-power-creep-stamps-next-tick": {
+			"actual": "`buryPowerCreep` (`mods/mmo/powercreep/processor.ts:23-41`) stamps `deathTime = Game.time` and `#decayTime = Game.time + TOMBSTONE_DECAY_POWER_CREEP` from the processor clock, which reads one tick past vanilla's `gameTime`. A power creep's tombstone therefore reads `deathTime` one past the tick the player issued `suicide()` on, and `ticksToDecay` of `TOMBSTONE_DECAY_POWER_CREEP` on the next tick.",
+			"expected": "Vanilla `processor/global-intents/power/_diePowerCreep.js` stamps `deathTime: gameTime` and `decayTime: gameTime + TOMBSTONE_DECAY_POWER_CREEP` on the death tick. `deathTime` equals the tick of the `suicide()` call, and the next tick reads `TOMBSTONE_DECAY_POWER_CREEP - 1`.",
+			"why": "Found 2026-09-25 when POWERCREEP-DEATH-001, which only checked that a live power creep had a positive TTL, was rewritten to kill one through suicide(). Same fix as `bury-creep-stamps-next-tick`, applied in the power-creep mod's copy.",
+			"tests": ["POWERCREEP-DEATH-001"]
 		}
 	}
 }
