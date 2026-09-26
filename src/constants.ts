@@ -246,6 +246,7 @@ export const INVADERS_ENERGY_GOAL: number = C.INVADERS_ENERGY_GOAL;
 // Invader core
 export const EFFECT_COLLAPSE_TIMER: 1002 = C.EFFECT_COLLAPSE_TIMER;
 export const INVADER_CORE_CREEP_SPAWN_TIME: Record<number, number> = C.INVADER_CORE_CREEP_SPAWN_TIME;
+export const INVADER_CORE_CONTROLLER_POWER: number = C.INVADER_CORE_CONTROLLER_POWER;
 
 // Ruin decay
 export const RUIN_DECAY: number = C.RUIN_DECAY;

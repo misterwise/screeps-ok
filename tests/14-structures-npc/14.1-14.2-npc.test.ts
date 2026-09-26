@@ -1,7 +1,8 @@
 import {
 	describe, test, expect, code,
 	ATTACK, MOVE,
-	EFFECT_COLLAPSE_TIMER,
+	CONTROLLER_RESERVE,
+	EFFECT_COLLAPSE_TIMER, INVADER_CORE_CONTROLLER_POWER,
 	FIND_STRUCTURES, FIND_RUINS,
 	STRUCTURE_CONTROLLER,
 } from '../../src/index.js';
@@ -236,6 +237,44 @@ describe('Invader core', () => {
 		expect(await shard.getObject(coreId)).toBeNull();
 		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
 		expect(ruins.filter(r => r.pos.x === 30 && r.pos.y === 30)).toHaveLength(0);
+	});
+
+	test('INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power', async ({ shard }) => {
+		// Engine invader-core/reserveController.js:22-37 starts a fresh
+		// reservation at `gameTime + 1` and then adds
+		// INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE; the core
+		// (stronghold.js handleController) renews every tick after that.
+		shard.requires('invaderCore');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		await shard.placeObject('W2N1', 'invaderCore', {
+			pos: [25, 25],
+			level: 0,
+		});
+		// A p1 creep gives the player vision of the room.
+		await shard.placeCreep('W2N1', {
+			pos: [10, 10],
+			owner: 'p1',
+			body: [MOVE],
+		});
+
+		// The first tick a reservation is visible follows the fresh reserve.
+		const readings: number[] = [];
+		for (let i = 0; i < 6 && readings.length < 2; i++) {
+			const ticksToEnd = await shard.runPlayer('p1', code`
+				const reservation = Game.rooms['W2N1'].controller.reservation;
+				reservation ? reservation.ticksToEnd : null
+			`) as number | null;
+			if (ticksToEnd !== null) readings.push(ticksToEnd);
+		}
+		const power = INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE;
+		// Each renewal credits `power` against one tick of decay.
+		expect(readings).toEqual([power, power + power - 1]);
 	});
 });
 

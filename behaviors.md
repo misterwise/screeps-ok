@@ -2591,6 +2591,15 @@ cross-shard `destination` values.
 - `INVADER-CORE-005` `behavior` `verified_vanilla`
   When an invader core's `EFFECT_COLLAPSE_TIMER` expires, the invader core is
   removed from the room in the same tick, leaving no ruin behind.
+- `INVADER-CORE-006` `behavior` `verified_vanilla`
+  An invader core in a room with a neutral, unreserved controller reserves it:
+  the first visible reservation reads `ticksToEnd` of exactly
+  `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` (2), and the core renews
+  it every tick after, so the next reading is one higher. (Engine
+  `processor/intents/invader-core/reserveController.js:22-37` starts a fresh
+  reservation at `gameTime + 1` and then adds the effect;
+  `stronghold/stronghold.js` `handleController` issues the intent every tick
+  while the reservation is the core's own.)
 
 Coverage Notes
 - Stronghold orchestration began splitting into concrete observable behaviors

@@ -7,10 +7,10 @@
 			"tests": ["CTRL-RESERVE-010"]
 		},
 		"reserve-fresh-reservation-one-tick-long": {
-			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, but `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so an N-CLAIM reservation reads `ticksToEnd` of N + 1 on the next tick and expires a tick late.",
-			"expected": "Vanilla `processor/intents/creeps/reserveController.js:31-45` starts a fresh reservation at `gameTime + 1` and then adds `effect`, so the next tick reads exactly `N * CONTROLLER_RESERVE`.",
-			"why": "Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`.",
-			"tests": ["CTRL-RESERVE-011"]
+			"actual": "The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late.",
+			"expected": "Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core.",
+			"why": "Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`.",
+			"tests": ["CTRL-RESERVE-011", "INVADER-CORE-006"]
 		},
 		"controller-my-reset-returns-undefined": {
 			"intentional": true,

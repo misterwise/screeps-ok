@@ -111,10 +111,10 @@ Last refreshed: 2026-09-25 against pin `4795a332`.
 
 ### reserve-fresh-reservation-one-tick-long
 
-- Tests: CTRL-RESERVE-011
+- Tests: CTRL-RESERVE-011, INVADER-CORE-006
 - Status: CONFIRMED 2026-09-25 at pin `4795a332`; found while fixing the cap gap above.
-- Cause: `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, transcribing vanilla's `gameTime + 1` base literally. The processor's `Game.time` already reads one tick past vanilla's `gameTime` (same convention as `controller-timer-anchors-one-tick-late`), so an N-CLAIM reservation reads `ticksToEnd` of N + 1 on the next tick and expires a tick late. Vanilla (`processor/intents/creeps/reserveController.js:31-45`) reads exactly N. CTRL-RESERVE-001 and -006 only asserted a positive reading, so nothing pinned it.
-- Plan: start a fresh reservation at `Game.time + power`. Built together with the cap fix above.
+- Cause: the creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, transcribing vanilla's `gameTime + 1` base literally, and the invader core's copy (`mods/modern/stronghold/processor.ts`) does the same as `(Game.time + 1) + power`. The processor's `Game.time` already reads one tick past vanilla's `gameTime` (same convention as `controller-timer-anchors-one-tick-late`), so a fresh reservation reads one tick above its credit and expires a tick late: an N-CLAIM creep's reads N + 1, and a core's reads 3 where vanilla reads 2 (`creeps/reserveController.js:31-45`, `invader-core/reserveController.js:22-37`). CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. The core's copy also refuses on `endTime > Game.time + CONTROLLER_RESERVE_MAX`, one past vanilla's boundary, so a core-held reservation can read 5000. No row pins that: seeding an Invader reservation near the cap needs an adapter hook, and reaching it naturally takes ~5000 ticks.
+- Plan: move the start, credit and cap into the shared `reserve()` so both intents use `(endTime || Game.time) + power` and refuse at `>= Game.time + CONTROLLER_RESERVE_MAX`. Built together with the cap fix above.
 
 ### power-bank-ruin-spills-one-tick-late
 
