@@ -33,8 +33,8 @@ Both adapters compile native modules via `node-gyp`:
 - **C/C++ toolchain** — `xcode-select --install` (macOS), `build-essential
   python3` (Debian/Ubuntu), or `"Development Tools" python3` (RHEL/Fedora)
 
-The first `npm install` builds `xxscreeps` from source, so it is slower than
-subsequent runs.
+`npm run setup:xxscreeps` fetches the pinned `xxscreeps` and builds it from
+source, so its first run is slower than later ones.
 
 ## Quick Start
 
@@ -60,9 +60,10 @@ npm run parity
 message if the active Node or native addons do not match the selected
 adapter. Its `posttest` step regenerates [`docs/status.md`](docs/status.md) and
 [`docs/coverage.html`](docs/coverage.html) from the last full-run reports in
-`reports/`; only `npm run parity` writes new ones. A filtered parity run
-(`npm run parity -- <vitest-args>`) writes `reports/<adapter>-partial.json`
-and leaves the docs untouched.
+`reports/`. A run writes a report only in CI mode, which `npm run parity` sets
+(as does `CI=1 npm test`): an unfiltered run writes `reports/<adapter>.json`,
+and a filtered one (`npm run parity -- <vitest-args>`) writes
+`reports/<adapter>-partial.json`, which the docs never read.
 
 Filter tests by path or name, the same as any vitest invocation:
 
