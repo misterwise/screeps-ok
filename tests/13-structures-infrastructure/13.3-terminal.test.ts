@@ -455,14 +455,14 @@ describe('Terminal send', () => {
 		shard.requires('terminalSend');
 		const amount = 1;
 		const energyBefore = 100000;
-		const roomLinearDistance = 4;
+		const roomLinearDistance = 1;
 		const expectedEnergyCost = Math.ceil(amount * (1 - Math.exp(-roomLinearDistance / 30)));
 
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
 				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W5N1', rcl: 6, owner: 'p1' },
+				{ name: 'W2N1', rcl: 6, owner: 'p1' },
 			],
 		});
 		const srcId = await shard.placeStructure('W1N1', {
@@ -471,7 +471,7 @@ describe('Terminal send', () => {
 			owner: 'p1',
 			store: { [RESOURCE_ENERGY]: energyBefore, [RESOURCE_POWER]: amount },
 		});
-		const dstId = await shard.placeStructure('W5N1', {
+		const dstId = await shard.placeStructure('W2N1', {
 			pos: [25, 25],
 			structureType: STRUCTURE_TERMINAL,
 			owner: 'p1',
@@ -480,7 +480,7 @@ describe('Terminal send', () => {
 		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).send(RESOURCE_POWER, ${amount}, 'W5N1')
+			Game.getObjectById(${srcId}).send(RESOURCE_POWER, ${amount}, 'W2N1')
 		`);
 		expect(rc).toBe(OK);
 
@@ -490,5 +490,46 @@ describe('Terminal send', () => {
 		expect(src.store[RESOURCE_ENERGY]).toBe(energyBefore - expectedEnergyCost);
 		expect(dst.store[RESOURCE_POWER]).toBe(amount);
 		expect(src.cooldown).toBe(TERMINAL_COOLDOWN - 1);
+	});
+
+	test('TERMINAL-SEND-015 send across opposite world edges charges calcTransactionCost at the wrapped distance', async ({ shard }) => {
+		shard.requires('terminalSend');
+		shard.requires('marketBasics');
+		shard.requires('liveWorldSize');
+		const amount = 1000;
+		const energyBefore = 100000;
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W0N1', rcl: 6, owner: 'p1' },
+				{ name: 'W10N1', rcl: 6, owner: 'p1' },
+			],
+		});
+		const srcId = await shard.placeStructure('W0N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: { [RESOURCE_ENERGY]: energyBefore },
+		});
+		const dstId = await shard.placeStructure('W10N1', {
+			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+			store: {},
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			({
+				wrapped: Game.map.getRoomLinearDistance('W0N1', 'W10N1', true),
+				cost: Game.market.calcTransactionCost(${amount}, 'W0N1', 'W10N1'),
+				rc: Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, ${amount}, 'W10N1'),
+			})
+		`) as { wrapped: number; cost: number; rc: number };
+
+		// World size is engine-reported; the rooms are 10 apart and must sit nearer across the edge.
+		expect(result.wrapped).toBeLessThan(10);
+		expect(result.cost).toBe(Math.ceil(amount * (1 - Math.exp(-result.wrapped / 30))));
+		expect(result.rc).toBe(OK);
+		const src = await shard.expectStructure(srcId, STRUCTURE_TERMINAL);
+		const dst = await shard.expectStructure(dstId, STRUCTURE_TERMINAL);
+		expect(src.store[RESOURCE_ENERGY]).toBe(energyBefore - amount - result.cost);
+		expect(dst.store[RESOURCE_ENERGY]).toBe(amount);
 	});
 });

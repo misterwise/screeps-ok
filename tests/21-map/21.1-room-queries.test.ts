@@ -31,17 +31,24 @@ describe('Game.map room queries', () => {
 	});
 
 	test('MAP-ROOM-003 getRoomLinearDistance with continuous=true wraps across world edges', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+		shard.requires('liveWorldSize');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W0N1', rcl: 1, owner: 'p1' }, { name: 'W10N1' }],
+		});
 
 		const result = await shard.runPlayer('p1', code`
 			({
-				normal: Game.map.getRoomLinearDistance('W1N1', 'W1N1', false),
-				wrapped: Game.map.getRoomLinearDistance('W1N1', 'W1N1', true),
+				worldSize: Game.map.getWorldSize(),
+				across: [false, true].map(c => Game.map.getRoomLinearDistance('W0N1', 'W10N1', c)),
+				within: [false, true].map(c => Game.map.getRoomLinearDistance('W0N1', 'W3N1', c)),
 			})
-		`) as { normal: number; wrapped: number };
-		// Same room → distance 0 regardless of wrap flag.
-		expect(result.normal).toBe(0);
-		expect(result.wrapped).toBe(0);
+		`) as { worldSize: number; across: number[]; within: number[] };
+
+		// World size is engine-reported; rooms 10 apart must still sit nearer across the edge.
+		expect(result.worldSize - 10).toBeLessThan(10);
+		expect(result.across).toEqual([10, result.worldSize - 10]);
+		expect(result.within).toEqual([3, 3]);
 	});
 
 	test('MAP-ROOM-004:normal getRoomStatus returns {status:"normal", timestamp:null} for an in-world room with no admin status set', async ({ shard }) => {

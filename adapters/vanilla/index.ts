@@ -134,12 +134,10 @@ function maybeRestore() {
 function patchUserVm(module, filename) {
 	const needle = "context.global.setIgnored('_worldSize', index.getWorldSize());";
 	const replacement = "context.global.setIgnored('_worldSize', await (async function() {\\n" +
-		"                try {\\n" +
-		"                    const value = await common.storage.env.get(" + JSON.stringify(worldSizeKey) + ");\\n" +
-		"                    const parsed = Number(value);\\n" +
-		"                    if (Number.isFinite(parsed) && parsed > 0) return parsed;\\n" +
-		"                } catch (_) {}\\n" +
-		"                return index.getWorldSize();\\n" +
+		"                const value = await common.storage.env.get(" + JSON.stringify(worldSizeKey) + ");\\n" +
+		"                const parsed = Number(value);\\n" +
+		"                if (Number.isFinite(parsed) && parsed > 0) return parsed;\\n" +
+		"                throw new Error('screeps-ok vanilla sandbox patch: no worldSize published for this shard (got ' + value + ')');\\n" +
 		"            })());";
 	let source = fs.readFileSync(filename, 'utf8');
 	if (!source.includes(needle)) {

@@ -73,7 +73,12 @@ That includes:
 
 - reset prior test state completely
 - declare the available player handles for the test
-- create the requested rooms
+- create the requested rooms. The world contains every requested room and may
+  contain more (an adapter may build on an engine's own test world), so its
+  extent is engine-reported rather than derived from the spec. Tests that
+  depend on it — `Game.map.getWorldSize()`, or a distance that wraps across
+  world edges — read `Game.map.getWorldSize()` in the sandbox and require
+  `liveWorldSize`
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
 - if the adapter declares `roomStatus`, apply public room status from

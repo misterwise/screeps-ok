@@ -2472,6 +2472,11 @@ Coverage Notes
   integer `amount`; there is no lower bound above 1. A successful
   `send(resource, 1, dest)` returns `OK`, deducts the standard energy
   cost and resource, and applies `TERMINAL_COOLDOWN`.
+- `TERMINAL-SEND-015` `behavior` `verified_vanilla`
+  A resolved send charges the sending terminal
+  `Game.market.calcTransactionCost(amount, sourceRoom, targetRoom)` in energy,
+  whose distance wraps across opposite world edges
+  (`Game.map.getRoomLinearDistance(sourceRoom, targetRoom, true)`).
 
 Coverage Notes
 - Terminal store-type semantics and capacity constants belong in section `23. Store API`.

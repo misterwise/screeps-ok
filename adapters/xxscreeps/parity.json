@@ -175,6 +175,12 @@
 			"why": "Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile.",
 			"tests": ["COSTMATRIX-005"]
 		},
+		"terminal-send-cost-ignores-world-wrap": {
+			"actual": "`StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96.",
+			"expected": "Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate.",
+			"why": "Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites.",
+			"tests": ["TERMINAL-SEND-015"]
+		},
 		"bury-creep-stamps-next-tick": {
 			"actual": "`buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late.",
 			"expected": "Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`.",
