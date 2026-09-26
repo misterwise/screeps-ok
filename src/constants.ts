@@ -251,8 +251,10 @@ export const INVADER_CORE_CONTROLLER_POWER: number = C.INVADER_CORE_CONTROLLER_P
 // Ruin decay
 export const RUIN_DECAY: number = C.RUIN_DECAY;
 
-// Deposit decay
+// Deposit decay and exhaustion
 export const DEPOSIT_DECAY_TIME: number = C.DEPOSIT_DECAY_TIME;
+export const DEPOSIT_EXHAUST_MULTIPLY: number = C.DEPOSIT_EXHAUST_MULTIPLY;
+export const DEPOSIT_EXHAUST_POW: number = C.DEPOSIT_EXHAUST_POW;
 
 // Store capacities
 export const STORAGE_CAPACITY: number = C.STORAGE_CAPACITY;

@@ -3241,8 +3241,9 @@ neighbors and no better section exists.
   ticks until the next harvest becomes available, and returns `0` once that
   wait has elapsed.
 - `DEPOSIT-004` `behavior` `verified_vanilla`
-  `deposit.ticksToDecay` becomes defined after the first successful harvest
-  and decreases by `1` each tick until the deposit is removed.
+  Each successful harvest restarts `deposit.ticksToDecay` at
+  `DEPOSIT_DECAY_TIME` from the harvest tick; it then decreases by `1` each
+  tick.
 - `DEPOSIT-005` `behavior` `verified_vanilla`
   Repeated successful harvests can increase a deposit's exposed
   `lastCooldown` and future `cooldown`.
