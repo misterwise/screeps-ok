@@ -73,6 +73,11 @@ describe('adapter contract: setup', () => {
 				ticksToDowngrade: CONTROLLER_DOWNGRADE[1],
 				progressTotal: CONTROLLER_LEVELS[1],
 			});
+			// Both adapters derive the snapshot field; the engine's getter is the reference.
+			const playerView = await shard.runPlayer('p1', code`
+				Game.rooms['W1N1'].controller.progressTotal
+			`);
+			expect(playerView).toBe(CONTROLLER_LEVELS[1]);
 		});
 
 		test('default room layout is canonical and sparse', async ({ shard }) => {

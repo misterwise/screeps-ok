@@ -1,18 +1,23 @@
-import { describe, test, expect,
+import { describe, test, expect, code,
 	DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA,
 	MINERAL_DENSITY,
 } from '../../src/index.js';
 import { mineralRegenCases } from '../../src/matrices/mineral-regen.js';
 
 describe('mineral regeneration', () => {
-	test('MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as 0', async ({ shard }) => {
+	test('MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as undefined', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
 			pos: [25, 25], mineralType: 'H', mineralAmount: 50000,
 		});
+		await shard.tick();
 
-		const mineral = await shard.expectObject(id, 'mineral');
-		expect(mineral.ticksToRegeneration).toBe(0);
+		// Read through the engine getter; the adapter snapshot defaults a missing timer.
+		const result = await shard.runPlayer('p1', code`
+			const m = Game.getObjectById(${id});
+			({ amount: m.mineralAmount, hasTimer: m.ticksToRegeneration !== undefined })
+		`);
+		expect(result).toEqual({ amount: 50000, hasTimer: false });
 	});
 
 	test('MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick', async ({ shard }) => {

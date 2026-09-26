@@ -31,36 +31,17 @@ describe('Timer gating', () => {
 		`);
 		expect(rc1).toBe(OK);
 
-		// Read the cooldown after the first reaction tick.
-		const labAfter = await shard.expectStructure(labId, STRUCTURE_LAB);
-		const cooldownAfterReaction = labAfter.cooldown;
-		expect(cooldownAfterReaction).toBeGreaterThan(0);
-
-		// Tick until cooldown is 0. Each tick decrements cooldown by 1.
-		// We need (cooldownAfterReaction) more ticks to reach 0.
-		if (cooldownAfterReaction > 1) {
-			await shard.tick(cooldownAfterReaction - 1);
-		}
-
-		// Verify cooldown is now 0 (or will be 0 after one more tick processing).
-		// The lab should report cooldown 0 or 1 at this point.
-		const labMid = await shard.expectStructure(labId, STRUCTURE_LAB);
-		// After cooldownAfterReaction - 1 additional ticks, cooldown should be 1 or 0.
-		// We need it to reach exactly 0 for the next reaction to succeed.
-		if (labMid.cooldown > 0) {
-			await shard.tick(labMid.cooldown);
-		}
-
-		// Now cooldown should be 0 — verify.
-		const labReady = await shard.expectStructure(labId, STRUCTURE_LAB);
-		expect(labReady.cooldown).toBe(0);
-
-		// Run another reaction — should succeed on the same tick cooldown is 0.
-		const rc2 = await shard.runPlayer('p1', code`
+		// Anchored on the reaction tick: refused while it reads 1, allowed at 0.
+		const cooldown = REACTION_TIME.OH;
+		const first = await shard.runPlayer('p1', code`Game.getObjectById(${labId}).cooldown`);
+		expect(first).toBe(cooldown - 1);
+		await shard.tick(cooldown - 3);
+		const react = code`
 			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc2).toBe(OK);
+			({ cooldown: lab.cooldown, rc: lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2})) })
+		`;
+		expect(await shard.runPlayer('p1', react)).toEqual({ cooldown: 1, rc: ERR_TIRED });
+		expect(await shard.runPlayer('p1', react)).toEqual({ cooldown: 0, rc: OK });
 	});
 
 	test('TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0', async ({ shard }) => {
@@ -111,18 +92,14 @@ describe('Timer gating', () => {
 		`) as number;
 		expect(sm1).toBe(sm0 - 4);
 
-		// Drive well past expiration; the engine reports undefined once
-		// safeMode <= gameTime, which we map to null in the test return.
-		await shard.tick(sm1 + 5);
-		const smExpired = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.safeMode ?? null
-		`);
-		expect(smExpired).toBeNull();
-
-		// With safe mode expired, the same hostile attack now succeeds.
-		const unblockedRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId}))
-		`);
-		expect(unblockedRc).toBe(OK);
+		// Run to the last safe-mode tick; the attack is blocked while it reads 1
+		// and allowed on the next tick, when the getter reports undefined.
+		await shard.tick(sm1 - 2);
+		const probe = code`({
+			safeMode: Game.rooms['W1N1'].controller.safeMode ?? null,
+			rc: Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId})),
+		})`;
+		expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: 1, rc: ERR_NO_BODYPART });
+		expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: null, rc: OK });
 	});
 });

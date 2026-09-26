@@ -104,8 +104,10 @@ describe('Safe mode combat effects', () => {
 		expect(moveRc).toBe(OK);
 		await shard.tick();
 
-		// Site still exists; safe mode protected it from stomping.
+		// The stomper did step onto the site tile; safe mode only skipped the stomp.
+		const stomper = await shard.expectObject(stomperId, 'creep');
+		expect(stomper.pos).toMatchObject({ x: 25, y: 25 });
 		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-		expect(sites.find(s => s.id === siteId)).toBeDefined();
+		expect(sites.find(s => s.id === siteId)).toMatchObject({ progress: 100 });
 	});
 });

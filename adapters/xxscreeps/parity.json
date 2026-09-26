@@ -75,9 +75,10 @@
 			"tests": ["FACTORY-PRODUCE-005", "FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
 		},
 		"power-bank-ruin-spills-one-tick-late": {
-			"actual": "A destroyed power bank creates a ruin with the canonical 10-tick decay value, but xxscreeps's ruin processor waits for `ticksToDecay === 0` and spills the stored power on the tenth tick after destruction.",
-			"expected": "Vanilla's ruin processor spills the power when `gameTime >= decayTime - 1`, so the dropped power appears on the ninth tick after destruction with its full amount.",
-			"tests": ["POWER-BANK-004"]
+			"actual": "`createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth.",
+			"expected": "Vanilla `processor/intents/structures/_destroy.js:21-36` stamps `destroyTime: gameTime` and `decayTime: gameTime + (RUIN_DECAY_STRUCTURES[type] || RUIN_DECAY)` on the destruction tick, so the next tick reads `RUIN_DECAY - 1` or `RUIN_DECAY_STRUCTURES[type] - 1`. The ruin processor spills the store when `gameTime >= decayTime - 1`, which is the ninth tick for a power bank.",
+			"why": "POWER-BANK-004 caught the spill side. RUIN-002 caught the decay reading on 2026-09-25, when its rows were rewritten to destroy a real structure instead of seeding the decay value they asserted. Same processor clock convention as `bury-creep-stamps-next-tick`; the upstream fix is `Game.time - 1` for both stamps in `createRuin`.",
+			"tests": ["POWER-BANK-004", "RUIN-002:container", "RUIN-002:powerBank"]
 		},
 		"power-bank-shape-exposes-store-extension": {
 			"intentional": true,

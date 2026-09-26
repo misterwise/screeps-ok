@@ -146,19 +146,18 @@ describe('Tombstone', () => {
 		const tombId = await shard.placeTombstone('W1N1', {
 			pos: [25, 25],
 			creepName: 'ephemeral',
-			ticksToDecay: 2,
+			ticksToDecay: 3,
 		});
 		await shard.tick();
 
-		const tomb = await shard.getObject(tombId);
-		expect(tomb).not.toBeNull();
-
-		await shard.tick();
-		await shard.tick();
-		await shard.tick();
-
-		const gone = await shard.getObject(tombId);
-		expect(gone).toBeNull();
+		// Removed during the tick that reads 1.
+		const readings: (number | null)[] = [];
+		for (let i = 0; i < 3; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				Game.getObjectById(${tombId})?.ticksToDecay ?? null
+			`) as number | null);
+		}
+		expect(readings).toEqual([2, 1, null]);
 	});
 
 	test('TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick', async ({ shard }) => {

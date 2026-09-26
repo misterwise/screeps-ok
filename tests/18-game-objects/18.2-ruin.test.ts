@@ -32,39 +32,52 @@ describe('Ruin', () => {
 		expect(ruin.store.energy).toBe(100);
 	});
 
-	test('RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-
-		// A powerBank has an entry in RUIN_DECAY_STRUCTURES (10 ticks).
-		// A container does not — it should use the generic RUIN_DECAY (500 ticks).
-		const expectedSpecial = RUIN_DECAY_STRUCTURES[STRUCTURE_POWER_BANK];
-		expect(expectedSpecial).toBeDefined();
-
-		const ruinWithEntry = await shard.placeRuin('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_POWER_BANK,
-			ticksToDecay: expectedSpecial,
-		});
-		const ruinGeneric = await shard.placeRuin('W1N1', {
-			pos: [26, 25],
-			structureType: STRUCTURE_CONTAINER,
-			ticksToDecay: RUIN_DECAY,
+	test('RUIN-002:container a destroyed structure with no RUIN_DECAY_STRUCTURES entry leaves a RUIN_DECAY ruin', async ({ shard }) => {
+		await shard.ownedRoom('p1', 'W1N1', 2);
+		expect(RUIN_DECAY_STRUCTURES[STRUCTURE_CONTAINER]).toBeUndefined();
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_CONTAINER,
 		});
 		await shard.tick();
 
-		const specialRuin = await shard.expectObject(ruinWithEntry, 'ruin');
-		const genericRuin = await shard.expectObject(ruinGeneric, 'ruin');
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${containerId}).destroy()
+		`);
+		expect(rc).toBe(OK);
 
-		expect(specialRuin.ticksToDecay).toBeLessThanOrEqual(expectedSpecial);
-		expect(specialRuin.ticksToDecay).toBeGreaterThan(0);
+		// Stamped on the destroy tick; read one tick later.
+		const ruin = await shard.runPlayer('p1', code`
+			const r = Game.rooms['W1N1'].lookForAt(LOOK_RUINS, 25, 25)[0];
+			r ? ({ structureType: r.structure.structureType, ticksToDecay: r.ticksToDecay }) : null
+		`);
+		expect(ruin).toEqual({ structureType: STRUCTURE_CONTAINER, ticksToDecay: RUIN_DECAY - 1 });
+	});
 
-		// container has no entry — uses generic RUIN_DECAY.
-		expect(RUIN_DECAY_STRUCTURES[STRUCTURE_CONTAINER]).toBeUndefined();
-		expect(genericRuin.ticksToDecay).toBeLessThanOrEqual(RUIN_DECAY);
-		expect(genericRuin.ticksToDecay).toBeGreaterThan(0);
+	test('RUIN-002:powerBank a destroyed power bank leaves a ruin with its RUIN_DECAY_STRUCTURES decay', async ({ shard }) => {
+		shard.requires('powerBank');
+		await shard.ownedRoom('p1');
+		const expectedDecay = RUIN_DECAY_STRUCTURES[STRUCTURE_POWER_BANK];
+		expect(expectedDecay).toBeDefined();
+		await shard.placeObject('W1N1', 'powerBank', {
+			pos: [25, 25], power: 100, hits: 100,
+		});
+		const attackerId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1', body: body(4, ATTACK, MOVE),
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			const bank = Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25)[0];
+			Game.getObjectById(${attackerId}).attack(bank)
+		`);
+		expect(rc).toBe(OK);
+
+		// 4 ATTACK parts outhit the 100-hit bank on the attack tick; read one tick later.
+		const ruin = await shard.runPlayer('p1', code`
+			const r = Game.rooms['W1N1'].lookForAt(LOOK_RUINS, 25, 25)[0];
+			r ? ({ structureType: r.structure.structureType, ticksToDecay: r.ticksToDecay }) : null
+		`);
+		expect(ruin).toEqual({ structureType: STRUCTURE_POWER_BANK, ticksToDecay: expectedDecay - 1 });
 	});
 
 	test('RUIN-003 ruin resources can be withdrawn', async ({ shard }) => {
@@ -123,19 +136,18 @@ describe('Ruin', () => {
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
 			structureType: STRUCTURE_CONTAINER,
-			ticksToDecay: 2,
+			ticksToDecay: 3,
 		});
 		await shard.tick();
 
-		const ruin = await shard.getObject(ruinId);
-		expect(ruin).not.toBeNull();
-
-		await shard.tick();
-		await shard.tick();
-		await shard.tick();
-
-		const gone = await shard.getObject(ruinId);
-		expect(gone).toBeNull();
+		// Removed during the tick that reads 1.
+		const readings: (number | null)[] = [];
+		for (let i = 0; i < 3; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				Game.getObjectById(${ruinId})?.ticksToDecay ?? null
+			`) as number | null);
+		}
+		expect(readings).toEqual([2, 1, null]);
 	});
 
 	test('RUIN-006 ruin ticksToDecay strictly decreases each tick', async ({ shard }) => {

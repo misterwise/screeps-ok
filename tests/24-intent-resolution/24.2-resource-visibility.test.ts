@@ -79,14 +79,14 @@ describe('Same-tick resource intent visibility', () => {
 		// Place a container with energy and a dropped resource on the same tile.
 		// Issue both withdraw and pickup in the same tick. Only one should
 		// succeed because the creep has limited carry capacity.
-		// Container adjacent to picker, dropped resource on picker's tile.
+		// Container and dropped pile both adjacent to the picker.
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
 			store: { energy: 100 },
 		});
-		// Dropper drops energy on picker's tile (not on the container).
+		// Dropper drops energy on its own tile, next to the picker.
 		const dropperId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
+			pos: [24, 25], owner: 'p1',
 			body: [CARRY, MOVE],
 			store: { energy: CARRY_CAPACITY },
 			name: 'dropper',
@@ -98,7 +98,7 @@ describe('Same-tick resource intent visibility', () => {
 		});
 		await shard.tick();
 
-		// Drop energy to create a dropped resource on [25,25].
+		// Drop energy to create a dropped resource on [24,25].
 		await shard.runPlayer('p1', code`
 			Game.creeps['dropper'].drop(RESOURCE_ENERGY)
 		`);
