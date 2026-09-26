@@ -1,4 +1,4 @@
-// Post-install helper: assemble the pinned xxscreeps package from upstream.
+// Assemble the pinned xxscreeps package from upstream (npm run setup:xxscreeps).
 //
 // Upstream (laverdet/xxscreeps) is a pnpm monorepo whose workspace root
 // package.json cannot be consumed by npm. Rather than fight npm's git-dep
@@ -15,7 +15,7 @@
 // upstream monorepo layout (tsconfig.base.json, packages/xxscreeps,
 // packages/pathfinder). The pin sha is ignored in this mode, and every run
 // rebuilds (no stamp check) since the source tree is assumed to be edited.
-// Intended for the screeps-ok-pr workspace — see .agent/workflows/xxscreeps-pr.md.
+// Intended for validating an unmerged xxscreeps branch.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -24,13 +24,14 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { compareSemver, hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
 
 const require = createRequire(import.meta.url);
 const minNodeMajor = 24;
 const tscBin = require.resolve('typescript/bin/tsc');
 
-const repoRoot = resolve('.');
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pinFile = join(repoRoot, '.xxscreeps-pin');
 const xxscreepsDir = join(repoRoot, 'node_modules/xxscreeps');
 const pathfinderDir = join(repoRoot, 'node_modules/@xxscreeps/pathfinder');
@@ -66,18 +67,10 @@ function stampContent(token) {
 	return `${token}\nschema=${stampSchema}\nvendor=${vendorToken}`;
 }
 
-if (process.env.SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL === '1') {
-	console.log('[screeps-ok] SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL=1, skipping xxscreeps postinstall');
-	process.exit(0);
-}
-
 const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
 if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
-	console.log(
-		`[screeps-ok] Skipping xxscreeps postinstall on ${process.version}. ` +
-		`Use Node ${minNodeMajor}+ and run npm install again for a supported environment.`,
-	);
-	process.exit(0);
+	console.error(`[screeps-ok] Building xxscreeps requires Node >=${minNodeMajor}. Current runtime is ${process.version}.`);
+	process.exit(1);
 }
 
 const localOverride = process.env.XXSCREEPS_LOCAL

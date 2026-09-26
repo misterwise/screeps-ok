@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -8,12 +8,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const minNodeMajor = 24;
-const tscBin = require.resolve('typescript/bin/tsc');
-const target = process.argv[2] ?? 'all';
-const validTargets = new Set(['all', 'xxscreeps', 'vanilla']);
+const target = process.argv[2];
+const validTargets = new Set(['xxscreeps', 'vanilla']);
 
 if (!validTargets.has(target)) {
-	console.error(`[screeps-ok] Unknown setup target '${target}'. Expected one of: ${[...validTargets].join(', ')}`);
+	console.error(`[screeps-ok] Unknown setup target '${target}'. Expected one of: ${[...validTargets].join(', ')} (npm run setup runs both).`);
 	process.exit(1);
 }
 
@@ -24,35 +23,29 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 	process.exit(1);
 }
 
-if (target === 'all' || target === 'xxscreeps') {
+// scripts/build-xxscreeps.js has already fetched and built the engine (npm run setup:xxscreeps).
+if (target === 'xxscreeps') {
 	await setupXxscreeps();
-}
-
-if (target === 'all' || target === 'vanilla') {
+} else {
 	setupVanilla();
 }
 
 async function setupXxscreeps() {
-	const root = resolvePackageRoot('xxscreeps');
+	const root = resolvePackageRoot('xxscreeps', 'Run npm run setup:xxscreeps.');
 	console.log(`[screeps-ok] Preparing xxscreeps in ${root}`);
-	runTypeScriptBuild(root);
 	const pathfinderRoot = resolvePackageDependencyRoot(root, '@xxscreeps/pathfinder');
 	await setupPathfinder(pathfinderRoot);
 }
 
 function setupVanilla() {
-	const driverRoot = resolvePackageRoot('@screeps/driver');
+	const driverRoot = resolvePackageRoot('@screeps/driver', 'Run npm install first.');
 	console.log(`[screeps-ok] Preparing vanilla dependencies in ${driverRoot}`);
 	run('NODE_PATH=../../.. npx webpack', { cwd: driverRoot });
-	run('npx node-gyp rebuild --release -C node_modules/isolated-vm', {
-		cwd: process.cwd(),
-	});
-	run('npx node-gyp rebuild --release -C node_modules/@screeps/driver/native', {
-		cwd: process.cwd(),
-	});
+	run('npx node-gyp rebuild --release -C node_modules/isolated-vm', { cwd: repoRoot });
+	run('npx node-gyp rebuild --release -C node_modules/@screeps/driver/native', { cwd: repoRoot });
 }
 
-function resolvePackageRoot(packageName) {
+function resolvePackageRoot(packageName, remedy) {
 	const directNodeModulesPath = path.join(repoRoot, 'node_modules', ...packageName.split('/'));
 	if (existsSync(path.join(directNodeModulesPath, 'package.json'))) {
 		return directNodeModulesPath;
@@ -73,7 +66,7 @@ function resolvePackageRoot(packageName) {
 		}
 	}
 
-	console.error(`[screeps-ok] Required package '${packageName}' is not installed. Run npm install first.`);
+	console.error(`[screeps-ok] Required package '${packageName}' is not installed. ${remedy}`);
 	process.exit(1);
 }
 
@@ -128,23 +121,6 @@ async function verifyPathfinder(pathfinderRoot) {
 	} catch (error) {
 		console.error('[screeps-ok] Failed to load @xxscreeps/pathfinder native addon.');
 		console.error(String(error instanceof Error ? error.message : error));
-		process.exit(1);
-	}
-}
-
-function runTypeScriptBuild(cwd) {
-	console.log(`[screeps-ok] ${process.execPath} ${tscBin} --noEmitOnError false`);
-	try {
-		execFileSync(process.execPath, [tscBin, '--noEmitOnError', 'false'], {
-			cwd,
-			stdio: 'inherit',
-		});
-	} catch {
-		// tsc exits non-zero on type errors but still emits JS. The caller
-		// verifies the expected output below before proceeding.
-	}
-	if (!existsSync(path.join(cwd, 'dist/test/simulate.js'))) {
-		console.error(`[screeps-ok] xxscreeps tsc build did not emit dist/test/simulate.js in ${cwd}`);
 		process.exit(1);
 	}
 }

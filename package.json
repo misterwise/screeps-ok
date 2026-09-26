@@ -36,7 +36,7 @@
     "prepublishOnly": "node scripts/generate-starter.js && node scripts/validate-package.js",
     "build:starter": "node scripts/generate-starter.js",
     "preflight": "node scripts/preflight.js",
-    "setup": "node scripts/setup.js",
+    "setup": "npm run setup:xxscreeps && npm run setup:vanilla",
     "setup:xxscreeps": "node scripts/build-xxscreeps.js && node scripts/setup.js xxscreeps",
     "setup:vanilla": "node scripts/setup.js vanilla",
     "pf:build": "node scripts/build-pathfinder.js",

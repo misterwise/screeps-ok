@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: node_modules
-          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', '.xxscreeps-pin') }}
+          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
@@ -85,12 +85,10 @@ jobs:
         uses: actions/cache@v6
         with:
           path: node_modules
-          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', 'scripts/build-xxscreeps.js', 'scripts/setup.js', '.xxscreeps-pin') }}
+          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**', 'scripts/setup.js') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
-        env:
-          SCREEPS_OK_SKIP_XXSCREEPS_POSTINSTALL: ${{ matrix.adapter == 'vanilla' && '1' || '' }}
         run: npm ci
 
       - name: Build adapter prerequisites

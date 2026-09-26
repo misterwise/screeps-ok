@@ -23,7 +23,7 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 		[
 			`screeps-ok requires Node >=${minNodeMajor}.`,
 			'Switch to Node 24.x or newer, then reinstall dependencies so native addons rebuild for the active runtime.',
-			'Example: nvm use 24 && rm -rf node_modules package-lock.json && npm install',
+			'Example: nvm use 24 && rm -rf node_modules && npm ci, then the npm run setup:* for your adapter',
 		],
 	);
 }
@@ -37,7 +37,7 @@ if (adapter === 'all' || adapter === 'vanilla') {
 }
 
 async function checkXxscreeps() {
-	const root = resolvePackageRoot('xxscreeps');
+	const root = resolvePackageRoot('xxscreeps', 'Run npm run setup:xxscreeps.');
 	checkFile(
 		path.join(root, 'dist/test/simulate.js'),
 		'xxscreeps JavaScript build output is missing.',
@@ -71,14 +71,14 @@ async function checkXxscreepsPathfinder(pathfinderRoot) {
 }
 
 async function checkVanilla() {
-	const isolatedVmRoot = resolvePackageRoot('isolated-vm');
+	const isolatedVmRoot = resolvePackageRoot('isolated-vm', 'Run npm install from the repository root.');
 	checkFile(
 		path.join(isolatedVmRoot, 'build/Release/isolated_vm.node'),
 		'isolated-vm native module has not been built.',
 		'Run npm run setup:vanilla',
 	);
 
-	const driverRoot = resolvePackageRoot('@screeps/driver');
+	const driverRoot = resolvePackageRoot('@screeps/driver', 'Run npm install from the repository root.');
 	checkFile(
 		path.join(driverRoot, 'lib/index.js'),
 		'@screeps/driver webpack bundle is missing.',
@@ -151,7 +151,7 @@ function probeSnapshot(snapshotPath, isolatedVmRoot) {
 	return result.status === 0;
 }
 
-function resolvePackageRoot(packageName) {
+function resolvePackageRoot(packageName, remedy) {
 	const directNodeModulesPath = path.join(repoRoot, 'node_modules', ...packageName.split('/'));
 	if (existsSync(path.join(directNodeModulesPath, 'package.json'))) {
 		return directNodeModulesPath;
@@ -174,7 +174,7 @@ function resolvePackageRoot(packageName) {
 
 	fail(
 		`Required package '${packageName}' is not installed.`,
-		['Run npm install from the repository root.'],
+		[remedy],
 	);
 }
 
