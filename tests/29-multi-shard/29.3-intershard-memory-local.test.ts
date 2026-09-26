@@ -8,8 +8,8 @@
  * `getRemote` requires a second shard and is gated on `multiShard`
  * (`ISM-005`/`ISM-006`); not covered here.
  *
- * Gated on `interShardMemory`: skips on xxscreeps (no module) and on
- * vanilla until a verified run flips the capability flag to true.
+ * Gated on `interShardMemory`. Neither reference engine ships the module
+ * (open-source vanilla has none), so both skip these.
  */
 import { describe, test, expect, code } from '../../src/index.js';
 

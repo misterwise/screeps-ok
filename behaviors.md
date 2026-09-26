@@ -5070,13 +5070,9 @@ Framework Notes
   `docs/xxscreeps-parity-gaps.md` for the upstream tracking.
 - The open-source `@screeps/engine` and `screeps-server-mockup` do not
   ship an `InterShardMemory` module or seed `Game.cpu.shardLimits`
-  (the closed-source MMO server provides both). The vanilla adapter
-  polyfills the local half of `InterShardMemory` in the player's
-  `main` module so the sandbox global is populated before any user
-  expression runs; `interShardMemory` is therefore `true` on vanilla
-  and 29.3 ISM-001/002/003 run there. `cpuShardLimits` remains `false`
-  on both adapters until the analogous shim for `Game.cpu.shardLimits`
-  / `setShardLimits` lands.
+  (the closed-source MMO server provides both), so no reference adapter
+  runs 29.3 or 29.4: `interShardMemory` and `cpuShardLimits` are `false`
+  on both. Their canonical source is the Screeps API documentation.
 
 ---
 

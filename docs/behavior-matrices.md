@@ -1449,7 +1449,8 @@ checks both. Each definition has these fields, in this order:
 - `Verification Notes`
   The case list is inline in
   `tests/29-multi-shard/29.3-intershard-memory-local.test.ts`, which accepts
-  a throw or a silent no-op for each rejected type.
+  a throw or a silent no-op for each rejected type. No reference adapter
+  declares `interShardMemory`.
 
 ### CPU-SHARD-LIMITS
 

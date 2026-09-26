@@ -578,42 +578,6 @@ const COOLDOWN_TIME_STRUCTURES = new Set(['lab', 'terminal', 'nuker', 'factory']
 const RESULT_PREFIX = '__SCREEPS_OK_RESULT__:';
 const RESULT_TIMEOUT_MS = 1000;
 
-// Sandbox-side polyfill for the `InterShardMemory` module. The open-source
-// `@screeps/engine` does not register this global (the closed-source MMO
-// server does); the local half of the API is observable single-shard, so
-// we register a same-tick implementation here. `_local` lives in the IIFE
-// closure and persists for the lifetime of the runtime worker via the
-// require-cache for `main`. `getRemote` throws because the harness is
-// single-shard (see capability `multiShard: false`); the 100 KiB length
-// cap matches behaviors.md §29.3 ISM-004.
-const INTER_SHARD_MEMORY_POLYFILL = `
-(function (g) {
-	if (g.InterShardMemory) return;
-	var _local = null;
-	var SIZE = 100 * 1024;
-	Object.defineProperty(g, 'InterShardMemory', {
-		value: Object.freeze({
-			getLocal: function () { return _local; },
-			setLocal: function (value) {
-				if (typeof value !== 'string') {
-					throw new TypeError('InterShardMemory.setLocal: value is not a string');
-				}
-				if (value.length > SIZE) {
-					throw new Error('InterShardMemory.setLocal: value exceeds 100 KiB');
-				}
-				_local = value;
-			},
-			getRemote: function () {
-				throw new Error('InterShardMemory.getRemote requires multi-shard, which this adapter does not support');
-			},
-		}),
-		configurable: false,
-		writable: false,
-		enumerable: false,
-	});
-})(typeof global !== 'undefined' ? global : this);
-`;
-
 type ResultCapture = {
 	wait: () => Promise<string | undefined>;
 	tickError: () => string | undefined;
@@ -646,15 +610,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// layout placement is testable without the backend strongholds cronjob.
 		strongholdDeploy: true,
 		invaderRaidSpawner: true,
-		// The open-source `@screeps/engine` ships no InterShardMemory
-		// module (the MMO server provides it closed-source) and does
-		// not seed `Game.cpu.shardLimits`. `interShardMemory` is true
-		// because the adapter polyfills the local half of the API in
-		// the player's main module — see INTER_SHARD_MEMORY_POLYFILL
-		// below. `multiShard` and `cpuShardLimits` remain false until
-		// further wiring lands.
+		// The open-source engine ships no InterShardMemory module and doesn't seed `Game.cpu.shardLimits` (the MMO server's are closed-source).
 		multiShard: false,
-		interShardMemory: true,
+		interShardMemory: false,
 		cpuShardLimits: false,
 		// The adapter supplies the current shard span to the vanilla runner
 		// before each player VM initializes, without changing @screeps/engine.
@@ -967,10 +925,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// controller overwrites). User snippets are delivered through
 		// vanilla's built-in users.console eval queue in runPlayer(), so the
 		// installed main loop must stay inert and must not touch Memory.
-		// The polyfill registers `InterShardMemory` on the sandbox global
-		// the first time `require('main')` runs (warmup tick), so console
-		// expressions in subsequent runPlayer calls observe the API.
-		const loopCode = `${INTER_SHARD_MEMORY_POLYFILL}\nmodule.exports.loop = function () {};`;
+		const loopCode = 'module.exports.loop = function () {};';
 		const shardCodeTimestamp = ++sharedUserCodeTimestamp;
 
 		for (let i = 0; i < spec.players.length; i++) {
