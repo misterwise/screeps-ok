@@ -40,14 +40,14 @@ describe('Game.gpl', () => {
 		expect(gpl).toEqual({ level: 0, progress: 0, progressTotal: POWER_LEVEL_MULTIPLY });
 	});
 
-	for (const [caseId, power] of [
-		['a', 999],
-		['b', 1000],
-		['c', 3999],
-		['d', 4000],
-		['e', 9000],
+	for (const [row, power] of [
+		['belowLevelOne', 999],
+		['levelOne', 1000],
+		['belowLevelTwo', 3999],
+		['levelTwo', 4000],
+		['levelThree', 9000],
 	] as const) {
-		test(`GPL-002${caseId} Game.gpl follows vanilla account-power math at ${power} power`, async ({ shard }) => {
+		test(`GPL-002:${row} Game.gpl follows vanilla account-power math at ${power} power`, async ({ shard }) => {
 			shard.requires('powerSpawn');
 			await shard.createShard({
 				players: [{ name: 'p1', power }],

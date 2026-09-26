@@ -18,13 +18,13 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, append
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { testCatalogId } from './lib/catalog-id.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptsDir, '..');
 const adaptersDir = path.join(packageRoot, 'adapters');
 const reportsOutDir = path.join(packageRoot, 'reports');
 
-const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
 
 function parseArgs(argv) {
 	const args = { artifactsDir: '.' };
@@ -86,11 +86,6 @@ function loadParity(adapter) {
 	return JSON.parse(readFileSync(p, 'utf8'));
 }
 
-function extractCatalogId(fullName) {
-	const m = fullName.match(CATALOG_ID_RE);
-	return m ? m[1] : null;
-}
-
 function summarize(report, parity) {
 	const idToGap = new Map();
 	for (const [gapId, gap] of Object.entries(parity.expected_failures ?? {})) {
@@ -111,7 +106,7 @@ function summarize(report, parity) {
 	const idHasFailure = new Map();
 	for (const a of all) {
 		if (a.status !== 'passed' && a.status !== 'failed') continue;
-		const catalogId = extractCatalogId(a.fullName);
+		const catalogId = testCatalogId(a.fullName);
 		if (!catalogId || !idToGap.has(catalogId)) continue;
 		if (a.status === 'failed') idHasFailure.set(catalogId, true);
 		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
@@ -119,7 +114,7 @@ function summarize(report, parity) {
 
 	for (const a of all) {
 		if (['skipped', 'pending', 'todo'].includes(a.status)) { skipped++; continue; }
-		const catalogId = extractCatalogId(a.fullName);
+		const catalogId = testCatalogId(a.fullName);
 		const gap = catalogId ? idToGap.get(catalogId) : null;
 		if (gap) {
 			const gapActive = idHasFailure.get(catalogId) === true;

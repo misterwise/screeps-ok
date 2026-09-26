@@ -5,8 +5,9 @@
  * oracle status. Used by generate-coverage.js and validate-capabilities.js.
  */
 import { readFileSync } from 'node:fs';
+import { CATALOG_ID_RE } from './catalog-id.js';
 
-const ID_RE = /^-\s+`([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})`\s+`(?:behavior|matrix)`/;
+const ROW_RE = /^-\s+`([^`]+)`\s+`(?:behavior|matrix)`/;
 const CLASS_RE = /`(behavior|matrix)`/;
 const ORACLE_RE = /`(verified_vanilla|needs_vanilla_verification)`/;
 const CAPABILITY_RE = /`capability:\s*(\w+)`/;
@@ -39,10 +40,13 @@ export function parseCatalog(behaviorsPath) {
 			continue;
 		}
 
-		const idMatch = line.match(ID_RE);
+		const idMatch = line.match(ROW_RE);
 		if (!idMatch) continue;
 
 		const id = idMatch[1];
+		if (!CATALOG_ID_RE.test(id)) {
+			throw new Error(`${behaviorsPath}: row id ${id} is not FAMILY-001 or FAMILY-SUBFAMILY-001`);
+		}
 		const classMatch = line.match(CLASS_RE);
 		const oracleMatch = line.match(ORACLE_RE);
 

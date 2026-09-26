@@ -65,6 +65,23 @@ describe('parity reporter', () => {
 		expect(verdictFor(['GAP-001'], registered, true, { unhandled: ['TypeError'] }).genuineFailures).toBe(1);
 	});
 
+	test('a test\'s `:row` id wins over its describe\'s bare id', () => {
+		const verdict = verdictFor(['GAP-001:rowA'], [
+			['GAP-001: group GAP-001:rowA fails as registered', 'failed'],
+		], true);
+		expect(verdict).toEqual({
+			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0,
+		});
+	});
+
+	test('a name that runs on past an id carries no id to register', () => {
+		const verdict = verdictFor(['GAP-002', 'GENERATE-OPS-001'], [
+			['GAP-002a fails', 'failed'],
+			['POWER-GENERATE-OPS-001 fails', 'failed'],
+		], false);
+		expect(verdict).toMatchObject({ expectedFailures: 0, genuineFailures: 2 });
+	});
+
 	test('a filtered or sharded run does not count orphans', () => {
 		const verdict = verdictFor(['GAP-001', 'GAP-002'], [
 			['GAP-001 fails as registered', 'failed'],

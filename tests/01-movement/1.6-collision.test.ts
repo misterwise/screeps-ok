@@ -76,7 +76,7 @@ describe('creep movement collision', () => {
 		expect(b.pos.y).toBe(25);
 	});
 
-	test('MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other', async ({ shard }) => {
+	test('MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

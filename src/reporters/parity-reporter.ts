@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Reporter, SerializedError, TestCase, TestModule } from 'vitest/node';
+import { testCatalogId } from '../../scripts/lib/catalog-id.js';
 import type { ParityVerdict } from '../../scripts/lib/parity-verdict.js';
 
 // ── Parity.json schema ────────────────────────────────────────
@@ -49,15 +50,6 @@ interface ParityFile {
 	extends?: string;
 	expected_failures?: Record<string, ParityGap>;
 	expected_passes?: string[];
-}
-
-// ── Catalog ID extraction ─────────────────────────────────────
-
-const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
-
-function extractCatalogId(testFullName: string): string | null {
-	const match = testFullName.match(CATALOG_ID_RE);
-	return match ? match[1] : null;
 }
 
 // ── Parity file loading ───────────────────────────────────────
@@ -125,7 +117,7 @@ export default class ParityReporter implements Reporter {
 		for (const mod of testModules) {
 			genuineFailures += mod.errors().length;
 			for (const testCase of this.allTests(mod)) {
-				const catalogId = extractCatalogId(testCase.fullName);
+				const catalogId = testCatalogId(testCase.fullName);
 				if (!catalogId || !this.expectedFailIds.has(catalogId)) {
 					if (testCase.result().state === 'failed') {
 						genuineFailures++;

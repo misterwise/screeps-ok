@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { testCatalogId } from './lib/catalog-id.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptsDir, '..');
@@ -31,7 +32,6 @@ const BADGE_MARKER_RE = /(<!-- BADGES:START -->)[\s\S]*?(<!-- BADGES:END -->)/;
 // adapters can reuse this script by passing their own adapter name on the
 // command line (see CLI block at the bottom).
 const DEFAULT_ADAPTERS = ['vanilla', 'xxscreeps'];
-const CATALOG_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3}(?::[a-zA-Z]+)?)\b/;
 
 function loadReport(adapter) {
 	const reportPath = path.join(reportsDir, `${adapter}.json`);
@@ -43,11 +43,6 @@ function loadParityFile(adapter) {
 	const parityPath = path.join(adaptersDir, adapter, 'parity.json');
 	if (!existsSync(parityPath)) return { expected_failures: {} };
 	return JSON.parse(readFileSync(parityPath, 'utf8'));
-}
-
-function extractCatalogId(fullName) {
-	const match = fullName.match(CATALOG_ID_RE);
-	return match ? match[1] : null;
 }
 
 function buildExpectedFailSet(parity) {
@@ -90,7 +85,7 @@ function summarizeReport(report, parity) {
 	const idHasFailure = new Map();
 	for (const a of all) {
 		if (a.status !== 'passed' && a.status !== 'failed') continue;
-		const catalogId = extractCatalogId(a.fullName);
+		const catalogId = testCatalogId(a.fullName);
 		if (!catalogId || !idToGap.has(catalogId)) continue;
 		if (a.status === 'failed') idHasFailure.set(catalogId, true);
 		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
@@ -101,7 +96,7 @@ function summarizeReport(report, parity) {
 			skippedTests.push(a);
 			continue;
 		}
-		const catalogId = extractCatalogId(a.fullName);
+		const catalogId = testCatalogId(a.fullName);
 		const gapId = catalogId ? idToGap.get(catalogId) : null;
 		if (gapId) {
 			// Gap is "still active" if *any* case for this catalog ID failed.
@@ -123,7 +118,7 @@ function summarizeReport(report, parity) {
 
 	const expectedFailureByGap = {};
 	for (const a of expectedFailure) {
-		const catalogId = extractCatalogId(a.fullName);
+		const catalogId = testCatalogId(a.fullName);
 		const gapId = catalogId ? idToGap.get(catalogId) : null;
 		if (!gapId) continue;
 		(expectedFailureByGap[gapId] ??= []).push(a);

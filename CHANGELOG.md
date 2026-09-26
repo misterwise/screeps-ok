@@ -61,14 +61,20 @@ changes since `v0.1.0-alpha` are not itemized.
   run instead of loading no registrations.
 - `behaviors.md` rows can carry their own `capability:` tag on top of their
   section's; `npm run validate:capabilities` checks both.
+- A test's ID is the one catalog ID its name carries, and a test's `:row`
+  wins over a describe's bare ID: `CTRL-STRUCTLIMIT-002`'s tests are now
+  `CTRL-STRUCTLIMIT-002:<structureType>`, not the bare ID. A name that runs on
+  past an ID (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
 
 ### Catalog IDs your `parity.json` may name
 
 - Renamed: `POWER-GENERATE-OPS-001`..`-003` → `POWER-GENERATE-001`..`-003`.
   Three-segment IDs never matched the reporter.
 - Now keyed by row: `UNDOC-JSONOBJ-001:<objectKey>`,
-  `POWER-GENERATE-001:level<One…Five>`, `SOURCE-POWER-001` and
-  `MINERAL-POWER-001` by level, `POWER-OPERATE-005` and `POWER-DISRUPT-003`
+  `POWER-GENERATE-001:level<One…Five>`, `GPL-002` by level edge
+  (`:belowLevelOne`, `:levelOne`, …; was `GPL-002a`..`e`, which no
+  registration could match), `SOURCE-POWER-001` and `MINERAL-POWER-001` by
+  level, `POWER-OPERATE-005` and `POWER-DISRUPT-003`
   by power and case (`…Valid`, `…Invalid`, `…Disabled`).
 - Dropped: `LEGACY-PATH-010`, `RENEW-CREEP-012`..`-014`,
   `ATTACK-NOTIFY-001`..`-004`, `CONSTRUCTION-SITE-015`, `POWER-BANK-003`,

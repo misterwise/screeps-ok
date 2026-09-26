@@ -21,6 +21,7 @@ const behaviorsPath = path.join(root, 'behaviors.md');
 const testsDir = path.join(root, 'tests');
 const outputPath = path.join(root, 'docs', 'coverage.html');
 
+import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
 import { parseCatalog as parseCatalogFromFile } from './lib/parse-catalog.js';
 
 function parseCatalog() {
@@ -31,9 +32,8 @@ function parseCatalog() {
 // 2. Scan test files
 // ---------------------------------------------------------------------------
 
-const TEST_ID_RE = /\b([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})\b/g;
 const MATRIX_IMPORT_RE = /from\s+['"]([^'"]+\/matrices\/[^'"]+?)(?:\.js)?['"]/g;
-const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-[0-9]{3})['"]/g;
+const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([^'"]+)['"]/g;
 
 function walkDir(dir) {
 	const results = [];
@@ -78,8 +78,8 @@ function scanTests() {
 		if (relFile.startsWith('tests/00-framework/')) continue;
 		const content = readFileSync(file, 'utf8');
 
-		for (const match of content.matchAll(TEST_ID_RE)) {
-			claim(match[1], relFile);
+		for (const id of catalogIdsIn(content)) {
+			claim(baseCatalogId(id), relFile);
 		}
 
 		for (const matrixPath of resolveMatrixImports(file, content)) {
@@ -94,7 +94,7 @@ function scanTests() {
 			}
 			if (!matrixContent) continue;
 			for (const match of matrixContent.matchAll(MATRIX_CATALOG_ID_RE)) {
-				claim(match[1], relFile);
+				for (const id of catalogIdsIn(match[1])) claim(baseCatalogId(id), relFile);
 			}
 		}
 	}

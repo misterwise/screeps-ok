@@ -12,6 +12,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
 import { parseCatalog } from './lib/parse-catalog.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -19,7 +20,6 @@ const root = path.resolve(scriptsDir, '..');
 const behaviorsPath = path.join(root, 'behaviors.md');
 const testsDir = path.join(root, 'tests');
 
-const TEST_ID_RE = /\b([A-Z]+-(?:[A-Z]+-)?[0-9]{3})\b/g;
 const REQUIRES_RE = /shard\.requires\('(\w+)'/g;
 
 // 1. Parse catalog — build map of catalog ID → required capabilities
@@ -58,7 +58,7 @@ for (const file of testFiles) {
 	if (relFile.startsWith('tests/00-adapter-contract/')) continue;
 
 	// Extract all catalog IDs in this file
-	const testIds = new Set([...content.matchAll(TEST_ID_RE)].map(m => m[1]));
+	const testIds = new Set(catalogIdsIn(content).map(baseCatalogId));
 
 	// Extract all shard.requires('cap') calls
 	const requiresCalls = new Set([...content.matchAll(REQUIRES_RE)].map(m => m[1]));
