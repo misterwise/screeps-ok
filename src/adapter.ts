@@ -227,6 +227,11 @@ export interface TickOptions {
 	 * Math.random. Requires the `randomInjection` capability.
 	 */
 	random?: readonly number[];
+	/**
+	 * Checked before each of the `count` ticks; once aborted the call throws
+	 * `signal.reason` without starting another tick. The fixture passes its own.
+	 */
+	signal?: AbortSignal;
 }
 
 // ── Capabilities ─────────────────────────────────────────────

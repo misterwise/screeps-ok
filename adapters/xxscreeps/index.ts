@@ -1260,6 +1260,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		try {
 			for (let i = 0; i < count; i++) {
+				options.signal?.throwIfAborted();
 				await this.seedUserRoomRelationships();
 				await this.simulation!.tick(1);
 			}

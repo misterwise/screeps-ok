@@ -284,6 +284,12 @@ This means `runPlayer() + tick()` always advances time by exactly 2 ticks,
 and `runPlayer()` alone advances by exactly 1. Tests should account for this
 when asserting tick-sensitive state.
 
+`options.signal` is an `AbortSignal` the adapter checks before each of the
+`count` ticks; once it is aborted, `tick()` throws `signal.reason` without
+starting another tick. The test fixture passes its own and aborts it when a
+test ends, so a timed-out test cannot keep ticking a server the next test
+reuses. The fixture also rejects any later call on that test's shard.
+
 `options.random` deterministically feeds the engine processor's `Math.random()`
 calls for the duration of the call. Adapters that declare the `randomInjection`
 capability must:

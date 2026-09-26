@@ -205,13 +205,48 @@ function wrapAdapter(
 	return shard;
 }
 
+// A timed-out test body keeps running after vitest moves on. The fence rejects
+// its later shard calls and aborts its in-flight tick(n) between ticks.
+function fenceShard(shard: ShardFixture) {
+	const controller = new AbortController();
+	const inFlight = new Set<Promise<void>>();
+	const fenced = new Proxy(shard, {
+		get(target, key) {
+			const value = Reflect.get(target, key);
+			if (typeof value !== 'function') return value;
+			return (...args: unknown[]) => {
+				if (controller.signal.aborted) {
+					throw new Error(`shard.${String(key)}() called after its test ended (did the test time out?)`);
+				}
+				if (key === 'tick') args[1] = { ...(args[1] as object | undefined), signal: controller.signal };
+				const result: unknown = value.apply(target, args);
+				if (result instanceof Promise) {
+					const settled = result.then(() => {}, () => {});
+					inFlight.add(settled);
+					void settled.then(() => inFlight.delete(settled));
+				}
+				return result;
+			};
+		},
+	});
+	return {
+		fenced,
+		async close() {
+			controller.abort(new Error('shard call aborted: its test ended (did the test time out?)'));
+			await Promise.all(inFlight);
+		},
+	};
+}
+
 export const test = base.extend<{ shard: ShardFixture }>({
 	shard: async ({ skip, task }, use) => {
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
+		const fence = fenceShard(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
 		try {
-			await use(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
+			await use(fence.fenced);
 		} finally {
+			await fence.close();
 			await adapter.teardown();
 		}
 	},

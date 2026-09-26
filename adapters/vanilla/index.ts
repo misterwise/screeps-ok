@@ -1755,6 +1755,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		let exhaustionError: Error | null = null;
 		try {
 			for (let i = 0; i < count; i++) {
+				options.signal?.throwIfAborted();
 				await guardedTick(this.server);
 			}
 			exhaustionError = readProcessorRandomExhaustion();
