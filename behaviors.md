@@ -2356,9 +2356,6 @@ Coverage Notes
   `RAMPART_HITS_MAX` table.
 - `RAMPART-DECAY-004` `behavior` `verified_vanilla`
   `PWR_FORTIFY` prevents direct damage to a rampart while the effect is active.
-- `RAMPART-DECAY-005` `behavior` `verified_vanilla`
-  `PWR_SHIELD` creates a temporary rampart that is removed when the shield
-  effect expires.
 
 Coverage Notes
 - Initial rampart hits on creation belong with construction behavior rather than

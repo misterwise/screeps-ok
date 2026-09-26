@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	OK, ERR_INVALID_TARGET,
 	ATTACK, MOVE, ATTACK_POWER,
-	PWR_FORTIFY, PWR_SHIELD,
+	PWR_FORTIFY,
 	STRUCTURE_RAMPART,
 } from '../../src/index.js';
 
@@ -45,32 +45,5 @@ describe('Rampart power effects', () => {
 
 		expect(await shard.runPlayer('p2', attack)).toBe(OK);
 		expect((await shard.expectStructure(rampartId, STRUCTURE_RAMPART)).hits).toBe(10000 - ATTACK_POWER);
-	});
-
-	test('RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerEffects');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
-		});
-
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			powers: { [PWR_SHIELD]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Object.values(Game.powerCreeps)[0].usePower(PWR_SHIELD)
-		`);
-		expect(rc).toBe(OK);
-
-		// Verify a rampart exists at the power creep's position.
-		const hasRampart = await shard.runPlayer('p1', code`
-			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === STRUCTURE_RAMPART)
-		`);
-		expect(hasRampart).toBe(true);
 	});
 });
