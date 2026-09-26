@@ -22,9 +22,8 @@ describe('adapter contract: hard family prerequisites', () => {
 			const result = await shard.runPlayer('p1', code`
 				Game.rooms['W1N1'].controller.ticksToDowngrade
 			`) as number;
-			// Should be close to 10 (may be off by 1 from the tick).
-			expect(result).toBeLessThanOrEqual(10);
-			expect(result).toBeGreaterThan(0);
+			// Seeded 10 at creation; one tick has elapsed.
+			expect(result).toBe(9);
 		});
 
 		downgradeTest('controller downgrades when ticksToDowngrade reaches 0', async ({ shard }) => {

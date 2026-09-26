@@ -1013,6 +1013,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				const gameTime = await this.server.world.gameTime;
 				const rcl = ownedRoom.rcl ?? 1;
 				const C = this.server.constants;
+				// The warm-up tick at the end of createShard consumes one tick, so relative seeds here add 1.
 				const downgradeTime = ownedRoom.ticksToDowngrade != null
 					? gameTime + ownedRoom.ticksToDowngrade + 1
 					: rcl > 0
@@ -1024,7 +1025,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				// `safeMode - gameTime` (remaining ticks). RoomSpec.safeMode
 				// passes "remaining ticks", so we add the current gameTime.
 				const safeMode = ownedRoom.safeMode != null && ownedRoom.safeMode > 0
-					? gameTime + ownedRoom.safeMode
+					? gameTime + ownedRoom.safeMode + 1
 					: null;
 				await this.db['rooms.objects'].update(
 					{ $and: [{ room: ownedRoom.name }, { type: 'controller' }] },

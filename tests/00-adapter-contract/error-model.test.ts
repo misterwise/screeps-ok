@@ -59,13 +59,13 @@ describe('adapter contract: error model', () => {
 		test('throw string produces RunPlayerError with errorKind "runtime"', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const err = await shard.expectRunPlayerError('p1', code`throw 'oops'`, 'runtime');
-			expect(err.engineMessage.length).toBeGreaterThan(0);
+			expect(err.engineMessage).toContain('oops');
 		});
 
 		test('throw number produces RunPlayerError with errorKind "runtime"', async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const err = await shard.expectRunPlayerError('p1', code`throw 42`, 'runtime');
-			expect(err.engineMessage.length).toBeGreaterThan(0);
+			expect(err.engineMessage).toContain('42');
 		});
 	});
 

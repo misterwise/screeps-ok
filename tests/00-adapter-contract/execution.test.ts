@@ -72,13 +72,12 @@ describe('adapter contract: execution', () => {
 			});
 
 			await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).move(1)
+				Game.getObjectById(${creepId}).move(TOP)
 			`);
 			await shard.tick();
 
 			const creep = await shard.expectObject(creepId, 'creep');
-			// Creep should have moved (exact position depends on direction constant)
-			expect(creep.pos.x !== 25 || creep.pos.y !== 25).toBe(true);
+			expect({ x: creep.pos.x, y: creep.pos.y }).toEqual({ x: 25, y: 24 });
 		});
 	});
 
@@ -128,8 +127,8 @@ describe('adapter contract: execution', () => {
 			const timeAfterRun = await shard.getGameTime();
 			await shard.tick();
 			const timeAfterTick = await shard.getGameTime();
-			// tick() must advance time regardless of what runPlayer consumed.
-			expect(timeAfterTick).toBeGreaterThan(timeAfterRun);
+			// tick() advances exactly one tick regardless of what runPlayer consumed.
+			expect(timeAfterTick).toBe(timeAfterRun + 1);
 		});
 
 		test('tick(N) after runPlayer advances game time by N', async ({ shard }) => {
@@ -143,7 +142,7 @@ describe('adapter contract: execution', () => {
 			const timeAfterRun = await shard.getGameTime();
 			await shard.tick(3);
 			const timeAfterTick = await shard.getGameTime();
-			expect(timeAfterTick).toBeGreaterThanOrEqual(timeAfterRun + 3);
+			expect(timeAfterTick).toBe(timeAfterRun + 3);
 		});
 	});
 

@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -571,11 +571,8 @@ describe('adapter contract: setup', () => {
 				await shard.tick();
 
 				const obj = await shard.expectStructure(id, type);
-				// The placement tick may consume one tick from the timer, so allow
-				// 4..5. If the adapter ignores the field, ticksToDecay will read
-				// the engine default (>=99 for any decayable), failing this bound.
-				expect((obj as { ticksToDecay: number }).ticksToDecay).toBeLessThanOrEqual(5);
-				expect((obj as { ticksToDecay: number }).ticksToDecay).toBeGreaterThanOrEqual(3);
+				// Seeded 5 at placement; one tick has elapsed.
+				expect((obj as { ticksToDecay: number }).ticksToDecay).toBe(4);
 			});
 		}
 
@@ -633,9 +630,8 @@ describe('adapter contract: setup', () => {
 				const result = await shard.runPlayer('p1', code`
 					Game.getObjectById(${id}).cooldown
 				`);
-				expect(typeof result).toBe('number');
-				expect(result as number).toBeGreaterThanOrEqual(3);
-				expect(result as number).toBeLessThanOrEqual(5);
+				// Seeded 5 at placement; one tick has elapsed.
+				expect(result).toBe(4);
 			});
 		}
 
@@ -762,7 +758,7 @@ describe('adapter contract: setup', () => {
 			const obj = await shard.expectObject(id, 'tombstone');
 			expect(obj.creepName).toBe('fallen-hero');
 			expect(obj.store.energy).toBe(50);
-			expect(obj.ticksToDecay).toBeGreaterThan(0);
+			expect(obj.ticksToDecay).toBe(99);
 		});
 	});
 
@@ -780,7 +776,7 @@ describe('adapter contract: setup', () => {
 			const obj = await shard.expectObject(id, 'ruin');
 			expect(obj.structureType).toBe(STRUCTURE_CONTAINER);
 			expect(obj.store.energy).toBe(75);
-			expect(obj.ticksToDecay).toBeGreaterThan(0);
+			expect(obj.ticksToDecay).toBe(199);
 		});
 	});
 
@@ -837,17 +833,15 @@ describe('adapter contract: setup', () => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeDroppedResource('W1N1', {
 				pos: [25, 25],
-				resourceType: 'energy',
+				resourceType: RESOURCE_ENERGY,
 				amount: 100,
 			});
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'resource');
-			expect(obj.resourceType).toBe('energy');
-			// Contract test: verify placement round-trip, not decay behavior.
-			// Amount may have decayed by ceil(100/1000)=1 during the tick.
-			expect(obj.amount).toBeGreaterThan(0);
-			expect(obj.amount).toBeLessThanOrEqual(100);
+			expect(obj.resourceType).toBe(RESOURCE_ENERGY);
+			// One tick of ground decay has elapsed since placement.
+			expect(obj.amount).toBe(100 - Math.ceil(100 / ENERGY_DECAY));
 		});
 	});
 

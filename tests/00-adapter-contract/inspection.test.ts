@@ -155,7 +155,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-			expect(structures.length).toBeGreaterThan(0);
+			expect(structures.map((s: any) => s.structureType).sort()).toEqual([STRUCTURE_CONTROLLER, STRUCTURE_ROAD].sort());
 			expect(structures.every((s: any) => s.kind === 'structure')).toBe(true);
 		});
 
@@ -273,8 +273,9 @@ describe('adapter contract: inspection', () => {
 			expect(obj.id).toBe(id);
 			expect(obj.depositType).toBe(RESOURCE_METAL);
 			expect(obj.lastCooldown).toBe(7);
-			expect(obj.cooldown).toBeGreaterThan(0);
-			expect(obj.ticksToDecay).toBeGreaterThan(0);
+			// Timers are seeded relative to placement; one tick has elapsed.
+			expect(obj.cooldown).toBe(24);
+			expect(obj.ticksToDecay).toBe(99);
 
 			const deposits = await shard.findInRoom('W1N1', FIND_DEPOSITS) as any[];
 			expect(deposits).toHaveLength(1);
@@ -311,8 +312,7 @@ describe('adapter contract: inspection', () => {
 			const obj = await shard.getObject(id) as any;
 			expect(obj?.kind).toBe('structure');
 			expect(obj.structureType).toBe(STRUCTURE_KEEPER_LAIR);
-			expect(obj.ticksToSpawn).toBeGreaterThan(0);
-			expect(obj.ticksToSpawn).toBeLessThanOrEqual(100);
+			expect(obj.ticksToSpawn).toBe(99);
 		});
 
 		test('invader core snapshot includes deploy and stronghold fields', async ({ shard }) => {
@@ -336,8 +336,7 @@ describe('adapter contract: inspection', () => {
 			expect(obj?.kind).toBe('structure');
 			expect(obj.structureType).toBe(STRUCTURE_INVADER_CORE);
 			expect(obj.level).toBe(2);
-			expect(obj.ticksToDeploy).toBeGreaterThan(0);
-			expect(obj.ticksToDeploy).toBeLessThanOrEqual(75);
+			expect(obj.ticksToDeploy).toBe(74);
 			expect(obj.effects).toEqual(effects);
 			expect(obj.templateName).toBe('testTemplate');
 			expect(obj.strongholdId).toBe('testStronghold');
@@ -361,8 +360,7 @@ describe('adapter contract: inspection', () => {
 			expect(obj.power).toBe(2500);
 			expect(obj.hits).toBe(1000000);
 			expect(obj.hitsMax).toBe(2000000);
-			expect(obj.ticksToDecay).toBeGreaterThan(0);
-			expect(obj.ticksToDecay).toBeLessThanOrEqual(500);
+			expect(obj.ticksToDecay).toBe(499);
 		});
 
 		test('portal snapshot includes destination and decay fields', async ({ shard }) => {
@@ -385,8 +383,7 @@ describe('adapter contract: inspection', () => {
 			expect(obj?.kind).toBe('structure');
 			expect(obj.structureType).toBe(STRUCTURE_PORTAL);
 			expect(obj.destination).toEqual({ x: 30, y: 31, roomName: 'W2N1' });
-			expect(obj.ticksToDecay).toBeGreaterThan(0);
-			expect(obj.ticksToDecay).toBeLessThanOrEqual(200);
+			expect(obj.ticksToDecay).toBe(199);
 		});
 	});
 
@@ -418,9 +415,8 @@ describe('adapter contract: inspection', () => {
 			// equal what player code reads. A snapshot that returns the raw
 			// absolute DB field (downgradeTime) will diverge by Game.time.
 			expect(ctrl.ticksToDowngrade).toBe(playerView);
-			// Sanity: must be a remaining-tick count near the configured 500,
-			// not a multi-thousand absolute timestamp.
-			expect(ctrl.ticksToDowngrade).toBeLessThan(600);
+			// Seeded 500 at creation; one tick has elapsed.
+			expect(ctrl.ticksToDowngrade).toBe(499);
 		});
 
 		test('controller snapshot safeMode matches player-code value when active', async ({ shard }) => {
@@ -439,8 +435,8 @@ describe('adapter contract: inspection', () => {
 
 			expect(typeof ctrl.safeMode).toBe('number');
 			expect(ctrl.safeMode).toBe(playerView);
-			// Must be a remaining-tick count near 200, not an absolute timestamp.
-			expect(ctrl.safeMode).toBeLessThan(300);
+			// Seeded 200 at creation; one tick has elapsed.
+			expect(ctrl.safeMode).toBe(199);
 		});
 	});
 

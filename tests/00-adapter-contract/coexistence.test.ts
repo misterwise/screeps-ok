@@ -2,7 +2,7 @@ import {
 	describe, test, expect, code,
 	MOVE, CARRY, WORK,
 	STRUCTURE_EXTRACTOR, STRUCTURE_ROAD, STRUCTURE_RAMPART,
-	STRUCTURE_CONTAINER, RESOURCE_ENERGY,
+	STRUCTURE_CONTAINER, RESOURCE_ENERGY, ENERGY_DECAY,
 	FIND_CREEPS, FIND_STRUCTURES, FIND_MINERALS,
 	FIND_TOMBSTONES, FIND_DROPPED_RESOURCES, FIND_RUINS,
 } from '../../src/index.js';
@@ -121,10 +121,9 @@ describe('adapter contract: tile coexistence', () => {
 		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
 		expect(container.store.energy).toBe(50);
 
-		// Contract test: verify coexistence, not decay behavior.
+		// One tick of ground decay has elapsed since placement.
 		const resource = await shard.expectObject(resourceId, 'resource');
-		expect(resource.amount).toBeGreaterThan(0);
-		expect(resource.amount).toBeLessThanOrEqual(30);
+		expect(resource.amount).toBe(30 - Math.ceil(30 / ENERGY_DECAY));
 	});
 
 	test('road + creep on the same tile have distinct IDs', async ({ shard }) => {
