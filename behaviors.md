@@ -2538,8 +2538,9 @@ cross-shard `destination` values.
   A creep or power creep standing on a portal tile is transported by the
   portal on the next tick without issuing a move intent.
 - `PORTAL-006` `behavior` `verified_vanilla`
-  A temporary portal's `ticksToDecay` counts down each tick and the portal
-  is removed once the decay window elapses.
+  A temporary portal's `ticksToDecay` counts down by 1 each tick, reaching 0
+  and then -1 while the portal still stands; the portal is removed on the
+  next tick.
 
 ---
 

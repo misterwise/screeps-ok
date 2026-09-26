@@ -144,11 +144,10 @@ describe('Portal mechanics', () => {
 				{ name: 'W2N1' },
 			],
 		});
-		const decayTicks = 5;
 		const portalId = await shard.placeObject('W1N1', 'portal', {
 			pos: [25, 25],
 			destination: { room: 'W2N1', x: 25, y: 25 },
-			decayTime: decayTicks,
+			decayTime: 3,
 		});
 		// An idle creep keeps the room active so the decay processor wakes
 		// up — a portal-only room is otherwise eligible to sleep past
@@ -158,19 +157,16 @@ describe('Portal mechanics', () => {
 		});
 		await shard.tick();
 
-		const initial = await shard.runPlayer('p1', code`
-			const p = Game.getObjectById(${portalId});
-			p ? p.ticksToDecay : null
-		`) as number | null;
-		// Seeded relative to placement; one tick has elapsed.
-		expect(initial).toBe(decayTicks - 1);
-
-		for (let i = 0; i < decayTicks + 2; i++) await shard.tick();
-
-		const gone = await shard.runPlayer('p1', code`
-			Game.getObjectById(${portalId}) === null
-		`);
-		expect(gone).toBe(true);
+		// The portal is removed only once the tick passes decayTime, so it is
+		// still standing while ticksToDecay reads 0 and then -1.
+		const readings: (number | null)[] = [];
+		for (let i = 0; i < 5; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				const p = Game.getObjectById(${portalId});
+				p ? p.ticksToDecay : null
+			`) as number | null);
+		}
+		expect(readings).toEqual([2, 1, 0, -1, null]);
 	});
 
 	test('PORTAL-003 cross-shard portal exposes destination as { shard, room }', async ({ shard }) => {

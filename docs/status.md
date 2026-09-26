@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2718%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2524%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-69-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2718%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,19 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2718](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 04:44 UTC |
-| 🟡 | **xxscreeps** | [2524](#xxscreeps-passing-tests) | [69](#xxscreeps-expected-failures) | — | [138](#xxscreeps-skipped-tests) | 2026-09-26 04:42 UTC |
+| 🔴 | **xxscreeps** | [2523](#xxscreeps-passing-tests) | [69](#xxscreeps-expected-failures) | — | [138](#xxscreeps-skipped-tests) | 2026-09-26 04:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## 🚨 Regression traps triggered
+
+Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
+
+**xxscreeps**
+
+- `Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay`
 
 ## vanilla expected failures
 
@@ -106,7 +114,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 36 expected-failure classifications against vanilla's canonical behavior, covering 69 tests. That includes 31 open parity gaps covering 60 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 37 expected-failure classifications against vanilla's canonical behavior, covering 69 tests. That includes 32 open parity gaps covering 60 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -145,6 +153,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | [1](#xxscreeps-gap-renew-claim-creep-returns-no-bodypart) |
 | `pathfinder-search-nullish-goal-throws` | `search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick. | Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys. | [1](#xxscreeps-gap-pathfinder-search-nullish-goal-throws) |
 | `bury-power-creep-stamps-next-tick` | `buryPowerCreep` (`mods/mmo/powercreep/processor.ts:23-41`) stamps `deathTime = Game.time` and `#decayTime = Game.time + TOMBSTONE_DECAY_POWER_CREEP` from the processor clock, which reads one tick past vanilla's `gameTime`. A power creep's tombstone therefore reads `deathTime` one past the tick the player issued `suicide()` on, and `ticksToDecay` of `TOMBSTONE_DECAY_POWER_CREEP` on the next tick. | Vanilla `processor/global-intents/power/_diePowerCreep.js` stamps `deathTime: gameTime` and `decayTime: gameTime + TOMBSTONE_DECAY_POWER_CREEP` on the death tick. `deathTime` equals the tick of the `suicide()` call, and the next tick reads `TOMBSTONE_DECAY_POWER_CREEP - 1`. | [1](#xxscreeps-gap-bury-power-creep-stamps-next-tick) |
+| `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -391,6 +400,12 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>bury-power-creep-stamps-next-tick</code> — 1 test</summary>
 
 - `Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone`
+
+</details>
+
+<details id="xxscreeps-gap-portal-removed-before-decay-time-passes">
+<summary><code>portal-removed-before-decay-time-passes</code> — 0 tests</summary>
+
 
 </details>
 
@@ -3939,7 +3954,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2524 tests across 134 files</summary>
+<summary>2523 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6134,13 +6149,12 @@ Click a count to jump to the affected test list.
 - StructureExtractor cooldown property EXTRACTOR-001 cooldown returns 0 when no cooldown is active
 - StructureExtractor cooldown property EXTRACTOR-002 cooldown decreases by 1 each tick until reaching 0
 
-**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (6)
+**`tests/13-structures-infrastructure/13.6-portal.test.ts`** (5)
 
 - Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
 - Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
 - Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
-- Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (9)
