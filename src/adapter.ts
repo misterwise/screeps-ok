@@ -40,6 +40,14 @@ export interface GclSpec {
 	progress?: number;
 }
 
+/** Throws for a room without a controller that sets a controller setting. */
+export function checkRoomSpec(room: RoomSpec): void {
+	if (room.controller !== false) return;
+	const set = (['rcl', 'owner', 'safeMode', 'safeModeAvailable', 'ticksToDowngrade', 'powerEnabled'] as const)
+		.filter(key => room[key] !== undefined);
+	if (set.length > 0) throw new Error(`RoomSpec ${room.name}: controller: false takes no ${set.join(', ')}`);
+}
+
 /** The engine's GCL points for a spec; throws for one no point total reads back as. */
 export function gclPoints({ level, progress = 0 }: GclSpec): number {
 	const threshold = (l: number) => Math.ceil(GCL_MULTIPLY * (l - 1) ** GCL_POW);
@@ -57,6 +65,13 @@ export type RoomStatusSpec = 'normal' | 'novice' | 'respawn' | 'closed';
 export interface RoomSpec {
 	name: string;
 	terrain?: TerrainSpec;
+	/**
+	 * `false` makes a room with no controller, as a source keeper room or a
+	 * highway room has none. It then takes none of the controller settings
+	 * below (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `powerEnabled`).
+	 * Defaults to true: one controller at (1, 1).
+	 */
+	controller?: boolean;
 	rcl?: number;
 	owner?: string;
 	/**
@@ -125,7 +140,13 @@ export interface SiteSpec {
 
 export interface SourceSpec {
 	pos: [number, number];
+	/** Defaults to full. */
 	energy?: number;
+	/**
+	 * Defaults to what the room's state gives a source: `SOURCE_ENERGY_KEEPER_CAPACITY`
+	 * without a controller, `SOURCE_ENERGY_CAPACITY` owned or reserved, else
+	 * `SOURCE_ENERGY_NEUTRAL_CAPACITY`.
+	 */
 	energyCapacity?: number;
 	ticksToRegeneration?: number;
 }

@@ -10,7 +10,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from 'screeps-ok';
-import { gclPoints } from 'screeps-ok';
+import { checkRoomSpec, gclPoints } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
 import { RunPlayerError } from 'screeps-ok';
@@ -48,7 +48,7 @@ import {
 	setRoomSafeModeUntil, setControllerDowngradeTime,
 	resetControllerTimers, resetRoomControllerFlags,
 	bindObjectPos, setCreepAgeTime,
-	setSourceNextRegenerationTime, setMineralNextRegenerationTime,
+	applySourceRoomStatus, setSourceNextRegenerationTime, setMineralNextRegenerationTime,
 	setStructureNextDecayTime,
 	setStructureCooldownRemaining, setFactoryLevel,
 	primeTombstoneCorpse, primeRuinStructure,
@@ -329,7 +329,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		ops.push(fn);
 	}
 
-	private resetRoomToCanonicalLayout(room: Room, roomName: string): void {
+	private resetRoomToCanonicalLayout(room: Room, roomName: string, withController: boolean): void {
 		for (const obj of [...iterateRoomObjects(room)]) {
 			removeRoomObject(room, obj);
 		}
@@ -337,6 +337,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		setRoomLevel(room, 0);
 		setRoomOwner(room, null);
 		resetRoomControllerFlags(room);
+		if (!withController) return;
 
 		const controller = new StructureController();
 		controller.id = this.nextId();
@@ -348,6 +349,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	async createShard(spec: ShardSpec): Promise<void> {
 		await this.teardown();
+		spec.rooms.forEach(checkRoomSpec);
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
 
@@ -545,7 +547,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			const source = new Source();
 			source.id = id;
 			bindObjectPos(source, new RoomPosition(spec.pos[0], spec.pos[1], roomName));
-			source.energyCapacity = spec.energyCapacity ?? 3000;
+			// The spec says whether the room has a controller: a removed one detaches only when the room flushes.
+			if (spec.energyCapacity === undefined) {
+				applySourceRoomStatus(source, room, this.shardSpec!.rooms.find(r => r.name === roomName)?.controller !== false);
+			}
+			else source.energyCapacity = spec.energyCapacity;
 			source.energy = spec.energy ?? source.energyCapacity;
 			// Set regen timer if source is depleted
 			if (spec.ticksToRegeneration !== undefined && spec.ticksToRegeneration > 0) {
@@ -1014,7 +1020,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		for (const roomName of this.rooms) {
 			const ops = this.pendingSetup.get(roomName);
 			const stripAndSetup = (room: any) => {
-				this.resetRoomToCanonicalLayout(room, roomName);
+				this.resetRoomToCanonicalLayout(room, roomName,
+					this.shardSpec!.rooms.find(r => r.name === roomName)?.controller !== false);
 				if (ops) {
 					for (const op of ops) op(room);
 				}

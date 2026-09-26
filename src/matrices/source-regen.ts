@@ -2,27 +2,13 @@ import {
 	SOURCE_ENERGY_CAPACITY,
 	SOURCE_ENERGY_NEUTRAL_CAPACITY,
 	SOURCE_ENERGY_KEEPER_CAPACITY,
-	ENERGY_REGEN_TIME,
 } from '../index.js';
 
-// Canonical source energy capacity by room state.
+// Source capacity by room state (@screeps/engine processor/intents/sources/tick.js:46-59):
+// a controller that is owned or reserved, one that is neither, and no controller.
 export const sourceRegenCases = [
-	{
-		label: 'owned/reserved room',
-		roomState: 'owned' as const,
-		expectedCapacity: SOURCE_ENERGY_CAPACITY,
-		expectedRegenTime: ENERGY_REGEN_TIME,
-	},
-	{
-		label: 'neutral room',
-		roomState: 'neutral' as const,
-		expectedCapacity: SOURCE_ENERGY_NEUTRAL_CAPACITY,
-		expectedRegenTime: ENERGY_REGEN_TIME,
-	},
-	{
-		label: 'keeper room',
-		roomState: 'keeper' as const,
-		expectedCapacity: SOURCE_ENERGY_KEEPER_CAPACITY,
-		expectedRegenTime: ENERGY_REGEN_TIME,
-	},
+	{ label: 'owned', roomState: 'owned', expectedCapacity: SOURCE_ENERGY_CAPACITY },
+	{ label: 'reserved', roomState: 'reserved', expectedCapacity: SOURCE_ENERGY_CAPACITY },
+	{ label: 'neutral', roomState: 'neutral', expectedCapacity: SOURCE_ENERGY_NEUTRAL_CAPACITY },
+	{ label: 'keeper', roomState: 'keeper', expectedCapacity: SOURCE_ENERGY_KEEPER_CAPACITY },
 ] as const;

@@ -74,6 +74,13 @@ changes since `v0.1.0-alpha` are not itemized.
   power bank's `hitsMax` (always `POWER_BANK_HITS`), and an invader core's
   `effects`, `user`, `hits` and `hitsMax`, which no test used. A timer of 0 now
   means 0 ticks, where it had meant unset.
+- `RoomSpec.controller: false` makes a room with no controller, as a keeper
+  or highway room has none; create no controller for it. It takes no `rcl`,
+  `owner`, safe mode, `ticksToDowngrade` or `powerEnabled`; `checkRoomSpec()`
+  rejects a spec that sets one.
+- `placeSource` without `energyCapacity` gives the capacity the room's state
+  sets (keeper with no controller, full when owned or reserved, else neutral),
+  where it was 3000 everywhere; `energy` defaults to full.
 
 ### Parity and the runner
 
@@ -137,6 +144,8 @@ changes since `v0.1.0-alpha` are not itemized.
 - Dropped: `LEGACY-PATH-010`, `RENEW-CREEP-012`..`-014`,
   `ATTACK-NOTIFY-001`..`-004`, `CONSTRUCTION-SITE-015`, `POWER-BANK-003`,
   `STRUCTURE-API-008`, `RAMPART-DECAY-005`.
+- `SOURCE-REGEN-001` is keyed by room state: `:owned`, `:reserved`,
+  `:neutral`, `:keeper`.
 - Re-scoped: `MAP-ROOM-005` covers worlds that straddle the map origin, and
   `SPAWN-TIMING-005`'s test now exercises its row (directions ignored on a
   one-tick `PWR_OPERATE_SPAWN` spawn).

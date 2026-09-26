@@ -986,11 +986,15 @@ Each definition should include:
 - `Catalog Entries`
   `SOURCE-REGEN-001`
 - `Canonical Source`
-  Source capacity constants and official source regeneration logic.
+  Source capacity constants and the source tick
+  (`@screeps/engine/src/processor/intents/sources/tick.js:46-59`).
 - `Dimensions`
   room state
 - `Applicability`
-  Neutral rooms, owned/reserved rooms, and keeper rooms
+  Owned, reserved, and neutral rooms, each reached the way a player reaches
+  it (a claim, a reservation, a reservation that lapses) from a neutral
+  room's capacity; keeper rooms, which have no controller
+  (`RoomSpec.controller: false`)
 - `Exclusions`
   Timer exposure and same-tick restore timing
 - `Verification Notes`

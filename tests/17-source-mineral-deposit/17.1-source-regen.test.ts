@@ -1,7 +1,8 @@
 import { describe, test, expect, code,
 	SOURCE_ENERGY_CAPACITY, SOURCE_ENERGY_NEUTRAL_CAPACITY,
-	OK, CLAIM, MOVE,
+	OK, CLAIM, MOVE, FIND_STRUCTURES, body,
 } from '../../src/index.js';
+import { sourceRegenCases } from '../../src/matrices/source-regen.js';
 
 describe('source regeneration', () => {
 	test('SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks', async ({ shard }) => {
@@ -24,15 +25,40 @@ describe('source regeneration', () => {
 		expect(after.energy).toBe(3000);
 	}, 120000);
 
-	test('SOURCE-REGEN-001 source energyCapacity in an owned room equals SOURCE_ENERGY_CAPACITY', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 25],
-		});
+	// Each state is reached the way a player reaches it, with the capacity read before and after.
+	for (const { label, roomState, expectedCapacity } of sourceRegenCases) {
+		test(`SOURCE-REGEN-001:${label} a source in a ${label} room takes capacity ${expectedCapacity}`, async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1', ...roomState === 'keeper' && { controller: false } }],
+			});
+			const srcId = await shard.placeSource('W2N1', { pos: [25, 25] });
+			// Five CLAIM parts reserve for five ticks (CONTROLLER_RESERVE each); one claims.
+			const creepId = await shard.placeCreep('W2N1', {
+				pos: [2, 2], owner: 'p1', body: roomState === 'keeper' ? [MOVE] : body(5, CLAIM, MOVE),
+			});
+			await shard.tick();
+			const capacity = async () => (await shard.expectObject(srcId, 'source')).energyCapacity;
+			if (roomState === 'keeper') {
+				expect(await capacity()).toBe(expectedCapacity);
+				return;
+			}
+			expect(await capacity()).toBe(SOURCE_ENERGY_NEUTRAL_CAPACITY);
 
-		const src = await shard.expectObject(srcId, 'source');
-		expect(src.energyCapacity).toBe(SOURCE_ENERGY_CAPACITY);
-	});
+			const verb = roomState === 'owned' ? 'claimController' : 'reserveController';
+			expect(await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId})[${verb}](Game.rooms.W2N1.controller)
+			`)).toBe(OK);
+			await shard.tick();
+			if (roomState === 'neutral') {
+				expect(await capacity()).toBe(SOURCE_ENERGY_CAPACITY);
+				// The reservation lapses with no creep renewing it.
+				await shard.tick(10);
+				expect((await shard.expectStructure((await shard.findInRoom('W2N1', FIND_STRUCTURES))[0].id, 'controller')).reservation).toBeNull();
+			}
+			expect(await capacity()).toBe(expectedCapacity);
+		});
+	}
 
 	test('SOURCE-REGEN-003 a source below full capacity exposes ticksToRegeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');

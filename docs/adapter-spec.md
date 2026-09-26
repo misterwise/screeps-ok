@@ -97,6 +97,10 @@ That includes:
   plain terrain unless `RoomSpec.terrain` overrides it, exactly one controller
   at `(1,1)`, and no ambient sources, minerals, structures, or other room
   objects
+- create no controller for a room whose `RoomSpec.controller` is `false`, as
+  a source keeper or highway room has none; such a room takes no controller
+  setting (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `powerEnabled`), and
+  `checkRoomSpec()` rejects one that sets any
 - wall the four corner tiles `(0,0)`, `(49,0)`, `(0,49)`, and `(49,49)` of
   every room, over the default terrain, `RoomSpec.terrain`, and
   `setTerrain()` alike: the map generator never leaves a corner passable, so a
@@ -124,7 +128,10 @@ Examples:
 - `placeStructure(..., { structureType: STRUCTURE_FACTORY, level: 1 })` means
   the factory starts with exact public factory level `1`.
 - `placeSource(..., { energy: 0, energyCapacity: 3000 })` means a depleted
-  source with known capacity.
+  source with known capacity. Without `energyCapacity`, a source gets the
+  capacity its room's state gives it, as a generated one does: the keeper
+  capacity with no controller, the full one owned or reserved, the neutral one
+  otherwise; `energy` defaults to full.
 - `placeMineral(..., { density: DENSITY_LOW })` means the placed mineral
   reports `density === DENSITY_LOW`. When `mineralAmount` is omitted, the
   placed amount is `MINERAL_DENSITY[density]`. Density defaults to

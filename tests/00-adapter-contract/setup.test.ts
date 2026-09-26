@@ -117,13 +117,24 @@ describe('adapter contract: setup', () => {
 			expect(minerals).toEqual([]);
 		});
 
-		test('getControllerPos returns null for rooms without a controller', async ({ shard }) => {
+		test('RoomSpec.controller: false makes a room with no controller', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1' }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1', controller: false }],
 			});
+			await shard.placeCreep('W2N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+			await shard.tick();
 
-			await expect(shard.getControllerPos('W9N9')).resolves.toBeNull();
+			await expect(shard.getControllerPos('W2N1')).resolves.toBeNull();
+			expect(await shard.findInRoom('W2N1', FIND_STRUCTURES)).toEqual([]);
+			expect(await shard.runPlayer('p1', code`Game.rooms.W2N1.controller === undefined`)).toBe(true);
+		});
+
+		test('RoomSpec.controller: false rejects a controller setting', async ({ shard }) => {
+			await expect(shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', controller: false, owner: 'p1', rcl: 1 }],
+			})).rejects.toThrow(/controller: false takes no rcl, owner/);
 		});
 
 		test('PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim', async ({ shard }) => {

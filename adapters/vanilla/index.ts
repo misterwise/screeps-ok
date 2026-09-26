@@ -7,7 +7,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from '../../src/adapter.js';
-import { gclPoints } from '../../src/adapter.js';
+import { checkRoomSpec, gclPoints } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -937,13 +937,16 @@ class VanillaAdapter implements ScreepsOkAdapter {
 
 		// Create rooms with terrain and controllers
 		for (const roomSpec of spec.rooms) {
+			checkRoomSpec(roomSpec);
 			await this.server.world.addRoom(roomSpec.name);
 			await this.server.world.setTerrain(roomSpec.name,
 				buildTerrain(withCornerWalls(roomSpec.terrain ?? new Array(2500).fill(0))));
-			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
-				level: roomSpec.rcl ?? 0,
-				isPowerEnabled: roomSpec.powerEnabled === true,
-			});
+			if (roomSpec.controller !== false) {
+				await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
+					level: roomSpec.rcl ?? 0,
+					isPowerEnabled: roomSpec.powerEnabled === true,
+				});
+			}
 			await this.applyRoomStatus(roomSpec);
 		}
 
@@ -1221,8 +1224,13 @@ class VanillaAdapter implements ScreepsOkAdapter {
 	}
 
 	async placeSource(roomName: string, spec: SourceSpec): Promise<string> {
-		const energy = spec.energy ?? spec.energyCapacity ?? 3000;
-		const capacity = spec.energyCapacity ?? 3000;
+		const C = this.server.constants;
+		// The room's state sets the default, as the engine's source tick does (sources/tick.js:46-59).
+		const controller = await this.db['rooms.objects'].findOne({ room: roomName, type: 'controller' });
+		const capacity = spec.energyCapacity ?? (!controller ? C.SOURCE_ENERGY_KEEPER_CAPACITY
+			: controller.user || controller.reservation ? C.SOURCE_ENERGY_CAPACITY
+			: C.SOURCE_ENERGY_NEUTRAL_CAPACITY);
+		const energy = spec.energy ?? capacity;
 		const gameTime = await this.server.world.gameTime;
 
 		const attrs: Record<string, any> = {

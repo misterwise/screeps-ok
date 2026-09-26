@@ -139,6 +139,12 @@ export function setSourceNextRegenerationTime(
 	setField(source, '#nextRegenerationTime', gameTime + ticksToRegen);
 }
 
+/** SETUP — mods/classic/source/source.ts: `#roomStatusDidChange` sets a source's capacity for
+ *  its room's state, as world generation and every status change do; no controller passes no user. */
+export function applySourceRoomStatus(source: any, room: any, hasController: boolean): void {
+	getField(source, '#roomStatusDidChange').call(source, getField(room, '#level'), hasController ? getField(room, '#user') : undefined);
+}
+
 /** SETUP — mods/mineral/mineral.ts: mineral regen timer, absolute tick. */
 export function setMineralNextRegenerationTime(
 	mineral: any, gameTime: number, ticksToRegen: number,
