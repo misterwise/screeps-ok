@@ -25,7 +25,7 @@ describe('PathFinder', () => {
 		`) as { incomplete: boolean; pathLength: number; last: { x: number; y: number } | null };
 
 		expect(result.incomplete).toBe(false);
-		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.pathLength).toBe(5);
 		expect(result.last).toEqual({ x: 15, y: 15 });
 	});
 
@@ -370,9 +370,9 @@ describe('PathFinder', () => {
 		`) as { incomplete: boolean; pathLength: number; lastDistance: number };
 
 		expect(result.incomplete).toBe(false);
-		expect(result.pathLength).toBeGreaterThan(0);
-		// flee with range:5 must end at Chebyshev distance >= 5 from the goal.
-		expect(result.lastDistance).toBeGreaterThanOrEqual(5);
+		expect(result.pathLength).toBe(5);
+		// flee with range:5 stops at the first tile at Chebyshev distance 5.
+		expect(result.lastDistance).toBe(5);
 	});
 
 	test('PATHFINDER-012 PathFinder.search returns incomplete: true with a partial path when no full path exists', async ({ shard }) => {
@@ -491,7 +491,7 @@ describe('PathFinder', () => {
 		};
 
 		expect(result.pathIsArray).toBe(true);
-		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.pathLength).toBe(9);
 		expect(result.hasOps).toBe(true);
 		expect(result.hasCost).toBe(true);
 		expect(result.hasIncomplete).toBe(true);
@@ -532,7 +532,7 @@ describe('PathFinder', () => {
 		`) as { allValid: boolean; pathLength: number; incomplete: boolean };
 
 		expect(result.incomplete).toBe(false);
-		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.pathLength).toBe(35);
 		expect(result.allValid).toBe(true);
 	});
 
@@ -558,8 +558,7 @@ describe('PathFinder', () => {
 		`) as { incomplete: boolean; dist: number; onGoal: boolean };
 
 		expect(result.incomplete).toBe(false);
-		expect(result.dist).toBeLessThanOrEqual(3);
-		expect(result.dist).toBeGreaterThan(0);
+		expect(result.dist).toBe(3);
 	});
 
 	test('PATHFINDER-020 multi-room path crosses room boundary with continuous positions', async ({ shard }) => {

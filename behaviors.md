@@ -439,8 +439,8 @@ Coverage Notes
   `Room.findPath()` returns an empty result (`[]`, or `''` with
   `serialize: true`) when the source position is not in the room.
 - `LEGACY-PATH-005` `behavior` `verified_vanilla`
-  `Room.findPath()` returns an empty result (`[]`, or `''` with
-  `serialize: true`) when the destination position is not in the room.
+  `Room.findPath()` to a destination in another room returns only the steps
+  inside this room, ending on the exit tile.
 - `LEGACY-PATH-006` `behavior` `verified_vanilla`
   `Room.findPath()` returns an empty result (`[]`, or `''` with
   `serialize: true`) when source and destination are the same position.

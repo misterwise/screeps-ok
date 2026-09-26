@@ -715,7 +715,7 @@ describe('creep.drop()', () => {
 		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25);
 		expect(pile).toBeDefined();
 		expect(pile!.resourceType).toBe(RESOURCE_ENERGY);
-		expect(pile!.amount).toBeGreaterThan(0);
+		expect(pile!.amount).toBe(29);
 	});
 
 	test('DROP-010 dropping different resource type creates separate Resource', async ({ shard }) => {
@@ -1192,8 +1192,7 @@ describe('Dropped resource decay', () => {
 			.filter(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === 'energy');
 		expect(piles.length).toBe(1);
 		// The overflow was 5; decay ceil(5/1000)=1 → 4 after the tick's decay pass.
-		expect(piles[0].amount).toBeGreaterThanOrEqual(4);
-		expect(piles[0].amount).toBeLessThanOrEqual(5);
+		expect(piles[0].amount).toBe(4);
 	});
 
 	test('DROP-DECAY-005 any player\'s creep can pick up any dropped resource', async ({ shard }) => {
@@ -1237,10 +1236,8 @@ describe('Dropped resource decay', () => {
 		expect(rc).toBe(OK);
 
 		const picker = await shard.expectObject(pickerId, 'creep');
-		// p1 dropped 50, two ticks of decay along the way (1 after drop, 1
-		// after pickup intent) leave the picker with 48-50 energy.
-		expect(picker.store.energy).toBeGreaterThanOrEqual(48);
-		expect(picker.store.energy).toBeLessThanOrEqual(50);
+		// p1 dropped 50; the drop tick's decay leaves 49 for the pickup.
+		expect(picker.store.energy).toBe(49);
 	});
 
 	test('DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API', async ({ shard }) => {
@@ -1263,7 +1260,7 @@ describe('Dropped resource decay', () => {
 
 		expect(result).not.toBeNull();
 		expect(result!.resourceType).toBe(RESOURCE_ENERGY);
-		expect(result!.amount).toBeGreaterThan(0);
+		expect(result!.amount).toBe(39);
 		expect(result!.hasId).toBe(true);
 	});
 });

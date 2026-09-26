@@ -89,10 +89,8 @@ describe('CostMatrix', () => {
 
 		expect(result.zero).toBe(0);
 		expect(result.max).toBe(255);
-		expect(result.negative).toBeGreaterThanOrEqual(0);
-		expect(result.negative).toBeLessThanOrEqual(255);
-		expect(result.overflow).toBeGreaterThanOrEqual(0);
-		expect(result.overflow).toBeLessThanOrEqual(255);
+		expect(result.negative).toBe(0);
+		expect(result.overflow).toBe(255);
 	});
 
 	test('COSTMATRIX-006 CostMatrix value 0 means use the default terrain cost', async ({ shard }) => {

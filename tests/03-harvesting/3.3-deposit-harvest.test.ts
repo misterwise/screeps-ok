@@ -34,7 +34,7 @@ describe('deposit lifecycle (section 17.5)', () => {
 		const deposit1 = await shard.runPlayer('p1', code`
 			({ lastCooldown: Game.getObjectById(${depositId}).lastCooldown })
 		`) as { lastCooldown: number };
-		expect(deposit1.lastCooldown).toBeGreaterThanOrEqual(1);
+		expect(deposit1.lastCooldown).toBe(1);
 
 		for (let i = 0; i < 50; i++) await shard.tick();
 
@@ -130,8 +130,8 @@ describe('deposit lifecycle (section 17.5)', () => {
 				cooldown: Game.getObjectById(${depositId}).cooldown,
 			})
 		`) as { lastCooldown: number; cooldown: number };
-		expect(after.lastCooldown).toBeGreaterThanOrEqual(1);
-		expect(after.cooldown).toBeGreaterThanOrEqual(after.lastCooldown - 1);
+		expect(after.lastCooldown).toBe(1);
+		expect(after.cooldown).toBe(0);
 	});
 
 	test('DEPOSIT-006 deposit disappears when the decay timer expires', async ({ shard }) => {

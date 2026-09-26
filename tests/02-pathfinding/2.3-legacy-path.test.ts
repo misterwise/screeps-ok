@@ -46,7 +46,7 @@ describe('Legacy Pathfinding', () => {
 		};
 
 		expect(result.isArray).toBe(true);
-		expect(result.length).toBeGreaterThan(0);
+		expect(result.length).toBe(10);
 		// Path step shape: { x, y, dx, dy, direction }
 		expect(result.firstStep).not.toBeNull();
 		expect(result.firstStep!.hasDirection).toBe(true);
@@ -90,7 +90,7 @@ describe('Legacy Pathfinding', () => {
 		};
 
 		expect(result.serializedType).toBe('string');
-		expect(result.originalLength).toBeGreaterThan(0);
+		expect(result.originalLength).toBe(10);
 		expect(result.restoredLength).toBe(result.originalLength);
 		expect(result.firstMatches).toBe(true);
 		expect(result.lastMatches).toBe(true);
@@ -137,15 +137,14 @@ describe('Legacy Pathfinding', () => {
 			({
 				isArray: Array.isArray(path),
 				length: path.length,
-				allInRoom: Array.isArray(path) && path.every(
-					s => s.x >= 0 && s.x <= 49 && s.y >= 0 && s.y <= 49
-				),
+				lastY: path.length ? path[path.length - 1].y : -1,
 			})
-		`) as { isArray: boolean; length: number; allInRoom: boolean };
+		`) as { isArray: boolean; length: number; lastY: number };
 
+		// 25 steps north to the top exit tile; nothing past the room edge.
 		expect(result.isArray).toBe(true);
-		expect(result.length).toBeGreaterThan(0);
-		expect(result.allInRoom).toBe(true);
+		expect(result.length).toBe(25);
+		expect(result.lastY).toBe(0);
 	});
 
 	test('LEGACY-PATH-006 findPath() returns empty array when source equals destination', async ({ shard }) => {
@@ -200,7 +199,7 @@ describe('Legacy Pathfinding', () => {
 		`) as { type: string; length: number };
 
 		expect(result.type).toBe('string');
-		expect(result.length).toBeGreaterThan(0);
+		expect(result.length).toBe(14);
 	});
 
 	test('LEGACY-PATH-009 path step dx/dy match positional deltas and direction matches dx/dy', async ({ shard }) => {
@@ -230,7 +229,7 @@ describe('Legacy Pathfinding', () => {
 			})
 		`) as { length: number; allCorrect: boolean; sample: { x: number; y: number; dx: number; dy: number; direction: number } | null };
 
-		expect(result.length).toBeGreaterThan(0);
+		expect(result.length).toBe(10);
 		expect(result.allCorrect).toBe(true);
 	});
 
@@ -273,6 +272,6 @@ describe('Legacy Pathfinding', () => {
 		expect(result.enableResult).toBeUndefined();
 		expect(result.disableResult).toBeUndefined();
 		expect(result.reEnableResult).toBeUndefined();
-		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.pathLength).toBe(5);
 	});
 });
