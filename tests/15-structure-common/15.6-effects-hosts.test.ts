@@ -69,7 +69,10 @@ describe('15.5 Effects Host Matrix', () => {
 			if (row.capability) shard.requires(row.capability);
 
 			const roomName = 'W1N1';
-			await shard.ownedRoom('p1', roomName, 8);
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: roomName, rcl: 8, owner: 'p1', powerEnabled: true }],
+			});
 
 			let targetSpec: TargetSpec;
 			switch (row.target.kind) {

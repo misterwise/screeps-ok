@@ -47,7 +47,7 @@ describe('Terminal send', () => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W1N1', rcl: 6, owner: 'p1', powerEnabled: true },
 				{ name: 'W5N1', rcl: 6, owner: 'p1' },
 			],
 		});
@@ -142,7 +142,7 @@ describe('Terminal send', () => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
+				{ name: 'W1N1', rcl: 6, owner: 'p1', powerEnabled: true },
 				{ name: 'W2N1', rcl: 6, owner: 'p1' },
 			],
 		});

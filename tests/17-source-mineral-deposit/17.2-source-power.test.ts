@@ -29,7 +29,7 @@ describe('Source power effects', () => {
 			shard.requires('powerEffects');
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 			});
 			const sourceId = await shard.placeSource('W1N1', {
 				pos: [25, 25], energy: 0, energyCapacity: 3000,
@@ -57,7 +57,7 @@ describe('Source power effects', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 		const sourceId = await shard.placeSource('W1N1', {
 			pos: [25, 25], energy: 0, energyCapacity: 3000, ticksToRegeneration: 10,
@@ -93,7 +93,7 @@ describe('Mineral power effects', () => {
 			shard.requires('powerEffects');
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 			});
 			// The power only pulses on a mineral with amount left and no regeneration timer.
 			const mineralId = await shard.placeMineral('W1N1', {

@@ -12,7 +12,7 @@ describe('Rampart power effects', () => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true },
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
@@ -52,7 +52,7 @@ describe('Rampart power effects', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		await shard.placePowerCreep('W1N1', {

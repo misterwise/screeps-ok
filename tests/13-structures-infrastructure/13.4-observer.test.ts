@@ -114,7 +114,7 @@ describe('StructureObserver', () => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
+				{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true },
 				{ name: 'W12N1' },
 			],
 		});

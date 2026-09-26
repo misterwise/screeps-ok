@@ -81,6 +81,8 @@ That includes:
   `liveWorldSize`
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
+- set the controller's `isPowerEnabled` from `RoomSpec.powerEnabled`
+  (default false)
 - if the adapter declares `roomStatus`, apply public room status from
   `RoomSpec.status`; omitted status means `normal`, while `novice`,
   `respawn`, and `closed` must be visible through `Game.map.getRoomStatus()`
@@ -125,7 +127,10 @@ Examples:
 - `placePowerCreep(..., { powers: { [PWR_GENERATE_OPS]: 2, [PWR_OPERATE_LAB]: 1 } })`
   means a level `3` power creep (the sum of its power levels) with the full
   hits, `hitsMax`, and store capacity of a creep upgraded to that level:
-  `1000 * (level + 1)` and `100 * (level + 1)`.
+  `1000 * (level + 1)` and `100 * (level + 1)`. Placement touches nothing
+  else: the room's controller keeps `isPowerEnabled` false unless
+  `RoomSpec.powerEnabled` sets it, so a power creep's `usePower` in a
+  controlled room needs that flag.
 
 `placeObject()` is an escape hatch for rare or newly added public objects. It
 must not become the primary path for common gameplay setup.

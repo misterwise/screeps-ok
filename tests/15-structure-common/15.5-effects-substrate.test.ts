@@ -28,7 +28,10 @@ describe('15.5 Effects Substrate', () => {
 	test('EFFECT-DECAY-001 entry ticksRemaining decrements by exactly 1 per tick', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
 			store: { energy: 1000 },
@@ -91,7 +94,10 @@ describe('15.5 Effects Substrate', () => {
 	test('EFFECT-DECAY-002 entry is removed the tick its remaining duration reaches zero', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
 			store: { energy: 1000 },
@@ -154,7 +160,10 @@ describe('15.5 Effects Substrate', () => {
 	test('EFFECT-APPLY-001 re-applying an active power refreshes the entry without stacking', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
 			store: { energy: 1000 },
@@ -220,7 +229,10 @@ describe('15.5 Effects Substrate', () => {
 	test('EFFECT-APPLY-002 distinct powers coexist on a target with independent timers', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
 			store: { energy: 1000 },
@@ -292,7 +304,10 @@ describe('15.5 Effects Substrate', () => {
 	test('EFFECT-DESTROY-001 active effects do not transfer to a ruin when the host is destroyed', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
 			store: { energy: 1000 },

@@ -943,6 +943,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				buildTerrain(withCornerWalls(roomSpec.terrain ?? new Array(2500).fill(0))));
 			await this.server.world.addRoomObject(roomSpec.name, 'controller', 1, 1, {
 				level: roomSpec.rcl ?? 0,
+				isPowerEnabled: roomSpec.powerEnabled === true,
 			});
 			await this.applyRoomStatus(roomSpec);
 		}
@@ -1433,12 +1434,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			x: spec.pos[0],
 			y: spec.pos[1],
 		});
-
-		// Power creeps need isPowerEnabled on the room controller.
-		await this.db['rooms.objects'].update(
-			{ $and: [{ room: roomName }, { type: 'controller' }] },
-			{ $set: { isPowerEnabled: true } },
-		);
 
 		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });
 		await this.env.sadd(this.env.keys.ACTIVE_ROOMS, [roomName]);

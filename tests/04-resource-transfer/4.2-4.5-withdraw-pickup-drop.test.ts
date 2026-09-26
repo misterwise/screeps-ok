@@ -195,7 +195,7 @@ describe('creep.withdraw()', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 		const terminalId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',

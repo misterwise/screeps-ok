@@ -55,6 +55,11 @@ export interface RoomSpec {
 	safeMode?: number;
 	/** Set the controller's initial downgrade timer (ticks until level loss). */
 	ticksToDowngrade?: number;
+	/**
+	 * Set the controller's `isPowerEnabled`. Placement never enables power, so
+	 * a power creep can `usePower` in a controlled room only when this is set.
+	 */
+	powerEnabled?: boolean;
 }
 
 export type TerrainSpec = (0 | 1 | 2)[];

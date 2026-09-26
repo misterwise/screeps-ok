@@ -54,7 +54,7 @@ describe('StructurePowerSpawn processPower', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const powerLevel = 1;

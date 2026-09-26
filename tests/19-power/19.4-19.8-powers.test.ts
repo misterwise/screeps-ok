@@ -33,7 +33,7 @@ describe('Operate powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		// Use PWR_OPERATE_TOWER as representative. Place tower + power creep.
@@ -71,7 +71,7 @@ describe('Operate powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {
@@ -110,7 +110,7 @@ describe('Operate powers', () => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {
@@ -141,7 +141,7 @@ describe('Operate powers', () => {
 		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const factoryId = await shard.placeStructure('W1N1', {
@@ -176,7 +176,7 @@ describe('Disrupt powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {
@@ -210,7 +210,7 @@ describe('Disrupt powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {
@@ -251,7 +251,7 @@ describe('Regen powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const sourceId = await shard.placeSource('W1N1', {
@@ -285,7 +285,7 @@ describe('Regen powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const sourceId = await shard.placeSource('W1N1', {
@@ -327,7 +327,7 @@ describe('Combat powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		await shard.placePowerCreep('W1N1', {
@@ -383,7 +383,7 @@ describe('Combat powers', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		await shard.placePowerCreep('W1N1', {
@@ -423,7 +423,7 @@ describe('Operate powers — additional', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const obsId = await shard.placeStructure('W1N1', {
@@ -455,7 +455,7 @@ describe('Operate powers — additional', () => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {
@@ -486,7 +486,7 @@ describe('Operate powers — additional', () => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		const towerId = await shard.placeStructure('W1N1', {

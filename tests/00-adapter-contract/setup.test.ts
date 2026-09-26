@@ -961,6 +961,24 @@ describe('adapter contract: setup', () => {
 			expect(result).toEqual({ level: 3, hits: 4000, hitsMax: 4000, capacity: 400 });
 		});
 
+		test('placement leaves power disabled; RoomSpec.powerEnabled enables it', async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1' },
+					{ name: 'W2N1', rcl: 8, owner: 'p1', powerEnabled: true },
+				],
+			});
+			await shard.placePowerCreep('W1N1', { pos: [25, 25], owner: 'p1', powers: {} });
+			await shard.tick();
+
+			const enabled = await shard.runPlayer('p1', code`
+				[Game.rooms['W1N1'].controller.isPowerEnabled, Game.rooms['W2N1'].controller.isPowerEnabled]
+			`);
+			expect(enabled).toEqual([false, true]);
+		});
+
 		test('default power creep names are deterministic and collision-free', async ({ shard }) => {
 			shard.requires('powerCreeps');
 			await shard.ownedRoom('p1', 'W1N1', 8);

@@ -301,7 +301,10 @@ describe('Lab runReaction', () => {
 		shard.requires('powerCreeps');
 		shard.requires('chemistry');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];
 
@@ -724,7 +727,10 @@ describe('Lab reverseReaction', () => {
 		shard.requires('powerCreeps');
 		shard.requires('chemistry');
 		shard.requires('powerEffects');
-		await shard.ownedRoom('p1', 'W1N1', 8);
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
+		});
 
 		const boostedAmount = LAB_REACTION_AMOUNT + POWER_INFO[PWR_OPERATE_LAB]!.effect![0];
 

@@ -305,13 +305,12 @@ describe('Power creep lifecycle', () => {
 		});
 		await shard.tick();
 
-		// enableRoom on the controller.
 		const rc = await shard.runPlayer('p1', code`
 			const pc = Object.values(Game.powerCreeps)[0];
 			const ctrl = Game.rooms['W1N1'].controller;
-			pc.enableRoom(ctrl)
+			[ctrl.isPowerEnabled, pc.enableRoom(ctrl)]
 		`);
-		expect(rc).toBe(OK);
+		expect(rc).toEqual([false, OK]);
 
 		// On next tick, isPowerEnabled should be true.
 		const enabled = await shard.runPlayer('p1', code`

@@ -23,7 +23,7 @@ describe('PWR_GENERATE_OPS', () => {
 			shard.requires('powerCreeps');
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 			});
 			const creepId = await shard.placePowerCreep('W1N1', {
 				pos: [25, 25], owner: 'p1',
@@ -49,7 +49,7 @@ describe('PWR_GENERATE_OPS', () => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		await shard.placePowerCreep('W1N1', {
@@ -75,7 +75,7 @@ describe('PWR_GENERATE_OPS', () => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 
 		// A level-5 creep holds 100 * (5 + 1); leave room for part of one generation.

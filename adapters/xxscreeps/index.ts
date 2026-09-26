@@ -387,6 +387,11 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 
 		for (const roomSpec of spec.rooms) {
+			if (roomSpec.powerEnabled) {
+				this.queueOp(roomSpec.name, room => {
+					room.controller!.isPowerEnabled = true;
+				});
+			}
 			if (roomSpec.owner || roomSpec.rcl) {
 				const owner = roomSpec.owner ? this.resolvePlayer(roomSpec.owner) : undefined;
 				const rcl = roomSpec.rcl ?? (roomSpec.owner ? 1 : 0);
@@ -745,9 +750,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				if (amount > 0) storeAdd(creep.store, resource, amount);
 			}
 			insertRoomObject(room, creep);
-			// Powers are inert in a controlled room until it is power-enabled, so a
-			// placed creep would be unable to act. Matches the vanilla adapter.
-			if (room.controller) room.controller.isPowerEnabled = true;
 		});
 
 		return id;

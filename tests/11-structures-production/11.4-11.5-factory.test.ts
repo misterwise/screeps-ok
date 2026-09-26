@@ -370,7 +370,7 @@ describe('Factory commodity chains', () => {
 		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1', powerEnabled: true }],
 		});
 
 		// Place factory with components for composite (level 1).
