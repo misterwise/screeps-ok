@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -878,6 +878,25 @@ describe('adapter contract: setup', () => {
 			expect(result!.y).toBe(25);
 			expect(result!.hasPower).toBe(true);
 			expect(result!.powerLevel).toBe(1);
+		});
+
+		test('derives level, hits, and store capacity from the placed power levels', async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			await shard.placePowerCreep('W1N1', {
+				pos: [25, 25],
+				owner: 'p1',
+				name: 'LeveledPC',
+				powers: { [PWR_GENERATE_OPS]: 2, [PWR_OPERATE_LAB]: 1 },
+			});
+			await shard.tick();
+
+			const result = await shard.runPlayer('p1', code`
+				const pc = Game.powerCreeps['LeveledPC'];
+				({ level: pc.level, hits: pc.hits, hitsMax: pc.hitsMax, capacity: pc.store.getCapacity() })
+			`);
+			// A level-L creep is a level-0 creep (1000 hits, 100 capacity) upgraded L times at +1000/+100.
+			expect(result).toEqual({ level: 3, hits: 4000, hitsMax: 4000, capacity: 400 });
 		});
 
 		test('default power creep names are deterministic and collision-free', async ({ shard }) => {

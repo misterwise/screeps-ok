@@ -160,7 +160,8 @@ export interface PowerCreepSpec {
 	pos: [number, number];
 	owner: string;
 	name?: string;
-	/** Map of PWR_* constant to level (1-5), optionally with remaining cooldown. */
+	/** Map of PWR_* constant to level (1-5), optionally with remaining cooldown.
+	 *  The creep's level is their sum; hits and store capacity follow from it. */
 	powers: Record<number, number | { level: number; cooldown?: number }>;
 	store?: Record<string, number>;
 }

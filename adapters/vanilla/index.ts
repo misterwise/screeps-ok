@@ -1388,6 +1388,9 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			powers[pwr] = { level, cooldownTime: gameTime + cooldown };
 			pcLevel += level;
 		}
+		// Vanilla creates at 1000 hits / 100 capacity and adds 1000 / 100 per upgrade.
+		const hitsMax = 1000 * (pcLevel + 1);
+		const storeCapacity = 100 * (pcLevel + 1);
 
 		// Insert into rooms.objects so the engine sees it in the room.
 		const result = await this.db['rooms.objects'].insert({
@@ -1399,10 +1402,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			name,
 			className: 'operator',
 			level: pcLevel,
-			hitsMax: 1000,
-			hits: 1000,
+			hitsMax,
+			hits: hitsMax,
 			store: spec.store ?? {},
-			storeCapacity: 100,
+			storeCapacity,
 			powers,
 			ageTime: gameTime + 5000,
 			actionLog: {},
@@ -1417,10 +1420,10 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			name,
 			className: 'operator',
 			level: pcLevel,
-			hitsMax: 1000,
-			hits: 1000,
+			hitsMax,
+			hits: hitsMax,
 			store: spec.store ?? {},
-			storeCapacity: 100,
+			storeCapacity,
 			powers,
 			shard: 'shard0',
 			spawnCooldownTime: null,

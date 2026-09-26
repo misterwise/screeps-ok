@@ -111,6 +111,10 @@ Examples:
   reports `density === DENSITY_LOW`. When `mineralAmount` is omitted, the
   placed amount is `MINERAL_DENSITY[density]`. Density defaults to
   `DENSITY_HIGH`.
+- `placePowerCreep(..., { powers: { [PWR_GENERATE_OPS]: 2, [PWR_OPERATE_LAB]: 1 } })`
+  means a level `3` power creep (the sum of its power levels) with the full
+  hits, `hitsMax`, and store capacity of a creep upgraded to that level:
+  `1000 * (level + 1)` and `100 * (level + 1)`.
 
 `placeObject()` is an escape hatch for rare or newly added public objects. It
 must not become the primary path for common gameplay setup.

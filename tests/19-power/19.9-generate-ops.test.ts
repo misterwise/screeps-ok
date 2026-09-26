@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	OK,
 	POWER_INFO, PWR_GENERATE_OPS,
-	FIND_DROPPED_RESOURCES,
+	FIND_DROPPED_RESOURCES, RESOURCE_OPS, ENERGY_DECAY,
 } from '../../src/index.js';
 
 const PI = POWER_INFO as Record<number, {
@@ -73,35 +73,32 @@ describe('PWR_GENERATE_OPS', () => {
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
 		});
 
-		// Fill the power creep's ops store near capacity so generation overflows.
-		// Power creep carry capacity is effectively unlimited for ops in practice,
-		// but the store has a finite capacity. Fill to near-max.
+		// A level-5 creep holds 100 * (5 + 1); leave room for part of one generation.
+		const capacity = 600;
+		const generated = PI[PWR_GENERATE_OPS].effect![4];
+		const free = 3;
 		await shard.placePowerCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			powers: { [PWR_GENERATE_OPS]: 5 },
-			store: { ops: 2499 }, // POWER_CREEP_MAX_OPS - 1 to trigger overflow
+			store: { ops: capacity - free },
 		});
 		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
+		const result = await shard.runPlayer('p1', code`
 			const pc = Object.values(Game.powerCreeps)[0];
-			pc.usePower(PWR_GENERATE_OPS)
-		`);
-		expect(rc).toBe(OK);
+			({ capacity: pc.store.getCapacity(), rc: pc.usePower(PWR_GENERATE_OPS) })
+		`) as { capacity: number; rc: number };
+		expect(result).toEqual({ capacity, rc: OK });
 
-		// Check for dropped ops on the tile.
+		// The drop decays once in the tick it lands, like any overflow pile.
+		const overflow = generated - free;
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const opsDrop = drops.find(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === 'ops');
-		// At level 5, effect generates enough ops to overflow from 2499.
-		// If the store capped, excess should appear as a drop.
-		if (opsDrop) {
-			expect(opsDrop.amount).toBeGreaterThan(0);
-		} else {
-			// If no drop, the store absorbed everything — verify store is at capacity.
-			const ops = await shard.runPlayer('p1', code`
-				Object.values(Game.powerCreeps)[0].store.ops
-			`) as number;
-			expect(ops).toBeGreaterThanOrEqual(2499);
-		}
+		expect(drops.map(r => ({ x: r.pos.x, y: r.pos.y, resourceType: r.resourceType, amount: r.amount })))
+			.toEqual([{ x: 25, y: 25, resourceType: RESOURCE_OPS, amount: overflow - Math.ceil(overflow / ENERGY_DECAY) }]);
+
+		const ops = await shard.runPlayer('p1', code`
+			Object.values(Game.powerCreeps)[0].store.ops
+		`);
+		expect(ops).toBe(capacity);
 	});
 });
