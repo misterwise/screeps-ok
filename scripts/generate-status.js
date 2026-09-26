@@ -18,7 +18,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { testCatalogId } from './lib/catalog-id.js';
+import { judgeReport, loadParity } from './lib/parity.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptsDir, '..');
@@ -39,102 +39,35 @@ function loadReport(adapter) {
 	return JSON.parse(readFileSync(reportPath, 'utf8'));
 }
 
-function loadParityFile(adapter) {
-	const parityPath = path.join(adaptersDir, adapter, 'parity.json');
-	if (!existsSync(parityPath)) return { expected_failures: {} };
-	return JSON.parse(readFileSync(parityPath, 'utf8'));
-}
-
-function buildExpectedFailSet(parity) {
-	const idToGap = new Map();
-	const gaps = parity.expected_failures ?? {};
-	for (const [gapId, gap] of Object.entries(gaps)) {
-		for (const testId of gap.tests ?? []) {
-			idToGap.set(testId, gapId);
-		}
-	}
-	return idToGap;
-}
-
 function summarizeReport(report, parity) {
 	if (!report) {
 		return {
-			total: 0, passed: 0, expectedFailure: 0, failed: 0, skipped: 0,
+			passed: 0, expectedFailure: 0, failed: 0, skipped: 0,
 			expectedFailureByGap: {}, passingTests: [], skippedTests: [],
-			failingTests: [], unexpectedPasses: [],
+			failingTests: [], unexpectedPasses: [], orphans: [], fileErrors: [],
 			loaded: false,
 		};
 	}
 
-	const idToGap = buildExpectedFailSet(parity);
-
-	const all = report.testResults.flatMap(f =>
-		f.assertionResults.map(a => ({ file: f.name, ...a })),
-	);
-
-	const expectedFailure = [];
-	const unexpectedPasses = [];
-	const genuinePasses = [];
-	const genuineFailures = [];
-	const skippedTests = [];
-
-	// First pass: per gap-tagged catalog ID, classify the entire ID by
-	// whether *any* of its cases failed. Mirrors parity-reporter's logic so
-	// matrix entries (one ID, many cases) don't generate false regression
-	// traps when their non-bug cases pass.
-	const idHasFailure = new Map();
-	for (const a of all) {
-		if (a.status !== 'passed' && a.status !== 'failed') continue;
-		const catalogId = testCatalogId(a.fullName);
-		if (!catalogId || !idToGap.has(catalogId)) continue;
-		if (a.status === 'failed') idHasFailure.set(catalogId, true);
-		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
-	}
-
-	for (const a of all) {
-		if (a.status === 'skipped' || a.status === 'pending' || a.status === 'todo') {
-			skippedTests.push(a);
-			continue;
-		}
-		const catalogId = testCatalogId(a.fullName);
-		const gapId = catalogId ? idToGap.get(catalogId) : null;
-		if (gapId) {
-			// Gap is "still active" if *any* case for this catalog ID failed.
-			const gapActive = idHasFailure.get(catalogId) === true;
-			if (gapActive) {
-				if (a.status === 'failed') expectedFailure.push(a);
-				else genuinePasses.push(a);
-			} else if (a.status === 'passed') {
-				unexpectedPasses.push(a);
-			} else {
-				genuineFailures.push(a);
-			}
-		} else if (a.status === 'passed') {
-			genuinePasses.push(a);
-		} else if (a.status === 'failed') {
-			genuineFailures.push(a);
-		}
-	}
-
+	// The reading the runner's exit applies: an id is an active gap if any of its cases failed.
+	const { classified, fileErrors } = judgeReport(report, parity);
 	const expectedFailureByGap = {};
-	for (const a of expectedFailure) {
-		const catalogId = testCatalogId(a.fullName);
-		const gapId = catalogId ? idToGap.get(catalogId) : null;
-		if (!gapId) continue;
-		(expectedFailureByGap[gapId] ??= []).push(a);
+	for (const t of classified.expected) {
+		(expectedFailureByGap[parity.gapForId.get(t.id)] ??= []).push(t);
 	}
 
 	return {
-		total: all.length,
-		passed: genuinePasses.length,
-		expectedFailure: expectedFailure.length,
-		failed: genuineFailures.length,
-		skipped: skippedTests.length,
+		passed: classified.passed.length,
+		expectedFailure: classified.expected.length,
+		failed: classified.failed.length,
+		skipped: classified.skipped.length,
 		expectedFailureByGap,
-		passingTests: genuinePasses,
-		skippedTests,
-		failingTests: genuineFailures,
-		unexpectedPasses,
+		passingTests: classified.passed,
+		skippedTests: classified.skipped,
+		failingTests: classified.failed,
+		unexpectedPasses: classified.unexpectedPasses,
+		orphans: classified.orphans.map(id => ({ id, gapId: parity.gapForId.get(id) })),
+		fileErrors,
 		loaded: true,
 	};
 }
@@ -163,8 +96,13 @@ function formatTimestamp(report) {
 }
 
 
+// Everything that fails the runner's exit, less the unexpected passes' own count.
+function problemCount(summary) {
+	return summary.failed + summary.fileErrors.length + summary.unexpectedPasses.length + summary.orphans.length;
+}
+
 function isAdapterOk(summary) {
-	return summary.failed === 0 && summary.unexpectedPasses.length === 0;
+	return problemCount(summary) === 0;
 }
 
 function adapterStatusIcon(summary) {
@@ -200,9 +138,9 @@ function renderHeaderBadges(summaries, statusHref) {
 			badges.push(`![${adapter}](${shieldBadge(adapter, 'no report', 'lightgrey')})`);
 			continue;
 		}
-		if (s.failed > 0 || s.unexpectedPasses.length > 0) {
+		if (!isAdapterOk(s)) {
 			const url = linkTo(slug(`${adapter} unexpected failures`));
-			badges.push(`[![${adapter}](${shieldBadge(adapter, `${s.failed || s.unexpectedPasses.length} failing`, 'red')})](${url})`);
+			badges.push(`[![${adapter}](${shieldBadge(adapter, `${problemCount(s)} failing`, 'red')})](${url})`);
 			continue;
 		}
 		const passUrl = linkTo(slug(`${adapter} passing tests`));
@@ -235,8 +173,9 @@ function renderAdapterRow(adapter, report, summary) {
 		summary.skipped,
 		summary.skipped > 0 ? slug(`${adapter} skipped tests`) : null,
 	);
-	const failedCell = summary.failed > 0
-		? `[${summary.failed}](#${slug(`${adapter} unexpected failures`)})`
+	const failedCount = summary.failed + summary.fileErrors.length;
+	const failedCell = failedCount > 0
+		? `[${failedCount}](#${slug(`${adapter} unexpected failures`)})`
 		: '—';
 	return `| ${icon} | **${adapter}** | ${passCell} | ${expectedCell} | ${failedCell} | ${skippedCell} | ${formatTimestamp(report)} |`;
 }
@@ -428,7 +367,7 @@ function renderPerAdapterExpectedFailures(adapterName, data) {
 	const lines = [];
 	const parity = data.parity;
 	const summary = data.summary;
-	const gaps = parity.expected_failures ?? {};
+	const gaps = parity.gaps;
 	const gapIds = Object.keys(gaps);
 	if (gapIds.length === 0) return '';
 	const intentionalGapIds = gapIds.filter(gapId => isIntentionalGap(gaps[gapId]));
@@ -554,11 +493,21 @@ function render(summaries) {
 
 	// Unexpected failures — only renders when present, one subsection per adapter
 	for (const [adapter, data] of Object.entries(summaries)) {
-		if (data.summary.failed === 0) continue;
+		const s = data.summary;
+		if (isAdapterOk(s)) continue;
 		lines.push(`## ${adapter} unexpected failures`);
 		lines.push('');
-		for (const t of data.summary.failingTests) {
+		for (const t of s.failingTests) {
 			lines.push(`- \`${t.fullName}\``);
+		}
+		for (const e of s.fileErrors) {
+			lines.push(`- \`${relativeFile(e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
+		}
+		for (const o of s.orphans) {
+			lines.push(`- \`${o.gapId}\` registers \`${o.id}\`, which no test passed or failed`);
+		}
+		if (s.unexpectedPasses.length > 0) {
+			lines.push(`- ${s.unexpectedPasses.length} registered test(s) now pass; see Regression traps triggered`);
 		}
 		lines.push('');
 	}
@@ -609,7 +558,7 @@ function main(argv) {
 	const summaries = {};
 	for (const adapter of requestedAdapters) {
 		const report = loadReport(adapter);
-		const parity = loadParityFile(adapter);
+		const parity = loadParity(path.join(adaptersDir, adapter, 'parity.json'));
 		const summary = summarizeReport(report, parity);
 		summaries[adapter] = { report, parity, summary };
 	}

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { parityExitCode } from './lib/parity-verdict.js';
+import { parityExitCode } from './lib/parity.js';
 
 const require = createRequire(import.meta.url);
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -205,7 +205,7 @@ function runSuiteLocked(options = {}) {
 		stdio,
 	});
 
-	// No verdict file: the reporter found no parity.json registrations.
+	// No verdict file: vitest ended before the parity reporter's run-end hook.
 	const verdict = existsSync(verdictPath) ? JSON.parse(readFileSync(verdictPath, 'utf8')) : null;
 	rmSync(verdictPath, { force: true });
 	return parityExitCode(result.status ?? 1, verdict);

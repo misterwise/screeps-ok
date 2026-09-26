@@ -59,6 +59,9 @@ changes since `v0.1.0-alpha` are not itemized.
   failure rather than being forgiven when every failed test is registered.
 - A malformed `parity.json` or an `extends` that doesn't resolve fails the
   run instead of loading no registrations.
+- A failing vitest run is forgiven only when it has registered failures to
+  forgive; one that fails for a reason the reporter doesn't see (no test file
+  matched, say) stays failed.
 - `behaviors.md` rows can carry their own `capability:` tag on top of their
   section's; `npm run validate:capabilities` checks both.
 - A test's ID is the one catalog ID its name carries, and a test's `:row`

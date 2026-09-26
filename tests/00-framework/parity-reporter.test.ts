@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { TestModule } from 'vitest/node';
 import ParityReporter from '../../src/reporters/parity-reporter.js';
-import { parityExitCode } from '../../scripts/lib/parity-verdict.js';
+import { judgeReport, loadParity, parityExitCode } from '../../scripts/lib/parity.js';
 
 type State = 'passed' | 'failed' | 'skipped';
 
@@ -14,10 +14,17 @@ afterEach(() => {
 	for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-// Runs the reporter over fake results against a parity.json holding `tests`.
-function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; unhandled?: string[] } = {}) {
+function tempDir() {
 	const dir = mkdtempSync(path.join(tmpdir(), 'screeps-ok-parity-'));
 	dirs.push(dir);
+	return dir;
+}
+
+const TEST_FILE = '/suite/tests/01-section/1.1-some.test.ts';
+
+// Runs the reporter over fake results against a parity.json holding `tests`.
+function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; unhandled?: string[] } = {}) {
+	const dir = tempDir();
 	writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
 		expected_failures: { 'some-gap': { tests } },
 	}));
@@ -35,7 +42,7 @@ function verdictFor(tests: string[], results: [string, State][], fullRun: boolea
 	const moduleErrors = (errors.module ?? []).map(message => ({ message }));
 	const unhandled = (errors.unhandled ?? []).map(message => ({ message }));
 	reporter.onTestRunEnd(
-		[{ children: { allTests: () => cases }, errors: () => moduleErrors } as unknown as TestModule],
+		[{ moduleId: TEST_FILE, children: { allTests: () => cases }, errors: () => moduleErrors } as unknown as TestModule],
 		unhandled as never,
 	);
 	return JSON.parse(readFileSync(verdictPath, 'utf8'));
@@ -92,8 +99,7 @@ describe('parity reporter', () => {
 
 describe('parity file loading', () => {
 	function reporterOver(parityText: string | null) {
-		const dir = mkdtempSync(path.join(tmpdir(), 'screeps-ok-parity-'));
-		dirs.push(dir);
+		const dir = tempDir();
 		if (parityText !== null) writeFileSync(path.join(dir, 'parity.json'), parityText);
 		return new ParityReporter({ env: { SCREEPS_OK_ADAPTER: path.join(dir, 'index.ts') } });
 	}
@@ -124,5 +130,58 @@ describe('parity exit code', () => {
 		expect(parityExitCode(1, { ...clean, genuineFailures: 1 })).toBe(1);
 		expect(parityExitCode(0, null)).toBe(0);
 		expect(parityExitCode(1, null)).toBe(1);
+	});
+
+	test('keeps vitest\'s failure when the verdict saw nothing to forgive', () => {
+		expect(parityExitCode(1, { ...clean, expectedFailures: 0 })).toBe(1);
+	});
+});
+
+describe('JSON reports', () => {
+	function report(files: { tests: [string, State][]; message?: string }[]) {
+		return {
+			testResults: files.map((f, i) => ({
+				name: `/suite/tests/01-section/1.${i}-some.test.ts`,
+				message: f.message ?? '',
+				assertionResults: f.tests.map(([fullName, status]) => ({ fullName, status })),
+			})),
+		};
+	}
+
+	test('a report gets the verdict the reporter gives the same results live', () => {
+		const results: [string, State][] = [
+			['GAP-001 fails as registered', 'failed'],
+			['GAP-003 passes although registered', 'passed'],
+			['OTHER-001 fails', 'failed'],
+		];
+		const dir = tempDir();
+		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
+			expected_failures: { 'some-gap': { tests: ['GAP-001', 'GAP-002', 'GAP-003'] } },
+		}));
+		const judged = judgeReport(report([{ tests: results }, { tests: [], message: 'SyntaxError' }]), loadParity(path.join(dir, 'parity.json')));
+		expect(judged.verdict).toEqual(verdictFor(['GAP-001', 'GAP-002', 'GAP-003'], results, true, { module: ['SyntaxError'] }));
+		expect(judged.verdict).toEqual({
+			expectedFailures: 1, unexpectedPasses: 1, genuineFailures: 2, orphanedRegistrations: 1,
+		});
+	});
+
+	test('a report is judged by the overlay merged onto its base', () => {
+		const dir = tempDir();
+		writeFileSync(path.join(dir, 'base.json'), JSON.stringify({
+			expected_failures: { 'fixed-gap': { tests: ['GAP-001'] }, 'base-gap': { tests: ['GAP-002'] } },
+		}));
+		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
+			extends: './base.json',
+			expected_failures: { 'own-gap': { tests: ['GAP-003'] } },
+			expected_passes: ['fixed-gap'],
+		}));
+		const judged = judgeReport(report([{ tests: [
+			['GAP-001 passes once fixed', 'passed'],
+			['GAP-002 fails as the base registers', 'failed'],
+			['GAP-003 fails as the overlay registers', 'failed'],
+		] }]), loadParity(path.join(dir, 'parity.json')));
+		expect(judged.verdict).toEqual({
+			expectedFailures: 2, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0,
+		});
 	});
 });

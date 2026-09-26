@@ -18,7 +18,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, append
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { testCatalogId } from './lib/catalog-id.js';
+import { judgeReport, loadParity, verdictIsClean } from './lib/parity.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(scriptsDir, '..');
@@ -80,69 +80,22 @@ function mergeShardReports(paths) {
 	return merged;
 }
 
-function loadParity(adapter) {
-	const p = path.join(adaptersDir, adapter, 'parity.json');
-	if (!existsSync(p)) return { expected_failures: {} };
-	return JSON.parse(readFileSync(p, 'utf8'));
-}
-
+// The runner's reading of the merged shards; shards merge into the full run, so orphans count.
 function summarize(report, parity) {
-	const idToGap = new Map();
-	for (const [gapId, gap] of Object.entries(parity.expected_failures ?? {})) {
-		for (const id of gap.tests ?? []) idToGap.set(id, gapId);
-	}
-	let passed = 0, expectedFail = 0, unexpectedFail = 0, unexpectedPass = 0, skipped = 0;
-
-	const all = [];
-	for (const file of report.testResults ?? []) {
-		for (const a of file.assertionResults ?? []) {
-			all.push(a);
-		}
-	}
-
-	// Matrix tests can have one catalog ID with both passing and failing cases.
-	// Classify the ID as an active gap if any case failed; only all-pass IDs are
-	// unexpected passes.
-	const idHasFailure = new Map();
-	for (const a of all) {
-		if (a.status !== 'passed' && a.status !== 'failed') continue;
-		const catalogId = testCatalogId(a.fullName);
-		if (!catalogId || !idToGap.has(catalogId)) continue;
-		if (a.status === 'failed') idHasFailure.set(catalogId, true);
-		else if (!idHasFailure.has(catalogId)) idHasFailure.set(catalogId, false);
-	}
-
-	for (const a of all) {
-		if (['skipped', 'pending', 'todo'].includes(a.status)) { skipped++; continue; }
-		const catalogId = testCatalogId(a.fullName);
-		const gap = catalogId ? idToGap.get(catalogId) : null;
-		if (gap) {
-			const gapActive = idHasFailure.get(catalogId) === true;
-			if (gapActive) {
-				if (a.status === 'failed') expectedFail++;
-				else if (a.status === 'passed') passed++;
-			} else if (a.status === 'passed') {
-				unexpectedPass++;
-			} else if (a.status === 'failed') {
-				unexpectedFail++;
-			}
-		} else if (a.status === 'passed') {
-			passed++;
-		} else if (a.status === 'failed') {
-			unexpectedFail++;
-		}
-	}
-	// Shards merge into the full run, so a registration no test ran is stale.
-	const orphaned = [...idToGap.keys()].filter(id => !idHasFailure.has(id));
-	return { passed, expectedFail, unexpectedFail, unexpectedPass, skipped, orphaned };
-}
-
-function failsRun(s) {
-	return s.unexpectedFail > 0 || s.unexpectedPass > 0 || s.orphaned.length > 0;
+	const { classified, fileErrors, verdict } = judgeReport(report, parity);
+	return {
+		passed: classified.passed.length,
+		expectedFail: verdict.expectedFailures,
+		unexpected: verdict.genuineFailures + verdict.unexpectedPasses,
+		skipped: classified.skipped.length,
+		orphaned: classified.orphans,
+		fileErrors,
+		clean: verdictIsClean(verdict),
+	};
 }
 
 function statusIcon(s) {
-	if (failsRun(s)) return '🔴';
+	if (!s.clean) return '🔴';
 	if (s.expectedFail > 0) return '🟡';
 	return '🟢';
 }
@@ -153,12 +106,14 @@ function renderTable(rows) {
 		'| :-: | --- | --: | --: | --: | --: |',
 	];
 	for (const { adapter, summary: s } of rows) {
-		const unexpected = s.unexpectedFail + s.unexpectedPass;
-		lines.push(`| ${statusIcon(s)} | **${adapter}** | ${s.passed} | ${s.expectedFail || '—'} | ${unexpected || '—'} | ${s.skipped || '—'} |`);
+		lines.push(`| ${statusIcon(s)} | **${adapter}** | ${s.passed} | ${s.expectedFail || '—'} | ${s.unexpected || '—'} | ${s.skipped || '—'} |`);
 	}
 	lines.push('');
 	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, or orphaned registrations');
 	for (const { adapter, summary: s } of rows) {
+		for (const e of s.fileErrors) {
+			lines.push('', `**${adapter}** \`${path.relative(packageRoot, e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
+		}
 		if (s.orphaned.length > 0) {
 			lines.push('', `**${adapter}** registrations that matched no test that ran: ${s.orphaned.map(id => `\`${id}\``).join(', ')}`);
 		}
@@ -181,7 +136,7 @@ function main() {
 		const out = path.join(reportsOutDir, `${adapter}.json`);
 		writeFileSync(out, JSON.stringify(merged));
 		console.log(`merged ${files.length} shard(s) → ${path.relative(packageRoot, out)}`);
-		const summary = summarize(merged, loadParity(adapter));
+		const summary = summarize(merged, loadParity(path.join(adaptersDir, adapter, 'parity.json')));
 		rows.push({ adapter, summary });
 	}
 
@@ -193,7 +148,7 @@ function main() {
 		console.log(`\n${table}`);
 	}
 
-	process.exit(rows.some(r => failsRun(r.summary)) ? 1 : 0);
+	process.exit(rows.some(r => !r.summary.clean) ? 1 : 0);
 }
 
 main();
