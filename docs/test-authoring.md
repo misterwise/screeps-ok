@@ -274,7 +274,8 @@ doesn't do what it claims.
 
 A `matrix` entry is one public rule that expands across a documented case
 family: one row per structure type, reaction, boost, or validation condition.
-The case list lives in `src/matrices/` and the test loops over it:
+The case list lives in `src/matrices/` (or inline in the test, for a short
+list no other test runs) and the test loops over it:
 
 ```typescript
 import { structureHitsCases } from '../../src/matrices/structure-hits.js';
@@ -305,9 +306,10 @@ Use a matrix when:
 Examples: `BOOSTS`, `REACTIONS`, `COMMODITIES`, `CONTROLLER_STRUCTURES`, and
 documented target-validity families.
 
-The generated family must derive its cases from the definition in
-`docs/behavior-matrices.md`, the canonical source it references, and the case
-list in `src/matrices/`. Do not:
+The generated family must derive its cases from its definition in
+`docs/behavior-matrices.md` and the canonical source it references. Every
+`matrix` entry needs a definition, and a framework test fails on one without
+it. Do not:
 
 - hand-pick an undocumented subset
 - silently expand scope beyond the documented applicability set
