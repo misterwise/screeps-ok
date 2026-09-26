@@ -158,7 +158,6 @@ function patchMake(module, filename) {
 	}
 	const replacement = "function getAllTerrainData() {\\n" +
 		"    return env.get(" + JSON.stringify(terrainRevisionKey) + ")\\n" +
-		"        .catch(() => null)\\n" +
 		"        .then((revision) => {\\n" +
 		"            if(staticTerrainData && staticTerrainRevision === revision) {\\n" +
 		"                return;\\n" +
@@ -211,7 +210,6 @@ function patchData(module, filename) {
 	}
 	const replacement = "function getRoomStatusData() {\\n" +
 		"    return env.get(" + JSON.stringify(roomStatusRevisionKey) + ")\\n" +
-		"        .catch(() => null)\\n" +
 		"        .then((revision) => {\\n" +
 		"            if(roomStatusDataCache.data && roomStatusDataCache.revision === revision) {\\n" +
 		"                return roomStatusDataCache.data;\\n" +
@@ -235,7 +233,6 @@ function patchData(module, filename) {
 	}
 	const accessReplacement = "function getAccessibleRooms() {\\n" +
 		"    return env.get(" + JSON.stringify(roomStatusRevisionKey) + ")\\n" +
-		"        .catch(() => null)\\n" +
 		"        .then((revision) => {\\n" +
 		"            if(accessibleRoomsCache.data && accessibleRoomsCache.revision === revision) {\\n" +
 		"                return accessibleRoomsCache.data;\\n" +
@@ -272,13 +269,14 @@ if (sequenceFile && sentinelFile) {
 
     Math.random = function() {
         let stat = null;
-        try { stat = fs.statSync(sequenceFile); } catch (_) {}
+        try { stat = fs.statSync(sequenceFile); } catch (e) { if (e.code !== 'ENOENT') throw e; }
         if (stat) {
             if (stat.mtimeMs !== cachedMtime) {
-                try {
-                    const data = JSON.parse(fs.readFileSync(sequenceFile, 'utf8'));
-                    sequence = Array.isArray(data && data.sequence) ? data.sequence : null;
-                } catch (_) { sequence = null; }
+                const data = JSON.parse(fs.readFileSync(sequenceFile, 'utf8'));
+                if (!Array.isArray(data && data.sequence)) {
+                    throw new Error('vanilla tick: random sequence file has no sequence array');
+                }
+                sequence = data.sequence;
                 index = 0;
                 cachedMtime = stat.mtimeMs;
             }
