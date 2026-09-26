@@ -267,8 +267,9 @@ describe('creep.upgradeController()', () => {
 		const upgradeBlocked = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.upgradeBlocked
 		`) as number;
-		expect(upgradeBlocked).toBeGreaterThan(0);
-		expect(upgradeBlocked).toBeLessThanOrEqual(CONTROLLER_NUKE_BLOCKED_UPGRADE);
+		// The nuke lands on the first tick after placement; this read is four
+		// ticks after that.
+		expect(upgradeBlocked).toBe(CONTROLLER_NUKE_BLOCKED_UPGRADE - 4);
 	});
 
 	test('CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount', async ({ shard }) => {

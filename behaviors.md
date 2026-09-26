@@ -3287,8 +3287,7 @@ neighbors and no better section exists.
   not own the deceased creep, `true` for its owner.
 - `TOMBSTONE-012` `behavior` `verified_vanilla`
   `tombstone.creep.ticksToLive` preserves the deceased creep's remaining TTL
-  from the moment of death, tracking its final live TTL to within one tick
-  (the exact value follows each engine's `Game.time`/processor-time offset).
+  on its death tick: one less than the TTL the creep read on the tick before.
 - `TOMBSTONE-013` `behavior` `verified_vanilla`
   `tombstone.creep.fatigue` is `0`.
 - `TOMBSTONE-014` `behavior` `verified_vanilla`

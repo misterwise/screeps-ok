@@ -377,7 +377,8 @@ describe('Power creep lifecycle', () => {
 		expect(result).not.toBeNull();
 		expect(result!.x).toBe(25);
 		expect(result!.y).toBe(25);
-		expect(result!.ttl).toBeGreaterThan(0);
+		// Full TTL anchored on the spawn tick; read one tick later.
+		expect(result!.ttl).toBe(POWER_CREEP_LIFE_TIME - 1);
 	});
 
 	test('POWERCREEP-DELETE-001 delete queues deletion for an unspawned power creep', async ({ shard }) => {

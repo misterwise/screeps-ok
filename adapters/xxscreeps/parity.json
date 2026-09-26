@@ -174,11 +174,29 @@
 			"why": "Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile.",
 			"tests": ["COSTMATRIX-005"]
 		},
-		"tombstone-decay-anchors-one-tick-late": {
-			"actual": "The creep death path (`mods/classic/creep/processor.ts:86`) stamps `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART`. Processor `Game.time` already reads one tick past vanilla's `gameTime`, so the tombstone reads `ticksToDecay` one higher on every tick and spills its store (`:478-484`) a tick late: a 4-part tombstone reads 20 on the tick after death, and a spilled 50-energy pile has decayed one tick less (49) at death + 6.",
-			"expected": "Vanilla `processor/intents/creeps/_die.js` sets `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick, so the next tick reads `ticksToDecay` of `body.length * TOMBSTONE_DECAY_PER_PART - 1`, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`.",
-			"why": "Found 2026-09-25 when CREEP-DEATH-006's `[expected - 1, expected]` band and CREEP-DEATH-007's `amount > 0` guard were pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; the upstream fix is `Game.time - 1` on the anchor.",
-			"tests": ["CREEP-DEATH-006", "CREEP-DEATH-007"]
+		"bury-creep-stamps-next-tick": {
+			"actual": "`buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late.",
+			"expected": "Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`.",
+			"why": "Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`.",
+			"tests": ["CREEP-DEATH-006", "CREEP-DEATH-007", "TOMBSTONE-001", "TOMBSTONE-012"]
+		},
+		"deposit-decay-anchors-one-tick-late": {
+			"actual": "The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor.",
+			"expected": "Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`.",
+			"why": "Found 2026-09-25 when DEPOSIT-004's `(49990, 50000]` band was pinned. Upstream fix: `- 1` on the decay anchor, matching the cooldown line above it.",
+			"tests": ["DEPOSIT-004"]
+		},
+		"nuke-upgrade-block-anchors-one-tick-late": {
+			"actual": "Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing.",
+			"expected": "Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`.",
+			"why": "Found 2026-09-25 when CTRL-UPGRADE-010's `(0, CONTROLLER_NUKE_BLOCKED_UPGRADE]` band was pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; upstream fix is `- 1` on the anchor.",
+			"tests": ["CTRL-UPGRADE-010"]
+		},
+		"controller-downgrade-step-one-tick-short": {
+			"actual": "A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`.",
+			"expected": "Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`.",
+			"why": "Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned. Unlike `controller-timer-anchors-one-tick-late` this write reads a tick short, not long, because vanilla's formula is relative and carries its own `+ 1`. Same file, separate line to fix.",
+			"tests": ["CTRL-DOWNGRADE-007"]
 		}
 	}
 }

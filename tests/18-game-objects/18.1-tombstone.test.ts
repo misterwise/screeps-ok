@@ -51,9 +51,9 @@ describe('Tombstone', () => {
 		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
 		expect(tomb).toBeDefined();
 		expect(tomb!.creepName).toBe('victim');
-		// deathTime must fall between the attack tick and current observation
-		expect(tomb!.deathTime).toBeGreaterThanOrEqual(attackTime);
-		expect(tomb!.deathTime).toBeLessThanOrEqual(timeAfterDeath);
+		// 7 ATTACK parts kill the 200-hit victim on the attack tick.
+		expect(tomb!.deathTime).toBe(attackTime);
+		expect(timeAfterDeath).toBe(attackTime + 3);
 		expect(tomb!.store).toBeDefined();
 	});
 
@@ -283,13 +283,8 @@ describe('Tombstone', () => {
 
 	test('TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL', async ({ shard }) => {
 		const { fields, live } = await killAndReadTombstone(shard);
-		// The exact tick depends on the engine's Game.time vs processor-time
-		// offset, so pin that the tombstone preserves the creep's final live
-		// TTL to within one tick rather than an exact value.
-		const ttl = fields.ticksToLive as number;
-		expect(ttl).toBeGreaterThan(0);
-		expect(ttl).toBeLessThanOrEqual(live.ttl);
-		expect(ttl).toBeGreaterThanOrEqual(live.ttl - 2);
+		// live.ttl was read the tick before the killing blow.
+		expect(fields.ticksToLive).toBe(live.ttl - 1);
 	});
 
 	test('TOMBSTONE-013 tombstone.creep.fatigue is 0', async ({ shard }) => {

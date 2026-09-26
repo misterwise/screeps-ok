@@ -594,11 +594,9 @@ describe('creep.drop()', () => {
 			.filter(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === 'energy');
 		// Exactly one pile — drop merged into the existing resource.
 		expect(piles.length).toBe(1);
-		// Merged amount = 40 (initial, after one decay from shard.tick) + 30 (dropped)
-		// then one end-of-tick decay from runPlayer.
-		// Accept the pile has clearly more than the initial 40 — the merge
-		// actually added the dropped 30 into the same resource.
-		expect(piles[0].amount).toBeGreaterThan(40);
+		// 40 decays to 39 on the setup tick; the drop merges 30 into it and the
+		// drop tick's decay takes 1 more.
+		expect(piles[0].amount).toBe(68);
 	});
 
 	test('DROP-004 returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource', async ({ shard }) => {

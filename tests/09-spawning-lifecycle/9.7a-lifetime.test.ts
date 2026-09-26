@@ -41,10 +41,9 @@ describe('creep lifetime', () => {
 			const c = Game.creeps['NoClaim'];
 			c && !c.spawning ? c.ticksToLive : null
 		`) as number | null;
-		expect(ttl).not.toBeNull();
-		// TTL should be near CREEP_LIFE_TIME, minus a few ticks of aging
-		expect(ttl!).toBeGreaterThanOrEqual(CREEP_LIFE_TIME - CREEP_SPAWN_TIME - 2);
-		expect(ttl!).toBeLessThanOrEqual(CREEP_LIFE_TIME);
+		// Born CREEP_SPAWN_TIME - 1 ticks after the intent; aging starts on the
+		// birth tick, and this read comes CREEP_SPAWN_TIME + 2 ticks after the intent.
+		expect(ttl).toBe(CREEP_LIFE_TIME - 3);
 	});
 
 	test('CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive', async ({ shard }) => {
@@ -68,9 +67,8 @@ describe('creep lifetime', () => {
 			const c = Game.creeps['ClaimCreep'];
 			c && !c.spawning ? c.ticksToLive : null
 		`) as number | null;
-		expect(ttl).not.toBeNull();
-		// TTL should be near CREEP_CLAIM_LIFE_TIME, minus a few ticks of aging
-		expect(ttl!).toBeGreaterThanOrEqual(CREEP_CLAIM_LIFE_TIME - 2 * CREEP_SPAWN_TIME - 2);
-		expect(ttl!).toBeLessThanOrEqual(CREEP_CLAIM_LIFE_TIME);
+		// Born 2 * CREEP_SPAWN_TIME - 1 ticks after the intent; aging starts on
+		// the birth tick, and this read comes 2 * CREEP_SPAWN_TIME + 2 ticks after the intent.
+		expect(ttl).toBe(CREEP_CLAIM_LIFE_TIME - 3);
 	});
 });

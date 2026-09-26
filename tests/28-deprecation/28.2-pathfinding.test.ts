@@ -44,8 +44,9 @@ describe('findPath / findClosestByPath opts.avoid deprecation', () => {
 				closestPos: from.findClosestByPath([tgt], { avoid: [{ x: 15, y: 15 }] }) ? 1 : 0,
 			})
 		`) as { findPath: number; findPathTo: number; closestPos: number };
-		expect(result.findPath).toBeGreaterThan(0);
-		expect(result.findPathTo).toBeGreaterThan(0);
+		// The option is dropped, so both return the plain 10-step diagonal.
+		expect(result.findPath).toBe(10);
+		expect(result.findPathTo).toBe(10);
 		expect(result.closestPos).toBe(1);
 
 		const logs = await shard.captureConsoleLogs('p1');
@@ -70,8 +71,9 @@ describe('findPath / findClosestByPath opts.avoid deprecation', () => {
 				closestPos: from.findClosestByPath([tgt], { ignore: [{ x: 15, y: 15 }] }) ? 1 : 0,
 			})
 		`) as { findPath: number; findPathTo: number; closestPos: number };
-		expect(result.findPath).toBeGreaterThan(0);
-		expect(result.findPathTo).toBeGreaterThan(0);
+		// The option is dropped, so both return the plain 10-step diagonal.
+		expect(result.findPath).toBe(10);
+		expect(result.findPathTo).toBe(10);
 		expect(result.closestPos).toBe(1);
 
 		const logs = await shard.captureConsoleLogs('p1');

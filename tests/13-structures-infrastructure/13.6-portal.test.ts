@@ -162,9 +162,8 @@ describe('Portal mechanics', () => {
 			const p = Game.getObjectById(${portalId});
 			p ? p.ticksToDecay : null
 		`) as number | null;
-		expect(typeof initial).toBe('number');
-		expect(initial).toBeGreaterThan(0);
-		expect(initial).toBeLessThanOrEqual(decayTicks);
+		// Seeded relative to placement; one tick has elapsed.
+		expect(initial).toBe(decayTicks - 1);
 
 		for (let i = 0; i < decayTicks + 2; i++) await shard.tick();
 

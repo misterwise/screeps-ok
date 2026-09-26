@@ -94,8 +94,8 @@ describe('Timer gating', () => {
 		const sm0 = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.safeMode ?? 0
 		`) as number;
-		expect(sm0).toBeGreaterThan(0);
-		expect(sm0).toBeLessThanOrEqual(10);
+		// Seeded 10 at creation; one tick has elapsed.
+		expect(sm0).toBe(9);
 
 		// While safe mode is active, the hostile attack is short-circuited
 		// to ERR_NO_BODYPART (same path covered by CTRL-SAFEMODE-006).

@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_TIRED,
 	WORK, CARRY, MOVE, body,
 	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
-	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER,
+	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER, DEPOSIT_DECAY_TIME,
 } from '../../src/index.js';
 import { depositHarvestValidationCases } from '../../src/matrices/deposit-harvest-validation.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -98,8 +98,8 @@ describe('deposit lifecycle (section 17.5)', () => {
 			({ ticksToDecay: Game.getObjectById(${depositId}).ticksToDecay })
 		`) as { ticksToDecay: number };
 		expect(typeof after.ticksToDecay).toBe('number');
-		expect(after.ticksToDecay).toBeGreaterThan(49990);
-		expect(after.ticksToDecay).toBeLessThanOrEqual(50000);
+		// Refreshed on the harvest tick; read two ticks later.
+		expect(after.ticksToDecay).toBe(DEPOSIT_DECAY_TIME - 2);
 	});
 
 	test('DEPOSIT-003 lastCooldown reflects the most recent cooldown value', async ({ shard }) => {

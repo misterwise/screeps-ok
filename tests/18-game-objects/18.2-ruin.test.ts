@@ -27,7 +27,8 @@ describe('Ruin', () => {
 		const ruin = await shard.expectObject(ruinId, 'ruin');
 		expect(ruin.structureType).toBe(STRUCTURE_CONTAINER);
 		expect(typeof ruin.destroyTime).toBe('number');
-		expect(ruin.ticksToDecay).toBeGreaterThan(0);
+		// Seeded relative to placement; one tick has elapsed.
+		expect(ruin.ticksToDecay).toBe(399);
 		expect(ruin.store.energy).toBe(100);
 	});
 

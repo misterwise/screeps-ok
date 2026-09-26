@@ -305,8 +305,7 @@ describe('PathFinder', () => {
 
 		// Search must be cut short before reaching the goal.
 		expect(result.incomplete).toBe(true);
-		// ops respects the cap (allowing small implementation overshoot).
-		expect(result.ops).toBeLessThanOrEqual(2);
+		expect(result.ops).toBe(1);
 	});
 
 	test('PATHFINDER-010 PathFinder.search maxRooms option limits the number of rooms searched', async ({ shard }) => {
@@ -394,15 +393,19 @@ describe('PathFinder', () => {
 				{ pos: new RoomPosition(40, 40, 'W1N1'), range: 0 },
 				{ roomCallback: () => cm, maxRooms: 1 }
 			);
+			const last = result.path[result.path.length - 1];
 			({
 				incomplete: result.incomplete,
 				pathLength: result.path.length,
+				lastRange: last ? Math.max(Math.abs(last.x - 40), Math.abs(last.y - 40)) : -1,
 			})
-		`) as { incomplete: boolean; pathLength: number };
+		`) as { incomplete: boolean; pathLength: number; lastRange: number };
 
-		// Goal is unreachable but a partial best-effort path is returned.
+		// The partial path ends on the nearest reachable tile, just outside the
+		// walled ring: (38,38), 28 diagonal steps from (10,10).
 		expect(result.incomplete).toBe(true);
-		expect(result.pathLength).toBeGreaterThan(0);
+		expect(result.pathLength).toBe(28);
+		expect(result.lastRange).toBe(2);
 	});
 
 	test('PATHFINDER-013 Empty goal array returns path: [] and ops: 0', async ({ shard }) => {
@@ -444,26 +447,36 @@ describe('PathFinder', () => {
 			const origin = new RoomPosition(10, 25, 'W1N1');
 			const goal = { pos: new RoomPosition(40, 25, 'W1N1'), range: 0 };
 			const capped = PathFinder.search(origin, goal, { maxCost: 5, maxRooms: 1 });
-			const full = PathFinder.search(origin, goal, { maxRooms: 1 });
+			// heuristicWeight 1 keeps the halting estimate admissible, so the
+			// boundary is exact; the default 1.2 overestimates and halts early.
+			const atCap = PathFinder.search(origin, goal, { maxCost: 30, maxRooms: 1, heuristicWeight: 1 });
+			const belowCap = PathFinder.search(origin, goal, { maxCost: 29, maxRooms: 1, heuristicWeight: 1 });
 			({
 				cappedIncomplete: capped.incomplete,
 				cappedCost: capped.cost,
 				cappedPathLength: capped.path.length,
-				fullIncomplete: full.incomplete,
-				fullPathLength: full.path.length,
+				atCapIncomplete: atCap.incomplete,
+				atCapCost: atCap.cost,
+				belowCapIncomplete: belowCap.incomplete,
 			})
 		`) as {
 			cappedIncomplete: boolean;
 			cappedCost: number;
 			cappedPathLength: number;
-			fullIncomplete: boolean;
-			fullPathLength: number;
+			atCapIncomplete: boolean;
+			atCapCost: number;
+			belowCapIncomplete: boolean;
 		};
 
-		expect(result.fullIncomplete).toBe(false);
+		// The search stops at the first node whose cost so far plus remaining
+		// range exceeds maxCost, returning the one step it took.
 		expect(result.cappedIncomplete).toBe(true);
-		expect(result.cappedCost).toBeLessThanOrEqual(5);
-		expect(result.cappedPathLength).toBeLessThan(result.fullPathLength);
+		expect(result.cappedCost).toBe(1);
+		expect(result.cappedPathLength).toBe(1);
+		// maxCost is inclusive: the 30-cost path is found at 30 and cut off at 29.
+		expect(result.atCapIncomplete).toBe(false);
+		expect(result.atCapCost).toBe(30);
+		expect(result.belowCapIncomplete).toBe(true);
 	});
 
 	test('PATHFINDER-016 heuristicWeight option accepted without changing result shape', async ({ shard }) => {

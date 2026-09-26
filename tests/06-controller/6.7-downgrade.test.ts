@@ -196,19 +196,13 @@ describe('Controller downgrade', () => {
 		`) as number;
 		expect(afterFirst).toBe(2);
 
-		// Engine assigns a fresh ticksToDowngrade on level-loss; the room
-		// spec cannot directly seed a second tiny timer, so verify the second
-		// transition by stepping through both downgrade windows sequentially.
-		// CONTROLLER_DOWNGRADE[2] is 10000 ticks — too slow for a loop, so
-		// observe that the timer was refreshed to the expected RCL 2 value
-		// (≥ 5000 — half of 10000 — since a downgrade awards half the new
-		// level's duration).
+		// The level loss extends the old timer by CONTROLLER_DOWNGRADE[2] / 2 + 1.
+		// The seed read 2 on the first player tick, so the loss lands on the next
+		// tick, and this read comes 12 ticks after the first.
 		const ttdAfter = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.ticksToDowngrade
 		`) as number;
-		// Half of CONTROLLER_DOWNGRADE[2] is 5000; allow a wide margin.
-		expect(ttdAfter).toBeGreaterThan(0);
-		expect(ttdAfter).toBeLessThanOrEqual(CONTROLLER_DOWNGRADE[2]);
+		expect(ttdAfter).toBe(2 + CONTROLLER_DOWNGRADE[2] / 2 + 1 - 12);
 	});
 
 	downgradeTest('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
@@ -259,11 +253,9 @@ describe('Controller downgrade', () => {
 			cooldown: Game.rooms['W1N1'].controller.safeModeCooldown ?? null,
 		})`) as { level: number; cooldown: number | null };
 		expect(after.level).toBe(1);
-		// A fresh SAFE_MODE_COOLDOWN-length cooldown, minus the ticks elapsed
-		// between the level loss and this read (timer seed + polling ticks).
-		expect(after.cooldown).not.toBeNull();
-		expect(after.cooldown!).toBeGreaterThan(SAFE_MODE_COOLDOWN - 30);
-		expect(after.cooldown!).toBeLessThanOrEqual(SAFE_MODE_COOLDOWN);
+		// The seed read 4 on the first player tick, so the level loss lands 3
+		// ticks later; this read is 11 ticks after the first.
+		expect(after.cooldown).toBe(SAFE_MODE_COOLDOWN - (11 - 3));
 	});
 
 	downgradeTest('CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false', async ({ shard }) => {

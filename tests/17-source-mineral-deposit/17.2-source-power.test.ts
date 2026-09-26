@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	OK,
-	PWR_REGEN_SOURCE, PWR_DISRUPT_SOURCE, PWR_REGEN_MINERAL,
+	PWR_REGEN_SOURCE, PWR_DISRUPT_SOURCE, PWR_REGEN_MINERAL, POWER_INFO,
 } from '../../src/index.js';
 
 describe('Source power effects', () => {
@@ -36,7 +36,9 @@ describe('Source power effects', () => {
 		const energy = await shard.runPlayer('p1', code`
 			Game.getObjectById(${sourceId}).energy
 		`) as number;
-		expect(energy).toBeGreaterThan(0);
+		// The first pulse lands period - 1 ticks after the use tick; the second
+		// would land a full period later, after this read.
+		expect(energy).toBe(POWER_INFO[PWR_REGEN_SOURCE].effect![0]);
 	});
 
 	test('SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration', async ({ shard }) => {

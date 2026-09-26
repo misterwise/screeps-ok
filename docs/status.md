@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-9%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2711](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 03:43 UTC |
-| 🔴 | **xxscreeps** | [2539](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
+| 🔴 | **xxscreeps** | [2533](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -29,9 +29,15 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 
 **xxscreeps**
 
+- `deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME`
 - `CostMatrix COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255`
+- `creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room`
+- `Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected`
 - `creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART`
 - `creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources`
+- `Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest`
+- `Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store`
+- `Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL`
 
 ## vanilla expected failures
 
@@ -116,7 +122,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 30 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 25 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 33 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 28 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -148,7 +154,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | 0 |
-| `tombstone-decay-anchors-one-tick-late` | The creep death path (`mods/classic/creep/processor.ts:86`) stamps `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART`. Processor `Game.time` already reads one tick past vanilla's `gameTime`, so the tombstone reads `ticksToDecay` one higher on every tick and spills its store (`:478-484`) a tick late: a 4-part tombstone reads 20 on the tick after death, and a spilled 50-energy pile has decayed one tick less (49) at death + 6. | Vanilla `processor/intents/creeps/_die.js` sets `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick, so the next tick reads `ticksToDecay` of `body.length * TOMBSTONE_DECAY_PER_PART - 1`, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | 0 |
+| `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | 0 |
+| `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | 0 |
+| `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | 0 |
+| `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -342,8 +351,26 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-tombstone-decay-anchors-one-tick-late">
-<summary><code>tombstone-decay-anchors-one-tick-late</code> — 0 tests</summary>
+<details id="xxscreeps-gap-bury-creep-stamps-next-tick">
+<summary><code>bury-creep-stamps-next-tick</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-deposit-decay-anchors-one-tick-late">
+<summary><code>deposit-decay-anchors-one-tick-late</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late">
+<summary><code>nuke-upgrade-block-anchors-one-tick-late</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-controller-downgrade-step-one-tick-short">
+<summary><code>controller-downgrade-step-one-tick-short</code> — 0 tests</summary>
 
 
 </details>
@@ -3875,7 +3902,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2539 tests across 134 files</summary>
+<summary>2533 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4333,11 +4360,10 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
 
-**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (31)
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (30)
 
 - deposit lifecycle (section 17.5) DEPOSIT-005 repeated harvests increase lastCooldown
 - deposit lifecycle (section 17.5) DEPOSIT-001 deposit exposes canonical depositType values
-- deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME
 - deposit lifecycle (section 17.5) DEPOSIT-003 lastCooldown reflects the most recent cooldown value
 - deposit lifecycle (section 17.5) DEPOSIT-006 deposit disappears when the decay timer expires
 - creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
@@ -4898,7 +4924,7 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (49)
+**`tests/06-controller/6.4-upgrade.test.ts`** (48)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -4909,7 +4935,6 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
-- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 - creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
@@ -4972,14 +4997,13 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (10)
+**`tests/06-controller/6.7-downgrade.test.ts`** (9)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
 - Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
-- Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
 - Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
@@ -6339,18 +6363,16 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-009:highRedensify DENSITY_HIGH redensifies when injected gate < MINERAL_DENSITY_CHANGE
 - mineral regeneration MINERAL-REGEN-009:highUnchanged DENSITY_HIGH stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
 
-**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (6)
+**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (5)
 
 - Deposit lifecycle DEPOSIT-001 deposit exposes the canonical depositType
 - Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula
 - Deposit lifecycle DEPOSIT-003 deposit cooldown returns remaining wait ticks
-- Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest
 - Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (18)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (16)
 
-- Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
@@ -6361,7 +6383,6 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
 - Tombstone TOMBSTONE-010 tombstone.creep.spawning is false
 - Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
-- Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
 - Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
 - Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
 - Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100

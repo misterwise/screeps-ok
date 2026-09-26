@@ -68,8 +68,8 @@ describe('Power bank', () => {
 			const pb = Game.getObjectById(${pbId});
 			pb ? pb.ticksToDecay : null
 		`) as number | null;
-		expect(ttd1).not.toBeNull();
-		expect(ttd1).toBeGreaterThan(0);
+		// Seeded relative to placement; one tick has elapsed.
+		expect(ttd1).toBe(99);
 
 		// Advance 2 empty ticks, then read again (runPlayer is +1 tick).
 		await shard.tick(2);
