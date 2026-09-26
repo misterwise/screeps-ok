@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2895%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2636%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2899%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2640%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2895](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 21:36 UTC |
-| 🟡 | **xxscreeps** | [2636](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 21:30 UTC |
+| 🟡 | **vanilla** | [2899](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 22:27 UTC |
+| 🟡 | **xxscreeps** | [2640](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 22:25 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -511,7 +511,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2895 tests across 158 files</summary>
+<summary>2899 tests across 158 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -733,9 +733,12 @@ Click a count to jump to the affected test list.
 - gclPoints a level or progress no point total reads back as fails
 - constants every constant has a value: a name @screeps/common lacks re-exports as undefined
 
-**`tests/00-framework/matrices.test.ts`** (1)
+**`tests/00-framework/matrices.test.ts`** (4)
 
 - matrices a case list runs in the test of the row it enumerates
+- docs/behavior-matrices.md each definition has the six fields in order and names catalog entries that exist
+- docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
+- docs/behavior-matrices.md every path a definition names exists
 
 **`tests/00-framework/parity-reporter.test.ts`** (20)
 
@@ -768,9 +771,10 @@ Click a count to jump to the affected test list.
 - parity.json skips a skipped test counts under its own id or, registered bare, its row
 - parity.json skips a full run counts a skip that names no test as orphaned
 
-**`tests/00-framework/test-claims.test.ts`** (5)
+**`tests/00-framework/test-claims.test.ts`** (6)
 
 - test file claims only code and imported matrices claim an id, and only in catalog sections
+- test file claims a catalog test carries no vitest modifier that skips, inverts or narrows the run
 - adapter capabilities reads the literal flags, comments aside
 - adapter capabilities a flag that is not a literal fails the read
 - capability descriptions every declared capability has a first sentence in the interface
@@ -4230,7 +4234,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2636 tests across 142 files</summary>
+<summary>2640 tests across 142 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4452,9 +4456,12 @@ Click a count to jump to the affected test list.
 - gclPoints a level or progress no point total reads back as fails
 - constants every constant has a value: a name @screeps/common lacks re-exports as undefined
 
-**`tests/00-framework/matrices.test.ts`** (1)
+**`tests/00-framework/matrices.test.ts`** (4)
 
 - matrices a case list runs in the test of the row it enumerates
+- docs/behavior-matrices.md each definition has the six fields in order and names catalog entries that exist
+- docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
+- docs/behavior-matrices.md every path a definition names exists
 
 **`tests/00-framework/parity-reporter.test.ts`** (20)
 
@@ -4487,9 +4494,10 @@ Click a count to jump to the affected test list.
 - parity.json skips a skipped test counts under its own id or, registered bare, its row
 - parity.json skips a full run counts a skip that names no test as orphaned
 
-**`tests/00-framework/test-claims.test.ts`** (5)
+**`tests/00-framework/test-claims.test.ts`** (6)
 
 - test file claims only code and imported matrices claim an id, and only in catalog sections
+- test file claims a catalog test carries no vitest modifier that skips, inverts or narrows the run
 - adapter capabilities reads the literal flags, comments aside
 - adapter capabilities a flag that is not a literal fails the read
 - capability descriptions every declared capability has a first sentence in the interface
