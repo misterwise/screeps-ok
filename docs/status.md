@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2755%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-15%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2774%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2540%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](docs/status.md#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,30 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2755](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 14:51 UTC |
-| 🔴 | **xxscreeps** | [2537](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | [15](#xxscreeps-unexpected-failures) | [160](#xxscreeps-skipped-tests) | 2026-09-26 14:51 UTC |
+| 🟡 | **vanilla** | [2774](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 15:16 UTC |
+| 🟡 | **xxscreeps** | [2540](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [171](#xxscreeps-skipped-tests) | 2026-09-26 15:16 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## xxscreeps unexpected failures
-
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot`
 
 ## vanilla expected failures
 
@@ -124,7 +106,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 56 tests. That includes 34 open parity gaps covering 47 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 39 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 34 open parity gaps covering 67 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -135,7 +117,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
-| `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | 0 |
+| `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
@@ -146,7 +128,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:212`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 | `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:145,156`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
 | `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
-| `power-cooldown-stamps-next-tick` | The usePower processor stamps `entry.cooldownTime = Game.time + info.cooldown` (`mods/mmo/powercreep/processor.ts:144`) from the processor clock, which reads one tick past vanilla's `gameTime`. The tick after a `usePower(PWR_GENERATE_OPS)` reads `powers[PWR_GENERATE_OPS].cooldown` as the full `POWER_INFO` cooldown, and the power stays `ERR_TIRED` one tick longer. | Vanilla `processor/intents/power-creeps/usePower.js` stamps `cooldownTime: gameTime + powerInfo.cooldown` on the use tick and the getter returns `cooldownTime - Game.time` (`game/power-creeps.js:58`), so the next tick reads `cooldown - 1`. | 0 |
+| `power-cooldown-stamps-next-tick` | The usePower processor stamps `entry.cooldownTime = Game.time + info.cooldown` (`mods/mmo/powercreep/processor.ts:144`) from the processor clock, which reads one tick past vanilla's `gameTime`. The tick after a `usePower(PWR_GENERATE_OPS)` reads `powers[PWR_GENERATE_OPS].cooldown` as the full `POWER_INFO` cooldown, and the power stays `ERR_TIRED` one tick longer. | Vanilla `processor/intents/power-creeps/usePower.js` stamps `cooldownTime: gameTime + powerInfo.cooldown` on the use tick and the getter returns `cooldownTime - Game.time` (`game/power-creeps.js:58`), so the next tick reads `cooldown - 1`. | [5](#xxscreeps-gap-power-cooldown-stamps-next-tick) |
 | `room-getpositionat-out-of-bounds-throws` | `Room.getPositionAt` (`game/room/look.ts:133`) is a bare `new RoomPosition(xx, yy, this.name)`, and the constructor guard (`game/position.ts:79`) throws `TypeError: Invalid arguments in RoomPosition constructor` for any coordinate outside 0..49. | Vanilla `Room.prototype.getPositionAt` (`game/rooms.js:971`) returns `null` when either coordinate is outside 0..49 and only constructs a position otherwise. | [1](#xxscreeps-gap-room-getpositionat-out-of-bounds-throws) |
 | `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method. | [2](#xxscreeps-gap-map-visual-clear-returns-undefined) |
 | `room-visual-roomname-missing` | `RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`. | Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`. | [1](#xxscreeps-gap-room-visual-roomname-missing) |
@@ -192,8 +174,23 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-omits-prototype-accessors">
-<summary><code>game-object-json-omits-prototype-accessors</code> — 0 tests</summary>
+<summary><code>game-object-json-omits-prototype-accessors</code> — 15 tests</summary>
 
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:controller JSON.stringify(StructureController) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedStructure JSON.stringify(owned Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:source JSON.stringify(Source) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:mineral JSON.stringify(Mineral) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:droppedResource JSON.stringify(Resource) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:tombstone JSON.stringify(Tombstone) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ruin JSON.stringify(Ruin) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:deposit JSON.stringify(Deposit) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:nuke JSON.stringify(Nuke) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot`
 
 </details>
 
@@ -277,8 +274,13 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-power-cooldown-stamps-next-tick">
-<summary><code>power-cooldown-stamps-next-tick</code> — 0 tests</summary>
+<summary><code>power-cooldown-stamps-next-tick</code> — 5 tests</summary>
 
+- `PWR_GENERATE_OPS POWER-GENERATE-001:levelOne amount, cooldown, and ops cost match POWER_INFO for each supported power level`
+- `PWR_GENERATE_OPS POWER-GENERATE-001:levelTwo amount, cooldown, and ops cost match POWER_INFO for each supported power level`
+- `PWR_GENERATE_OPS POWER-GENERATE-001:levelThree amount, cooldown, and ops cost match POWER_INFO for each supported power level`
+- `PWR_GENERATE_OPS POWER-GENERATE-001:levelFour amount, cooldown, and ops cost match POWER_INFO for each supported power level`
+- `PWR_GENERATE_OPS POWER-GENERATE-001:levelFive amount, cooldown, and ops cost match POWER_INFO for each supported power level`
 
 </details>
 
@@ -501,7 +503,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2755 tests across 148 files</summary>
+<summary>2774 tests across 149 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -601,7 +603,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (70)
+**`tests/00-adapter-contract/setup.test.ts`** (71)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -615,7 +617,8 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
-- adapter contract: setup default room terrain default rooms have all-plain interior terrain
+- adapter contract: setup default room terrain default rooms are plain except for walled corners
+- adapter contract: setup default room terrain RoomSpec.terrain and setTerrain get walled corners too
 - adapter contract: setup default room terrain default rooms have all four exits open
 - adapter contract: setup placeCreep places a creep and returns a valid ID
 - adapter contract: setup placeCreep creep is retrievable by ID after tick
@@ -673,6 +676,15 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
+
+**`tests/00-framework/parity-reporter.test.ts`** (6)
+
+- parity reporter a full run counts a registration no test ran as orphaned
+- parity reporter a registration whose tests only skipped is orphaned
+- parity reporter a filtered or sharded run does not count orphans
+- parity exit code forgives failures that are all registered gaps
+- parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
+- parity exit code keeps vitest's code for genuine failures and when no verdict was written
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (45)
 
@@ -3048,11 +3060,19 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
-**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (3)
+**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (11)
 
-- Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
-- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
-- Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
+- Source power effects SOURCE-POWER-001:levelOne PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelTwo PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelThree PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelFour PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelFive PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE holds the regeneration timer while active
+- Mineral power effects MINERAL-POWER-001:levelOne PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelTwo PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelThree PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelFour PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelFive PWR_REGEN_MINERAL adds its effect once per period
 
 **`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
@@ -3213,11 +3233,15 @@ Click a count to jump to the affected test list.
 - Power creep renew POWERCREEP-SPAWN-002:rclBeforeCooldown powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (3)
+**`tests/19-power/19.9-generate-ops.test.ts`** (7)
 
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelOne amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelTwo amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelThree amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelFour amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelFive amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
+- PWR_GENERATE_OPS POWER-GENERATE-003 overflow ops are dropped on the same tile
 
 **`tests/20-market/20.2-20.4-market.test.ts`** (21)
 
@@ -3546,24 +3570,24 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (18)
 
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:room JSON.stringify(Room) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedCreep JSON.stringify(owned Creep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:controller JSON.stringify(StructureController) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedStructure JSON.stringify(owned Structure) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:source JSON.stringify(Source) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:mineral JSON.stringify(Mineral) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:droppedResource JSON.stringify(Resource) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:flag JSON.stringify(Flag) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:tombstone JSON.stringify(Tombstone) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ruin JSON.stringify(Ruin) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:deposit JSON.stringify(Deposit) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:nuke JSON.stringify(Nuke) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot
 
 **`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (7)
 
@@ -3706,11 +3730,11 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 160 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 171 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | usePower applying PWR_* effects | [56](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerEffects` | usePower applying PWR_* effects | [67](#xxscreeps-skip-capability-powereffects) |
 | capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
@@ -3723,7 +3747,7 @@ xxscreeps has 160 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powereffects">
-<summary><code>capability:powerEffects</code> — 56 tests across 15 files</summary>
+<summary><code>capability:powerEffects</code> — 67 tests across 15 files</summary>
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
@@ -3760,8 +3784,9 @@ Click a count to jump to the affected test list.
 
 - StructurePowerSpawn processPower POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power
 
-**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
+**`tests/12-structures-military/12.4-rampart-power.test.ts`** (2)
 
+- Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 - Rampart power effects RAMPART-DECAY-005 PWR_SHIELD creates a temporary rampart removed when effect expires
 
 **`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (2)
@@ -3805,9 +3830,19 @@ Click a count to jump to the affected test list.
 
 - room.getEventLog() ROOM-EVENTLOG-020 EVENT_POWER is emitted when a power creep usePower succeeds
 
-**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (1)
+**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (11)
 
-- Source power effects SOURCE-POWER-001 PWR_REGEN_SOURCE adds energy to a source
+- Source power effects SOURCE-POWER-001:levelOne PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelTwo PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelThree PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelFour PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-001:levelFive PWR_REGEN_SOURCE adds its effect once per period
+- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE holds the regeneration timer while active
+- Mineral power effects MINERAL-POWER-001:levelOne PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelTwo PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelThree PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelFour PWR_REGEN_MINERAL adds its effect once per period
+- Mineral power effects MINERAL-POWER-001:levelFive PWR_REGEN_MINERAL adds its effect once per period
 
 **`tests/19-power/19.4-19.8-powers.test.ts`** (10)
 
@@ -4024,7 +4059,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2537 tests across 134 files</summary>
+<summary>2540 tests across 133 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4123,7 +4158,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (70)
+**`tests/00-adapter-contract/setup.test.ts`** (71)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -4137,7 +4172,8 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
 - adapter contract: setup createShard createShard discards the previous shard after it has ticked
 - adapter contract: setup createShard createShard refreshes player-visible terrain after a previous shard
-- adapter contract: setup default room terrain default rooms have all-plain interior terrain
+- adapter contract: setup default room terrain default rooms are plain except for walled corners
+- adapter contract: setup default room terrain RoomSpec.terrain and setTerrain get walled corners too
 - adapter contract: setup default room terrain default rooms have all four exits open
 - adapter contract: setup placeCreep places a creep and returns a valid ID
 - adapter contract: setup placeCreep creep is retrievable by ID after tick
@@ -4195,6 +4231,15 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure for a spawn without owner throws with an actionable error
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
+
+**`tests/00-framework/parity-reporter.test.ts`** (6)
+
+- parity reporter a full run counts a registration no test ran as orphaned
+- parity reporter a registration whose tests only skipped is orphaned
+- parity reporter a filtered or sharded run does not count orphans
+- parity exit code forgives failures that are all registered gaps
+- parity exit code fails a run vitest passed when a gap now passes or a registration is orphaned
+- parity exit code keeps vitest's code for genuine failures and when no verdict was written
 
 **`tests/01-movement/1.1-basic-movement.test.ts`** (45)
 
@@ -6128,10 +6173,6 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
-**`tests/12-structures-military/12.4-rampart-power.test.ts`** (1)
-
-- Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
-
 **`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
@@ -6454,11 +6495,6 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
-**`tests/17-source-mineral-deposit/17.2-source-power.test.ts`** (2)
-
-- Source power effects SOURCE-POWER-002 PWR_DISRUPT_SOURCE prevents source regeneration
-- Mineral power effects MINERAL-POWER-001 PWR_REGEN_MINERAL adds mineral amount
-
 **`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as undefined
@@ -6566,11 +6602,10 @@ Click a count to jump to the affected test list.
 - Power creep renew POWERCREEP-SPAWN-002:busyBeforeNotOwner powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-SPAWN-002:busyBeforeRcl powerCreep.spawn() validation returns the canonical code
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (3)
+**`tests/19-power/19.9-generate-ops.test.ts`** (2)
 
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
-- PWR_GENERATE_OPS POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile
+- PWR_GENERATE_OPS POWER-GENERATE-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
+- PWR_GENERATE_OPS POWER-GENERATE-003 overflow ops are dropped on the same tile
 
 **`tests/20-market/20.2-20.4-market.test.ts`** (2)
 
@@ -6862,9 +6897,9 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (3)
 
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 room JSON.stringify(Room) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
-- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 flag JSON.stringify(Flag) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:room JSON.stringify(Room) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:roomPosition JSON.stringify(RoomPosition) returns a plain snapshot
+- Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001:flag JSON.stringify(Flag) returns a plain snapshot
 
 **`tests/27-undocumented/27.15-prototype-extensions.test.ts`** (7)
 
