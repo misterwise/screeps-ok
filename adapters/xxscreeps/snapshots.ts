@@ -21,8 +21,7 @@ import { Tombstone } from 'xxscreeps/mods/classic/creep/tombstone.js';
 import { Ruin } from 'xxscreeps/mods/classic/structure/ruin.js';
 import { Nuke } from 'xxscreeps/mods/modern/nuker/nuke.js';
 import {
-	iterateRoomObjects, readInvaderCoreTemplateName, readRawOwnerId,
-	readRawReservation, readRawSign,
+	iterateRoomObjects, readRawOwnerId, readRawReservation, readRawSign,
 } from './engine-internals.js';
 // Adapter reference for player handle resolution
 interface PlayerResolver {
@@ -296,8 +295,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				ticksToSpawn: obj.ticksToSpawn ?? null,
 			} satisfies KeeperLairSnapshot;
 
-		case 'invaderCore': {
-			const templateName = readInvaderCoreTemplateName(obj);
+		case 'invaderCore':
 			return {
 				...base,
 				structureType: 'invaderCore',
@@ -311,10 +309,7 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				} : null,
 				ticksToDeploy: obj.ticksToDeploy ?? null,
 				effects: snapEffects(obj),
-				// `strongholdId` has no engine counterpart; see strongholdMetadata.
-				...(templateName !== undefined ? { templateName } : {}),
 			} satisfies InvaderCoreSnapshot;
-		}
 
 		case 'powerBank':
 			return {

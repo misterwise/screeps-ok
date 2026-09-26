@@ -200,8 +200,6 @@ export interface InvaderCoreSnapshot extends StructureSnapshotBase {
 	} | null;
 	ticksToDeploy: number | null;
 	effects: Array<{ effect: number; level?: number; power?: number; ticksRemaining: number }> | null;
-	templateName?: unknown;
-	strongholdId?: unknown;
 }
 
 export interface PowerBankSnapshot extends StructureSnapshotBase {

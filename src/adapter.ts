@@ -294,10 +294,6 @@ export interface AdapterCapabilities {
 	/** Engine-driven stronghold deployment: the deploy trigger placing the
 	 *  canonical template layout for a seeded `templateName`. */
 	strongholdDeploy: boolean;
-	/** Stronghold bookkeeping on a seeded invader core that the harness can read
-	 *  back from the snapshot: `strongholdId`, and arbitrary `effects` entries
-	 *  rather than the ones the engine derives from its own timers. */
-	strongholdMetadata: boolean;
 	/** Per-room inactive Invader raid spawning orchestration. */
 	invaderRaidSpawner: boolean;
 	/** Two or more shards orchestrated within a single test (createShard with

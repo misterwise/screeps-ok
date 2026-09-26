@@ -219,9 +219,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// five canonical bunker templates; the adapter seeds `#templateName` at
 		// placement and the deploy processor spawns that layout.
 		strongholdDeploy: true,
-		// xxscreeps has no `strongholdId`, and its `effects` is derived from the
-		// deploy/collapse timers rather than a stored array the adapter can seed.
-		strongholdMetadata: false,
 		// The room tick processor can generate a fixed small Invader group in an
 		// already-active room. It does not implement the canonical inactive-room
 		// backend sweep, sector policy, or raid composition matrix.
@@ -925,7 +922,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			);
 		}
 		// `spec.strongholdId` is dropped: xxscreeps groups stronghold peers by ownership
-		// plus the core's `#ownedNeutralStructureIds`. See the strongholdMetadata capability.
+		// plus the core's `#ownedNeutralStructureIds`.
 
 		this.queueOp(roomName, room => {
 			const time = this.simulation!.shard.time;

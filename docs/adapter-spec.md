@@ -417,7 +417,6 @@ Current capability flags are:
 - `portals`
 - `invaderCore`
 - `strongholdDeploy`
-- `strongholdMetadata`
 - `invaderRaidSpawner`
 - `multiShard`
 - `interShardMemory`
@@ -455,14 +454,10 @@ separately:
   target's `effects` entry, the gameplay consequence, and the ops and cooldown
   the use costs
 
-The two stronghold flags split behavior from bookkeeping:
-
-- `strongholdDeploy` covers the engine-driven deploy: a core seeded with a
-  `templateName` places that bunker's canonical structure layout when its
-  deploy timer elapses
-- `strongholdMetadata` covers the invader-core fields an engine may keep purely
-  for its own peer bookkeeping — `strongholdId`, and `effects` entries the
-  adapter seeds rather than ones the engine derives from its own timers
+`strongholdDeploy` covers the engine-driven deploy: a core seeded with a
+`templateName` places that bunker's canonical structure layout when its deploy
+timer elapses. `templateName` and `strongholdId` are placement inputs only; no
+player getter exposes them, so no snapshot carries them.
 
 Rules:
 

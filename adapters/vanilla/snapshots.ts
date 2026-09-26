@@ -308,8 +308,6 @@ export function snapshotStructure(
 				spawning: snapSpawning(obj, gameTime),
 				ticksToDeploy: remaining(obj.deployTime, gameTime),
 				effects: snapEffects(obj, gameTime),
-				...(obj.templateName !== undefined ? { templateName: obj.templateName } : {}),
-				...(obj.strongholdId !== undefined ? { strongholdId: obj.strongholdId } : {}),
 			} satisfies InvaderCoreSnapshot;
 
 		case 'powerBank':

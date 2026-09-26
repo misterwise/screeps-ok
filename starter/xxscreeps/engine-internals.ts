@@ -214,12 +214,6 @@ export function setInvaderCoreTemplateName(core: any, templateName: string): voi
 	setField(core, '#templateName', templateName);
 }
 
-/** SNAPSHOT — mods/modern/stronghold/schema.ts: `#templateName` has no public getter;
- *  vanilla's invader-core doc carries the equivalent `templateName` field. */
-export function readInvaderCoreTemplateName(core: any): string | undefined {
-	return getField(core, '#templateName');
-}
-
 /** SETUP — mods/modern/stronghold/processor.ts createCreep intent: an in-progress defender
  *  spawn is an incubating creep at `#ageTime === 0` plus a Spawning record wired
  *  to the core and creep ids; `#spawnTime` is the absolute birth tick. Mirrors

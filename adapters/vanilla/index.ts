@@ -643,9 +643,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// stronghold/stronghold.js`) runs the deploy trigger in-process, so
 		// layout placement is testable without the backend strongholds cronjob.
 		strongholdDeploy: true,
-		// `strongholdId` and `effects` are plain fields on the invader-core
-		// document, so seeding them round-trips through the snapshot.
-		strongholdMetadata: true,
 		invaderRaidSpawner: true,
 		// The open-source `@screeps/engine` ships no InterShardMemory
 		// module (the MMO server provides it closed-source) and does

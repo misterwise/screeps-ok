@@ -298,20 +298,13 @@ describe('adapter contract: inspection', () => {
 			expect(obj.ticksToSpawn).toBe(99);
 		});
 
-		test('invader core snapshot includes deploy and stronghold fields', async ({ shard }) => {
-			// Arbitrary seeded effects and the templateName/strongholdId fields
-			// only exist for deployed strongholds; `strongholdId` and seeded
-			// effects are the half an engine may keep purely for bookkeeping.
-			shard.requires('strongholdMetadata');
+		test('invader core snapshot includes level and deploy timer', async ({ shard }) => {
+			shard.requires('invaderCore');
 			await shard.ownedRoom('p1');
-			const effects = [{ effect: 1001, level: 1, ticksRemaining: 50 }];
 			const id = await shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, {
 				pos: [25, 25],
 				level: 2,
 				deployTime: 75,
-				effects,
-				templateName: 'testTemplate',
-				strongholdId: 'testStronghold',
 			});
 			await shard.tick();
 
@@ -320,10 +313,6 @@ describe('adapter contract: inspection', () => {
 			expect(obj.structureType).toBe(STRUCTURE_INVADER_CORE);
 			expect(obj.level).toBe(2);
 			expect(obj.ticksToDeploy).toBe(74);
-			// Seeded effects count down like the engine's own; one tick has elapsed.
-			expect(obj.effects).toEqual([{ effect: 1001, level: 1, ticksRemaining: 49 }]);
-			expect(obj.templateName).toBe('testTemplate');
-			expect(obj.strongholdId).toBe('testStronghold');
 		});
 
 		test('power bank snapshot includes power and decay fields', async ({ shard }) => {

@@ -3826,7 +3826,7 @@ xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
-| capability | `strongholdMetadata` | Stronghold bookkeeping on a seeded invader core that the harness can read back from the snapshot: `strongholdId`, and arbitrary `effects` entries rather than the ones the engine derives from its own timers. | [1](#xxscreeps-skip-capability-strongholdmetadata) |
+| capability | `strongholdMetadata` | No longer declared by `AdapterCapabilities`; the next full run drops it | [1](#xxscreeps-skip-capability-strongholdmetadata) |
 
 Click a count to jump to the affected test list.
 

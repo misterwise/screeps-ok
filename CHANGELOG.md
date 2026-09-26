@@ -49,6 +49,10 @@ changes since `v0.1.0-alpha` are not itemized.
 - A player tick the engine aborts is `RunPlayerError('runtime')`.
 - `screeps-ok` exports `withCornerWalls` and `MarketOrderSpec`, which the
   starter adapter imports; it had not compiled against the package.
+- The `strongholdMetadata` capability is gone, and `InvaderCoreSnapshot` no
+  longer carries `templateName` or `strongholdId`: no player getter exposes
+  them. Drop the flag and the snapshot fields; both stay `placeObject` inputs
+  for an invader core.
 
 ### Parity and the runner
 
