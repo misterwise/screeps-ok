@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	OK,
-	POWER_INFO,
+	POWER_INFO, PWR_GENERATE_OPS,
 	FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
 
@@ -14,9 +14,6 @@ const PI = POWER_INFO as Record<number, {
 	ops?: number;
 	range?: number;
 }>;
-
-// PWR_GENERATE_OPS = 1 (not exported from constants, but available in-engine).
-const PWR_GENERATE_OPS = 1;
 
 describe('PWR_GENERATE_OPS', () => {
 	test('POWER-GENERATE-OPS-001 amount, cooldown, and ops cost match POWER_INFO for each supported power level', async ({ shard }) => {

@@ -4,7 +4,9 @@ import { describe, test, expect, code,
 	ROAD_WEAROUT_POWER_CREEP,
 	ATTACK, MOVE, CARRY,
 	body,
+	POWER_LEVEL_MULTIPLY, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB,
 } from '../../src/index.js';
+import { powerCreepUpgradeValidationCases } from '../../src/matrices/power-creep-upgrade-validation.js';
 
 describe('Power creep lifecycle', () => {
 	test('POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape', async ({ shard }) => {
@@ -510,26 +512,39 @@ describe('Power creep lifecycle', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('POWERCREEP-UPGRADE-002 upgrade fails for invalid power or insufficient levels', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerCreepAccountApi');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+	for (const row of powerCreepUpgradeValidationCases) {
+		test(`POWERCREEP-UPGRADE-002:${row.label} powerCreep.upgrade() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			shard.requires('powerCreeps');
+			shard.requires('powerCreepAccountApi');
+			const hostile = blockers.has('not-owner');
+			// Level 25 from five powers at 5; one GENERATE_OPS level leaves the next one wanting creep level 2.
+			const powers: Record<number, number> = blockers.has('max-level')
+				? { [PWR_GENERATE_OPS]: 5, [PWR_OPERATE_SPAWN]: 5, [PWR_OPERATE_TOWER]: 5, [PWR_OPERATE_STORAGE]: 5, [PWR_OPERATE_LAB]: 5 }
+				: { [PWR_GENERATE_OPS]: 1 };
+			const level = Object.values(powers).reduce((sum, value) => sum + value, 0);
+			// A creep costs one GPL level plus one per creep level; the upgrader's own account pays.
+			const used = hostile ? 0 : 1 + level;
+			const gpl = blockers.has('no-free-levels') ? used : used + 1;
+			await shard.createShard({
+				players: [{ name: 'p1', power: POWER_LEVEL_MULTIPLY * gpl ** 2 }, 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				],
+			});
+			const creepId = await shard.placePowerCreep('W1N1', {
+				pos: [25, 25], owner: hostile ? 'p2' : 'p1', powers,
+			});
+			await shard.tick();
+
+			const power = blockers.has('invalid-power') ? 9999 : PWR_GENERATE_OPS;
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgrade(${power})
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			PowerCreep.create('UpgradeTest', POWER_CLASS.OPERATOR)
-		`);
-
-		// Try upgrading an invalid power id.
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Game.powerCreeps['UpgradeTest'];
-			pc ? pc.upgrade(9999) : -99
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
+	}
 
 	test('POWERCREEP-MOVE-002 power creep move onto a road triggers road wear', async ({ shard }) => {
 		shard.requires('powerCreeps');

@@ -2595,9 +2595,6 @@ Coverage Notes
   damage back to the attacker in the same tick.
 - `POWER-BANK-002` `behavior` `verified_vanilla`
   `ticksToDecay` counts down to power bank removal.
-- `POWER-BANK-003` `matrix` `verified_vanilla`
-  The public `powerBank.power` value lies within the canonical power bank
-  capacity range.
 - `POWER-BANK-004` `behavior` `verified_vanilla`
   When a power bank is destroyed, its stored power is dropped as a resource on
   the same tile.
@@ -2607,6 +2604,12 @@ Coverage Notes
   `POWER-BANK-004`.
 - The critical-threshold behavior for generated power needs a dedicated
   observable rule before it belongs in the catalog.
+- Former `POWER-BANK-003` dropped; the number is retired. It claimed
+  generated `power` stays within `POWER_BANK_CAPACITY_MIN..MAX`, but vanilla's
+  generator adds `POWER_BANK_CAPACITY_MAX` on a critical roll
+  (`@screeps/backend/lib/cronjobs.js`), and that generator is a backend cron
+  job no harness drives, so its test only read back a seeded value. The
+  `power` getter itself stays covered by the object-shape matrix.
 
 ### 14.4 NPC Ownership Query Surface
 - `NPC-OWNERSHIP-001` `matrix` `verified_vanilla`

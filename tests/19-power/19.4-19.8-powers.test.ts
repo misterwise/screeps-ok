@@ -12,6 +12,8 @@ import { describe, test, expect, code,
 	ATTACK, MOVE, TOUGH,
 	STRUCTURE_RAMPART,
 } from '../../src/index.js';
+import { powerCreepRenewValidationCases } from '../../src/matrices/power-creep-renew-validation.js';
+import { powerCreepSpawnValidationCases } from '../../src/matrices/power-creep-spawn-validation.js';
 
 const PI = POWER_INFO as Record<number, {
 	className: string;
@@ -546,54 +548,89 @@ describe('Power creep renew', () => {
 		expect(ttl).toBe(POWER_CREEP_LIFE_TIME - 1);
 	});
 
-	test('POWERCREEP-RENEW-002 renew fails for invalid target or out of range', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+	for (const row of powerCreepRenewValidationCases) {
+		test(`POWERCREEP-RENEW-002:${row.label} powerCreep.renew() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			shard.requires('powerCreeps');
+			// Only the account API can make an unspawned power creep.
+			if (blockers.has('busy')) shard.requires('powerCreepAccountApi');
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: blockers.has('rcl') ? 7 : 8, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				],
+			});
+			const powerSpawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
+			});
+			const creepId = blockers.has('busy') ? null : await shard.placePowerCreep('W1N1', {
+				pos: blockers.has('range') ? [40, 40] : [25, 26],
+				owner: blockers.has('not-owner') ? 'p2' : 'p1',
+				powers: {},
+			});
+			await shard.tick();
+			if (blockers.has('busy')) {
+				expect(await shard.runPlayer('p1', code`PowerCreep.create('Idle', POWER_CLASS.OPERATOR)`)).toBe(OK);
+			}
+
+			const rc = await shard.runPlayer('p1', code`
+				const pc = ${creepId} === null ? Game.powerCreeps.Idle : Game.getObjectById(${creepId});
+				const target = ${blockers.has('invalid-target')} ? Game.rooms.W1N1.controller : Game.getObjectById(${powerSpawnId});
+				pc.renew(target)
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
+	}
 
-		const psId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
-			store: { energy: 1000, power: 100 },
+	for (const row of powerCreepSpawnValidationCases) {
+		test(`POWERCREEP-SPAWN-002:${row.label} powerCreep.spawn() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = new Set(row.blockers);
+			shard.requires('powerCreeps');
+			// Every unspawned creep comes from the account API; only a spawned one can be placed.
+			if (!blockers.has('busy')) shard.requires('powerCreepAccountApi');
+			const hostile = blockers.has('not-owner');
+			const inactive = blockers.has('rcl');
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1' },
+					{ name: 'W2N1', rcl: hostile && inactive ? 7 : 8, owner: 'p2' },
+					{ name: 'W3N1', rcl: 7, owner: 'p1' },
+				],
+			});
+			// The creep spawns and dies at W1N1's active power spawn; the target varies.
+			const homeSpawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
+			});
+			const hostileSpawnId = await shard.placeStructure('W2N1', {
+				pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p2',
+			});
+			const inactiveSpawnId = await shard.placeStructure('W3N1', {
+				pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
+			});
+			// Vision of the hostile power spawn.
+			await shard.placeCreep('W2N1', { pos: [10, 10], owner: 'p1', body: [MOVE] });
+			if (blockers.has('busy')) {
+				await shard.placePowerCreep('W1N1', { pos: [25, 26], owner: 'p1', name: 'Spawner', powers: {} });
+			}
+			await shard.tick();
+			if (!blockers.has('busy')) {
+				expect(await shard.runPlayer('p1', code`PowerCreep.create('Spawner', POWER_CLASS.OPERATOR)`)).toBe(OK);
+			}
+			if (blockers.has('cooldown')) {
+				expect(await shard.runPlayer('p1', code`Game.powerCreeps.Spawner.spawn(Game.getObjectById(${homeSpawnId}))`)).toBe(OK);
+				expect(await shard.runPlayer('p1', code`Game.powerCreeps.Spawner.suicide()`)).toBe(OK);
+			}
+
+			const targetId = hostile ? hostileSpawnId : inactive ? inactiveSpawnId : homeSpawnId;
+			const rc = await shard.runPlayer('p1', code`
+				const target = ${blockers.has('invalid-target')} ? Game.rooms.W1N1.controller : Game.getObjectById(${targetId});
+				Game.powerCreeps.Spawner.spawn(target)
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-		// Place power creep far from power spawn.
-		await shard.placePowerCreep('W1N1', {
-			pos: [40, 40], owner: 'p1',
-			powers: {},
-			store: { ops: 10 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			const ps = Game.getObjectById(${psId});
-			pc.renew(ps)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerCreepAccountApi');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.tick();
-
-		// Create a power creep.
-		await shard.runPlayer('p1', code`
-			PowerCreep.create('SpawnFail', POWER_CLASS.OPERATOR)
-		`);
-
-		// Try to spawn without a power spawn — should fail.
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Game.powerCreeps['SpawnFail'];
-			pc ? pc.spawn(null) : -99
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
+	}
 
 	test('POWERCREEP-DEATH-001 power creep death creates a tombstone', async ({ shard }) => {
 		shard.requires('powerCreeps');

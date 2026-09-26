@@ -790,23 +790,6 @@ Each definition should include:
   `ROAD-WEAR-002`. The executable case list lives in
   `src/matrices/road-wear.ts`.
 
-### POWER-BANK-POWER
-
-- `Catalog Entries`
-  `POWER-BANK-003`
-- `Canonical Source`
-  Official power bank creation/placement rules and public `powerBank.power`
-  surface.
-- `Dimensions`
-  generated power amount
-- `Applicability`
-  Public `powerBank.power` values on power banks
-- `Exclusions`
-  Hit-back, decay timer, and destruction drop outcomes
-- `Verification Notes`
-  This family remains `needs_vanilla_verification` until the full public range
-  is confirmed in concrete cases.
-
 ### STRUCTURE-HITS
 
 - `Catalog Entries`
@@ -1112,6 +1095,8 @@ Each definition should include:
 - `Verification Notes`
   Each API keeps its own result surface in `behaviors.md`; this family exists
   only to keep the validation case inventories explicit.
+  Spawn, renew, and upgrade run their case lists from
+  `src/matrices/power-creep-{spawn,renew,upgrade}-validation.ts`.
 
 ### POWER-INFO
 

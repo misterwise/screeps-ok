@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ATTACK, MOVE, TOUGH,
 	ATTACK_POWER, BODYPART_HITS,
 	STRUCTURE_POWER_BANK, RESOURCE_POWER, FIND_DROPPED_RESOURCES,
-	POWER_BANK_HIT_BACK, POWER_BANK_CAPACITY_MAX, POWER_BANK_CAPACITY_MIN, POWER_BANK_HITS,
+	POWER_BANK_HIT_BACK, POWER_BANK_HITS,
 } from '../../src/index.js';
 
 describe('Power bank', () => {
@@ -71,38 +71,6 @@ describe('Power bank', () => {
 			`) as number | null);
 		}
 		expect(readings).toEqual([2, 1, null]);
-	});
-
-	// ---- POWER-BANK-003: power value is within canonical capacity range ----
-	test('POWER-BANK-003 powerBank.power is within POWER_BANK_CAPACITY_MIN..POWER_BANK_CAPACITY_MAX', async ({ shard }) => {
-		shard.requires('powerBank');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-
-		const powerAmount = Math.floor(
-			(POWER_BANK_CAPACITY_MIN + POWER_BANK_CAPACITY_MAX) / 2,
-		);
-
-		const pbId = await shard.placeObject('W1N1', 'powerBank', {
-			pos: [25, 25],
-			store: { power: powerAmount },
-			hits: POWER_BANK_HITS,
-			hitsMax: POWER_BANK_HITS,
-			decayTime: 50000,
-		});
-		await shard.tick();
-
-		const power = await shard.runPlayer('p1', code`
-			const pb = Game.getObjectById(${pbId});
-			pb ? pb.power : null
-		`) as number | null;
-
-		expect(power).not.toBeNull();
-		expect(power).toBeGreaterThanOrEqual(POWER_BANK_CAPACITY_MIN);
-		expect(power).toBeLessThanOrEqual(POWER_BANK_CAPACITY_MAX);
-		expect(power).toBe(powerAmount);
 	});
 
 	// ---- POWER-BANK-004: destroyed power bank drops stored power on the same tile ----

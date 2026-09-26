@@ -293,6 +293,7 @@ export const NUKE_DAMAGE: Record<number, number> = C.NUKE_DAMAGE;
 export const NUKER_COOLDOWN: number = C.NUKER_COOLDOWN;
 
 // Power constants
+export const PWR_GENERATE_OPS: number = C.PWR_GENERATE_OPS;
 export const PWR_OPERATE_TOWER: number = C.PWR_OPERATE_TOWER;
 export const PWR_OPERATE_STORAGE: number = C.PWR_OPERATE_STORAGE;
 export const PWR_DISRUPT_SPAWN: number = C.PWR_DISRUPT_SPAWN;
