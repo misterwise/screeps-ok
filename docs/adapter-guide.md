@@ -547,7 +547,8 @@ Each `expected_failures` entry:
 - **tests** — catalog IDs of tests expected to fail due to this gap. When a
   single catalog ID has `:variant` sub-tests (e.g. `SHAPE-STRUCT-001:road`),
   list either the base ID (gates all variants) or specific suffixed IDs
-  (gates only those variants, letting siblings that pass remain ungated).
+  (gates only those variants, letting siblings that pass remain ungated). A
+  variant's own registration wins over its base ID's.
 
 `extends` accepts any specifier `createRequire` can resolve (package subpath,
 absolute path, relative path). Leave the default unless you're pinning to a

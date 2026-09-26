@@ -65,9 +65,11 @@ changes since `v0.1.0-alpha` are not itemized.
 - `behaviors.md` rows can carry their own `capability:` tag on top of their
   section's; `npm run validate:capabilities` checks both.
 - A test's ID is the one catalog ID its name carries, and a test's `:row`
-  wins over a describe's bare ID: `CTRL-STRUCTLIMIT-002`'s tests are now
-  `CTRL-STRUCTLIMIT-002:<structureType>`, not the bare ID. A name that runs on
-  past an ID (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
+  wins over a describe's bare ID. A name that runs on past an ID
+  (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
+- Registering a bare ID gates every `:row` test of it, as the adapter guide
+  documented; a row's own registration wins. Before, a bare registration
+  matched only tests named with the bare ID.
 - A test under `tests/NN-*/` (other than `00-*`) whose name carries no
   catalog ID, or two, fails the run: nothing could register or cover it.
 

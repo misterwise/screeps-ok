@@ -20,6 +20,9 @@ export interface TestResult {
 
 export interface ClassifiedTest extends TestResult {
 	id: string | null;
+	// The registered id this test falls under (its own, or its bare id), and that registration's gap.
+	registration: string | undefined;
+	gapId: string | undefined;
 }
 
 export interface Classified {

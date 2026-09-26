@@ -53,7 +53,7 @@ function summarizeReport(report, parity) {
 	const { classified, fileErrors } = judgeReport(report, parity);
 	const expectedFailureByGap = {};
 	for (const t of classified.expected) {
-		(expectedFailureByGap[parity.gapForId.get(t.id)] ??= []).push(t);
+		(expectedFailureByGap[t.gapId] ??= []).push(t);
 	}
 
 	return {

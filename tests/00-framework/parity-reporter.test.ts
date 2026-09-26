@@ -81,6 +81,34 @@ describe('parity reporter', () => {
 		});
 	});
 
+	test('a bare id\'s registration gates every `:row` of it', () => {
+		const verdict = verdictFor(['GAP-001'], [
+			['GAP-001:rowA fails as registered', 'failed'],
+			['GAP-001:rowB passes beside it', 'passed'],
+		], true);
+		expect(verdict).toEqual({
+			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0, untaggedTests: 0,
+		});
+		expect(verdictFor(['GAP-001'], [['GAP-001:rowA passes', 'passed']], true).unexpectedPasses).toBe(1);
+	});
+
+	test('a row\'s own registration wins over its bare id\'s', () => {
+		const dir = tempDir();
+		writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
+			expected_failures: { 'row-gap': { tests: ['GAP-001:rowB'] }, 'base-gap': { tests: ['GAP-001'] } },
+		}));
+		const judged = judgeReport({ testResults: [{
+			name: TEST_FILE,
+			message: '',
+			assertionResults: [
+				{ fullName: 'GAP-001:rowA fails', status: 'failed' },
+				{ fullName: 'GAP-001:rowB passes', status: 'passed' },
+			],
+		}] }, loadParity(path.join(dir, 'parity.json')));
+		expect(judged.verdict).toMatchObject({ expectedFailures: 1, unexpectedPasses: 1 });
+		expect(judged.classified.expected.map(t => t.gapId)).toEqual(['base-gap']);
+	});
+
 	test('a name that runs on past an id carries no id to register', () => {
 		const verdict = verdictFor(['GAP-002', 'GENERATE-OPS-001'], [
 			['GAP-002a fails', 'failed'],

@@ -19,7 +19,7 @@
  */
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
-import { testCatalogId } from './catalog-id.js';
+import { baseCatalogId, testCatalogId } from './catalog-id.js';
 
 // Only a missing file means no registrations; a malformed one or an unresolvable `extends` throws.
 export function loadParity(parityPath) {
@@ -40,26 +40,34 @@ export function loadParity(parityPath) {
 // Tests in a numbered catalog section each carry one catalog id; the 00-* sections test the framework and contract.
 const CATALOG_SECTION_RE = /[\\/]tests[\\/](?!00-)[0-9]{2}-[^\\/]+[\\/]/;
 
-// An id with any failing test is an active gap: its failures are expected and
-// its passing cases plain passes. An id whose every test passed is an
-// unexpected pass. On a full run, a registration no test passed or failed is
-// orphaned. Any state but passed/failed counts as skipped. A catalog test with
-// no single id is untagged: nothing could register or cover it.
+// A test falls under its own id's registration, else its bare id's: a bare
+// registration gates every `:row`. A registration with any failing test is an
+// active gap: its failures are expected and its passing cases plain passes.
+// One whose every test passed is an unexpected pass. On a full run, a
+// registration no test passed or failed is orphaned. Any state but
+// passed/failed counts as skipped. A catalog test with no single id is
+// untagged: nothing could register or cover it.
 export function classifyResults(gapForId, results, { fullRun }) {
-	const tests = results.map(r => ({ ...r, id: testCatalogId(r.fullName) }));
+	const tests = results.map(r => {
+		const id = testCatalogId(r.fullName);
+		const registration = !id ? undefined
+			: gapForId.has(id) ? id
+			: gapForId.has(baseCatalogId(id)) ? baseCatalogId(id)
+			: undefined;
+		return { ...r, id, registration, gapId: registration && gapForId.get(registration) };
+	});
 	const idStats = new Map();
 	for (const t of tests) {
-		const gapId = t.id ? gapForId.get(t.id) : undefined;
-		if (!gapId || (t.state !== 'passed' && t.state !== 'failed')) continue;
-		const stats = idStats.get(t.id) ?? { gapId, passed: 0, failed: 0 };
+		if (!t.registration || (t.state !== 'passed' && t.state !== 'failed')) continue;
+		const stats = idStats.get(t.registration) ?? { gapId: t.gapId, passed: 0, failed: 0 };
 		stats[t.state]++;
-		idStats.set(t.id, stats);
+		idStats.set(t.registration, stats);
 	}
 
 	const classified = { passed: [], expected: [], failed: [], unexpectedPasses: [], skipped: [], untagged: [], orphans: [], idStats };
 	for (const t of tests) {
 		if (!t.id && CATALOG_SECTION_RE.test(t.file)) classified.untagged.push(t);
-		const stats = t.id ? idStats.get(t.id) : undefined;
+		const stats = t.registration ? idStats.get(t.registration) : undefined;
 		if (t.state === 'failed') (stats ? classified.expected : classified.failed).push(t);
 		else if (t.state === 'passed') (stats?.failed === 0 ? classified.unexpectedPasses : classified.passed).push(t);
 		else classified.skipped.push(t);
