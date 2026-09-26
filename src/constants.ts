@@ -41,8 +41,7 @@ export const EXTENSION_ENERGY_CAPACITY: Record<number, number> = C.EXTENSION_ENE
 export const RAMPART_HITS_MAX: Record<number, number> = C.RAMPART_HITS_MAX;
 export const MINERAL_DENSITY: Record<number, number> = C.MINERAL_DENSITY;
 export const RUIN_DECAY_STRUCTURES: Record<string, number> = C.RUIN_DECAY_STRUCTURES;
-// RANGED_ATTACK_DISTANCE_RATE is not exported by @screeps/common; the values
-// are hardcoded in the rangedMassAttack processor: {0: 1, 1: 1, 2: 0.4, 3: 0.1}.
+// Not in @screeps/common: @screeps/engine processor/intents/creeps/rangedMassAttack.js:32.
 export const RANGED_ATTACK_DISTANCE_RATE: Record<number, number> = { 0: 1, 1: 1, 2: 0.4, 3: 0.1 };
 
 // Return codes
@@ -169,8 +168,7 @@ export const ATTACK_POWER: number = C.ATTACK_POWER;
 export const RANGED_ATTACK_POWER: number = C.RANGED_ATTACK_POWER;
 export const HEAL_POWER: number = C.HEAL_POWER;
 export const RANGED_HEAL_POWER: number = C.RANGED_HEAL_POWER;
-// BODYPART_HITS is not exported by @screeps/common; 100 HP per part is a
-// universal engine convention documented in the Screeps API.
+// Not in @screeps/common: @screeps/engine processor/intents/spawns/create-creep.js:71.
 export const BODYPART_HITS = 100 as const;
 export const TOWER_ENERGY_COST: number = C.TOWER_ENERGY_COST;
 export const UPGRADE_CONTROLLER_POWER: number = C.UPGRADE_CONTROLLER_POWER;
