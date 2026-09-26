@@ -1,5 +1,8 @@
 import { resolve } from 'node:path';
-import { test as base, describe, expect } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { test as base, describe, expect, type RunnerTask, type RunnerTestCase } from 'vitest';
+import { baseCatalogId, testCatalogId } from '../scripts/lib/catalog-id.js';
+import { parseCatalog } from '../scripts/lib/parse-catalog.js';
 import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName } from './adapter.js';
 import type { PlayerCode } from './code.js';
 import { RunPlayerError } from './errors.js';
@@ -135,6 +138,7 @@ function wrapAdapter(
 	adapter: ScreepsOkAdapter,
 	skip: (note?: string) => never,
 	task: { meta: Record<string, unknown> },
+	gates: Set<string>,
 ): ShardFixture {
 	const shard = adapter as ShardFixture;
 	const runPlayers = adapter.runPlayers.bind(adapter);
@@ -171,6 +175,7 @@ function wrapAdapter(
 	shard.runPlayers = async (codesByUser) => runPlayers(codesByUser);
 
 	shard.requires = (capability: CapabilityName, reason?: string): void => {
+		gates.add(capability);
 		if (adapter.capabilities[capability]) return;
 		task.meta.skipReason = `capability:${capability}`;
 		skip(reason ?? `adapter capability '${capability}' is disabled`);
@@ -238,17 +243,40 @@ function fenceShard(shard: ShardFixture) {
 	};
 }
 
+// Each catalog row's capabilities: its section's tag and its own.
+let rowCapabilities: Map<string, string[]> | undefined;
+
+// A test of a capability-tagged row must call shard.requires for each tag, or
+// it runs on adapters without the capability. Checked when the test ends, so
+// gates a matrix passes as data count too.
+function assertGated(task: RunnerTestCase, gates: Set<string>) {
+	// vitest's skip() marks the running result pending (untyped); a skipped test may not reach its gates.
+	if ((task.result as { pending?: boolean } | undefined)?.pending) return;
+	const names: string[] = [];
+	for (let t: RunnerTask | undefined = task; t && t !== task.file; t = t.suite) names.unshift(t.name);
+	const id = testCatalogId(names.join(' > '));
+	if (!id) return;
+	rowCapabilities ??= new Map(parseCatalog(fileURLToPath(new URL('../behaviors.md', import.meta.url)))
+		.map(entry => [entry.id, entry.capabilities]));
+	const ungated = (rowCapabilities.get(baseCatalogId(id)) ?? []).filter(cap => !gates.has(cap));
+	if (ungated.length > 0) {
+		throw new Error(`${id}: behaviors.md tags its row ${ungated.map(cap => `capability:${cap}`).join(', ')}; call shard.requires('${ungated[0]}')${ungated.length > 1 ? ' for each' : ''}`);
+	}
+}
+
 export const test = base.extend<{ shard: ShardFixture }>({
 	shard: async ({ skip, task }, use) => {
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
-		const fence = fenceShard(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }));
+		const gates = new Set<string>();
+		const fence = fenceShard(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }, gates));
 		try {
 			await use(fence.fenced);
 		} finally {
 			await fence.close();
 			await adapter.teardown();
 		}
+		assertGated(task, gates);
 	},
 });
 

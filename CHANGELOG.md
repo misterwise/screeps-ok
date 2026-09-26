@@ -67,7 +67,9 @@ changes since `v0.1.0-alpha` are not itemized.
   forgive; one that fails for a reason the reporter doesn't see (no test file
   matched, say) stays failed.
 - `behaviors.md` rows can carry their own `capability:` tag on top of their
-  section's; `npm run validate:capabilities` checks both.
+  section's. A test of a tagged row fails when it ends without having called
+  `shard.requires()` for each tag, so an ungated test can't run on an adapter
+  that lacks the capability; gates a matrix passes as data count.
 - A test's ID is the one catalog ID its name carries, and a test's `:row`
   wins over a describe's bare ID. A name that runs on past an ID
   (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
