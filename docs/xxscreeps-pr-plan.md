@@ -2,13 +2,13 @@
 
 Companion to `docs/xxscreeps-parity-gaps.md`. Tracks active xxscreeps PRs that affect screeps-ok parity plus the selected submission queue. Full current parity counts are generated in `docs/status.md`.
 
-Last refreshed: 2026-08-24 (pin `e9380f4d`).
+Last refreshed: 2026-09-25 (pin `4795a332`).
 
 > Source paths: xxscreeps engine at `/Users/mrwise/Coding/Screeps/xxscreeps/packages/xxscreeps`; this repo's adapter at `adapters/xxscreeps/`. PR validation runs in the `screeps-ok-pr` workspace via `XXSCREEPS_LOCAL` (see `conventions/xxscreeps-pr-workspace.md`).
 
 ## Current upstream PRs to track
 
-[#388](https://github.com/laverdet/xxscreeps/pull/388) (controller: credit a renewed reservation by the creep's CLAIM power, not power + 1) OPEN, external contributor — registered `reserve-renewal-credits-one-extra-tick` (CTRL-RESERVE-009, 2 rows) at pin `e9380f4d` on 2026-09-12 via screeps-ok PR #8 from the same author. Renewal adds `power + 1` where vanilla adds `power`, so a one-CLAIM reserver's `ticksToEnd` climbs 1 per tick instead of holding. Prune the gap on the bump that consumes it.
+[#388](https://github.com/laverdet/xxscreeps/pull/388) (controller: credit a renewed reservation by the creep's CLAIM power, not power + 1) merged, external contributor, consumed at pin `4795a332` (2026-09-25) — pruned `reserve-renewal-credits-one-extra-tick` (CTRL-RESERVE-009, 2 rows). The cap half of the same branch (`reserve-cap-clamps-instead-of-rejecting`) still fails and stays queued below. The same bump consumed #384/#385/#386 and the `@xxscreeps/pathfinder@0.4.6` move, none of which move parity rows. Full suite at this pin: 2543 passed, 66 expected-failure, 0 genuine, 128 skipped.
 
 [#374](https://github.com/laverdet/xxscreeps/pull/374) (game: compose effects and renderers across mods) merged, consumed at pin `e9380f4d` (2026-08-24) — no parity rows, but it moves the cached `effects` getter onto `RoomObject` over a `'#effects'` generator chain, so the accepted structure/controller `effects` divergence widens to every room object and the adapter now declares it once as `roomObject: { extra: ['effects'] }`. This closes out the `RoomObject.effects` substrate that the feature queue below had held as the next Tier 1 area. The same bump consumed #370/#371/#372/#373/#375/#376/#378, none of which move parity rows. Full suite at this pin: 2510 passed, 55 expected-failure, 0 genuine, 128 skipped.
 
@@ -22,10 +22,10 @@ Last refreshed: 2026-08-24 (pin `e9380f4d`).
 
 ## Active submission queue
 
-`parity.json` currently registers 17 open parity gaps (24 catalog IDs) plus 5 intentional expected failures (9 catalog IDs), 58 expected-failure test rows in all as generated in `docs/status.md` — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
+`parity.json` currently registers 24 open parity gaps (33 catalog IDs) plus 5 intentional expected failures (9 catalog IDs), 66 expected-failure test rows in all as generated in `docs/status.md` — a matrix ID expands to many rows. The queue below is the agreed bug-fix focus; everything else is next-up, deferred, or blocked.
 
 1. **`controller-unclaim-clears-safe-mode-cooldown`** (CTRL-UNCLAIM-005) — vanilla's unclaim SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms; xxscreeps's `release()` clears it. Genuine value bug, not covered by #318; needs its own upstream fix.
-2. **`reserve-cap-clamps-instead-of-rejecting`** (CTRL-RESERVE-010) — vanilla drops a reserve intent whose credit would overshoot `gameTime + CONTROLLER_RESERVE_MAX` (no update, no event, timer decays that tick); xxscreeps `Math.min`-clamps it to the ceiling. Same processor branch as [#388](https://github.com/laverdet/xxscreeps/pull/388); submit after that lands.
+2. **`reserve-cap-clamps-instead-of-rejecting`** (CTRL-RESERVE-010) — vanilla drops a reserve intent whose credit would overshoot `gameTime + CONTROLLER_RESERVE_MAX` (no update, no event, timer decays that tick); xxscreeps `Math.min`-clamps it to the ceiling. Same processor branch as [#388](https://github.com/laverdet/xxscreeps/pull/388), which has merged, so this is unblocked.
 
 `power-bank-shape-exposes-store-extension` (SHAPE-NPC-003) was promoted to this queue and removed again on 2026-07-25 — accepted as an intentional divergence. The promotion assumed the `store` member was storage showing through the overlay; it is not. laverdet's `035d70bf` ("docs: sync with Screeps API", 2026-07-14) annotates the field `@public` as "an xxscreeps extension; the official API only exposes the amount via `power`", and in that 97-file sweep the phrase is used exactly twice, so the member was checked against the official API and kept deliberately. Prototyping the rename against `upstream/main` also found it isn't the ~4-line mod-local change the promotion assumed: `createRuin` (`mods/classic/structure/ruin.ts:68-76`) duck-types the loot out of the public `store` name, so hiding it leaves a destroyed bank's ruin empty, and the blob upgrader looks members up by name, so a renamed composed member arrives `undefined` and the room load throws for any saved world holding a live bank. See Accepted divergences in `docs/xxscreeps-parity-gaps.md`.
 

@@ -1,15 +1,9 @@
 {
 	"expected_failures": {
-		"reserve-renewal-credits-one-extra-tick": {
-			"actual": "The renewal branch of `reserveController` in `mods/classic/controller/processor.ts` sets `endTime` to `reservationEndTime + power + 1`, so an existing reservation gains one tick beyond what the CLAIM parts pay for on every renewing tick. A one-CLAIM reserver banks a tick per tick instead of standing still, and a two-CLAIM reserver gains two.",
-			"expected": "Vanilla `processor/intents/creeps/reserveController.js:35-49` renews with `reservation.endTime += effect` and nothing else; the `gameTime + 1` base applies only when there is no reservation yet.",
-			"why": "Fix open upstream as xxscreeps#388 (same external contributor as the rows). Prune on the pin bump that consumes it.",
-			"tests": ["CTRL-RESERVE-009"]
-		},
 		"reserve-cap-clamps-instead-of-rejecting": {
-			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power + 1)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick.",
+			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick.",
 			"expected": "Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer.",
-			"why": "Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Same processor branch as xxscreeps#388; needs its own upstream fix.",
+			"why": "Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix.",
 			"tests": ["CTRL-RESERVE-010"]
 		},
 		"controller-my-reset-returns-undefined": {
