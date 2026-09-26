@@ -137,11 +137,17 @@ function summarize(report, parity) {
 			unexpectedFail++;
 		}
 	}
-	return { passed, expectedFail, unexpectedFail, unexpectedPass, skipped };
+	// Shards merge into the full run, so a registration no test ran is stale.
+	const orphaned = [...idToGap.keys()].filter(id => !idHasFailure.has(id));
+	return { passed, expectedFail, unexpectedFail, unexpectedPass, skipped, orphaned };
+}
+
+function failsRun(s) {
+	return s.unexpectedFail > 0 || s.unexpectedPass > 0 || s.orphaned.length > 0;
 }
 
 function statusIcon(s) {
-	if (s.unexpectedFail > 0 || s.unexpectedPass > 0) return '🔴';
+	if (failsRun(s)) return '🔴';
 	if (s.expectedFail > 0) return '🟡';
 	return '🟢';
 }
@@ -156,7 +162,12 @@ function renderTable(rows) {
 		lines.push(`| ${statusIcon(s)} | **${adapter}** | ${s.passed} | ${s.expectedFail || '—'} | ${unexpected || '—'} | ${s.skipped || '—'} |`);
 	}
 	lines.push('');
-	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes');
+	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, or orphaned registrations');
+	for (const { adapter, summary: s } of rows) {
+		if (s.orphaned.length > 0) {
+			lines.push('', `**${adapter}** registrations that matched no test that ran: ${s.orphaned.map(id => `\`${id}\``).join(', ')}`);
+		}
+	}
 	return lines.join('\n');
 }
 
@@ -187,8 +198,7 @@ function main() {
 		console.log(`\n${table}`);
 	}
 
-	const genuineFail = rows.some(r => r.summary.unexpectedFail > 0 || r.summary.unexpectedPass > 0);
-	process.exit(genuineFail ? 1 : 0);
+	process.exit(rows.some(r => failsRun(r.summary)) ? 1 : 0);
 }
 
 main();

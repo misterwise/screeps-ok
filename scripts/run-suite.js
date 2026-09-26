@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { parityExitCode } from './lib/parity-verdict.js';
 
 const require = createRequire(import.meta.url);
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -190,6 +191,7 @@ function runSuiteLocked(options = {}) {
 	const vitestBin = require.resolve('vitest/vitest.mjs');
 	const commandArgs = isWatch ? vitestArgs : ['run', ...vitestArgs];
 	const verdictPath = path.join(packageRoot, '.parity-verdict.json');
+	rmSync(verdictPath, { force: true });
 	const result = spawnSync(process.execPath, [vitestBin, ...commandArgs], {
 		cwd: packageRoot,
 		env: {
@@ -198,27 +200,15 @@ function runSuiteLocked(options = {}) {
 			SCREEPS_OK_REPORT_NAME: options.reportName ?? sanitizeReportName(resolved.label),
 			SCREEPS_OK_PROJECT_ROOT: invokerCwd,
 			SCREEPS_OK_PARITY_VERDICT: verdictPath,
+			SCREEPS_OK_FULL_RUN: vitestArgs.length === 0 ? '1' : '0',
 		},
 		stdio,
 	});
 
-	const exitCode = result.status ?? 1;
-
-	// If vitest failed, check whether all failures are expected parity gaps.
-	if (exitCode !== 0) {
-		try {
-			const verdict = JSON.parse(readFileSync(verdictPath, 'utf8'));
-			if (verdict.genuineFailures === 0 && verdict.unexpectedPasses === 0) {
-				try { unlinkSync(verdictPath); } catch {}
-				return 0;
-			}
-		} catch {
-			// No verdict file → reporter didn't run or no parity.json
-		}
-		try { unlinkSync(verdictPath); } catch {}
-	}
-
-	return exitCode;
+	// No verdict file: the reporter found no parity.json registrations.
+	const verdict = existsSync(verdictPath) ? JSON.parse(readFileSync(verdictPath, 'utf8')) : null;
+	rmSync(verdictPath, { force: true });
+	return parityExitCode(result.status ?? 1, verdict);
 }
 
 function isBuiltInAdapter(value) {

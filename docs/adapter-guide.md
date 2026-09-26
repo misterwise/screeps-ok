@@ -520,6 +520,15 @@ When upstream catalogs the same gap and publishes, the base covers it and
 your overlay entry becomes redundant. Reusing the upstream gap id (once you
 know it) makes that transition silent.
 
+### Orphaned registrations
+
+A full run (no filter, no `--shard`; CI checks the merged shards) also fails
+when a merged-set test id matched no test that passed or failed: a typo, a
+renamed `:row`, or tests your adapter skips for a missing capability. The
+reporter prints `Parity: N registration(s) matched no test that ran` with the
+gap ids. Fix the id, or list a base gap your engine can't run in
+`expected_passes`.
+
 ### Field reference
 
 Each `expected_failures` entry:

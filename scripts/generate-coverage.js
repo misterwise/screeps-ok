@@ -73,8 +73,10 @@ function scanTests() {
 	};
 
 	for (const file of testFiles) {
-		const content = readFileSync(file, 'utf8');
 		const relFile = path.relative(root, file);
+		// Framework tests use synthetic IDs as fixtures, not catalog claims.
+		if (relFile.startsWith('tests/00-framework/')) continue;
+		const content = readFileSync(file, 'utf8');
 
 		for (const match of content.matchAll(TEST_ID_RE)) {
 			claim(match[1], relFile);

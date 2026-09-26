@@ -6,12 +6,14 @@
  * The reporter post-processes results:
  *   - A failing test whose catalog ID is in expected_failures → expected failure
  *   - A passing test whose catalog ID is in expected_failures → unexpected pass (regression fixed)
- *   - Sets process.exitCode = 0 when all failures are expected
+ *   - On a full run, a registered ID with no test that passed or failed → orphaned registration
+ *   - Writes a verdict file the runner reads to reclassify the exit code
  */
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Reporter, TestCase, TestModule } from 'vitest/node';
+import type { ParityVerdict } from '../../scripts/lib/parity-verdict.js';
 
 // ── Parity.json schema ────────────────────────────────────────
 //
@@ -88,9 +90,14 @@ function loadExtends(fromPath: string, spec: string): ParityFile | null {
 export default class ParityReporter implements Reporter {
 	private expectedFailIds = new Set<string>();
 	private gapForId = new Map<string, string>();
+	private env: NodeJS.ProcessEnv;
+
+	constructor({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
+		this.env = env;
+	}
 
 	onInit(): void {
-		const adapterPath = process.env.SCREEPS_OK_ADAPTER ?? '';
+		const adapterPath = this.env.SCREEPS_OK_ADAPTER ?? '';
 		if (!adapterPath) return;
 
 		const parityPath = resolve(dirname(adapterPath), 'parity.json');
@@ -186,17 +193,32 @@ export default class ParityReporter implements Reporter {
 			}
 		}
 
+		// Only a full run can tell a stale registration from one outside the filter.
+		const orphans = this.env.SCREEPS_OK_FULL_RUN === '1'
+			? [...this.expectedFailIds].filter(id => {
+				const stats = idStats.get(id);
+				return !stats || stats.passed + stats.failed === 0;
+			})
+			: [];
+		if (orphans.length > 0) {
+			console.log(`\n Parity: ${orphans.length} registration(s) matched no test that ran — fix the id or prune it`);
+			for (const id of orphans) {
+				console.log(`  ${this.gapForId.get(id)}: ${id}`);
+			}
+		}
+
 		// Write a parity verdict file so the runner can reclassify the exit code.
 		// Vitest calls process.exit() directly, so we cannot reliably override it
 		// from a reporter. The runner reads this file after vitest exits.
-		const verdictPath = process.env['SCREEPS_OK_PARITY_VERDICT'];
+		const verdictPath = this.env['SCREEPS_OK_PARITY_VERDICT'];
 		if (verdictPath) {
 			try {
 				writeFileSync(verdictPath, JSON.stringify({
 					expectedFailures: totalExpected,
 					unexpectedPasses: totalUnexpected,
 					genuineFailures,
-				}));
+					orphanedRegistrations: orphans.length,
+				} satisfies ParityVerdict));
 			} catch (err) {
 				console.error(`Parity reporter: failed to write verdict to ${verdictPath}:`, err);
 			}
