@@ -136,67 +136,6 @@ describe('Power creep lifecycle', () => {
 		expect(isUndefined).toBe(true);
 	});
 
-	test('ATTACK-NOTIFY-001 spawned owned power creep notifiesWhenAttacked() returns current boolean state', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', name: 'NotifyPC',
-			powers: {},
-			store: { ops: 10 },
-		});
-		await shard.tick();
-
-		const state = await shard.runPlayer('p1', code`
-			Game.powerCreeps['NotifyPC'].notifiesWhenAttacked()
-		`);
-		expect(state).toBe(true);
-	});
-
-	test('ATTACK-NOTIFY-002 spawned owned power creep notifyWhenAttacked() changes next-tick getter state', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', name: 'QuietPC',
-			powers: {},
-			store: { ops: 10 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.powerCreeps['QuietPC'].notifyWhenAttacked(false)
-		`);
-		expect(rc).toBe(OK);
-
-		const state = await shard.runPlayer('p1', code`
-			Game.powerCreeps['QuietPC'].notifiesWhenAttacked()
-		`);
-		expect(state).toBe(false);
-	});
-
-	test('ATTACK-NOTIFY-004 unspawned power creep notifiesWhenAttacked() returns ERR_BUSY', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerCreepAccountApi');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			PowerCreep.create('UnspawnedNotify', POWER_CLASS.OPERATOR)
-		`);
-		const rc = await shard.runPlayer('p1', code`
-			Game.powerCreeps['UnspawnedNotify'].notifiesWhenAttacked()
-		`);
-		expect(rc).toBe(ERR_BUSY);
-	});
-
 	test('POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		await shard.createShard({

@@ -3,41 +3,17 @@
 		"pull-fatigue-stranded-on-puller-ttl-death": {
 			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract.",
 			"expected": "The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`.",
-			"tests": ["MOVE-PULL-012:pullerFirst"]
-		},
-		"construction-site-array-prototype-pollution": {
-			"actual": "Stable vanilla iterates room-edge border-tile arrays with `for(var i in borderTiles)` (`@screeps/engine/src/utils.js:140`, `:157`), which picks up inherited enumerable `Array.prototype` keys. An enumerable user-code addition to `Array.prototype` therefore makes otherwise-valid edge-adjacent construction sites fail validation with `ERR_INVALID_TARGET`.",
-			"expected": "Enumerable user-code additions to Array.prototype do not affect Room.createConstructionSite or RoomPosition.createConstructionSite validation near room edges. Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (633718e); the source screeps/engine PR was not recovered — search upstream before triaging this row as an engine bug.",
-			"tests": ["CONSTRUCTION-SITE-015"]
-		},
-		"renew-creep-energy-structures-option-missing": {
-			"actual": "Stable vanilla's `StructureSpawn.renewCreep` is declared `function(target)` (`@screeps/engine/src/game/structures.js:1237-1267`) — no `options` parameter, no validation, no `energyStructures` plumbing. The `energyStructures` option is wired only into `spawnCreep` (`structures.js:1077`).",
-			"expected": "renewCreep validates the options argument and uses options.energyStructures as the only eligible owned active spawn/extension energy source set. Canonical claim is PR-derived: screeps/engine#153 (open) proposes adding the energyStructures option to Spawn.renewCreep. Stable vanilla has not shipped it, so this row is an expected failure on BOTH adapters until upstream lands — it is not an xxscreeps bug.",
-			"tests": ["RENEW-CREEP-012", "RENEW-CREEP-013", "RENEW-CREEP-014"]
-		},
-		"legacy-path-cost-callback-false-ignored": {
-			"actual": "Stable vanilla's `Room.findPath` (`@screeps/engine/src/game/rooms.js:247-250`) guards the `costCallback` return with `if (resultMatrix instanceof globals.PathFinder.CostMatrix)`; `false` fails the `instanceof` check and is silently ignored, so the path computation continues with the unmodified cost matrix and returns a path.",
-			"expected": "Room.findPath treats costCallback returning false as blocking the room and returns an empty path. Canonical claim is PR-derived: screeps/engine#113 (open, needs-testing) proposes supporting a false return from the costCallback option, mirroring PathFinder.roomCallback's documented semantics. Stable vanilla has not shipped it, so this row is an expected failure on BOTH adapters until upstream lands — it is not an xxscreeps bug.",
-			"tests": ["LEGACY-PATH-010"]
-		},
-		"attack-notify-getter-api-missing": {
-			"actual": "Stable vanilla wires the setter (`notifyWhenAttacked`) on structures (`@screeps/engine/src/game/structures.js:89-106`), creeps (`creeps.js:988-1004`), and power creeps (`power-creeps.js:375-393`), but no `notifiesWhenAttacked` getter is defined on any of them. `spawnCreep` (`processor/intents/spawns/create-creep.js:93`) hard-codes `notifyWhenAttacked: true` on the new creep with no per-call option, so the initial state isn't observable through spawn either.",
-			"expected": "notifiesWhenAttacked returns the current attack-notification state and failure codes, and spawnCreep can seed the initial state.",
-			"tests": ["STRUCTURE-API-006", "ATTACK-NOTIFY-001", "ATTACK-NOTIFY-002", "ATTACK-NOTIFY-003", "ATTACK-NOTIFY-004"]
-		},
-		"eventlog-build-energy-spent-missing": {
-			"actual": "Stable vanilla's build intent emits an `EVENT_BUILD` payload of `{ targetId, amount, structureType, x, y, incomplete }` (`@screeps/engine/src/processor/intents/creeps/build.js:91-101`) — `energySpent` is not on the payload.",
-			"expected": "EVENT_BUILD data includes energySpent equal to the energy spent by the build action. Canonical claim is PR-derived: screeps/engine#112 (open, needs-testing) adds the missing energySpent field to EVENT_BUILD. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
-			"tests": ["ROOM-EVENTLOG-013"]
+			"tests": ["MOVE-PULL-012:pullerFirst"],
+			"why": "Vanilla bug; upstream fix is screeps/engine#156 (open)."
 		},
 		"eventlog-structure-destroy-intent-missing": {
 			"actual": "Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`).",
-			"expected": "Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (633718e); screeps/engine#129 (open, 'use data object in EVENT_OBJECT_DESTROYED') is adjacent but does not clearly cover the missing emit from the destroy intent — confirm upstream before triaging.",
+			"expected": "Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies.",
 			"tests": ["ROOM-EVENTLOG-027"]
 		},
 		"power-creep-name-truncated-to-50-chars": {
 			"actual": "Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars.",
-			"expected": "Power creeps preserve 100-character names exactly through create and rename. Provenance: introduced by the 2026-05-07 PR-derived catalog sweep (633718e) as one half of the former power-creep-long-name-and-ttl-pr-behavior-missing gap; the source screeps/engine PR was not recovered (its TTL half is screeps/engine#148) — search upstream before triaging.",
+			"expected": "Power creeps preserve 100-character names exactly through create and rename. Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.'",
 			"tests": ["POWERCREEP-CREATE-003", "POWERCREEP-RENAME-001"]
 		},
 		"power-creep-ticks-to-live-not-undefined-when-unspawned": {

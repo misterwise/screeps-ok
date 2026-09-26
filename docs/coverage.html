@@ -58,8 +58,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">1135</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1128</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">1126</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">1119</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">5</div><div class="label">feasible untested</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
@@ -78,7 +78,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="2. Pathfinding">2. Pathfinding</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">41/41</span>
+    <span class="bar-text">40/40</span>
   </div>
 </div>
 <div class="bar-row">
@@ -99,7 +99,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="5. Construction &amp; Repair">5. Construction &amp; Repair</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">49/49</span>
+    <span class="bar-text">48/48</span>
   </div>
 </div>
 <div class="bar-row">
@@ -127,7 +127,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="9. Spawning &amp; Creep Lifecycle">9. Spawning &amp; Creep Lifecycle</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:100%;background:var(--green)"></div>
-    <span class="bar-text">76/76</span>
+    <span class="bar-text">73/73</span>
   </div>
 </div>
 <div class="bar-row">
@@ -169,7 +169,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <span class="bar-label" title="15. Structure Common">15. Structure Common</span>
   <div class="bar-track">
     <div class="bar-fill" style="width:97%;background:var(--yellow)"></div>
-    <span class="bar-text">32/33</span>
+    <span class="bar-text">28/29</span>
   </div>
 </div>
 <div class="bar-row">
@@ -799,7 +799,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>1. Movement</td>
   <td>behavior</td>
-  <td>verified_vanilla</td>
+  <td>needs_vanilla_verification</td>
   <td></td>
   <td><small>tests/01-movement/1.5-pulling.test.ts</small></td>
 </tr>
@@ -1232,15 +1232,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>2. Pathfinding</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
-  <td><small>tests/02-pathfinding/2.3-legacy-path.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>LEGACY-PATH-010</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>2. Pathfinding</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
   <td></td>
   <td><small>tests/02-pathfinding/2.3-legacy-path.test.ts</small></td>
 </tr>
@@ -2474,15 +2465,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>5. Construction &amp; Repair</td>
   <td>behavior</td>
   <td>verified_vanilla</td>
-  <td></td>
-  <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>CONSTRUCTION-SITE-015</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>5. Construction &amp; Repair</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
   <td></td>
   <td><small>tests/05-construction-repair/5.4-construction-sites.test.ts</small></td>
 </tr>
@@ -4728,33 +4710,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small>tests/09-spawning-lifecycle/9.4-renew.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
-  <td><code>RENEW-CREEP-012</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>9. Spawning &amp; Creep Lifecycle</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.4-renew.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>RENEW-CREEP-013</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>9. Spawning &amp; Creep Lifecycle</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.4-renew.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>RENEW-CREEP-014</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>9. Spawning &amp; Creep Lifecycle</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.4-renew.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
   <td><code>RECYCLE-CREEP-001</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>9. Spawning &amp; Creep Lifecycle</td>
@@ -6523,7 +6478,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><span class="badge badge-green">tested</span></td>
   <td>15. Structure Common</td>
   <td>behavior</td>
-  <td>needs_vanilla_verification</td>
+  <td>verified_vanilla</td>
   <td></td>
   <td><small>tests/15-structure-common/15.4-structure-api.test.ts</small></td>
 </tr>
@@ -6544,42 +6499,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td>verified_vanilla</td>
   <td></td>
   <td><small></small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ATTACK-NOTIFY-001</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>15. Structure Common</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts, tests/15-structure-common/15.4-structure-api.test.ts, tests/19-power/19.1-lifecycle.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ATTACK-NOTIFY-002</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>15. Structure Common</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts, tests/15-structure-common/15.4-structure-api.test.ts, tests/19-power/19.1-lifecycle.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ATTACK-NOTIFY-003</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>15. Structure Common</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ATTACK-NOTIFY-004</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>15. Structure Common</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td></td>
-  <td><small>tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts, tests/15-structure-common/15.4-structure-api.test.ts, tests/19-power/19.1-lifecycle.test.ts</small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
   <td><code>ATTACK-NOTIFY-005</code></td>

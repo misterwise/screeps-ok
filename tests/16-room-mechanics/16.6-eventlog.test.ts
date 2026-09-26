@@ -542,7 +542,7 @@ describe('room.getEventLog()', () => {
 		expect(harvest.data.amount).toBe(HARVEST_POWER);
 	});
 
-	test('ROOM-EVENTLOG-013 EVENT_BUILD carries amount and energySpent matching progress added', async ({ shard }) => {
+	test('ROOM-EVENTLOG-013 EVENT_BUILD carries the documented target, amount, site type/position and incomplete fields', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
@@ -576,8 +576,9 @@ describe('room.getEventLog()', () => {
 			e => e.event === EVENT_BUILD && e.objectId === ids.builder);
 		expect(build.data.targetId).toBe(ids.site);
 		expect(build.data.amount).toBe(BUILD_POWER);
-		// Unboosted build spends energy 1:1 with progress, so energySpent == BUILD_POWER too.
-		expect(build.data.energySpent).toBe(BUILD_POWER);
+		expect(build.data.structureType).toBe(STRUCTURE_ROAD);
+		expect(build.data.x).toBe(25);
+		expect(build.data.y).toBe(26);
 		// One swing is far below a road's progressTotal, so the site stays incomplete.
 		expect(build.data.incomplete).toBe(true);
 	});

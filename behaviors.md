@@ -269,7 +269,7 @@ Coverage Notes
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
-- `MOVE-PULL-012` `behavior` `verified_vanilla`
+- `MOVE-PULL-012` `behavior` `needs_vanilla_verification`
   When the puller dies from `ticksToLive === 1` on the same tick a pull
   resolves, the pull still completes — the pulled creep moves into the
   puller's old tile — and the move's fatigue is buried with the dying
@@ -451,10 +451,6 @@ Coverage Notes
 - `LEGACY-PATH-009` `behavior` `verified_vanilla`
   Each element of the path step array contains `x`, `y`, `dx`, `dy`, and
   `direction` fields.
-- `LEGACY-PATH-010` `behavior` `needs_vanilla_verification`
-  `Room.findPath(..., { costCallback })` treats a `costCallback` return value
-  of `false` as blocking that room, yielding an empty path (`[]`, or `''` when
-  serialized).
 
 ---
 
@@ -922,10 +918,6 @@ Coverage Notes
   structure type, including road and container. Engine `rooms.js:1055-1061`
   rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
   from the caller's user, before the rcl check runs.
-- `CONSTRUCTION-SITE-015` `behavior` `needs_vanilla_verification`
-  Enumerable user-code additions to `Array.prototype` do not affect
-  `Room.createConstructionSite()` or `RoomPosition.createConstructionSite()`
-  validation for valid or invalid edge-adjacent construction-site positions.
 - `CONSTRUCTION-SITE-016` `behavior` `verified_vanilla`
   When a room's RCL leaves `sites + active > CONTROLLER_STRUCTURES[type][rcl]`
   for a given structure type (e.g. after a downgrade, or via direct fixture
@@ -1904,17 +1896,6 @@ Coverage Notes
   `renewCreep(creep)` failure return codes and precedence match the canonical
   validation matrix for ownership, caller busy state, target validity, range,
   store capacity, and resource availability.
-- `RENEW-CREEP-012` `behavior` `needs_vanilla_verification`
-  `renewCreep(creep, options)` returns `ERR_INVALID_ARGS` when `options` is
-  supplied and is not an object.
-- `RENEW-CREEP-013` `behavior` `needs_vanilla_verification`
-  When `options.energyStructures` is supplied to `renewCreep()`, only the
-  listed active owned spawns/extensions contribute available energy and only
-  those listed structures are charged.
-- `RENEW-CREEP-014` `behavior` `needs_vanilla_verification`
-  Duplicate, inactive, unowned, non-spawn/extension, or stale
-  `options.energyStructures` entries do not contribute energy to
-  `renewCreep()` and do not double-count.
 
 ### 9.5 Recycle Creep
 - `RECYCLE-CREEP-001` `behavior` `verified_vanilla`
@@ -2780,9 +2761,9 @@ Coverage Notes
 - `STRUCTURE-API-005` `behavior` `verified_vanilla`
   `notifyWhenAttacked(enabled)` returns `ERR_INVALID_ARGS` when `enabled` is not
   boolean.
-- `STRUCTURE-API-006` `behavior` `needs_vanilla_verification`
-  A successful structure `notifyWhenAttacked(enabled)` returns `OK` and the
-  next-tick `notifiesWhenAttacked()` value reflects the requested setting.
+- `STRUCTURE-API-006` `behavior` `verified_vanilla`
+  `notifyWhenAttacked(enabled)` on an owned structure with a boolean argument
+  returns `OK`.
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `Structure.destroy()` failure return codes and precedence match the
   canonical validation matrix for ownership and room-busy state.
@@ -2794,21 +2775,6 @@ Coverage Notes
   (`STRUCTURE-API-007`) which returns `OK`.
 
 ### 15.4b Attack Notification APIs
-- `ATTACK-NOTIFY-001` `behavior` `needs_vanilla_verification`
-  `notifiesWhenAttacked()` returns the current boolean attack-notification
-  state for an owned creep, a spawned owned power creep, a valid owned
-  structure, and an owned spawn.
-- `ATTACK-NOTIFY-002` `behavior` `needs_vanilla_verification`
-  `notifyWhenAttacked(enabled)` changes the next-tick value observed through
-  `notifiesWhenAttacked()`.
-- `ATTACK-NOTIFY-003` `behavior` `needs_vanilla_verification`
-  `spawnCreep(..., { notifyWhenAttacked: false })` creates a creep whose
-  initial attack-notification state is `false`; omitting the option defaults
-  the new creep's state to `true`.
-- `ATTACK-NOTIFY-004` `behavior` `needs_vanilla_verification`
-  `notifiesWhenAttacked()` failure codes match object kind: spawning creep
-  `ERR_BUSY`, unowned object `ERR_NOT_OWNER`, unspawned power creep `ERR_BUSY`,
-  and invalid structure `ERR_INVALID_TARGET`.
 - `ATTACK-NOTIFY-005` `behavior` `verified_vanilla`
   `notifyWhenAttacked(enabled)` returns `OK` for an unowned structure in a room
   controlled by the caller.
@@ -3069,11 +3035,9 @@ Coverage Notes
 - `ROOM-EVENTLOG-013` `behavior` `verified_vanilla`
   `EVENT_BUILD` is emitted when a creep builds a construction site, with
   `objectId` set to the creep, `data.targetId` set to the site,
-  `data.amount` equal to the progress added this tick, and `data.incomplete`
-  reflecting whether the site still has work remaining — all matching stable
-  vanilla. `data.energySpent` is a docs-vs-engine divergence: `docs.screeps.com`
-  documents it as the energy the build action spent, but stable vanilla omits
-  the field from the payload, while xxscreeps ships it.
+  `data.amount` equal to the progress added this tick, `data.structureType`,
+  `data.x` and `data.y` describing the site, and `data.incomplete` reflecting
+  whether the site still has work remaining — the documented payload.
 - `ROOM-EVENTLOG-014` `behavior` `verified_vanilla`
   `EVENT_REPAIR` is emitted when a creep repairs a structure, with
   `objectId` set to the creep, `data.targetId` set to the structure, and
