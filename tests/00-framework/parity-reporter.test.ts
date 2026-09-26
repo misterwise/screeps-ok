@@ -55,7 +55,7 @@ describe('parity reporter', () => {
 			['OTHER-001 passes', 'passed'],
 		], true);
 		expect(verdict).toEqual({
-			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 1,
+			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 1, untaggedTests: 0,
 		});
 	});
 
@@ -77,7 +77,7 @@ describe('parity reporter', () => {
 			['GAP-001: group GAP-001:rowA fails as registered', 'failed'],
 		], true);
 		expect(verdict).toEqual({
-			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0,
+			expectedFailures: 1, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0, untaggedTests: 0,
 		});
 	});
 
@@ -87,6 +87,16 @@ describe('parity reporter', () => {
 			['POWER-GENERATE-OPS-001 fails', 'failed'],
 		], false);
 		expect(verdict).toMatchObject({ expectedFailures: 0, genuineFailures: 2 });
+	});
+
+	test('a catalog test whose name carries no single id fails the run', () => {
+		const verdict = verdictFor(['GAP-001'], [
+			['GAP-001 fails as registered', 'failed'],
+			['GAP-002a passes under an id no tool reads', 'passed'],
+			['GAP-002 and GAP-003 pass together', 'passed'],
+		], false);
+		expect(verdict.untaggedTests).toBe(2);
+		expect(parityExitCode(1, verdict)).toBe(1);
 	});
 
 	test('a filtered or sharded run does not count orphans', () => {
@@ -115,7 +125,7 @@ describe('parity file loading', () => {
 });
 
 describe('parity exit code', () => {
-	const clean = { expectedFailures: 3, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0 };
+	const clean = { expectedFailures: 3, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0, untaggedTests: 0 };
 
 	test('forgives failures that are all registered gaps', () => {
 		expect(parityExitCode(1, clean)).toBe(0);
@@ -124,6 +134,7 @@ describe('parity exit code', () => {
 	test('fails a run vitest passed when a gap now passes or a registration is orphaned', () => {
 		expect(parityExitCode(0, { ...clean, unexpectedPasses: 1 })).toBe(1);
 		expect(parityExitCode(0, { ...clean, orphanedRegistrations: 1 })).toBe(1);
+		expect(parityExitCode(0, { ...clean, untaggedTests: 1 })).toBe(1);
 	});
 
 	test('keeps vitest\'s code for genuine failures and when no verdict was written', () => {
@@ -138,10 +149,10 @@ describe('parity exit code', () => {
 });
 
 describe('JSON reports', () => {
-	function report(files: { tests: [string, State][]; message?: string }[]) {
+	function report(files: { tests: [string, State][]; message?: string; name?: string }[]) {
 		return {
 			testResults: files.map((f, i) => ({
-				name: `/suite/tests/01-section/1.${i}-some.test.ts`,
+				name: f.name ?? `/suite/tests/01-section/1.${i}-some.test.ts`,
 				message: f.message ?? '',
 				assertionResults: f.tests.map(([fullName, status]) => ({ fullName, status })),
 			})),
@@ -161,8 +172,16 @@ describe('JSON reports', () => {
 		const judged = judgeReport(report([{ tests: results }, { tests: [], message: 'SyntaxError' }]), loadParity(path.join(dir, 'parity.json')));
 		expect(judged.verdict).toEqual(verdictFor(['GAP-001', 'GAP-002', 'GAP-003'], results, true, { module: ['SyntaxError'] }));
 		expect(judged.verdict).toEqual({
-			expectedFailures: 1, unexpectedPasses: 1, genuineFailures: 2, orphanedRegistrations: 1,
+			expectedFailures: 1, unexpectedPasses: 1, genuineFailures: 2, orphanedRegistrations: 1, untaggedTests: 0,
 		});
+	});
+
+	test('framework and contract sections need no catalog ids', () => {
+		const judged = judgeReport(report([
+			{ name: '/suite/tests/00-framework/some.test.ts', tests: [['reporter behaves', 'passed']] },
+			{ name: '/suite/tests/00-adapter-contract/some.test.ts', tests: [['tick advances one tick', 'passed']] },
+		]), { gaps: {}, gapForId: new Map() });
+		expect(judged.verdict.untaggedTests).toBe(0);
 	});
 
 	test('a report is judged by the overlay merged onto its base', () => {
@@ -181,7 +200,7 @@ describe('JSON reports', () => {
 			['GAP-003 fails as the overlay registers', 'failed'],
 		] }]), loadParity(path.join(dir, 'parity.json')));
 		expect(judged.verdict).toEqual({
-			expectedFailures: 2, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0,
+			expectedFailures: 2, unexpectedPasses: 0, genuineFailures: 0, orphanedRegistrations: 0, untaggedTests: 0,
 		});
 	});
 });

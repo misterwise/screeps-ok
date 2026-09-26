@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2814%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2555%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-76-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-56%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-56%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,12 +16,130 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2814](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 16:05 UTC |
-| 🟡 | **xxscreeps** | [2555](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 16:04 UTC |
+| 🔴 | **vanilla** | [2814](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 16:05 UTC |
+| 🔴 | **xxscreeps** | [2555](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 16:04 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## vanilla unexpected failures
+
+- `creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power` carries no single catalog id
+- `Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power` carries no single catalog id
+- `Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power` carries no single catalog id
+- `Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power` carries no single catalog id
+- `Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers` carries no single catalog id
+
+## xxscreeps unexpected failures
+
+- `creep movement collision MOVE-COLLISION-003b two hostile creeps can also swap tiles by moving toward each other` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:not-owner launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:invalid-argument-shape launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-rcl launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:out-of-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-energy launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:missing-ghodium launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-inactive launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-range launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:inactive-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKE-LAUNCH-008:range-before-resources launchNuke validation returns the canonical code` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:energy-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Nuke launch — section 7.13 NUKER-PROPS-001:ghodium-capacity-alias StructureNuker legacy property mirrors store or capacity` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:ghodium_melt produce(ghodium_melt) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:keanium_bar produce(keanium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:lemergium_bar produce(lemergium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:utrium_bar produce(utrium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory production FACTORY-PRODUCE-001:zynthium_bar produce(zynthium_bar) consumes components and yields 100` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:ghodium_melt COMMODITIES[ghodium_melt].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:keanium_bar COMMODITIES[keanium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:lemergium_bar COMMODITIES[lemergium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:utrium_bar COMMODITIES[utrium_bar].level is undefined` carries no single catalog id
+- `Factory commodity chains FACTORY-COMMODITY-001:zynthium_bar COMMODITIES[zynthium_bar].level is undefined` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:attack-object-is-nuke-target-is-structure nuke event-log detail matches the matrix` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:roomwide-creep-kill-emits-no-attack-event nuke event-log detail matches the matrix` carries no single catalog id
+- `room.getEventLog() ROOM-EVENTLOG-026:rampart-attack-entry-precedes-covered-structure nuke event-log detail matches the matrix` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:target-room-visible-to-target-owner in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:launch-room-does-not-list-target-nuke in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Nuke flight NUKE-FLIGHT-004:target-room-hidden-from-launcher-without-visibility in-flight nuke visibility follows player perspective` carries no single catalog id
+- `Game.gpl GPL-002a Game.gpl follows vanilla account-power math at 999 power` carries no single catalog id
+- `Game.gpl GPL-002b Game.gpl follows vanilla account-power math at 1000 power` carries no single catalog id
+- `Game.gpl GPL-002c Game.gpl follows vanilla account-power math at 3999 power` carries no single catalog id
+- `Game.gpl GPL-002d Game.gpl follows vanilla account-power math at 4000 power` carries no single catalog id
+- `Game.gpl GPL-002e Game.gpl follows vanilla account-power math at 9000 power` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:attack-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:harvest-source-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:build-site-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:repair-structure-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:ranged-heal-target-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:upgrade-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-CREEP-001:reserve-controller-coordinates successful creep actions render source-side action markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-creep successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-creep successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-damaged-by-tower successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-TARGET-001:creep-healed-by-tower successful incoming effects render target-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-attack-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-heal-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:tower-repair-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:link-transfer-target-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:lab-run-reaction-reagent-coordinates successful structure actions render source-side markers` carries no single catalog id
+- `Room history action log ACTIONLOG-STRUCT-001:lab-reverse-reaction-output-coordinates successful structure actions render source-side markers` carries no single catalog id
 
 ## vanilla expected failures
 

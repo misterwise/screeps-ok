@@ -91,7 +91,8 @@ that adapter's `parity.json`.
 - Start the test title with the catalog ID: `'HARVEST-001 harvest deposits…'`.
 - Matrix rows append `:rowLabel` to the ID: `STRUCTURE-HITS-001:storage`. Keep
   a label one camelCase token, a letter then letters or digits (`:GH2O`, not
-  `:not-owner`), so `parity.json` can register a single row.
+  `:not-owner`), so `parity.json` can register a single row. A test in a
+  numbered section whose name carries no catalog ID, or two, fails the run.
 - Use constants from `src/index.ts` (`FIND_*`, `STRUCTURE_*`, `ERR_*`, body
   parts) rather than string or number literals.
 

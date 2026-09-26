@@ -68,6 +68,10 @@ export default class ParityReporter implements Reporter {
 			console.log(`\n Parity: ${classified.orphans.length} registration(s) matched no test that ran — fix the id or prune it`);
 			for (const id of classified.orphans) console.log(`  ${this.gapForId.get(id)}: ${id}`);
 		}
+		if (classified.untagged.length > 0) {
+			console.log(`\n Parity: ${classified.untagged.length} test(s) carry no single catalog id — name one id (or one \`:row\`) per test`);
+			for (const t of classified.untagged) console.log(`  ${t.fullName}`);
+		}
 
 		// Vitest calls process.exit() directly, so we cannot reliably override it
 		// from a reporter. The runner reads this file after vitest exits.

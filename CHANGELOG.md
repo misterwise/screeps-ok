@@ -68,6 +68,8 @@ changes since `v0.1.0-alpha` are not itemized.
   wins over a describe's bare ID: `CTRL-STRUCTLIMIT-002`'s tests are now
   `CTRL-STRUCTLIMIT-002:<structureType>`, not the bare ID. A name that runs on
   past an ID (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
+- A test under `tests/NN-*/` (other than `00-*`) whose name carries no
+  catalog ID, or two, fails the run: nothing could register or cover it.
 
 ### Catalog IDs your `parity.json` may name
 

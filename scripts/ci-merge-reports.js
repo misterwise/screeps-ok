@@ -86,10 +86,11 @@ function summarize(report, parity) {
 	return {
 		passed: classified.passed.length,
 		expectedFail: verdict.expectedFailures,
-		unexpected: verdict.genuineFailures + verdict.unexpectedPasses,
+		unexpected: verdict.genuineFailures + verdict.unexpectedPasses + verdict.untaggedTests,
 		skipped: classified.skipped.length,
 		orphaned: classified.orphans,
 		fileErrors,
+		untagged: classified.untagged,
 		clean: verdictIsClean(verdict),
 	};
 }
@@ -109,10 +110,13 @@ function renderTable(rows) {
 		lines.push(`| ${statusIcon(s)} | **${adapter}** | ${s.passed} | ${s.expectedFail || '—'} | ${s.unexpected || '—'} | ${s.skipped || '—'} |`);
 	}
 	lines.push('');
-	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, or orphaned registrations');
+	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, orphaned registrations, or tests without an id');
 	for (const { adapter, summary: s } of rows) {
 		for (const e of s.fileErrors) {
 			lines.push('', `**${adapter}** \`${path.relative(packageRoot, e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
+		}
+		for (const t of s.untagged) {
+			lines.push('', `**${adapter}** \`${t.fullName}\` carries no single catalog id`);
 		}
 		if (s.orphaned.length > 0) {
 			lines.push('', `**${adapter}** registrations that matched no test that ran: ${s.orphaned.map(id => `\`${id}\``).join(', ')}`);

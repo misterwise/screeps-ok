@@ -44,7 +44,7 @@ function summarizeReport(report, parity) {
 		return {
 			passed: 0, expectedFailure: 0, failed: 0, skipped: 0,
 			expectedFailureByGap: {}, passingTests: [], skippedTests: [],
-			failingTests: [], unexpectedPasses: [], orphans: [], fileErrors: [],
+			failingTests: [], unexpectedPasses: [], orphans: [], untagged: [], fileErrors: [],
 			loaded: false,
 		};
 	}
@@ -67,6 +67,7 @@ function summarizeReport(report, parity) {
 		failingTests: classified.failed,
 		unexpectedPasses: classified.unexpectedPasses,
 		orphans: classified.orphans.map(id => ({ id, gapId: parity.gapForId.get(id) })),
+		untagged: classified.untagged,
 		fileErrors,
 		loaded: true,
 	};
@@ -96,9 +97,10 @@ function formatTimestamp(report) {
 }
 
 
-// Everything that fails the runner's exit, less the unexpected passes' own count.
+// Everything that fails the runner's exit.
 function problemCount(summary) {
-	return summary.failed + summary.fileErrors.length + summary.unexpectedPasses.length + summary.orphans.length;
+	return summary.failed + summary.fileErrors.length + summary.unexpectedPasses.length
+		+ summary.orphans.length + summary.untagged.length;
 }
 
 function isAdapterOk(summary) {
@@ -505,6 +507,9 @@ function render(summaries) {
 		}
 		for (const o of s.orphans) {
 			lines.push(`- \`${o.gapId}\` registers \`${o.id}\`, which no test passed or failed`);
+		}
+		for (const t of s.untagged) {
+			lines.push(`- \`${t.fullName}\` carries no single catalog id`);
 		}
 		if (s.unexpectedPasses.length > 0) {
 			lines.push(`- ${s.unexpectedPasses.length} registered test(s) now pass; see Regression traps triggered`);

@@ -28,6 +28,7 @@ export interface Classified {
 	failed: ClassifiedTest[];
 	unexpectedPasses: ClassifiedTest[];
 	skipped: ClassifiedTest[];
+	untagged: ClassifiedTest[];
 	orphans: string[];
 	idStats: Map<string, { gapId: string; passed: number; failed: number }>;
 }
@@ -38,6 +39,7 @@ export interface ParityVerdict {
 	unexpectedPasses: number;
 	genuineFailures: number;
 	orphanedRegistrations: number;
+	untaggedTests: number;
 }
 
 export function loadParity(parityPath: string): Parity;

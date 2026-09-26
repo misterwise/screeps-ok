@@ -37,10 +37,14 @@ export function loadParity(parityPath) {
 	return { gaps, gapForId };
 }
 
+// Tests in a numbered catalog section each carry one catalog id; the 00-* sections test the framework and contract.
+const CATALOG_SECTION_RE = /[\\/]tests[\\/](?!00-)[0-9]{2}-[^\\/]+[\\/]/;
+
 // An id with any failing test is an active gap: its failures are expected and
 // its passing cases plain passes. An id whose every test passed is an
 // unexpected pass. On a full run, a registration no test passed or failed is
-// orphaned. Any state but passed/failed counts as skipped.
+// orphaned. Any state but passed/failed counts as skipped. A catalog test with
+// no single id is untagged: nothing could register or cover it.
 export function classifyResults(gapForId, results, { fullRun }) {
 	const tests = results.map(r => ({ ...r, id: testCatalogId(r.fullName) }));
 	const idStats = new Map();
@@ -52,8 +56,9 @@ export function classifyResults(gapForId, results, { fullRun }) {
 		idStats.set(t.id, stats);
 	}
 
-	const classified = { passed: [], expected: [], failed: [], unexpectedPasses: [], skipped: [], orphans: [], idStats };
+	const classified = { passed: [], expected: [], failed: [], unexpectedPasses: [], skipped: [], untagged: [], orphans: [], idStats };
 	for (const t of tests) {
+		if (!t.id && CATALOG_SECTION_RE.test(t.file)) classified.untagged.push(t);
 		const stats = t.id ? idStats.get(t.id) : undefined;
 		if (t.state === 'failed') (stats ? classified.expected : classified.failed).push(t);
 		else if (t.state === 'passed') (stats?.failed === 0 ? classified.unexpectedPasses : classified.passed).push(t);
@@ -91,18 +96,21 @@ export function parityVerdict(classified, errorCount) {
 		unexpectedPasses: classified.unexpectedPasses.length,
 		genuineFailures: classified.failed.length + errorCount,
 		orphanedRegistrations: classified.orphans.length,
+		untaggedTests: classified.untagged.length,
 	};
 }
 
 export function verdictIsClean(verdict) {
 	return verdict.genuineFailures === 0
 		&& verdict.unexpectedPasses === 0
-		&& verdict.orphanedRegistrations === 0;
+		&& verdict.orphanedRegistrations === 0
+		&& verdict.untaggedTests === 0;
 }
 
 // The verdict forgives failures that are all registered gaps, and fails a run
-// vitest passed when a gap now passes or a registration matched no test. A
-// non-zero exit with nothing registered to forgive (no test files, say) stands.
+// vitest passed when a gap now passes, a registration matched no test, or a
+// catalog test carries no id. A non-zero exit with nothing registered to
+// forgive (no test files, say) stands.
 export function parityExitCode(vitestExit, verdict) {
 	if (!verdict) return vitestExit;
 	if (!verdictIsClean(verdict)) return vitestExit || 1;
