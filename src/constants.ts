@@ -280,9 +280,10 @@ export const DENSITY_HIGH: 3 = C.DENSITY_HIGH;
 export const DENSITY_ULTRA: 4 = C.DENSITY_ULTRA;
 
 // RawMemory segment limits
-export const MAX_ACTIVE_SEGMENTS: number = C.MAX_ACTIVE_SEGMENTS;
-export const MAX_SEGMENT_COUNT: number = C.MAX_SEGMENT_COUNT;
-export const MAX_SEGMENT_SIZE: number = C.MAX_SEGMENT_SIZE;
+// Not in @screeps/common: @screeps/driver lib/runtime/runtime.js:134 (active), :140 (ids 0-99), :264 (100 KB).
+export const MAX_ACTIVE_SEGMENTS = 10 as const;
+export const MAX_SEGMENT_COUNT = 100 as const;
+export const MAX_SEGMENT_SIZE = 100 * 1024;
 
 // Nuke
 export const NUKE_RANGE: number = C.NUKE_RANGE;

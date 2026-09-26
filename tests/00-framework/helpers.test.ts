@@ -4,6 +4,7 @@ import { code } from '../../src/code.js';
 import { body } from '../../src/helpers/body.js';
 import { makeValidationCases } from '../../src/matrices/validation-cases.js';
 import { gclPoints } from '../../src/adapter.js';
+import * as constants from '../../src/constants.js';
 import { GCL_MULTIPLY, GCL_POW } from '../../src/constants.js';
 
 describe('code tag', () => {
@@ -77,5 +78,11 @@ describe('gclPoints', () => {
 		expect(() => gclPoints({ level: 1.5 })).toThrow(/PlayerSpec.gcl/);
 		expect(() => gclPoints({ level: 2, progress: -1 })).toThrow(/PlayerSpec.gcl/);
 		expect(() => gclPoints({ level: 1, progress: GCL_MULTIPLY })).toThrow(/below 1000000/);
+	});
+});
+
+describe('constants', () => {
+	test('every constant has a value: a name @screeps/common lacks re-exports as undefined', () => {
+		expect(Object.entries(constants).filter(([, value]) => value === undefined).map(([name]) => name)).toEqual([]);
 	});
 });
