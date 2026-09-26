@@ -229,7 +229,7 @@ async function setupJsonObjectCase(shard: ShardFixture, key: JsonObjectCaseKey):
 
 describe('Undocumented API Surface — game object JSON serialization', () => {
 	for (const row of jsonObjectCases) {
-		test(`${row.catalogId} ${row.key} JSON.stringify(${row.label}) returns a plain snapshot`, async ({ shard }) => {
+		test(`${row.catalogId}:${row.key} JSON.stringify(${row.label}) returns a plain snapshot`, async ({ shard }) => {
 			if (row.requiredCapability) shard.requires(row.requiredCapability);
 
 			const selector = await setupJsonObjectCase(shard, row.key);

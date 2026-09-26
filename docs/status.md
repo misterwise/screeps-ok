@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2755%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2537%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-71-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2755%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-15%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,29 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2755](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 14:51 UTC |
-| 🟡 | **xxscreeps** | [2537](#xxscreeps-passing-tests) | [71](#xxscreeps-expected-failures) | — | [160](#xxscreeps-skipped-tests) | 2026-09-26 14:51 UTC |
+| 🔴 | **xxscreeps** | [2537](#xxscreeps-passing-tests) | [56](#xxscreeps-expected-failures) | [15](#xxscreeps-unexpected-failures) | [160](#xxscreeps-skipped-tests) | 2026-09-26 14:51 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot`
+- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot`
 
 ## vanilla expected failures
 
@@ -106,7 +124,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 71 tests. That includes 33 open parity gaps covering 62 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 38 expected-failure classifications against vanilla's canonical behavior, covering 56 tests. That includes 33 open parity gaps covering 47 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -117,7 +135,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
-| `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
+| `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | 0 |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
@@ -173,23 +191,8 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-game-object-json-omits-prototype-accessors">
-<summary><code>game-object-json-omits-prototype-accessors</code> — 15 tests</summary>
+<summary><code>game-object-json-omits-prototype-accessors</code> — 0 tests</summary>
 
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedCreep JSON.stringify(owned Creep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileCreep JSON.stringify(hostile Creep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 controller JSON.stringify(StructureController) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedStructure JSON.stringify(owned Structure) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostileStructure JSON.stringify(hostile Structure) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 source JSON.stringify(Source) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 mineral JSON.stringify(Mineral) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 droppedResource JSON.stringify(Resource) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 constructionSite JSON.stringify(ConstructionSite) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 tombstone JSON.stringify(Tombstone) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ruin JSON.stringify(Ruin) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 deposit JSON.stringify(Deposit) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 nuke JSON.stringify(Nuke) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 ownedPowerCreep JSON.stringify(owned PowerCreep) returns a plain snapshot`
-- `Undocumented API Surface — game object JSON serialization UNDOC-JSONOBJ-001 hostilePowerCreep JSON.stringify(hostile PowerCreep) returns a plain snapshot`
 
 </details>
 

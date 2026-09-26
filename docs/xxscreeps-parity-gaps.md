@@ -69,7 +69,7 @@ Last refreshed: 2026-09-25 against pin `4795a332`.
 
 ### game-object-json-omits-prototype-accessors
 
-- Tests: UNDOC-JSONOBJ-001
+- Tests: UNDOC-JSONOBJ-001, every row but `room`, `roomPosition` and `flag`.
 - Status: CONFIRMED 2026-07-25 (was filed as a nested-`pos` residual after pin `15df4bea`); mechanism corrected 2026-09-25. Needs an upstream conversation before any PR — see the PR plan.
 - Cause: object-model wide, not position-specific. Probing the same creep on both adapters: vanilla emits `{room, pos{x,y,roomName}, id, name, body, my, owner, spawning, ticksToLive, carryCapacity, carry, store, fatigue, hits, hitsMax, …}`; xxscreeps emits `{room, id, name}` and nothing else. Both engines put the public surface on enumerable PROTOTYPE accessors — vanilla's `defineGameObjectProperties` is called on `Structure.prototype` and friends, and xxscreeps's `withOverlay` keys enumerability off the `#` prefix (`schema/overlay.ts:65`). The difference is that vanilla also installs a `toJSON` (`@screeps/engine/src/utils.js:535`) that walks the object with `for...in` (inherited enumerable keys included) and skips `_`-prefixed cache slots, while xxscreeps has no game-object `toJSON`, so `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct: `JSON.stringify(creep.pos)` alone returns `{"x":25,"y":25,"roomName":"W1N1"}`.
 - Plan: none queued. The likely fix is a vanilla-style `toJSON` on `RoomObject` rather than an object-model rework. The payoff is debug ergonomics plus any bot that round-trips an object through JSON and reads `.pos.x`; no upstream report exists, so raise it with laverdet before writing code. The matrix stays broad because the divergence spans every object class.
