@@ -22,12 +22,13 @@ const engineFreeTests = readdirSync(frameworkDir)
 	.filter(file => !/from '\.\.\/\.\.\/src\/index\.js'/.test(readFileSync(file, 'utf8')));
 
 const steps = [
+	// The typecheck covers the starter, so it regenerates first.
+	['starter', [script('generate-starter.js')]],
 	['typecheck', [require.resolve('typescript/bin/tsc'), '--noEmit']],
 	['capability gates', [script('validate-capabilities.js')]],
 	['engine-internals drift', engineInternalsDrift],
 	['framework tests', [require.resolve('vitest/vitest.mjs'), 'run', ...engineFreeTests], { SCREEPS_OK_ADAPTER: 'none' }],
 	['coverage', [script('generate-coverage.js')]],
-	['starter', [script('generate-starter.js')]],
 	// Status reads the local full-run reports, which a fresh clone or CI lacks.
 	...['vanilla', 'xxscreeps'].some(adapter => existsSync(path.join(root, 'reports', `${adapter}.json`)))
 		? [['status', [script('generate-status.js')]]]
