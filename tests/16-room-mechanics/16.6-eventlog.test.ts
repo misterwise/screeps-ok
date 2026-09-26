@@ -99,7 +99,7 @@ describe('room.getEventLog()', () => {
 		expect(typeof raw).toBe('string');
 		const parsed = JSON.parse(raw);
 		expect(Array.isArray(parsed)).toBe(true);
-		expect(parsed.length).toBeGreaterThan(0);
+		expectExactlyOne(parsed, e => e.event === EVENT_ATTACK);
 	});
 
 	test('ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping', async ({ shard }) => {
@@ -153,7 +153,8 @@ describe('room.getEventLog()', () => {
 		const healEvent = expectExactlyOne(events,
 			e => e.event === EVENT_HEAL && e.objectId === ids.tower);
 		expect(healEvent.data.targetId).toBe(ids.friendly);
-		expect(healEvent.data.amount).toBeGreaterThan(0);
+		// Range 1 is inside TOWER_OPTIMAL_RANGE: the full nominal heal.
+		expect(healEvent.data.amount).toBe(TOWER_POWER_HEAL);
 		// Tower heal is ranged (EVENT_HEAL_TYPE_RANGED = 2), not melee.
 		expect(healEvent.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
 	});
@@ -376,7 +377,8 @@ describe('room.getEventLog()', () => {
 		expect(linkTransfer.data.resourceType).toBe(RESOURCE_ENERGY);
 		// Pre-loss amount; the destination receives less due to LINK_LOSS_RATIO.
 		expect(linkTransfer.data.amount).toBe(sentAmount);
-		expect(sentAmount * LINK_LOSS_RATIO).toBeGreaterThan(0);
+		const link2 = await shard.expectStructure(link2Id, STRUCTURE_LINK);
+		expect(link2.store.energy).toBe(sentAmount - Math.ceil(sentAmount * LINK_LOSS_RATIO));
 	});
 
 	test('ROOM-EVENTLOG-008 EVENT_EXIT is emitted when a creep crosses a room boundary with destination room/x/y', async ({ shard }) => {

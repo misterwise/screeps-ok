@@ -75,13 +75,11 @@ describe('Keeper lair', () => {
 		await shard.tick();
 		await shard.tick();
 
-		// Check if a source keeper was spawned.
+		// Exactly one source keeper, on the lair's own tile.
 		const result = await shard.runPlayer('p1', code`
-			const creeps = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS);
-			creeps.length
-		`) as number;
-		// A source keeper should have been spawned.
-		expect(result).toBeGreaterThanOrEqual(0); // May or may not have spawned yet.
+			Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS).map(c => ({ x: c.pos.x, y: c.pos.y }))
+		`) as { x: number; y: number }[];
+		expect(result).toEqual([{ x: 25, y: 25 }]);
 	});
 });
 

@@ -100,7 +100,8 @@ describe('Operate powers', () => {
 
 		const expectedOps = PI[PWR_OPERATE_TOWER].ops;
 		expect(storeBefore - result.ops).toBe(expectedOps);
-		expect(result.cooldown).toBeGreaterThan(0);
+		// Anchored on the use tick; read one tick later.
+		expect(result.cooldown).toBe(PI[PWR_OPERATE_TOWER].cooldown - 1);
 	});
 
 	test('POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active', async ({ shard }) => {
@@ -237,8 +238,8 @@ describe('Disrupt powers', () => {
 		`) as { ops: number; cooldown: number };
 
 		expect(opsBefore - result.ops).toBe(PI[PWR_DISRUPT_TOWER].ops);
-		// Cooldown should be set after using the power.
-		expect(result.cooldown).toBeGreaterThanOrEqual(0);
+		// PWR_DISRUPT_TOWER has no cooldown, so the getter's floor of 0 applies.
+		expect(result.cooldown).toBe(Math.max(0, PI[PWR_DISRUPT_TOWER].cooldown - 1));
 	});
 });
 
@@ -279,6 +280,7 @@ describe('Regen powers', () => {
 
 	test('POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO', async ({ shard }) => {
 		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
@@ -312,7 +314,8 @@ describe('Regen powers', () => {
 		// PWR_REGEN_SOURCE has no ops cost.
 		const expectedOps = PI[PWR_REGEN_SOURCE].ops ?? 0;
 		expect(opsBefore - result.ops).toBe(expectedOps);
-		expect(result.cooldown).toBeGreaterThanOrEqual(0);
+		// Anchored on the use tick; read one tick later.
+		expect(result.cooldown).toBe(PI[PWR_REGEN_SOURCE].cooldown - 1);
 	});
 });
 

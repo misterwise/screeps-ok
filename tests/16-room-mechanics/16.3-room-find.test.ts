@@ -55,7 +55,8 @@ describe('Room.find exit constants', () => {
 		}>;
 
 		for (const side of ['top', 'right', 'bottom', 'left'] as const) {
-			expect(result[side].count).toBeGreaterThan(0);
+			// Every edge tile of the plain default room except the two corners.
+			expect(result[side].count).toBe(48);
 			expect(result[side].onEdge).toBe(true);
 			expect(result[side].inRange).toBe(true);
 			expect(result[side].walkable).toBe(true);
@@ -88,7 +89,7 @@ describe('Room.find exit constants', () => {
 			})
 		`) as { sidesKeys: string[]; allKeys: string[]; allOnBorder: boolean; allUnique: boolean };
 
-		expect(result.allKeys.length).toBeGreaterThan(0);
+		expect(result.allKeys.length).toBe(4 * 48);
 		expect(result.allKeys).toEqual(result.sidesKeys);
 		expect(result.allOnBorder).toBe(true);
 		expect(result.allUnique).toBe(true);

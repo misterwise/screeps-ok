@@ -176,8 +176,8 @@ describe('Tombstone', () => {
 		await shard.tick();
 		const t2 = await shard.expectObject(tombId, 'tombstone');
 
-		expect(t1.ticksToDecay).toBeLessThan(t0.ticksToDecay);
-		expect(t2.ticksToDecay).toBeLessThan(t1.ticksToDecay);
+		expect(t1.ticksToDecay).toBe(t0.ticksToDecay - 1);
+		expect(t2.ticksToDecay).toBe(t1.ticksToDecay - 1);
 	});
 
 	// TOMBSTONE-006..017: deceased-creep field exposure on tombstone.creep.

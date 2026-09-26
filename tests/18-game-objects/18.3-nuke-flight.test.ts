@@ -43,8 +43,7 @@ describe('Nuke flight', () => {
 		`) as { launchRoomName: string; timeToLand: number; x: number; y: number } | null;
 		expect(nukeInfo).not.toBeNull();
 		expect(nukeInfo!.launchRoomName).toBe('W1N1');
-		expect(nukeInfo!.timeToLand).toBeGreaterThan(0);
-		expect(nukeInfo!.timeToLand).toBeLessThanOrEqual(NUKE_LAND_TIME);
+		expect(nukeInfo!.timeToLand).toBe(NUKE_LAND_TIME - 2);
 		expect(nukeInfo!.x).toBe(25);
 		expect(nukeInfo!.y).toBe(25);
 	});

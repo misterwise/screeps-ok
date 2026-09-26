@@ -128,7 +128,7 @@ describe('RoomPosition find helpers', () => {
 			})
 		`) as { isArray: boolean; length: number; firstHasXY: boolean };
 		expect(result.isArray).toBe(true);
-		expect(result.length).toBeGreaterThan(0);
+		expect(result.length).toBe(5);
 		expect(result.firstHasXY).toBe(true);
 	});
 

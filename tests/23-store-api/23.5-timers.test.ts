@@ -104,13 +104,12 @@ describe('Timer gating', () => {
 		`);
 		expect(blockedRc).toBe(ERR_NO_BODYPART);
 
-		// Drive a few ticks and confirm the timer counted down.
+		// Four ticks separate the reads: sm0's, the blocked attack, and tick(2).
 		await shard.tick(2);
 		const sm1 = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.safeMode ?? 0
 		`) as number;
-		expect(sm1).toBeGreaterThan(0);
-		expect(sm1).toBeLessThan(sm0);
+		expect(sm1).toBe(sm0 - 4);
 
 		// Drive well past expiration; the engine reports undefined once
 		// safeMode <= gameTime, which we map to null in the test return.

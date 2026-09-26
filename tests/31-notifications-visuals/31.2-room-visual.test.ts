@@ -171,6 +171,9 @@ describe('Visual size accounting and limits', () => {
 			(function () {
 				const v = new RoomVisual('W1N1');
 				const t = 'x'.repeat(1000);
+				v.text(t, 1, 1);
+				const entry = v.getSize();
+				v.clear();
 				let threw = false;
 				let calls = 0;
 				try { for (; calls < 2000; calls++) v.text(t, 1, 1); } catch (e) { threw = true; }
@@ -178,14 +181,14 @@ describe('Visual size accounting and limits', () => {
 				v.clear();
 				const afterClear = v.getSize();
 				v.text('ok', 1, 1);
-				return { threw, calls, size, afterClear, recovered: v.getSize() };
+				return { threw, entry, calls, size, afterClear, recovered: v.getSize() };
 			})()
-		`) as { threw: boolean; calls: number; size: number; afterClear: number; recovered: number };
+		`) as { threw: boolean; entry: number; calls: number; size: number; afterClear: number; recovered: number };
 
+		// Every drawing that fits is kept; the first that would cross the limit throws.
 		expect(result.threw).toBe(true);
-		expect(result.calls).toBeLessThan(2000);
-		expect(result.size).toBeLessThanOrEqual(500 * 1024);
-		expect(result.size).toBeGreaterThan(500 * 1024 - 2048);
+		expect(result.calls).toBe(Math.floor(500 * 1024 / result.entry));
+		expect(result.size).toBe(result.calls * result.entry);
 		expect(result.afterClear).toBe(0);
 		expect(result.recovered).toBeGreaterThan(0);
 	});
@@ -198,6 +201,9 @@ describe('Visual size accounting and limits', () => {
 				const v = Game.map.visual;
 				const pos = new RoomPosition(1, 1, 'W1N1');
 				const t = 'x'.repeat(1000);
+				v.text(t, pos);
+				const entry = v.getSize();
+				v.clear();
 				let threw = false;
 				let calls = 0;
 				try { for (; calls < 4000; calls++) v.text(t, pos); } catch (e) { threw = true; }
@@ -205,14 +211,14 @@ describe('Visual size accounting and limits', () => {
 				v.clear();
 				const afterClear = v.getSize();
 				v.text('ok', pos);
-				return { threw, calls, size, afterClear, recovered: v.getSize() };
+				return { threw, entry, calls, size, afterClear, recovered: v.getSize() };
 			})()
-		`) as { threw: boolean; calls: number; size: number; afterClear: number; recovered: number };
+		`) as { threw: boolean; entry: number; calls: number; size: number; afterClear: number; recovered: number };
 
+		// Every drawing that fits is kept; the first that would cross the limit throws.
 		expect(result.threw).toBe(true);
-		expect(result.calls).toBeLessThan(4000);
-		expect(result.size).toBeLessThanOrEqual(1000 * 1024);
-		expect(result.size).toBeGreaterThan(1000 * 1024 - 2048);
+		expect(result.calls).toBe(Math.floor(1000 * 1024 / result.entry));
+		expect(result.size).toBe(result.calls * result.entry);
 		expect(result.afterClear).toBe(0);
 		expect(result.recovered).toBeGreaterThan(0);
 	});

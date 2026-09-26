@@ -66,7 +66,7 @@ describe('PWR_GENERATE_OPS', () => {
 		const ops = await shard.runPlayer('p1', code`
 			Object.values(Game.powerCreeps)[0].store.ops
 		`) as number;
-		expect(ops).toBeGreaterThan(0);
+		expect(ops).toBe(PI[PWR_GENERATE_OPS].effect![0]);
 	});
 
 	test('POWER-GENERATE-OPS-003 overflow ops are dropped on the same tile', async ({ shard }) => {

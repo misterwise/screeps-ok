@@ -161,7 +161,8 @@ describe('room energy tracking', () => {
 	});
 
 	test('ROOM-ENERGY-003 room energy counts only controller-owner spawns and extensions', async ({ shard }) => {
-		const ownSpawnEnergy = 200;
+		// A full own spawn keeps spawn regen out of the totals.
+		const ownSpawnEnergy = SPAWN_ENERGY_CAPACITY;
 		const ownExtensionEnergy = 17;
 
 		await shard.createShard({
@@ -235,9 +236,9 @@ describe('room energy tracking', () => {
 		expect(result.ownCapacity).toBe(SPAWN_ENERGY_CAPACITY + EXTENSION_ENERGY_CAPACITY[2]);
 		expect(result.myEnergyStructures).toBe(2);
 		expect(result.hostileEnergyStructures).toBe(2);
-		expect(result.ownEnergy).toBeGreaterThan(0);
-		expect(result.hostileEnergy).toBeGreaterThan(0);
-		expect(result.hostileCapacity).toBeGreaterThan(0);
+		expect(result.ownEnergy).toBe(ownSpawnEnergy + ownExtensionEnergy);
+		expect(result.hostileEnergy).toBe(SPAWN_ENERGY_CAPACITY + EXTENSION_ENERGY_CAPACITY[2]);
+		expect(result.hostileCapacity).toBe(SPAWN_ENERGY_CAPACITY + EXTENSION_ENERGY_CAPACITY[2]);
 	});
 
 	// A spawn or extension construction site carries the same structureType as

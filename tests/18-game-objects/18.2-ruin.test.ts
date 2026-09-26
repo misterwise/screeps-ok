@@ -28,7 +28,7 @@ describe('Ruin', () => {
 		expect(ruin.structureType).toBe(STRUCTURE_CONTAINER);
 		expect(typeof ruin.destroyTime).toBe('number');
 		expect(ruin.ticksToDecay).toBeGreaterThan(0);
-		expect(ruin.store.energy).toBeGreaterThan(0);
+		expect(ruin.store.energy).toBe(100);
 	});
 
 	test('RUIN-002 ruin decay time matches RUIN_DECAY_STRUCTURES when present and RUIN_DECAY otherwise', async ({ shard }) => {
@@ -152,8 +152,8 @@ describe('Ruin', () => {
 		await shard.tick();
 		const r2 = await shard.expectObject(ruinId, 'ruin');
 
-		expect(r1.ticksToDecay).toBeLessThan(r0.ticksToDecay);
-		expect(r2.ticksToDecay).toBeLessThan(r1.ticksToDecay);
+		expect(r1.ticksToDecay).toBe(r0.ticksToDecay - 1);
+		expect(r2.ticksToDecay).toBe(r1.ticksToDecay - 1);
 	});
 
 	test('RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership', async ({ shard }) => {
@@ -180,6 +180,7 @@ describe('Ruin', () => {
 				hitsMax: structure.hitsMax,
 				structureType: structure.structureType,
 				owner: structure.owner.username,
+				expectedOwner: Game.rooms['W1N1'].controller.owner.username,
 				my: structure.my,
 			})
 		`) as {
@@ -188,6 +189,7 @@ describe('Ruin', () => {
 			hitsMax: number;
 			structureType: string;
 			owner: string;
+			expectedOwner: string;
 			my: boolean;
 		};
 
@@ -196,8 +198,7 @@ describe('Ruin', () => {
 		expect(result.hits).toBe(0);
 		expect(result.hitsMax).toBe(250000);
 		expect(result.structureType).toBe(STRUCTURE_CONTAINER);
-		expect(result.owner).toEqual(expect.any(String));
-		expect(result.owner.length).toBeGreaterThan(0);
+		expect(result.owner).toBe(result.expectedOwner);
 		expect(result.my).toBe(true);
 	});
 });

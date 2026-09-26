@@ -73,7 +73,7 @@ describe('Simultaneous creep actions', () => {
 		// 2. rangedMassAttack: hostile should have taken damage.
 		// At range 1, rangedMassAttack deals RANGED_ATTACK_POWER.
 		const hostileAfter = await shard.expectObject(hostileId, 'creep');
-		expect(hostileAfter.hits).toBeLessThan(hostileBefore.hits);
+		expect(hostileAfter.hits).toBe(hostileBefore.hits - RANGED_ATTACK_POWER);
 
 		// 3. Heal: friendly should have been healed.
 		const friendlyAfter = await shard.expectObject(friendlyId, 'creep');

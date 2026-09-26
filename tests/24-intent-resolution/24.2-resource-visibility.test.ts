@@ -124,10 +124,10 @@ describe('Same-tick resource intent visibility', () => {
 		expect(picker).toBeDefined();
 		expect(picker!.store.energy).toBe(CARRY_CAPACITY);
 
-		// The dropped resource should still exist (not picked up) because
-		// withdraw consumed all capacity.
+		// The dropped pile is untouched because withdraw consumed all capacity;
+		// it has only lost one decay on the drop tick and one on this tick.
 		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		expect(remaining.length).toBeGreaterThan(0);
+		expect(remaining.map(r => r.amount)).toEqual([CARRY_CAPACITY - 2]);
 	});
 
 	test('INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed', async ({ shard }) => {

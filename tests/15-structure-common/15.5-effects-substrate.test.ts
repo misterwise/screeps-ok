@@ -189,7 +189,7 @@ describe('15.5 Effects Substrate', () => {
 			const e = t.effects.find(e => e.power === PWR_DISRUPT_TOWER || e.effect === PWR_DISRUPT_TOWER);
 			e ? e.ticksRemaining : -1
 		`) as number;
-		expect(decayed).toBeLessThan(fullDuration);
+		expect(decayed).toBe(fullDuration - 2);
 
 		// Re-apply.
 		const rc2 = await shard.runPlayer('p1', code`

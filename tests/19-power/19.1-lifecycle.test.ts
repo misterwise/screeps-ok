@@ -1,6 +1,7 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE,
 	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
+	ROAD_WEAROUT_POWER_CREEP,
 	ATTACK, MOVE, CARRY,
 	body,
 } from '../../src/index.js';
@@ -539,6 +540,7 @@ describe('Power creep lifecycle', () => {
 			store: { ops: 10 },
 		});
 		await shard.tick();
+		const ttdBefore = (await shard.expectStructure(roadId, STRUCTURE_ROAD)).ticksToDecay;
 
 		// Move onto the road.
 		const rc = await shard.runPlayer('p1', code`
@@ -553,12 +555,10 @@ describe('Power creep lifecycle', () => {
 		`) as { x: number; y: number };
 		expect(pos.y).toBe(24);
 
-		// Road wear: ROAD_WEAROUT_POWER_CREEP = 100.
-		// Private server may or may not process road wear for power creeps.
-		const hits = await shard.runPlayer('p1', code`
-			Game.getObjectById(${roadId}).hits
-		`) as number;
-		// Road should have same or reduced hits.
-		expect(hits).toBeLessThanOrEqual(5000);
+		// Wear advances the decay timer, not hits: ROAD_WEAROUT_POWER_CREEP plus
+		// the 2 ticks elapsed (move + position read).
+		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
+		expect(road.ticksToDecay).toBe(ttdBefore - ROAD_WEAROUT_POWER_CREEP - 2);
+		expect(road.hits).toBe(5000);
 	});
 });
