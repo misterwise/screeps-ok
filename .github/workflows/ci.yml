@@ -60,6 +60,10 @@ jobs:
             exit 1
           fi
 
+      # prepublishOnly runs this too; here a `files` change fails before the publish.
+      - name: Package contents
+        run: npm run validate:package
+
   test:
     runs-on: ubuntu-latest
     strategy:
