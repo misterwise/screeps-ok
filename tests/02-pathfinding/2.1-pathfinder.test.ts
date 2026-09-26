@@ -310,9 +310,6 @@ describe('PathFinder', () => {
 
 	test('PATHFINDER-010 PathFinder.search maxRooms option limits the number of rooms searched', async ({ shard }) => {
 		shard.requires('terrain', 'cross-room pathfinding uses the fixture room pair');
-		// TERRAIN_FIXTURE_ROOM + TERRAIN_FIXTURE_NEIGHBOR are pre-loaded into
-		// the vanilla runner's static terrain cache by the adapter, so both
-		// rooms are always visible to PathFinder regardless of test ordering.
 		// TERRAIN_FIXTURE_NEIGHBOR is the blank-terrain room immediately north
 		// of the fixture room. We use the plainOrigin landmark and a tile
 		// near the north border so the cross-room path is short.

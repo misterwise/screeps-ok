@@ -414,9 +414,7 @@ describe('creep.moveTo()', () => {
 		shard.requires('terrain', 'wall pocket fixture requires custom terrain support');
 		// Use the shared terrain fixture room: its wall-pocket landmark is a
 		// plain tile surrounded by walls on all 8 neighbors, so no path out
-		// exists. The fixture is pre-loaded into the runner cache at adapter
-		// init, so the runner pathfinder sees the walls — a test crafting
-		// RoomSpec.terrain on the fly would be invisible to the cached copy.
+		// exists.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
