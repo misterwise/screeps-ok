@@ -9,11 +9,11 @@
  * Usage:
  *   node scripts/validate-capabilities.js
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
 import { parseCatalog } from './lib/parse-catalog.js';
+import { testFileClaims } from './lib/test-claims.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptsDir, '..');
@@ -31,40 +31,14 @@ for (const entry of catalog) {
 	}
 }
 
-// 2. Walk test files
-function walkDir(dir) {
-	const files = [];
-	for (const entry of readdirSync(dir, { withFileTypes: true })) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			files.push(...walkDir(full));
-		} else if (entry.name.endsWith('.test.ts')) {
-			files.push(full);
-		}
-	}
-	return files;
-}
-
-// 3. Check each test file
+// 2. Each ID a catalog test file's code names must be gated in that code. Matrix
+// rows gate through their own data (`shard.requires(entry.cap)`), which a static
+// read can't follow, so their IDs aren't checked here.
 const errors = [];
-const testFiles = walkDir(testsDir);
-
-for (const file of testFiles) {
-	// Comments name rows a file deliberately leaves to another; only code claims them.
-	const content = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+for (const { file, code } of testFileClaims(testsDir)) {
 	const relFile = path.relative(root, file);
-
-	// Skip adapter-contract tests — they don't have catalog IDs
-	if (relFile.startsWith('tests/00-adapter-contract/')) continue;
-
-	// Extract all catalog IDs in this file
-	const testIds = new Set(catalogIdsIn(content).map(baseCatalogId));
-
-	// Extract all shard.requires('cap') calls
-	const requiresCalls = new Set([...content.matchAll(REQUIRES_RE)].map(m => m[1]));
-
-	// Check: each tested ID that needs a capability should have requires()
-	for (const id of testIds) {
+	const requiresCalls = new Set([...code.matchAll(REQUIRES_RE)].map(m => m[1]));
+	for (const id of new Set(catalogIdsIn(code).map(baseCatalogId))) {
 		for (const needed of requiredCapabilities.get(id) ?? []) {
 			if (!requiresCalls.has(needed)) {
 				errors.push({ file: relFile, id, capability: needed });
@@ -73,7 +47,7 @@ for (const file of testFiles) {
 	}
 }
 
-// 4. Report
+// 3. Report
 if (errors.length > 0) {
 	console.error(`Found ${errors.length} test(s) missing capability gates:\n`);
 	for (const e of errors) {

@@ -13,6 +13,17 @@ export function catalogIdsIn(text) {
 	return [...text.matchAll(ID_IN_TEXT_RE)].map(m => m[0]);
 }
 
+// Comments name rows a file deliberately leaves to another; only code claims them.
+export function stripComments(source) {
+	return source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+}
+
+// Tests in a numbered catalog section each carry one catalog id; the 00-*
+// sections test the framework and the adapter contract.
+export function isCatalogTestFile(file) {
+	return /[\\/]tests[\\/](?!00-)[0-9]{2}-[^\\/]+[\\/]/.test(file);
+}
+
 export function baseCatalogId(id) {
 	return id.split(':')[0];
 }

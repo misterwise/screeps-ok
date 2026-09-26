@@ -11,99 +11,37 @@
  *   npm run coverage
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { adapterCapabilities } from './lib/capabilities.js';
+import { parseCatalog } from './lib/parse-catalog.js';
+import { testFileClaims } from './lib/test-claims.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptsDir, '..');
 const behaviorsPath = path.join(root, 'behaviors.md');
 const testsDir = path.join(root, 'tests');
+const adaptersDir = path.join(root, 'adapters');
 const outputPath = path.join(root, 'docs', 'coverage.html');
 
-import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
-import { parseCatalog as parseCatalogFromFile } from './lib/parse-catalog.js';
-
-function parseCatalog() {
-	return parseCatalogFromFile(behaviorsPath);
-}
-
 // ---------------------------------------------------------------------------
-// 2. Scan test files
+// 1. Scan test files: id → test files claiming it
 // ---------------------------------------------------------------------------
-
-const MATRIX_IMPORT_RE = /from\s+['"]([^'"]+\/matrices\/[^'"]+?)(?:\.js)?['"]/g;
-const MATRIX_CATALOG_ID_RE = /catalogId\s*:\s*['"]([^'"]+)['"]/g;
-
-function walkDir(dir) {
-	const results = [];
-	for (const entry of readdirSync(dir, { withFileTypes: true })) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			results.push(...walkDir(full));
-		} else if (entry.name.endsWith('.test.ts')) {
-			results.push(full);
-		}
-	}
-	return results;
-}
-
-/**
- * Resolve matrix file paths imported by a test file. Test files import
- * from '../../src/matrices/foo.js' but the source is foo.ts.
- */
-function resolveMatrixImports(testFile, content) {
-	const resolved = new Set();
-	for (const m of content.matchAll(MATRIX_IMPORT_RE)) {
-		const spec = m[1];
-		const tsPath = path.resolve(path.dirname(testFile), `${spec}.ts`);
-		resolved.add(tsPath);
-	}
-	return [...resolved];
-}
 
 function scanTests() {
 	const idToFiles = new Map();
-	const matrixCache = new Map();
-	const testFiles = walkDir(testsDir);
-
-	const claim = (id, relFile) => {
-		if (!idToFiles.has(id)) idToFiles.set(id, new Set());
-		idToFiles.get(id).add(relFile);
-	};
-
-	for (const file of testFiles) {
-		const relFile = path.relative(root, file);
-		// Framework tests use synthetic IDs as fixtures, not catalog claims.
-		if (relFile.startsWith('tests/00-framework/')) continue;
-		const content = readFileSync(file, 'utf8');
-
-		for (const id of catalogIdsIn(content)) {
-			claim(baseCatalogId(id), relFile);
-		}
-
-		for (const matrixPath of resolveMatrixImports(file, content)) {
-			let matrixContent = matrixCache.get(matrixPath);
-			if (matrixContent === undefined) {
-				try {
-					matrixContent = readFileSync(matrixPath, 'utf8');
-				} catch {
-					matrixContent = null;
-				}
-				matrixCache.set(matrixPath, matrixContent);
-			}
-			if (!matrixContent) continue;
-			for (const match of matrixContent.matchAll(MATRIX_CATALOG_ID_RE)) {
-				for (const id of catalogIdsIn(match[1])) claim(baseCatalogId(id), relFile);
-			}
+	for (const { file, ids } of testFileClaims(testsDir)) {
+		for (const id of ids) {
+			if (!idToFiles.has(id)) idToFiles.set(id, new Set());
+			idToFiles.get(id).add(path.relative(root, file));
 		}
 	}
-
 	return idToFiles;
 }
 
 // ---------------------------------------------------------------------------
-// 3. Cross-reference
+// 2. Cross-reference
 // ---------------------------------------------------------------------------
 
 function crossReference(catalog, testedIds) {
@@ -132,55 +70,32 @@ function crossReference(catalog, testedIds) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Categorize untested
+// 3. Categorize untested
 // ---------------------------------------------------------------------------
 
-// IDs whose tests require simulate() which xxscreeps doesn't support
-const SIMULATE_FAMILIES = ['FLAG', 'RAWMEMORY', 'RAWMEMORY-FOREIGN'];
-// IDs whose vanilla behavior is cataloged, but the fixture cannot currently
+// Rows whose vanilla behavior is cataloged, but the fixture cannot currently
 // create the world state needed for an executable adapter test.
 const FIXTURE_BLOCKED_IDS = new Set([
 	'UNDOC-SYSUSER-002',
 	// halt() disposes the cached sandbox; needs adapter sandbox-recreation
 	'CPU-HALT-001',
 ]);
-// Capabilities no adapter fully covers, so an untested entry behind one stays untested
-const BLOCKED_CAPABILITIES = new Set([
-	'factory', 'market', 'nuke', 'deposit',
-	'actionLogCapture',
-]);
+
+// A capability no adapter declares leaves every row behind it untestable.
+const supported = new Set(readdirSync(adaptersDir, { withFileTypes: true })
+	.filter(entry => entry.isDirectory())
+	.flatMap(entry => [...adapterCapabilities(path.join(adaptersDir, entry.name, 'index.ts'))])
+	.filter(([, declared]) => declared)
+	.map(([name]) => name));
 
 function categorizeUntested(entry) {
-	if (FIXTURE_BLOCKED_IDS.has(entry.id)) {
-		return 'fixture-blocked';
-	}
-	const blocked = entry.capabilities.find(capability => BLOCKED_CAPABILITIES.has(capability));
-	if (blocked) {
-		return `capability: ${blocked}`;
-	}
-	if (entry.capabilities.includes('powerEffects')) {
-		return 'capability: powerEffects';
-	}
-	const family = entry.id.replace(/-[0-9]{3}$/, '');
-	if (SIMULATE_FAMILIES.some(f => family === f || family.startsWith(f + '-'))) {
-		return 'simulate()-blocked';
-	}
-	if (entry.id.startsWith('MEMORY-') && entry.id !== 'MEMORY-001' &&
-		entry.id !== 'MEMORY-002' && entry.id !== 'MEMORY-003') {
-		return 'simulate()-blocked';
-	}
-	if (entry.id.startsWith('KEEPER-LAIR') || entry.id.startsWith('INVADER-CORE') ||
-		entry.id.startsWith('NPC-OWNERSHIP')) {
-		return 'NPC spawning';
-	}
-	if (entry.id.startsWith('TERMINAL-SEND')) {
-		return 'capability: market';
-	}
-	return 'feasible';
+	if (FIXTURE_BLOCKED_IDS.has(entry.id)) return 'fixture-blocked';
+	const blocked = entry.capabilities.find(capability => !supported.has(capability));
+	return blocked ? `capability: ${blocked}` : 'feasible';
 }
 
 // ---------------------------------------------------------------------------
-// 5. Render HTML
+// 4. Render HTML
 // ---------------------------------------------------------------------------
 
 function esc(s) {
@@ -378,7 +293,7 @@ input.addEventListener('input', () => {
 // Main
 // ---------------------------------------------------------------------------
 
-const catalog = parseCatalog();
+const catalog = parseCatalog(behaviorsPath);
 const testedIds = scanTests();
 const result = crossReference(catalog, testedIds);
 
