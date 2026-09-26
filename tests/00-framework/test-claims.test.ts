@@ -38,6 +38,15 @@ describe('test file claims', () => {
 			['tests/01-section/1.1-some.test.ts', ['GAP-001', 'GAP-004']],
 		]);
 	});
+
+	// A skipped or todo test claims its id while running nothing; gates go through shard.requires() or a parity.json skip.
+	test('a catalog test carries no vitest modifier that skips, inverts or narrows the run', () => {
+		const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+		const modified = testFileClaims(path.join(repo, 'tests')).flatMap(({ file, code }) =>
+			[...code.matchAll(/\b(?:test|it|describe)(?:\.\w+)*\.(?:skip|todo|only|fails|skipIf|runIf)\b/g)]
+				.map(([match]) => `${path.relative(repo, file)}: ${match}`));
+		expect(modified).toEqual([]);
+	});
 });
 
 describe('adapter capabilities', () => {

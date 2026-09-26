@@ -223,6 +223,11 @@ if (!shard.capabilities.chemistry) return;
 shard.requires('chemistry');
 ```
 
+Don't use vitest's `skip`, `todo`, `only`, `fails`, `skipIf`, or `runIf`
+modifiers in a catalog test: the test would still claim its ID's coverage
+while running nothing, or run with its result inverted. An entry with no test
+yet has no test.
+
 The capability list and what each flag covers are in
 [`adapter-spec.md`](adapter-spec.md#capabilities-and-skip-policy).
 

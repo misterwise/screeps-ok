@@ -504,9 +504,6 @@ all (it hangs a tick or takes the process down) lists it under `skips` in its
 adapter. A skip reports nothing about the behavior, so an engine that can run
 a test registers its failure as a gap instead.
 
-Suite coverage that is not implemented yet should use `test.todo`, not
-`test.skip`.
-
 ## Error Model
 
 `RunPlayerError` means the player-code execution contract failed, not gameplay.
