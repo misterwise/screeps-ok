@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2840%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2895%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2636%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2840](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 19:55 UTC |
-| 🔴 | **xxscreeps** | [2581](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | — | [196](#xxscreeps-skipped-tests) | 2026-09-26 19:53 UTC |
+| 🟡 | **vanilla** | [2895](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 21:36 UTC |
+| 🟡 | **xxscreeps** | [2636](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 21:30 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## xxscreeps unexpected failures
-
-- `segment-over-limit-drops-segment-not-tick` registers `RAWMEMORY-002:segmentSize`, which no test passed or failed
 
 ## vanilla expected failures
 
@@ -110,7 +106,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 35 open parity gaps covering 67 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 77 tests. That includes 35 open parity gaps covering 68 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -142,7 +138,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `controller-timer-anchors-one-tick-late` | The controller tick (`mods/classic/controller/processor.ts:238-240`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:184`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up. | Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore. | Same engine-side clock convention as `power-creep-renew-stamps-next-tick-age`: the processor's `GameState` is built at `nextTime` (`engine/processor/room.ts:97-98`), so `Game.time` sits one tick ahead of vanilla's `gameTime`. The same file already compensates with `- 1` on its other absolute anchors (`:61`, `:207-208`, `:259`); the two-line upstream fix is `- 1` on the level-up half-timer and moving the `1 +` inside the relative arm of the clamp. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines. | [2](#xxscreeps-gap-controller-timer-anchors-one-tick-late) |
 | `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | Engine-side ordering gap, not adapter translation. Upstream fix: `after: 'harvest'` on the `upgradeController` processor, or the equivalent `before` on `harvest`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | Found 2026-09-25: the vanilla adapter used to reset a cyclic `RawMemory` itself, which manufactured the old 'subtree silently dropped' reading of UNDOC-MEMJSON-005 on vanilla. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
-| `segment-over-limit-drops-segment-not-tick` | `flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes. | Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error. | Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes. | 0 |
+| `segment-over-limit-drops-segment-not-tick` | `flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes. | Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error. | Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes. | [1](#xxscreeps-gap-segment-over-limit-drops-segment-not-tick) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile. | [1](#xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping) |
 | `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites. | [1](#xxscreeps-gap-terminal-send-cost-ignores-world-wrap) |
 | `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`. | [4](#xxscreeps-gap-bury-creep-stamps-next-tick) |
@@ -355,8 +351,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-segment-over-limit-drops-segment-not-tick">
-<summary><code>segment-over-limit-drops-segment-not-tick</code> — 0 tests</summary>
+<summary><code>segment-over-limit-drops-segment-not-tick</code> — 1 test</summary>
 
+- `RawMemory RAWMEMORY-002:segmentSize a segment holds MAX_SEGMENT_SIZE characters, and one more fails the tick`
 
 </details>
 
@@ -514,7 +511,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2840 tests across 155 files</summary>
+<summary>2895 tests across 158 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -607,7 +604,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
-- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
+- adapter contract: inspection special object snapshots invader core snapshot includes level and deploy timer
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection spawn snapshot spawn snapshot exposes the public spawning name, needTime and remainingTime
@@ -615,7 +612,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (73)
+**`tests/00-adapter-contract/setup.test.ts`** (75)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -624,7 +621,9 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
-- adapter contract: setup createShard getControllerPos returns null for rooms without a controller
+- adapter contract: setup createShard RoomSpec.controller: false makes a room with no controller
+- adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
+- adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
@@ -691,10 +690,12 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
-**`tests/00-framework/canonical-parity.test.ts`** (2)
+**`tests/00-framework/canonical-parity.test.ts`** (4)
 
 - canonical parity.json vanilla registers every gap with a why
 - canonical parity.json xxscreeps registers every gap with a why
+- canonical parity.json vanilla skips no test: a reference adapter runs the whole suite
+- canonical parity.json xxscreeps skips no test: a reference adapter runs the whole suite
 
 **`tests/00-framework/capability-gates.test.ts`** (2)
 
@@ -718,6 +719,24 @@ Click a count to jump to the affected test list.
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
+**`tests/00-framework/helpers.test.ts`** (11)
+
+- code tag a value JSON would change fails instead of interpolating as something else
+- code tag JSON-safe values and undefined interpolate as literals
+- body a count is a positive integer followed by a part
+- body a count repeats its part; a bare part counts once
+- makeValidationCases an exclusion names two of its conditions in declaration order
+- makeValidationCases two conditions with one label fail
+- makeValidationCases every shipped matrix loads
+- gclPoints every level reads back, at its threshold and just below the next
+- gclPoints progress counts whole points past the rounded-up threshold
+- gclPoints a level or progress no point total reads back as fails
+- constants every constant has a value: a name @screeps/common lacks re-exports as undefined
+
+**`tests/00-framework/matrices.test.ts`** (1)
+
+- matrices a case list runs in the test of the row it enumerates
+
 **`tests/00-framework/parity-reporter.test.ts`** (20)
 
 - parity reporter a full run counts a registration no test ran as orphaned
@@ -740,6 +759,14 @@ Click a count to jump to the affected test list.
 - JSON reports a report gets the verdict the reporter gives the same results live
 - JSON reports framework and contract sections need no catalog ids
 - JSON reports a report is judged by the overlay merged onto its base
+
+**`tests/00-framework/parity-skips.test.ts`** (5)
+
+- parity.json skips a skip needs a why and catalog test ids
+- parity.json skips a test id is skipped or registered as a gap, not both
+- parity.json skips an overlay keeps the skips its base registers
+- parity.json skips a skipped test counts under its own id or, registered bare, its row
+- parity.json skips a full run counts a skip that names no test as orphaned
 
 **`tests/00-framework/test-claims.test.ts`** (5)
 
@@ -1581,7 +1608,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:rangeBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeCooldown attackController() validation returns the canonical code
 
-**`tests/06-controller/6.10-structlimit.test.ts`** (18)
+**`tests/06-controller/6.10-structlimit.test.ts`** (42)
 
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === true at required RCL
@@ -1600,7 +1627,31 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === true at required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
-- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl1 1 of 2 spawns are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl7 2 of 3 spawns are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl8 3 of 4 spawns are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl1 0 of 1 extensions are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl2 5 of 6 extensions are active at RCL 2
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl3 10 of 11 extensions are active at RCL 3
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl4 20 of 21 extensions are active at RCL 4
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl5 30 of 31 extensions are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl6 40 of 41 extensions are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl7 50 of 51 extensions are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl8 60 of 61 extensions are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl1 0 of 1 links are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl5 2 of 3 links are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl6 3 of 4 links are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl7 4 of 5 links are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl8 6 of 7 links are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl1 0 of 1 towers are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl3 1 of 2 towers are active at RCL 3
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl5 2 of 3 towers are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl7 3 of 4 towers are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl8 6 of 7 towers are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl1 0 of 1 labs are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl6 3 of 4 labs are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl7 6 of 7 labs are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl8 10 of 11 labs are active at RCL 8
 
 **`tests/06-controller/6.4-upgrade.test.ts`** (51)
 
@@ -2730,12 +2781,15 @@ Click a count to jump to the affected test list.
 
 - Rampart power effects RAMPART-DECAY-004 PWR_FORTIFY prevents direct damage while effect is active
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (9)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
 - StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
 - StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
-- StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
+- StructureRoad ROAD-WEAR-001:creepBody1 a creepBody1 moving onto a road advances its decay by 1
+- StructureRoad ROAD-WEAR-001:creepBody5 a creepBody5 moving onto a road advances its decay by 5
+- StructureRoad ROAD-WEAR-001:creepBody50 a creepBody50 moving onto a road advances its decay by 50
+- StructureRoad ROAD-WEAR-001:powerCreep a powerCreep moving onto a road advances its decay by 100
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
 - StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road
 
@@ -2833,7 +2887,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (10)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (12)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
@@ -2844,7 +2898,9 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - Invader core INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power
-- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
+- NPC ownership NPC-OWNERSHIP-001:keeperLair a keeperLair is not my, and Source Keeper owns it
+- NPC ownership NPC-OWNERSHIP-001:powerBank a powerBank is not my, and Power Bank owns it
+- NPC ownership NPC-OWNERSHIP-001:invaderCore a invaderCore is not my, and Invader owns it
 
 **`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
 
@@ -3112,10 +3168,13 @@ Click a count to jump to the affected test list.
 - Game object lookup and collections GAME-LOOKUP-001 Game.getObjectById returns null for an unknown id and for undefined or null
 - Game object lookup and collections GAME-STRUCTURES-001 Game.structures holds exactly the player's owned structures keyed by id
 
-**`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
+**`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (9)
 
 - source regeneration SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks
-- source regeneration SOURCE-REGEN-001 source energyCapacity in an owned room equals SOURCE_ENERGY_CAPACITY
+- source regeneration SOURCE-REGEN-001:owned a source in a owned room takes capacity 3000
+- source regeneration SOURCE-REGEN-001:reserved a source in a reserved room takes capacity 3000
+- source regeneration SOURCE-REGEN-001:neutral a source in a neutral room takes capacity 1500
+- source regeneration SOURCE-REGEN-001:keeper a source in a keeper room takes capacity 4000
 - source regeneration SOURCE-REGEN-003 a source below full capacity exposes ticksToRegeneration
 - source regeneration SOURCE-REGEN-004 ticksToRegeneration decreases by 1 each tick
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
@@ -3534,7 +3593,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (20)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (22)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
@@ -3543,7 +3602,9 @@ Click a count to jump to the affected test list.
 - Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
-- RawMemory RAWMEMORY-002 segment limits match canonical constants
+- RawMemory RAWMEMORY-002:activeCount setActiveSegments takes at most MAX_ACTIVE_SEGMENTS ids
+- RawMemory RAWMEMORY-002:segmentId a segment id runs from 0 to MAX_SEGMENT_COUNT - 1
+- RawMemory RAWMEMORY-002:segmentSize a segment holds MAX_SEGMENT_SIZE characters, and one more fails the tick
 - RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
 - RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
 - RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
@@ -3825,7 +3886,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
+xxscreeps has 195 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -3837,7 +3898,6 @@ xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Cap
 | capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
-| capability | `strongholdMetadata` | No longer declared by `AdapterCapabilities`; the next full run drops it | [1](#xxscreeps-skip-capability-strongholdmetadata) |
 
 Click a count to jump to the affected test list.
 
@@ -4166,20 +4226,11 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-strongholdmetadata">
-<summary><code>capability:strongholdMetadata</code> — 1 test across 1 file</summary>
-
-**`tests/00-adapter-contract/inspection.test.ts`** (1)
-
-- adapter contract: inspection special object snapshots invader core snapshot includes deploy and stronghold fields
-
-</details>
-
 
 ## xxscreeps passing tests
 
 <details>
-<summary>2581 tests across 139 files</summary>
+<summary>2636 tests across 142 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4253,7 +4304,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (23)
+**`tests/00-adapter-contract/inspection.test.ts`** (24)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -4272,6 +4323,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection lab snapshot lab mineralType reflects stored mineral after runReaction
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
+- adapter contract: inspection special object snapshots invader core snapshot includes level and deploy timer
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection spawn snapshot spawn snapshot exposes the public spawning name, needTime and remainingTime
@@ -4279,7 +4331,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (73)
+**`tests/00-adapter-contract/setup.test.ts`** (75)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -4288,7 +4340,9 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard sets room ownership and RCL
 - adapter contract: setup createShard owned controller snapshot exposes default downgrade timer and progressTotal
 - adapter contract: setup createShard default room layout is canonical and sparse
-- adapter contract: setup createShard getControllerPos returns null for rooms without a controller
+- adapter contract: setup createShard RoomSpec.controller: false makes a room with no controller
+- adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
+- adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain after first tick either succeeds or throws explicitly
 - adapter contract: setup createShard terrain spec is honored end-to-end (room.getTerrain and PathFinder)
@@ -4355,10 +4409,12 @@ Click a count to jump to the affected test list.
 - adapter contract: setup placeStructure required-field validation placeStructure rejects public object-only types with a placeObject hint
 - adapter contract: setup setTerrain after runPlayer setTerrain after runPlayer throws with an actionable error
 
-**`tests/00-framework/canonical-parity.test.ts`** (2)
+**`tests/00-framework/canonical-parity.test.ts`** (4)
 
 - canonical parity.json vanilla registers every gap with a why
 - canonical parity.json xxscreeps registers every gap with a why
+- canonical parity.json vanilla skips no test: a reference adapter runs the whole suite
+- canonical parity.json xxscreeps skips no test: a reference adapter runs the whole suite
 
 **`tests/00-framework/capability-gates.test.ts`** (2)
 
@@ -4382,6 +4438,24 @@ Click a count to jump to the affected test list.
 - fixture fence a test that times out mid-tick is cut off
 - fixture fence the next test's shard does not advance on its own
 
+**`tests/00-framework/helpers.test.ts`** (11)
+
+- code tag a value JSON would change fails instead of interpolating as something else
+- code tag JSON-safe values and undefined interpolate as literals
+- body a count is a positive integer followed by a part
+- body a count repeats its part; a bare part counts once
+- makeValidationCases an exclusion names two of its conditions in declaration order
+- makeValidationCases two conditions with one label fail
+- makeValidationCases every shipped matrix loads
+- gclPoints every level reads back, at its threshold and just below the next
+- gclPoints progress counts whole points past the rounded-up threshold
+- gclPoints a level or progress no point total reads back as fails
+- constants every constant has a value: a name @screeps/common lacks re-exports as undefined
+
+**`tests/00-framework/matrices.test.ts`** (1)
+
+- matrices a case list runs in the test of the row it enumerates
+
 **`tests/00-framework/parity-reporter.test.ts`** (20)
 
 - parity reporter a full run counts a registration no test ran as orphaned
@@ -4404,6 +4478,14 @@ Click a count to jump to the affected test list.
 - JSON reports a report gets the verdict the reporter gives the same results live
 - JSON reports framework and contract sections need no catalog ids
 - JSON reports a report is judged by the overlay merged onto its base
+
+**`tests/00-framework/parity-skips.test.ts`** (5)
+
+- parity.json skips a skip needs a why and catalog test ids
+- parity.json skips a test id is skipped or registered as a gap, not both
+- parity.json skips an overlay keeps the skips its base registers
+- parity.json skips a skipped test counts under its own id or, registered bare, its row
+- parity.json skips a full run counts a skip that names no test as orphaned
 
 **`tests/00-framework/test-claims.test.ts`** (5)
 
@@ -5240,7 +5322,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:rangeBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeCooldown attackController() validation returns the canonical code
 
-**`tests/06-controller/6.10-structlimit.test.ts`** (18)
+**`tests/06-controller/6.10-structlimit.test.ts`** (42)
 
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:extension extension reports isActive() === true at required RCL
@@ -5259,7 +5341,31 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === false below required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:observer observer reports isActive() === true at required RCL
 - CTRL-STRUCTLIMIT-002: isActive by RCL CTRL-STRUCTLIMIT-002:spawn spawn reports isActive() === true at RCL 1
-- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl1 1 of 2 spawns are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl7 2 of 3 spawns are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:spawnRcl8 3 of 4 spawns are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl1 0 of 1 extensions are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl2 5 of 6 extensions are active at RCL 2
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl3 10 of 11 extensions are active at RCL 3
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl4 20 of 21 extensions are active at RCL 4
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl5 30 of 31 extensions are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl6 40 of 41 extensions are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl7 50 of 51 extensions are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:extensionRcl8 60 of 61 extensions are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl1 0 of 1 links are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl5 2 of 3 links are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl6 3 of 4 links are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl7 4 of 5 links are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:linkRcl8 6 of 7 links are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl1 0 of 1 towers are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl3 1 of 2 towers are active at RCL 3
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl5 2 of 3 towers are active at RCL 5
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl7 3 of 4 towers are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:towerRcl8 6 of 7 towers are active at RCL 8
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl1 0 of 1 labs are active at RCL 1
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl6 3 of 4 labs are active at RCL 6
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl7 6 of 7 labs are active at RCL 7
+- CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl8 10 of 11 labs are active at RCL 8
 
 **`tests/06-controller/6.4-upgrade.test.ts`** (48)
 
@@ -6344,12 +6450,15 @@ Click a count to jump to the affected test list.
 - StructureWall WALL-001 ordinary constructed walls do not decay
 - StructureWall WALL-002 constructed wall has hitsMax = WALL_HITS_MAX when RCL allows walls
 
-**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (6)
+**`tests/13-structures-infrastructure/13.1-13.2-road.test.ts`** (9)
 
 - StructureRoad ROAD-HITS-001:plain road built on plain initializes with ROAD_HITS × 1
 - StructureRoad ROAD-HITS-001:swamp road built on swamp initializes with ROAD_HITS × 5
 - StructureRoad ROAD-HITS-001:wall road built on wall initializes with ROAD_HITS × 150
-- StructureRoad ROAD-WEAR-001 moving onto a road advances nextDecayTime by ROAD_WEAROUT * body.length
+- StructureRoad ROAD-WEAR-001:creepBody1 a creepBody1 moving onto a road advances its decay by 1
+- StructureRoad ROAD-WEAR-001:creepBody5 a creepBody5 moving onto a road advances its decay by 5
+- StructureRoad ROAD-WEAR-001:creepBody50 a creepBody50 moving onto a road advances its decay by 50
+- StructureRoad ROAD-WEAR-001:powerCreep a powerCreep moving onto a road advances its decay by 100
 - StructureRoad ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road
 - StructureRoad ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road
 
@@ -6442,7 +6551,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (9)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (11)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
@@ -6452,7 +6561,9 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
 - Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
-- NPC ownership NPC-OWNERSHIP-001 NPC structures expose correct my and owner properties
+- NPC ownership NPC-OWNERSHIP-001:keeperLair a keeperLair is not my, and Source Keeper owns it
+- NPC ownership NPC-OWNERSHIP-001:powerBank a powerBank is not my, and Power Bank owns it
+- NPC ownership NPC-OWNERSHIP-001:invaderCore a invaderCore is not my, and Invader owns it
 
 **`tests/14-structures-npc/14.3-power-bank.test.ts`** (2)
 
@@ -6657,10 +6768,13 @@ Click a count to jump to the affected test list.
 - Game object lookup and collections GAME-LOOKUP-001 Game.getObjectById returns null for an unknown id and for undefined or null
 - Game object lookup and collections GAME-STRUCTURES-001 Game.structures holds exactly the player's owned structures keyed by id
 
-**`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (6)
+**`tests/17-source-mineral-deposit/17.1-source-regen.test.ts`** (9)
 
 - source regeneration SOURCE-REGEN-002 depleted source regenerates to full capacity after ENERGY_REGEN_TIME ticks
-- source regeneration SOURCE-REGEN-001 source energyCapacity in an owned room equals SOURCE_ENERGY_CAPACITY
+- source regeneration SOURCE-REGEN-001:owned a source in a owned room takes capacity 3000
+- source regeneration SOURCE-REGEN-001:reserved a source in a reserved room takes capacity 3000
+- source regeneration SOURCE-REGEN-001:neutral a source in a neutral room takes capacity 1500
+- source regeneration SOURCE-REGEN-001:keeper a source in a keeper room takes capacity 4000
 - source regeneration SOURCE-REGEN-003 a source below full capacity exposes ticksToRegeneration
 - source regeneration SOURCE-REGEN-004 ticksToRegeneration decreases by 1 each tick
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
@@ -6954,7 +7068,7 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (20)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (21)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
@@ -6963,7 +7077,8 @@ Click a count to jump to the affected test list.
 - Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
-- RawMemory RAWMEMORY-002 segment limits match canonical constants
+- RawMemory RAWMEMORY-002:activeCount setActiveSegments takes at most MAX_ACTIVE_SEGMENTS ids
+- RawMemory RAWMEMORY-002:segmentId a segment id runs from 0 to MAX_SEGMENT_COUNT - 1
 - RawMemory RAWMEMORY-003 setActiveSegments makes those segments active on the next tick
 - RawMemory RAWMEMORY-004 RawMemory.segments[id] exposes content of active segments
 - RawMemory RAWMEMORY-005 writing to segments[id] persists the new content to the next tick
