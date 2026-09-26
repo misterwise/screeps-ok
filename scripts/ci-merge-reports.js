@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, append
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { suitePath } from './lib/catalog-id.js';
 import { judgeReport, loadParity, verdictIsClean } from './lib/parity.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -113,7 +114,7 @@ function renderTable(rows) {
 	lines.push('🟢 fully passing · 🟡 failures are all registered parity gaps · 🔴 unexpected failures or passes, orphaned registrations, or tests without an id');
 	for (const { adapter, summary: s } of rows) {
 		for (const e of s.fileErrors) {
-			lines.push('', `**${adapter}** \`${path.relative(packageRoot, e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
+			lines.push('', `**${adapter}** \`${suitePath(e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
 		}
 		for (const t of s.untagged) {
 			lines.push('', `**${adapter}** \`${t.fullName}\` carries no single catalog id`);

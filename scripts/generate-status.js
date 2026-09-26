@@ -19,6 +19,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { capabilityDescriptions } from './lib/capabilities.js';
+import { suitePath } from './lib/catalog-id.js';
 import { judgeReport, loadParity } from './lib/parity.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -74,16 +75,10 @@ function summarizeReport(report, parity) {
 	};
 }
 
-function relativeFile(abs) {
-	if (!abs) return '';
-	const prefix = packageRoot + path.sep;
-	return abs.startsWith(prefix) ? abs.slice(prefix.length) : abs;
-}
-
 function groupTestsByFile(tests) {
 	const byFile = new Map();
 	for (const t of tests) {
-		const file = relativeFile(t.file);
+		const file = suitePath(t.file);
 		if (!byFile.has(file)) byFile.set(file, []);
 		byFile.get(file).push(t);
 	}
@@ -448,7 +443,7 @@ function render(summaries) {
 			lines.push(`- \`${t.fullName}\``);
 		}
 		for (const e of s.fileErrors) {
-			lines.push(`- \`${relativeFile(e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
+			lines.push(`- \`${suitePath(e.file)}\` failed outside its tests: ${e.message.split('\n')[0]}`);
 		}
 		for (const o of s.orphans) {
 			lines.push(`- \`${o.gapId}\` registers \`${o.id}\`, which no test passed or failed`);

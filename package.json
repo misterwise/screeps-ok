@@ -50,6 +50,7 @@
     "status:refresh": "node scripts/generate-status.js && node scripts/generate-coverage.js",
     "build": "tsc",
     "lint": "tsc --noEmit",
+    "check": "node scripts/check.js",
     "validate:capabilities": "node scripts/validate-capabilities.js",
     "validate:package": "node scripts/validate-package.js"
   },

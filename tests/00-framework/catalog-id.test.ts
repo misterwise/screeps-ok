@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import { testCatalogId } from '../../scripts/lib/catalog-id.js';
+import { suitePath, testCatalogId } from '../../scripts/lib/catalog-id.js';
 import { parseCatalog } from '../../scripts/lib/parse-catalog.js';
 
 const dirs: string[] = [];
@@ -35,5 +35,13 @@ describe('catalog ids', () => {
 		expect(testCatalogId('GAP-001:not-owner returns ERR_NOT_OWNER')).toBeNull();
 		expect(testCatalogId('GAP-001:ghodium_melt produces')).toBeNull();
 		expect(testCatalogId('GAP-001:2x reads')).toBeNull();
+	});
+
+	test('a report\'s test file reads from its suite root wherever the run was', () => {
+		expect(suitePath('/home/runner/work/screeps-ok/screeps-ok/tests/01-movement/1.1-move.test.ts'))
+			.toBe('tests/01-movement/1.1-move.test.ts');
+		expect(suitePath('/work/tests/consumer/node_modules/screeps-ok/tests/00-framework/a.test.ts'))
+			.toBe('tests/00-framework/a.test.ts');
+		expect(suitePath('C:\\ci\\screeps-ok\\tests-xxscreeps\\scratch.test.ts')).toBe('tests-xxscreeps/scratch.test.ts');
 	});
 });

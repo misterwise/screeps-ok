@@ -24,6 +24,13 @@ export function isCatalogTestFile(file) {
 	return /[\\/]tests[\\/](?!00-)[0-9]{2}-[^\\/]+[\\/]/.test(file);
 }
 
+// A test file's path from its suite root (`tests/…`), wherever the run's checkout or install was.
+export function suitePath(file) {
+	const parts = file.split(/[\\/]/);
+	const at = parts.findLastIndex(part => /^tests(?:-\w+)?$/.test(part));
+	return at === -1 ? file : parts.slice(at).join('/');
+}
+
 export function baseCatalogId(id) {
 	return id.split(':')[0];
 }

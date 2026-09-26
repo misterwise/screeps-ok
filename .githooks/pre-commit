@@ -1,60 +1,63 @@
 #!/usr/bin/env bash
-# Regenerate the status dashboard, README badges, and coverage report from
-# the current repo state, then fail the commit if any of those files drifted
-# from what was staged. Keeps published artifacts honest without running the
-# multi-minute parity suite.
+# Run scripts/check.js on the tree being committed: a copy of the index, so
+# unstaged edits neither fail a commit nor leak into it. Generated files the
+# checks rewrite are staged from that copy, and mirrored into the working tree
+# where it has no unstaged edits of its own.
 
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+# `commit -a` and `commit <paths>` stage into a temporary index; follow it.
+if [[ -n "${GIT_INDEX_FILE:-}" && "$GIT_INDEX_FILE" != /* ]]; then
+	export GIT_INDEX_FILE="$repo_root/$GIT_INDEX_FILE"
+fi
 
-# Lint first — fast and catches type regressions before they ship.
-if ! npx tsc --noEmit; then
-	echo "pre-commit: lint failed — fix type errors and retry." >&2
+snapshot="$(mktemp -d)"
+trap 'rm -rf "$snapshot"' EXIT
+git checkout-index --all --prefix="$snapshot/"
+ln -s "$repo_root/node_modules" "$snapshot/node_modules"
+if [[ -d reports ]]; then
+	ln -s "$repo_root/reports" "$snapshot/reports"
+fi
+
+if ! (cd "$snapshot" && node scripts/check.js); then
+	echo "pre-commit: checks failed on the staged tree (unstaged edits aren't checked)." >&2
 	exit 1
 fi
 
-# Every test of a capability-tagged catalog row must requires() that capability.
-if ! node scripts/validate-capabilities.js >/dev/null; then
-	echo "pre-commit: capability gates missing — see above." >&2
+in_snapshot() { git --work-tree="$snapshot" "$@"; }
+generated=(README.md docs/status.md docs/coverage.html starter parity)
+
+stray=()
+while IFS= read -r f; do
+	case "$f" in
+		README.md | docs/status.md | docs/coverage.html | starter/* | parity/*) ;;
+		*) stray+=("$f") ;;
+	esac
+done < <(in_snapshot diff --name-only)
+if (( ${#stray[@]} > 0 )); then
+	echo "pre-commit: scripts/check.js modified files it doesn't generate:" >&2
+	printf '  %s\n' "${stray[@]}" >&2
 	exit 1
-fi
-
-# Drift trap: xxscreeps engine-internals access must go through the helper
-# module (adapters/xxscreeps/engine-internals.ts). See
-# docs/xxscreeps-engine-internals-policy.md. Exception: `#flushObjects` in
-# the inlined createSimulation fork.
-drift=$(grep -nE "['\"]#[a-zA-Z_]" \
-	adapters/xxscreeps/index.ts adapters/xxscreeps/snapshots.ts \
-	| grep -v '#flushObjects' || true)
-if [[ -n "$drift" ]]; then
-	echo "pre-commit: xxscreeps engine-internals drift — direct \`#\` access outside engine-internals.ts:" >&2
-	echo "$drift" >&2
-	echo "See docs/xxscreeps-engine-internals-policy.md." >&2
-	exit 1
-fi
-
-# Coverage derives from behaviors.md + tests/, so it can always regenerate.
-node scripts/generate-coverage.js >/dev/null
-
-# Status + README badges derive from reports/*.json — only run if at least
-# one report is present (skips cleanly on a fresh clone).
-if [[ -f reports/vanilla.json || -f reports/xxscreeps.json ]]; then
-	node scripts/generate-status.js >/dev/null
 fi
 
 changed=()
-for f in README.md docs/status.md docs/coverage.html; do
-	if ! git diff --quiet -- "$f"; then
-		changed+=("$f")
+while IFS= read -r f; do
+	changed+=("$f")
+done < <({ in_snapshot diff --name-only -- "${generated[@]}"; in_snapshot ls-files --others -- "${generated[@]}"; })
+(( ${#changed[@]} > 0 )) || exit 0
+
+# Where the working copy matches the index, it takes the regenerated file too.
+mirror=()
+for f in "${changed[@]}"; do
+	if [[ ! -e "$f" ]] || git diff --quiet -- "$f"; then
+		mirror+=("$f")
 	fi
 done
-
-if (( ${#changed[@]} > 0 )); then
-	echo "pre-commit: generated artifacts regenerated — stage and retry:" >&2
-	for f in "${changed[@]}"; do
-		echo "  git add $f" >&2
-	done
-	exit 1
-fi
+in_snapshot add -- "${changed[@]}"
+for f in "${mirror[@]}"; do
+	mkdir -p "$(dirname "$f")"
+	cp "$snapshot/$f" "$f"
+done
+echo "pre-commit: staged regenerated ${changed[*]}"
