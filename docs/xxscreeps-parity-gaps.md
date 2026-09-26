@@ -107,7 +107,14 @@ Last refreshed: 2026-09-25 against pin `4795a332`.
 - Tests: CTRL-RESERVE-010
 - Status: CONFIRMED at pin `e9380f4d` (2026-09-12); still failing at pin `4795a332`, which consumed [xxscreeps#388](https://github.com/laverdet/xxscreeps/pull/388)'s renewal-credit fix in the same branch. Found while landing screeps-ok PR #8: `CTRL-RESERVE-005`'s `(MAX - 50, MAX]` tolerance admitted both behaviors, so the cap had never been pinned.
 - Cause: xxscreeps applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)` (`mods/classic/controller/processor.ts`), so an overshooting renewal still succeeds, pins `endTime` to the ceiling, and logs the action and event. Vanilla (`processor/intents/creeps/reserveController.js:39-41`) returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX` — no update, no actionLog, no event — so the timer decays that tick. Player-visible: under a two-CLAIM renewer at saturation vanilla reads `4999, 4998, 4999, …` and never 5000; xxscreeps reads a flat `5000`.
-- Plan: replace the `Math.min` clamp with vanilla's overshoot check (drop the intent when `endTime + power > Game.time + CONTROLLER_RESERVE_MAX`), in the same processor branch xxscreeps#388 touched. Unblocked now that #388 has merged.
+- Plan: replace the `Math.min` clamp with an early return when the new `endTime >= Game.time + CONTROLLER_RESERVE_MAX`. The processor's `Game.time` is one ahead of vanilla's `gameTime`, so transcribing vanilla's `>` literally would admit one overshooting renewal. The row also depends on `reserve-fresh-reservation-one-tick-long` below: with only the cap fixed, the two 50-CLAIM saturators stall near 4950 and the readings top out around 4955. Built together with that fix on xxscreeps branch `fix/reserve-cap-overshoot`, not yet submitted.
+
+### reserve-fresh-reservation-one-tick-long
+
+- Tests: CTRL-RESERVE-011
+- Status: CONFIRMED 2026-09-25 at pin `4795a332`; found while fixing the cap gap above.
+- Cause: `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, transcribing vanilla's `gameTime + 1` base literally. The processor's `Game.time` already reads one tick past vanilla's `gameTime` (same convention as `controller-timer-anchors-one-tick-late`), so an N-CLAIM reservation reads `ticksToEnd` of N + 1 on the next tick and expires a tick late. Vanilla (`processor/intents/creeps/reserveController.js:31-45`) reads exactly N. CTRL-RESERVE-001 and -006 only asserted a positive reading, so nothing pinned it.
+- Plan: start a fresh reservation at `Game.time + power`. Built together with the cap fix above.
 
 ### power-bank-ruin-spills-one-tick-late
 

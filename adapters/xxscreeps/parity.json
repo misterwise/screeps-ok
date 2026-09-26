@@ -3,8 +3,14 @@
 		"reserve-cap-clamps-instead-of-rejecting": {
 			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick.",
 			"expected": "Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer.",
-			"why": "Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix.",
+			"why": "Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix. The row's saturation phase also depends on `reserve-fresh-reservation-one-tick-long`: with only the cap fixed, the 50-CLAIM saturators stall near 4950 and the row still fails, so it flips only when both are fixed.",
 			"tests": ["CTRL-RESERVE-010"]
+		},
+		"reserve-fresh-reservation-one-tick-long": {
+			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, but `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so an N-CLAIM reservation reads `ticksToEnd` of N + 1 on the next tick and expires a tick late.",
+			"expected": "Vanilla `processor/intents/creeps/reserveController.js:31-45` starts a fresh reservation at `gameTime + 1` and then adds `effect`, so the next tick reads exactly `N * CONTROLLER_RESERVE`.",
+			"why": "Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`.",
+			"tests": ["CTRL-RESERVE-011"]
 		},
 		"controller-my-reset-returns-undefined": {
 			"intentional": true,

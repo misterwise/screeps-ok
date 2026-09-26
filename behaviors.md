@@ -1000,7 +1000,8 @@ Coverage Notes
 - `CTRL-RESERVE-001` `behavior` `verified_vanilla`
   `reserveController()` on an unreserved controller returns `OK` and, on the
   next tick, exposes a `reservation` owned by the caller with a positive
-  `ticksToEnd`. (The per-CLAIM credit arithmetic is `CTRL-RESERVE-009`.)
+  `ticksToEnd`. (The fresh reservation's exact length is `CTRL-RESERVE-011`;
+  the per-CLAIM renewal arithmetic is `CTRL-RESERVE-009`.)
 - `CTRL-RESERVE-002` `behavior` `verified_vanilla`
   `reserveController()` requires at least one CLAIM body part.
 - `CTRL-RESERVE-003` `behavior` `verified_vanilla`
@@ -1041,6 +1042,13 @@ Coverage Notes
   a renewer crediting more than 1 per tick cannot hold the timer flat at the
   ceiling — it sawtooths (`4999, 4998, 4999, …` for two CLAIM parts). (Engine
   `processor/intents/creeps/reserveController.js:39-41`.)
+- `CTRL-RESERVE-011` `behavior` `verified_vanilla`
+  A fresh reservation lasts exactly its CLAIM credit: `reserveController()` on
+  an unreserved controller by a creep with N CLAIM parts reads `ticksToEnd` of
+  `N * CONTROLLER_RESERVE` on the next tick, not one more. (Engine
+  `processor/intents/creeps/reserveController.js:31-45` starts the reservation
+  at `gameTime + 1` and then adds `effect`; `game/structures.js:178` reads
+  `ticksToEnd` as `endTime - gameTime`.)
 
 ### 6.3 Attack Controller
 - `CTRL-ATTACK-001` `behavior` `verified_vanilla`

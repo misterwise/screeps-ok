@@ -703,6 +703,40 @@ describe('controller mechanics', () => {
 		expect(drops.length).toBeGreaterThan(0);
 	}, 60_000);
 
+	test('CTRL-RESERVE-011 a fresh reservation reads exactly its CLAIM credit as ticksToEnd', async ({ shard }) => {
+		// Engine reserveController.js:31-45 starts a fresh reservation at
+		// `gameTime + 1` and then adds `effect`, and ticksToEnd reads
+		// `endTime - gameTime`, so the tick after reserving shows the credit.
+		// Three CLAIM parts keep the reading clear of the one-tick expiry edge.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1' },
+			],
+		});
+		const ctrlPos = await shard.getControllerPos('W2N1');
+		const claimParts = 3;
+		const creepId = await shard.placeCreep('W2N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: Array.from({ length: claimParts }, () => CLAIM),
+		});
+		await shard.tick();
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).reserveController(
+				Game.rooms['W2N1'].controller
+			)
+		`);
+		expect(rc).toBe(OK);
+
+		const ticksToEnd = await shard.runPlayer('p1', code`
+			Game.rooms['W2N1'].controller.reservation.ticksToEnd
+		`);
+		expect(ticksToEnd).toBe(claimParts * CONTROLLER_RESERVE);
+	});
+
 	for (const row of ctrlReserveValidationCases) {
 		test(`CTRL-RESERVE-008:${row.label} reserveController() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
