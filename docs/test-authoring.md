@@ -125,9 +125,10 @@ against the effect (see the scope rule in the `behaviors.md` Summary).
 
 ### 2. Never let the engine grade itself
 
-Expected values come from the checked-in canonical constants in
-`src/constants.ts` and the matrix definitions under `src/matrices/`, never from
-the engine under test.
+Expected values come from the constants `src/index.ts` exports and the case
+lists under `src/matrices/`, never from the engine under test. The constants
+are `@screeps/common`'s, the package both reference engines build on, plus a
+few it lacks that `src/constants.ts` writes out with their engine source.
 
 ```typescript
 // Bad: asks the engine under test for the expected value.
@@ -139,8 +140,7 @@ expect(creep.store.energy).toBe(HARVEST_POWER); // imported from src/index.ts
 ```
 
 The same applies to tables and formulas: do not read them from the engine at
-runtime, and do not treat a dependency bundled with one implementation as the
-source of truth for another.
+runtime.
 
 ### 3. One behavior, one reason to fail
 
@@ -169,9 +169,17 @@ Good:
 Avoid:
 
 - "works correctly" or "changed as expected"
-- console output inspection
+- console output as a stand-in for state, unless the console output is the
+  behavior (a deprecation notice, say)
 - manual spot-checking of logs or snapshots
 - filtering or branching on adapter discriminators like `kind`
+
+A loose assertion (`toBeGreaterThan`, `not.toBe(OK)`, `toBeDefined`) is
+allowed only as a guard before an exact one, for a value that is genuinely
+nondeterministic (wall clock, a random roll with no `randomInjection`), or
+when presence is the whole of what the entry claims. Anything else tightens
+to the value the constants derive, even when that surfaces a gap on one
+engine; register the gap rather than loosen the assertion.
 
 If the public contract includes both a return code and a resulting world state,
 assert both unless the catalog entry deliberately scopes to one. Examples:
@@ -256,6 +264,11 @@ these is missing:
 - the behavior should remain a note instead of a catalog entry
 
 Do not patch around that with a vague or inspection-based test.
+
+When the setup the contract offers can't reach a branch the entry's canonical
+source has, extend the contract (a new spec field, say) rather than scope the
+entry down to what setup reaches. Narrow an entry only where vanilla itself
+doesn't do what it claims.
 
 ## Matrix families
 
