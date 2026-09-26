@@ -342,7 +342,6 @@ export function snapshotStructure(
 				structureType: 'observer',
 				hits: obj.hits ?? 500,
 				hitsMax: obj.hitsMax ?? 500,
-				cooldown: snapCooldown(obj, gameTime),
 			} satisfies ObserverSnapshot;
 
 		case 'keeperLair':

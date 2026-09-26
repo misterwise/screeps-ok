@@ -281,7 +281,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	private shardSpec: ShardSpec | null = null;
 	private idCounter = 0;
 	private firstTickRun = false;
-	private snapshotCooldownUntil = new Map<string, number>();
 
 	private nextId(): string {
 		return (++this.idCounter).toString(16).padStart(24, '0');
@@ -295,12 +294,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	resolvePlayerReverse(userId: string): string {
 		return this.reversePlayerMap.get(userId) ?? userId;
-	}
-
-	resolveSnapshotCooldown(id: string): number | undefined {
-		const until = this.snapshotCooldownUntil.get(id);
-		if (until === undefined || !this.simulation) return undefined;
-		return Math.max(0, until - this.simulation.shard.time);
 	}
 
 	private pokeQueue: Array<{ room: string; fn: (room: any) => void }> = [];
@@ -370,7 +363,6 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 	async createShard(spec: ShardSpec): Promise<void> {
 		this.shardSpec = spec;
 		this.rooms = spec.rooms.map(r => r.name);
-		this.snapshotCooldownUntil.clear();
 
 		for (const [handle, engineId] of Object.entries(NPC_HANDLES)) {
 			this.playerMap.set(handle, engineId);
@@ -513,18 +505,14 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				}
 			}
 			if (spec.cooldown !== undefined) {
-				// Most cooldown-bearing mods (link/lab/extractor/factory) store it
-				// in #cooldownTime. Observer is the exception: no schema field, so
-				// the snapshot path reads the side-table via resolveSnapshotCooldown.
 				const cooldownStored = setStructureCooldownRemaining(
 					structure, this.simulation!.shard.time, spec.cooldown,
 				);
-				if (!cooldownStored && spec.structureType !== 'observer') {
+				if (!cooldownStored) {
 					throw new Error(
-						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build (mod likely not loaded).`,
+						`placeStructure: structureType '${spec.structureType}' has no cooldown field on this xxscreeps build.`,
 					);
 				}
-				this.snapshotCooldownUntil.set(id, this.simulation!.shard.time + spec.cooldown);
 			}
 			// Inserting a controller assigns room.controller to the new one; preserve
 			// the room's primary controller so a fixture controller doesn't replace it.

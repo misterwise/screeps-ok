@@ -2,7 +2,7 @@ import {
 	describe, test, expect, code, WORK, CARRY, MOVE,
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
 	FIND_MINERALS, STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
-	STRUCTURE_LAB, STRUCTURE_OBSERVER, STRUCTURE_KEEPER_LAIR,
+	STRUCTURE_LAB, STRUCTURE_KEEPER_LAIR,
 	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
 	FIND_DEPOSITS, OK, REACTION_TIME,
 	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
@@ -281,24 +281,6 @@ describe('adapter contract: inspection', () => {
 			expect(deposits).toHaveLength(1);
 			expect(deposits[0].id).toBe(id);
 			expect(deposits[0].kind).toBe('deposit');
-		});
-
-		test('observer snapshot includes cooldown', async ({ shard }) => {
-			shard.requires('observer');
-			await shard.ownedRoom('p1', 'W1N1', 8);
-			const id = await shard.placeStructure('W1N1', {
-				pos: [25, 25],
-				structureType: STRUCTURE_OBSERVER,
-				owner: 'p1',
-				cooldown: 12,
-			});
-			await shard.tick();
-
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe(STRUCTURE_OBSERVER);
-			expect(obj.cooldown).toBeGreaterThan(0);
-			expect(obj.cooldown).toBeLessThanOrEqual(12);
 		});
 
 		test('keeper lair snapshot includes ticksToSpawn', async ({ shard }) => {

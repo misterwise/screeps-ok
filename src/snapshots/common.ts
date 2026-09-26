@@ -178,7 +178,6 @@ export interface ObserverSnapshot extends StructureSnapshotBase {
 	structureType: 'observer';
 	hits: number;
 	hitsMax: number;
-	cooldown: number;
 }
 
 export interface KeeperLairSnapshot extends StructureSnapshotBase {

@@ -27,7 +27,6 @@ import {
 // Adapter reference for player handle resolution
 interface PlayerResolver {
 	resolvePlayerReverse(userId: string): string;
-	resolveSnapshotCooldown?(id: string): number | undefined;
 }
 
 function snapPos(obj: any) {
@@ -289,7 +288,6 @@ export function snapshotStructure(obj: any, resolver: PlayerResolver): Structure
 				structureType: 'observer',
 				hits: obj.hits,
 				hitsMax: obj.hitsMax,
-				cooldown: resolver.resolveSnapshotCooldown?.(obj.id) ?? obj.cooldown ?? 0,
 			} satisfies ObserverSnapshot;
 
 		case 'keeperLair':

@@ -573,6 +573,8 @@ const STRUCTURE_TYPES_REQUIRING_OWNER = new Set([
 const STRUCTURE_TYPES_PLACE_OBJECT_ONLY = new Set([
 	'deposit', 'invaderCore', 'keeperLair', 'portal', 'powerBank',
 ]);
+// Structures whose public cooldown getter reads a future `cooldownTime` (engine game/structures.js).
+const COOLDOWN_TIME_STRUCTURES = new Set(['lab', 'terminal', 'nuker', 'factory']);
 const RESULT_PREFIX = '__SCREEPS_OK_RESULT__:';
 const RESULT_TIMEOUT_MS = 1000;
 
@@ -1194,9 +1196,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			// or the seeded value is silently dropped at the runtime getter.
 			if (spec.structureType === 'link' || spec.structureType === 'extractor') {
 				attrs.cooldown = spec.cooldown;
-			} else {
+			} else if (COOLDOWN_TIME_STRUCTURES.has(spec.structureType)) {
 				const gameTime = await currentGameTime();
 				attrs.cooldownTime = gameTime + spec.cooldown;
+			} else {
+				throw new Error(`placeStructure: structureType '${spec.structureType}' has no public cooldown.`);
 			}
 		}
 

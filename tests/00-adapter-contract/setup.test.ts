@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_OBSERVER, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -639,6 +639,21 @@ describe('adapter contract: setup', () => {
 				expect(result).toBe(4);
 			});
 		}
+
+		test('cooldown spec is rejected for a structure with no public cooldown', async ({ shard }) => {
+			shard.requires('observer');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			// An observer has no cooldown, so a seeded one could only be an adapter-side timer.
+			await expect((async () => {
+				await shard.placeStructure('W1N1', {
+					pos: [25, 25],
+					structureType: STRUCTURE_OBSERVER,
+					owner: 'p1',
+					cooldown: 12,
+				});
+				await shard.tick();
+			})()).rejects.toThrow(/cooldown/);
+		});
 
 		test('factory level spec is honored', async ({ shard }) => {
 			shard.requires('factory');
