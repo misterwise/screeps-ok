@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, ERR_BUSY,
+	OK, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, ERR_BUSY, ERR_INVALID_TARGET,
 	ERR_RCL_NOT_ENOUGH,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
@@ -123,8 +123,8 @@ describe('Spawn.renewCreep', () => {
 			const creep = Game.getObjectById(${creepId});
 			spawn.renewCreep(creep)
 		`);
-		// Vanilla rejects CLAIM creeps from renewal.
-		expect(rc).not.toBe(OK);
+		// The CLAIM check sits in the target-validity guard.
+		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
 	test('RENEW-CREEP-003 renewCreep spends the correct energy cost', async ({ shard }) => {

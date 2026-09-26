@@ -471,13 +471,21 @@ describe('Power creep lifecycle', () => {
 			PowerCreep.create('Unspawned', POWER_CLASS.OPERATOR)
 		`);
 
-		// Try to use say() — should fail because unspawned.
-		const rc = await shard.runPlayer('p1', code`
+		// Each method returns before it looks at its arguments.
+		const rcs = await shard.runPlayer('p1', code`
 			const pc = Game.powerCreeps['Unspawned'];
-			pc ? pc.say('hello') : -99
+			const target = Game.rooms['W1N1'].controller;
+			({
+				transfer: pc.transfer(target, RESOURCE_ENERGY),
+				withdraw: pc.withdraw(target, RESOURCE_ENERGY),
+				pickup: pc.pickup(target),
+				drop: pc.drop(RESOURCE_ENERGY),
+				say: pc.say('hello'),
+			})
 		`);
-		// Unspawned power creep actions return ERR_BUSY.
-		expect(rc).not.toBe(OK);
+		expect(rcs).toEqual({
+			transfer: ERR_BUSY, withdraw: ERR_BUSY, pickup: ERR_BUSY, drop: ERR_BUSY, say: ERR_BUSY,
+		});
 	});
 
 	test('POWERCREEP-UPGRADE-001 upgrade increases power level and stats', async ({ shard }) => {
@@ -520,7 +528,7 @@ describe('Power creep lifecycle', () => {
 			const pc = Game.powerCreeps['UpgradeTest'];
 			pc ? pc.upgrade(9999) : -99
 		`);
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
 	test('POWERCREEP-MOVE-002 power creep move onto a road triggers road wear', async ({ shard }) => {

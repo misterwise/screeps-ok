@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-9%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-11%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2711](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 03:43 UTC |
-| 🔴 | **xxscreeps** | [2533](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
+| 🔴 | **xxscreeps** | [2531](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -33,8 +33,10 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `CostMatrix COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255`
 - `creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room`
 - `Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected`
+- `Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part`
 - `creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART`
 - `creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources`
+- `Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active`
 - `Deposit lifecycle DEPOSIT-004 deposit ticksToDecay is defined after first harvest`
 - `Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store`
 - `Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL`
@@ -122,7 +124,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 33 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 28 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 34 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 29 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -158,6 +160,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | 0 |
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | 0 |
 | `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | 0 |
+| `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -371,6 +374,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-controller-downgrade-step-one-tick-short">
 <summary><code>controller-downgrade-step-one-tick-short</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-renew-claim-creep-returns-no-bodypart">
+<summary><code>renew-claim-creep-returns-no-bodypart</code> — 0 tests</summary>
 
 
 </details>
@@ -3902,7 +3911,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2533 tests across 134 files</summary>
+<summary>2531 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5516,14 +5525,13 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (34)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (33)
 
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns OK and increases creep TTL
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep deducts energy from the spawn
 - Spawn.renewCreep RENEW-CREEP-008 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy
 - Spawn.renewCreep RENEW-CREEP-001 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - Spawn.renewCreep RENEW-CREEP-010 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME
-- Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part
 - Spawn.renewCreep RENEW-CREEP-003 renewCreep spends the correct energy cost
 - Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep
 - Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
@@ -5864,7 +5872,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeFull reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFull reverseReaction() validation returns the canonical code
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (109)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (108)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -5891,7 +5899,6 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
 - Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
 - Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
-- Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
 - Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
 - Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
 - Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity

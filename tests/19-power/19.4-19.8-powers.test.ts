@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_INVALID_ARGS,
+	OK, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	POWER_INFO, POWER_CREEP_LIFE_TIME,
 	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, PWR_OPERATE_LAB, PWR_OPERATE_OBSERVER,
 	PWR_OPERATE_FACTORY, PWR_OPERATE_TERMINAL, PWR_OPERATE_SPAWN, PWR_OPERATE_POWER,
@@ -570,8 +570,7 @@ describe('Power creep renew', () => {
 			const ps = Game.getObjectById(${psId});
 			pc.renew(ps)
 		`);
-		// Should fail — out of range.
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
 	test('POWERCREEP-SPAWN-002 spawn fails for invalid target or conditions', async ({ shard }) => {
@@ -593,7 +592,7 @@ describe('Power creep renew', () => {
 			const pc = Game.powerCreeps['SpawnFail'];
 			pc ? pc.spawn(null) : -99
 		`);
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
 	test('POWERCREEP-DEATH-001 power creep death creates a tombstone', async ({ shard }) => {

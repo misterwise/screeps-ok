@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_BUSY,
 	MOVE, ATTACK, RANGED_ATTACK, WORK, HEAL, CLAIM, CARRY,
 	STRUCTURE_RAMPART, STRUCTURE_CONTAINER,
-	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
+	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, CONTROLLER_DOWNGRADE, SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
 	limitationGated,
 } from '../../src/index.js';
 import { safeModeBlockedActionCases } from '../../src/matrices/ctrl-safemode-blocked.js';
@@ -164,8 +164,6 @@ describe('Safe mode mechanics', () => {
 
 	// ---- CTRL-SAFEMODE-005: downgrade timer below threshold ----
 	downgradeTest('CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD', async ({ shard }) => {
-		// Use RCL 4 where CONTROLLER_DOWNGRADE[4]/2 - threshold = 15000.
-		// ticksToDowngrade=100 is well below 15000 so ERR_TIRED is expected.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 4, owner: 'p1', safeModeAvailable: 1, ticksToDowngrade: 100 }],
@@ -177,10 +175,10 @@ describe('Safe mode mechanics', () => {
 			({ rc: ctrl.activateSafeMode(), ttd: ctrl.ticksToDowngrade })
 		`) as { rc: number; ttd: number };
 
-		// Verify the downgrade timer is actually below the threshold.
-		expect(result.ttd).toBeLessThan(CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD);
-		// activateSafeMode must not return OK.
-		expect(result.rc).not.toBe(OK);
+		// Seeded 100; well under CONTROLLER_DOWNGRADE[4] / 2 - threshold.
+		expect(result.ttd).toBe(99);
+		expect(result.ttd).toBeLessThan(CONTROLLER_DOWNGRADE[4] / 2 - CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD);
+		expect(result.rc).toBe(ERR_TIRED);
 
 		// Confirm safe mode did not activate after the tick processes.
 		await shard.tick();

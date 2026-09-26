@@ -1219,8 +1219,9 @@ Coverage Notes
   `activateSafeMode()` returns ERR_TIRED when the controller's safe mode
   cooldown is active.
 - `CTRL-SAFEMODE-005` `behavior` `verified_vanilla`
-  `activateSafeMode()` fails and does not activate when the controller's
-  downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD.
+  `activateSafeMode()` returns `ERR_TIRED` and does not activate when
+  `ticksToDowngrade < CONTROLLER_DOWNGRADE[level] / 2 -
+  CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`.
 - `CTRL-SAFEMODE-006` `matrix` `verified_vanilla`
   Hostile creep intents in a foreign safe-moded room short-circuit at the
   Creep prototype guard with a method-specific return code, across

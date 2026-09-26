@@ -136,19 +136,20 @@ describe('Factory production', () => {
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
 		});
 
-		// composite is level 1: needs utrium_bar(20), zynthium_bar(20), energy(20)
+		// composite is level 1: needs utrium_bar(20), zynthium_bar(20), energy(20).
+		// The factory's level must match, or the level check returns
+		// ERR_INVALID_TARGET before the effect check is reached.
 		const factoryId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
 			store: { utrium_bar: 20, zynthium_bar: 20, energy: 20 },
+			level: 1,
 		});
 		await shard.tick();
 
-		// Attempt to produce a level 1 commodity without PWR_OPERATE_FACTORY.
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${factoryId}).produce(RESOURCE_COMPOSITE)
 		`);
-		// Should fail — no power effect active.
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(ERR_BUSY);
 	});
 
 	// ---- FACTORY-PRODUCE-006: ERR_TIRED while on cooldown ----
@@ -229,17 +230,8 @@ describe('Factory production', () => {
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
 		});
 
-		// Place a factory with level 0 (default).
-		// Try to produce 'device' which requires level 5.
-		// Even if we had PWR_OPERATE_FACTORY at level 1, factory.level=0 would mismatch.
-		// The engine checks factory.level first — if the commodity has a level requirement
-		// and the factory's intrinsic level doesn't match, it returns ERR_INVALID_TARGET.
-		// However, factory.level is set at construction and can't be changed.
-		// A level 0 factory with PWR_OPERATE_FACTORY level 1 produces level 1 commodities.
-		// Without PWR_OPERATE_FACTORY, attempting a leveled commodity hits ERR_BUSY (005) first.
-		// This test verifies a different scenario: factory has a set level but commodity
-		// requires a different one. Since we can't easily set factory.level without
-		// PWR_OPERATE_FACTORY, verify the error for a leveled commodity on a level 0 factory.
+		// A level-0 factory producing 'device' (level 5): the level check runs
+		// before the RCL, effect, and component checks.
 		const factoryId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
 			store: { circuit: 1, microchip: 3, crystal: 110, ghodium_melt: 150, energy: 64 },
@@ -249,8 +241,7 @@ describe('Factory production', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${factoryId}).produce(RESOURCE_DEVICE)
 		`);
-		// Without power effect, a leveled commodity should not return OK.
-		expect(rc).not.toBe(OK);
+		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
 	// ---- FACTORY-PRODUCE-010: ERR_NOT_OWNER for unowned factory ----
