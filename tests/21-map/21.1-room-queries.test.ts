@@ -186,38 +186,33 @@ describe('Game.map room queries', () => {
 
 	test('MAP-ROOM-005 getWorldSize equals the inclusive room-coordinate span', async ({ shard }) => {
 		shard.requires('liveWorldSize');
-		await shard.ownedRoom('p1');
+		// Straddles the origin on both axes, as generated worlds do: vanilla's
+		// calcWorldSize measures a W/N-only world out to E0/S0.
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'E1S1' }],
+		});
 
 		const result = await shard.runPlayer('p1', code`
-			// BFS the map graph from the owned room, then assert getWorldSize
-			// equals the inclusive rx/ry span. Off-by-one in width/height
-			// arithmetic surfaces as size === span - 1.
-			const visited = new Set();
-			const queue = ['W1N1'];
-			while (queue.length) {
-				const name = queue.shift();
-				if (visited.has(name)) continue;
-				visited.add(name);
-				const exits = Game.map.describeExits(name);
-				if (exits) for (const k in exits) queue.push(exits[k]);
-			}
-			const xs = [], ys = [];
-			for (const name of visited) {
-				const match = /^([WE])(\\d+)([NS])(\\d+)$/.exec(name);
-				if (!match) continue;
-				const [, h, x, v, y] = match;
-				xs.push(h === 'W' ? -1 - +x : +x);
-				ys.push(v === 'N' ? -1 - +y : +y);
+			// describeExits is null for a room the world lacks.
+			const rooms = [], xs = [], ys = [];
+			for (let x = -30; x < 30; x++) {
+				for (let y = -30; y < 30; y++) {
+					const name = (x < 0 ? 'W' + (-x - 1) : 'E' + x) + (y < 0 ? 'N' + (-y - 1) : 'S' + y);
+					if (Game.map.describeExits(name) === null) continue;
+					rooms.push(name);
+					xs.push(x);
+					ys.push(y);
+				}
 			}
 			({
+				rooms,
 				size: Game.map.getWorldSize(),
-				span: Math.max(
-					Math.max(...xs) - Math.min(...xs) + 1,
-					Math.max(...ys) - Math.min(...ys) + 1,
-				),
+				span: Math.max(Math.max(...xs) - Math.min(...xs) + 1, Math.max(...ys) - Math.min(...ys) + 1),
 			})
-		`) as { size: number; span: number };
+		`) as { rooms: string[]; size: number; span: number };
 
+		expect(result.rooms).toEqual(expect.arrayContaining(['W1N1', 'E1S1']));
 		expect(result.size).toBe(result.span);
 	});
 });

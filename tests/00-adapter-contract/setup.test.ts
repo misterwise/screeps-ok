@@ -42,6 +42,21 @@ describe('adapter contract: setup', () => {
 			expect(await shard.getObject(id2)).not.toBeNull();
 		});
 
+		test('creates spec rooms on both sides of the map origin', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'E1S1', rcl: 2, owner: 'p1' },
+				],
+			});
+
+			const levels = await shard.runPlayer('p1', code`
+				[Game.rooms['W1N1']?.controller?.level, Game.rooms['E1S1']?.controller?.level]
+			`);
+			expect(levels).toEqual([1, 2]);
+		});
+
 		test('sets room ownership and RCL', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],

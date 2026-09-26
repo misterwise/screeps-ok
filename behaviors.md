@@ -3656,9 +3656,10 @@ Notes
   room reads `normal`, not `closed`). Route planners that avoid `closed`
   rooms depend on this to path scouts into unseen neighbours.
 - `MAP-ROOM-005` `behavior` `verified_vanilla`
-  `Game.map.getWorldSize()` returns the inclusive count of rooms along the
-  longest world-map edge — i.e. `max(maxRx - minRx + 1, maxRy - minRy + 1)`
-  over the rooms that exist in the engine.
+  In a world whose rooms straddle the map origin on both axes (the shape the
+  map generator makes), `Game.map.getWorldSize()` returns the inclusive count
+  of rooms along the longest world-map edge — i.e.
+  `max(maxRx - minRx + 1, maxRy - minRy + 1)` over the rooms that exist.
 - `MAP-ROOM-006` `behavior` `verified_vanilla`
   `Game.map.getRoomStatus(arg)` returns `undefined` for a non-string argument
   (`undefined`, `null`, a number) — the same `undefined` outcome vanilla gives an

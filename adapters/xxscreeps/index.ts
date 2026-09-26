@@ -1575,7 +1575,8 @@ async function createSimulation(
 		// Initialize rooms (inlined from xxscreeps/src/test/simulate.ts:76-86)
 		await Promise.all(Fn.map(Object.entries(roomInits), async ([roomName, callback]) => {
 			let room;
-			if (await shard.data.sIsMember('rooms', roomName)) {
+			// Not the live set: the terrain overrides above already added every spec room to it.
+			if (existingRooms.includes(roomName)) {
 				room = await shard.loadRoom(roomName, shard.time);
 			} else {
 				// Room not in shard.json — create a blank room
