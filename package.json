@@ -29,6 +29,7 @@
     "docs/adapter-spec.md",
     "docs/adapter-guide.md",
     "docs/test-authoring.md",
+    "docs/behavior-matrices.md",
     "vitest.config.ts"
   ],
   "scripts": {

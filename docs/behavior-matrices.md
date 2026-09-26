@@ -13,13 +13,16 @@ catalog:
 
 This file should stay narrow. It is not a second planning backlog.
 
-Where a matrix family is actively exercised by the test suite, keep the
-executable case list in `src/matrices/*` and keep this document as
-the human-readable scope/source definition.
+The executable case list lives in `src/matrices/`, or inline in the test for
+a short list no other test runs; this document is the human-readable
+scope/source definition, and each definition's `Verification Notes` says
+where its list lives, or that none enumerates the family yet.
 
 ## Entry Format
 
-Each definition should include:
+Every `matrix` entry in `behaviors.md` belongs to a definition, and every
+case list in `src/matrices/` is named by one; `tests/00-framework/matrices.test.ts`
+checks both. Each definition has these fields, in this order:
 
 - `Catalog Entries`
 - `Canonical Source`
@@ -74,11 +77,10 @@ Each definition should include:
   Each row must be verified against vanilla before being added. The matrix
   asserts only that the engine throws a runtime error on the stale call
   (`errorKind === 'runtime'`); exact error wording is allowed to differ
-  between engines. Vanilla typically throws `Could not find an object with
-  ID ...`; xxscreeps emits `Accessed a released object from a previous
-  tick`; vanilla `StructureSpawn.recycleCreep` throws a TypeError because
-  that one method bypasses the `data()` helper. The executable case list
-  lives in `src/matrices/stale-receiver.ts`.
+  between engines. Vanilla throws `Could not find an object with ID ...`,
+  except `StructureSpawn.recycleCreep`, which bypasses the `data()` helper
+  and throws a TypeError. The executable case list lives in
+  `src/matrices/stale-receiver.ts`.
 
 ### STALE-ARGUMENT
 
@@ -182,7 +184,7 @@ Each definition should include:
 
 - `Catalog Entries`
   `STORE-RESTRICTED-001`, `STORE-RESTRICTED-002`, `STORE-RESTRICTED-003`,
-  `STORE-RESTRICTED-004`, `STORE-RESTRICTED-005`
+  `STORE-RESTRICTED-004`, `STORE-RESTRICTED-005`, `STORE-BIND-002`
 - `Canonical Source`
   Official store model in `@screeps/engine/src/game/store.js`,
   `capacityForResource()` in `@screeps/engine/src/utils.js`, and canonical
@@ -195,9 +197,12 @@ Each definition should include:
 - `Exclusions`
   Open stores and single-resource stores
 - `Verification Notes`
-  Lab remains part of this family even though its allowed mineral type can
-  change at runtime. The executable case list lives in
-  `src/matrices/store-restricted.ts`.
+  Lab remains part of this family even though its allowed mineral type binds
+  on the first deposit; `STORE-BIND-002` runs that binding for `H`, `O` and
+  `G`, a list inline in its test. The executable case lists live in
+  `src/matrices/store-restricted.ts` and, for the null capacities of
+  resources a nuker or power spawn never takes (`STORE-RESTRICTED-004`),
+  `src/matrices/store-disallowed.ts`.
 
 ### LAB-RUN
 
@@ -263,15 +268,15 @@ Each definition should include:
 - `Dimensions`
   API family using `cooldownTime`
 - `Applicability`
-  Verified examples currently include labs, terminals, factories, deposits, and
-  power-creep powers.
+  Actions refused while their `cooldown` getter reads above `0`: lab
+  reactions, terminal sends, factory production, deposit harvesting, and
+  power creep powers.
 - `Exclusions`
   `endTime`, `safeMode`, `decayTime`, `nextDecayTime`, `spawnTime`, and
   `landTime`
 - `Verification Notes`
-  Applicability inventory is intentionally incomplete. This shared rule must
-  remain `needs_vanilla_verification` until the full set of `cooldownTime`-gated
-  APIs is enumerated and checked.
+  No case list enumerates the family: the test
+  (`tests/23-store-api/23.5-timers.test.ts`) runs a lab reaction only.
 
 ### NPC-OWNERSHIP
 
@@ -475,6 +480,23 @@ Each definition should include:
   active count. Inactive-below-RCL behavior is owned by `CTRL-STRUCTLIMIT-002`.
   The executable case list lives in `src/matrices/ctrl-structlimit.ts`.
 
+### CONTROLLER-LEVELS
+
+- `Catalog Entries`
+  `CTRL-UPGRADE-007`
+- `Canonical Source`
+  `CONTROLLER_LEVELS`.
+- `Dimensions`
+  controller level (1-7)
+- `Applicability`
+  The progress an owned controller needs to reach its next level
+- `Exclusions`
+  Level 8, which has no next level, and the upgrade amount per tick
+- `Verification Notes`
+  The test (`tests/06-controller/6.4-upgrade.test.ts`) compares
+  `CONTROLLER_LEVELS` with the row's literal table and never reads a
+  controller, so no engine runs it.
+
 ### TOWER-RANGE
 
 - `Catalog Entries`
@@ -506,8 +528,11 @@ Each definition should include:
 - `Exclusions`
   Range falloff and tower intent priority
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the target-class
-  inventory is written as concrete accepted and rejected cases.
+  No case list enumerates the target classes. The tests
+  (`tests/07-combat/7.12-tower-intent.test.ts`,
+  `tests/07-combat/7.9-7.11-tower.test.ts`) run a hostile creep and a
+  construction site for `attack`, a friendly creep for `heal`, and a damaged
+  rampart and a creep for `repair`.
 
 ### TOWER-POWER
 
@@ -677,19 +702,22 @@ Each definition should include:
   `BOOST-ATTACK-001`, `BOOST-RANGED-001`, `BOOST-HEAL-001`,
   `BOOST-TOUGH-001`, `BOOST-HARVEST-001`, `BOOST-BUILD-001`,
   `BOOST-DISMANTLE-001`, `BOOST-UPGRADE-001`, `BOOST-MOVE-001`,
-  `BOOST-CARRY-001`
+  `BOOST-CARRY-001`, `MOVE-FATIGUE-006`
 - `Canonical Source`
   `BOOSTS` and the official action processors that consume those effects.
 - `Dimensions`
   body part type, compound, affected mechanic
 - `Applicability`
-  All reviewed boost families in section `8`
+  All reviewed boost families in section `8`, and the move compounds'
+  fatigue reduction (`MOVE-FATIGUE-006`, the magnitudes `BOOST-MOVE-001`
+  also claims)
 - `Exclusions`
   Mixed-part aggregation and boost application/removal costs
 - `Verification Notes`
   Numeric boost magnitudes are owned here; mechanic-specific non-table rules
-  remain in the local boost facets. The executable case list lives in
-  `src/matrices/boost-tables.ts`.
+  remain in the local boost facets. The case list is
+  `src/matrices/boost-tables.ts`, which no test runs yet: the section 8 tests
+  and `MOVE-FATIGUE-006` loop over `BOOSTS` directly.
 
 ### CREEP-DEATH-SOURCES
 
@@ -795,6 +823,31 @@ Each definition should include:
   `ROAD-WEAR-002`. The executable case list lives in
   `src/matrices/road-wear.ts`.
 
+### ROAD-TERRAIN-RATIO
+
+- `Catalog Entries`
+  `ROAD-HITS-001`, `CONSTRUCTION-COST-003`
+- `Canonical Source`
+  `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` and `CONSTRUCTION_COST_ROAD_WALL_RATIO`,
+  applied by `Room.createConstructionSite()` (`@screeps/engine/src/game/rooms.js`)
+  to a road site's cost and by the build processor
+  (`@screeps/engine/src/processor/intents/creeps/build.js:171-187`) to a
+  completed road's hits.
+- `Dimensions`
+  terrain under the road tile
+- `Applicability`
+  Plain, swamp, and natural-wall tiles for a completed road's hits
+  (`ROAD-HITS-001`); swamp and natural-wall tiles for a road site's
+  `progressTotal` (`CONSTRUCTION-COST-003`), since plain is
+  `CONSTRUCTION-COST-001`'s
+- `Exclusions`
+  Road decay by terrain (`ROAD-DECAY`) and road wear
+- `Verification Notes`
+  Both place through player code, since a placement helper would skip the
+  scaling. The case lists are inline in
+  `tests/13-structures-infrastructure/13.1-13.2-road.test.ts` and
+  `tests/15-structure-common/15.3-construction-cost.test.ts`.
+
 ### STRUCTURE-HITS
 
 - `Catalog Entries`
@@ -822,7 +875,8 @@ Each definition should include:
 - `Applicability`
   Standard buildable structures
 - `Exclusions`
-  Terrain multipliers for roads and construction-site progress side behavior
+  Terrain multipliers for roads (`ROAD-TERRAIN-RATIO`) and construction-site
+  progress side behavior
 - `Verification Notes`
   This family covers base construction cost only. The executable case list lives
   in `src/matrices/construction-cost.ts`.
@@ -849,6 +903,29 @@ Each definition should include:
   and covers a representative `{ spawn, extension, tower, container, road }`
   cross-product (25 cases).
 
+### CONSTRUCTION-SITE-OVER-STRUCTURE
+
+- `Catalog Entries`
+  `CONSTRUCTION-SITE-017`
+- `Canonical Source`
+  Vanilla `utils.checkConstructionSite`
+  (`@screeps/engine/src/utils.js:181-184`): a site is rejected with
+  `ERR_INVALID_TARGET` when a structure of another `CONSTRUCTION_COST` type
+  occupies the tile and neither it nor the placed type is a road or rampart.
+- `Dimensions`
+  existing structure type, placed site type
+- `Applicability`
+  Twelve representative pairs of spawn, extension, tower, container, road and
+  rampart: five where two non-road, non-rampart types block each other (a
+  container against the rest, both ways), seven where a road or rampart on
+  either side stacks
+- `Exclusions`
+  Same-type stacking (`utils.js:172`) and site-on-site placement, owned by
+  `CONSTRUCTION-SITE-007`
+- `Verification Notes`
+  The executable case list lives in
+  `src/matrices/construction-site-over-structure.ts`.
+
 ### ROOM-FIND
 
 - `Catalog Entries`
@@ -870,18 +947,21 @@ Each definition should include:
 ### ROOM-TERRAIN
 
 - `Catalog Entries`
-  `ROOM-TERRAIN-001`
+  `ROOM-TERRAIN-001`, `MAP-TERRAIN-002`
 - `Canonical Source`
   Static room terrain data and official terrain accessors.
 - `Dimensions`
   terrain class
 - `Applicability`
-  Plain, swamp, and wall tiles returned through `Room.Terrain.get(x, y)`
+  Plain, swamp, and wall tiles returned through `Room.Terrain.get(x, y)`, on
+  a `new Room.Terrain(roomName)` (`ROOM-TERRAIN-001`) or the one
+  `Game.map.getRoomTerrain()` returns (`MAP-TERRAIN-002`)
 - `Exclusions`
-  Raw buffer shape and `Game.map.getRoomTerrain()` equivalence
+  Raw buffer shape
 - `Verification Notes`
   This family is about mask values only. The executable case list lives in
-  `src/matrices/room-terrain.ts`.
+  `src/matrices/room-terrain.ts`; `MAP-TERRAIN-002`'s test doesn't run it,
+  and only checks that a default room's values fall in the mask set.
 
 ### ROOM-EVENTLOG
 
@@ -896,8 +976,10 @@ Each definition should include:
 - `Exclusions`
   Raw JSON form and current-tick-only exposure
 - `Verification Notes`
-  The event-type inventory should remain explicit here rather than inline in
-  `behaviors.md`.
+  No case list enumerates the event types: the test
+  (`tests/16-room-mechanics/16.6-eventlog.test.ts`) checks a tower's
+  `EVENT_HEAL`, and the other rows of section 16.6 each pin one event's
+  payload.
 
 ### ROOM-EVENTLOG-NUKE
 
@@ -959,10 +1041,8 @@ Each definition should include:
   `Room.getEventLog()` payloads.
 - `Verification Notes`
   The executable case list lives in `src/matrices/actionlog-target.ts` and
-  covers creep targets damaged or healed by creep and tower actions. Structure
-  target rows and power-creep target rows should be added only where the
-  rendered client/history payload differs and capability composition is
-  explicit.
+  covers creep targets damaged or healed by creep and tower actions; no row
+  covers a structure or power creep target.
 
 ### ACTIONLOG-STRUCT
 
@@ -983,8 +1063,7 @@ Each definition should include:
 - `Verification Notes`
   The executable case list lives in `src/matrices/actionlog-struct.ts` and
   covers tower `attack` / `heal` / `repair`, link `transferEnergy`, and lab
-  `runReaction` / `reverseReaction`. Optional feature rows such as factory
-  production should wait until capability composition is explicit.
+  `runReaction` / `reverseReaction`; no row covers factory production.
 
 ### SOURCE-REGEN
 
@@ -1085,7 +1164,24 @@ Each definition should include:
 - `Verification Notes`
   This family covers decay-time mapping only. `RUIN_DECAY_STRUCTURES` has one
   entry, `powerBank`; RUIN-002 has a test for it and one for a default
-  (a destroyed container).
+  (a destroyed container), in `tests/18-game-objects/18.2-ruin.test.ts`.
+
+### GPL-LEVELS
+
+- `Catalog Entries`
+  `GPL-002`
+- `Canonical Source`
+  `Game.gpl` in `@screeps/engine/src/game/game.js:133-134`, from
+  `POWER_LEVEL_MULTIPLY` and `POWER_LEVEL_POW`.
+- `Dimensions`
+  account power at a level edge
+- `Applicability`
+  999, 1000, 3999, 4000 and 9000 power: each side of the first two levels,
+  and level three
+- `Exclusions`
+  Zero power (`GPL-001`) and spending power on power creeps
+- `Verification Notes`
+  The case list is inline in `tests/19-power/19.0-gpl.test.ts`.
 
 ### POWERCREEP-VALIDATION
 
@@ -1106,7 +1202,9 @@ Each definition should include:
   Each API keeps its own result surface in `behaviors.md`; this family exists
   only to keep the validation case inventories explicit.
   Spawn, renew, and upgrade run their case lists from
-  `src/matrices/power-creep-{spawn,renew,upgrade}-validation.ts`.
+  `src/matrices/power-creep-spawn-validation.ts`,
+  `src/matrices/power-creep-renew-validation.ts`, and
+  `src/matrices/power-creep-upgrade-validation.ts`.
 
 ### POWER-INFO
 
@@ -1169,8 +1267,8 @@ Each definition should include:
   `effects` arrays; instant powers that do not create active host entries.
 - `Verification Notes`
   The executable case list lives in `src/matrices/effect-hosts.ts`.
-  Invader-core natural effects are excluded until they can be produced through
-  setup without directly injecting the `effects` array.
+  Invader-core natural effects are excluded; `placeObject` takes no
+  `effects` for a core.
 
 ### MARKET-ORDER
 
@@ -1221,9 +1319,8 @@ Each definition should include:
 - `Verification Notes`
   Timestamp presence and meaning is defined per returned status: invalid-format
   names return `undefined`; the two `closed` outcomes split on timestamp
-  (admin-closed → number, off-world → null). The novice/respawn/admin-closed
-  rows are roomStatus-capability-skipped on xxscreeps — see
-  `docs/xxscreeps-parity-gaps.md`.
+  (admin-closed → number, off-world → null). The novice, respawn and
+  admin-closed rows need the `roomStatus` capability.
 
 ### MOVE-BASIC-DIRECTIONS
 
@@ -1270,7 +1367,7 @@ Each definition should include:
 ### INTENT-CREEP-OVERWRITE
 
 - `Catalog Entries`
-  `INTENT-CREEP-005`
+  `INTENT-CREEP-002`
 - `Canonical Source`
   Official same-method creep intent storage and replacement behavior.
 - `Dimensions`
@@ -1280,13 +1377,14 @@ Each definition should include:
 - `Exclusions`
   Blocking priority interactions between different methods
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the supported method
-  inventory is explicit.
+  No case list enumerates the methods: the test
+  (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) calls
+  `attack` twice.
 
 ### INTENT-CREEP-CANCEL
 
 - `Catalog Entries`
-  `INTENT-CREEP-006`
+  `INTENT-CREEP-003`
 - `Canonical Source`
   Official `cancelOrder(methodName)` handling on creep intents.
 - `Dimensions`
@@ -1296,8 +1394,9 @@ Each definition should include:
 - `Exclusions`
   Overwrite behavior and cross-method priority blocking
 - `Verification Notes`
-  This family remains `needs_vanilla_verification` until the cancelable-method
-  inventory is explicit.
+  No case list enumerates the methods: the tests
+  (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) cancel a
+  queued `attack`, and cancel `attack` with nothing queued.
 
 ### INTENT-LIMIT
 
@@ -1333,6 +1432,43 @@ Each definition should include:
   This family covers limit values only; next-tick activation is owned by
   `RAWMEMORY-003`. The executable case list lives in
   `src/matrices/rawmemory-segments.ts`.
+
+### ISM-SETLOCAL-TYPES
+
+- `Catalog Entries`
+  `ISM-003`
+- `Canonical Source`
+  The Screeps API documentation for `InterShardMemory.setLocal(data)`, which
+  takes a string. The open-source engine ships no `InterShardMemory`.
+- `Dimensions`
+  argument type
+- `Applicability`
+  `string` (accepted); `number`, `object`, `null` and `undefined` (rejected)
+- `Exclusions`
+  The size limit (`ISM-004`) and remote shards
+- `Verification Notes`
+  The case list is inline in
+  `tests/29-multi-shard/29.3-intershard-memory-local.test.ts`, which accepts
+  a throw or a silent no-op for each rejected type.
+
+### CPU-SHARD-LIMITS
+
+- `Catalog Entries`
+  `CPU-SHARD-003`
+- `Canonical Source`
+  The Screeps API documentation for `Game.cpu.setShardLimits(limits)`.
+- `Dimensions`
+  rejection branch
+- `Applicability`
+  A map whose values don't sum to the allowance, one naming an unknown shard,
+  one with a negative value, and one with a non-integer value, each
+  `ERR_INVALID_ARGS`
+- `Exclusions`
+  The successful call and its once-per-12-hours limit (`CPU-SHARD-004`)
+- `Verification Notes`
+  The case list is inline in
+  `tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`. No reference adapter
+  declares `cpuShardLimits`.
 
 ### SHAPE-STRUCT
 
@@ -1440,9 +1576,7 @@ Each definition should include:
 - `Verification Notes`
   Verified vanilla API-guard order is: ownership → cooldown → argument
   validity → target validity (level mismatch) → active RCL → missing
-  `PWR_OPERATE_FACTORY` effect → resources → capacity. This differs from
-  the original PR #114 recollection, which placed cooldown last and RCL
-  before target validity.
+  `PWR_OPERATE_FACTORY` effect → resources → capacity.
   The executable case list lives in `src/matrices/factory-produce-validation.ts`.
 
 ### BOOST-CREEP-VALIDATION

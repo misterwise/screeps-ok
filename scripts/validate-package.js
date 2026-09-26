@@ -47,6 +47,7 @@ const allowedDocs = new Set([
 	'docs/adapter-spec.md',
 	'docs/adapter-guide.md',
 	'docs/test-authoring.md',
+	'docs/behavior-matrices.md',
 ]);
 
 const denyPatterns = [
