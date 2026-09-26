@@ -6,7 +6,7 @@ import { parseCatalog } from '../scripts/lib/parse-catalog.js';
 import { loadParity, registrationFor, type Parity } from '../scripts/lib/parity.js';
 import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName } from './adapter.js';
 import type { PlayerCode } from './code.js';
-import { RunPlayerError } from './errors.js';
+import { RunPlayerError, type RunPlayerErrorKind } from './errors.js';
 import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
@@ -93,11 +93,6 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	ownedRoom(player: string, roomName?: string, rcl?: number): Promise<void>;
 
 	/**
-	 * Evaluate multiple players against the same current game state.
-	 */
-	runPlayers(codesByUser: Record<string, import('./code.js').PlayerCode>): Promise<Record<string, import('./adapter.js').PlayerReturnValue>>;
-
-	/**
 	 * Get an object by ID and assert it exists with the expected kind.
 	 * Throws (fails the test) if null or wrong kind — no silent passes.
 	 *
@@ -125,7 +120,7 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	expectRunPlayerError(
 		userId: string,
 		playerCode: PlayerCode,
-		expectedKind: 'syntax' | 'runtime' | 'serialization',
+		expectedKind: RunPlayerErrorKind,
 	): Promise<RunPlayerError>;
 
 	/**
@@ -144,7 +139,6 @@ function wrapAdapter(
 	gates: Set<string>,
 ): ShardFixture {
 	const shard = adapter as ShardFixture;
-	const runPlayers = adapter.runPlayers.bind(adapter);
 
 	shard.ownedRoom = async (player: string, roomName = 'W1N1', rcl = 1) => {
 		await adapter.createShard({
@@ -175,8 +169,6 @@ function wrapAdapter(
 		return struct as StructureTypeMap[S];
 	};
 
-	shard.runPlayers = async (codesByUser) => runPlayers(codesByUser);
-
 	shard.requires = (capability: CapabilityName, reason?: string): void => {
 		gates.add(capability);
 		if (adapter.capabilities[capability]) return;
@@ -187,7 +179,7 @@ function wrapAdapter(
 	shard.expectRunPlayerError = async (
 		userId: string,
 		playerCode: PlayerCode,
-		expectedKind: 'syntax' | 'runtime' | 'serialization',
+		expectedKind: RunPlayerErrorKind,
 	): Promise<RunPlayerError> => {
 		let result: PlayerReturnValue;
 		try {

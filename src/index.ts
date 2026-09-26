@@ -2,6 +2,7 @@
 export { code } from './code.js';
 export type { PlayerCode } from './code.js';
 export { RunPlayerError } from './errors.js';
+export type { RunPlayerErrorKind } from './errors.js';
 export { test, describe, expect } from './fixture.js';
 export { expectedShape } from './shape-divergences.js';
 export type { ShapeDivergence, ShapeDivergences, ShapeDivergenceTarget } from './shape-divergences.js';

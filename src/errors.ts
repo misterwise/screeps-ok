@@ -15,14 +15,15 @@
 // it is deterministic across realms and module graphs.
 const MARKER = Symbol.for('screeps-ok.RunPlayerError');
 
+export type RunPlayerErrorKind = 'syntax' | 'runtime' | 'serialization';
+
 export class RunPlayerError extends Error {
 	/** The original error message from the engine's VM. */
 	readonly engineMessage: string;
-	/** 'syntax' | 'runtime' | 'serialization' */
-	readonly errorKind: 'syntax' | 'runtime' | 'serialization';
+	readonly errorKind: RunPlayerErrorKind;
 	readonly [MARKER] = true;
 
-	constructor(errorKind: 'syntax' | 'runtime' | 'serialization', engineMessage: string) {
+	constructor(errorKind: RunPlayerErrorKind, engineMessage: string) {
 		super(`RunPlayerError [${errorKind}]: ${engineMessage}`);
 		this.name = 'RunPlayerError';
 		this.errorKind = errorKind;
