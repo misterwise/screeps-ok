@@ -1,18 +1,23 @@
 name: CI
 
+# Prose doesn't trigger a run; the catalog does.
 on:
   push:
     branches:
       - master
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!LICENSE'
+      - 'behaviors.md'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!LICENSE'
+      - 'behaviors.md'
 
 jobs:
   lint:
@@ -42,8 +47,18 @@ jobs:
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: node scripts/build-xxscreeps.js
 
-      - name: Typecheck
-        run: npm run lint
+      # The pre-commit hook's gates; a clone can skip or lack the hook.
+      - name: Static checks
+        run: npm run check
+
+      - name: Generated files are committed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --short
+            git diff
+            echo "::error::npm run check regenerated committed files; commit what it wrote."
+            exit 1
+          fi
 
   test:
     runs-on: ubuntu-latest
