@@ -602,7 +602,7 @@ vanilla has 3 skipped tests, grouped by the mechanism that gated them. **Capabil
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#vanilla-skip-capability-cpushardlimits) |
+| capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#vanilla-skip-capability-cpushardlimits) |
 
 Click a count to jump to the affected test list.
 
@@ -3895,15 +3895,15 @@ xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Cap
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | usePower applying PWR_* effects | [92](#xxscreeps-skip-capability-powereffects) |
-| capability | `powerCreepAccountApi` | PowerCreep create/rename/upgrade/delete | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
-| capability | `market` | Full market orders, deals, and history | [22](#xxscreeps-skip-capability-market) |
-| capability | `invaderRaidSpawner` | Inactive-room Invader raid spawning | [21](#xxscreeps-skip-capability-invaderraidspawner) |
-| capability | `roomStatus` | Room status fixture setup | [7](#xxscreeps-skip-capability-roomstatus) |
-| capability | `deprecationNotices` | Adapter capability 'deprecationNotices' is disabled | [7](#xxscreeps-skip-capability-deprecationnotices) |
-| capability | `interShardMemory` | Adapter capability 'interShardMemory' is disabled | [4](#xxscreeps-skip-capability-intershardmemory) |
-| capability | `cpuShardLimits` | Adapter capability 'cpuShardLimits' is disabled | [3](#xxscreeps-skip-capability-cpushardlimits) |
-| capability | `strongholdMetadata` | Stronghold bookkeeping fields on a seeded invader core | [1](#xxscreeps-skip-capability-strongholdmetadata) |
+| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [92](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerCreepAccountApi` | Account-level power-creep management from game code: `PowerCreep.create` plus the `rename` / `upgrade` / `delete` instance methods, and the unspawned-roster states only they can reach. | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
+| capability | `market` | Full market order lifecycle, deals, history, and adapter-side order placement. | [22](#xxscreeps-skip-capability-market) |
+| capability | `invaderRaidSpawner` | Per-room inactive Invader raid spawning orchestration. | [21](#xxscreeps-skip-capability-invaderraidspawner) |
+| capability | `roomStatus` | Public room-status setup through RoomSpec.status. | [7](#xxscreeps-skip-capability-roomstatus) |
+| capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [7](#xxscreeps-skip-capability-deprecationnotices) |
+| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#xxscreeps-skip-capability-intershardmemory) |
+| capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
+| capability | `strongholdMetadata` | Stronghold bookkeeping on a seeded invader core that the harness can read back from the snapshot: `strongholdId`, and arbitrary `effects` entries rather than the ones the engine derives from its own timers. | [1](#xxscreeps-skip-capability-strongholdmetadata) |
 
 Click a count to jump to the affected test list.
 

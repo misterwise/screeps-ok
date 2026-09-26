@@ -1,8 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, test } from 'vitest';
-import { adapterCapabilities } from '../../scripts/lib/capabilities.js';
+import { adapterCapabilities, capabilityDescriptions } from '../../scripts/lib/capabilities.js';
 import { testFileClaims } from '../../scripts/lib/test-claims.js';
 
 const dirs: string[] = [];
@@ -52,5 +53,23 @@ describe('adapter capabilities', () => {
 	test('a flag that is not a literal fails the read', () => {
 		expect(adapter('\t\tnuke: Boolean(process.env.NUKE),')).toThrow(/Boolean/);
 		expect(() => adapterCapabilities(tree({ 'index.ts': 'class A {}' }) + '/index.ts')).toThrow(/capabilities/);
+	});
+});
+
+describe('capability descriptions', () => {
+	const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+	test('every declared capability has a first sentence in the interface', () => {
+		const described = capabilityDescriptions(path.join(repo, 'src/adapter.ts'));
+		expect(described.get('chemistry')).toBe('Labs, reactions, minerals in labs, and related chemistry APIs.');
+		for (const engine of ['vanilla', 'xxscreeps']) {
+			const undescribed = [...adapterCapabilities(path.join(repo, 'adapters', engine, 'index.ts')).keys()].filter(name => !described.has(name));
+			expect(undescribed).toEqual([]);
+		}
+	});
+
+	test('a capability without a doc comment fails the read', () => {
+		const root = tree({ 'adapter.ts': 'export interface AdapterCapabilities {\n\t/** Documented. */\n\tone: boolean;\n\ttwo: boolean;\n}\n' });
+		expect(() => capabilityDescriptions(path.join(root, 'adapter.ts'))).toThrow(/two/);
 	});
 });

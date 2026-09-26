@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { capabilityDescriptions } from './lib/capabilities.js';
 import { judgeReport, loadParity } from './lib/parity.js';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -231,50 +232,18 @@ function renderGapDetails(adapterName, summary, gapIds) {
 	return lines.join('\n');
 }
 
-const CAPABILITY_DESCRIPTIONS = {
-	chemistry: 'Lab/boost mechanics',
-	powerCreeps: 'Power creeps as room objects',
-	powerCreepAccountApi: 'PowerCreep create/rename/upgrade/delete',
-	powerEffects: 'usePower applying PWR_* effects',
-	powerSpawn: 'Power spawn and account GPL',
-	factory: 'Factory commodities',
-	terminal: 'Terminal structure surface',
-	marketBasics: 'Self-contained Game.market surface',
-	market: 'Full market orders, deals, and history',
-	terminalSend: 'Terminal send processing',
-	observer: 'Observer rooms',
-	nuke: 'Nukes',
-	deposit: 'Deposits (highway)',
-	powerBank: 'Power Bank objects and lifecycle',
-	terrain: 'Custom terrain specs',
-	roomStatus: 'Room status fixture setup',
-	portals: 'Portal structures and teleport mechanics',
-	invaderCore: 'Invader core structures',
-	strongholdDeploy: 'Engine-driven stronghold deployment',
-	strongholdMetadata: 'Stronghold bookkeeping fields on a seeded invader core',
-	invaderRaidSpawner: 'Inactive-room Invader raid spawning',
-};
-
-const LIMITATION_DESCRIPTIONS = {
-	pullSelfHang: 'pull(self) hangs the runner',
-};
+const CAPABILITY_DESCRIPTIONS = capabilityDescriptions(path.join(packageRoot, 'src/adapter.ts'));
 
 function describeSkipReason(reason) {
 	if (!reason) return { category: 'uncategorized', key: '(no reason)', description: 'Skip reason not recorded' };
 	const [category, key] = reason.split(':');
 	if (category === 'capability') {
-		return {
-			category: 'capability',
-			key,
-			description: CAPABILITY_DESCRIPTIONS[key] ?? `Adapter capability '${key}' is disabled`,
-		};
+		const description = CAPABILITY_DESCRIPTIONS.get(key);
+		if (!description) throw new Error(`skip reason names capability "${key}", which AdapterCapabilities doesn't declare`);
+		return { category, key, description };
 	}
 	if (category === 'limitation') {
-		return {
-			category: 'limitation',
-			key,
-			description: LIMITATION_DESCRIPTIONS[key] ?? `Documented adapter limitation '${key}'`,
-		};
+		return { category, key, description: `Documented adapter limitation; see \`src/limitations.ts\`` };
 	}
 	return { category: 'other', key: reason, description: reason };
 }

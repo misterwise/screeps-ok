@@ -16,3 +16,18 @@ export function adapterCapabilities(adapterFile) {
 	}
 	return declared;
 }
+
+// Each capability's first doc-comment sentence from the AdapterCapabilities interface.
+export function capabilityDescriptions(adapterContractFile) {
+	const source = readFileSync(adapterContractFile, 'utf8');
+	const block = source.match(/export interface AdapterCapabilities \{\n([\s\S]*?)\n\}/);
+	if (!block) throw new Error(`${adapterContractFile}: no AdapterCapabilities interface`);
+	const described = new Map();
+	for (const [, doc, name] of block[1].matchAll(/(?:\/\*\*([\s\S]*?)\*\/\s*)?(\w+): boolean;/g)) {
+		if (!doc) throw new Error(`${adapterContractFile}: capability ${name} has no doc comment`);
+		const text = doc.replace(/^\s*\*\s?/gm, '').replace(/\s+/g, ' ').trim();
+		described.set(name, text.match(/^.*?\.(?=\s|$)/)?.[0] ?? text);
+	}
+	return described;
+}
+
