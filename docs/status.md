@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-11%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2711%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-12%20failing-red)](docs/status.md#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2711](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [3](#vanilla-skipped-tests) | 2026-09-26 03:43 UTC |
-| 🔴 | **xxscreeps** | [2531](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
+| 🔴 | **xxscreeps** | [2530](#xxscreeps-passing-tests) | [55](#xxscreeps-expected-failures) | — | [127](#xxscreeps-skipped-tests) | 2026-09-26 03:42 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -30,6 +30,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 **xxscreeps**
 
 - `deposit lifecycle (section 17.5) DEPOSIT-004 harvest refreshes ticksToDecay to DEPOSIT_DECAY_TIME`
+- `PathFinder PATHFINDER-014 Nullish goal returns path: [] and ops: 0`
 - `CostMatrix COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255`
 - `creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room`
 - `Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected`
@@ -124,7 +125,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 34 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 29 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 35 expected-failure classifications against vanilla's canonical behavior, covering 55 tests. That includes 30 open parity gaps covering 46 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -161,6 +162,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | 0 |
 | `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | 0 |
 | `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | 0 |
+| `pathfinder-search-nullish-goal-throws` | `search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick. | Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys. | 0 |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -380,6 +382,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-renew-claim-creep-returns-no-bodypart">
 <summary><code>renew-claim-creep-returns-no-bodypart</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-pathfinder-search-nullish-goal-throws">
+<summary><code>pathfinder-search-nullish-goal-throws</code> — 0 tests</summary>
 
 
 </details>
@@ -3911,7 +3919,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2531 tests across 134 files</summary>
+<summary>2530 tests across 134 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4202,7 +4210,7 @@ Click a count to jump to the affected test list.
 
 - Power creep movement collision MOVE-POWER-001 a power creep loses a movement collision tie to a regular creep
 
-**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (21)
+**`tests/02-pathfinding/2.1-pathfinder.test.ts`** (20)
 
 - PathFinder PATHFINDER-001 PathFinder.search accepts a bare RoomPosition goal with implicit range 0
 - PathFinder PATHFINDER-002 PathFinder.search accepts a single goal object with { pos, range }
@@ -4217,7 +4225,6 @@ Click a count to jump to the affected test list.
 - PathFinder PATHFINDER-011 PathFinder.search flee mode finds a path away from the goal positions
 - PathFinder PATHFINDER-012 PathFinder.search returns incomplete: true with a partial path when no full path exists
 - PathFinder PATHFINDER-013 Empty goal array returns path: [] and ops: 0
-- PathFinder PATHFINDER-014 Nullish goal returns path: [] and ops: 0
 - PathFinder PATHFINDER-015 maxCost limits search by cumulative path cost
 - PathFinder PATHFINDER-016 heuristicWeight option accepted without changing result shape
 - PathFinder PATHFINDER-017 origin within goal range produces empty path

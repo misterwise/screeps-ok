@@ -9,7 +9,7 @@ import {
 import type { ControllerSnapshot } from '../../src/index.js';
 
 describe('Keeper lair', () => {
-	test('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick', async ({ shard }) => {
+	test('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -17,26 +17,19 @@ describe('Keeper lair', () => {
 
 		const lairId = await shard.placeObject('W1N1', 'keeperLair', {
 			pos: [25, 25],
-			nextSpawnTime: 20,
+			nextSpawnTime: 3,
 		});
 		await shard.tick();
 
-		const ttl1 = await shard.runPlayer('p1', code`
-			const lair = Game.getObjectById(${lairId});
-			lair ? lair.ticksToSpawn : null
-		`) as number | null;
-
-		const ttl2 = await shard.runPlayer('p1', code`
-			const lair = Game.getObjectById(${lairId});
-			lair ? lair.ticksToSpawn : null
-		`) as number | null;
-
-		if (ttl1 !== null && ttl2 !== null) {
-			expect(ttl2).toBe(ttl1 - 1);
-		} else {
-			// Lair may not be visible or ticksToSpawn may already be 0.
-			expect(true).toBe(true);
+		// The keeper spawns during the tick that reads 1; a full-hits keeper
+		// starts no new timer, so the next read has none.
+		const readings: (number | null)[] = [];
+		for (let i = 0; i < 3; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				Game.getObjectById(${lairId}).ticksToSpawn ?? null
+			`) as number | null);
 		}
+		expect(readings).toEqual([2, 1, null]);
 	});
 
 	test('KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing', async ({ shard }) => {

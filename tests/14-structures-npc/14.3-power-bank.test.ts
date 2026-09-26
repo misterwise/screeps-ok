@@ -59,34 +59,18 @@ describe('Power bank', () => {
 			pos: [25, 25],
 			power: 500,
 			hits: POWER_BANK_HITS,
-			decayTime: 100,
+			decayTime: 3,
 		});
 		await shard.tick();
 
-		// Read initial ticksToDecay via player code.
-		const ttd1 = await shard.runPlayer('p1', code`
-			const pb = Game.getObjectById(${pbId});
-			pb ? pb.ticksToDecay : null
-		`) as number | null;
-		// Seeded relative to placement; one tick has elapsed.
-		expect(ttd1).toBe(99);
-
-		// Advance 2 empty ticks, then read again (runPlayer is +1 tick).
-		await shard.tick(2);
-
-		const ttd2 = await shard.runPlayer('p1', code`
-			const pb = Game.getObjectById(${pbId});
-			pb ? pb.ticksToDecay : null
-		`) as number | null;
-
-		if (ttd2 === null) {
-			// Power bank already decayed — the initial ticksToDecay was small enough.
-			// That still validates decay behavior.
-			expect(true).toBe(true);
-		} else {
-			// 2 empty ticks + 1 runPlayer tick = 3 ticks elapsed since ttd1 read.
-			expect(ttd2).toBe(ttd1! - 3);
+		// The bank is removed during the tick that reads 1.
+		const readings: (number | null)[] = [];
+		for (let i = 0; i < 3; i++) {
+			readings.push(await shard.runPlayer('p1', code`
+				Game.getObjectById(${pbId})?.ticksToDecay ?? null
+			`) as number | null);
 		}
+		expect(readings).toEqual([2, 1, null]);
 	});
 
 	// ---- POWER-BANK-003: power value is within canonical capacity range ----

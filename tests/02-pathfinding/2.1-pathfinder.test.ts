@@ -424,20 +424,11 @@ describe('PathFinder', () => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
-			try {
-				const result = PathFinder.search(new RoomPosition(25, 25, 'W1N1'), null);
-				({ pathLength: result.path.length, ops: result.ops, threw: false })
-			} catch (e) {
-				({ threw: true, message: String(e.message || e) })
-			}
-		`) as { pathLength?: number; ops?: number; threw: boolean; message?: string };
+			const result = PathFinder.search(new RoomPosition(25, 25, 'W1N1'), null);
+			({ keys: Object.keys(result).sort(), pathLength: result.path.length, ops: result.ops })
+		`) as { keys: string[]; pathLength: number; ops: number };
 
-		if (!result.threw) {
-			expect(result.pathLength).toBe(0);
-			expect(result.ops).toBe(0);
-		} else {
-			expect(result.threw).toBe(true);
-		}
+		expect(result).toEqual({ keys: ['ops', 'path'], pathLength: 0, ops: 0 });
 	});
 
 	test('PATHFINDER-015 maxCost limits search by cumulative path cost', async ({ shard }) => {
