@@ -15,7 +15,7 @@ type TestFn = typeof test;
  * from `capabilities`, which says the feature is disabled entirely.
  */
 export function limitationGated(limitation: AdapterLimitation): TestFn {
-	const gated = ((name: string, fn: (ctx: unknown) => unknown) => {
+	const gated = ((name: string, fn: (ctx: unknown) => unknown, timeout?: number) => {
 		// vitest requires the test callback's first argument to be an object
 		// destructuring pattern (it inspects the function source). So we must
 		// name the shape explicitly here rather than passing `ctx` through.
@@ -26,7 +26,7 @@ export function limitationGated(limitation: AdapterLimitation): TestFn {
 				return;
 			}
 			return fn({ shard, task, skip });
-		});
+		}, timeout);
 	}) as unknown as TestFn;
 	return gated;
 }
