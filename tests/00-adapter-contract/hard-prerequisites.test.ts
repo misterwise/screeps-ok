@@ -1,15 +1,13 @@
-import { describe, test, expect, code, limitationGated,
+import { describe, test, expect, code,
 	OK, MOVE, FIND_CREEPS,
 	STRUCTURE_SPAWN,
 	CONTROLLER_DOWNGRADE,
 	STRUCTURE_PORTAL,
 } from '../../src/index.js';
 
-const downgradeTest = limitationGated('controllerDowngrade');
-
 describe('adapter contract: hard family prerequisites', () => {
 	describe('controller ticksToDowngrade', () => {
-		downgradeTest('RoomSpec.ticksToDowngrade sets the controller downgrade timer', async ({ shard }) => {
+		test('RoomSpec.ticksToDowngrade sets the controller downgrade timer', async ({ shard }) => {
 			// A room created with ticksToDowngrade should expose that value
 			// on the controller snapshot, allowing downgrade tests to run in
 			// a small number of ticks instead of thousands.
@@ -26,7 +24,7 @@ describe('adapter contract: hard family prerequisites', () => {
 			expect(result).toBe(9);
 		});
 
-		downgradeTest('controller downgrades when ticksToDowngrade reaches 0', async ({ shard }) => {
+		test('controller downgrades when ticksToDowngrade reaches 0', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 3 }],

@@ -273,8 +273,6 @@ export interface NpcShapeEntry {
 	catalogId: string;
 	objectType: string;
 	shape: readonly string[];
-	/** Adapter limitation that gates placement. */
-	limitation?: string;
 	/** Adapter capability that gates placement. */
 	cap?: CapabilityName;
 	/** Spec fields for placeObject. */

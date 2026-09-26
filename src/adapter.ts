@@ -371,23 +371,14 @@ export interface ScreepsOkAdapter {
 	readonly capabilities: AdapterCapabilities;
 
 	/**
-	 * Documented engine quirks that require skipping specific tests (not
-	 * asserting failure). Distinct from capabilities: a limitation says the
-	 * engine implements the feature but misbehaves in a way that would hang
-	 * or corrupt the runner if the test ran. Omitted flags default to false.
-	 * See `AdapterLimitation` in `limitations.ts` for the catalog.
-	 */
-	readonly limitations?: import('./limitations.js').AdapterLimitations;
-
-	/**
 	 * Intentional object-shape divergences from the canonical vanilla
 	 * surface that upstream has declined to change. Shape tests fold the
 	 * declared extras into their expected key sets via `expectedShape`,
 	 * so the remaining surface stays asserted. Distinct from parity.json
 	 * `expected_failures`, which tracks genuine gaps awaiting a fix.
-	 * See `ShapeDivergences` in `limitations.ts` for the catalog.
+	 * See `ShapeDivergences` in `shape-divergences.ts` for the catalog.
 	 */
-	readonly shapeDivergences?: import('./limitations.js').ShapeDivergences;
+	readonly shapeDivergences?: import('./shape-divergences.js').ShapeDivergences;
 
 	/** Create a fresh isolated shard for a single test. */
 	createShard(spec: ShardSpec): Promise<void>;

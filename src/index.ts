@@ -3,10 +3,8 @@ export { code } from './code.js';
 export type { PlayerCode } from './code.js';
 export { RunPlayerError } from './errors.js';
 export { test, describe, expect } from './fixture.js';
-export { limitationGated } from './test-helpers.js';
-export type { AdapterLimitation, AdapterLimitations } from './limitations.js';
-export { expectedShape } from './limitations.js';
-export type { ShapeDivergence, ShapeDivergences, ShapeDivergenceTarget } from './limitations.js';
+export { expectedShape } from './shape-divergences.js';
+export type { ShapeDivergence, ShapeDivergences, ShapeDivergenceTarget } from './shape-divergences.js';
 
 // Adapter contract
 export type {

@@ -53,6 +53,10 @@ changes since `v0.1.0-alpha` are not itemized.
   longer carries `templateName` or `strongholdId`: no player getter exposes
   them. Drop the flag and the snapshot fields; both stay `placeObject` inputs
   for an invader core.
+- `ScreepsOkAdapter.limitations` is gone, with `AdapterLimitation`,
+  `AdapterLimitations` and `limitationGated`: all three limitations were
+  closed, and an engine couldn't add one of its own. Drop the field; a test
+  your engine can't run goes under `skips` in your `parity.json`.
 
 ### Parity and the runner
 
@@ -88,6 +92,11 @@ changes since `v0.1.0-alpha` are not itemized.
   run (any vitest argument, `--shard` included) writes
   `reports/<name>-partial.json`, and vitest run directly writes no report. A
   CI that shards the suite collects `<name>-partial.json` from each shard.
+- `parity.json` takes `skips`, for tests your engine can't run at all (one
+  that hangs a tick, say): `{ "<skip id>": { "why": "…", "tests": [ids] } }`.
+  The fixture skips them before they touch the adapter, the reporter lists
+  them, and status shows each `why`. A skip that names no test is orphaned on
+  a full run, and a test ID is skipped or registered as a gap, not both.
 
 ### Catalog IDs your `parity.json` may name
 

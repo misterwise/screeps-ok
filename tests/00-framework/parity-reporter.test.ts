@@ -231,7 +231,7 @@ describe('JSON reports', () => {
 		const judged = judgeReport(report([
 			{ name: '/suite/tests/00-framework/some.test.ts', tests: [['reporter behaves', 'passed']] },
 			{ name: '/suite/tests/00-adapter-contract/some.test.ts', tests: [['tick advances one tick', 'passed']] },
-		]), { gaps: {}, gapForId: new Map() });
+		]), { gaps: {}, gapForId: new Map(), skips: {}, skipForId: new Map() });
 		expect(judged.verdict.untaggedTests).toBe(0);
 	});
 

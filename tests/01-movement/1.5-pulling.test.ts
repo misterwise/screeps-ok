@@ -1,4 +1,4 @@
-import { describe, test, expect, code, limitationGated,
+import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
@@ -190,8 +190,7 @@ describe('creep.pull()', () => {
 		expect(c.pos.x).toBe(25); expect(c.pos.y).toBe(24);
 	});
 
-	const pullSelfTest = limitationGated('pullSelfHang');
-	pullSelfTest('MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
+	test('MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'solo',

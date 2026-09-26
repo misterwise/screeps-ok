@@ -8,15 +8,16 @@
  *   - A failing test whose catalog ID is in expected_failures → expected failure
  *   - A passing test whose catalog ID is in expected_failures → unexpected pass (regression fixed)
  *   - On a full run, a registered ID with no test that passed or failed → orphaned registration
+ *   - A test under the parity.json's skips was skipped by the fixture → registered skip
  *   - Writes a verdict file the runner reads to reclassify the exit code
  */
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Reporter, SerializedError, TestModule } from 'vitest/node';
-import { classifyResults, loadParity, parityVerdict, type TestResult } from '../../scripts/lib/parity.js';
+import { classifyResults, loadParity, parityVerdict, type Parity, type TestResult } from '../../scripts/lib/parity.js';
 
 export default class ParityReporter implements Reporter {
-	private gapForId = new Map<string, string>();
+	private parity: Parity = { gaps: {}, gapForId: new Map(), skips: {}, skipForId: new Map() };
 	private env: NodeJS.ProcessEnv;
 
 	constructor({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
@@ -26,7 +27,7 @@ export default class ParityReporter implements Reporter {
 	onInit(): void {
 		const adapterPath = this.env.SCREEPS_OK_ADAPTER ?? '';
 		if (!adapterPath) return;
-		this.gapForId = loadParity(resolve(dirname(adapterPath), 'parity.json')).gapForId;
+		this.parity = loadParity(resolve(dirname(adapterPath), 'parity.json'));
 	}
 
 	onTestRunEnd(testModules: ReadonlyArray<TestModule>, unhandledErrors: ReadonlyArray<SerializedError> = []): void {
@@ -41,7 +42,7 @@ export default class ParityReporter implements Reporter {
 		}
 
 		// Only a full run can tell a stale registration from one outside the filter.
-		const classified = classifyResults(this.gapForId, results, { fullRun: this.env.SCREEPS_OK_FULL_RUN === '1' });
+		const classified = classifyResults(this.parity, results, { fullRun: this.env.SCREEPS_OK_FULL_RUN === '1' });
 		const expectedByGap = new Map<string, string[]>();
 		const unexpectedByGap = new Map<string, string[]>();
 		for (const [id, { gapId, passed, failed }] of classified.idStats) {
@@ -66,7 +67,13 @@ export default class ParityReporter implements Reporter {
 		}
 		if (classified.orphans.length > 0) {
 			console.log(`\n Parity: ${classified.orphans.length} registration(s) matched no test that ran — fix the id or prune it`);
-			for (const id of classified.orphans) console.log(`  ${this.gapForId.get(id)}: ${id}`);
+			for (const id of classified.orphans) console.log(`  ${this.parity.gapForId.get(id) ?? this.parity.skipForId.get(id)}: ${id}`);
+		}
+		if (classified.registeredSkips.length > 0) {
+			console.log(`\n Parity: ${classified.registeredSkips.length} test(s) not run — parity.json skips them; each skip says why`);
+			const bySkip = new Map<string, string[]>();
+			for (const t of classified.registeredSkips) bySkip.set(t.skipId!, [...bySkip.get(t.skipId!) ?? [], t.id!]);
+			for (const [skipId, ids] of bySkip) console.log(`  ${skipId}: ${ids.join(', ')}`);
 		}
 		if (classified.untagged.length > 0) {
 			console.log(`\n Parity: ${classified.untagged.length} test(s) carry no single catalog id — name one id (or one \`:row\`) per test`);

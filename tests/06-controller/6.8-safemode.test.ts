@@ -3,12 +3,9 @@ import { describe, test, expect, code,
 	MOVE, ATTACK, RANGED_ATTACK, WORK, HEAL, CLAIM, CARRY,
 	STRUCTURE_RAMPART, STRUCTURE_CONTAINER,
 	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, CONTROLLER_DOWNGRADE, SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
-	limitationGated,
 } from '../../src/index.js';
 import { safeModeBlockedActionCases } from '../../src/matrices/ctrl-safemode-blocked.js';
 import { ctrlSafemodeValidationCases } from '../../src/matrices/ctrl-safemode-validation.js';
-
-const downgradeTest = limitationGated('controllerDowngrade');
 
 describe('Safe mode mechanics', () => {
 	// ---- CTRL-SAFEMODE-001: activation consumes a charge and starts safe mode ----
@@ -163,7 +160,7 @@ describe('Safe mode mechanics', () => {
 	});
 
 	// ---- CTRL-SAFEMODE-005: downgrade timer below threshold ----
-	downgradeTest('CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD', async ({ shard }) => {
+	test('CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 4, owner: 'p1', safeModeAvailable: 1, ticksToDowngrade: 100 }],

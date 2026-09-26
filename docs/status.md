@@ -480,7 +480,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## vanilla skipped tests
 
-vanilla has 3 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+vanilla has 3 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Registered** skips are tests `adapters/vanilla/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
@@ -3814,7 +3814,7 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Limitation** skips come from `src/limitations.ts` — features the canonical engine has but this adapter can't surface through the screeps-ok API.
+xxscreeps has 196 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |

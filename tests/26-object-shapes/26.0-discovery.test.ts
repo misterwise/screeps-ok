@@ -22,7 +22,7 @@ import { describe, test, expect, code,
 	STRUCTURE_SPAWN,
 } from '../../src/index.js';
 import type { PlayerCode } from '../../src/index.js';
-import { expectedShape, hasDocumentedAdapterLimitation } from '../../src/limitations.js';
+import { expectedShape } from '../../src/shape-divergences.js';
 import {
 	CREEP_SHAPE, POWER_CREEP_SHAPE,
 	BODY_PART_SHAPE, BODY_PART_BOOSTED_SHAPE,
@@ -101,7 +101,7 @@ describe('26.0 Object Shape Conformance', () => {
 			c ? dataProps(c) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', CREEP_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', CREEP_SHAPE));
 	});
 
 	test('SHAPE-CREEP-002 creep nested sub-objects match canonical shapes', async ({ shard }) => {
@@ -123,7 +123,7 @@ describe('26.0 Object Shape Conformance', () => {
 		`) as { bodyPart: string[]; owner: string[]; pos: string[] } | null;
 
 		expect(shape).not.toBeNull();
-		expect(shape!.bodyPart).toEqual(await expectedShape('bodyPart', BODY_PART_SHAPE));
+		expect(shape!.bodyPart).toEqual(expectedShape(shard, 'bodyPart', BODY_PART_SHAPE));
 		expect(shape!.owner).toEqual([...OWNER_SHAPE]);
 		expect(shape!.pos).toEqual([...ROOM_POSITION_SHAPE]);
 	});
@@ -147,7 +147,7 @@ describe('26.0 Object Shape Conformance', () => {
 		`) as { unboosted: string[]; boosted: string[] } | null;
 
 		expect(shape).not.toBeNull();
-		expect(shape!.unboosted).toEqual(await expectedShape('bodyPart', BODY_PART_SHAPE));
+		expect(shape!.unboosted).toEqual(expectedShape(shard, 'bodyPart', BODY_PART_SHAPE));
 		expect(shape!.boosted).toEqual([...BODY_PART_BOOSTED_SHAPE]);
 	});
 
@@ -168,7 +168,7 @@ describe('26.0 Object Shape Conformance', () => {
 			pc ? dataProps(pc) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', POWER_CREEP_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', POWER_CREEP_SHAPE));
 	});
 
 	// ── 26.3 Room & Controller Shape ─────────────────────────────────
@@ -194,7 +194,7 @@ describe('26.0 Object Shape Conformance', () => {
 			ctrl ? dataProps(ctrl) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('controller', CONTROLLER_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'controller', CONTROLLER_SHAPE));
 	});
 
 	test('SHAPE-CTRL-002 controller.sign sub-object matches canonical shape', async ({ shard }) => {
@@ -363,7 +363,7 @@ describe('26.0 Object Shape Conformance', () => {
 				s ? dataProps(s) : null
 			`) as string[] | null;
 
-			expect(keys).toEqual(await expectedShape('structure', entry.shape));
+			expect(keys).toEqual(expectedShape(shard, 'structure', entry.shape));
 		});
 	}
 
@@ -394,12 +394,6 @@ describe('26.0 Object Shape Conformance', () => {
 
 	for (const entry of npcShapes) {
 		test(`${entry.catalogId} ${entry.objectType} data-property surface matches canonical shape`, async ({ shard }) => {
-			if (entry.limitation) {
-				const skip = await hasDocumentedAdapterLimitation(
-					entry.limitation as Parameters<typeof hasDocumentedAdapterLimitation>[0],
-				);
-				if (skip) return;
-			}
 			if (entry.cap) shard.requires(entry.cap);
 
 			if (entry.objectType === 'portal') {
@@ -422,7 +416,7 @@ describe('26.0 Object Shape Conformance', () => {
 				o ? dataProps(o) : null
 			`) as string[] | null;
 
-			expect(keys).toEqual(await expectedShape('structure', entry.shape));
+			expect(keys).toEqual(expectedShape(shard, 'structure', entry.shape));
 		});
 	}
 
@@ -442,7 +436,7 @@ describe('26.0 Object Shape Conformance', () => {
 			s ? dataProps(s) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', SOURCE_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', SOURCE_SHAPE));
 	});
 
 	test('SHAPE-MINERAL-001 mineral data-property surface matches canonical shape', async ({ shard }) => {
@@ -459,7 +453,7 @@ describe('26.0 Object Shape Conformance', () => {
 			m ? dataProps(m) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', MINERAL_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', MINERAL_SHAPE));
 	});
 
 	test('SHAPE-DEPOSIT-001 deposit data-property surface matches canonical shape', async ({ shard }) => {
@@ -476,7 +470,7 @@ describe('26.0 Object Shape Conformance', () => {
 			d ? dataProps(d) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', DEPOSIT_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', DEPOSIT_SHAPE));
 	});
 
 	test('SHAPE-SITE-001 constructionSite data-property surface matches canonical shape', async ({ shard }) => {
@@ -492,7 +486,7 @@ describe('26.0 Object Shape Conformance', () => {
 			s ? dataProps(s) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', CONSTRUCTION_SITE_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', CONSTRUCTION_SITE_SHAPE));
 	});
 
 	test('SHAPE-FLAG-001 flag data-property surface matches canonical shape', async ({ shard }) => {
@@ -510,7 +504,7 @@ describe('26.0 Object Shape Conformance', () => {
 			f ? dataProps(f) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('flag', FLAG_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'flag', FLAG_SHAPE));
 	});
 
 	test('SHAPE-RESOURCE-001 droppedResource data-property surface matches canonical shape', async ({ shard }) => {
@@ -527,7 +521,7 @@ describe('26.0 Object Shape Conformance', () => {
 			r ? dataProps(r) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', DROPPED_RESOURCE_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', DROPPED_RESOURCE_SHAPE));
 	});
 
 	test('SHAPE-TOMBSTONE-001 tombstone data-property surface matches canonical shape', async ({ shard }) => {
@@ -545,7 +539,7 @@ describe('26.0 Object Shape Conformance', () => {
 			t ? dataProps(t) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', TOMBSTONE_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', TOMBSTONE_SHAPE));
 	});
 
 	test('SHAPE-RUIN-001 ruin data-property surface matches canonical shape', async ({ shard }) => {
@@ -563,7 +557,7 @@ describe('26.0 Object Shape Conformance', () => {
 			r ? dataProps(r) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', RUIN_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', RUIN_SHAPE));
 	});
 
 	test('SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape', async ({ shard }) => {
@@ -581,7 +575,7 @@ describe('26.0 Object Shape Conformance', () => {
 			n ? dataProps(n) : null
 		`) as string[] | null;
 
-		expect(keys).toEqual(await expectedShape('roomObject', NUKE_SHAPE));
+		expect(keys).toEqual(expectedShape(shard, 'roomObject', NUKE_SHAPE));
 	});
 
 	// ── 26.8 Effects Substrate Shape ─────────────────────────────────

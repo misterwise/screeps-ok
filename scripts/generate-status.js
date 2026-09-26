@@ -68,7 +68,7 @@ function summarizeReport(report, parity) {
 		skippedTests: classified.skipped,
 		failingTests: classified.failed,
 		unexpectedPasses: classified.unexpectedPasses,
-		orphans: classified.orphans.map(id => ({ id, gapId: parity.gapForId.get(id) })),
+		orphans: classified.orphans.map(id => ({ id, gapId: parity.gapForId.get(id) ?? parity.skipForId.get(id) })),
 		untagged: classified.untagged,
 		fileErrors,
 		loaded: true,
@@ -229,7 +229,7 @@ function renderGapDetails(adapterName, summary, gapIds) {
 
 const CAPABILITY_DESCRIPTIONS = capabilityDescriptions(path.join(packageRoot, 'src/adapter.ts'));
 
-function describeSkipReason(reason) {
+function describeSkipReason(reason, parity) {
 	if (!reason) return { category: 'uncategorized', key: '(no reason)', description: 'Skip reason not recorded' };
 	const [category, key] = reason.split(':');
 	if (category === 'capability') {
@@ -238,13 +238,13 @@ function describeSkipReason(reason) {
 		const description = CAPABILITY_DESCRIPTIONS.get(key) ?? 'No longer declared by `AdapterCapabilities`; the next full run drops it';
 		return { category, key, description };
 	}
-	if (category === 'limitation') {
-		return { category, key, description: `Documented adapter limitation; see \`src/limitations.ts\`` };
+	if (category === 'registered') {
+		return { category, key, description: parity.skips[key]?.why ?? 'No longer in `skips`; the next full run drops it' };
 	}
 	return { category: 'other', key: reason, description: reason };
 }
 
-function renderSkippedSection(adapterName, tests) {
+function renderSkippedSection(adapterName, tests, parity) {
 	const lines = [];
 	lines.push(`## ${adapterName} skipped tests`);
 	lines.push('');
@@ -257,7 +257,7 @@ function renderSkippedSection(adapterName, tests) {
 	const groups = new Map();
 	for (const t of tests) {
 		const reason = t.meta?.skipReason ?? null;
-		const info = describeSkipReason(reason);
+		const info = describeSkipReason(reason, parity);
 		const groupKey = `${info.category}:${info.key}`;
 		const entry = groups.get(groupKey) ?? { info, tests: [] };
 		entry.tests.push(t);
@@ -269,7 +269,7 @@ function renderSkippedSection(adapterName, tests) {
 	);
 
 	lines.push(
-		`${adapterName} has ${tests.length} skipped test${tests.length === 1 ? '' : 's'}, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in \`capabilities\` (see \`adapters/${adapterName}/index.ts\`). **Limitation** skips come from \`src/limitations.ts\` — features the canonical engine has but this adapter can't surface through the screeps-ok API.`,
+		`${adapterName} has ${tests.length} skipped test${tests.length === 1 ? '' : 's'}, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in \`capabilities\` (see \`adapters/${adapterName}/index.ts\`). **Registered** skips are tests \`adapters/${adapterName}/parity.json\` lists under \`skips\`, which the fixture doesn't run.`,
 	);
 	lines.push('');
 	lines.push('| Category | Cause | What it means | Tests |');
@@ -472,7 +472,7 @@ function render(summaries) {
 		const s = data.summary;
 		if (!s.loaded) continue;
 		if (s.skipped > 0) {
-			lines.push(renderSkippedSection(adapter, s.skippedTests));
+			lines.push(renderSkippedSection(adapter, s.skippedTests, data.parity));
 			lines.push('');
 		}
 		lines.push(renderTestListByFile(

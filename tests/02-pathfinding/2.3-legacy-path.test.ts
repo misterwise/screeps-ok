@@ -1,5 +1,4 @@
-import { describe, test, expect, code, limitationGated } from '../../src/index.js';
-const pathFinderUseTest = limitationGated('xxscreepsPathFinderUseMissing');
+import { describe, test, expect, code } from '../../src/index.js';
 
 function singleExitTerrain(openEdge: 'top' | 'bottom'): Array<0 | 1 | 2> {
 	const terrain = new Array<0 | 1 | 2>(2500).fill(0);
@@ -233,7 +232,7 @@ describe('Legacy Pathfinding', () => {
 		expect(result.allCorrect).toBe(true);
 	});
 
-	pathFinderUseTest('LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing', async ({ shard }) => {
+	test('LEGACY-PATH-003 PathFinder.use() exists and toggles between new PathFinder and legacy mode without throwing', async ({ shard }) => {
 		// Catalog rule: "PathFinder.use() toggles between new PathFinder and legacy mode."
 		// The actual mode-switch is not observable from user code (legacy and new
 		// pathfinder produce the same step format and converge on simple maps),

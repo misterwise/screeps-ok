@@ -6,9 +6,16 @@ export interface ParityGap {
 	tests: string[];
 }
 
+export interface ParitySkip {
+	why: string;
+	tests: string[];
+}
+
 export interface Parity {
 	gaps: Record<string, ParityGap>;
 	gapForId: Map<string, string>;
+	skips: Record<string, ParitySkip>;
+	skipForId: Map<string, string>;
 }
 
 export interface TestResult {
@@ -23,6 +30,8 @@ export interface ClassifiedTest extends TestResult {
 	// The registered id this test falls under (its own, or its bare id), and that registration's gap.
 	registration: string | undefined;
 	gapId: string | undefined;
+	// The skip registered for this test, by its own id or its bare id.
+	skipId: string | undefined;
 }
 
 export interface Classified {
@@ -31,6 +40,7 @@ export interface Classified {
 	failed: ClassifiedTest[];
 	unexpectedPasses: ClassifiedTest[];
 	skipped: ClassifiedTest[];
+	registeredSkips: ClassifiedTest[];
 	untagged: ClassifiedTest[];
 	orphans: string[];
 	idStats: Map<string, { gapId: string; passed: number; failed: number }>;
@@ -46,7 +56,8 @@ export interface ParityVerdict {
 }
 
 export function loadParity(parityPath: string): Parity;
-export function classifyResults(gapForId: Map<string, string>, results: TestResult[], options: { fullRun: boolean }): Classified;
+export function registrationFor(forId: Map<string, string>, id: string | null | undefined): string | undefined;
+export function classifyResults(parity: Parity, results: TestResult[], options: { fullRun: boolean }): Classified;
 export function runPlan(name: string, vitestArgs: string[]): { fullRun: boolean; reportName: string };
 export function reportResults(report: unknown): { results: TestResult[]; fileErrors: { file: string; message: string }[] };
 export function judgeReport(report: unknown, parity: Parity): {

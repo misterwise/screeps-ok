@@ -274,9 +274,9 @@ covers the structure, `terminalSend` covers its send processor,
 `market` covers the complete order/deal/history lifecycle. `powerBank` is
 independent of functional `powerCreeps` support.
 
-Adapter-specific skips should be rare. In this repository, narrow built-in
-exceptions are centralized in `src/limitations.ts` rather than
-scattered as raw adapter-name checks throughout the suite.
+Adapter-specific skips should be rare, and tests never branch on the
+adapter's name. A test your engine can't run at all goes under `skips` in your
+`parity.json` (see [A test your engine can't run](#a-test-your-engine-cant-run)).
 
 If a test represents planned coverage that the suite cannot exercise yet, use
 `test.todo` instead of `test.skip`.
@@ -520,11 +520,35 @@ When upstream catalogs the same gap and publishes, the base covers it and
 your overlay entry becomes redundant. Reusing the upstream gap id (once you
 know it) makes that transition silent.
 
+### A test your engine can't run
+
+A registered gap still runs its tests. When a test can't run at all on your
+engine, because it hangs a tick or takes the process down, list it under
+`skips` with the reason:
+
+```json
+{
+  "extends": "screeps-ok/parity/xxscreeps.json",
+  "skips": {
+    "pull-self-hangs": {
+      "why": "pull(self) loops the processor forever; tracked in <issue>",
+      "tests": ["MOVE-PULL-007:self"]
+    }
+  }
+}
+```
+
+The fixture skips those tests before they touch your adapter; the reporter
+prints a `Parity:` line naming each skip's tests, and `docs/status.md` lists
+them with their `why`. A skip reports nothing about the behavior, so register
+a test your engine can run as a gap instead.
+
 ### Orphaned registrations
 
 A full run (no filter, no `--shard`; CI checks the merged shards) also fails
-when a merged-set test id matched no test that passed or failed: a typo, a
-renamed `:row`, or tests your adapter skips for a missing capability. The
+when a merged-set test id matched no test that passed or failed, or a skip
+names no test: a typo, a renamed `:row`, or tests your adapter skips for a
+missing capability. The
 reporter prints `Parity: N registration(s) matched no test that ran` with the
 gap ids. Fix the id, or list a base gap your engine can't run in
 `expected_passes`.
@@ -553,10 +577,18 @@ Each `expected_failures` entry:
   (gates only those variants, letting siblings that pass remain ungated). A
   variant's own registration wins over its base ID's.
 
+Each `skips` entry:
+
+- **skip id** (the JSON key) — names what goes wrong. Overlay entries with the
+  same id as a base entry replace it.
+- **why** — required; what the test does to your engine, and the issue that
+  tracks it.
+- **tests** — catalog IDs to skip; a base ID skips all its `:variant` tests.
+
 The loader rejects a file that breaks this shape: an unknown key, a gap
-without `actual`, `expected` or `tests`, a `tests` entry that isn't a catalog
-test ID, a test ID under two gaps, or an `expected_passes` entry the base
-doesn't register.
+without `actual`, `expected` or `tests`, a skip without `why` or `tests`, a
+`tests` entry that isn't a catalog test ID, a test ID under two gaps or skips
+(or one of each), or an `expected_passes` entry the base doesn't register.
 
 `extends` accepts any specifier `createRequire` can resolve (package subpath,
 absolute path, relative path). Leave the default unless you're pinning to a

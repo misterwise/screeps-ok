@@ -1,14 +1,11 @@
 import { describe, test, expect, code,
 	CONTROLLER_DOWNGRADE, CONTROLLER_DOWNGRADE_RESTORE, CONTROLLER_LEVELS, SAFE_MODE_COOLDOWN,
 	OK, MOVE, WORK, CARRY,
-	limitationGated,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 
-const downgradeTest = limitationGated('controllerDowngrade');
-
 describe('Controller downgrade', () => {
-	downgradeTest('CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 3 }],
@@ -32,7 +29,7 @@ describe('Controller downgrade', () => {
 		expect(after).toBe(1);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0', async ({ shard }) => {
 		// Use two rooms so p1 stays active after losing W1N1.
 		await shard.createShard({
 			players: ['p1'],
@@ -63,7 +60,7 @@ describe('Controller downgrade', () => {
 		expect(result!.my).toBe(false);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 50 }],
@@ -120,7 +117,7 @@ describe('Controller downgrade', () => {
 		});
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 500 }],
@@ -146,7 +143,7 @@ describe('Controller downgrade', () => {
 		expect(before.ttd - after.ttd).toBe(elapsed);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]', async ({ shard }) => {
 		// Engine processor/intents/controllers/tick.js:66 — on a non-terminal
 		// downgrade, progress += round(CONTROLLER_LEVELS[newLevel] * 0.9).
 		// Seed a level-2 controller with progress 0 and let it downgrade.
@@ -171,7 +168,7 @@ describe('Controller downgrade', () => {
 		expect(after.progress).toBe(headStart);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1', ticksToDowngrade: 3 }],
@@ -202,7 +199,7 @@ describe('Controller downgrade', () => {
 		expect(ttdAfter).toBe(2 + CONTROLLER_DOWNGRADE[2] / 2 + 1 - 12);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5, safeModeAvailable: 2 }],
@@ -227,7 +224,7 @@ describe('Controller downgrade', () => {
 		expect(after.safeModeAvailable).toBe(0);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5 }],
@@ -255,7 +252,7 @@ describe('Controller downgrade', () => {
 		expect(after.cooldown).toBe(SAFE_MODE_COOLDOWN - (11 - 3));
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		await shard.createShard({
 			players: ['p1'],
@@ -334,7 +331,7 @@ describe('Controller downgrade', () => {
 		return readings;
 	}
 
-	downgradeTest('CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade', async ({ shard }) => {
 		// Engine processor/intents/controllers/tick.js:38-42 — an upgraded tick sets
 		// downgradeTime to downgradeTime + RESTORE + 1 (the +1 cancels that tick's
 		// own decay), so the tick-over-tick read rises by exactly RESTORE.
@@ -345,7 +342,7 @@ describe('Controller downgrade', () => {
 		expect(readings).toEqual(rising);
 	});
 
-	downgradeTest('CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there', async ({ shard }) => {
 		// Same code path, Math.min against gameTime + CONTROLLER_DOWNGRADE[level] + 1:
 		// a timer within one restore of the ceiling lands exactly on it and stays.
 		const ceiling = CONTROLLER_DOWNGRADE[2];

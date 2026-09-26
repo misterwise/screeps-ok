@@ -120,7 +120,7 @@ Before opening a PR, run the smallest useful validation set for your change:
 Also check:
 
 - Example commands in docs still match real file paths.
-- Internal doc references still match `src/matrices/` and `src/limitations.ts`.
+- Internal doc references still match `src/matrices/` and `src/shape-divergences.ts`.
 - Generated files in the diff are intentional.
 - A change a consumer must act on (adapter contract, catalog ID renames or
   drops, runner or reporter semantics) has an entry under **Unreleased** in

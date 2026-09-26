@@ -469,19 +469,11 @@ Rules:
 - capability-gated tests should use an explicit runtime skip helper rather than
   silently `return` from the test body
 
-Adapter-specific skips are allowed only as documented exceptions.
-
-They must:
-
-- be narrowly scoped
-- be explained inline in the test
-- be documented in the README or adapter docs
-- be routed through a shared limitation helper rather than ad hoc adapter-name
-  checks where practical
-- not become the default way to express missing feature support
-
-The intended long-term model is capability-based skipping, not adapter-name
-branching.
+Tests never branch on the adapter's name. An engine that can't run a test at
+all (it hangs a tick or takes the process down) lists it under `skips` in its
+`parity.json`, with a `why`; the fixture skips it before it touches the
+adapter. A skip reports nothing about the behavior, so an engine that can run
+a test registers its failure as a gap instead.
 
 Suite coverage that is not implemented yet should use `test.todo`, not
 `test.skip`.

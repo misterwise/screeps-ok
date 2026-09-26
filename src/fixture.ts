@@ -1,8 +1,9 @@
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test as base, describe, expect, type RunnerTask, type RunnerTestCase } from 'vitest';
 import { baseCatalogId, testCatalogId } from '../scripts/lib/catalog-id.js';
 import { parseCatalog } from '../scripts/lib/parse-catalog.js';
+import { loadParity, registrationFor, type Parity } from '../scripts/lib/parity.js';
 import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName } from './adapter.js';
 import type { PlayerCode } from './code.js';
 import { RunPlayerError } from './errors.js';
@@ -22,20 +23,22 @@ import type {
 type AdapterFactory = { createAdapter(): Promise<ScreepsOkAdapter> };
 
 let adapterModule: AdapterFactory | undefined;
+let parity: Parity | undefined;
+
+function adapterPath(): string {
+	const adapterPath = process.env.SCREEPS_OK_ADAPTER;
+	if (!adapterPath) {
+		throw new Error(
+			'SCREEPS_OK_ADAPTER env var not set. Point it at an adapter module ' +
+			'(e.g., SCREEPS_OK_ADAPTER=./adapters/xxscreeps/index.ts)'
+		);
+	}
+	// Resolve relative to project root, not to vite-node internals
+	return resolve(process.cwd(), adapterPath);
+}
 
 async function getAdapterModule(): Promise<AdapterFactory> {
-	if (!adapterModule) {
-		const adapterPath = process.env.SCREEPS_OK_ADAPTER;
-		if (!adapterPath) {
-			throw new Error(
-				'SCREEPS_OK_ADAPTER env var not set. Point it at an adapter module ' +
-				'(e.g., SCREEPS_OK_ADAPTER=./adapters/xxscreeps/index.ts)'
-			);
-		}
-		// Resolve relative to project root, not to vite-node internals
-		const absPath = resolve(process.cwd(), adapterPath);
-		adapterModule = await import(absPath) as AdapterFactory;
-	}
+	adapterModule ??= await import(adapterPath()) as AdapterFactory;
 	return adapterModule;
 }
 
@@ -243,6 +246,12 @@ function fenceShard(shard: ShardFixture) {
 	};
 }
 
+function taskCatalogId(task: RunnerTestCase): string | null {
+	const names: string[] = [];
+	for (let t: RunnerTask | undefined = task; t && t !== task.file; t = t.suite) names.unshift(t.name);
+	return testCatalogId(names.join(' > '));
+}
+
 // Each catalog row's capabilities: its section's tag and its own.
 let rowCapabilities: Map<string, string[]> | undefined;
 
@@ -252,9 +261,7 @@ let rowCapabilities: Map<string, string[]> | undefined;
 function assertGated(task: RunnerTestCase, gates: Set<string>) {
 	// vitest's skip() marks the running result pending (untyped); a skipped test may not reach its gates.
 	if ((task.result as { pending?: boolean } | undefined)?.pending) return;
-	const names: string[] = [];
-	for (let t: RunnerTask | undefined = task; t && t !== task.file; t = t.suite) names.unshift(t.name);
-	const id = testCatalogId(names.join(' > '));
+	const id = taskCatalogId(task);
 	if (!id) return;
 	rowCapabilities ??= new Map(parseCatalog(fileURLToPath(new URL('../behaviors.md', import.meta.url)))
 		.map(entry => [entry.id, entry.capabilities]));
@@ -266,6 +273,14 @@ function assertGated(task: RunnerTestCase, gates: Set<string>) {
 
 export const test = base.extend<{ shard: ShardFixture }>({
 	shard: async ({ skip, task }, use) => {
+		// A test the adapter's parity.json skips never reaches the engine: it may hang it.
+		parity ??= loadParity(resolve(dirname(adapterPath()), 'parity.json'));
+		const skipped = registrationFor(parity.skipForId, taskCatalogId(task));
+		if (skipped) {
+			const skipId = parity.skipForId.get(skipped)!;
+			(task.meta as Record<string, unknown>).skipReason = `registered:${skipId}`;
+			skip(parity.skips[skipId].why);
+		}
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
 		const gates = new Set<string>();
