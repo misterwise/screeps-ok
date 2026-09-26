@@ -9,6 +9,7 @@ import { describe, test, expect, code,
 	CARRY_CAPACITY,
 	BODYPART_HITS,
 	body,
+	STRUCTURE_CONTAINER,
 } from '../../src/index.js';
 
 // ── BOOST-RANGED-001: ranged attack boost magnitudes ────────
@@ -738,7 +739,7 @@ describe('BOOST-CARRY-001 carry capacity boost magnitudes', () => {
 			// Verify via withdraw: put a container with more energy than base
 			// capacity and withdraw the full boosted amount.
 			const containerId = await shard.placeStructure('W1N1', {
-				pos: [26, 26], structureType: 'container',
+				pos: [26, 26], structureType: STRUCTURE_CONTAINER,
 				store: { energy: 500 },
 			});
 			await shard.tick();

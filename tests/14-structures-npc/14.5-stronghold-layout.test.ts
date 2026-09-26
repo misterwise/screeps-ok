@@ -1,6 +1,7 @@
 import {
 	describe, test, expect, code,
 	FIND_STRUCTURES, STRUCTURE_INVADER_CORE,
+	STRUCTURE_CONTROLLER,
 } from '../../src/index.js';
 import { strongholdTemplates } from '../../src/matrices/stronghold-layout.js';
 
@@ -39,7 +40,7 @@ describe('Stronghold layout', () => {
 				expect(cores).toHaveLength(1);
 
 				const placed = allStructures
-					.filter(s => s.id !== coreId && s.structureType !== 'controller')
+					.filter(s => s.id !== coreId && s.structureType !== STRUCTURE_CONTROLLER)
 					.map(s => `${s.structureType}@${s.pos.x - coreX},${s.pos.y - coreY}`)
 					.sort();
 

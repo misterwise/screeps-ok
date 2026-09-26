@@ -91,7 +91,7 @@ describe('adapter contract: setup', () => {
 			expect(structures).toHaveLength(1);
 			expect(structures[0]).toMatchObject({
 				kind: 'structure',
-				structureType: 'controller',
+				structureType: STRUCTURE_CONTROLLER,
 			});
 			expect(sources).toEqual([]);
 			expect(minerals).toEqual([]);
@@ -515,7 +515,7 @@ describe('adapter contract: setup', () => {
 			await shard.tick();
 
 			const obj = await shard.expectStructure(id, STRUCTURE_CONTAINER);
-			expect(obj.structureType).toBe('container');
+			expect(obj.structureType).toBe(STRUCTURE_CONTAINER);
 		});
 
 		test('structure store is initialized', async ({ shard }) => {
@@ -693,7 +693,7 @@ describe('adapter contract: setup', () => {
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'site');
-			expect(obj.structureType).toBe('road');
+			expect(obj.structureType).toBe(STRUCTURE_ROAD);
 			expect(obj.progress).toBe(0);
 			expect(obj.progressTotal).toBe(CONSTRUCTION_COST[STRUCTURE_ROAD]);
 		});
@@ -771,14 +771,14 @@ describe('adapter contract: setup', () => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeRuin('W1N1', {
 				pos: [25, 25],
-				structureType: 'container',
+				structureType: STRUCTURE_CONTAINER,
 				store: { energy: 75 },
 				ticksToDecay: 200,
 			});
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'ruin');
-			expect(obj.structureType).toBe('container');
+			expect(obj.structureType).toBe(STRUCTURE_CONTAINER);
 			expect(obj.store.energy).toBe(75);
 			expect(obj.ticksToDecay).toBeGreaterThan(0);
 		});

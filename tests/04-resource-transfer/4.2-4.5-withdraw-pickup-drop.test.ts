@@ -143,7 +143,7 @@ describe('creep.withdraw()', () => {
 		});
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [24, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			store: { energy: 60 },
 			ticksToDecay: 200,
 		});

@@ -19,6 +19,7 @@ import { describe, test, expect, code,
 	RESOURCE_ENERGY, RESOURCE_SILICON,
 	COLOR_RED, COLOR_BLUE,
 	PWR_DISRUPT_TOWER,
+	STRUCTURE_SPAWN,
 } from '../../src/index.js';
 import type { PlayerCode } from '../../src/index.js';
 import { expectedShape, hasDocumentedAdapterLimitation } from '../../src/limitations.js';
@@ -369,7 +370,7 @@ describe('26.0 Object Shape Conformance', () => {
 	test('SHAPE-STRUCT-002 spawn.spawning sub-object matches canonical shape', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: 'spawn', owner: 'p1',
+			pos: [26, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
 			store: { energy: 300 },
 		});
 		await shard.tick();

@@ -342,11 +342,11 @@ describe('Combat powers', () => {
 		const result = await shard.runPlayer('p1', code`
 			const pos = new RoomPosition(25, 25, 'W1N1');
 			const structs = pos.lookFor(LOOK_STRUCTURES);
-			const rampart = structs.find(s => s.structureType === 'rampart');
+			const rampart = structs.find(s => s.structureType === STRUCTURE_RAMPART);
 			rampart ? ({ x: rampart.pos.x, y: rampart.pos.y, type: rampart.structureType }) : null
 		`) as { x: number; y: number; type: string } | null;
 		expect(result).not.toBeNull();
-		expect(result!.type).toBe('rampart');
+		expect(result!.type).toBe(STRUCTURE_RAMPART);
 	});
 
 	test('POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays', async ({ shard }) => {
@@ -395,7 +395,7 @@ describe('Combat powers', () => {
 
 		// Rampart should exist now.
 		const exists = await shard.runPlayer('p1', code`
-			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === 'rampart')
+			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === STRUCTURE_RAMPART)
 		`);
 		expect(exists).toBe(true);
 
@@ -406,7 +406,7 @@ describe('Combat powers', () => {
 		for (let i = 0; i < duration + 5; i++) await shard.tick();
 
 		const gone = await shard.runPlayer('p1', code`
-			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === 'rampart')
+			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === STRUCTURE_RAMPART)
 		`);
 		expect(gone).toBe(false);
 	});

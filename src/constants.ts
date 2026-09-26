@@ -147,6 +147,7 @@ export const STRUCTURE_FACTORY: 'factory' = C.STRUCTURE_FACTORY;
 export const STRUCTURE_KEEPER_LAIR: 'keeperLair' = C.STRUCTURE_KEEPER_LAIR;
 export const STRUCTURE_POWER_BANK: 'powerBank' = C.STRUCTURE_POWER_BANK;
 export const STRUCTURE_INVADER_CORE: 'invaderCore' = C.STRUCTURE_INVADER_CORE;
+export const STRUCTURE_PORTAL: 'portal' = C.STRUCTURE_PORTAL;
 
 // Resources
 export const RESOURCE_ENERGY: 'energy' = C.RESOURCE_ENERGY;

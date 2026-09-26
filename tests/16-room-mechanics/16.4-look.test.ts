@@ -45,7 +45,7 @@ describe('Room look API', () => {
 			const structs = Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25);
 			structs.map(s => s.structureType)
 		`);
-		expect(result).toEqual(['road']);
+		expect(result).toEqual([STRUCTURE_ROAD]);
 	});
 
 	test('ROOM-LOOK-003 lookForAt(LOOK_CREEPS) returns only creeps at the tile', async ({ shard }) => {

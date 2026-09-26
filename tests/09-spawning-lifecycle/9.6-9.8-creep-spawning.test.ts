@@ -70,7 +70,7 @@ describe('creep.suicide()', () => {
 		await shard.ownedRoom('p1', 'W1N1', 1);
 		// Place a spawn explicitly (ownedRoom doesn't create one).
 		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: 'spawn', owner: 'p1',
+			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
 			store: { energy: 300 },
 		});
 		await shard.tick();

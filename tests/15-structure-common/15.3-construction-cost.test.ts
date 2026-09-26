@@ -2,6 +2,7 @@ import { describe, test, expect, code,
 	OK, CONSTRUCTION_COST, STRUCTURE_ROAD,
 	CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
 	FIND_CONSTRUCTION_SITES, TERRAIN_SWAMP, TERRAIN_WALL,
+	STRUCTURE_EXTENSION,
 } from '../../src/index.js';
 import { constructionCostCases } from '../../src/matrices/construction-cost.js';
 
@@ -40,11 +41,11 @@ describe('Construction costs', () => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const siteId = await shard.placeSite('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			structureType: 'extension',
+			structureType: STRUCTURE_EXTENSION,
 		});
 
 		const site = await shard.expectObject(siteId, 'site');
-		expect(site.progressTotal).toBe(CONSTRUCTION_COST['extension']);
+		expect(site.progressTotal).toBe(CONSTRUCTION_COST[STRUCTURE_EXTENSION]);
 	});
 
 	// ── CONSTRUCTION-COST-003: road site progressTotal scales by terrain ratio ──

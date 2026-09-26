@@ -1,5 +1,6 @@
 import { describe, test, expect, code,
 	OK,
+	STRUCTURE_RAMPART,
 } from '../../src/index.js';
 
 describe('Rampart power effects', () => {
@@ -11,7 +12,7 @@ describe('Rampart power effects', () => {
 		});
 
 		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: 'rampart', owner: 'p1',
+			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
 			hits: 10000,
 		});
 		await shard.placePowerCreep('W1N1', {
@@ -25,7 +26,7 @@ describe('Rampart power effects', () => {
 		const rc = await shard.runPlayer('p1', code`
 			const pc = Object.values(Game.powerCreeps)[0];
 			const structs = new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES);
-			const rampart = structs.find(s => s.structureType === 'rampart');
+			const rampart = structs.find(s => s.structureType === STRUCTURE_RAMPART);
 			rampart ? pc.usePower(PWR_FORTIFY, rampart) : -99
 		`);
 		expect(rc).toBe(OK);
@@ -53,7 +54,7 @@ describe('Rampart power effects', () => {
 
 		// Verify a rampart exists at the power creep's position.
 		const hasRampart = await shard.runPlayer('p1', code`
-			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === 'rampart')
+			new RoomPosition(25, 25, 'W1N1').lookFor(LOOK_STRUCTURES).some(s => s.structureType === STRUCTURE_RAMPART)
 		`);
 		expect(hasRampart).toBe(true);
 	});

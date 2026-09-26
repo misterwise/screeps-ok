@@ -6,6 +6,7 @@ import {
 	STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK,
 	FIND_DEPOSITS, OK, REACTION_TIME,
 	RESOURCE_SILICON, RESOURCE_METAL, RESOURCE_POWER,
+	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
 } from '../../src/index.js';
 
 describe('adapter contract: inspection', () => {
@@ -382,7 +383,7 @@ describe('adapter contract: inspection', () => {
 
 			const obj = await shard.getObject(id) as any;
 			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe('portal');
+			expect(obj.structureType).toBe(STRUCTURE_PORTAL);
 			expect(obj.destination).toEqual({ x: 30, y: 31, roomName: 'W2N1' });
 			expect(obj.ticksToDecay).toBeGreaterThan(0);
 			expect(obj.ticksToDecay).toBeLessThanOrEqual(200);
@@ -405,7 +406,7 @@ describe('adapter contract: inspection', () => {
 
 			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 			const ctrl = sites.find((s: any) =>
-				s.kind === 'structure' && s.structureType === 'controller') as any;
+				s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER) as any;
 			const playerView = await shard.runPlayer('p1', code`
 				Game.rooms['W1N1'].controller.ticksToDowngrade
 			`) as number;
@@ -431,7 +432,7 @@ describe('adapter contract: inspection', () => {
 
 			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 			const ctrl = sites.find((s: any) =>
-				s.kind === 'structure' && s.structureType === 'controller') as any;
+				s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER) as any;
 			const playerView = await shard.runPlayer('p1', code`
 				Game.rooms['W1N1'].controller.safeMode || 0
 			`) as number;

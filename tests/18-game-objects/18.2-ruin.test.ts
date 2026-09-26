@@ -7,6 +7,7 @@ import {
 	FIND_RUINS,
 	STRUCTURE_CONTAINER, STRUCTURE_WALL,
 	body,
+	STRUCTURE_POWER_BANK,
 } from '../../src/index.js';
 
 describe('Ruin', () => {
@@ -17,14 +18,14 @@ describe('Ruin', () => {
 		});
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			store: { energy: 100 },
 			ticksToDecay: 400,
 		});
 		await shard.tick();
 
 		const ruin = await shard.expectObject(ruinId, 'ruin');
-		expect(ruin.structureType).toBe('container');
+		expect(ruin.structureType).toBe(STRUCTURE_CONTAINER);
 		expect(typeof ruin.destroyTime).toBe('number');
 		expect(ruin.ticksToDecay).toBeGreaterThan(0);
 		expect(ruin.store.energy).toBeGreaterThan(0);
@@ -38,17 +39,17 @@ describe('Ruin', () => {
 
 		// A powerBank has an entry in RUIN_DECAY_STRUCTURES (10 ticks).
 		// A container does not — it should use the generic RUIN_DECAY (500 ticks).
-		const expectedSpecial = RUIN_DECAY_STRUCTURES['powerBank'];
+		const expectedSpecial = RUIN_DECAY_STRUCTURES[STRUCTURE_POWER_BANK];
 		expect(expectedSpecial).toBeDefined();
 
 		const ruinWithEntry = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
-			structureType: 'powerBank',
+			structureType: STRUCTURE_POWER_BANK,
 			ticksToDecay: expectedSpecial,
 		});
 		const ruinGeneric = await shard.placeRuin('W1N1', {
 			pos: [26, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			ticksToDecay: RUIN_DECAY,
 		});
 		await shard.tick();
@@ -60,7 +61,7 @@ describe('Ruin', () => {
 		expect(specialRuin.ticksToDecay).toBeGreaterThan(0);
 
 		// container has no entry — uses generic RUIN_DECAY.
-		expect(RUIN_DECAY_STRUCTURES['container']).toBeUndefined();
+		expect(RUIN_DECAY_STRUCTURES[STRUCTURE_CONTAINER]).toBeUndefined();
 		expect(genericRuin.ticksToDecay).toBeLessThanOrEqual(RUIN_DECAY);
 		expect(genericRuin.ticksToDecay).toBeGreaterThan(0);
 	});
@@ -72,7 +73,7 @@ describe('Ruin', () => {
 		});
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			store: { energy: 100 },
 			ticksToDecay: 400,
 		});
@@ -113,14 +114,14 @@ describe('Ruin', () => {
 		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
 		const ruin = ruins.find(r => r.pos.x === 25 && r.pos.y === 25);
 		expect(ruin).toBeDefined();
-		expect(ruin!.structureType).toBe('constructedWall');
+		expect(ruin!.structureType).toBe(STRUCTURE_WALL);
 	});
 
 	test('RUIN-005 ruin is removed when ticksToDecay reaches 0', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			ticksToDecay: 2,
 		});
 		await shard.tick();
@@ -140,7 +141,7 @@ describe('Ruin', () => {
 		await shard.ownedRoom('p1');
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
-			structureType: 'container',
+			structureType: STRUCTURE_CONTAINER,
 			ticksToDecay: 50,
 		});
 		await shard.tick();

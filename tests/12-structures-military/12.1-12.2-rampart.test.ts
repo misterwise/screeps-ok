@@ -148,7 +148,7 @@ describe('StructureRampart', () => {
 		// Make the rampart public, then move onto it next tick.
 		await shard.runPlayer('p1', code`
 			const structs = Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25);
-			const rampart = structs.find(s => s.structureType === 'rampart');
+			const rampart = structs.find(s => s.structureType === STRUCTURE_RAMPART);
 			rampart.setPublic(true)
 		`);
 		await shard.tick();
@@ -229,7 +229,7 @@ describe('StructureRampart', () => {
 
 		const rc = await shard.runPlayer('p2', code`
 			const structs = Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25);
-			const rampart = structs.find(s => s.structureType === 'rampart');
+			const rampart = structs.find(s => s.structureType === STRUCTURE_RAMPART);
 			rampart ? rampart.setPublic(true) : -99
 		`);
 		expect(rc).toBe(ERR_NOT_OWNER);

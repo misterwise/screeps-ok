@@ -2,6 +2,7 @@ import { describe, test, expect, code, limitationGated,
 	OK, MOVE, FIND_CREEPS,
 	STRUCTURE_SPAWN,
 	CONTROLLER_DOWNGRADE,
+	STRUCTURE_PORTAL,
 } from '../../src/index.js';
 
 const downgradeTest = limitationGated('controllerDowngrade');
@@ -70,7 +71,7 @@ describe('adapter contract: hard family prerequisites', () => {
 				}) : null
 			`) as any;
 			expect(result).not.toBeNull();
-			expect(result.type).toBe('portal');
+			expect(result.type).toBe(STRUCTURE_PORTAL);
 			expect(result.destRoom).toBe('W2N1');
 		});
 	});

@@ -37,7 +37,7 @@ describe('adapter contract: tile coexistence', () => {
 		expect(mineral.mineralType).toBe('H');
 
 		const extractor = await shard.expectStructure(extractorId, STRUCTURE_EXTRACTOR);
-		expect(extractor.structureType).toBe('extractor');
+		expect(extractor.structureType).toBe(STRUCTURE_EXTRACTOR);
 	});
 
 	test('mineral + extractor resolve to correct types in player code', async ({ shard }) => {
@@ -57,7 +57,7 @@ describe('adapter contract: tile coexistence', () => {
 			const e = Game.getObjectById(${extractorId});
 			({
 				mineralHasType: typeof m?.mineralType === 'string',
-				extractorHasType: e?.structureType === 'extractor',
+				extractorHasType: e?.structureType === STRUCTURE_EXTRACTOR,
 				distinctIds: m?.id !== e?.id,
 			})
 		`) as { mineralHasType: boolean; extractorHasType: boolean; distinctIds: boolean };
@@ -83,10 +83,10 @@ describe('adapter contract: tile coexistence', () => {
 		await shard.tick();
 
 		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.structureType).toBe('road');
+		expect(road.structureType).toBe(STRUCTURE_ROAD);
 
 		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(rampart.structureType).toBe('rampart');
+		expect(rampart.structureType).toBe(STRUCTURE_RAMPART);
 	});
 
 	test('container + creep on the same tile have distinct IDs', async ({ shard }) => {
@@ -138,7 +138,7 @@ describe('adapter contract: tile coexistence', () => {
 		await shard.tick();
 
 		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.structureType).toBe('road');
+		expect(road.structureType).toBe(STRUCTURE_ROAD);
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.body).toHaveLength(1);
@@ -163,10 +163,10 @@ describe('adapter contract: tile coexistence', () => {
 		await shard.tick();
 
 		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.structureType).toBe('road');
+		expect(road.structureType).toBe(STRUCTURE_ROAD);
 
 		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(rampart.structureType).toBe('rampart');
+		expect(rampart.structureType).toBe(STRUCTURE_RAMPART);
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.owner).toBe('p1');
@@ -190,7 +190,7 @@ describe('adapter contract: tile coexistence', () => {
 		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 		const atTile = structures.filter(s => s.pos.x === 25 && s.pos.y === 25);
 		const types = atTile.map(s => s.structureType).sort();
-		expect(types).toContain('road');
-		expect(types).toContain('rampart');
+		expect(types).toContain(STRUCTURE_ROAD);
+		expect(types).toContain(STRUCTURE_RAMPART);
 	});
 });
