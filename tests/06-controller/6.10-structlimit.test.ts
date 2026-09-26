@@ -3,8 +3,8 @@ import { describe, test, expect, code,
 	STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_LINK,
 	STRUCTURE_LAB, STRUCTURE_EXTRACTOR, STRUCTURE_TERMINAL, STRUCTURE_OBSERVER,
 	STRUCTURE_SPAWN,
-	CONTROLLER_STRUCTURES,
 } from '../../src/index.js';
+import { ctrlStructLimitTransitionCases } from '../../src/matrices/ctrl-structlimit.js';
 
 // Minimum RCL required for each structure type (from CONTROLLER_STRUCTURES).
 // Tests place the structure at rcl - 1 to verify isActive() === false,
@@ -69,37 +69,23 @@ describe('CTRL-STRUCTLIMIT-002: isActive by RCL', () => {
 });
 
 describe('CTRL-STRUCTLIMIT-001: structure count limits', () => {
-	// Pick extension at RCL 2 (max 5) as a representative combo.
-	// Place exactly the limit → all active; place one more → the excess is inactive.
-	test('CTRL-STRUCTLIMIT-001 placing exactly CONTROLLER_STRUCTURES[extension][2] structures are all active, one more is inactive', async ({ shard }) => {
-		const limit = CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][2];
-		expect(limit).toBeGreaterThan(0);
+	// Place one more than the level allows: exactly the limit are active, the extra one isn't.
+	for (const { structureType, rcl, expectedCount } of ctrlStructLimitTransitionCases) {
+		test(`CTRL-STRUCTLIMIT-001:${structureType}Rcl${rcl} ${expectedCount} of ${expectedCount + 1} ${structureType}s are active at RCL ${rcl}`, async ({ shard }) => {
+			await shard.ownedRoom('p1', 'W1N1', rcl);
+			for (let i = 0; i <= expectedCount; i++) {
+				await shard.placeStructure('W1N1', {
+					pos: [10 + i % 30, 10 + 2 * Math.floor(i / 30)], structureType, owner: 'p1',
+				});
+			}
+			await shard.tick();
 
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		// Place exactly the allowed number of extensions.
-		for (let i = 0; i < limit; i++) {
-			await shard.placeStructure('W1N1', {
-				pos: [10 + i, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			});
-		}
-		// Place one extra beyond the limit.
-		await shard.placeStructure('W1N1', {
-			pos: [10 + limit, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
+			const active = await shard.runPlayer('p1', code`
+				const placed = Game.rooms['W1N1'].find(FIND_MY_STRUCTURES)
+					.filter(s => s.structureType === ${structureType});
+				[placed.length, placed.filter(s => s.isActive()).length]
+			`);
+			expect(active).toEqual([expectedCount + 1, expectedCount]);
 		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const exts = Game.rooms['W1N1'].find(FIND_MY_STRUCTURES)
-				.filter(s => s.structureType === STRUCTURE_EXTENSION);
-			({
-				total: exts.length,
-				active: exts.filter(s => s.isActive()).length,
-				inactive: exts.filter(s => !s.isActive()).length,
-			})
-		`) as { total: number; active: number; inactive: number };
-
-		expect(result.total).toBe(limit + 1);
-		expect(result.active).toBe(limit);
-		expect(result.inactive).toBe(1);
-	});
+	}
 });

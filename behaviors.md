@@ -1281,15 +1281,17 @@ Coverage Notes
 
 ### 6.10 Structure Limits per RCL
 - `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
-  The maximum active owned structure count for each structure type and
-  controller level matches the canonical `CONTROLLER_STRUCTURES` table.
+  For each structure type `isActive()` counts and each controller level, at
+  most `CONTROLLER_STRUCTURES[type][level]` owned structures of that type are
+  active.
 - `CTRL-STRUCTLIMIT-002` `behavior` `verified_vanilla`
   Owned structures above the room's current controller-level limit remain
   present but inactive until the room again satisfies the limit.
 
 Coverage Notes
-- Constant-across-level limits for containers, roads, walls, and ramparts are
-  covered by the same structure-limit matrix.
+- `isActive()` counts only spawns, extensions, links, towers and labs: unowned
+  roads, walls and containers are always active, and a type allowed once at
+  RCL 8 is never counted (`docs/behavior-matrices.md` → CTRL-STRUCTLIMIT).
 
 ---
 

@@ -146,6 +146,10 @@ changes since `v0.1.0-alpha` are not itemized.
   `STRUCTURE-API-008`, `RAMPART-DECAY-005`.
 - `SOURCE-REGEN-001` is keyed by room state: `:owned`, `:reserved`,
   `:neutral`, `:keeper`.
+- `CTRL-STRUCTLIMIT-001` covers the types `isActive()` counts (spawn,
+  extension, link, tower, lab) and is keyed by type and level
+  (`:extensionRcl2`); roads, walls, containers, ramparts and the one-per-room
+  types were never counted.
 - Re-scoped: `MAP-ROOM-005` covers worlds that straddle the map origin, and
   `SPAWN-TIMING-005`'s test now exercises its row (directions ignored on a
   one-tick `PWR_OPERATE_SPAWN` spawn).

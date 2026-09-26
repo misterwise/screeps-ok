@@ -1,44 +1,27 @@
-import { CONTROLLER_STRUCTURES } from '../index.js';
+import {
+	CONTROLLER_STRUCTURES,
+	STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_LAB,
+} from '../index.js';
 
-type StructType = keyof typeof CONTROLLER_STRUCTURES;
-type RCL = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+// The types isActive() counts against CONTROLLER_STRUCTURES (@screeps/engine utils.js:456-490).
+// It skips unowned ones (road, wall, container: always active, :458) and any type allowed
+// only once at RCL 8 (:474); a room can't hold rampart's 2500.
+const countedTypes = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_LAB] as const;
 
 interface StructLimitCase {
-	structureType: StructType;
-	rcl: RCL;
+	structureType: (typeof countedTypes)[number];
+	rcl: number;
 	expectedCount: number;
 }
 
-// Canonical controller structure limits — one case per (structureType, rcl) pair.
-// Only includes entries where the allowed count transitions (first non-zero
-// appearance and each subsequent increase) to keep the case set practical.
-export const ctrlStructLimitTransitionCases: readonly StructLimitCase[] = (() => {
+// One case per owned level (1-8) at which a counted type's limit changes, the first included.
+export const ctrlStructLimitTransitionCases: readonly StructLimitCase[] = countedTypes.flatMap(structureType => {
 	const cases: StructLimitCase[] = [];
-	for (const [structureType, levels] of Object.entries(CONTROLLER_STRUCTURES)) {
-		const byRcl = levels as Record<number, number>;
-		let prev = -1;
-		for (let rcl = 0; rcl <= 8; rcl++) {
-			const count = byRcl[rcl];
-			if (count === undefined) continue;
-			if (count !== prev) {
-				cases.push({ structureType: structureType as StructType, rcl: rcl as RCL, expectedCount: count });
-				prev = count;
-			}
+	for (let rcl = 1; rcl <= 8; rcl++) {
+		const expectedCount = CONTROLLER_STRUCTURES[structureType][rcl];
+		if (rcl === 1 || expectedCount !== CONTROLLER_STRUCTURES[structureType][rcl - 1]) {
+			cases.push({ structureType, rcl, expectedCount });
 		}
 	}
 	return cases;
-})();
-
-// Full table for exhaustive testing if needed.
-export const ctrlStructLimitAllCases: readonly StructLimitCase[] = (() => {
-	const cases: StructLimitCase[] = [];
-	for (const [structureType, levels] of Object.entries(CONTROLLER_STRUCTURES)) {
-		const byRcl = levels as Record<number, number>;
-		for (let rcl = 0; rcl <= 8; rcl++) {
-			const count = byRcl[rcl];
-			if (count === undefined) continue;
-			cases.push({ structureType: structureType as StructType, rcl: rcl as RCL, expectedCount: count });
-		}
-	}
-	return cases;
-})();
+});

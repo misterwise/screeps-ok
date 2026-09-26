@@ -457,18 +457,23 @@ Each definition should include:
 - `Catalog Entries`
   `CTRL-STRUCTLIMIT-001`
 - `Canonical Source`
-  `CONTROLLER_STRUCTURES` and official `isActive()` / controller-limit checks.
+  `CONTROLLER_STRUCTURES` and `checkStructureAgainstController`
+  (`@screeps/engine/src/utils.js:456-490`), which `isActive()` calls.
 - `Dimensions`
-  structure type, controller level
+  structure type, controller level (1-8) at which its limit changes
 - `Applicability`
-  Owned structures governed by `CONTROLLER_STRUCTURES`, including constant-limit
-  families such as roads, containers, walls, and ramparts
+  Spawn, extension, link, tower and lab: the owned types a room can hold more
+  of than one
 - `Exclusions`
-  Distance-to-controller tie-breaking between same-type structures
+  Roads, constructed walls and containers, which are unowned and always active
+  (`utils.js:458`); storage, terminal, observer, power spawn, extractor, nuker
+  and factory, allowed once at RCL 8 and never counted (`utils.js:474`);
+  ramparts, whose 2500 a room can't hold; distance-to-controller
+  tie-breaking between same-type structures
 - `Verification Notes`
-  This matrix covers the allowed active count only. Inactive-above-limit
-  behavior is owned by `CTRL-STRUCTLIMIT-002`. The executable case list lives
-  in `src/matrices/ctrl-structlimit.ts`.
+  Each case places one more structure than the level allows and reads the
+  active count. Inactive-below-RCL behavior is owned by `CTRL-STRUCTLIMIT-002`.
+  The executable case list lives in `src/matrices/ctrl-structlimit.ts`.
 
 ### TOWER-RANGE
 
