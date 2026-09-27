@@ -157,7 +157,12 @@ changes since `v0.1.0-alpha` are not itemized.
   `INTERSHARD-PORTAL-002` (a creep's `Memory` crossing shards: the docs say
   each shard's `Memory` is isolated), `CPU-SHARD-002` and `SHARD-MEMORY-002`
   (no documented source). `MOVE-FATIGUE-006`, merged into `BOOST-MOVE-001`,
-  which owns the boosted MOVE part's fatigue reduction.
+  which owns the boosted MOVE part's fatigue reduction. `ROOM-TERRAIN-003`,
+  `MAP-TERRAIN-002` and `MAP-TERRAIN-003`, which restated each other:
+  section 16.5 owns `Room.Terrain` (`ROOM-TERRAIN-002` now pins every
+  buffer element, and the new `ROOM-TERRAIN-004` owns
+  `getRawBuffer(destinationArray)`), and 21.3's `MAP-TERRAIN-001` owns
+  `Game.map.getRoomTerrain`.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this
   shard's entry equals `Game.cpu.limit`), `CPU-SHARD-003` (a changed total
   is `ERR_INVALID_ARGS`; now `behavior`), `CPU-SHARD-004` (`OK`, then

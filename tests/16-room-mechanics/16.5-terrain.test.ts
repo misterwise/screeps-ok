@@ -1,6 +1,6 @@
 import {
 	describe, test, expect, code,
-	TERRAIN_PLAIN, TERRAIN_WALL, TERRAIN_SWAMP,
+	TERRAIN_WALL, TERRAIN_SWAMP,
 } from '../../src/index.js';
 import { roomTerrainCases, roomTerrainLayout } from '../../src/matrices/room-terrain.js';
 
@@ -21,7 +21,7 @@ describe('Room terrain access', () => {
 		});
 	}
 
-	test('ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array', async ({ shard }) => {
+	test('ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns a 2500-element Uint8Array indexed y * 50 + x', async ({ shard }) => {
 		shard.requires('terrain', 'custom terrain setup is required for terrain buffer assertions');
 		await shard.createShard({
 			players: ['p1'],
@@ -29,50 +29,38 @@ describe('Room terrain access', () => {
 		});
 
 		const result = await shard.runPlayer('p1', code`
-			const buffer = new Room.Terrain('W1N1').getRawBuffer();
-			({
-				isUint8Array: buffer instanceof Uint8Array,
-				length: buffer.length,
-				samples: [buffer[10 * 50 + 10], buffer[10 * 50 + 11], buffer[10 * 50 + 12]],
-			})
-		`) as {
-			isUint8Array: boolean;
-			length: number;
-			samples: number[];
-		};
+			const terrain = new Room.Terrain('W1N1');
+			const buffer = terrain.getRawBuffer();
+			const values = [];
+			for (let y = 0; y < 50; y++) {
+				for (let x = 0; x < 50; x++) values.push(terrain.get(x, y));
+			}
+			({ isUint8Array: buffer instanceof Uint8Array, buffer: Array.from(buffer), values })
+		`) as { isUint8Array: boolean; buffer: number[]; values: number[] };
 
-		expect(result).toEqual({
-			isUint8Array: true,
-			length: 2500,
-			samples: [TERRAIN_PLAIN, TERRAIN_WALL, TERRAIN_SWAMP],
-		});
+		expect(result.isUint8Array).toBe(true);
+		expect(result.buffer).toHaveLength(2500);
+		expect(result.buffer).toEqual(result.values);
+		expect(result.buffer[10 * 50 + 11]).toBe(TERRAIN_WALL);
+		expect(result.buffer[10 * 50 + 12]).toBe(TERRAIN_SWAMP);
 	});
 
-	test('ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)', async ({ shard }) => {
-		shard.requires('terrain', 'custom terrain setup is required for terrain access equivalence assertions');
+	test('ROOM-TERRAIN-004 Room.Terrain.getRawBuffer(destinationArray) fills and returns destinationArray', async ({ shard }) => {
+		shard.requires('terrain', 'custom terrain setup is required for terrain buffer assertions');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', terrain: roomTerrainLayout }],
 		});
 
 		const result = await shard.runPlayer('p1', code`
-			const viaMap = Game.map.getRoomTerrain('W1N1');
-			const viaCtor = new Room.Terrain('W1N1');
-			({
-				plain: [viaMap.get(10, 10), viaCtor.get(10, 10)],
-				wall: [viaMap.get(11, 10), viaCtor.get(11, 10)],
-				swamp: [viaMap.get(12, 10), viaCtor.get(12, 10)],
-			})
-		`) as {
-			plain: [number, number];
-			wall: [number, number];
-			swamp: [number, number];
-		};
+			const terrain = new Room.Terrain('W1N1');
+			const destination = new Uint8Array(2500);
+			const returned = terrain.getRawBuffer(destination);
+			({ same: returned === destination, filled: Array.from(destination), copy: Array.from(terrain.getRawBuffer()) })
+		`) as { same: boolean; filled: number[]; copy: number[] };
 
-		expect(result).toEqual({
-			plain: [TERRAIN_PLAIN, TERRAIN_PLAIN],
-			wall: [TERRAIN_WALL, TERRAIN_WALL],
-			swamp: [TERRAIN_SWAMP, TERRAIN_SWAMP],
-		});
+		expect(result.same).toBe(true);
+		expect(result.filled).toEqual(result.copy);
+		expect(result.filled[10 * 50 + 11]).toBe(TERRAIN_WALL);
 	});
 });

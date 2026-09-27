@@ -945,21 +945,18 @@ checks both. Each definition has these fields, in this order:
 ### ROOM-TERRAIN
 
 - `Catalog Entries`
-  `ROOM-TERRAIN-001`, `MAP-TERRAIN-002`
+  `ROOM-TERRAIN-001`
 - `Canonical Source`
   Static room terrain data and official terrain accessors.
 - `Dimensions`
   terrain class
 - `Applicability`
-  Plain, swamp, and wall tiles returned through `Room.Terrain.get(x, y)`, on
-  a `new Room.Terrain(roomName)` (`ROOM-TERRAIN-001`) or the one
-  `Game.map.getRoomTerrain()` returns (`MAP-TERRAIN-002`)
+  Plain, swamp, and wall tiles returned through `Room.Terrain.get(x, y)`
 - `Exclusions`
   Raw buffer shape
 - `Verification Notes`
   This family is about mask values only. The executable case list lives in
-  `src/matrices/room-terrain.ts`; `MAP-TERRAIN-002`'s test doesn't run it,
-  and only checks that a default room's values fall in the mask set.
+  `src/matrices/room-terrain.ts`.
 
 ### ROOM-EVENTLOG
 

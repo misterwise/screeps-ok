@@ -2993,11 +2993,15 @@ Coverage Notes
   `Room.Terrain.get(x, y)` returns the canonical terrain mask values for
   plain, swamp, and wall tiles.
 - `ROOM-TERRAIN-002` `behavior` `verified_vanilla`
-  `Room.Terrain.getRawBuffer()` returns the room terrain as a 2500-byte
-  `Uint8Array`.
-- `ROOM-TERRAIN-003` `behavior` `verified_vanilla`
-  `Game.map.getRoomTerrain(roomName)` provides equivalent terrain access to
-  `new Room.Terrain(roomName)`.
+  `Room.Terrain.getRawBuffer()` returns a 2500-element `Uint8Array` whose
+  element `y * 50 + x` is `get(x, y)`.
+- `ROOM-TERRAIN-004` `behavior` `verified_vanilla`
+  `Room.Terrain.getRawBuffer(destinationArray)` copies the terrain into
+  `destinationArray` and returns that same array.
+
+Notes
+- `Game.map.getRoomTerrain(roomName)`, the other way to obtain a
+  `Room.Terrain`, is `MAP-TERRAIN-001` (section 21.3).
 
 ### 16.6 Event Log
 - `ROOM-EVENTLOG-001` `behavior` `verified_vanilla`
@@ -3691,14 +3695,11 @@ Notes
 
 ### 21.3 Terrain
 - `MAP-TERRAIN-001` `behavior` `verified_vanilla`
-  `Game.map.getRoomTerrain(roomName)` returns terrain access for visible and
-  non-visible rooms alike.
-- `MAP-TERRAIN-002` `matrix` `verified_vanilla`
-  `terrain.get(x, y)` returns `0`, `TERRAIN_MASK_WALL`, or
-  `TERRAIN_MASK_SWAMP` matching the room's actual terrain.
-- `MAP-TERRAIN-003` `behavior` `verified_vanilla`
-  `terrain.getRawBuffer()` returns a 2500-element buffer whose values match
-  `get(x, y)` for all coordinates.
+  `Game.map.getRoomTerrain(roomName)` returns a `Room.Terrain` reading the
+  room's terrain, for visible and non-visible rooms alike.
+
+Notes
+- The `Room.Terrain` it returns is section 16.5's (`ROOM-TERRAIN-*`).
 
 ---
 
