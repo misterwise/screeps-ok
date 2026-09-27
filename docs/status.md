@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3426%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3645%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3055%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-171-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,28 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [3426](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 17:52 UTC |
-| 🔴 | **xxscreeps** | [2937](#xxscreeps-passing-tests) | [166](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [338](#xxscreeps-skipped-tests) | 2026-09-27 17:52 UTC |
+| 🟡 | **vanilla** | [3645](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 20:27 UTC |
+| 🟡 | **xxscreeps** | [3055](#xxscreeps-passing-tests) | [171](#xxscreeps-expected-failures) | — | [436](#xxscreeps-skipped-tests) | 2026-09-27 20:27 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## 🚨 Regression traps triggered
-
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]`
-
-## xxscreeps unexpected failures
-
-- `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module`
-- `attack-controller-ignores-invulnerability` registers `CTRL-ATTACK-007:invulnerable`, which no test passed or failed
-- `power-creep-shard-null-when-unspawned` registers `SHARD-PCREEP-001:afterDeath`, which no test passed or failed
-- `power-creep-suicide-uncapped` registers `INTENT-LIMIT-002:suicidePowerCreep`, which no test passed or failed
-- 1 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -146,7 +130,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 63 expected-failure classifications against vanilla's canonical behavior, covering 166 tests. That includes 60 open parity gaps covering 159 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 63 expected-failure classifications against vanilla's canonical behavior, covering 171 tests. That includes 60 open parity gaps covering 163 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -167,10 +151,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `creep-combat-rejects-power-creep-targets` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET. | Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it. | Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`. | [3](#xxscreeps-gap-creep-combat-rejects-power-creep-targets) |
 | `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28). | [11](#xxscreeps-gap-renew-recycle-target-creep-checked-late) |
 | `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28). | [8](#xxscreeps-gap-spawn-creep-accepts-non-object-options) |
-| `attack-controller-ignores-invulnerability` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`). | Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check. | Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`). | 0 |
-| `controller-downgrade-replaces-progress` | A controller's level loss (`mods/classic/controller/processor.ts:258`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held. | Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`. | Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start. | 0 |
-| `power-creep-shard-null-when-unspawned` | `PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`. | Vanilla's getter is `o.shard \|\| undefined` (`game/power-creeps.js:53`), and death writes `shard: null` (`_diePowerCreep.js:54-55`), so an unspawned power creep reads `undefined`. | Found 2026-09-27 by SHARD-PCREEP-001:afterDeath, the row's first case reachable without `powerCreepAccountApi`. Canonical claim is documented too: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' xxscreeps' own doc comment says `null`. | 0 |
-| `power-creep-suicide-uncapped` | `PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep. | Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives. | Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does. | 0 |
+| `attack-controller-ignores-invulnerability` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`). | Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check. | Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`). | [1](#xxscreeps-gap-attack-controller-ignores-invulnerability) |
+| `controller-downgrade-replaces-progress` | A controller's level loss (`mods/classic/controller/processor.ts:258`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held. | Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`. | Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start. | [1](#xxscreeps-gap-controller-downgrade-replaces-progress) |
+| `power-creep-shard-null-when-unspawned` | `PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`. | Vanilla's getter is `o.shard \|\| undefined` (`game/power-creeps.js:53`), and death writes `shard: null` (`_diePowerCreep.js:54-55`), so an unspawned power creep reads `undefined`. | Found 2026-09-27 by SHARD-PCREEP-001:afterDeath, the row's first case reachable without `powerCreepAccountApi`. Canonical claim is documented too: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' xxscreeps' own doc comment says `null`. | [1](#xxscreeps-gap-power-creep-shard-null-when-unspawned) |
+| `power-creep-suicide-uncapped` | `PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep. | Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives. | Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does. | [1](#xxscreeps-gap-power-creep-suicide-uncapped) |
 | `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | [1](#xxscreeps-gap-portal-ignores-power-creeps) |
 | `invader-core-collapses-one-tick-early` | The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:180-197`) remove the core and release its room's controller once `optionalExpiryTime(#collapseTime)` reads 0 against processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so both land a tick before the timer expires. | Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh. | Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Same processor clock convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-invader-core-collapses-one-tick-early) |
 | `event-log-kept-while-room-sleeps` | A room's event log is reset only when its processor runs (`engine/processor/room.ts:105-107`); a room that sleeps through a tick keeps exposing the previous processed tick's entries, so an attack's EVENT_ATTACK still reads two ticks later with nothing done in between. | Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events. | Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick. | [1](#xxscreeps-gap-event-log-kept-while-room-sleeps) |
@@ -287,11 +271,11 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>stale-argument-throws-instead-of-invalid-target</code> — 16 tests</summary>
 
 - `creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
 - `creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target`
 - `creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target`
 - `creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
 - `creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target`
 - `creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target`
 - `creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target`
@@ -299,9 +283,9 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target`
 - `StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target`
 - `StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target`
+- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
 - `Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target`
 - `Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target`
-- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
 
 </details>
 
@@ -362,26 +346,30 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-attack-controller-ignores-invulnerability">
-<summary><code>attack-controller-ignores-invulnerability</code> — 0 tests</summary>
+<summary><code>attack-controller-ignores-invulnerability</code> — 1 test</summary>
 
+- `controller mechanics CTRL-ATTACK-007:invulnerable attackController() validation returns the canonical code`
 
 </details>
 
 <details id="xxscreeps-gap-controller-downgrade-replaces-progress">
-<summary><code>controller-downgrade-replaces-progress</code> — 0 tests</summary>
+<summary><code>controller-downgrade-replaces-progress</code> — 1 test</summary>
 
+- `Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]`
 
 </details>
 
 <details id="xxscreeps-gap-power-creep-shard-null-when-unspawned">
-<summary><code>power-creep-shard-null-when-unspawned</code> — 0 tests</summary>
+<summary><code>power-creep-shard-null-when-unspawned</code> — 1 test</summary>
 
+- `PowerCreep shard home SHARD-PCREEP-001:afterDeath a PowerCreep that died exposes pc.shard === undefined`
 
 </details>
 
 <details id="xxscreeps-gap-power-creep-suicide-uncapped">
-<summary><code>power-creep-suicide-uncapped</code> — 0 tests</summary>
+<summary><code>power-creep-suicide-uncapped</code> — 1 test</summary>
 
+- `Per-tick intent limits INTENT-LIMIT-002:suicidePowerCreep a call past the cap returns OK and takes no effect`
 
 </details>
 
@@ -395,7 +383,7 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-invader-core-collapses-one-tick-early">
 <summary><code>invader-core-collapses-one-tick-early</code> — 2 tests</summary>
 
-- `Invader core INVADER-CORE-004 invader core collapse timer clears the room controller the tick it expires`
+- `Invader core INVADER-CORE-004:controller invader core collapse timer clears the room controller the tick it expires`
 - `Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin`
 
 </details>
@@ -544,8 +532,8 @@ Click a test count above to jump to the affected test list for that gap.
 <details id="xxscreeps-gap-live-cached-receiver-released">
 <summary><code>live-cached-receiver-released</code> — 2 tests</summary>
 
-- `cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)`
-- `cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes`
+- `cached live receiver across ticks UNDOC-STALERECV-002:read a read method on a creep cached last tick returns its value (no throw)`
+- `cached live receiver across ticks UNDOC-STALERECV-002:action an action on a creep cached last tick dispatches and executes`
 
 </details>
 
@@ -744,7 +732,7 @@ These are known vanilla differences that the engine maintainers have decided not
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/classic/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | Accepted `undefined`-vs-`false` value divergence: truthiness is identical, so only strict `=== false` checks diverge. laverdet called vanilla's `controller.my === undefined` shape 'a dumb quirk' (xxscreeps#128 review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix (xxscreeps#193), and rejected codifying strict conformance to vanilla's exact undefined-in shapes (xxscreeps#215 review, 2026-06-03). Do not re-queue an upstream fix; the rows stay as regression traps. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
-| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
+| `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps. | [5](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `power-bank-shape-exposes-store-extension` | xxscreeps declares the bank's loot as a public schema field — `store: powerBankStoreFormat` in the `powerBankShape` struct (`mods/modern/powerbank/schema.ts`) — and `withOverlay` publishes schema fields, with enumerability keyed off the `#` prefix (`schema/overlay.ts:65`), so the backing storage appears on the player-facing surface next to the canonical `power` projection (`@enumerable get power() { return this.store[C.RESOURCE_POWER]; }`). Upstream documents it as an intentional extension rather than treating it as a leak. | The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property. Vanilla keeps the same internal representation and publishes only the projection (`power: (o) => o.store.power`, `@screeps/engine/src/game/structures.js:585`), and is deliberate about the distinction — `StructurePowerSpawn` twenty lines later does declare `store: _storeGetter`. | Accepted 2026-07-25: upstream documents this member as a deliberate xxscreeps extension, and the rename that would remove it is not viable. laverdet's `035d70bf` ("docs: sync with Screeps API", 2026-07-14) annotated the field `@public` with "this member is an xxscreeps extension; the official API only exposes the amount via `power`" — in that 97-file sweep the phrase "xxscreeps extension" appears exactly twice, here and on `getTerrain`'s `version` param, so the field was audited against the official API and kept on purpose rather than leaking unnoticed. Three findings from prototyping the `store` → `'#store'` rename against `upstream/main`: (1) `createRuin` (`mods/classic/structure/ruin.ts:68-76`) duck-types the loot out of the public name — `structure as never as Record<'store', Store \| undefined>` — so hiding the field empties the ruin a destroyed bank leaves behind, defeating the structure's purpose; (2) the blob upgrader migrates by reading with the old layout and writing with the new (`engine/schema/build/index.ts:66-92`), and members are looked up by name (`schema/write.ts:39`), so a renamed composed member arrives `undefined` and the room load THROWS — verified by replicating `makeUpgrader` against the real schema primitives, where renaming or adding a composed member throws while absent primitives merely default to 0; (3) the rename is lossy even with that fixed, since a rename is a drop plus an add. Not shape-foldable into `shapeDivergences`: that declaration's `roomObject` target is global to every room-object row (correct for `effects`, which every room object inherits), whereas `store` is power-bank-only, so folding it would stop walls and roads being asserted against a store-free surface. Do not queue an upstream fix; the row stays as a regression trap so an upstream removal surfaces as an unexpected pass. | [1](#xxscreeps-gap-power-bank-shape-exposes-store-extension) |
 
 Click a test count above to jump to the affected test list for that gap.
@@ -758,9 +746,10 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks">
-<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 4 tests</summary>
+<summary><code>memory-parsed-json-not-refreshed-across-ticks</code> — 5 tests</summary>
 
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-011:delete clearing RawMemory._parsed after access skips end-of-tick save`
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-011:assignUndefined clearing RawMemory._parsed after access skips end-of-tick save`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-001 function values assigned to Memory are absent on the next tick`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-003 NaN values in Memory read as null on the next tick`
 - `Undocumented API Surface — Memory serialization fidelity UNDOC-MEMJSON-004 Infinity values in Memory read as null on the next tick`
@@ -811,7 +800,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>3426 tests across 159 files</summary>
+<summary>3645 tests across 159 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -889,7 +878,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (32)
+**`tests/00-adapter-contract/inspection.test.ts`** (34)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -910,6 +899,8 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots invader core snapshot includes level and deploy timer
+- adapter contract: inspection special object snapshots an invader core that ownsController holds its room's controller invulnerable until it deploys
+- adapter contract: inspection special object snapshots ownsController is rejected for an owned room's controller
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection placeObject defaults portal: no decay
@@ -924,7 +915,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (80)
+**`tests/00-adapter-contract/setup.test.ts`** (86)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -937,6 +928,12 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
 - adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.power defaults to DEFAULT_PLAYER_POWER
+- adapter contract: setup createShard RoomSpec.progress sets the controller's progress, and defaults to 0
+- adapter contract: setup createShard RoomSpec.progress is rejected where no controller can hold it
+- adapter contract: setup createShard PlayerSpec.credits sets Game.market.credits, and defaults to DEFAULT_PLAYER_CREDITS
+- adapter contract: setup createShard PlayerSpec.credits is rejected in fractions of a thousandth
+- adapter contract: setup createShard PlayerSpec.modules installs code modules player code can require
+- adapter contract: setup createShard PlayerSpec.modules can't replace the adapter's main
 - adapter contract: setup createShard an owned room without rcl has a level 1 controller
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain before the first tick is what player code and PathFinder read
@@ -1747,7 +1744,7 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
 - creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (27)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (33)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
@@ -1761,20 +1758,26 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:range dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:safeMode dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:fortified dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeBusy dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeNoBodypart dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:notOwnerBeforeSafeMode dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:notOwnerBeforeFortified dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busyBeforeNoBodypart dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busyBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busyBeforeRange dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:busyBeforeFortified dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeInvalidTarget dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeSafeMode dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:noBodypartBeforeFortified dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeSafeMode dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:rangeBeforeSafeMode dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:rangeBeforeFortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:safeModeBeforeFortified dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
 **`tests/05-construction-repair/5.4-construction-sites.test.ts`** (104)
@@ -1888,7 +1891,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (131)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (136)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -1998,6 +2001,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:invalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:cooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:safeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:invulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeBusy attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeInvalidTarget attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeNoBodypart attackController() validation returns the canonical code
@@ -2005,11 +2009,13 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:notOwnerBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeInvalidTarget attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeNoBodypart attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeCooldown attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:busyBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeNoBodypart attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeSafeMode attackController() validation returns the canonical code
@@ -2017,9 +2023,11 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:noBodypartBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:rangeBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:cooldownBeforeSafeMode attackController() validation returns the canonical code
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (44)
@@ -2075,7 +2083,7 @@ Click a count to jump to the affected test list.
 - Game.gcl GCL-001:levelTwo Game.gcl follows vanilla GCL math at level 2, progress 0
 - Game.gcl GCL-001:levelThree Game.gcl follows vanilla GCL math at level 3, progress 0
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (52)
+**`tests/06-controller/6.4-upgrade.test.ts`** (53)
 
 - creep.upgradeController() CTRL-UPGRADE-001 each WORK part adds UPGRADE_CONTROLLER_POWER progress per tick
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -2093,7 +2101,8 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
-- creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-012:excess an upgrade across the threshold advances the level and keeps the excess
+- creep.upgradeController() CTRL-UPGRADE-012:levelEight an upgrade across the threshold advances the level and keeps the excess
 - creep.upgradeController() CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold
 - creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
@@ -2195,7 +2204,7 @@ Click a count to jump to the affected test list.
 - StructureController.unclaim() CTRL-UNCLAIM-005 unclaim() starts a fresh safe-mode cooldown rather than clearing it
 - StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (108)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (120)
 
 - creep.attack() COMBAT-MELEE-001 each ATTACK part deals ATTACK_POWER damage
 - creep.attack() COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2
@@ -2212,21 +2221,27 @@ Click a count to jump to the affected test list.
 - creep.attack() COMBAT-MELEE-009:noBodypart attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:safeMode attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:invalidTarget attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:fortified attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:range attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:notOwnerBeforeBusy attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:notOwnerBeforeNoBodypart attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:notOwnerBeforeSafeMode attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:notOwnerBeforeInvalidTarget attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:notOwnerBeforeFortified attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:notOwnerBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:busyBeforeNoBodypart attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:busyBeforeInvalidTarget attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:busyBeforeFortified attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:busyBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeSafeMode attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeInvalidTarget attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:noBodypartBeforeFortified attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:safeModeBeforeInvalidTarget attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:safeModeBeforeFortified attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:safeModeBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:invalidTargetBeforeRange attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:fortifiedBeforeRange attack() validation returns the canonical code
 - creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target
 - creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3, ERR_NOT_IN_RANGE at range 4
@@ -2240,20 +2255,26 @@ Click a count to jump to the affected test list.
 - creep.rangedAttack() COMBAT-RANGED-007:safeMode rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:invalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:range rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:fortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeBusy rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeNoBodypart rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeSafeMode rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeFortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:busyBeforeNoBodypart rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:busyBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:busyBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:busyBeforeFortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeSafeMode rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeFortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:safeModeBeforeInvalidTarget rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:safeModeBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:safeModeBeforeFortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:invalidTargetBeforeRange rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:rangeBeforeFortified rangedAttack() validation returns the canonical code
 - creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1: OK adjacent, ERR_NOT_IN_RANGE at range 2
@@ -3633,7 +3654,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (13)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (14)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns
 - Keeper lair KEEPER-LAIR-002:keeperMissing a keeper lair with no keeper starts an ENERGY_REGEN_TIME spawn timer
@@ -3642,7 +3663,8 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-001 ticksToDeploy counts down
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller the tick it expires
+- Invader core INVADER-CORE-004:controller invader core collapse timer clears the room controller the tick it expires
+- Invader core INVADER-CORE-004:controllerEffects invader core collapse clears the controller's power effects
 - Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - Invader core INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power
 - NPC ownership NPC-OWNERSHIP-001:keeperLair a keeperLair is not my, and Source Keeper owns it
@@ -4004,7 +4026,7 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
 - Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
 - Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
-- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100
+- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * BODYPART_HITS
 - Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY
 - Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity
 - Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death
@@ -4039,7 +4061,7 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (51)
+**`tests/19-power/19.1-lifecycle.test.ts`** (55)
 
 - Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002:invalidName PowerCreep.create() validation returns the canonical code
@@ -4083,28 +4105,87 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevels powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:invalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:powerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:levelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeNoFreeLevels powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (72)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (127)
 
-- Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
-- Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
+- Operate powers POWER-OPERATE-001:operateSpawnLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel5 the operate effect's magnitude at its level
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
-- Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
-- Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
-- Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
-- Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel1 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel2 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel3 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel4 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel5 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptTower the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel1 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel2 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel3 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel4 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel5 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptTerminal the disrupt effect lasts its duration
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
-- Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
+- Combat powers POWER-COMBAT-001:shieldLevel1 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel2 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel3 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel4 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel5 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:fortifyLevel1 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel2 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel3 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel4 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel5 PWR_FORTIFY's effect lasts the level's duration
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
+- Power use costs POWER-OPERATE-002:operateSpawn a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateTower a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateStorage a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateLab a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateExtension a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateObserver a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateTerminal a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operatePower a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateController a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateFactory a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptSpawn a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTower a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptSource a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel1 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel2 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel3 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel4 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel5 a use in range costs its ops and cooldown
+- Power use costs POWER-REGEN-002:regenSource a use in range costs its ops and cooldown
+- Power use costs POWER-REGEN-002:regenMineral a use in range costs its ops and cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
 - Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
@@ -4327,38 +4408,97 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005:left getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005:topLeft getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (26)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (75)
 
-- Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
-- Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
-- Store STORE-OPEN-001:container getCapacity() returns total capacity for container
-- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
-- Store STORE-OPEN-002:storage getCapacity(RESOURCE_ENERGY) returns total capacity for storage
-- Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
-- Store STORE-OPEN-002:container getCapacity(RESOURCE_ENERGY) returns total capacity for container
-- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
-- Store STORE-OPEN-003 getUsedCapacity and getFreeCapacity reflect mixed contents
-- Store STORE-SINGLE-001:spawn getCapacity(RESOURCE_ENERGY) returns 300 for spawn
-- Store STORE-SINGLE-001:tower getCapacity(RESOURCE_ENERGY) returns 1000 for tower
-- Store STORE-SINGLE-001:link getCapacity(RESOURCE_ENERGY) returns 800 for link
-- Store STORE-SINGLE-001:extension getCapacity(RESOURCE_ENERGY) returns RCL-based capacity for extension
-- Store STORE-SINGLE-002 getCapacity() with no argument returns null for energy-only stores
-- Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
-- Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
-- Store STORE-RESTRICTED-002 lab getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-004:powerSpawn restricted store returns null for disallowed resources
+- Store STORE-OPEN-001:storage stored resources share one capacity pool
+- Store STORE-OPEN-002:storage getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:storage no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:terminal stored resources share one capacity pool
+- Store STORE-OPEN-002:terminal getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:terminal no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:container stored resources share one capacity pool
+- Store STORE-OPEN-002:container getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:container no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:factory stored resources share one capacity pool
+- Store STORE-OPEN-002:factory getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:factory no-argument calls report the shared total, used and free
+- Store STORE-SINGLE-001:spawn calls for another resource return null
+- Store STORE-SINGLE-002:spawn getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:spawn energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:spawn no-argument calls return null
+- Store STORE-SINGLE-001:tower calls for another resource return null
+- Store STORE-SINGLE-002:tower getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:tower energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:tower no-argument calls return null
+- Store STORE-SINGLE-001:link calls for another resource return null
+- Store STORE-SINGLE-002:link getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:link energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:link no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl0 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl0 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl0 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl0 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl1 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl1 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl1 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl1 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl2 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl2 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl2 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl2 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl3 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl3 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl3 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl3 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl4 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl4 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl4 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl4 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl5 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl5 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl5 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl5 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl6 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl6 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl6 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl6 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl7 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl7 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl7 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl7 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl8 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl8 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl8 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl8 no-argument calls return null
+- Store STORE-RESTRICTED-002:lab each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:lab calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:lab no-argument calls return null
+- Store STORE-RESTRICTED-002:powerSpawn each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:powerSpawn calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:powerSpawn no-argument calls return null
+- Store STORE-RESTRICTED-002:nuker each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:nuker calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:nuker no-argument calls return null
+- Store STORE-RESTRICTED-004:nuker calls for a disallowed resource return null
+- Store STORE-RESTRICTED-004:powerSpawn calls for a disallowed resource return null
 - Store STORE-BIND-001 unbound lab mineral slot accepts any non-energy resource
 - Store STORE-BIND-002:H stored mineral binds the lab slot
 - Store STORE-BIND-002:O stored mineral binds the lab slot
 - Store STORE-BIND-002:G stored mineral binds the lab slot
-- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
 
-**`tests/23-store-api/23.5-timers.test.ts`** (11)
+**`tests/23-store-api/23.5-timers.test.ts`** (21)
 
-- Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
+- Timer gating TIMER-COOLDOWN-001:runReaction is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:reverseReaction is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:unboostCreep is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:transferEnergy is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:send is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:deal is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:launchNuke is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:produce is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:harvestMineral is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:harvestDeposit is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:usePower is refused while its cooldown reads 1 and allowed at 0
 - Timer gating TIMER-SAFEMODE-001:attack a hostile attack is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:rangedAttack a hostile rangedAttack is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:rangedMassAttack a hostile rangedMassAttack is refused while safeMode reads 1 and allowed the next tick
@@ -4370,36 +4510,42 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-SAFEMODE-001:usePower a hostile usePower is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:enableRoom a hostile enableRoom is refused while safeMode reads 1 and allowed the next tick
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (6)
+**`tests/23-store-api/23.6-store-access.test.ts`** (5)
 
-- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
-- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 for a resource key the store never carried
-- store access STORE-ACCESS-001 creep.store[RESOURCE_TYPE] returns 0 for an empty creep
+- store access STORE-ACCESS-001:structure a structure store reads its amount of a resource, 0 for one it holds none of
+- store access STORE-ACCESS-001:creep a creep store reads its amount of a resource, 0 for one it holds none of
 - store access STORE-ACCESS-004 store[nonResourceKey] returns undefined, not 0
-- store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
+- store access STORE-ACCESS-002 the capacity calls return null for a resource the store cannot hold
 - store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 
-**`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (28)
+**`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (35)
 
 - Intent creep priority INTENT-CREEP-001:healBlocksRangedHeal heal blocks rangedHeal
+- Intent creep priority INTENT-CREEP-001:rangedHealBlocksAttackController rangedHeal blocks attackController
+- Intent creep priority INTENT-CREEP-001:healBlocksAttackController heal blocks attackController
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksDismantle attackController blocks dismantle
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksDismantle rangedHeal blocks dismantle
 - Intent creep priority INTENT-CREEP-001:healBlocksDismantle heal blocks dismantle
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksRepair dismantle blocks repair
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksRepair attackController blocks repair
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksRepair rangedHeal blocks repair
 - Intent creep priority INTENT-CREEP-001:healBlocksRepair heal blocks repair
 - Intent creep priority INTENT-CREEP-001:repairBlocksBuild repair blocks build
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksBuild dismantle blocks build
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksBuild attackController blocks build
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksBuild rangedHeal blocks build
 - Intent creep priority INTENT-CREEP-001:healBlocksBuild heal blocks build
 - Intent creep priority INTENT-CREEP-001:buildBlocksAttack build blocks attack
 - Intent creep priority INTENT-CREEP-001:repairBlocksAttack repair blocks attack
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksAttack dismantle blocks attack
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksAttack attackController blocks attack
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksAttack rangedHeal blocks attack
 - Intent creep priority INTENT-CREEP-001:healBlocksAttack heal blocks attack
 - Intent creep priority INTENT-CREEP-001:attackBlocksHarvest attack blocks harvest
 - Intent creep priority INTENT-CREEP-001:buildBlocksHarvest build blocks harvest
 - Intent creep priority INTENT-CREEP-001:repairBlocksHarvest repair blocks harvest
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksHarvest dismantle blocks harvest
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksHarvest attackController blocks harvest
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksHarvest rangedHeal blocks harvest
 - Intent creep priority INTENT-CREEP-001:healBlocksHarvest heal blocks harvest
 - Intent creep priority INTENT-CREEP-001:buildBlocksRangedMassAttack build blocks rangedMassAttack
@@ -4410,30 +4556,86 @@ Click a count to jump to the affected test list.
 - Intent creep priority INTENT-CREEP-001:repairBlocksRangedAttack repair blocks rangedAttack
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksRangedAttack rangedHeal blocks rangedAttack
 
-**`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`** (3)
+**`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`** (41)
 
-- Intent overwrite and cancel INTENT-CREEP-002 repeated same-tick calls keep only the last intent
-- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
-- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
+- Intent overwrite and cancel INTENT-CREEP-002:move a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:pull a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:attack a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:rangedAttack a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:heal a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:rangedHeal a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:harvest a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:build a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:repair a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:dismantle a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:transfer a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:withdraw a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:pickup a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:drop a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:say a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:signController a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-003:move cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:pull cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:attack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedAttack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedMassAttack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:heal cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedHeal cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:harvest cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:build cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:repair cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:dismantle cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:upgradeController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:claimController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:reserveController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:attackController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:signController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:generateSafeMode cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:transfer cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:withdraw cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:pickup cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:drop cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:say cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:suicide cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:notFound cancelOrder returns ERR_NOT_FOUND with nothing queued under the name
+- Intent overwrite and cancel INTENT-CREEP-003:moveTo cancelOrder('moveTo') finds nothing: moveTo queues move
 
-**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (4)
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (6)
 
-- Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
-- Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:drop drop resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:transfer transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:withdraw withdraw resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:pickup pickup resolves before harvest even when harvest is called first
 - Intent creep resolution order INTENT-CREEP-005 harvest resolves before upgradeController even when upgradeController is called first
 - Intent creep resolution order INTENT-CREEP-006 transfer resolves before suicide even when suicide is called first
 
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 
-- Same-tick resource intent visibility INTENT-RESOURCE-001 withdraw does not make resources available to same-tick actions
-- Same-tick resource intent visibility INTENT-RESOURCE-002 transfer removes from sender in same tick
-- Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist
-- Same-tick resource intent visibility INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed
+- Same-tick resource intent visibility INTENT-RESOURCE-001 withdrawn resources are not available to the same tick's drop
+- Same-tick resource intent visibility INTENT-RESOURCE-002 transfer changes neither store during the calling tick and both the next
+- Same-tick resource intent visibility INTENT-RESOURCE-003 a transfer and a drop of the whole load both return OK and the drop resolves first
+- Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw resolves before a same-tick pickup, which takes the capacity left
 
-**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (2)
+**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (18)
 
-- Per-tick intent limits INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table
-- Per-tick intent limits INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect
+- Per-tick intent limits INTENT-LIMIT-001:cancelOrder the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:cancelOrder a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:changeOrderPrice the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:changeOrderPrice a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:extendOrder the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:extendOrder a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:createPowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:createPowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:spawnPowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:spawnPowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:suicidePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:suicidePowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:deletePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:deletePowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:upgradePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:upgradePowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:renamePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:renamePowerCreep a call past the cap returns OK and takes no effect
 
 **`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (2)
 
@@ -4518,7 +4720,7 @@ Click a count to jump to the affected test list.
 - 26.0 Object Shape Conformance SHAPE-NUKE-001 in-flight nuke data-property surface matches canonical shape
 - 26.0 Object Shape Conformance SHAPE-EFFECT-001 effects-array entry data-property surface matches canonical shape
 
-**`tests/27-undocumented/27.1-memhack.test.ts`** (11)
+**`tests/27-undocumented/27.1-memhack.test.ts`** (12)
 
 - Undocumented API Surface — memhack UNDOC-MEMHACK-001 Memory descriptor at tick start has a getter, no setter, and is configurable
 - Undocumented API Surface — memhack UNDOC-MEMHACK-002 plain global.Memory assignment before first access silently fails
@@ -4529,7 +4731,8 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — memhack UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick
 - Undocumented API Surface — memhack UNDOC-MEMHACK-008 flag.memory first access pins the in-tick object while RawMemory.set wins next tick
 - Undocumented API Surface — memhack UNDOC-MEMHACK-009 room.memory first access pins the in-tick object while RawMemory.set wins next tick
-- Undocumented API Surface — memhack UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save
+- Undocumented API Surface — memhack UNDOC-MEMHACK-011:delete clearing RawMemory._parsed after access skips end-of-tick save
+- Undocumented API Surface — memhack UNDOC-MEMHACK-011:assignUndefined clearing RawMemory._parsed after access skips end-of-tick save
 - Undocumented API Surface — memhack UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick
 
 **`tests/27-undocumented/27.10-actionlog.test.ts`** (20)
@@ -4570,8 +4773,8 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.12-cached-live-receiver.test.ts`** (2)
 
-- cached live receiver across ticks UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)
-- cached live receiver across ticks UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes
+- cached live receiver across ticks UNDOC-STALERECV-002:read a read method on a creep cached last tick returns its value (no throw)
+- cached live receiver across ticks UNDOC-STALERECV-002:action an action on a creep cached last tick dispatches and executes
 
 **`tests/27-undocumented/27.14-json-objects.test.ts`** (18)
 
@@ -4608,7 +4811,7 @@ Click a count to jump to the affected test list.
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
-- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within an executing user module
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry
 
 **`tests/27-undocumented/27.3-memjson.test.ts`** (5)
@@ -4641,14 +4844,14 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
-- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a 32-bit signed integer __packedPos
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-004 positions in the same room share the upper 16 bits of __packedPos
 
 **`tests/27-undocumented/27.8-system-username.test.ts`** (1)
 
-- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is a non-empty string accessible on the global scope
+- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is the server username on the global scope
 
 **`tests/27-undocumented/27.9-move-cache.test.ts`** (3)
 
@@ -4661,11 +4864,15 @@ Click a count to jump to the affected test list.
 - Game.map deprecation notices DEPRECATED-MAP-001 Game.map.isRoomAvailable emits a deprecation notice naming the replacement
 - Game.map deprecation notices DEPRECATED-MAP-002 Game.map.getTerrainAt emits a deprecation notice recommending getRoomTerrain
 
-**`tests/28-deprecation/28.2-pathfinding.test.ts`** (3)
+**`tests/28-deprecation/28.2-pathfinding.test.ts`** (7)
 
 - PathFinder.use deprecation notice DEPRECATED-PATH-001 PathFinder.use(false) emits a notice; PathFinder.use(true) is silent
-- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002 avoid emits a notice and recommends costCallback; path is still returned
-- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-003 ignore emits a notice and recommends costCallback; path is still returned
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findPath avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findPathTo avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findClosestByPath avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findPath ignore emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findPathTo ignore emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findClosestByPath ignore emits a notice recommending costCallback and changes nothing
 
 **`tests/28-deprecation/28.3-spawn.test.ts`** (1)
 
@@ -4681,9 +4888,10 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
 
-**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (2)
 
-- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
+- PowerCreep shard home SHARD-PCREEP-001:neverSpawned a PowerCreep never spawned exposes pc.shard === undefined
+- PowerCreep shard home SHARD-PCREEP-001:afterDeath a PowerCreep that died exposes pc.shard === undefined
 
 **`tests/30-cpu-runtime/30.1-heap-statistics.test.ts`** (1)
 
@@ -4720,23 +4928,23 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 338 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
+xxscreeps has 436 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [123](#xxscreeps-skip-capability-powereffects) |
-| capability | `market` | Full market order lifecycle, deals, history, and adapter-side order placement. | [81](#xxscreeps-skip-capability-market) |
-| capability | `powerCreepAccountApi` | Account-level power-creep management from game code: `PowerCreep.create` plus the `rename` / `upgrade` / `delete` instance methods, and the unspawned-roster states only they can reach. | [50](#xxscreeps-skip-capability-powercreepaccountapi) |
+| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [198](#xxscreeps-skip-capability-powereffects) |
+| capability | `market` | Full market order lifecycle, deals, history, and adapter-side order placement. | [86](#xxscreeps-skip-capability-market) |
+| capability | `powerCreepAccountApi` | Account-level power-creep management from game code: `PowerCreep.create` plus the `rename` / `upgrade` / `delete` instance methods, and the unspawned-roster states only they can reach. | [64](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `roomStatus` | Public room-status setup through RoomSpec.status. | [45](#xxscreeps-skip-capability-roomstatus) |
 | capability | `invaderRaidSpawner` | Per-room inactive Invader raid spawning orchestration. | [27](#xxscreeps-skip-capability-invaderraidspawner) |
-| capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [8](#xxscreeps-skip-capability-deprecationnotices) |
+| capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [12](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [1](#xxscreeps-skip-capability-intershardmemory) |
 
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powereffects">
-<summary><code>capability:powerEffects</code> — 123 tests across 15 files</summary>
+<summary><code>capability:powerEffects</code> — 198 tests across 18 files</summary>
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (10)
 
@@ -4750,6 +4958,30 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeNotEnough withdraw() validation returns the canonical code
+
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (6)
+
+- creep.dismantle() DISMANTLE-009:fortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:notOwnerBeforeFortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:busyBeforeFortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:noBodypartBeforeFortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:rangeBeforeFortified dismantle() validation returns the canonical code
+- creep.dismantle() DISMANTLE-009:safeModeBeforeFortified dismantle() validation returns the canonical code
+
+**`tests/07-combat/7.1-melee-attack.test.ts`** (12)
+
+- creep.attack() COMBAT-MELEE-009:fortified attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:notOwnerBeforeFortified attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:busyBeforeFortified attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:noBodypartBeforeFortified attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:safeModeBeforeFortified attack() validation returns the canonical code
+- creep.attack() COMBAT-MELEE-009:fortifiedBeforeRange attack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:fortified rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:notOwnerBeforeFortified rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:busyBeforeFortified rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:noBodypartBeforeFortified rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:safeModeBeforeFortified rangedAttack() validation returns the canonical code
+- creep.rangedAttack() COMBAT-RANGED-007:rangeBeforeFortified rangedAttack() validation returns the canonical code
 
 **`tests/07-combat/7.17-tower-power.test.ts`** (11)
 
@@ -4819,6 +5051,10 @@ Click a count to jump to the affected test list.
 
 - StructureObserver OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit
 
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (1)
+
+- Invader core INVADER-CORE-004:controllerEffects invader core collapse clears the controller's power effects
+
 **`tests/15-structure-common/15.5-effects-substrate.test.ts`** (5)
 
 - 15.5 Effects Substrate EFFECT-DECAY-001 entry ticksRemaining decrements by exactly 1 per tick
@@ -4865,16 +5101,72 @@ Click a count to jump to the affected test list.
 - Mineral power effects MINERAL-POWER-001:levelFour PWR_REGEN_MINERAL adds its effect once per period
 - Mineral power effects MINERAL-POWER-001:levelFive PWR_REGEN_MINERAL adds its effect once per period
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (34)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (90)
 
-- Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
-- Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
-- Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
-- Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
-- Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
-- Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
+- Operate powers POWER-OPERATE-001:operateSpawnLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateSpawnLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateStorageLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateExtensionLevel5 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel1 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel2 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel3 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel4 the operate effect's magnitude at its level
+- Operate powers POWER-OPERATE-001:operateControllerLevel5 the operate effect's magnitude at its level
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel1 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel2 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel3 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel4 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSpawnLevel5 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptTower the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel1 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel2 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel3 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel4 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptSourceLevel5 the disrupt effect lasts its duration
+- Disrupt powers POWER-DISRUPT-001:disruptTerminal the disrupt effect lasts its duration
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
+- Combat powers POWER-COMBAT-001:shieldLevel1 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel2 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel3 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel4 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:shieldLevel5 PWR_SHIELD's rampart has the level's hits
+- Combat powers POWER-COMBAT-001:fortifyLevel1 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel2 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel3 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel4 PWR_FORTIFY's effect lasts the level's duration
+- Combat powers POWER-COMBAT-001:fortifyLevel5 PWR_FORTIFY's effect lasts the level's duration
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
+- Power use costs POWER-OPERATE-002:operateSpawn a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateTower a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateStorage a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateLab a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateExtension a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateObserver a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateTerminal a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operatePower a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateController a use in range costs its ops and cooldown
+- Power use costs POWER-OPERATE-002:operateFactory a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptSpawn a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTower a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptSource a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel1 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel2 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel3 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel4 a use in range costs its ops and cooldown
+- Power use costs POWER-DISRUPT-002:disruptTerminalLevel5 a use in range costs its ops and cooldown
+- Power use costs POWER-REGEN-002:regenSource a use in range costs its ops and cooldown
+- Power use costs POWER-REGEN-002:regenMineral a use in range costs its ops and cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
 - Power target matrix POWER-OPERATE-005:operateTowerValid usePower on its target type charges ops and starts the cooldown
@@ -4909,7 +5201,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-market">
-<summary><code>capability:market</code> — 81 tests across 2 files</summary>
+<summary><code>capability:market</code> — 86 tests across 3 files</summary>
 
 **`tests/20-market/20.2-20.4-market.test.ts`** (79)
 
@@ -4993,22 +5285,30 @@ Click a count to jump to the affected test list.
 - Market queries MARKET-QUERY-006 getHistory invalid resources and valid resources with no history return empty arrays
 - Market queries MARKET-QUERY-005 order prices and market credits use public units, not internal milli-credits
 
-**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (2)
+**`tests/23-store-api/23.5-timers.test.ts`** (1)
 
-- Per-tick intent limits INTENT-LIMIT-001 per-tick intent caps for market actions match the canonical limit table
-- Per-tick intent limits INTENT-LIMIT-002 calls beyond the per-tick cap return OK but do not take effect
+- Timer gating TIMER-COOLDOWN-001:deal is refused while its cooldown reads 1 and allowed at 0
+
+**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (6)
+
+- Per-tick intent limits INTENT-LIMIT-001:cancelOrder the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:cancelOrder a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:changeOrderPrice the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:changeOrderPrice a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:extendOrder the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:extendOrder a call past the cap returns OK and takes no effect
 
 </details>
 
 <details id="xxscreeps-skip-capability-powercreepaccountapi">
-<summary><code>capability:powerCreepAccountApi</code> — 50 tests across 4 files</summary>
+<summary><code>capability:powerCreepAccountApi</code> — 64 tests across 5 files</summary>
 
 **`tests/19-power/19.0-gpl.test.ts`** (2)
 
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (36)
+**`tests/19-power/19.1-lifecycle.test.ts`** (40)
 
 - Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002:invalidName PowerCreep.create() validation returns the canonical code
@@ -5037,15 +5337,19 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevels powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:invalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:powerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:levelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeNoFreeLevels powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:notOwnerBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
+- Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforePowerMaxLevel powerCreep.upgrade() validation returns the canonical code
 
 **`tests/19-power/19.4-19.8-powers.test.ts`** (11)
 
@@ -5061,9 +5365,22 @@ Click a count to jump to the affected test list.
 - Power creep renew POWERCREEP-SPAWN-002:notOwnerBeforeCooldown powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-SPAWN-002:rclBeforeCooldown powerCreep.spawn() validation returns the canonical code
 
+**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (10)
+
+- Per-tick intent limits INTENT-LIMIT-001:createPowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:createPowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:spawnPowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:spawnPowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:deletePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:deletePowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:upgradePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:upgradePowerCreep a call past the cap returns OK and takes no effect
+- Per-tick intent limits INTENT-LIMIT-001:renamePowerCreep the capped call in a tick takes effect
+- Per-tick intent limits INTENT-LIMIT-002:renamePowerCreep a call past the cap returns OK and takes no effect
+
 **`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
 
-- PowerCreep shard home SHARD-PCREEP-001 unspawned PowerCreep exposes pc.shard === undefined
+- PowerCreep shard home SHARD-PCREEP-001:neverSpawned a PowerCreep never spawned exposes pc.shard === undefined
 
 </details>
 
@@ -5165,7 +5482,7 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-deprecationnotices">
-<summary><code>capability:deprecationNotices</code> — 8 tests across 5 files</summary>
+<summary><code>capability:deprecationNotices</code> — 12 tests across 5 files</summary>
 
 **`tests/00-adapter-contract/inspection.test.ts`** (1)
 
@@ -5176,11 +5493,15 @@ Click a count to jump to the affected test list.
 - Game.map deprecation notices DEPRECATED-MAP-001 Game.map.isRoomAvailable emits a deprecation notice naming the replacement
 - Game.map deprecation notices DEPRECATED-MAP-002 Game.map.getTerrainAt emits a deprecation notice recommending getRoomTerrain
 
-**`tests/28-deprecation/28.2-pathfinding.test.ts`** (3)
+**`tests/28-deprecation/28.2-pathfinding.test.ts`** (7)
 
 - PathFinder.use deprecation notice DEPRECATED-PATH-001 PathFinder.use(false) emits a notice; PathFinder.use(true) is silent
-- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002 avoid emits a notice and recommends costCallback; path is still returned
-- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-003 ignore emits a notice and recommends costCallback; path is still returned
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findPath avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findPathTo avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.avoid deprecation DEPRECATED-PATH-002:findClosestByPath avoid emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findPath ignore emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findPathTo ignore emits a notice recommending costCallback and changes nothing
+- findPath / findClosestByPath opts.ignore deprecation DEPRECATED-PATH-003:findClosestByPath ignore emits a notice recommending costCallback and changes nothing
 
 **`tests/28-deprecation/28.3-spawn.test.ts`** (1)
 
@@ -5216,7 +5537,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2937 tests across 145 files</summary>
+<summary>3055 tests across 146 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -5294,7 +5615,7 @@ Click a count to jump to the affected test list.
 - adapter contract: hard family prerequisites portal placement placeObject creates a same-shard portal retrievable by player code
 - adapter contract: hard family prerequisites inter-room creep transition creep moving to exit tile appears in the adjacent room
 
-**`tests/00-adapter-contract/inspection.test.ts`** (31)
+**`tests/00-adapter-contract/inspection.test.ts`** (33)
 
 - adapter contract: inspection getObject returns null for nonexistent ID
 - adapter contract: inspection getObject creep snapshot has correct kind and required fields
@@ -5315,6 +5636,8 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection special object snapshots deposit snapshot round-trips placement fields and findInRoom filters deposits
 - adapter contract: inspection special object snapshots keeper lair snapshot includes ticksToSpawn
 - adapter contract: inspection special object snapshots invader core snapshot includes level and deploy timer
+- adapter contract: inspection special object snapshots an invader core that ownsController holds its room's controller invulnerable until it deploys
+- adapter contract: inspection special object snapshots ownsController is rejected for an owned room's controller
 - adapter contract: inspection special object snapshots power bank snapshot includes power and decay fields
 - adapter contract: inspection special object snapshots portal snapshot includes destination and decay fields
 - adapter contract: inspection placeObject defaults portal: no decay
@@ -5328,7 +5651,7 @@ Click a count to jump to the affected test list.
 - adapter contract: inspection snapshot timer relativity controller snapshot safeMode matches player-code value when active
 - adapter contract: inspection player handle mapping snapshot owner matches player handle, not engine ID
 
-**`tests/00-adapter-contract/setup.test.ts`** (79)
+**`tests/00-adapter-contract/setup.test.ts`** (85)
 
 - adapter contract: setup createShard creates a shard with one player and one room
 - adapter contract: setup createShard creates multiple players
@@ -5341,6 +5664,12 @@ Click a count to jump to the affected test list.
 - adapter contract: setup createShard RoomSpec.controller: false rejects a controller setting
 - adapter contract: setup createShard PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim
 - adapter contract: setup createShard PlayerSpec.power defaults to DEFAULT_PLAYER_POWER
+- adapter contract: setup createShard RoomSpec.progress sets the controller's progress, and defaults to 0
+- adapter contract: setup createShard RoomSpec.progress is rejected where no controller can hold it
+- adapter contract: setup createShard PlayerSpec.credits sets Game.market.credits, and defaults to DEFAULT_PLAYER_CREDITS
+- adapter contract: setup createShard PlayerSpec.credits is rejected in fractions of a thousandth
+- adapter contract: setup createShard PlayerSpec.modules installs code modules player code can require
+- adapter contract: setup createShard PlayerSpec.modules can't replace the adapter's main
 - adapter contract: setup createShard an owned room without rcl has a level 1 controller
 - adapter contract: setup createShard PlayerSpec.gcl override is honored at user creation (gates extra claims)
 - adapter contract: setup createShard setTerrain before the first tick is what player code and PathFinder read
@@ -6254,7 +6583,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (115)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (119)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -6356,11 +6685,13 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:notOwnerBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:notOwnerBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeInvalidTarget attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeNoBodypart attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busyBeforeCooldown attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:busyBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeNoBodypart attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeRange attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:invalidTargetBeforeSafeMode attackController() validation returns the canonical code
@@ -6368,9 +6699,11 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:noBodypartBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:noBodypartBeforeInvulnerable attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeInvalidControllerState attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeCooldown attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:rangeBeforeSafeMode attackController() validation returns the canonical code
+- controller mechanics CTRL-ATTACK-007:rangeBeforeInvulnerable attackController() validation returns the canonical code
 
 **`tests/06-controller/6.10-structlimit.test.ts`** (44)
 
@@ -6423,7 +6756,7 @@ Click a count to jump to the affected test list.
 
 - Game.gcl GCL-001:belowLevelTwo Game.gcl follows vanilla GCL math at level 1, progress 999999
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (49)
+**`tests/06-controller/6.4-upgrade.test.ts`** (50)
 
 - creep.upgradeController() CTRL-UPGRADE-001 each WORK part adds UPGRADE_CONTROLLER_POWER progress per tick
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -6440,7 +6773,8 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
-- creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
+- creep.upgradeController() CTRL-UPGRADE-012:excess an upgrade across the threshold advances the level and keeps the excess
+- creep.upgradeController() CTRL-UPGRADE-012:levelEight an upgrade across the threshold advances the level and keeps the excess
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -8105,7 +8439,7 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
 - Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
 - Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
-- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100
+- Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * BODYPART_HITS
 - Tombstone TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY
 - Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity
 - Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death
@@ -8157,10 +8491,9 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (25)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (24)
 
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
-- Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
 - Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWERCREEP-ENABLE-003:operateTower usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWERCREEP-ENABLE-003:operateStorage usePower returns ERR_INVALID_ARGS in a room without power enabled
@@ -8258,38 +8591,96 @@ Click a count to jump to the affected test list.
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005:left getDirectionTo() returns the expected direction constant
 - RoomPosition.getDirectionTo() ROOMPOS-SPATIAL-005:topLeft getDirectionTo() returns the expected direction constant
 
-**`tests/23-store-api/23.1-23.4-store.test.ts`** (26)
+**`tests/23-store-api/23.1-23.4-store.test.ts`** (75)
 
-- Store STORE-OPEN-001:storage getCapacity() returns total capacity for storage
-- Store STORE-OPEN-001:terminal getCapacity() returns total capacity for terminal
-- Store STORE-OPEN-001:container getCapacity() returns total capacity for container
-- Store STORE-OPEN-001:factory getCapacity() returns total capacity for factory
-- Store STORE-OPEN-002:storage getCapacity(RESOURCE_ENERGY) returns total capacity for storage
-- Store STORE-OPEN-002:terminal getCapacity(RESOURCE_ENERGY) returns total capacity for terminal
-- Store STORE-OPEN-002:container getCapacity(RESOURCE_ENERGY) returns total capacity for container
-- Store STORE-OPEN-002:factory getCapacity(RESOURCE_ENERGY) returns total capacity for factory
-- Store STORE-OPEN-003 getUsedCapacity and getFreeCapacity reflect mixed contents
-- Store STORE-SINGLE-001:spawn getCapacity(RESOURCE_ENERGY) returns 300 for spawn
-- Store STORE-SINGLE-001:tower getCapacity(RESOURCE_ENERGY) returns 1000 for tower
-- Store STORE-SINGLE-001:link getCapacity(RESOURCE_ENERGY) returns 800 for link
-- Store STORE-SINGLE-001:extension getCapacity(RESOURCE_ENERGY) returns RCL-based capacity for extension
-- Store STORE-SINGLE-002 getCapacity() with no argument returns null for energy-only stores
-- Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
-- Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
-- Store STORE-RESTRICTED-002 lab getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
-- Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
-- Store STORE-RESTRICTED-004:powerSpawn restricted store returns null for disallowed resources
+- Store STORE-OPEN-001:storage stored resources share one capacity pool
+- Store STORE-OPEN-002:storage getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:storage no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:terminal stored resources share one capacity pool
+- Store STORE-OPEN-002:terminal getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:terminal no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:container stored resources share one capacity pool
+- Store STORE-OPEN-002:container getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:container no-argument calls report the shared total, used and free
+- Store STORE-OPEN-001:factory stored resources share one capacity pool
+- Store STORE-OPEN-002:factory getCapacity() is the canonical capacity
+- Store STORE-OPEN-003:factory no-argument calls report the shared total, used and free
+- Store STORE-SINGLE-001:spawn calls for another resource return null
+- Store STORE-SINGLE-002:spawn getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:spawn energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:spawn no-argument calls return null
+- Store STORE-SINGLE-001:tower calls for another resource return null
+- Store STORE-SINGLE-002:tower getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:tower energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:tower no-argument calls return null
+- Store STORE-SINGLE-001:link calls for another resource return null
+- Store STORE-SINGLE-002:link getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:link energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:link no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl0 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl0 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl0 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl0 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl1 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl1 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl1 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl1 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl2 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl2 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl2 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl2 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl3 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl3 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl3 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl3 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl4 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl4 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl4 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl4 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl5 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl5 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl5 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl5 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl6 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl6 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl6 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl6 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl7 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl7 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl7 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl7 no-argument calls return null
+- Store STORE-SINGLE-001:extensionRcl8 calls for another resource return null
+- Store STORE-SINGLE-002:extensionRcl8 getCapacity(RESOURCE_ENERGY) is the canonical capacity
+- Store STORE-SINGLE-003:extensionRcl8 energy calls report its capacity, stored and free amounts
+- Store STORE-SINGLE-004:extensionRcl8 no-argument calls return null
+- Store STORE-RESTRICTED-002:lab each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:lab calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:lab no-argument calls return null
+- Store STORE-RESTRICTED-002:powerSpawn each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:powerSpawn calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:powerSpawn no-argument calls return null
+- Store STORE-RESTRICTED-002:nuker each allowed resource has its canonical capacity
+- Store STORE-RESTRICTED-003:nuker calls for an allowed resource report its capacity, stored and free amounts
+- Store STORE-RESTRICTED-005:nuker no-argument calls return null
+- Store STORE-RESTRICTED-004:nuker calls for a disallowed resource return null
+- Store STORE-RESTRICTED-004:powerSpawn calls for a disallowed resource return null
 - Store STORE-BIND-001 unbound lab mineral slot accepts any non-energy resource
 - Store STORE-BIND-002:H stored mineral binds the lab slot
 - Store STORE-BIND-002:O stored mineral binds the lab slot
 - Store STORE-BIND-002:G stored mineral binds the lab slot
-- Store STORE-RESTRICTED-005 restricted store getUsedCapacity reflects stored amounts
 
-**`tests/23-store-api/23.5-timers.test.ts`** (11)
+**`tests/23-store-api/23.5-timers.test.ts`** (20)
 
-- Timer gating TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0
+- Timer gating TIMER-COOLDOWN-001:runReaction is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:reverseReaction is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:unboostCreep is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:transferEnergy is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:send is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:launchNuke is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:produce is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:harvestMineral is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:harvestDeposit is refused while its cooldown reads 1 and allowed at 0
+- Timer gating TIMER-COOLDOWN-001:usePower is refused while its cooldown reads 1 and allowed at 0
 - Timer gating TIMER-SAFEMODE-001:attack a hostile attack is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:rangedAttack a hostile rangedAttack is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:rangedMassAttack a hostile rangedMassAttack is refused while safeMode reads 1 and allowed the next tick
@@ -8301,36 +8692,42 @@ Click a count to jump to the affected test list.
 - Timer gating TIMER-SAFEMODE-001:usePower a hostile usePower is refused while safeMode reads 1 and allowed the next tick
 - Timer gating TIMER-SAFEMODE-001:enableRoom a hostile enableRoom is refused while safeMode reads 1 and allowed the next tick
 
-**`tests/23-store-api/23.6-store-access.test.ts`** (6)
+**`tests/23-store-api/23.6-store-access.test.ts`** (5)
 
-- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 when the store currently holds none of that resource
-- store access STORE-ACCESS-001 store[RESOURCE_TYPE] returns 0 for a resource key the store never carried
-- store access STORE-ACCESS-001 creep.store[RESOURCE_TYPE] returns 0 for an empty creep
+- store access STORE-ACCESS-001:structure a structure store reads its amount of a resource, 0 for one it holds none of
+- store access STORE-ACCESS-001:creep a creep store reads its amount of a resource, 0 for one it holds none of
 - store access STORE-ACCESS-004 store[nonResourceKey] returns undefined, not 0
-- store access STORE-ACCESS-002 store.getCapacity(type) returns null when the store cannot hold that resource type
+- store access STORE-ACCESS-002 the capacity calls return null for a resource the store cannot hold
 - store access STORE-ACCESS-003 for-in / Object.keys over a store yield only resource keys, not the store methods
 
-**`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (28)
+**`tests/24-intent-resolution/24.1-creep-action-priority.test.ts`** (35)
 
 - Intent creep priority INTENT-CREEP-001:healBlocksRangedHeal heal blocks rangedHeal
+- Intent creep priority INTENT-CREEP-001:rangedHealBlocksAttackController rangedHeal blocks attackController
+- Intent creep priority INTENT-CREEP-001:healBlocksAttackController heal blocks attackController
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksDismantle attackController blocks dismantle
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksDismantle rangedHeal blocks dismantle
 - Intent creep priority INTENT-CREEP-001:healBlocksDismantle heal blocks dismantle
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksRepair dismantle blocks repair
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksRepair attackController blocks repair
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksRepair rangedHeal blocks repair
 - Intent creep priority INTENT-CREEP-001:healBlocksRepair heal blocks repair
 - Intent creep priority INTENT-CREEP-001:repairBlocksBuild repair blocks build
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksBuild dismantle blocks build
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksBuild attackController blocks build
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksBuild rangedHeal blocks build
 - Intent creep priority INTENT-CREEP-001:healBlocksBuild heal blocks build
 - Intent creep priority INTENT-CREEP-001:buildBlocksAttack build blocks attack
 - Intent creep priority INTENT-CREEP-001:repairBlocksAttack repair blocks attack
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksAttack dismantle blocks attack
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksAttack attackController blocks attack
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksAttack rangedHeal blocks attack
 - Intent creep priority INTENT-CREEP-001:healBlocksAttack heal blocks attack
 - Intent creep priority INTENT-CREEP-001:attackBlocksHarvest attack blocks harvest
 - Intent creep priority INTENT-CREEP-001:buildBlocksHarvest build blocks harvest
 - Intent creep priority INTENT-CREEP-001:repairBlocksHarvest repair blocks harvest
 - Intent creep priority INTENT-CREEP-001:dismantleBlocksHarvest dismantle blocks harvest
+- Intent creep priority INTENT-CREEP-001:attackControllerBlocksHarvest attackController blocks harvest
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksHarvest rangedHeal blocks harvest
 - Intent creep priority INTENT-CREEP-001:healBlocksHarvest heal blocks harvest
 - Intent creep priority INTENT-CREEP-001:buildBlocksRangedMassAttack build blocks rangedMassAttack
@@ -8341,24 +8738,68 @@ Click a count to jump to the affected test list.
 - Intent creep priority INTENT-CREEP-001:repairBlocksRangedAttack repair blocks rangedAttack
 - Intent creep priority INTENT-CREEP-001:rangedHealBlocksRangedAttack rangedHeal blocks rangedAttack
 
-**`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`** (3)
+**`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`** (41)
 
-- Intent overwrite and cancel INTENT-CREEP-002 repeated same-tick calls keep only the last intent
-- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder removes a queued intent
-- Intent overwrite and cancel INTENT-CREEP-003 cancelOrder returns ERR_NOT_FOUND when no intent queued
+- Intent overwrite and cancel INTENT-CREEP-002:move a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:pull a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:attack a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:rangedAttack a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:heal a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:rangedHeal a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:harvest a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:build a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:repair a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:dismantle a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:transfer a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:withdraw a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:pickup a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:drop a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:say a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-002:signController a second same-tick call replaces the first
+- Intent overwrite and cancel INTENT-CREEP-003:move cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:pull cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:attack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedAttack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedMassAttack cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:heal cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:rangedHeal cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:harvest cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:build cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:repair cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:dismantle cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:upgradeController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:claimController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:reserveController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:attackController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:signController cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:generateSafeMode cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:transfer cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:withdraw cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:pickup cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:drop cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:say cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:suicide cancelOrder removes the queued intent
+- Intent overwrite and cancel INTENT-CREEP-003:notFound cancelOrder returns ERR_NOT_FOUND with nothing queued under the name
+- Intent overwrite and cancel INTENT-CREEP-003:moveTo cancelOrder('moveTo') finds nothing: moveTo queues move
 
-**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (3)
+**`tests/24-intent-resolution/24.1c-intent-order.test.ts`** (5)
 
-- Intent creep resolution order INTENT-CREEP-004 drop resolves before harvest even when harvest is called first
-- Intent creep resolution order INTENT-CREEP-004 transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:drop drop resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:transfer transfer resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:withdraw withdraw resolves before harvest even when harvest is called first
+- Intent creep resolution order INTENT-CREEP-004:pickup pickup resolves before harvest even when harvest is called first
 - Intent creep resolution order INTENT-CREEP-006 transfer resolves before suicide even when suicide is called first
 
 **`tests/24-intent-resolution/24.2-resource-visibility.test.ts`** (4)
 
-- Same-tick resource intent visibility INTENT-RESOURCE-001 withdraw does not make resources available to same-tick actions
-- Same-tick resource intent visibility INTENT-RESOURCE-002 transfer removes from sender in same tick
-- Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist
-- Same-tick resource intent visibility INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed
+- Same-tick resource intent visibility INTENT-RESOURCE-001 withdrawn resources are not available to the same tick's drop
+- Same-tick resource intent visibility INTENT-RESOURCE-002 transfer changes neither store during the calling tick and both the next
+- Same-tick resource intent visibility INTENT-RESOURCE-003 a transfer and a drop of the whole load both return OK and the drop resolves first
+- Same-tick resource intent visibility INTENT-RESOURCE-004 withdraw resolves before a same-tick pickup, which takes the capacity left
+
+**`tests/24-intent-resolution/24.3-intent-limits.test.ts`** (1)
+
+- Per-tick intent limits INTENT-LIMIT-001:suicidePowerCreep the capped call in a tick takes effect
 
 **`tests/24-intent-resolution/24.4-simultaneous-actions.test.ts`** (2)
 
@@ -8505,10 +8946,11 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-006 rooms, positions and spawns expose no own method properties and inherit from their class prototypes
 - Undocumented API Surface — player prototype extensions UNDOC-PROTO-007 a spawn is an instance of the whole structure chain and a RoomPosition prototype wrapper is the method that runs
 
-**`tests/27-undocumented/27.2-global-persistence.test.ts`** (3)
+**`tests/27-undocumented/27.2-global-persistence.test.ts`** (4)
 
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-001 top-level assignments to global.X persist across ticks within the same VM
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-002 require()d module exports are reference-stable across ticks within the same VM
+- Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within an executing user module
 - Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-004 require.cache exposes module exports and delete evicts the entry
 
 **`tests/27-undocumented/27.3-memjson.test.ts`** (1)
@@ -8537,14 +8979,14 @@ Click a count to jump to the affected test list.
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
-- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos
+- Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-001 every RoomPosition has a 32-bit signed integer __packedPos
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-003 writing __packedPos updates x, y, and roomName getters
 - Undocumented API Surface — RoomPosition.__packedPos UNDOC-PACKEDPOS-004 positions in the same room share the upper 16 bits of __packedPos
 
 **`tests/27-undocumented/27.8-system-username.test.ts`** (1)
 
-- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is a non-empty string accessible on the global scope
+- Undocumented API Surface — SYSTEM_USERNAME global UNDOC-SYSUSER-001 SYSTEM_USERNAME is the server username on the global scope
 
 **`tests/27-undocumented/27.9-move-cache.test.ts`** (4)
 
