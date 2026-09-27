@@ -1255,7 +1255,9 @@ checks both. Each definition has these fields, in this order:
   Spawn, renew, and upgrade run their case lists from
   `src/matrices/power-creep-spawn-validation.ts`,
   `src/matrices/power-creep-renew-validation.ts`, and
-  `src/matrices/power-creep-upgrade-validation.ts`.
+  `src/matrices/power-creep-upgrade-validation.ts`. Not yet listed in
+  upgrade's: a power already at level 5 (`ERR_FULL`,
+  `game/power-creeps.js:234-236`).
 
 ### POWER-INFO
 

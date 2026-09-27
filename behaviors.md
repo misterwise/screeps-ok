@@ -2978,8 +2978,12 @@ neighbors and no better section exists.
   creep on the power spawn's tile and restores full hits and full TTL when the
   spawn resolves.
 - `POWERCREEP-SPAWN-002` `matrix` `verified_vanilla`
-  `powerCreep.spawn()` failure codes match the canonical validation matrix for
-  busy, invalid target, ownership, inactive power spawn, and spawn cooldown.
+  `powerCreep.spawn(powerSpawn)` returns the first failing check's code, in
+  this order: `:busy` the power creep is already spawned, `ERR_BUSY`;
+  `:invalidTarget` the target isn't a power spawn, `ERR_INVALID_TARGET`;
+  `:notOwner` the power spawn isn't the player's, `ERR_NOT_OWNER`; `:rcl` it
+  is inactive, `ERR_RCL_NOT_ENOUGH`; `:cooldown` the power creep's spawn
+  cooldown hasn't passed, `ERR_TIRED`.
 - `POWERCREEP-LIFETIME-001` `behavior` `verified_vanilla`
   A spawned power creep's `ticksToLive` decreases by `1` each tick.
 - `POWERCREEP-LIFETIME-002` `behavior` `documented`
@@ -2994,8 +2998,12 @@ neighbors and no better section exists.
   A successful `powerCreep.renew(target)` returns `OK` and resets
   `ticksToLive` to `POWER_CREEP_LIFE_TIME` in the same tick.
 - `POWERCREEP-RENEW-002` `matrix` `verified_vanilla`
-  `powerCreep.renew()` failure codes match the canonical validation matrix for
-  invalid target, inactive power spawn, range, busy, and ownership.
+  `powerCreep.renew(target)` returns the first failing check's code, in this
+  order: `:notOwner` the power creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it isn't spawned, `ERR_BUSY`; `:invalidTarget` the target is neither
+  a power bank nor a power spawn, `ERR_INVALID_TARGET`; `:rcl` it is an
+  inactive power spawn, `ERR_RCL_NOT_ENOUGH`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`.
 - `POWERCREEP-DELETE-001` `behavior` `verified_vanilla`
   `powerCreep.delete()` queues deletion for an unspawned owned power creep.
 - `POWERCREEP-DELETE-002` `behavior` `verified_vanilla`
@@ -3013,9 +3021,13 @@ neighbors and no better section exists.
   specified power's level by `1`, increases the power creep's `level` by `1`,
   increases `hitsMax` by `1000`, and increases `storeCapacity` by `100`.
 - `POWERCREEP-UPGRADE-002` `matrix` `verified_vanilla`
-  `powerCreep.upgrade()` failure codes match the canonical validation matrix
-  for ownership, free power levels, max level, invalid power selection, and
-  unmet level requirements.
+  `powerCreep.upgrade(power)` returns the first failing check's code, in this
+  order: `:notOwner` the power creep isn't the player's, `ERR_NOT_OWNER`;
+  `:noFreeLevels` the player has no unallocated power level,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:maxLevel` the creep is at
+  `POWER_CREEP_MAX_LEVEL`, `ERR_FULL`; `:invalidPower` the power isn't one of
+  its class's, `ERR_INVALID_ARGS`; `:levelRequirement` the creep's level is
+  below what the power's next level requires, `ERR_FULL`.
 
 ### 19.2 Movement & Actions `capability: powerCreeps`
 - `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
