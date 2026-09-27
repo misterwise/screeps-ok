@@ -157,7 +157,7 @@ async function setupCaseObject(shard: ShardFixture, objectType: typeof idConstru
 
 describe('Undocumented API Surface — id constructors', () => {
 	for (const row of idConstructorCases) {
-		test(`${row.catalogId} new ${row.constructorName}(id) reconstructs a ${row.label} view with overlay fields`, async ({ shard }) => {
+		test(`${row.catalogId}:${row.constructorName} new ${row.constructorName}(id) reconstructs a ${row.label} view with overlay fields`, async ({ shard }) => {
 			const id = await setupCaseObject(shard, row.objectType);
 
 			const result = await shard.runPlayer('p1', code`

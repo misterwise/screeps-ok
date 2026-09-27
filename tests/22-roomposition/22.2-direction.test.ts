@@ -3,7 +3,7 @@ import { roomPositionDirectionCases } from '../../src/matrices/roompos-direction
 
 describe('RoomPosition.getDirectionTo()', () => {
 	for (const { label, target, expectedDirection } of roomPositionDirectionCases) {
-		test(`ROOMPOS-SPATIAL-005 [${label}] getDirectionTo() returns the expected direction constant`, async ({ shard }) => {
+		test(`ROOMPOS-SPATIAL-005:${label} getDirectionTo() returns the expected direction constant`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 
 			const direction = await shard.runPlayer('p1', code`

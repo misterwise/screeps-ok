@@ -10,6 +10,7 @@ import {
 	STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_TOWER,
 	type CapabilityName,
 } from '../index.js';
+import { toLabelToken } from './validation-cases.js';
 
 type RoomPoint = readonly [number, number];
 
@@ -68,7 +69,7 @@ function powerEffectCase(
 ): EffectHostCase {
 	const powerLevel = options.powerLevel ?? 1;
 	const result: EffectHostCase = {
-		label: `${producer}->${targetName}`,
+		label: toLabelToken(producer.replace(/^PWR_/, '').toLowerCase()),
 		producer,
 		targetName,
 		power,

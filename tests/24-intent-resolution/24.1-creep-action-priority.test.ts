@@ -19,7 +19,7 @@ const feasibleCases = intentCreepPriorityCases.filter(
 
 describe('Intent creep priority', () => {
 	for (const { blocker, blocked } of feasibleCases) {
-		test(`INTENT-CREEP-001:${blocker}>${blocked} ${blocker} blocks ${blocked}`, async ({ shard }) => {
+		test(`INTENT-CREEP-001:${blocker}Blocks${blocked[0].toUpperCase()}${blocked.slice(1)} ${blocker} blocks ${blocked}`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [

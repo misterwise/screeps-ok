@@ -152,7 +152,7 @@ describe('creep.suicide()', () => {
 	});
 
 	for (const { label, creepName, ticksToLive, trigger } of creepDeathResourceCases) {
-		test(`CREEP-DEATH-008 [${label}] preserves carried resources in the tombstone`, async ({ shard }) => {
+		test(`CREEP-DEATH-008:${label} preserves carried resources in the tombstone`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			await shard.placeCreep('W1N1', {
 				pos: [25, 25], owner: 'p1',

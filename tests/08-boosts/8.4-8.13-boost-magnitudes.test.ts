@@ -22,7 +22,7 @@ describe('BOOST-RANGED-001 rangedAttack boost magnitudes', () => {
 	for (const [compound, effects] of rangedCompounds) {
 		const multiplier = effects.rangedAttack;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-RANGED-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -78,7 +78,7 @@ describe('BOOST-HEAL-001 heal boost magnitudes', () => {
 	for (const [compound, effects] of healCompounds) {
 		const multiplier = effects.heal;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-HEAL-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -150,7 +150,7 @@ describe('BOOST-ATTACK-001 attack boost magnitudes', () => {
 	for (const [compound, effects] of attackCompounds) {
 		const multiplier = effects.attack;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-ATTACK-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -205,7 +205,7 @@ describe('BOOST-DISMANTLE-001 dismantle boost magnitudes', () => {
 	for (const [compound, effects] of dismantleCompounds) {
 		const multiplier = effects.dismantle;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-DISMANTLE-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -256,7 +256,7 @@ describe('BOOST-HARVEST-001 harvest boost magnitudes', () => {
 	for (const [compound, effects] of harvestCompounds) {
 		const multiplier = effects.harvest;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-HARVEST-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -347,7 +347,7 @@ describe('BOOST-BUILD-001 build/repair boost magnitudes', () => {
 	for (const [compound, effects] of buildCompounds) {
 		const multiplier = effects.repair;
 
-		test(`${compound} repair (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-BUILD-001:${compound} repair (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -453,7 +453,7 @@ describe('BOOST-UPGRADE-001 upgrade boost magnitudes', () => {
 		const workParts = 10;
 		const expectedProgress = workParts * UPGRADE_CONTROLLER_POWER * multiplier;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-UPGRADE-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -554,7 +554,7 @@ describe('BOOST-TOUGH-001 tough damage reduction magnitudes', () => {
 	for (const [compound, effects] of toughCompounds) {
 		const damageMultiplier = effects.damage;
 
-		test(`${compound} (${damageMultiplier}x damage taken)`, async ({ shard }) => {
+		test(`BOOST-TOUGH-001:${compound} (${damageMultiplier}x damage taken)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -666,7 +666,7 @@ describe('BOOST-MOVE-001 move boost fatigue reduction magnitudes', () => {
 	for (const [compound, effects] of moveCompounds) {
 		const multiplier = effects.fatigue;
 
-		test(`${compound} (${multiplier}x fatigue reduction)`, async ({ shard }) => {
+		test(`BOOST-MOVE-001:${compound} (${multiplier}x fatigue reduction)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 
@@ -710,7 +710,7 @@ describe('BOOST-CARRY-001 carry capacity boost magnitudes', () => {
 	for (const [compound, effects] of carryCompounds) {
 		const multiplier = effects.capacity;
 
-		test(`${compound} (${multiplier}x)`, async ({ shard }) => {
+		test(`BOOST-CARRY-001:${compound} (${multiplier}x)`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 

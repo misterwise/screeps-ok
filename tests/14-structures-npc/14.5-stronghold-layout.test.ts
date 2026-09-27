@@ -8,7 +8,7 @@ import { strongholdTemplates } from '../../src/matrices/stronghold-layout.js';
 describe('Stronghold layout', () => {
 	for (const template of strongholdTemplates) {
 		test(
-			`STRONGHOLD-LAYOUT-001 deploying invader core (${template.name}) places the canonical structure layout`,
+			`STRONGHOLD-LAYOUT-001:${template.name} deploying the invader core places the canonical structure layout`,
 			async ({ shard }) => {
 				shard.requires('strongholdDeploy');
 				await shard.createShard({

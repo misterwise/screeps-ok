@@ -286,7 +286,7 @@ describe('Invader raid spawning', () => {
 	});
 
 	for (const row of invaderRaidCompositionCases) {
-		test(`INVADER-RAID-009 ${row.label}`, async ({ shard }) => {
+		test(`INVADER-RAID-009:${row.key} ${row.label}`, async ({ shard }) => {
 			shard.requires('invaderRaidSpawner');
 			await setupRaidRoom(shard, {
 				roomName: row.roomName,

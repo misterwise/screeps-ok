@@ -10,7 +10,7 @@ import { rampartHitsMaxCases } from '../../src/matrices/rampart-hitsmax.js';
 
 describe('StructureRampart', () => {
 	for (const { rcl, expectedHitsMax } of rampartHitsMaxCases) {
-		test(`RAMPART-DECAY-003 [rcl=${rcl}] owned rampart hitsMax matches the canonical table`, async ({ shard }) => {
+		test(`RAMPART-DECAY-003:rcl${rcl} owned rampart hitsMax matches the canonical table`, async ({ shard }) => {
 			await shard.ownedRoom('p1', 'W1N1', rcl);
 			const rampartId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],

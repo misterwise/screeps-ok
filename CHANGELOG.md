@@ -138,6 +138,20 @@ changes since `v0.1.0-alpha` are not itemized.
   registration could match), `SOURCE-POWER-001` and `MINERAL-POWER-001` by
   level, `POWER-OPERATE-005` and `POWER-DISRUPT-003`
   by power and case (`…Valid`, `…Invalid`).
+- Now keyed by case, where a loop's cases had all carried one bare ID:
+  `MOVE-BASIC-001` and `ROOMPOS-SPATIAL-005` by direction (`:topRight`),
+  `ROOM-TERRAIN-001` by mask (`:swamp`), `CONSTRUCTION-SITE-009`
+  (`:spawnRuinPlaceRoad`), `CONSTRUCTION-SITE-017` (`:containerBlocksTower`),
+  `EFFECT-HOST-001` by power (`:operateTower`), `CREEP-DEATH-008` (`:suicide`,
+  `:ticksToLive`), `COMBAT-RMA-002` and `TOWER-ATTACK/HEAL/REPAIR-002` by
+  range (`:range3`), `RAMPART-DECAY-003` by RCL (`:rcl2`), the boost
+  magnitude rows `BOOST-{RANGED,HEAL,ATTACK,DISMANTLE,HARVEST,BUILD,UPGRADE,
+  TOUGH,MOVE,CARRY}-001` by compound (`:XGHO2`), `UNDOC-IDCTOR-001` by
+  constructor (`:Creep`), `STRONGHOLD-LAYOUT-001` by template (`:bunker1`),
+  `INVADER-RAID-009` by case (`:centerSmallRaid`). Re-keyed: `LAB-RUN-001`
+  by product (`:UH2O`; the key was the first reagent, which up to ten
+  reactions shared) and `INTENT-CREEP-001` by pair
+  (`:healBlocksRangedHeal`; the key was the blocking method).
 - A `:row` key is one camelCase token, a letter then letters or digits
   (`LAB-REVERSE-001:GH2O`). The reporter used to cut a key at its first
   digit, `-` or `_`, so these rows only now register as written:

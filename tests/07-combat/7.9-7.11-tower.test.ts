@@ -16,7 +16,7 @@ const staleArgTowerRepairCase = staleArgumentCases.find(row => row.key === 'towe
 
 describe('StructureTower', () => {
 	for (const { range, expectedAmount } of towerAttackRangeCases) {
-		test(`TOWER-ATTACK-002 [range=${range}] tower.attack() deals the expected falloff damage`, async ({ shard }) => {
+		test(`TOWER-ATTACK-002:range${range} tower.attack() deals the expected falloff damage`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
@@ -66,7 +66,7 @@ describe('StructureTower', () => {
 	});
 
 	for (const { range, expectedAmount } of towerHealRangeCases) {
-		test(`TOWER-HEAL-002 [range=${range}] tower.heal() restores the expected falloff amount`, async ({ shard }) => {
+		test(`TOWER-HEAL-002:range${range} tower.heal() restores the expected falloff amount`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
@@ -152,7 +152,7 @@ describe('StructureTower', () => {
 	});
 
 	for (const { range, expectedAmount } of towerRepairRangeCases) {
-		test(`TOWER-REPAIR-002 [range=${range}] tower.repair() restores the expected falloff amount`, async ({ shard }) => {
+		test(`TOWER-REPAIR-002:range${range} tower.repair() restores the expected falloff amount`, async ({ shard }) => {
 			await shard.ownedRoom('p1', 'W1N1', 3);
 			const towerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',

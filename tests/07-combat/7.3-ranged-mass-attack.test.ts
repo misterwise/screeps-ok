@@ -5,7 +5,7 @@ import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.rangedMassAttack()', () => {
 	for (const { range, expectedDamage } of rangedMassAttackRangeCases) {
-		test(`COMBAT-RMA-002 [range=${range}] rangedMassAttack() deals the expected per-range damage`, async ({ shard }) => {
+		test(`COMBAT-RMA-002:range${range} rangedMassAttack() deals the expected per-range damage`, async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

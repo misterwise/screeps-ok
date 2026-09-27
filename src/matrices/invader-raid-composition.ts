@@ -48,6 +48,8 @@ export interface InvaderRaidExpectedCreep {
 }
 
 export interface InvaderRaidCompositionCase {
+	// The row key; `label` describes the case.
+	readonly key: string;
 	readonly label: string;
 	readonly roomName: string;
 	readonly coreRoom: string;
@@ -88,6 +90,7 @@ export function invaderRaidExpectedBody(
 
 export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] = [
 	{
+		key: 'neutralSmallMelee',
 		label: 'non-center neutral no escalation spawns a boosted small Melee',
 		roomName: 'W1N1',
 		coreRoom: 'W1N2',
@@ -98,6 +101,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'ownedRcl3SmallClass',
 		label: 'owned RCL 3 still uses the small body class',
 		roomName: 'W1N1',
 		coreRoom: 'W1N2',
@@ -110,6 +114,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'nestedSmallRaid',
 		label: 'non-center nested small raid assigns index 1 Ranged and index 2 Healer',
 		roomName: 'W1N1',
 		coreRoom: 'W1N2',
@@ -128,6 +133,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'countFiveRanged',
 		label: 'non-center count five lets deterministic RNG choose index 2 Ranged',
 		roomName: 'W1N1',
 		coreRoom: 'W1N2',
@@ -150,6 +156,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'centerSmallRaid',
 		label: 'center small raid starts Ranged and caps count to selected exit tiles',
 		roomName: 'W5N5',
 		coreRoom: 'W5N6',
@@ -166,6 +173,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'ownedRcl4Escalation',
 		label: 'non-center owned RCL 4 first escalation uses big bodies without boosts',
 		roomName: 'W1N1',
 		coreRoom: 'W1N2',
@@ -184,6 +192,7 @@ export const invaderRaidCompositionCases: readonly InvaderRaidCompositionCase[] 
 		],
 	},
 	{
+		key: 'centerRcl4BigHealer',
 		label: 'center owned RCL 4 can assign a big Healer and still has zero boost chance',
 		roomName: 'W5N5',
 		coreRoom: 'W5N6',

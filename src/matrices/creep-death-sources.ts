@@ -1,12 +1,12 @@
 export const creepDeathResourceCases = [
 	{
-		label: 'source=suicide',
+		label: 'suicide',
 		creepName: 'SuicideCreep',
 		ticksToLive: undefined,
 		trigger: 'suicide',
 	},
 	{
-		label: 'source=ticksToLive',
+		label: 'ticksToLive',
 		creepName: 'AgingCreep',
 		ticksToLive: 1,
 		trigger: 'ticksToLive',

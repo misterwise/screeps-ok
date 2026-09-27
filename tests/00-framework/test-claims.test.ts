@@ -47,6 +47,21 @@ describe('test file claims', () => {
 				.map(([match]) => `${path.relative(repo, file)}: ${match}`));
 		expect(modified).toEqual([]);
 	});
+
+	// Cases sharing one bare id, or a key cut short at `+` or `>`, can't be registered or reported apart.
+	test('a test title that interpolates a case keys its id by the whole case', () => {
+		const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+		const keyed = /^(?:[A-Z]+-(?:[A-Z]+-)?[0-9]{3}|\$\{[\w.]*catalogId\})(?::(?:[a-zA-Z0-9]|\$\{[^}]+\})+)?(?: |$)/;
+		const unkeyed = testFileClaims(path.join(repo, 'tests')).flatMap(({ file, code }) =>
+			[...code.matchAll(/\btest\(\s*`([^`]*\$\{[^`]*)`/g)]
+				.map(([, title]) => title)
+				.filter(title => {
+					const id = title.match(keyed);
+					return !id || !id[0].includes(':') && !id[0].startsWith('${');
+				})
+				.map(title => `${path.relative(repo, file)}: ${title}`));
+		expect(unkeyed).toEqual([]);
+	});
 });
 
 describe('adapter capabilities', () => {

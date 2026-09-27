@@ -215,7 +215,7 @@ describe('room.createConstructionSite()', () => {
 	});
 
 	for (const { label, ruinType, placedType } of constructionSiteOverRuinCases) {
-		test(`CONSTRUCTION-SITE-009 [${label}] a ruin does not block placing a construction site on its tile`, async ({ shard }) => {
+		test(`CONSTRUCTION-SITE-009:${label} a ruin does not block placing a construction site on its tile`, async ({ shard }) => {
 			// Engine utils.js:172-184 — checkConstructionSite filters on
 			// same-type structures and existing constructionSites but never on
 			// ruins. The matrix asserts the ruin alone never contributes to
@@ -245,7 +245,7 @@ describe('room.createConstructionSite()', () => {
 	}
 
 	for (const { label, existingType, placedType, expectedRc } of constructionSiteOverStructureCases) {
-		test(`CONSTRUCTION-SITE-017 [${label}] structure under construction-site placement obeys road/rampart stacking`, async ({ shard }) => {
+		test(`CONSTRUCTION-SITE-017:${label} structure under construction-site placement obeys road/rampart stacking`, async ({ shard }) => {
 			// Engine utils.js:181-184 — a placed site is rejected when an existing
 			// non-road/non-rampart structure with a CONSTRUCTION_COST type occupies
 			// the tile and the placed type is also non-road/non-rampart. Road and

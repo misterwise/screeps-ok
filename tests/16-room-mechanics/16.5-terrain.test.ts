@@ -6,7 +6,7 @@ import { roomTerrainCases, roomTerrainLayout } from '../../src/matrices/room-ter
 
 describe('Room terrain access', () => {
 	for (const { label, pos, expectedMask } of roomTerrainCases) {
-		test(`ROOM-TERRAIN-001 [${label}] Room.Terrain.get(x, y) returns the expected terrain mask`, async ({ shard }) => {
+		test(`ROOM-TERRAIN-001:${label} Room.Terrain.get(x, y) returns the expected terrain mask`, async ({ shard }) => {
 			shard.requires('terrain', 'custom terrain setup is required for terrain mask assertions');
 			await shard.createShard({
 				players: ['p1'],

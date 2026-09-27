@@ -17,12 +17,12 @@ interface DirectionOffset {
 // Values come from the checked-in constants (TOP..TOP_LEFT), not from the
 // engine under test.
 export const moveDirectionCases: readonly DirectionOffset[] = [
-	{ label: 'TOP',          direction: TOP,          dx:  0, dy: -1 },
-	{ label: 'TOP_RIGHT',    direction: TOP_RIGHT,    dx:  1, dy: -1 },
-	{ label: 'RIGHT',        direction: RIGHT,        dx:  1, dy:  0 },
-	{ label: 'BOTTOM_RIGHT', direction: BOTTOM_RIGHT, dx:  1, dy:  1 },
-	{ label: 'BOTTOM',       direction: BOTTOM,       dx:  0, dy:  1 },
-	{ label: 'BOTTOM_LEFT',  direction: BOTTOM_LEFT,  dx: -1, dy:  1 },
-	{ label: 'LEFT',         direction: LEFT,         dx: -1, dy:  0 },
-	{ label: 'TOP_LEFT',     direction: TOP_LEFT,     dx: -1, dy: -1 },
+	{ label: 'top',          direction: TOP,          dx:  0, dy: -1 },
+	{ label: 'topRight',    direction: TOP_RIGHT,    dx:  1, dy: -1 },
+	{ label: 'right',        direction: RIGHT,        dx:  1, dy:  0 },
+	{ label: 'bottomRight', direction: BOTTOM_RIGHT, dx:  1, dy:  1 },
+	{ label: 'bottom',       direction: BOTTOM,       dx:  0, dy:  1 },
+	{ label: 'bottomLeft',  direction: BOTTOM_LEFT,  dx: -1, dy:  1 },
+	{ label: 'left',         direction: LEFT,         dx: -1, dy:  0 },
+	{ label: 'topLeft',     direction: TOP_LEFT,     dx: -1, dy: -1 },
 ] as const;

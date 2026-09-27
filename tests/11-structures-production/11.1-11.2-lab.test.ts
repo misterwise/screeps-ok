@@ -12,7 +12,7 @@ import { labReverseValidationCases } from '../../src/matrices/lab-reverse-valida
 describe('Lab runReaction', () => {
 	// ---- Matrix: product mapping (LAB-RUN-001) ----
 	for (const { reagent1, reagent2, expectedProduct } of labRunCases) {
-		test(`LAB-RUN-001:${reagent1}+${reagent2} runReaction produces ${expectedProduct}`, async ({ shard }) => {
+		test(`LAB-RUN-001:${expectedProduct} runReaction(${reagent1}, ${reagent2}) produces ${expectedProduct}`, async ({ shard }) => {
 			shard.requires('chemistry');
 			await shard.ownedRoom('p1', 'W1N1', 6);
 

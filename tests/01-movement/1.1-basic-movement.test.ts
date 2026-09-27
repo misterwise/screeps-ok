@@ -12,7 +12,7 @@ import { placeFatiguedCreep, spawnBusyCreep } from '../intent-validation-helpers
 
 describe('creep.move()', () => {
 	for (const { label, direction, dx, dy } of moveDirectionCases) {
-		test(`MOVE-BASIC-001 [${label}] move(direction) moves one tile toward the direction constant`, async ({ shard }) => {
+		test(`MOVE-BASIC-001:${label} move(direction) moves one tile toward the direction constant`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeCreep('W1N1', {
 				pos: [25, 25], owner: 'p1', body: [MOVE],

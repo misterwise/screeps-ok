@@ -29,7 +29,7 @@ export const constructionSiteOverRuinCases: readonly ConstructionSiteOverRuinCas
 	for (const ruinType of TYPES) {
 		for (const placedType of TYPES) {
 			cases.push({
-				label: `${ruinType}-ruin-place-${placedType}`,
+				label: `${ruinType}RuinPlace${placedType[0].toUpperCase()}${placedType.slice(1)}`,
 				ruinType,
 				placedType,
 			});
