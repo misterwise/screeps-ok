@@ -6,6 +6,7 @@ import {
 	EFFECT_COLLAPSE_TIMER, INVADER_CORE_CONTROLLER_POWER,
 	FIND_STRUCTURES, FIND_RUINS,
 	STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK, STRUCTURE_INVADER_CORE, POWER_BANK_CAPACITY_MIN,
+	PWR_OPERATE_CONTROLLER, RESOURCE_OPS, powerOps,
 } from '../../src/index.js';
 import { npcOwnershipCases } from '../../src/matrices/npc-ownership.js';
 import type { ControllerSnapshot } from '../../src/index.js';
@@ -174,6 +175,7 @@ describe('Invader core', () => {
 				core: await shard.getObject(coreId) !== null,
 				owner: controller.owner ?? null,
 				level: controller.level,
+				progress: controller.progress,
 				safeMode: controller.safeMode,
 				isPowerEnabled: controller.isPowerEnabled,
 			});
@@ -182,23 +184,49 @@ describe('Invader core', () => {
 	}
 	const ticksToCollapse = 6;
 
-	test('INVADER-CORE-004 invader core collapse timer clears the room controller the tick it expires', async ({ shard }) => {
+	test('INVADER-CORE-004:controller invader core collapse timer clears the room controller the tick it expires', async ({ shard }) => {
 		shard.requires('invaderCore');
+		const progress = 100;
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', safeMode: SAFE_MODE_DURATION, powerEnabled: true }],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', progress, safeMode: SAFE_MODE_DURATION, powerEnabled: true }],
 		});
 		const coreId = await shard.placeObject('W1N1', 'invaderCore', { pos: [25, 25], level: 0, ticksToCollapse });
 
+		// A level 0 controller reads no progress.
 		const series = await collapseSeries(shard, coreId, ticksToCollapse + 1);
-		expect(series.map(({ owner, level, isPowerEnabled }) => [owner, level, isPowerEnabled])).toEqual([
-			...Array(ticksToCollapse).fill(['p1', 2, true]),
-			[null, 0, false],
+		expect(series.map(row => [row.owner, row.level, row.progress, row.isPowerEnabled])).toEqual([
+			...Array(ticksToCollapse).fill(['p1', 2, progress, true]),
+			[null, 0, null, false],
 		]);
 		expect(series.map(row => row.safeMode)).toEqual([
 			...Array.from({ length: ticksToCollapse }, (_, i) => SAFE_MODE_DURATION - 1 - i),
 			null,
 		]);
+	});
+
+	test('INVADER-CORE-004:controllerEffects invader core collapse clears the controller\'s power effects', async ({ shard }) => {
+		shard.requires('invaderCore');
+		shard.requires('powerCreeps');
+		shard.requires('powerEffects');
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', powerEnabled: true }],
+		});
+		const creepId = await shard.placePowerCreep('W1N1', {
+			pos: [3, 3], owner: 'p1', powers: { [PWR_OPERATE_CONTROLLER]: 1 }, store: { [RESOURCE_OPS]: powerOps(PWR_OPERATE_CONTROLLER, 1) },
+		});
+		await shard.placeObject('W1N1', 'invaderCore', { pos: [25, 25], level: 0, ticksToCollapse });
+
+		// The use is the core's first tick; each read is the next tick's start.
+		expect(await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).usePower(PWR_OPERATE_CONTROLLER, Game.rooms.W1N1.controller)
+		`)).toBe(OK);
+		const readings = [];
+		for (let i = 0; i <= ticksToCollapse; i++) {
+			readings.push(await shard.runPlayer('p1', code`(Game.rooms.W1N1.controller.effects || []).map(e => e.power)`));
+		}
+		expect(readings).toEqual([...Array(ticksToCollapse).fill([PWR_OPERATE_CONTROLLER]), []]);
 	});
 
 	test('INVADER-CORE-005 expired collapse timer removes the invader core without a ruin', async ({ shard }) => {

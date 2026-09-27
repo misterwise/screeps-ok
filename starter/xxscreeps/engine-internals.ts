@@ -85,6 +85,17 @@ export function setControllerDowngradeTime(
 	setField(controller, '#downgradeTime', gameTime + ticksRemaining);
 }
 
+/** SETUP — mods/classic/controller/controller.ts:35: the progress getter reads `#progress`. */
+export function setControllerProgress(controller: StructureController, progress: number): void {
+	setField(controller, '#progress', progress);
+}
+
+/** SETUP — mods/modern/effects/game.ts:42-50: the controller's `EFFECT_INVULNERABILITY` reads
+ *  `#upgradeInvulnerableUntil`, which the stronghold's upgrade sets (stronghold/processor.ts:117-119). */
+export function setControllerInvulnerableUntil(controller: StructureController, until: number): void {
+	setField(controller, '#upgradeInvulnerableUntil', until);
+}
+
 /** SETUP — reset all engine-managed controller timers to zero so a canonical
  *  test controller starts from a known state. Used by resetRoomToCanonicalLayout. */
 export function resetControllerTimers(controller: StructureController): void {

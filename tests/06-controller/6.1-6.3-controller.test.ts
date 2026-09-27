@@ -709,8 +709,10 @@ describe('controller mechanics', () => {
 	for (const row of ctrlAttackValidationCases) {
 		test(`CTRL-ATTACK-007:${row.label} attackController() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
+			if (blockers.has('invulnerable')) shard.requires('invaderCore');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const usesNeutralTarget = blockers.has('invalid-controller-state');
+			// A neutral controller, or a stronghold's, sits in W2N1.
+			const usesNeutralTarget = blockers.has('invalid-controller-state') || blockers.has('invulnerable');
 			const targetRoom = usesNeutralTarget ? 'W2N1' : 'W1N1';
 			// A spawning attacker's room is its owner's, and attacking one's own controller is allowed
 			// (CTRL-ATTACK-005). RCL 3 affords the extensions a CLAIM part needs.
@@ -725,6 +727,9 @@ describe('controller mechanics', () => {
 					...(usesNeutralTarget ? [{ name: 'W2N1' }] : []),
 				],
 			});
+			if (blockers.has('invulnerable')) {
+				await shard.placeObject(targetRoom, 'invaderCore', { pos: [30, 30], level: 1, ticksToDeploy: 100, ownsController: true });
+			}
 			const ctrlPos = await shard.getControllerPos(targetRoom);
 			if (owner === 'p2' && !blockers.has('busy') || usesNeutralTarget && blockers.has('busy')) {
 				await shard.placeCreep(targetRoom, { pos: [20, 20], owner: 'p1', body: [MOVE] });

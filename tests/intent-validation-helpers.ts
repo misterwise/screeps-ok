@@ -3,8 +3,8 @@ import type { ShardFixture } from '../src/fixture.js';
 import type { PlayerCode } from '../src/code.js';
 import type { StaleArgumentCase } from '../src/matrices/stale-argument.js';
 import {
-	body, code, BODYPART_COST, CARRY, CLAIM, EXTENSION_ENERGY_CAPACITY, FIND_CREEPS, MOVE, OK, RANGED_ATTACK,
-	SPAWN_ENERGY_CAPACITY, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, WORK,
+	body, code, powerOps, BODYPART_COST, CARRY, CLAIM, EXTENSION_ENERGY_CAPACITY, FIND_CREEPS, MOVE, OK, PWR_FORTIFY,
+	RANGED_ATTACK, RESOURCE_OPS, SPAWN_ENERGY_CAPACITY, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, WORK,
 } from '../src/index.js';
 
 interface BusyCreepOptions {
@@ -56,6 +56,22 @@ export async function spawnBusyCreep(shard: ShardFixture, options: BusyCreepOpti
 	const creep = creeps.find(candidate => candidate.name === name);
 	if (!creep) throw new Error(`spawnBusyCreep: could not find spawning creep '${name}'`);
 	return creep.id;
+}
+
+// `owner`'s power creep, placed at `pos` within range of the rampart or wall, fortifies it this
+// tick. Level 2 lasts two ticks, so the next tick's calls see the effect (level 1's is gone by then).
+// The room needs power enabled.
+export async function fortify(shard: ShardFixture, roomName: string, targetId: string, owner: string, pos: [number, number]): Promise<void> {
+	shard.requires('powerCreeps');
+	shard.requires('powerEffects');
+	const level = 2;
+	const creepId = await shard.placePowerCreep(roomName, {
+		pos, owner, powers: { [PWR_FORTIFY]: level }, store: { [RESOURCE_OPS]: powerOps(PWR_FORTIFY, level) },
+	});
+	const rc = await shard.runPlayer(owner, code`
+		Game.getObjectById(${creepId}).usePower(PWR_FORTIFY, Game.getObjectById(${targetId}))
+	`);
+	if (rc !== OK) throw new Error(`fortify: usePower returned ${rc}`);
 }
 
 // No room spec field reserves a controller: `reserver` reserves the neutral

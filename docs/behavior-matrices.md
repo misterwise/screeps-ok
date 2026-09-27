@@ -1982,11 +1982,12 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.attack(target)` ownership, caller busy state (spawning),
   body-part requirements (`ATTACK`), another player's safe mode, target
-  validity (not a hostile creep/PC/structure), and range.
+  validity (not a hostile creep/PC/structure), a fortified target
+  (`game/creeps.js:613-616`, a rampart the room's owner fortifies at level 2
+  the tick before), and range.
 - `Exclusions`
   Counter-damage rules, owned by `COMBAT-MELEE-008`. Busy excludes safe mode: a spawning creep's room is its owner's.
-  Not yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
-  returns `ERR_INVALID_TARGET` before range (`game/creeps.js:613-616`).
+  An invalid target is a source, which can't be fortified.
 - `Verification Notes`
   The executable case list lives in `src/matrices/combat-melee-validation.ts`.
 
@@ -2004,11 +2005,11 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.rangedAttack(target)` ownership, caller busy state, body-part
   requirements (`RANGED_ATTACK`), another player's safe mode, target
-  validity, and range (≤ 3).
+  validity, range (≤ 3), and a fortified target after range
+  (`game/creeps.js:649-652`).
 - `Exclusions`
-  Rampart redirection, owned by `COMBAT-RANGED-006`. Busy excludes safe mode: a spawning creep's room is its owner's. Not
-  yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
-  returns `ERR_INVALID_TARGET` after range (`game/creeps.js:649-652`).
+  Rampart redirection, owned by `COMBAT-RANGED-006`. Busy excludes safe mode: a spawning creep's room is its owner's.
+  An invalid target is a source, which can't be fortified.
 - `Verification Notes`
   The executable case list lives in `src/matrices/combat-ranged-validation.ts`.
 
@@ -2133,11 +2134,11 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.dismantle(target)` ownership, caller busy state, body-part
   requirements (`WORK`), target validity (not a dismantleable structure),
-  range, and another player's safe mode.
+  range, another player's safe mode, and a fortified target
+  (`game/creeps.js:1040-1043`).
 - `Exclusions`
-  Dismantle yield math, owned by `DISMANTLE-001..008`. Busy excludes safe mode: a spawning creep's room is its owner's. Not yet
-  listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY` returns
-  `ERR_INVALID_TARGET` after that (`game/creeps.js:1040-1043`).
+  Dismantle yield math, owned by `DISMANTLE-001..008`. Busy excludes safe mode: a spawning creep's room is its owner's.
+  An invalid target is a keeper lair, which can't be fortified.
 - `Verification Notes`
   The executable case list lives in `src/matrices/dismantle-validation.ts`.
 
@@ -2155,8 +2156,9 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.attackController(target)` ownership, caller busy state, body-part
   requirements (`CLAIM`), target validity (no controller, own controller,
-  unowned), range, cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`), and
-  another player's safe mode.
+  unowned), range, cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`), another
+  player's safe mode, and a stronghold's invulnerable controller, last
+  (`game/creeps.js:911-913`; `InvaderCoreSpec.ownsController`).
 - `Exclusions`
   Reservation-reduction math, owned by `CTRL-RESERVE-007`. The
   invalid-controller-state/cooldown pair is excluded because attack cooldown
@@ -2164,9 +2166,10 @@ checks both. Each definition has these fields, in this order:
   later invalid-controller-state setup unavailable through public API state;
   an invalid target excludes both, properties of the controller it replaces.
   Safe mode excludes busy (a spawning creep's room is its owner's) and the
-  unowned controller, whose room nobody owns. Not yet listed: a controller under
-  `EFFECT_INVULNERABILITY` returns `ERR_INVALID_TARGET` last
-  (`game/creeps.js:911-913`).
+  unowned controller, whose room nobody owns. An invulnerable controller is
+  owned (excluding the invalid controller state), runs no safe mode, and takes
+  neither an attack nor a nuke's hit that would block its upgrades
+  (`nukes/tick.js:71`), so it pairs with neither.
 - `Verification Notes`
   A spawning attacker's room is its owner's, so `:busy` attacks its own
   controller (allowed, `CTRL-ATTACK-005`) from a spawn beside it. Under safe

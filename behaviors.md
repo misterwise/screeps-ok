@@ -742,7 +742,8 @@ Coverage Notes
   `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a structure with a
   `CONSTRUCTION_COST` (a keeper lair, say), `ERR_INVALID_TARGET`; `:range` it
   isn't adjacent, `ERR_NOT_IN_RANGE`; `:safeMode` it stands in another
-  player's room under safe mode, `ERR_NO_BODYPART`.
+  player's room under safe mode, `ERR_NO_BODYPART`; `:fortified` the target
+  has an active `PWR_FORTIFY` effect, `ERR_INVALID_TARGET`.
 
 Coverage Notes
 - Dismantle boost magnitudes are owned by `BOOST-DISMANTLE-001`
@@ -932,7 +933,8 @@ Coverage Notes
   `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is neither owned nor
   reserved, `ERR_INVALID_TARGET`; `:cooldown` its `upgradeBlocked` is above 0,
   `ERR_TIRED`; `:safeMode` the creep stands in another player's room under
-  safe mode, `ERR_NO_BODYPART`.
+  safe mode, `ERR_NO_BODYPART`; `:invulnerable` the controller has
+  `EFFECT_INVULNERABILITY`, a stronghold's, `ERR_INVALID_TARGET`.
 
 ### 6.4 Upgrade Controller
 - `CTRL-UPGRADE-001` `behavior` `verified_vanilla`
@@ -1148,7 +1150,8 @@ Coverage Notes
   is spawning, `ERR_BUSY`; `:noBodypart` it has no active ATTACK part,
   `ERR_NO_BODYPART`; `:safeMode` it stands in another player's room under
   safe mode, `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep,
-  power creep or structure, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  power creep or structure, or `:fortified` it has an active `PWR_FORTIFY`
+  effect, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
   `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
@@ -1172,7 +1175,8 @@ Coverage Notes
   `ERR_NO_BODYPART`; `:safeMode` it stands in another player's room under
   safe mode, `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep,
   power creep or structure, `ERR_INVALID_TARGET`; `:range` it is more than 3
-  tiles away, `ERR_NOT_IN_RANGE`.
+  tiles away, `ERR_NOT_IN_RANGE`; `:fortified` it has an active `PWR_FORTIFY`
+  effect, `ERR_INVALID_TARGET`.
 
 Coverage Notes
 - Ranged attack boost magnitudes are owned by `BOOST-RANGED-001`

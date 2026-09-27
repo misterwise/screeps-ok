@@ -8,7 +8,7 @@ import type { SupportedFindConstant } from './find.js';
 import {
 	FIND_CREEPS, FIND_STRUCTURES, FIND_CONSTRUCTION_SITES, FIND_SOURCES,
 	FIND_MINERALS, FIND_TOMBSTONES, FIND_DEPOSITS, FIND_RUINS, FIND_DROPPED_RESOURCES,
-	GCL_MULTIPLY, GCL_POW,
+	GCL_MULTIPLY, GCL_POW, CONTROLLER_LEVELS,
 } from './constants.js';
 
 // ── Setup types ──────────────────────────────────────────────
@@ -31,9 +31,35 @@ export interface PlayerSpec {
 	 * derives `Game.gpl`. Defaults to `DEFAULT_PLAYER_POWER`.
 	 */
 	power?: number;
+	/**
+	 * The player's market credits, as `Game.market.credits` reads them.
+	 * Defaults to `DEFAULT_PLAYER_CREDITS`; `playerMillicredits` converts.
+	 */
+	credits?: number;
+	/**
+	 * Code modules, source by name, installed beside the adapter's own `main`
+	 * so player code can `require(name)` them. `main` is the adapter's.
+	 */
+	modules?: Record<string, string>;
 }
 
 export const DEFAULT_PLAYER_POWER = 10_000_000;
+export const DEFAULT_PLAYER_CREDITS = 10_000_000;
+
+/** A player's code modules; throws for one that would replace the adapter's `main`. */
+export function playerModules(modules: Record<string, string> = {}): Record<string, string> {
+	if ('main' in modules) throw new Error('PlayerSpec.modules: `main` is the adapter\'s module');
+	return modules;
+}
+
+/** The engine's balance in thousandths of a credit; throws for credits it can't hold. */
+export function playerMillicredits(credits = DEFAULT_PLAYER_CREDITS): number {
+	const millicredits = Math.round(credits * 1000);
+	if (!(credits >= 0) || Math.abs(millicredits - credits * 1000) > 1e-6) {
+		throw new Error(`PlayerSpec.credits ${credits}: must be a non-negative amount in whole thousandths`);
+	}
+	return millicredits;
+}
 
 export interface GclSpec {
 	/** `Game.gcl.level`. */
@@ -42,12 +68,20 @@ export interface GclSpec {
 	progress?: number;
 }
 
-/** Throws for a room without a controller that sets a controller setting. */
+/** Throws for a room without a controller that sets a controller setting, or a `progress` no controller can hold. */
 export function checkRoomSpec(room: RoomSpec): void {
-	if (room.controller !== false) return;
-	const set = (['rcl', 'owner', 'safeMode', 'safeModeAvailable', 'ticksToDowngrade', 'powerEnabled'] as const)
-		.filter(key => room[key] !== undefined);
-	if (set.length > 0) throw new Error(`RoomSpec ${room.name}: controller: false takes no ${set.join(', ')}`);
+	if (room.controller === false) {
+		const set = (['rcl', 'owner', 'safeMode', 'safeModeAvailable', 'ticksToDowngrade', 'powerEnabled', 'progress'] as const)
+			.filter(key => room[key] !== undefined);
+		if (set.length > 0) throw new Error(`RoomSpec ${room.name}: controller: false takes no ${set.join(', ')}`);
+	}
+	if (room.progress !== undefined) {
+		const rcl = room.rcl ?? 1;
+		const needed = CONTROLLER_LEVELS[rcl];
+		if (!room.owner || needed === undefined || !Number.isInteger(room.progress) || room.progress < 0 || room.progress >= needed) {
+			throw new Error(`RoomSpec ${room.name}: progress ${room.progress} needs an owned controller below level 8 and a whole number below its CONTROLLER_LEVELS`);
+		}
+	}
 }
 
 /** The engine's GCL points for a spec; throws for one no point total reads back as. */
@@ -70,7 +104,8 @@ export interface RoomSpec {
 	/**
 	 * `false` makes a room with no controller, as a source keeper room or a
 	 * highway room has none. It then takes none of the controller settings
-	 * below (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `powerEnabled`).
+	 * below (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `progress`,
+	 * `powerEnabled`).
 	 * Defaults to true: one controller at (1, 1).
 	 */
 	controller?: boolean;
@@ -91,6 +126,12 @@ export interface RoomSpec {
 	safeMode?: number;
 	/** Set the controller's initial downgrade timer (ticks until level loss). */
 	ticksToDowngrade?: number;
+	/**
+	 * The controller's `progress` toward its next level. Defaults to 0. Only an
+	 * owned controller below level 8 takes it, below `CONTROLLER_LEVELS[rcl]`;
+	 * `checkRoomSpec()` rejects any other.
+	 */
+	progress?: number;
 	/**
 	 * Set the controller's `isPowerEnabled`. Placement never enables power, so
 	 * a power creep can `usePower` in a controlled room only when this is set.
@@ -260,6 +301,13 @@ export interface InvaderCoreSpec {
 	templateName?: string;
 	/** The engine's tag for a stronghold's structures; an engine that groups them otherwise ignores it. */
 	strongholdId?: string;
+	/**
+	 * The core owns its room's controller, as the backend creates a stronghold:
+	 * the Invader user's at level 8 with no progress, invulnerable
+	 * (`EFFECT_INVULNERABILITY`) and its downgrade timer both running out when the
+	 * core deploys. Needs a room whose controller has no owner.
+	 */
+	ownsController?: boolean;
 }
 
 export interface PowerBankSpec {

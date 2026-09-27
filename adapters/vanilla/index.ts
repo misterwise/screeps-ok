@@ -7,7 +7,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from '../../src/adapter.js';
-import { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from '../../src/adapter.js';
+import { checkRoomSpec, gclPoints, playerMillicredits, playerModules, DEFAULT_PLAYER_POWER } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -947,7 +947,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				gcl,
 				power,
 				active: 10000,
-				money: 10000000000, // 10M credits (stored as milli-credits internally)
+				money: playerMillicredits(playerSpec.credits),
 				badge: { type: 1, color1: '#000', color2: '#000', color3: '#000', flip: false, param: 0 },
 			});
 
@@ -956,7 +956,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 				this.db['users.code'].insert({
 					user: user._id,
 					branch: 'default',
-					modules: { main: loopCode },
+					modules: { ...playerModules(playerSpec.modules), main: loopCode },
 					activeWorld: true,
 					timestamp: shardCodeTimestamp,
 				}),
@@ -986,7 +986,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 					{ $set: {
 						user: user._id,
 						level: rcl,
-						progress: 0,
+						progress: ownedRoom.progress ?? 0,
 						downgradeTime,
 						safeMode,
 						safeModeAvailable: ownedRoom.safeModeAvailable ?? 0,
@@ -1535,6 +1535,16 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			}
 			if (s.templateName !== undefined) insert.templateName = s.templateName;
 			if (s.strongholdId !== undefined) insert.strongholdId = s.strongholdId;
+			if (s.ownsController) {
+				// What the backend's stronghold creation writes (`@screeps/backend/lib/strongholds.js:111-124`).
+				const controller = await this.db['rooms.objects'].findOne({ room: roomName, type: 'controller' });
+				if (!controller || controller.user) throw new Error(`placeObject invaderCore: ownsController needs ${roomName}'s controller unowned`);
+				const until = (insert.deployTime as number | null) ?? gameTime;
+				await this.db['rooms.objects'].update({ _id: controller._id }, { $set: {
+					user, level: 8, progress: 0, downgradeTime: until,
+					effects: [{ effect: C.EFFECT_INVULNERABILITY, power: C.EFFECT_INVULNERABILITY, endTime: until, duration: s.ticksToDeploy ?? 0 }],
+				} });
+			}
 			const result = await this.db['rooms.objects'].insert(insert);
 			if (spawningSpec) {
 				await this.db['rooms.objects'].insert({

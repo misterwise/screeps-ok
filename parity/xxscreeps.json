@@ -50,12 +50,6 @@
 			"why": "No upstream report yet; raise the RoomObject toJSON with laverdet before a PR. Room, RoomPosition and Flag already serialize and stay pinned.",
 			"tests": ["UNDOC-JSONOBJ-001:ownedCreep", "UNDOC-JSONOBJ-001:hostileCreep", "UNDOC-JSONOBJ-001:controller", "UNDOC-JSONOBJ-001:ownedStructure", "UNDOC-JSONOBJ-001:hostileStructure", "UNDOC-JSONOBJ-001:source", "UNDOC-JSONOBJ-001:mineral", "UNDOC-JSONOBJ-001:droppedResource", "UNDOC-JSONOBJ-001:constructionSite", "UNDOC-JSONOBJ-001:tombstone", "UNDOC-JSONOBJ-001:ruin", "UNDOC-JSONOBJ-001:deposit", "UNDOC-JSONOBJ-001:nuke", "UNDOC-JSONOBJ-001:ownedPowerCreep", "UNDOC-JSONOBJ-001:hostilePowerCreep"]
 		},
-		"commonjs-main-exports-alias-missing": {
-			"why": "Reported upstream as an encapsulation-leak observation in laverdet/xxscreeps#328 (2026-07-20). No player-bot replication, so it is not queued for a PR; the gap stays open pending laverdet's read.",
-			"actual": "The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works.",
-			"expected": "In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record.",
-			"tests": ["UNDOC-GLOBAL-003"]
-		},
 		"stale-pickup-target-allowed": {
 			"actual": "`Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops.",
 			"expected": "Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`).",
@@ -97,6 +91,18 @@
 			"expected": "Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name.",
 			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28).",
 			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
+		},
+		"attack-controller-ignores-invulnerability": {
+			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`).",
+			"expected": "Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check.",
+			"why": "Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`).",
+			"tests": ["CTRL-ATTACK-007:invulnerable"]
+		},
+		"controller-downgrade-replaces-progress": {
+			"actual": "A controller's level loss (`mods/classic/controller/processor.ts:258`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held.",
+			"expected": "Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`.",
+			"why": "Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start.",
+			"tests": ["CTRL-DOWNGRADE-006"]
 		},
 		"power-creep-shard-null-when-unspawned": {
 			"actual": "`PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`.",

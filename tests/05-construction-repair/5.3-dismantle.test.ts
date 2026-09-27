@@ -6,7 +6,7 @@ import { describe, test, expect, code, body,
 } from '../../src/index.js';
 import { dismantleValidationCases } from '../../src/matrices/dismantle-validation.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
-import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
+import { expectStaleArgumentRejected, fortify, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 const staleDismantleCase = staleArgumentCases.find(row => row.key === 'creepDismantle')!;
 
@@ -181,12 +181,15 @@ describe('creep.dismantle()', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
 			const safeMode = blockers.has('safe-mode');
+			const fortified = blockers.has('fortified');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{
 					name: 'W1N1',
 					rcl: 2,
-					owner: safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1',
+					owner: roomOwner,
+					powerEnabled: fortified,
 					...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}),
 				}],
 			});
@@ -210,6 +213,8 @@ describe('creep.dismantle()', () => {
 			const targetId = blockers.has('invalid-target')
 				? await shard.placeObject('W1N1', STRUCTURE_KEEPER_LAIR, { pos: targetPos })
 				: await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_WALL, hits: 1000 });
+			// The room's owner fortifies the wall.
+			if (fortified) await fortify(shard, 'W1N1', targetId, roomOwner, [targetPos[0] + 2, targetPos[1] + 1]);
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${creepId}).dismantle(Game.getObjectById(${targetId}))

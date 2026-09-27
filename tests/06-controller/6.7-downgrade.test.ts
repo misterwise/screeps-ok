@@ -75,10 +75,10 @@ describe('Controller downgrade', () => {
 	test('CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]', async ({ shard }) => {
 		// Engine processor/intents/controllers/tick.js:66 — on a non-terminal
 		// downgrade, progress += round(CONTROLLER_LEVELS[newLevel] * 0.9).
-		// Seed a level-2 controller with progress 0 and let it downgrade.
+		const progress = 7;
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 3 }],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 3, progress }],
 		});
 		await shard.tick();
 
@@ -90,11 +90,7 @@ describe('Controller downgrade', () => {
 			({ level: ctrl.level, progress: ctrl.progress })
 		`) as { level: number; progress: number };
 
-		expect(after.level).toBe(1);
-		// Initial progress on a fresh RCL 2 controller is 0, so the observed
-		// progress should equal the 90% head start at level 1.
-		const headStart = Math.round(CONTROLLER_LEVELS[1] * 0.9);
-		expect(after.progress).toBe(headStart);
+		expect(after).toEqual({ level: 1, progress: progress + Math.round(CONTROLLER_LEVELS[1] * 0.9) });
 	});
 
 	test('CTRL-DOWNGRADE-007 a level loss re-arms the timer by CONTROLLER_DOWNGRADE[new level] / 2 + 1', async ({ shard }) => {

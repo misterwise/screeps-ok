@@ -10,9 +10,13 @@ export const combatRangedValidationCases = makeValidationCases('COMBAT-RANGED-00
 	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
+	// game/creeps.js:649: a PWR_FORTIFY or EFFECT_INVULNERABILITY effect on the target, after range.
+	{ condition: 'fortified', expectedRc: ERR_INVALID_TARGET },
 ] as const, [
 	// A spawning creep's room is its owner's, never in another player's safe mode.
 	['busy', 'safe-mode'],
+	// A source replaces the fortified rampart.
+	['invalid-target', 'fortified'],
 ]);
 
 export type CombatRangedValidationCase = typeof combatRangedValidationCases[number];

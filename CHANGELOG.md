@@ -95,6 +95,18 @@ changes since `v0.1.0-alpha` are not itemized.
 - `setTerrain()` is setup-only: before the shard's first tick it replaces the
   terrain player code reads, and after it the call throws and changes
   nothing. An adapter had been allowed to accept it after a tick.
+- Four setup fields: `RoomSpec.progress` sets an owned controller's
+  `progress` (default 0; `checkRoomSpec()` rejects it without an owner, at
+  level 8, or at `CONTROLLER_LEVELS[rcl]` and above). `PlayerSpec.credits` sets
+  `Game.market.credits` (default `DEFAULT_PLAYER_CREDITS`, 10,000,000, the
+  credits both reference adapters had hard-coded; `playerMillicredits()` gives
+  your engine's thousandths). `PlayerSpec.modules` installs code modules beside
+  your adapter's own `main`, so player code can `require()` them
+  (`playerModules()` rejects a `main`). An invader core placed with
+  `ownsController` owns its room's controller as the backend creates a
+  stronghold: the Invader's, level 8, invulnerable and with its downgrade
+  timer both running out when the core deploys. Apply each; contract tests
+  pin them.
 
 ### Parity and the runner
 
@@ -284,6 +296,15 @@ changes since `v0.1.0-alpha` are not itemized.
   `DEPRECATED-PATH-001`, which no longer claims `PathFinder.use`'s toggle
   takes effect: vanilla's reaches `Room.findPath` only on a global's first
   tick.
+- Rows that waited on the contract: `CTRL-UPGRADE-012` is keyed `:excess` and
+  `:levelEight` (progress reads 0 on reaching level 8); `INVADER-CORE-004` is
+  keyed `:controller` (now with seeded progress) and gains
+  `:controllerEffects`, a power effect the collapse clears. New conditions,
+  each with its pairs: `CTRL-ATTACK-007:invulnerable` (a stronghold's
+  controller, last), and `:fortified` (a target under `PWR_FORTIFY`) in
+  `COMBAT-MELEE-009` (before range), `COMBAT-RANGED-007` (after range) and
+  `DISMANTLE-009` (last). `UNDOC-GLOBAL-003` runs in an installed module
+  rather than the eval channel, where `exports` is no module's.
 - Now keyed by condition, each validation row running its conditions alone
   and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
   `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,

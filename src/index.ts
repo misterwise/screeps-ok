@@ -18,7 +18,7 @@ export type {
 	PlaceObjectSpec, PlaceObjectSpecs, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
-export { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from './adapter.js';
+export { checkRoomSpec, gclPoints, playerMillicredits, playerModules, DEFAULT_PLAYER_POWER, DEFAULT_PLAYER_CREDITS } from './adapter.js';
 export { withCornerWalls } from './terrain-fixture.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';
@@ -108,7 +108,7 @@ export {
 	SOURCE_ENERGY_CAPACITY, SOURCE_ENERGY_NEUTRAL_CAPACITY, SOURCE_ENERGY_KEEPER_CAPACITY,
 	INVADERS_ENERGY_GOAL,
 	// Invader core
-	EFFECT_COLLAPSE_TIMER, INVADER_CORE_CREEP_SPAWN_TIME, INVADER_CORE_CONTROLLER_POWER,
+	EFFECT_INVULNERABILITY, EFFECT_COLLAPSE_TIMER, INVADER_CORE_CREEP_SPAWN_TIME, INVADER_CORE_CONTROLLER_POWER,
 	// Ruin decay
 	RUIN_DECAY, RUIN_DECAY_STRUCTURES,
 	// Deposit decay and exhaustion

@@ -2,15 +2,13 @@ import { describe, test, expect, code,
 	OK, ERR_INVALID_ARGS,
 	STRUCTURE_TERMINAL, TERMINAL_COOLDOWN,
 	MARKET_ORDER_LIFE_TIME, MARKET_FEE, MARKET_MAX_ORDERS, MARKET_MAX_DEALS_PER_TICK,
-	RESOURCE_ENERGY, RESOURCE_HYDROGEN,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN, DEFAULT_PLAYER_CREDITS,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 import { marketDealValidationCases } from '../../src/matrices/market-deal-validation.js';
 import {
 	marketChangeOrderPriceValidationCases, marketCreateOrderValidationCases, marketExtendOrderValidationCases,
 } from '../../src/matrices/market-order-validation.js';
-
-const INITIAL_CREDITS = 10_000_000;
 
 function publicFee(price: number, amount: number): number {
 	const milliPrice = Math.round(price * 1000);
@@ -135,7 +133,7 @@ describe('Market orders', () => {
 			},
 		]);
 		expect(view.credits).toBeCloseTo(
-			INITIAL_CREDITS - publicFee(0.5, 100) - publicFee(2, 75),
+			DEFAULT_PLAYER_CREDITS - publicFee(0.5, 100) - publicFee(2, 75),
 			5,
 		);
 	});
@@ -432,7 +430,7 @@ describe('Market deal', () => {
 		};
 
 		expect(ledgers.p1.credits).toBeCloseTo(deal.beforeCredits - publicDealCost(2.5, 100), 5);
-		expect(ledgers.p2.credits).toBeCloseTo(INITIAL_CREDITS + publicDealCost(2.5, 100), 5);
+		expect(ledgers.p2.credits).toBeCloseTo(DEFAULT_PLAYER_CREDITS + publicDealCost(2.5, 100), 5);
 		expect(ledgers.p1.outgoing).toEqual([]);
 		expect(ledgers.p2.incoming).toEqual([]);
 		expect(ledgers.p1.incoming).toHaveLength(1);
@@ -844,8 +842,8 @@ describe('Market queries', () => {
 			})
 		`) as { price: number; credits: number };
 
-		expect(before).toBe(INITIAL_CREDITS);
+		expect(before).toBe(DEFAULT_PLAYER_CREDITS);
 		expect(view.price).toBe(0.5);
-		expect(view.credits).toBeCloseTo(INITIAL_CREDITS - publicFee(0.5, 100), 5);
+		expect(view.credits).toBeCloseTo(DEFAULT_PLAYER_CREDITS - publicFee(0.5, 100), 5);
 	});
 });

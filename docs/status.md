@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3426%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3426%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,16 +17,27 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [3426](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 17:52 UTC |
-| 🔴 | **xxscreeps** | [2938](#xxscreeps-passing-tests) | [167](#xxscreeps-expected-failures) | — | [338](#xxscreeps-skipped-tests) | 2026-09-27 17:52 UTC |
+| 🔴 | **xxscreeps** | [2937](#xxscreeps-passing-tests) | [166](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [338](#xxscreeps-skipped-tests) | 2026-09-27 17:52 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## 🚨 Regression traps triggered
+
+Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
+
+**xxscreeps**
+
+- `Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]`
+
 ## xxscreeps unexpected failures
 
+- `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module`
+- `attack-controller-ignores-invulnerability` registers `CTRL-ATTACK-007:invulnerable`, which no test passed or failed
 - `power-creep-shard-null-when-unspawned` registers `SHARD-PCREEP-001:afterDeath`, which no test passed or failed
 - `power-creep-suicide-uncapped` registers `INTENT-LIMIT-002:suicidePowerCreep`, which no test passed or failed
+- 1 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -135,7 +146,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 62 expected-failure classifications against vanilla's canonical behavior, covering 167 tests. That includes 59 open parity gaps covering 160 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 63 expected-failure classifications against vanilla's canonical behavior, covering 166 tests. That includes 60 open parity gaps covering 159 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -149,7 +160,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step (CTRL-DOWNGRADE-010:levelZero); the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix. | [2](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | No upstream report yet; raise the RoomObject toJSON with laverdet before a PR. Room, RoomPosition and Flag already serialize and stay pinned. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
-| `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | Reported upstream as an encapsulation-leak observation in laverdet/xxscreeps#328 (2026-07-20). No player-bot replication, so it is not queued for a PR; the gap stays open pending laverdet's read. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | [16](#xxscreeps-gap-stale-argument-throws-instead-of-invalid-target) |
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | [1](#xxscreeps-gap-pull-range-checked-before-spawning-target) |
@@ -157,6 +167,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `creep-combat-rejects-power-creep-targets` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET. | Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it. | Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`. | [3](#xxscreeps-gap-creep-combat-rejects-power-creep-targets) |
 | `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28). | [11](#xxscreeps-gap-renew-recycle-target-creep-checked-late) |
 | `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28). | [8](#xxscreeps-gap-spawn-creep-accepts-non-object-options) |
+| `attack-controller-ignores-invulnerability` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`). | Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check. | Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`). | 0 |
+| `controller-downgrade-replaces-progress` | A controller's level loss (`mods/classic/controller/processor.ts:258`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held. | Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`. | Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start. | 0 |
 | `power-creep-shard-null-when-unspawned` | `PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`. | Vanilla's getter is `o.shard \|\| undefined` (`game/power-creeps.js:53`), and death writes `shard: null` (`_diePowerCreep.js:54-55`), so an unspawned power creep reads `undefined`. | Found 2026-09-27 by SHARD-PCREEP-001:afterDeath, the row's first case reachable without `powerCreepAccountApi`. Canonical claim is documented too: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' xxscreeps' own doc comment says `null`. | 0 |
 | `power-creep-suicide-uncapped` | `PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep. | Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives. | Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does. | 0 |
 | `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | [1](#xxscreeps-gap-portal-ignores-power-creeps) |
@@ -264,13 +276,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-commonjs-main-exports-alias-missing">
-<summary><code>commonjs-main-exports-alias-missing</code> — 1 test</summary>
-
-- `Undocumented API Surface — global / VM persistence UNDOC-GLOBAL-003 exports aliases module.exports within the executing user module`
-
-</details>
-
 <details id="xxscreeps-gap-stale-pickup-target-allowed">
 <summary><code>stale-pickup-target-allowed</code> — 1 test</summary>
 
@@ -353,6 +358,18 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeBusy spawnCreep() validation returns the canonical code`
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeRcl spawnCreep() validation returns the canonical code`
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeNotEnough spawnCreep() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-attack-controller-ignores-invulnerability">
+<summary><code>attack-controller-ignores-invulnerability</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-controller-downgrade-replaces-progress">
+<summary><code>controller-downgrade-replaces-progress</code> — 0 tests</summary>
+
 
 </details>
 
@@ -5199,7 +5216,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2938 tests across 145 files</summary>
+<summary>2937 tests across 145 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6477,11 +6494,10 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (8)
+**`tests/06-controller/6.7-downgrade.test.ts`** (7)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
-- Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-009:levelOne a downgrade step landing on level >= 1 resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-010:levelOne a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
 - Controller downgrade CTRL-DOWNGRADE-009:levelZero the downgrade step to level 0 also resets safeModeAvailable to 0

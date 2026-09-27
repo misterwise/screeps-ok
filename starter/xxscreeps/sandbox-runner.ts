@@ -108,9 +108,10 @@ export class UserSandbox {
 		return this.usernameCache;
 	}
 
-	static async create(shard: Shard, world: World, userId: string): Promise<UserSandbox> {
-		// Ensure a main.js exists so `requireMain()` resolves to an empty loop.
+	static async create(shard: Shard, world: World, userId: string, modules: Record<string, string>): Promise<UserSandbox> {
+		// Ensure a main.js exists so `requireMain()` resolves to an empty loop, beside the player's own modules.
 		await Code.saveContent(shard.db, userId, kBranchName, new Map([
+			...Object.entries(modules).map(([name, source]) => [`${name}.js`, source] as const),
 			['main.js', kMainCode],
 		]));
 

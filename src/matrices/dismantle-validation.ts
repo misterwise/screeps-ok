@@ -10,9 +10,13 @@ export const dismantleValidationCases = makeValidationCases('DISMANTLE-009', [
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
+	// game/creeps.js:1040: a PWR_FORTIFY or EFFECT_INVULNERABILITY effect on the target.
+	{ condition: 'fortified', expectedRc: ERR_INVALID_TARGET },
 ] as const, [
 	// A spawning creep's room is its owner's, never in another player's safe mode.
 	['busy', 'safe-mode'],
+	// A keeper lair replaces the fortified wall.
+	['invalid-target', 'fortified'],
 ]);
 
 export type DismantleValidationCase = typeof dismantleValidationCases[number];

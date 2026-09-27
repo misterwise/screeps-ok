@@ -250,37 +250,34 @@ describe('creep.upgradeController()', () => {
 			.toEqual({ level: 2, safeModeAvailable: before.safeModeAvailable + 1 });
 	});
 
-	test('CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold', async ({ shard }) => {
-		// Engine upgradeController.js:63-74: crossing CONTROLLER_LEVELS[level] advances the
-		// level and keeps progress + effect - threshold. 30 WORK over 7 upgrades is 210.
-		await shard.ownedRoom('p1', 'W1N1', 1);
-		const ctrlPos = await shard.getControllerPos('W1N1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: body(30, WORK, 5, CARRY, MOVE),
-			store: { energy: 250 },
+	// Engine upgradeController.js:63-74: crossing CONTROLLER_LEVELS[level] advances the level and keeps
+	// progress + effect - threshold, except that level 8 has no progress.
+	for (const { key, rcl, progress } of [
+		{ key: 'excess', rcl: 1, progress: (after: number) => after },
+		{ key: 'levelEight', rcl: 7, progress: () => 0 },
+	]) {
+		test(`CTRL-UPGRADE-012:${key} an upgrade across the threshold advances the level and keeps the excess`, async ({ shard }) => {
+			const work = 30;
+			const short = 10;
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl, owner: 'p1', progress: CONTROLLER_LEVELS[rcl] - short }],
+			});
+			const ctrlPos = await shard.getControllerPos('W1N1');
+			const creepId = await shard.placeCreep('W1N1', {
+				pos: [ctrlPos!.x + 1, ctrlPos!.y], owner: 'p1', body: body(work, WORK, 5, CARRY, MOVE), store: { energy: 250 },
+			});
+
+			expect(await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgradeController(Game.rooms['W1N1'].controller)
+			`)).toBe(OK);
+			const result = await shard.runPlayer('p1', code`({
+				level: Game.rooms['W1N1'].controller.level,
+				progress: Game.rooms['W1N1'].controller.progress,
+			})`);
+			expect(result).toEqual({ level: rcl + 1, progress: progress(work * UPGRADE_CONTROLLER_POWER - short) });
 		});
-
-		const levelBefore = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.level
-		`) as number;
-		expect(levelBefore).toBe(1);
-
-		for (let i = 0; i < 7; i++) {
-			await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).upgradeController(
-					Game.rooms['W1N1'].controller
-				)
-			`);
-		}
-
-		const result = await shard.runPlayer('p1', code`({
-			level: Game.rooms['W1N1'].controller.level,
-			progress: Game.rooms['W1N1'].controller.progress,
-		})`) as { level: number; progress: number };
-		expect(result).toEqual({ level: 2, progress: 7 * 30 * UPGRADE_CONTROLLER_POWER - CONTROLLER_LEVELS[1] });
-	});
+	}
 
 	test('CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold', async ({ shard }) => {
 		// Engine upgradeController.js:63-64 gates the level-up on

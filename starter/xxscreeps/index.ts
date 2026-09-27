@@ -10,7 +10,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from 'screeps-ok';
-import { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from 'screeps-ok';
+import { checkRoomSpec, gclPoints, playerMillicredits, playerModules, DEFAULT_PLAYER_POWER } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
 import { RunPlayerError } from 'screeps-ok';
@@ -45,7 +45,7 @@ import { snapshotObject, snapshotRoom, posKeyKind } from './snapshots.js';
 import {
 	insertRoomObject, removeRoomObject, iterateRoomObjects,
 	setRoomLevel, getRoomLevel, setRoomOwner, setControllerOwner,
-	setRoomSafeModeUntil, setControllerDowngradeTime,
+	setRoomSafeModeUntil, setControllerDowngradeTime, setControllerProgress, setControllerInvulnerableUntil,
 	resetControllerTimers, resetRoomControllerFlags,
 	bindObjectPos, setCreepAgeTime,
 	applySourceRoomStatus, setSourceNextRegenerationTime, setMineralNextRegenerationTime,
@@ -256,9 +256,12 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 
 	private playerMap = new Map<string, string>();
 	private reversePlayerMap = new Map<string, string>();
-	// Account GCL and power points by handle, written to each user's info at createShard.
+	// Account GCL, power points and millicredits by handle, written to each user's info at createShard.
 	private playerGcl = new Map<string, number>();
 	private playerPower = new Map<string, number>();
+	private playerMillicredits = new Map<string, number>();
+	// Code modules by engine user id, installed with each user's sandbox.
+	private playerModules = new Map<string, Record<string, string>>();
 	private pendingSetup = new Map<string, Array<(room: Room) => void>>();
 	private rooms: string[] = [];
 	private simulation: Awaited<ReturnType<typeof createSimulation>> | null = null;
@@ -370,6 +373,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			this.playerPower.set(handle, typeof entry !== 'string' && entry.power !== undefined
 				? entry.power
 				: DEFAULT_PLAYER_POWER);
+			this.playerMillicredits.set(handle, playerMillicredits(typeof entry !== 'string' ? entry.credits : undefined));
+			this.playerModules.set(playerSlots[i], playerModules(typeof entry !== 'string' ? entry.modules : undefined));
 		}
 
 		for (const roomSpec of spec.rooms) {
@@ -408,6 +413,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 					}
 					if (ticksToDowngrade > 0 && room.controller) {
 						setControllerDowngradeTime(room.controller, Game.time, ticksToDowngrade);
+					}
+					if (roomSpec.progress !== undefined) {
+						setControllerProgress(room.controller!, roomSpec.progress);
 					}
 				});
 			}
@@ -905,6 +913,10 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		}
 		// `spec.strongholdId` is dropped: xxscreeps groups stronghold peers by ownership
 		// plus the core's `#ownedNeutralStructureIds`.
+		const roomSpec = this.shardSpec?.rooms.find(room => room.name === roomName);
+		if (spec.ownsController && (!roomSpec || roomSpec.controller === false || roomSpec.owner)) {
+			throw new Error(`placeObject invaderCore: ownsController needs ${roomName}'s controller unowned`);
+		}
 
 		this.queueOp(roomName, room => {
 			const time = this.simulation!.shard.time;
@@ -917,6 +929,16 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 			}
 			if (spec.ticksToCollapse !== undefined) {
 				setInvaderCoreCollapseTime(core, time, spec.ticksToCollapse);
+			}
+			if (spec.ownsController) {
+				// The stronghold's controller as the backend creates it: the Invader's, level 8, until deploy.
+				const until = deployTime || time;
+				setRoomLevel(room, 8);
+				setRoomOwner(room, '2');
+				setControllerOwner(room.controller!, '2');
+				setControllerProgress(room.controller!, 0);
+				setControllerDowngradeTime(room.controller!, until, 0);
+				setControllerInvulnerableUntil(room.controller!, until);
 			}
 			insertRoomObject(room, core);
 			if (spawningSpec) {
@@ -1004,11 +1026,13 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		for (const roomName of this.rooms) {
 			bareInits[roomName] = () => {};
 		}
-		this.simulation = await createSimulation(bareInits, terrainOverrides);
+		this.simulation = await createSimulation(bareInits, terrainOverrides, this.playerModules);
 		for (const [handle, power] of this.playerPower) {
 			const info = User.infoKey(this.resolvePlayer(handle));
 			await this.simulation.shard.db.data.hSet(info, 'power', String(power));
 			await this.simulation.shard.db.data.hSet(info, 'gcl', String(this.playerGcl.get(handle)));
+			// The wallstreet mod's balance field (`mods/mmo/wallstreet/model.ts:12`).
+			await this.simulation.shard.db.data.hSet(info, 'credits', String(this.playerMillicredits.get(handle)));
 		}
 		await this.simulation.tick(1);
 
@@ -1401,6 +1425,8 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		this.reversePlayerMap.clear();
 		this.playerGcl.clear();
 		this.playerPower.clear();
+		this.playerMillicredits.clear();
+		this.playerModules.clear();
 		this.idMap.clear();
 		this.nameToSyntheticId.clear();
 		this.posToSyntheticId.clear();
@@ -1483,7 +1509,8 @@ function buildTerrainEntry(spec: TerrainSpec): { exits: number; terrain: Terrain
 // room initialization, and exposes updateTerrain for post-creation changes.
 async function createSimulation(
 	roomInits: Record<string, (room: any) => void>,
-	terrainOverrides?: Record<string, TerrainSpec>,
+	terrainOverrides: Record<string, TerrainSpec>,
+	playerModules: ReadonlyMap<string, Record<string, string>>,
 ) {
 	const testShard = await instantiateTestShard();
 	const { db, shard } = testShard;
@@ -1614,7 +1641,7 @@ async function createSimulation(
 
 				let sandbox = userSandboxes.get(userId);
 				if (!sandbox) {
-					sandbox = await UserSandbox.create(shard, world, userId);
+					sandbox = await UserSandbox.create(shard, world, userId, playerModules.get(userId) ?? {});
 					userSandboxes.set(userId, sandbox);
 				}
 

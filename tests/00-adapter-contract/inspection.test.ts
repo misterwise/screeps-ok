@@ -9,7 +9,7 @@ import {
 	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
 	BODYPART_HITS, CARRY_CAPACITY, CONSTRUCTION_COST, SOURCE_ENERGY_CAPACITY,
 	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES,
-	DEPOSIT_DECAY_TIME, POWER_BANK_DECAY, POWER_BANK_HITS,
+	DEPOSIT_DECAY_TIME, POWER_BANK_DECAY, POWER_BANK_HITS, EFFECT_INVULNERABILITY,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 
@@ -323,6 +323,29 @@ describe('adapter contract: inspection', () => {
 			const obj = await shard.expectStructure(id, STRUCTURE_INVADER_CORE);
 			expect(obj.level).toBe(2);
 			expect(obj.ticksToDeploy).toBe(74);
+		});
+
+		test('an invader core that ownsController holds its room\'s controller invulnerable until it deploys', async ({ shard }) => {
+			shard.requires('invaderCore');
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1' }],
+			});
+			await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			await shard.placeObject('W2N1', STRUCTURE_INVADER_CORE, { pos: [25, 25], level: 1, ticksToDeploy: 75, ownsController: true });
+
+			const controller = await shard.runPlayer('p1', code`
+				const c = Game.rooms.W2N1.controller;
+				({ my: c.my, owned: !!c.owner, level: c.level, effects: c.effects.map(e => ({ effect: e.effect, ticksRemaining: e.ticksRemaining })) })
+			`);
+			expect(controller).toEqual({ my: false, owned: true, level: 8, effects: [{ effect: EFFECT_INVULNERABILITY, ticksRemaining: 75 }] });
+		});
+
+		test('ownsController is rejected for an owned room\'s controller', async ({ shard }) => {
+			shard.requires('invaderCore');
+			await shard.ownedRoom('p1');
+			await expect(shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, { pos: [25, 25], level: 1, ticksToDeploy: 75, ownsController: true }))
+				.rejects.toThrow(/ownsController/);
 		});
 
 		test('power bank snapshot includes power and decay fields', async ({ shard }) => {

@@ -13,7 +13,7 @@ import { combatHealValidationCases } from '../../src/matrices/combat-heal-valida
 import { combatMeleeValidationCases } from '../../src/matrices/combat-melee-validation.js';
 import { combatRangedValidationCases } from '../../src/matrices/combat-ranged-validation.js';
 import { combatRangedHealValidationCases } from '../../src/matrices/combat-rangedheal-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { fortify, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.attack()', () => {
 	test('COMBAT-MELEE-001 each ATTACK part deals ATTACK_POWER damage', async ({ shard }) => {
@@ -180,10 +180,14 @@ describe('creep.attack()', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
 			const safeMode = blockers.has('safe-mode');
+			const fortified = blockers.has('fortified');
 			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
+				rooms: [{
+					name: 'W1N1', rcl: 1, owner: roomOwner, powerEnabled: fortified,
+					...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}),
+				}],
 			});
 			if (safeMode && owner === 'p2') {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
@@ -200,13 +204,15 @@ describe('creep.attack()', () => {
 					owner,
 					body: blockers.has('no-bodypart') ? [MOVE] : [ATTACK, MOVE],
 				});
+			// The room's owner fortifies a hostile rampart for the attacker.
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
+			const targetOwner = owner === 'p1' ? 'p2' : 'p1';
 			const targetId = blockers.has('invalid-target')
-				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
-				: await shard.placeCreep('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [25, 26],
-					owner: owner === 'p1' ? 'p2' : 'p1',
-					body: [TOUGH, MOVE],
-				});
+				? await shard.placeSource('W1N1', { pos: targetPos })
+				: fortified
+					? await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_RAMPART, owner: targetOwner, hits: 10000 })
+					: await shard.placeCreep('W1N1', { pos: targetPos, owner: targetOwner, body: [TOUGH, MOVE] });
+			if (fortified) await fortify(shard, 'W1N1', targetId, roomOwner, [targetPos[0] + 2, targetPos[1] + 1]);
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
@@ -345,10 +351,14 @@ describe('creep.rangedAttack()', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
 			const safeMode = blockers.has('safe-mode');
+			const fortified = blockers.has('fortified');
 			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
+				rooms: [{
+					name: 'W1N1', rcl: 1, owner: roomOwner, powerEnabled: fortified,
+					...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}),
+				}],
 			});
 			if (safeMode && owner === 'p2') {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
@@ -365,13 +375,15 @@ describe('creep.rangedAttack()', () => {
 					owner,
 					body: blockers.has('no-bodypart') ? [MOVE] : [RANGED_ATTACK, MOVE],
 				});
+			// The room's owner fortifies a hostile rampart for the attacker.
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 27];
+			const targetOwner = owner === 'p1' ? 'p2' : 'p1';
 			const targetId = blockers.has('invalid-target')
-				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 27] })
-				: await shard.placeCreep('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [25, 27],
-					owner: owner === 'p1' ? 'p2' : 'p1',
-					body: [TOUGH, MOVE],
-				});
+				? await shard.placeSource('W1N1', { pos: targetPos })
+				: fortified
+					? await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_RAMPART, owner: targetOwner, hits: 10000 })
+					: await shard.placeCreep('W1N1', { pos: targetPos, owner: targetOwner, body: [TOUGH, MOVE] });
+			if (fortified) await fortify(shard, 'W1N1', targetId, roomOwner, [targetPos[0] + 2, targetPos[1] + 1]);
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${targetId}))

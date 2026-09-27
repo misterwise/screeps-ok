@@ -79,8 +79,14 @@ That includes:
 - write each player's account into the engine's own user record, where the
   engine's checks read it: `PlayerSpec.gcl` as `Game.gcl` reads it
   (`gclPoints()` gives the engine's points; default level is the rooms the
-  player owns plus one, at least 2), and `PlayerSpec.power` in points
-  (default `DEFAULT_PLAYER_POWER`, 10,000,000)
+  player owns plus one, at least 2), `PlayerSpec.power` in points
+  (default `DEFAULT_PLAYER_POWER`, 10,000,000), and `PlayerSpec.credits` as
+  `Game.market.credits` reads them (default `DEFAULT_PLAYER_CREDITS`,
+  10,000,000; `playerMillicredits()` gives the engines' thousandths and
+  rejects a finer amount)
+- install each player's `PlayerSpec.modules` as code modules beside the
+  adapter's own `main`, so player code's `require(name)` loads them
+  (`playerModules()` rejects one named `main`)
 - create the requested rooms. The world contains every requested room and may
   contain more (an adapter may build on an engine's own test world), so its
   extent is engine-reported rather than derived from the spec. Tests that
@@ -90,7 +96,9 @@ That includes:
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
 - set the controller's `isPowerEnabled` from `RoomSpec.powerEnabled`
-  (default false)
+  (default false), and an owned controller's `progress` from
+  `RoomSpec.progress` (default 0; `checkRoomSpec()` rejects progress an
+  owned controller below level 8 can't hold)
 - if the adapter declares `roomStatus`, apply public room status from
   `RoomSpec.status`; omitted status means `normal`, while `novice`,
   `respawn`, and `closed` must be visible through `Game.map.getRoomStatus()`
@@ -102,7 +110,8 @@ That includes:
   objects
 - create no controller for a room whose `RoomSpec.controller` is `false`, as
   a source keeper or highway room has none; such a room takes no controller
-  setting (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `powerEnabled`), and
+  setting (`rcl`, `owner`, safe mode, `ticksToDowngrade`, `progress`,
+  `powerEnabled`), and
   `checkRoomSpec()` rejects one that sets any
 - wall the four corner tiles `(0,0)`, `(49,0)`, `(0,49)`, and `(49,49)` of
   every room, over the default terrain, `RoomSpec.terrain`, and
@@ -156,6 +165,13 @@ relative ticks named for the getter that reads them (`ticksToDecay`,
 default. Any other type is an escape hatch with an untyped spec, which an
 adapter may reject; it must not become the primary path for common gameplay
 setup.
+
+An invader core placed with `ownsController` also owns its room's controller,
+as the backend creates a stronghold: the Invader user's controller at level 8
+with no progress, invulnerable (`EFFECT_INVULNERABILITY`) and with its downgrade
+timer both running out when the core deploys. The placement rejects a room
+whose controller is missing or owned; it is part of the stronghold's own state,
+not a precondition granted to another object.
 
 ### Terrain
 

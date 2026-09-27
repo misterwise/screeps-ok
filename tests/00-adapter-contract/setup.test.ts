@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_OBSERVER, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, CREEP_LIFE_TIME, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY, BODYPART_HITS, SOURCE_ENERGY_CAPACITY, COLOR_RED, COLOR_BLUE, DEFAULT_PLAYER_POWER, POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_OBSERVER, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, CREEP_LIFE_TIME, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY, BODYPART_HITS, SOURCE_ENERGY_CAPACITY, COLOR_RED, COLOR_BLUE, DEFAULT_PLAYER_POWER, DEFAULT_PLAYER_CREDITS, POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -155,6 +155,54 @@ describe('adapter contract: setup', () => {
 			const level = Math.floor((DEFAULT_PLAYER_POWER / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW));
 			expect(await shard.runPlayer('p1', code`({ level: Game.gpl.level, progress: Game.gpl.progress })`))
 				.toEqual({ level, progress: DEFAULT_PLAYER_POWER - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY });
+		});
+
+		test('RoomSpec.progress sets the controller\'s progress, and defaults to 0', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1', progress: CONTROLLER_LEVELS[3] - 1 }, { name: 'W2N1', rcl: 3, owner: 'p1' }],
+			});
+			expect(await shard.runPlayer('p1', code`[Game.rooms.W1N1.controller.progress, Game.rooms.W2N1.controller.progress]`))
+				.toEqual([CONTROLLER_LEVELS[3] - 1, 0]);
+		});
+
+		test('RoomSpec.progress is rejected where no controller can hold it', async ({ shard }) => {
+			for (const room of [
+				{ name: 'W1N1', progress: 1 },
+				{ name: 'W1N1', rcl: 8, owner: 'p1', progress: 1 },
+				{ name: 'W1N1', rcl: 3, owner: 'p1', progress: CONTROLLER_LEVELS[3] },
+				{ name: 'W1N1', controller: false, progress: 1 },
+			]) {
+				await expect(shard.createShard({ players: ['p1'], rooms: [room] })).rejects.toThrow(/progress/);
+			}
+		});
+
+		test('PlayerSpec.credits sets Game.market.credits, and defaults to DEFAULT_PLAYER_CREDITS', async ({ shard }) => {
+			shard.requires('marketBasics');
+			await shard.createShard({
+				players: [{ name: 'p1', credits: 12.345 }, 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1', rcl: 1, owner: 'p2' }],
+			});
+			const credits = code`Game.market.credits`;
+			expect(await shard.runPlayers({ p1: credits, p2: credits })).toEqual({ p1: 12.345, p2: DEFAULT_PLAYER_CREDITS });
+		});
+
+		test('PlayerSpec.credits is rejected in fractions of a thousandth', async ({ shard }) => {
+			await expect(shard.createShard({ players: [{ name: 'p1', credits: 0.0005 }], rooms: [{ name: 'W1N1' }] }))
+				.rejects.toThrow(/credits/);
+		});
+
+		test('PlayerSpec.modules installs code modules player code can require', async ({ shard }) => {
+			await shard.createShard({
+				players: [{ name: 'p1', modules: { answer: 'module.exports = 42;' } }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			});
+			expect(await shard.runPlayer('p1', code`require('answer')`)).toBe(42);
+		});
+
+		test('PlayerSpec.modules can\'t replace the adapter\'s main', async ({ shard }) => {
+			await expect(shard.createShard({ players: [{ name: 'p1', modules: { main: '' } }], rooms: [{ name: 'W1N1' }] }))
+				.rejects.toThrow(/main/);
 		});
 
 		test('an owned room without rcl has a level 1 controller', async ({ shard }) => {
