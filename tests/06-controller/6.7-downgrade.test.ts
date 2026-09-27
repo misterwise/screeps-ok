@@ -142,7 +142,7 @@ describe('Controller downgrade', () => {
 		expect(ttdAfter).toBe(2 + CONTROLLER_DOWNGRADE[2] / 2 + 1 - 12);
 	});
 
-	test('CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-009:levelOne a downgrade step landing on level >= 1 resets safeModeAvailable to 0', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5, safeModeAvailable: 2 }],
@@ -167,7 +167,7 @@ describe('Controller downgrade', () => {
 		expect(after.safeModeAvailable).toBe(0);
 	});
 
-	test('CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-010:levelOne a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 5 }],
@@ -193,6 +193,41 @@ describe('Controller downgrade', () => {
 		// The seed read 4 on the first player tick, so the level loss lands 3
 		// ticks later; this read is 11 ticks after the first.
 		expect(after.cooldown).toBe(SAFE_MODE_COOLDOWN - (11 - 3));
+	});
+
+	// The level-0 step clears the owner, so a creep keeps W1N1 visible and W2N1 keeps p1 playing.
+	async function downgradeToZero(shard: ShardFixture) {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1', ticksToDowngrade: 5, safeModeAvailable: 2 },
+				{ name: 'W2N1', rcl: 1, owner: 'p1' },
+			],
+		});
+		await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
+		await shard.tick();
+		const read = code`({
+			level: Game.rooms['W1N1'].controller.level,
+			safeModeAvailable: Game.rooms['W1N1'].controller.safeModeAvailable,
+			cooldown: Game.rooms['W1N1'].controller.safeModeCooldown ?? null,
+		})`;
+		const before = await shard.runPlayer('p1', read);
+		await shard.tick(10);
+		return { before, after: await shard.runPlayer('p1', read) };
+	}
+
+	test('CTRL-DOWNGRADE-009:levelZero the downgrade step to level 0 also resets safeModeAvailable to 0', async ({ shard }) => {
+		const { before, after } = await downgradeToZero(shard);
+		expect(before).toMatchObject({ level: 1, safeModeAvailable: 2 });
+		expect(after).toMatchObject({ level: 0, safeModeAvailable: 0 });
+	});
+
+	test('CTRL-DOWNGRADE-010:levelZero the downgrade step to level 0 also starts a fresh safe-mode cooldown', async ({ shard }) => {
+		const { before, after } = await downgradeToZero(shard);
+		expect(before).toMatchObject({ level: 1, cooldown: null });
+		// Same timing as the level-2 case above: the step lands 3 ticks after the
+		// first read, and this read is 11 ticks after it.
+		expect(after).toMatchObject({ level: 0, cooldown: SAFE_MODE_COOLDOWN - (11 - 3) });
 	});
 
 	test('CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false', async ({ shard }) => {

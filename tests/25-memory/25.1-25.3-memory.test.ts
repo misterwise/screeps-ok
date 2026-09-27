@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, FIND_HOSTILE_CREEPS, STRUCTURE_SPAWN } from '../../src/index.js';
 import { rawMemorySegmentLimits } from '../../src/matrices/rawmemory-segments.js';
 
 describe('Memory', () => {
@@ -84,6 +84,38 @@ describe('Memory', () => {
 		expect(parsed.fromSet).toBe(1);
 		expect(parsed.added).toBe('after-set');
 	});
+
+	for (const { label, collection } of [
+		{ label: 'room', collection: 'rooms' },
+		{ label: 'spawn', collection: 'spawns' },
+		{ label: 'flag', collection: 'flags' },
+		{ label: 'powerCreep', collection: 'powerCreeps' },
+	] as const) {
+		test(`MEMORY-007:${label} ${label}.memory is Memory.${collection}[name]`, async ({ shard }) => {
+			if (label === 'powerCreep') shard.requires('powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			if (label === 'spawn') {
+				await shard.placeStructure('W1N1', { pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1' });
+			} else if (label === 'powerCreep') {
+				await shard.placePowerCreep('W1N1', { pos: [25, 25], owner: 'p1', name: 'PC1', powers: {} });
+			}
+			await shard.tick();
+			if (label === 'flag') await shard.runPlayer('p1', code`Game.rooms.W1N1.createFlag(25, 25, 'F1')`);
+
+			const result = await shard.runPlayer('p1', code`
+				const object = {
+					room: () => Game.rooms.W1N1,
+					spawn: () => Object.values(Game.spawns)[0],
+					flag: () => Game.flags.F1,
+					powerCreep: () => Game.powerCreeps.PC1,
+				}[${label}]();
+				object.memory.viaAccessor = 1;
+				Memory[${collection}][object.name].viaMemory = 2;
+				({ viaAccessor: Memory[${collection}][object.name].viaAccessor, viaMemory: object.memory.viaMemory })
+			`);
+			expect(result).toEqual({ viaAccessor: 1, viaMemory: 2 });
+		});
+	}
 
 	test('MEMORY-005 RawMemory.set after Memory access persists across ticks', async ({ shard }) => {
 		await shard.ownedRoom('p1');

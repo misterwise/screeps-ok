@@ -47,6 +47,35 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
 
+	test('SPAWN-CREATE-015 without energyStructures, spawnCreep drains spawns nearest-first, then extensions nearest-first', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
+		});
+		const place = (pos: [number, number], structureType: typeof STRUCTURE_SPAWN | typeof STRUCTURE_EXTENSION, energy: number) =>
+			shard.placeStructure('W1N1', { pos, structureType, owner: 'p1', store: { energy } });
+		const spawnId = await place([25, 25], STRUCTURE_SPAWN, 100);
+		// The far spawn is drained before the adjacent extension: spawns go first.
+		const farSpawnId = await place([32, 25], STRUCTURE_SPAWN, 100);
+		const nearExtId = await place([25, 26], STRUCTURE_EXTENSION, 50);
+		// 300 left afterward, so no spawn regenerates before the read.
+		const farExtIds = [await place([25, 28], STRUCTURE_EXTENSION, 100),
+			await place([25, 29], STRUCTURE_EXTENSION, 100),
+			await place([25, 30], STRUCTURE_EXTENSION, 100)];
+		await shard.tick();
+
+		// [WORK, WORK, MOVE] costs 250: both spawns' 200, then the nearest extension's 50.
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).spawnCreep([WORK, WORK, MOVE], 'DefaultDrain')
+		`);
+		expect(rc).toBe(OK);
+
+		const spawnEnergy = async (id: string) => (await shard.expectStructure(id, STRUCTURE_SPAWN)).store.energy ?? 0;
+		const extensionEnergy = async (id: string) => (await shard.expectStructure(id, STRUCTURE_EXTENSION)).store.energy ?? 0;
+		expect(await Promise.all([spawnId, farSpawnId].map(spawnEnergy))).toEqual([0, 0]);
+		expect(await Promise.all([nearExtId, ...farExtIds].map(extensionEnergy))).toEqual([0, 100, 100, 100]);
+	});
+
 	test('SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],

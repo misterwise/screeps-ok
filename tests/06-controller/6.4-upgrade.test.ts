@@ -306,6 +306,34 @@ describe('creep.upgradeController()', () => {
 		expect(after - before).toBeLessThan(5 * UPGRADE_CONTROLLER_POWER);
 	});
 
+	test('CTRL-UPGRADE-017 a level-up adds one safe-mode charge', async ({ shard }) => {
+		// 25 WORK × 8 upgrades = 200 progress, the RCL 1 threshold.
+		await shard.ownedRoom('p1', 'W1N1', 1);
+		const ctrlPos = await shard.getControllerPos('W1N1');
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [ctrlPos!.x + 1, ctrlPos!.y],
+			owner: 'p1',
+			body: body(25, WORK, CARRY, MOVE),
+			store: { energy: 500 },
+		});
+
+		const readController = code`({
+			level: Game.rooms['W1N1'].controller.level,
+			safeModeAvailable: Game.rooms['W1N1'].controller.safeModeAvailable,
+		})`;
+		const before = await shard.runPlayer('p1', readController) as { level: number; safeModeAvailable: number };
+		expect(before.level).toBe(1);
+
+		for (let i = 0; i < 8; i++) {
+			await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).upgradeController(Game.rooms['W1N1'].controller)
+			`);
+		}
+
+		expect(await shard.runPlayer('p1', readController))
+			.toEqual({ level: 2, safeModeAvailable: before.safeModeAvailable + 1 });
+	});
+
 	test('CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold', async ({ shard }) => {
 		// Engine upgradeController.js:63-74 — when progress + boostedEffect crosses
 		// CONTROLLER_LEVELS[level], the controller advances to level+1 and progress

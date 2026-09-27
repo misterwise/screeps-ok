@@ -187,6 +187,12 @@ changes since `v0.1.0-alpha` are not itemized.
   `STORE-RESTRICTED-001` (`-002`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
+- New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up
+  adds a safe-mode charge), `SPAWN-CREATE-015` (the default spawn energy drain
+  order), and `MEMORY-007`, keyed `:room`, `:spawn`, `:flag`, `:powerCreep`
+  (each object's `memory` is its `Memory` collection entry).
+  `CTRL-DOWNGRADE-009`/`-010` now cover the step to level 0 too and are keyed
+  by landing level (`:levelOne`, `:levelZero`).
 - New: `GCL-001`, keyed by level edge (`:belowLevelTwo`, `:levelTwo`,
   `:levelThree`), pins `Game.gcl`'s values, where only its keys were pinned.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this

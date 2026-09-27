@@ -26,10 +26,10 @@
 			"tests": ["CTRL-DOWNGRADE-002", "CTRL-UNCLAIM-001"]
 		},
 		"controller-unclaim-clears-safe-mode-cooldown": {
-			"actual": "`release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).",
+			"actual": "`release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step (CTRL-DOWNGRADE-010:levelZero); the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes).",
 			"expected": "Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick.",
 			"why": "NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix.",
-			"tests": ["CTRL-UNCLAIM-005"]
+			"tests": ["CTRL-UNCLAIM-005", "CTRL-DOWNGRADE-010:levelZero"]
 		},
 		"rawmemory-set-invalidates-parsed-memhack": {
 			"intentional": true,

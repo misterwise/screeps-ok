@@ -1484,6 +1484,25 @@ checks both. Each definition has these fields, in this order:
   `INTENT-LIMIT-001` covers the limit values; `INTENT-LIMIT-002` covers the
   overflow outcome.
 
+### MEMORY-ACCESSORS
+
+- `Catalog Entries`
+  `MEMORY-007`
+- `Canonical Source`
+  The `memory` accessors in `@screeps/engine/src/game/rooms.js:551`,
+  `structures.js:865` (spawn), `flags.js:33-49` and `power-creeps.js:75`, each
+  reading and writing its `Memory` collection by name.
+- `Dimensions`
+  game object class
+- `Applicability`
+  `Room`, `StructureSpawn`, `Flag`, and a spawned `PowerCreep`, each written
+  through the accessor and read through `Memory`, then the reverse
+- `Exclusions`
+  `creep.memory` (`UNDOC-CREEPMEM-001`), and the errors for writing another
+  player's object's memory
+- `Verification Notes`
+  The case list is inline in `tests/25-memory/25.1-25.3-memory.test.ts`.
+
 ### RAWMEMORY-SEGMENTS
 
 - `Catalog Entries`

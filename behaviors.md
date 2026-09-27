@@ -1078,6 +1078,9 @@ Coverage Notes
   the upgrading tick's ordinary restore applies on top: the first read
   after reaching RCL 2 is `CONTROLLER_DOWNGRADE[2] / 2 +
   CONTROLLER_DOWNGRADE_RESTORE`.
+- `CTRL-UPGRADE-017` `behavior` `verified_vanilla`
+  A level-up adds one to the controller's `safeModeAvailable`
+  (`processor/intents/creeps/upgradeController.js:73`).
 
 Coverage Notes
 - Upgrade boost magnitudes and zero-extra-cost are owned by
@@ -1130,10 +1133,10 @@ Coverage Notes
 - `CTRL-DOWNGRADE-007` `behavior` `verified_vanilla`
   The controller can downgrade through multiple levels if neglected.
 - `CTRL-DOWNGRADE-009` `behavior` `verified_vanilla`
-  A downgrade step that lands on a level ≥ 1 resets the controller's
+  Every downgrade step, to level 0 included, resets the controller's
   `safeModeAvailable` to 0.
 - `CTRL-DOWNGRADE-010` `behavior` `verified_vanilla`
-  A downgrade step that lands on a level ≥ 1 starts a fresh safe-mode
+  Every downgrade step, to level 0 included, starts a fresh safe-mode
   cooldown in a room without novice-area protection: `safeModeCooldown` was
   absent before the step and reads just under SAFE_MODE_COOLDOWN immediately
   after the level loss.
@@ -1153,11 +1156,8 @@ Coverage Notes
 Coverage Notes
 - Structures becoming inactive above the RCL limit is owned by
   `CTRL-STRUCTLIMIT-002` (section 6.10).
-- The safe-mode field resets on the terminal (level-0) downgrade step are not
-  yet catalogued: vanilla also zeroes `safeModeAvailable` and starts a fresh
-  cooldown there, but only the ≥ 1 step is pinned by CTRL-DOWNGRADE-009/-010.
-  The unclaim rows (CTRL-UNCLAIM-004/-005) pin the same processor fields on
-  the other neutralization path.
+- The unclaim rows (`CTRL-UNCLAIM-004`/`-005`) pin the same safe-mode
+  resets on the other way a controller goes neutral.
 
 ### 6.8 Safe Mode Mechanics
 - `CTRL-SAFEMODE-001` `behavior` `verified_vanilla`
@@ -1725,6 +1725,11 @@ Coverage Notes
   the canonical validation matrix for ownership, active-structure state,
   caller busy state, argument validity, name uniqueness, and resource
   availability.
+- `SPAWN-CREATE-015` `behavior` `verified_vanilla`
+  Without `energyStructures`, `spawnCreep()` takes the cost from the owner's
+  active spawns first, nearest the spawning spawn first, and then from its
+  active extensions, nearest first
+  (`processor/intents/spawns/_charge-energy.js:6-37`).
 
 ### 9.2 Spawning Duration & Direction
 - `SPAWN-TIMING-001` `behavior` `verified_vanilla`
@@ -3782,6 +3787,11 @@ Coverage Notes
   `RawMemory.set(value)` followed in the same tick by a `Memory` access and
   a mutation persists the *mutated parsed* object across the tick boundary,
   not `value` verbatim.
+- `MEMORY-007` `matrix` `verified_vanilla`
+  `room.memory`, `spawn.memory`, `flag.memory`, and `powerCreep.memory` are
+  `Memory.rooms[name]`, `Memory.spawns[name]`, `Memory.flags[name]`, and
+  `Memory.powerCreeps[name]`: a write through either path reads back
+  through the other in the same tick.
 
 ### 25.2 RawMemory
 - `RAWMEMORY-001` `behavior` `verified_vanilla`
