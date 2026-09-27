@@ -570,15 +570,18 @@ checks both. Each definition has these fields, in this order:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `launchNuke()` ownership, argument type, cooldown, active-structure state,
-  target range, and energy/ghodium availability.
+  `launchNuke()` ownership, argument type, the source and target rooms'
+  novice or respawn status, cooldown, active-structure state, target range,
+  and energy/ghodium availability.
 - `Exclusions`
-  Pairs other than those the case list names: it runs each condition alone,
-  a novice source before cooldown, cooldown before inactive/range/resources,
-  inactive before range/resources, and range before resources.
+  The four room statuses are one expression
+  (`game/structures.js:1363-1369`), and both stocks another (`:1382`), so
+  neither group pairs within itself.
 - `Verification Notes`
-  The room-status cases need `roomStatus` and set `RoomSpec.status`. The
-  executable case list lives in `src/matrices/nuke-launch-validation.ts`.
+  The room-status cases need `roomStatus` and set `RoomSpec.status`; an
+  out-of-range target is a room `NUKE_RANGE + 1` rooms away, created with the
+  target status its pair needs. The executable case list lives in
+  `src/matrices/nuke-launch-validation.ts`.
 
 ### NUKER-PROPS
 
@@ -1227,10 +1230,15 @@ checks both. Each definition has these fields, in this order:
 - `Verification Notes`
   Each API keeps its own result surface in `behaviors.md`; this family exists
   only to keep the validation case inventories explicit.
-  Spawn, renew, and upgrade run their case lists from
+  Create, spawn, renew, upgrade and enable run their case lists from
+  `src/matrices/power-creep-create-validation.ts`,
   `src/matrices/power-creep-spawn-validation.ts`,
-  `src/matrices/power-creep-renew-validation.ts`, and
-  `src/matrices/power-creep-upgrade-validation.ts`. Not yet listed in
+  `src/matrices/power-creep-renew-validation.ts`,
+  `src/matrices/power-creep-upgrade-validation.ts`, and
+  `src/matrices/power-creep-enable-validation.ts`. A name create refuses
+  can't exist; another player's unspawned power creep isn't visible and an
+  unspawned one has no position; a source (no structure) excludes the two
+  controller conditions, and a container the safe-mode one. Not yet listed in
   upgrade's: a power already at level 5 (`ERR_FULL`,
   `game/power-creeps.js:234-236`).
 
@@ -1313,7 +1321,12 @@ checks both. Each definition has these fields, in this order:
   Successful cancel/remove behavior and direct query surfaces
 - `Verification Notes`
   This family combines order creation shape and order-validation cases because
-  both are driven by the same narrow market-order APIs.
+  both are driven by the same narrow market-order APIs. The validation lists
+  live in `src/matrices/market-order-validation.ts`. A fee is a product of
+  price and amount, so an invalid price or amount (or a missing order's)
+  can't be short of credits; `createOrder`'s price and amount are one
+  expression. A credits case derives its price or amount from
+  `Game.market.credits` in player code.
 
 ### MARKET-DEAL
 
@@ -1329,7 +1342,11 @@ checks both. Each definition has these fields, in this order:
   Successful deal execution and terminal energy payer semantics
 - `Verification Notes`
   The per-tick cap overflow outcome belongs here with the rest of the failure
-  matrix.
+  matrix. The order decides the transfer cost and whether the terminal's
+  stock or the credits are checked, the amount measures both, and the
+  terminal is the target room's, so those conditions pair only where their
+  object exists. The ten cap-filling deals go through a second room's
+  terminal. The case list lives in `src/matrices/market-deal-validation.ts`.
 
 ### MAP-ROOM-STATUS
 

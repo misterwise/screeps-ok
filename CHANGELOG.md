@@ -169,6 +169,20 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Now keyed by condition, each validation row running its conditions alone
+  and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
+  `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,
+  `:busy`, `:invalidTarget`, `:range`, `:notController`, `:safeMode`),
+  `MARKET-ORDER-002` (`:invalidResource` … `:orderCap`), `MARKET-ORDER-006`
+  and `-008` (`:missingOrder`, `:invalidPrice` or `:invalidAmount`,
+  `:notEnoughCredits`), `MARKET-DEAL-003` (`:missingOrder` … `:dealCap`); all
+  were bare IDs. `GPL-003` is dropped for
+  `POWERCREEP-CREATE-002:noFreeLevels`. `NUKE-LAUNCH-008` now runs every pair,
+  keyed by its condition labels: `cooldownBeforeInactive` →
+  `cooldownBeforeInactiveRcl`, `cooldownBeforeRange` →
+  `cooldownBeforeOutOfRange`, `inactiveBeforeRange` →
+  `inactiveRclBeforeOutOfRange`, and each `…BeforeResources` splits into
+  `…BeforeMissingEnergy` and `…BeforeMissingGhodium`.
 - Dropped: `UNDOC-MEMHACK-012` (the `Memory` property descriptor after first
   access; what a bot observes of it is `MEMORY-002` and
   `UNDOC-MEMHACK-007`..`-010`) and `ACTIONLOG-DEDUP-001` (its test could not

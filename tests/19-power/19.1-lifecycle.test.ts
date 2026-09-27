@@ -1,10 +1,13 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE,
+	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS,
 	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
 	ATTACK, MOVE, CARRY,
 	body,
-	POWER_LEVEL_MULTIPLY, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB, PWR_OPERATE_EXTENSION,
+	POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB, PWR_OPERATE_EXTENSION,
+	POWER_CLASS, SAFE_MODE_DURATION,
 } from '../../src/index.js';
+import { powerCreepCreateValidationCases } from '../../src/matrices/power-creep-create-validation.js';
+import { powerCreepEnableValidationCases } from '../../src/matrices/power-creep-enable-validation.js';
 import { powerCreepUpgradeValidationCases } from '../../src/matrices/power-creep-upgrade-validation.js';
 
 describe('Power creep lifecycle', () => {
@@ -33,27 +36,28 @@ describe('Power creep lifecycle', () => {
 		expect(result).toEqual({ exists: true, name: 'TestPC', classMatches: true });
 	});
 
-	test('POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerCreepAccountApi');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.tick();
+	for (const row of powerCreepCreateValidationCases) {
+		test(`POWERCREEP-CREATE-002:${row.label} PowerCreep.create() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('powerCreeps');
+			shard.requires('powerCreepAccountApi');
+			const blockers = shard.validationBlockers(row);
+			// Each creep costs one GPL level: the namesake spends one, and the new creep wants another.
+			const levels = (blockers.has('name-exists') ? 1 : 0) + (blockers.has('no-free-levels') ? 0 : 1);
+			await shard.createShard({
+				players: [{ name: 'p1', power: POWER_LEVEL_MULTIPLY * levels ** POWER_LEVEL_POW }],
+				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
+			});
+			const name = blockers.has('invalid-name') ? 'x'.repeat(101) : 'TestPC';
+			if (blockers.has('name-exists')) {
+				expect(await shard.runPlayer('p1', code`PowerCreep.create(${name}, POWER_CLASS.OPERATOR)`)).toBe(OK);
+			}
+			await shard.tick();
 
-		// Invalid class name
-		const result = await shard.runPlayer('p1', code`
-			({
-				invalidClass: PowerCreep.create('TestPC', 'invalid_class'),
-				tooLongName: PowerCreep.create(${'x'.repeat(101)}, POWER_CLASS.OPERATOR),
-			})
-		`) as { invalidClass: number; tooLongName: number };
-		expect(result).toEqual({
-			invalidClass: ERR_INVALID_ARGS,
-			tooLongName: ERR_INVALID_ARGS,
+			const className = blockers.has('invalid-class') ? 'invalid_class' : POWER_CLASS.OPERATOR;
+			const rc = await shard.runPlayer('p1', code`PowerCreep.create(${name}, ${className})`);
+			expect(rc).toBe(row.expectedRc);
 		});
-	});
+	}
 
 	test('POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name', async ({ shard }) => {
 		shard.requires('powerCreeps');
@@ -318,28 +322,48 @@ describe('Power creep lifecycle', () => {
 		expect(enabled).toBe(true);
 	});
 
-	test('POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
+	for (const row of powerCreepEnableValidationCases) {
+		test(`POWERCREEP-ENABLE-002:${row.label} powerCreep.enableRoom() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('powerCreeps');
+			const blockers = shard.validationBlockers(row);
+			if (blockers.has('busy')) shard.requires('powerCreepAccountApi');
+			// The target is W1N1's own controller, or p2's safe-moded W2N1's.
+			const safeMode = blockers.has('safe-mode');
+			const targetRoom = safeMode ? 'W2N1' : 'W1N1';
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 8, owner: 'p1' },
+					...(safeMode ? [{ name: 'W2N1', rcl: 1, owner: 'p2', safeMode: SAFE_MODE_DURATION }] : []),
+				],
+			});
+			const ctrlPos = await shard.getControllerPos(targetRoom);
+			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (safeMode) await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			const creepId = blockers.has('busy') ? null : await shard.placePowerCreep(targetRoom, {
+				pos: blockers.has('range') ? [40, 40] : [ctrlPos!.x + 1, ctrlPos!.y + 1],
+				owner,
+				powers: { [PWR_GENERATE_OPS]: 1 },
+			});
+			if (blockers.has('busy')) {
+				expect(await shard.runPlayer('p1', code`PowerCreep.create('Unspawned', POWER_CLASS.OPERATOR)`)).toBe(OK);
+			}
+			// Beside the creep: a source is no structure, a container no controller.
+			const otherPos: [number, number] = [ctrlPos!.x + 2, ctrlPos!.y + 1];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource(targetRoom, { pos: otherPos })
+				: blockers.has('not-controller')
+					? await shard.placeStructure(targetRoom, { pos: otherPos, structureType: STRUCTURE_CONTAINER })
+					: null;
+			await shard.tick();
 
-		// Place power creep far from controller (controller is at [1,1]).
-		await shard.placePowerCreep('W1N1', {
-			pos: [40, 40], owner: 'p1',
-			powers: {},
-			store: { ops: 10 },
+			const rc = await shard.runPlayer('p1', code`
+				const pc = ${creepId} === null ? Game.powerCreeps.Unspawned : Game.getObjectById(${creepId});
+				pc.enableRoom(${targetId} === null ? Game.rooms[${targetRoom}].controller : Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-		await shard.tick();
-
-		// Out of range.
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			pc.enableRoom(Game.rooms['W1N1'].controller)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
+	}
 
 	test('POWERCREEP-SPAWN-001 spawn places power creep on the power spawn tile', async ({ shard }) => {
 		shard.requires('powerCreeps');

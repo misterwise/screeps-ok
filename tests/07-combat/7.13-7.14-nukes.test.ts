@@ -92,38 +92,44 @@ describe('Nuke launch — section 7.13', () => {
 
 	for (const row of nukeLaunchValidationCases) {
 		test(`NUKE-LAUNCH-008:${row.label} launchNuke validation returns the canonical code`, async ({ shard }) => {
-			shard.requires(row.capability);
-			if (row.sourceStatus || row.targetStatus) shard.requires('roomStatus');
+			shard.requires('nuke');
+			const blockers = shard.validationBlockers(row);
+			const status = (novice: 'novice-source' | 'novice-target', respawn: 'respawn-source' | 'respawn-target') =>
+				blockers.has(novice) ? 'novice' as const : blockers.has(respawn) ? 'respawn' as const : undefined;
+			const sourceStatus = status('novice-source', 'respawn-source');
+			const targetStatus = status('novice-target', 'respawn-target');
+			if (sourceStatus || targetStatus) shard.requires('roomStatus');
+			// One room past NUKE_RANGE on the x axis.
+			const targetRoom = blockers.has('out-of-range') ? `W${2 + NUKE_RANGE}N1` : 'W2N1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: row.roomRcl, owner: 'p1', status: row.sourceStatus },
-					{ name: 'W2N1', rcl: 1, owner: 'p2', status: row.targetStatus },
+					{ name: 'W1N1', rcl: blockers.has('inactive-rcl') ? 7 : 8, owner: 'p1', status: sourceStatus },
+					{ name: targetRoom, rcl: 1, owner: 'p2', status: targetStatus },
 				],
 			});
 			const nukerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],
 				structureType: STRUCTURE_NUKER,
 				owner: 'p1',
-				store: nukerStore(row.store),
-				...(row.cooldown !== undefined ? { cooldown: row.cooldown } : {}),
+				store: {
+					...(blockers.has('missing-energy') ? {} : { [RESOURCE_ENERGY]: NUKER_ENERGY_CAPACITY }),
+					...(blockers.has('missing-ghodium') ? {} : { [RESOURCE_GHODIUM]: NUKER_GHODIUM_CAPACITY }),
+				},
+				...(blockers.has('cooldown') ? { cooldown: 50 } : {}),
 			});
-			if (row.caller === 'other') {
-				await shard.placeCreep('W1N1', {
-					pos: [24, 25],
-					owner: 'p2',
-					body: [MOVE],
-				});
+			const caller = blockers.has('not-owner') ? 'p2' : 'p1';
+			if (caller === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p2', body: [MOVE] });
 			}
 			await shard.tick();
 
-			const caller = row.caller === 'owner' ? 'p1' : 'p2';
-			const rc = row.arg === 'plainObject'
+			const rc = blockers.has('invalid-argument-shape')
 				? await shard.runPlayer(caller, code`
-					Game.getObjectById(${nukerId}).launchNuke({ x: 25, y: 25, roomName: ${row.targetRoomName} })
+					Game.getObjectById(${nukerId}).launchNuke({ x: 25, y: 25, roomName: ${targetRoom} })
 				`)
 				: await shard.runPlayer(caller, code`
-					Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, ${row.targetRoomName}))
+					Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, ${targetRoom}))
 				`);
 			expect(rc).toBe(row.expectedRc);
 		});

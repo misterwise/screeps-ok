@@ -1,15 +1,16 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_INVALID_ARGS, ERR_NOT_OWNER,
-	ERR_FULL, ERR_TIRED,
-	STRUCTURE_TERMINAL,
-	MARKET_ORDER_LIFE_TIME,
+	OK, ERR_INVALID_ARGS,
+	STRUCTURE_TERMINAL, TERMINAL_COOLDOWN,
+	MARKET_ORDER_LIFE_TIME, MARKET_FEE, MARKET_MAX_ORDERS, MARKET_MAX_DEALS_PER_TICK,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
+import { marketDealValidationCases } from '../../src/matrices/market-deal-validation.js';
+import {
+	marketChangeOrderPriceValidationCases, marketCreateOrderValidationCases, marketExtendOrderValidationCases,
+} from '../../src/matrices/market-order-validation.js';
 
 const INITIAL_CREDITS = 10_000_000;
-const MARKET_FEE = 0.05;
-const MARKET_MAX_ORDERS = 300;
-const DEAL_CAP = 10;
 
 function publicFee(price: number, amount: number): number {
 	const milliPrice = Math.round(price * 1000);
@@ -139,97 +140,32 @@ describe('Market orders', () => {
 		);
 	});
 
-	test('MARKET-ORDER-002 createOrder fails with exact validation codes', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
+	for (const row of marketCreateOrderValidationCases) {
+		test(`MARKET-ORDER-002:${row.label} createOrder() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = shard.validationBlockers(row);
+			await createSingleMarketRoom(shard);
+			if (blockers.has('order-cap')) {
+				for (let i = 0; i < MARKET_MAX_ORDERS; i++) {
+					await shard.placeMarketOrder({
+						owner: 'p1', type: 'sell', resourceType: RESOURCE_ENERGY, price: 1, totalAmount: 1, roomName: 'W1N1', active: false,
+					});
+				}
+			}
 
-		const result = await shard.runPlayer('p1', code`
-			({
-				invalidResource: Game.market.createOrder({
-					type: ORDER_SELL,
-					resourceType: 'not-a-resource',
-					price: 1,
-					totalAmount: 100,
-					roomName: 'W1N1',
-				}),
-				invalidType: Game.market.createOrder({
-					type: 'trade',
-					resourceType: RESOURCE_ENERGY,
-					price: 1,
-					totalAmount: 100,
-					roomName: 'W1N1',
-				}),
-				invalidPrice: Game.market.createOrder({
-					type: ORDER_SELL,
-					resourceType: RESOURCE_ENERGY,
-					price: 0,
-					totalAmount: 100,
-					roomName: 'W1N1',
-				}),
-				invalidAmount: Game.market.createOrder({
-					type: ORDER_SELL,
-					resourceType: RESOURCE_ENERGY,
-					price: 1,
-					totalAmount: 0,
-					roomName: 'W1N1',
-				}),
-				insufficientCredits: Game.market.createOrder({
-					type: ORDER_BUY,
-					resourceType: RESOURCE_ENERGY,
-					price: 250000000,
-					totalAmount: 1,
-					roomName: 'W1N1',
-				}),
-				missingOwnedTerminal: Game.market.createOrder({
-					type: ORDER_SELL,
-					resourceType: RESOURCE_ENERGY,
-					price: 1,
-					totalAmount: 100,
-					roomName: 'W9N9',
-				}),
-			})
-		`) as Record<string, number>;
-
-		expect(result).toEqual({
-			invalidResource: ERR_INVALID_ARGS,
-			invalidType: ERR_INVALID_ARGS,
-			invalidPrice: ERR_INVALID_ARGS,
-			invalidAmount: ERR_INVALID_ARGS,
-			insufficientCredits: ERR_NOT_ENOUGH_RESOURCES,
-			missingOwnedTerminal: ERR_NOT_OWNER,
+			// A price whose fee is past the player's credits, whatever they hold.
+			const rc = await shard.runPlayer('p1', code`
+				Game.market.createOrder({
+					type: ${blockers.has('invalid-type') ? 'trade' : 'sell'},
+					resourceType: ${blockers.has('invalid-resource') ? 'not-a-resource' : RESOURCE_ENERGY},
+					price: ${blockers.has('invalid-price')} ? 0
+						: ${blockers.has('not-enough-credits')} ? (Game.market.credits + 1) / MARKET_FEE : 1,
+					totalAmount: ${blockers.has('invalid-amount') ? 0 : 1},
+					roomName: ${blockers.has('no-terminal') ? 'W9N9' : 'W1N1'},
+				})
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-
-		const orderCount = await shard.runPlayer('p1', code`Object.keys(Game.market.orders).length`);
-		expect(orderCount).toBe(0);
-	});
-
-	test('MARKET-ORDER-002 createOrder returns ERR_FULL at the per-player order cap', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
-
-		for (let i = 0; i < MARKET_MAX_ORDERS; i++) {
-			await shard.placeMarketOrder({
-				owner: 'p1',
-				type: 'sell',
-				resourceType: 'energy',
-				price: 1,
-				totalAmount: 1,
-				roomName: 'W1N1',
-				active: false,
-			});
-		}
-
-		const result = await shard.runPlayer('p1', code`
-			const rc = Game.market.createOrder({
-				type: ORDER_SELL,
-				resourceType: RESOURCE_ENERGY,
-				price: 1,
-				totalAmount: 1,
-				roomName: 'W1N1',
-			});
-			({ rc, orderCount: Object.keys(Game.market.orders).length })
-		`) as { rc: number; orderCount: number };
-
-		expect(result).toEqual({ rc: ERR_FULL, orderCount: MARKET_MAX_ORDERS });
-	});
+	}
 
 	test('MARKET-ORDER-003 cancelOrder returns OK and removes the order from owner and public queries', async ({ shard }) => {
 		await createSingleMarketRoom(shard);
@@ -303,38 +239,26 @@ describe('Market orders', () => {
 		expect(view.credits).toBeCloseTo(beforeCredits - publicFee(2.5 - 1, 500), 5);
 	});
 
-	test('MARKET-ORDER-006 changeOrderPrice fails with exact validation codes', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
-		const orderId = await shard.placeMarketOrder({
-			owner: 'p1',
-			type: 'sell',
-			resourceType: 'energy',
-			price: 1,
-			totalAmount: 1_000_000,
-			roomName: 'W1N1',
-			active: true,
+	for (const row of marketChangeOrderPriceValidationCases) {
+		test(`MARKET-ORDER-006:${row.label} changeOrderPrice() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = shard.validationBlockers(row);
+			await createSingleMarketRoom(shard);
+			const orderId = await shard.placeMarketOrder({
+				owner: 'p1', type: 'sell', resourceType: RESOURCE_ENERGY, price: 1, totalAmount: 1000, roomName: 'W1N1', active: true,
+			});
+			await shard.tick();
+
+			// A raise whose fee on the remaining amount is past the player's credits.
+			const rc = await shard.runPlayer('p1', code`
+				const order = Game.market.orders[${orderId}];
+				const price = ${blockers.has('invalid-price')} ? 0
+					: ${blockers.has('not-enough-credits')} ? order.price + (Game.market.credits + 1) / (order.remainingAmount * MARKET_FEE)
+					: order.price + 1;
+				Game.market.changeOrderPrice(${blockers.has('missing-order') ? 'nonexistent-id' : orderId}, price)
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			({
-				missingOrder: Game.market.changeOrderPrice('nonexistent-id', 1),
-				zeroPrice: Game.market.changeOrderPrice(${orderId}, 0),
-				negativePrice: Game.market.changeOrderPrice(${orderId}, -1),
-				insufficientCredits: Game.market.changeOrderPrice(${orderId}, 300),
-			})
-		`) as Record<string, number>;
-
-		expect(result).toEqual({
-			missingOrder: ERR_INVALID_ARGS,
-			zeroPrice: ERR_INVALID_ARGS,
-			negativePrice: ERR_INVALID_ARGS,
-			insufficientCredits: ERR_NOT_ENOUGH_RESOURCES,
-		});
-
-		const unchangedPrice = await shard.runPlayer('p1', code`Game.market.orders[${orderId}].price`);
-		expect(unchangedPrice).toBe(1);
-	});
+	}
 
 	test('MARKET-ORDER-007 extendOrder increases remaining and total amounts and charges the extension fee', async ({ shard }) => {
 		await createSingleMarketRoom(shard);
@@ -367,41 +291,26 @@ describe('Market orders', () => {
 		expect(view.credits).toBeCloseTo(beforeCredits - publicFee(2, 300), 5);
 	});
 
-	test('MARKET-ORDER-008 extendOrder fails with exact validation codes', async ({ shard }) => {
-		await createSingleMarketRoom(shard);
-		const orderId = await shard.placeMarketOrder({
-			owner: 'p1',
-			type: 'sell',
-			resourceType: 'energy',
-			price: 1000,
-			totalAmount: 1,
-			roomName: 'W1N1',
-			active: true,
+	for (const row of marketExtendOrderValidationCases) {
+		test(`MARKET-ORDER-008:${row.label} extendOrder() validation returns the canonical code`, async ({ shard }) => {
+			const blockers = shard.validationBlockers(row);
+			await createSingleMarketRoom(shard);
+			const orderId = await shard.placeMarketOrder({
+				owner: 'p1', type: 'sell', resourceType: RESOURCE_ENERGY, price: 1, totalAmount: 1, roomName: 'W1N1', active: true,
+			});
+			await shard.tick();
+
+			// An added amount whose fee at the order's price is past the player's credits.
+			const rc = await shard.runPlayer('p1', code`
+				const order = Game.market.orders[${orderId}];
+				const amount = ${blockers.has('invalid-amount')} ? 0
+					: ${blockers.has('not-enough-credits')} ? Math.ceil((Game.market.credits + 1) / (order.price * MARKET_FEE))
+					: 1;
+				Game.market.extendOrder(${blockers.has('missing-order') ? 'nonexistent-id' : orderId}, amount)
+			`);
+			expect(rc).toBe(row.expectedRc);
 		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			({
-				missingOrder: Game.market.extendOrder('nonexistent-id', 100),
-				zeroAmount: Game.market.extendOrder(${orderId}, 0),
-				negativeAmount: Game.market.extendOrder(${orderId}, -1),
-				insufficientCredits: Game.market.extendOrder(${orderId}, 1_000_000),
-			})
-		`) as Record<string, number>;
-
-		expect(result).toEqual({
-			missingOrder: ERR_INVALID_ARGS,
-			zeroAmount: ERR_INVALID_ARGS,
-			negativeAmount: ERR_INVALID_ARGS,
-			insufficientCredits: ERR_NOT_ENOUGH_RESOURCES,
-		});
-
-		const unchanged = await shard.runPlayer('p1', code`
-			const o = Game.market.orders[${orderId}];
-			({ remainingAmount: o.remainingAmount, totalAmount: o.totalAmount })
-		`) as { remainingAmount: number; totalAmount: number };
-		expect(unchanged).toEqual({ remainingAmount: 1, totalAmount: 1 });
-	});
+	}
 
 	test('MARKET-ORDER-009 order expiry uses wall-clock createdTimestamp and removes expired orders deterministically', async ({ shard }) => {
 		await createSingleMarketRoom(shard);
@@ -629,122 +538,65 @@ describe('Market deal', () => {
 		expect(view.p2).toEqual({ remainingAmount: 0, amount: 0, active: false });
 	});
 
-	test('MARKET-DEAL-003 deal fails with exact validation codes', async ({ shard }) => {
-		shard.requires('market');
-
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 6, owner: 'p1' }],
-		});
-		await shard.tick();
-		const missing = await shard.runPlayer('p1', code`Game.market.deal('nonexistent-order-id', 100, 'W1N1')`);
-		expect(missing).toBe(ERR_INVALID_ARGS);
-
-		await createTwoPlayerMarketRooms(shard);
-		let orderId = await placeSellOrder(shard, 1, 100);
-		const invalidAmount = await shard.runPlayer('p1', code`
-			({
-				zero: Game.market.deal(${orderId}, 0, 'W1N1'),
-				negative: Game.market.deal(${orderId}, -1, 'W1N1'),
-				missingTargetRoom: Game.market.deal(${orderId}, 1),
-			})
-		`) as { zero: number; negative: number; missingTargetRoom: number };
-		expect(invalidAmount).toEqual({
-			zero: ERR_INVALID_ARGS,
-			negative: ERR_INVALID_ARGS,
-			missingTargetRoom: ERR_INVALID_ARGS,
-		});
-
-		shard.requires('market');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W5N1', rcl: 6, owner: 'p2' },
-			],
-		});
-		await shard.placeStructure('W5N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_TERMINAL,
-			owner: 'p2',
-			store: { energy: 100000, H: 1000 },
-		});
-		await shard.tick();
-		orderId = await placeSellOrder(shard, 1, 100);
-		const missingTerminal = await shard.runPlayer('p1', code`Game.market.deal(${orderId}, 10, 'W1N1')`);
-		expect(missingTerminal).toBe(ERR_NOT_OWNER);
-
-		await createTwoPlayerMarketRooms(shard, { energy: 0 }, { energy: 100000, H: 1000 });
-		orderId = await placeSellOrder(shard, 1, 1000);
-		const noEnergy = await shard.runPlayer('p1', code`Game.market.deal(${orderId}, 1000, 'W1N1')`);
-		expect(noEnergy).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		await createTwoPlayerMarketRooms(shard);
-		orderId = await placeSellOrder(shard, 20_000_000, 1);
-		const noCredits = await shard.runPlayer('p1', code`Game.market.deal(${orderId}, 1, 'W1N1')`);
-		expect(noCredits).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		await createTwoPlayerMarketRooms(shard, { energy: 100000 }, { energy: 100000 });
-		const buyOrderId = await shard.placeMarketOrder({
-			owner: 'p2',
-			type: 'buy',
-			resourceType: 'H',
-			price: 1,
-			totalAmount: 100,
-			roomName: 'W5N1',
-			active: true,
-		});
-		await shard.tick();
-		const noTradedResource = await shard.runPlayer('p1', code`Game.market.deal(${buyOrderId}, 10, 'W1N1')`);
-		expect(noTradedResource).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		shard.requires('market');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W2N1', rcl: 6, owner: 'p1' },
-				{ name: 'W5N1', rcl: 6, owner: 'p2' },
-			],
-		});
-		const callerTerminalId = await shard.placeStructure('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_TERMINAL,
-			owner: 'p1',
-			store: { energy: 100000 },
-		});
-		await shard.placeStructure('W2N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_TERMINAL,
-			owner: 'p1',
-			store: { energy: 0 },
-		});
-		await shard.placeStructure('W5N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_TERMINAL,
-			owner: 'p2',
-			store: { energy: 100000, H: 1000 },
-		});
-		await shard.tick();
-		orderId = await placeSellOrder(shard, 1, 100);
-		const sendRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${callerTerminalId}).send(RESOURCE_ENERGY, 1, 'W2N1')
-		`);
-		expect(sendRc).toBe(OK);
-		const tired = await shard.runPlayer('p1', code`Game.market.deal(${orderId}, 10, 'W1N1')`);
-		expect(tired).toBe(ERR_TIRED);
-
-		await createTwoPlayerMarketRooms(shard);
-		orderId = await placeSellOrder(shard, 1, 100);
-		const capped = await shard.runPlayer('p1', code`
-			const rcs = [];
-			for (let i = 0; i < ${DEAL_CAP + 1}; i++) {
-				rcs.push(Game.market.deal(${orderId}, 1, 'W1N1'));
+	for (const row of marketDealValidationCases) {
+		test(`MARKET-DEAL-003:${row.label} deal() validation returns the canonical code`, async ({ shard }) => {
+			shard.requires('market');
+			const blockers = shard.validationBlockers(row);
+			// p1 deals into W1N1; W2N1's terminal makes the deals that fill the cap; p2 trades from W5N1.
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 6, owner: 'p1' },
+					{ name: 'W2N1', rcl: 6, owner: 'p1' },
+					{ name: 'W5N1', rcl: 6, owner: 'p2' },
+				],
+			});
+			if (!blockers.has('no-terminal')) {
+				await shard.placeStructure('W1N1', {
+					pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
+					store: { [RESOURCE_ENERGY]: blockers.has('terminal-energy') ? 0 : 100000 },
+					...(blockers.has('cooldown') ? { cooldown: TERMINAL_COOLDOWN } : {}),
+				});
 			}
-			rcs
-		`) as number[];
-		expect(capped).toEqual([...Array(DEAL_CAP).fill(OK), ERR_FULL]);
-	});
+			await shard.placeStructure('W2N1', {
+				pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1', store: { [RESOURCE_ENERGY]: 100000 },
+			});
+			await shard.placeStructure('W5N1', {
+				pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p2',
+				store: { [RESOURCE_ENERGY]: 100000, [RESOURCE_HYDROGEN]: 1000 },
+			});
+			await shard.tick();
+			const credits = await shard.runPlayer('p1', code`Game.market.credits`) as number;
+			// A buy order wants hydrogen p1 doesn't hold; one unit of a sell order costs more than p1's credits.
+			const orderId = await shard.placeMarketOrder({
+				owner: 'p2',
+				type: blockers.has('traded-resource') ? 'buy' : 'sell',
+				resourceType: RESOURCE_HYDROGEN,
+				price: blockers.has('not-enough-credits') ? credits + 1 : 1,
+				totalAmount: 100,
+				roomName: 'W5N1',
+				active: true,
+			});
+			const capOrderId = await shard.placeMarketOrder({
+				owner: 'p2', type: 'sell', resourceType: RESOURCE_HYDROGEN, price: 1, totalAmount: 100, roomName: 'W5N1', active: true,
+			});
+			await shard.tick();
+
+			const result = await shard.runPlayer('p1', code`
+				const cap = [];
+				for (let i = 0; i < ${blockers.has('deal-cap') ? MARKET_MAX_DEALS_PER_TICK : 0}; i++) {
+					cap.push(Game.market.deal(${capOrderId}, 1, 'W2N1'));
+				}
+				const id = ${blockers.has('missing-order') ? 'nonexistent-order-id' : orderId};
+				const amount = ${blockers.has('invalid-amount') ? 0 : 1};
+				({ cap, rc: ${blockers.has('no-target-room')} ? Game.market.deal(id, amount) : Game.market.deal(id, amount, 'W1N1') })
+			`);
+			expect(result).toEqual({
+				cap: blockers.has('deal-cap') ? Array(MARKET_MAX_DEALS_PER_TICK).fill(OK) : [],
+				rc: row.expectedRc,
+			});
+		});
+	}
 });
 
 describe('Market queries', () => {

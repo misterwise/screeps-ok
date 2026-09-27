@@ -60,21 +60,6 @@ describe('Game.gpl', () => {
 		});
 	}
 
-	test('GPL-003 PowerCreep.create returns ERR_NOT_ENOUGH_RESOURCES at GPL level 0', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerCreepAccountApi');
-		await shard.createShard({
-			players: [{ name: 'p1', power: 0 }],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			PowerCreep.create('NoLevels', POWER_CLASS.OPERATOR)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
 	test('GPL-004 one GPL level allows one allocated power creep level', async ({ shard }) => {
 		shard.requires('powerCreeps');
 		shard.requires('powerCreepAccountApi');

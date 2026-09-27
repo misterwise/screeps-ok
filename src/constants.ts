@@ -320,6 +320,7 @@ export const GCL_MULTIPLY: number = C.GCL_MULTIPLY;
 export const GCL_POW: number = C.GCL_POW;
 export const POWER_LEVEL_MULTIPLY: number = C.POWER_LEVEL_MULTIPLY;
 export const POWER_LEVEL_POW: number = C.POWER_LEVEL_POW;
+export const POWER_CLASS: { OPERATOR: string } = C.POWER_CLASS;
 export const POWER_CREEP_LIFE_TIME: number = C.POWER_CREEP_LIFE_TIME;
 export const POWER_SPAWN_ENERGY_RATIO: number = C.POWER_SPAWN_ENERGY_RATIO;
 export const POWER_BANK_HIT_BACK: number = C.POWER_BANK_HIT_BACK;
@@ -350,6 +351,10 @@ export const MAX_CONSTRUCTION_SITES: number = C.MAX_CONSTRUCTION_SITES;
 // Flags
 export const FLAGS_LIMIT: number = C.FLAGS_LIMIT;
 export const MARKET_ORDER_LIFE_TIME: number = C.MARKET_ORDER_LIFE_TIME;
+export const MARKET_FEE: number = C.MARKET_FEE;
+export const MARKET_MAX_ORDERS: number = C.MARKET_MAX_ORDERS;
+// Deals a player may make per tick: intents.pushByName's limit (game/market.js:149).
+export const MARKET_MAX_DEALS_PER_TICK = 10 as const;
 export const COLOR_RED: number = C.COLOR_RED;
 export const COLOR_BLUE: number = C.COLOR_BLUE;
 export const COLOR_GREEN: number = C.COLOR_GREEN;

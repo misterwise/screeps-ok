@@ -2954,9 +2954,6 @@ neighbors and no better section exists.
   for `base = level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`.
 
 ### 19.0b Power Creep Allocation `capability: powerCreeps`
-- `GPL-003` `behavior` `verified_vanilla`
-  `PowerCreep.create(name, POWER_CLASS.OPERATOR)` returns
-  `ERR_NOT_ENOUGH_RESOURCES` when GPL level is `0`.
 - `GPL-004` `behavior` `verified_vanilla`
   One GPL level allows exactly one allocated power creep level; after creating
   one power creep at GPL level `1`, another `PowerCreep.create()` returns
@@ -2970,9 +2967,12 @@ neighbors and no better section exists.
   A successful `PowerCreep.create(name, className)` returns `OK` and queues a
   new unspawned power creep with that name and class.
 - `POWERCREEP-CREATE-002` `matrix` `verified_vanilla`
-  `PowerCreep.create()` failure codes match the canonical validation matrix
-  for invalid arguments (including names longer than 100 characters),
-  duplicate name, and insufficient free power levels.
+  `PowerCreep.create(name, className)` returns the first failing check's
+  code, in this order: `:invalidName` the name is missing, not a string or
+  over 100 characters, `ERR_INVALID_ARGS`; `:noFreeLevels` the player has no
+  free GPL level, `ERR_NOT_ENOUGH_RESOURCES`; `:nameExists` one of the
+  player's power creeps has the name, `ERR_NAME_EXISTS`; `:invalidClass` the
+  class isn't one of `POWER_CLASS`, `ERR_INVALID_ARGS`.
 - `POWERCREEP-CREATE-003` `behavior` `documented`
   `PowerCreep.create()` accepts a 100-character name and the created power
   creep preserves that exact name.
@@ -3053,9 +3053,12 @@ neighbors and no better section exists.
   A successful `powerCreep.enableRoom(controller)` returns `OK` and sets
   `controller.isPowerEnabled` to `true` on the next tick.
 - `POWERCREEP-ENABLE-002` `matrix` `verified_vanilla`
-  `powerCreep.enableRoom()` failure codes match the canonical validation
-  matrix for invalid target, safe-mode-blocked hostile controller, range,
-  busy, and ownership.
+  `powerCreep.enableRoom(controller)` returns the first failing check's code,
+  in this order: `:notOwner` the power creep isn't the player's,
+  `ERR_NOT_OWNER`; `:busy` it isn't spawned, `ERR_BUSY`; `:invalidTarget` the
+  target isn't a structure, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:notController` it isn't a controller, or `:safeMode`
+  it is another player's under safe mode, `ERR_INVALID_TARGET`.
 - `POWERCREEP-ENABLE-003` `matrix` `verified_vanilla`
   `usePower()` in a room whose controller doesn't have power enabled returns
   `ERR_INVALID_ARGS`, for each power in the canonical power-to-target matrix.
@@ -3138,9 +3141,15 @@ Coverage Notes
   resource type, price, amount, and room for the canonical order-creation
   matrix.
 - `MARKET-ORDER-002` `matrix` `verified_vanilla`
-  `createOrder()` failure codes match the canonical validation matrix for
-  invalid arguments, insufficient credits, missing owned terminal, and order
-  cap.
+  `Game.market.createOrder()` returns the first failing check's code, in this
+  order: `:invalidResource` the resource type is unknown, `:invalidType` the
+  type is neither `ORDER_BUY` nor `ORDER_SELL`, `:invalidPrice` the price
+  isn't above 0, or `:invalidAmount` the total amount parses to no nonzero
+  integer, `ERR_INVALID_ARGS`; `:notEnoughCredits` the fee (price × total
+  amount × `MARKET_FEE`) is more than the player's credits,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:noTerminal` the player owns no terminal in the
+  room, `ERR_NOT_OWNER`; `:orderCap` the player already has
+  `MARKET_MAX_ORDERS` orders, `ERR_FULL`.
 - `MARKET-ORDER-003` `behavior` `verified_vanilla`
   A successful `cancelOrder()` returns `OK` and removes the order so it no
   longer appears in market queries.
@@ -3150,15 +3159,21 @@ Coverage Notes
 - `MARKET-ORDER-005` `behavior` `verified_vanilla`
   `changeOrderPrice()` updates the order price visible to later market queries.
 - `MARKET-ORDER-006` `matrix` `verified_vanilla`
-  `changeOrderPrice()` failure codes match the canonical validation matrix for
-  missing order, invalid price, and insufficient credits for the additional
-  fee.
+  `Game.market.changeOrderPrice(orderId, newPrice)` returns the first failing
+  check's code, in this order: `:missingOrder` the order isn't one of the
+  player's, or `:invalidPrice` the new price isn't above 0,
+  `ERR_INVALID_ARGS`; `:notEnoughCredits` the fee on a raise (the raise ×
+  remaining amount × `MARKET_FEE`) is more than the player's credits,
+  `ERR_NOT_ENOUGH_RESOURCES`.
 - `MARKET-ORDER-007` `behavior` `verified_vanilla`
   `extendOrder()` increases the remaining amount on an existing order.
 - `MARKET-ORDER-008` `matrix` `verified_vanilla`
-  `extendOrder()` failure codes match the canonical validation matrix for
-  missing order, invalid added amount, and insufficient credits for the
-  extension fee.
+  `Game.market.extendOrder(orderId, addAmount)` returns the first failing
+  check's code, in this order: `:missingOrder` the order isn't one of the
+  player's, or `:invalidAmount` the added amount isn't above 0,
+  `ERR_INVALID_ARGS`; `:notEnoughCredits` the fee (price × added amount ×
+  `MARKET_FEE`) is more than the player's credits,
+  `ERR_NOT_ENOUGH_RESOURCES`.
 - `MARKET-ORDER-009` `behavior` `verified_vanilla`
   An order expires and is removed after `MARKET_ORDER_LIFE_TIME` ms of
   wall-clock time with no activity. Engine check uses `Date.now()`, not
@@ -3172,10 +3187,17 @@ Coverage Notes
   For terminal-based deals, the energy transfer cost is paid by the caller's
   terminal, not the order owner's terminal.
 - `MARKET-DEAL-003` `matrix` `verified_vanilla`
-  `Game.market.deal()` failure codes match the canonical validation matrix for
-  invalid arguments, missing owned terminal, insufficient terminal energy,
-  terminal cooldown, insufficient traded resource, insufficient credits, and
-  per-tick deal cap.
+  `Game.market.deal(orderId, amount, targetRoomName)` for a resource that
+  isn't intershard returns the first failing check's code, in this order:
+  `:missingOrder` no active order has the id, `:invalidAmount` the amount
+  isn't above 0, or `:noTargetRoom` no target room is given,
+  `ERR_INVALID_ARGS`; `:noTerminal` the player owns no terminal in it,
+  `ERR_NOT_OWNER`; `:terminalEnergy` the terminal holds less energy than the
+  transfer cost, `ERR_NOT_ENOUGH_RESOURCES`; `:cooldown` its `cooldown` is
+  above 0, `ERR_TIRED`; `:tradedResource` it holds less of a buy order's
+  resource than the amount, or `:notEnoughCredits` a sell order's amount costs
+  more than the player's credits, `ERR_NOT_ENOUGH_RESOURCES`; `:dealCap` the
+  player has made 10 deals this tick, `ERR_FULL`.
 - `MARKET-DEAL-004` `behavior` `verified_vanilla`
   A partial deal reduces the target order's remaining amount by the traded
   quantity.
