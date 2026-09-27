@@ -411,9 +411,7 @@ Coverage Notes
 Coverage Notes
 - RoomPosition find/path helpers (`findClosestByPath`, `findClosestByRange`,
   `findInRange`, `findPathTo`, `getDirectionTo`, filter option) are owned by
-  section 22.3 (`ROOMPOS-FIND-*`) and 22.2 (`ROOMPOS-SPATIAL-005`). Six
-  duplicate entries formerly in section 2.3 dropped; they also had an ID
-  collision with section 22.1's `ROOMPOS-001`.
+  section 22.3 (`ROOMPOS-FIND-*`) and 22.2 (`ROOMPOS-SPATIAL-005`).
 
 ### 2.3 Legacy Pathfinding
 - `LEGACY-PATH-001` `behavior` `verified_vanilla`
@@ -488,14 +486,9 @@ Coverage Notes
 
 Coverage Notes
 - Harvest boost magnitudes (UO/UHO2/XUHO2) are owned by `BOOST-HARVEST-001`
-  (section 8.8). A previous harvest-boost entry was dropped as duplicate
-  coverage.
+  (section 8.8).
 - Source energy capacity per room state is owned by `SOURCE-REGEN-001`
-  (section 17.1). A previous source-capacity entry was dropped as duplicate
-  coverage.
-- Shared `harvest()` API gates (`ERR_NOT_OWNER` on the acting creep,
-  `ERR_BUSY`, `ERR_INVALID_TARGET`) are temporarily owned here even though they
-  also apply to mineral and deposit harvest calls.
+  (section 17.1).
 - Vanilla source harvesting also contributes to the server-side raid budget for
   the harvested source by the successful harvest amount. That field is not part
   of the public `Source` shape, so this catalog keeps it non-normative here;
@@ -548,8 +541,7 @@ Coverage Notes
 
 Coverage Notes
 - Mineral depletion triggering regeneration is owned by `MINERAL-REGEN-004`
-  (section 17.3). A previous mineral-regeneration entry was dropped as
-  duplicate coverage.
+  (section 17.3).
 - Extractor-gated `harvest(mineral)` outcomes are owned here because they are
   part of the mineral harvest contract. The extractor section should not
   duplicate these action outcomes.
@@ -742,8 +734,7 @@ Coverage Notes
 
 Coverage Notes
 - Creep-death → dropped-resources flow is owned by `CREEP-DEATH-007`
-  (section 9.7: tombstone decay emits dropped resources). Former
-  DROP-DECAY-003 dropped as a duplicate.
+  (section 9.7: tombstone decay emits dropped resources).
 
 ---
 
@@ -1110,9 +1101,7 @@ Coverage Notes
 
 Coverage Notes
 - Upgrade boost magnitudes and zero-extra-cost are owned by
-  `BOOST-UPGRADE-001` and `BOOST-UPGRADE-003` (section 8.11). Former
-  CTRL-UPGRADE-007 dropped; remaining entries renumbered (008→007, 009→008,
-  010→009, 011→010). CTRL-UPGRADE-007 reclassified `behavior`→`matrix`.
+  `BOOST-UPGRADE-001` and `BOOST-UPGRADE-002` (section 8.11).
 
 ### 6.5 Sign Controller
 - `CTRL-SIGN-001` `behavior` `verified_vanilla`
@@ -1184,10 +1173,7 @@ Coverage Notes
 
 Coverage Notes
 - Structures becoming inactive above the RCL limit is owned by
-  `CTRL-STRUCTLIMIT-002` (section 6.10). Former CTRL-DOWNGRADE-007 dropped;
-  CTRL-DOWNGRADE-008 renumbered to 007. The number 008 is retired by that
-  renumbering (its historical content lives at 007) and is not reused; new
-  rows continue at 009.
+  `CTRL-STRUCTLIMIT-002` (section 6.10).
 - The safe-mode field resets on the terminal (level-0) downgrade step are not
   yet catalogued: vanilla also zeroes `safeModeAvailable` and starts a fresh
   cooldown there, but only the ≥ 1 step is pinned by CTRL-DOWNGRADE-009/-010.
@@ -1229,10 +1215,6 @@ Coverage Notes
   the canonical validation matrix for ownership, controller-busy state,
   resource availability, and cooldown.
 
-Notes
-- Any hostile movement restrictions during safe mode should be added only as
-  concrete observable outcomes, not as a broad summary rule.
-
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
   `StructureController.unclaim()` resets the controller to level 0 (unowned),
@@ -1255,18 +1237,6 @@ Notes
 - `CTRL-UNCLAIM-006` `behavior` `verified_vanilla`
   After `unclaim()` resolves on a power-enabled room, `isPowerEnabled` is
   false.
-
-Coverage Notes
-- Original CTRL-UNCLAIM-002 ("All owned structures in the room are
-  destroyed") and CTRL-UNCLAIM-003 ("Destroyed structures become ruins")
-  dropped: both contradicted the engine's `unclaim` processor
-  (`@screeps/engine/src/processor/intents/controllers/unclaim.js`), which
-  only updates the controller object and leaves room structures intact.
-  The inactive-above-RCL-limit outcome is owned by `CTRL-STRUCTLIMIT-002`.
-  The retired numbers are not reused; new rows continue at 004.
-- Split: the `safeModeAvailable` reset was moved out of CTRL-UNCLAIM-001's
-  cleared-field list into its own row (CTRL-UNCLAIM-004) so the safe-mode
-  and power-enable field resets are independently tracked per divergence.
 
 ### 6.10 Structure Limits per RCL
 - `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
@@ -1428,17 +1398,10 @@ Coverage Notes
   regardless of remaining HP.
 
 Coverage Notes
-- The gameplay consequences of destroyed MOVE, WORK, CARRY, ATTACK, HEAL, and
-  other body parts should be covered in their type-specific movement, combat,
-  harvesting, transfer, and controller-action sections rather than as one
-  umbrella statement here.
-
-Coverage Notes
-- Entire section 7.7 (Boost Damage Reduction, COMBAT-TOUGH-001 through 005)
-  dropped. Tough damage-reduction magnitudes are owned by `BOOST-TOUGH-001`
-  (section 8.7); self-only scope is owned by `BOOST-TOUGH-002` (section 8.7).
-  COMBAT-TOUGH-005 (effective HP calculation) is a derived value, not an
-  independent observable. Subsequent facets renumbered.
+- A destroyed part's consequence for an action is cataloged with that action
+  (`MOVE-FATIGUE-007` for MOVE).
+- Tough damage reduction is owned by `BOOST-TOUGH-001` and `BOOST-TOUGH-002`
+  (section 8.7).
 
 ### 7.7 Simultaneous Damage & Healing
 - `COMBAT-SIMULT-001` `behavior` `verified_vanilla` Damage and healing are resolved simultaneously: `newHits = oldHits + healing - damage`.
@@ -1598,9 +1561,8 @@ Coverage Notes
   unchanged.
 
 Coverage Notes
-- `NUKE-IMPACT-004` (rampart absorbs nuke damage for structures underneath)
-  was a duplicate of `RAMPART-PROTECT-008` (section 12.1) and is dropped here;
-  the nuke + rampart structure-absorption observable is owned by section 12.1.
+- A rampart absorbing nuke damage for the structures under it is
+  `RAMPART-PROTECT-008` (section 12.1).
 - `NUKE-IMPACT-002` and `NUKE-IMPACT-003` already pin the center and a single
   east-axis sample for ranges 1 and 2; `NUKE-IMPACT-014` extends that to the
   full 49-tile box (25 in-blast cells + 24 range-3 cells) so the geometry and
@@ -1616,8 +1578,7 @@ Coverage Notes
 Coverage Notes
 - Hostile creep action blocking (attack, rangedAttack, rangedMassAttack,
   dismantle, withdraw, heal, rangedHeal, attackController) is owned by
-  `CTRL-SAFEMODE-006` (section 6.8). Former SAFEMODE-COMBAT-001/002/003
-  dropped; SAFEMODE-COMBAT-004/005 renumbered to 001/002.
+  `CTRL-SAFEMODE-006` (section 6.8).
 
 ---
 
@@ -1675,15 +1636,6 @@ Coverage Notes
   `Lab.unboostCreep(creep)` failure return codes and precedence match the
   canonical validation matrix for ownership, target validity, range,
   resource availability, and cooldown.
-
-Coverage Notes
-- A previously listed UNBOOST entry asserting `ERR_FULL when lab cannot hold
-  the returned compounds` was dropped on 2026-04-11. Vanilla
-  `@screeps/engine/src/game/structures.js` `StructureLab.unboostCreep` has no
-  ERR_FULL branch and the unboost processor never returns capacity errors —
-  returned compounds spill onto the creep tile via `_create-energy` (which
-  prefers a same-tile container then falls back to a dropped resource), so
-  there is nothing for the lab to "fail to hold".
 
 ### 8.3 Per-Part Boost Aggregation
 - `BOOST-AGGREGATION-001` `matrix` `verified_vanilla`
@@ -1750,10 +1702,6 @@ Coverage Notes
   `2 × BOOSTS.move[compound].fatigue` per tick, in place of the unboosted 2
   (`MOVE-FATIGUE-002`).
 
-Coverage Notes
-- Concrete fatigue outcomes from move boosts are also covered in movement
-  section `1.2 Fatigue Calculation`.
-
 ### 8.13 Carry Boosts
 - `BOOST-CARRY-001` `matrix` `verified_vanilla`
   Carry boost capacity increases match the canonical Screeps `BOOSTS` table for
@@ -1805,11 +1753,6 @@ Coverage Notes
   the canonical validation matrix for ownership, active-structure state,
   caller busy state, argument validity, name uniqueness, and resource
   availability.
-
-Coverage Notes
-- Default spawn-plus-extension drain order should be covered through concrete
-  scenarios if we decide that exact source ordering is part of the public
-  contract.
 
 ### 9.2 Spawning Duration & Direction
 - `SPAWN-TIMING-001` `behavior` `verified_vanilla`
@@ -1915,10 +1858,6 @@ Coverage Notes
   canonical validation matrix for spawn ownership, target validity,
   target-creep ownership, and range.
 
-Coverage Notes
-- Container-vs-tombstone placement of recycled resources should be kept as a
-  concrete scenario once we verify the exact vanilla outcome.
-
 ### 9.6 Creep Spawning State
 - `CREEP-SPAWNING-001` `behavior` `verified_vanilla`
   `creep.spawning` is `true` while the creep is being spawned.
@@ -2016,9 +1955,7 @@ Coverage Notes
 
 ### 9.10 cancelOrder
 Coverage Notes
-- Canonical `cancelOrder(methodName)` behaviors live in section `24.2 Intent
-  Resolution`, where they can be specified against queued same-tick intents
-  without duplicating the same rule surface in two places.
+- `creep.cancelOrder(name)` is `INTENT-CREEP-003` (section 24.1).
 
 ---
 
@@ -2047,8 +1984,6 @@ Coverage Notes
   The regeneration gate is the room total, not the spawn: a spawn holding
   100 alongside extensions holding the remaining 200 (room
   `energyAvailable === SPAWN_ENERGY_CAPACITY`) does not regenerate at all.
-  `SPAWN-TIMING-008` relies on the trickle when reading spawn energy across
-  a cancel.
 
 ### 10.2 Storage
 Coverage Notes
@@ -2224,10 +2159,7 @@ Coverage Notes
 
 ### 11.3 Reaction Chain `capability: chemistry`
 Coverage Notes
-- Base, tier-1, tier-2, and tier-3 compound chains should be generated from the
-  canonical `REACTIONS` table rather than maintained as separate hand-written
-  recipe bullets.
-- Conformance of the reaction table itself is covered by `LAB-RUN-001`.
+- The reaction table is `LAB-RUN-001` and `LAB-REVERSE-001`.
 
 ### 11.4 Factory Production `capability: factory`
 - `FACTORY-PRODUCE-001` `matrix` `verified_vanilla`
@@ -2279,8 +2211,6 @@ Coverage Notes
   level 0 commodities and level N commodities.
 
 Coverage Notes
-- Chain names and tier counts should be derived from `COMMODITIES`, not
-  maintained as separate hand-written bullets.
 - Factory error-code behavior for invalid commodity level requests is covered by
   `FACTORY-PRODUCE-009`.
 
@@ -2476,9 +2406,6 @@ Coverage Notes
 
 Coverage Notes
 - Terminal store-type semantics and capacity constants belong in section `23. Store API`.
-- Cooldown amount and market-order interactions should be derived from the
-  terminal send and market processor paths rather than maintained here as loose
-  summary bullets.
 
 ### 13.4 Observer
 - `OBSERVER-001` `behavior` `verified_vanilla`
@@ -2585,11 +2512,6 @@ cross-shard `destination` values.
   `stronghold/stronghold.js` `handleController` issues the intent every tick
   while the reservation is the core's own.)
 
-Coverage Notes
-- Stronghold orchestration began splitting into concrete observable behaviors
-  in `14.5`; further family entries (rampart hits, effect propagation, reward
-  contents) are still pending.
-
 ### 14.3 Power Bank `capability: powerBank`
 - `POWER-BANK-001` `behavior` `verified_vanilla`
   When a power bank is attacked, it deals `POWER_BANK_HIT_BACK` of the received
@@ -2601,16 +2523,9 @@ Coverage Notes
   the same tile.
 
 Coverage Notes
-- Concrete destruction-drop behavior for power banks is now covered by
-  `POWER-BANK-004`.
-- The critical-threshold behavior for generated power needs a dedicated
-  observable rule before it belongs in the catalog.
-- Former `POWER-BANK-003` dropped; the number is retired. It claimed
-  generated `power` stays within `POWER_BANK_CAPACITY_MIN..MAX`, but vanilla's
-  generator adds `POWER_BANK_CAPACITY_MAX` on a critical roll
-  (`@screeps/backend/lib/cronjobs.js`), and that generator is a backend cron
-  job no harness drives, so its test only read back a seeded value. The
-  `power` getter itself stays covered by the object-shape matrix.
+- A generated power bank's `power` amount isn't cataloged: vanilla's
+  generator is a backend cron job no harness drives, and it adds
+  `POWER_BANK_CAPACITY_MAX` on a critical roll (`@screeps/backend/lib/cronjobs.js`).
 
 ### 14.4 NPC Ownership Query Surface
 - `NPC-OWNERSHIP-001` `matrix` `verified_vanilla`
@@ -2635,11 +2550,9 @@ Coverage Notes
   created.
 
 Coverage Notes
-- Coverage of stronghold orchestration that previously sat in `14.2` has
-  begun here as a layout matrix. Per-rampart hits scaling
-  (`STRONGHOLD_RAMPART_HITS`), per-tile effect propagation
-  (`EFFECT_COLLAPSE_TIMER`), and stronghold container reward contents are
-  separate observables not covered by `STRONGHOLD-LAYOUT-001`.
+- Per-rampart hits scaling (`STRONGHOLD_RAMPART_HITS`), per-tile effect
+  propagation (`EFFECT_COLLAPSE_TIMER`), and stronghold container reward
+  contents are separate observables `STRONGHOLD-LAYOUT-001` doesn't cover.
 
 ### 14.6 Invader Raid Spawning `capability: invaderRaidSpawner`
 - `INVADER-RAID-001` `behavior` `verified_vanilla`
@@ -3148,9 +3061,8 @@ Notes
   requires visibility.
 
 Coverage Notes
-- Old FLAG-007 ("player-scoped and referenced by name") dropped: player-scoping
-  merged into FLAG-001; "referenced by name" is API shape, not a behavior.
-- `RoomPosition.createFlag()` is owned by ROOMPOS-ACTION-002 in section 22.
+- A successful `RoomPosition.createFlag()` is `ROOMPOS-ACTION-002` (section
+  22.5); its throw for a room without visibility is `FLAG-010`.
 
 ### 16.8 Room Helpers
 - `ROOM-API-001` `behavior` `verified_vanilla`
@@ -3317,10 +3229,6 @@ neighbors and no better section exists.
 - `TOMBSTONE-018` `behavior` `verified_vanilla`
   `tombstone.creep.saying` exposes the message the deceased creep was publicly
   saying at the moment of death.
-
-Coverage Notes
-- Power creep tombstone decay dropped: requires `capability: powerCreeps`,
-  not feasible for either adapter currently.
 
 ### 18.2 Ruin
 - `RUIN-001` `behavior` `verified_vanilla`
@@ -3584,10 +3492,6 @@ Coverage Notes
   wall-clock time with no activity. Engine check uses `Date.now()`, not
   `gameTime` (`global-intents/market.js:507`).
 
-Notes
-- Order lifetime and expiry should be specified through observable query
-  behavior rather than only by restating MARKET_ORDER_LIFE_TIME.
-
 ### 20.3 Deal `capability: market`
 - `MARKET-DEAL-001` `behavior` `verified_vanilla`
   A successful `Game.market.deal()` returns `OK` and executes a trade against
@@ -3710,10 +3614,6 @@ Notes
 - `ROOMPOS-001` `behavior` `verified_vanilla`
   `new RoomPosition(x, y, roomName)` exposes `x`, `y`, and `roomName`, and
   coordinates are bounded to the inclusive `0..49` range.
-
-Coverage Notes
-- Old ROOMPOS-002 ("coordinates limited to 0..49") merged into ROOMPOS-001:
-  both describe the constructor's public contract.
 
 ### 22.2 Spatial Queries
 - `ROOMPOS-SPATIAL-001` `behavior` `verified_vanilla`
@@ -3882,12 +3782,9 @@ Coverage Notes
   mode timer reaches `0`.
 
 Coverage Notes
-- `endTime` effect expiration is not one shared timer model; some checks use
-  `endTime > time` while others use `endTime >= time`, so those behaviors should
-  stay with their local mechanics.
-- `decayTime`, `nextDecayTime`, `spawnTime`, and `landTime` also use
-  family-specific edge conditions and should stay local unless a stricter shared
-  sub-model emerges.
+- Effect expiry has no shared edge (some checks use `endTime > time`, others
+  `endTime >= time`), nor do decay, spawn and landing timers, so each is
+  cataloged with its mechanic.
 
 ---
 
@@ -3933,13 +3830,6 @@ Coverage Notes
   leaves a tombstone holding only the body's corpse resources, never the
   load.
 
-Coverage Notes
-- `move()` and `heal()` compatibility with the blocking creep action priority
-  chain should be expressed through concrete same-tick scenarios rather than as
-  abstract independence claims.
-- Non-blocking action combinations should be captured through concrete
-  compatibility scenarios rather than as one umbrella sentence.
-
 ### 24.2 Same-Tick Resource Visibility
 - `INTENT-RESOURCE-001` `behavior` `verified_vanilla`
   Resources gained by `withdraw()` are not available to other actions by that
@@ -3969,10 +3859,6 @@ Coverage Notes
 - `INTENT-SIMULT-002` `behavior` `verified_vanilla`
   `heal()` on a healthy creep returns `OK` and still blocks lower-priority
   actions in the blocking creep action chain.
-
-Coverage Notes
-- Same-pipeline exclusions already implied by `24.2 Creep Action Priority`
-  should not be duplicated here.
 
 ---
 
@@ -4348,9 +4234,7 @@ Notes
 Notes
 - `UNDOC-MEMJSON-005`: vanilla serializes `RawMemory._parsed` outside any
   try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw
-  escapes the runtime run before intents are collected. An earlier reading
-  ("silent subtree drop") came from the vanilla adapter resetting a cyclic
-  `RawMemory` itself.
+  escapes the runtime run before intents are collected.
 
 ### 27.4 PathFinder CostMatrix Direct Access
 - `UNDOC-COSTMATRIX-001` `behavior` `verified_vanilla`
@@ -4377,12 +4261,6 @@ Notes
   Deleting `Memory.creeps[creep.name]` causes subsequent same-tick reads of
   `creep.memory` to return an empty object, and the empty object is written
   back to `Memory.creeps[creep.name]` on next access.
-
-Notes
-- Analogous aliasing for `spawn.memory`, `flag.memory`, `room.memory`, and
-  `powerCreep.memory` is expected to follow the same contract and should be
-  cataloged as sibling entries once `UNDOC-CREEPMEM-001/002` are verified
-  against vanilla.
 
 ### 27.6 Within-Tick Object Identity
 
@@ -4443,11 +4321,6 @@ objects for the same entity within a tick.
   `new Ruin(id)` produces an object whose public `id`, `pos`,
   `structureType`, `destroyTime`, `ticksToDecay`, and energy store amount
   fields match `Game.getObjectById(id)` for the same ruin within the tick.
-
-Notes
-- `room.find()`'s own per-tick result caching is covered by `ROOM-FIND-*`
-  (if present); this facet is about object-reference identity across lookup
-  paths within a tick.
 
 ### 27.7 RoomPosition `__packedPos`
 
@@ -4560,20 +4433,12 @@ Coverage Notes
 - Runtime visibility of `creep.saying` is owned by section `9.9 Say`
   (`CREEP-SAY-*`). `ACTIONLOG-SAY-001` owns only the rendered action-log
   artifact that backs the client/history surface.
-- Optional feature rows such as factory production, power creep powers, and
-  power-creep `say()` should be added to the relevant matrices only when the
-  framework can express the needed capability combination cleanly.
 
 Framework Notes
 - Tests read the payload through the adapter's `captureActionLog`, gated on
   `actionLogCapture`.
-- Future tests should assert a normalized rendered payload, not raw engine
-  storage. Vanilla stores object `actionLog` objects in room objects/history;
-  xxscreeps stores `#actionLog` vectors and renders them for backend clients.
-  Those storage shapes are implementation details.
-- Action-log tests should remain narrow: trigger one successful action, capture
-  the resulting rendered marker, and assert the action name, source/target
-  object, coordinates, timing, or privacy field named by the catalog entry.
+- Entries assert the normalized rendered payload, not an engine's stored
+  action-log shape.
 
 ### 27.11 ID Constructors
 
@@ -4656,25 +4521,9 @@ Coverage Notes
 - `Structure.destroy()` is used only as setup for removing a structure before
   calling the receiver method on the cached wrapper.
 
-Coverage Notes
-- Entries in this section interact with `§25 Memory` and `§24.2 Same-Tick
-  Resource Visibility`. When a test could be written either under an
-  established section or here, prefer the established section and leave a
-  pointer in this section's Notes rather than duplicating.
-- Multi-bot evidence for each facet is logged in the bot-corpus survey:
-  27.1 (5 bots), 27.4 (2), 27.6 (4), 27.7 (2), 27.8 (2). Facets 27.2,
-  27.3, and 27.5 are coverage-completeness entries not surfaced by the
-  corpus; they remain in catalog because they describe observable engine
-  contracts that parity tests should pin even if no surveyed bot grep'd
-  for the symbol.
-
 Framework Notes
-- The `simulate()` public API is sufficient for all entries in this section;
-  no adapter internals are required. Entries that would require adapter
-  internals to assert are out of scope regardless of folklore support.
-- Entries asserting absence (e.g. `UNDOC-MEMJSON-001` stripping a function)
-  must compare against a control fixture that would have persisted a
-  non-stripped value, to distinguish "stripped" from "never written."
+- Every entry here is observable through the `shard` fixture's public
+  surface; one that would need adapter internals is out of scope.
 
 ### 27.13 Stale Cached Object Arguments
 
@@ -4719,8 +4568,7 @@ Coverage Notes
   receiver in a later tick with the cached wrapper.
 
 Framework Notes
-- The `simulate()` public API is sufficient for all entries in this
-  matrix; no adapter internals are required.
+- Every row is observable through the `shard` fixture's public surface.
 - "No effect" assertion: prefer `Room.getEventLog()` absence of the
   action event for the fresh receiver in the call's tick. Add per-row
   state assertions (e.g. unchanged store, unchanged hits) when the engine
@@ -4892,9 +4740,8 @@ Notes
   alongside the notice. This mutation is not mirrored by
   `findClosestByPath`, and the routing wrappers (`findPathTo`,
   `RoomPosition.findClosestByPath`) clone opts before dispatching, so
-  the mutation is invisible through those paths. This quirk is adjacent
-  to the deprecation but is not a deprecation-notice behavior and is
-  left to a dedicated pathfinding-options catalog entry if pinned later.
+  the mutation is invisible through those paths. It isn't a
+  deprecation-notice behavior.
 - The exact deprecation message strings emitted by vanilla are fixed in
   engine source. Catalog entries above reference the message content
   (which API, which replacement) rather than the exact string so that
@@ -5159,9 +5006,6 @@ Notes
 ---
 
 ## Summary
-
-Coverage counts are temporarily omitted. The facet and behavior totals need to
-be recomputed after the current normalization pass is complete.
 
 ### Scope rule: runtime surface in, out-of-band effects out
 
