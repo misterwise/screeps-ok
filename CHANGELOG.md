@@ -191,6 +191,18 @@ changes since `v0.1.0-alpha` are not itemized.
   spawned-power-creep half. `PATHFINDER-016`, `-021`, `-022` and `-023` state
   exact outcomes (a weighted search's cost, complete paths within
   `maxOps: 2000`, and which neighbour a directed search never loads).
+- NPC, structure and room rows: `ROOM-EVENTLOG-002` is keyed by source
+  (`:creepAttack`, `:towerAttack`, `:towerHeal`, `:towerRepair`,
+  `:mineralHarvest`; it was a bare ID) and now says a mineral harvest logs the
+  WORK parts' harvest power; `KEEPER-LAIR-002` (`:keeperMissing`,
+  `:keeperDamaged`) and `ROOM-ENERGY-001`/`-002` (`:activeStructures`,
+  `:inactiveExtension`; they were `[label]` titles) are keyed by case.
+  `STRUCTURE-API-007` gains `:neutralController` and `FLAG-009`
+  `:invalidSecondaryColor`, each with its pairs. `INVADER-RAID-009` gains
+  `:smallFirstEscalation`, `:ownedRcl6BigNested`, `:ownedRcl7BoostChance` and
+  `:ownedRcl8CountFive`. Restated rows: `STRUCTURE-HITS-001` (a built
+  structure's starting hits) and `SOURCE-REGEN-006` (the next regeneration
+  refills to the new capacity).
 - Spawn, lab and link validation rows gain the vanilla branches they had no
   condition for, each with its pairs: `SPAWN-CREATE-014` `:missingName`,
   `:invalidOptions` and `:nameTaken` (another spawn started the name earlier

@@ -23,10 +23,7 @@ describe('structure.destroy()', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// Let the intent resolve.
-		await shard.tick();
-
-		// Structure should be gone.
+		// Gone in the same tick.
 		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 		const tower = structures.find(s => s.id === towerId);
 		expect(tower).toBeUndefined();
@@ -47,13 +44,13 @@ describe('structure.destroy()', () => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					blockers.has('no-controller')
-						? { name: 'W1N1', controller: false }
+					blockers.has('no-controller') ? { name: 'W1N1', controller: false }
+						: blockers.has('neutral-controller') ? { name: 'W1N1' }
 						: { name: 'W1N1', rcl: 3, owner: roomOwner },
 					{ name: 'W2N1', rcl: 1, owner: 'p2' },
 				],
 			});
-			if (blockers.has('not-owner') || blockers.has('no-controller')) {
+			if (blockers.has('not-owner') || blockers.has('neutral-controller') || blockers.has('no-controller')) {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
 			if (blockers.has('busy')) {

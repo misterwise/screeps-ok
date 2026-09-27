@@ -5,6 +5,7 @@ export const flagCreateValidationCases = makeValidationCases('FLAG-009', [
 	{ condition: 'invalid-coords', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'flag-cap-full', expectedRc: ERR_FULL },
 	{ condition: 'invalid-color', expectedRc: ERR_INVALID_ARGS },
+	{ condition: 'invalid-secondary-color', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'name-exists', expectedRc: ERR_NAME_EXISTS },
 	{ condition: 'name-created', expectedRc: ERR_NAME_EXISTS },
 	{ condition: 'invalid-name-length', expectedRc: ERR_INVALID_ARGS },

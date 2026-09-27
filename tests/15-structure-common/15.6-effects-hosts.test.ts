@@ -7,7 +7,6 @@
  */
 import { describe, test, expect, code,
 	OK, STRUCTURE_RAMPART,
-	type PlayerCode,
 } from '../../src/index.js';
 import { effectHostCases } from '../../src/matrices/effect-hosts.js';
 
@@ -32,34 +31,6 @@ type EffectObservation = {
 };
 
 const EFFECT_ENTRY_SHAPE = Object.freeze(['effect', 'level', 'power', 'ticksRemaining'].sort());
-
-const DATA_PROPS_FN = `function dataProps(obj) {
-	var props = new Set();
-	var proto = obj;
-	while (proto && proto !== Object.prototype) {
-		var keys = Object.getOwnPropertyNames(proto);
-		for (var i = 0; i < keys.length; i++) {
-			var key = keys[i];
-			if (key === 'constructor') continue;
-			if (key.charAt(0) === '_' || key.charAt(0) === '#') continue;
-			var d = Object.getOwnPropertyDescriptor(proto, key);
-			if (d.get) { props.add(key); continue; }
-			if (typeof d.value === 'function') continue;
-			props.add(key);
-		}
-		proto = Object.getPrototypeOf(proto);
-	}
-	return Array.from(props).sort();
-}`;
-
-function effectHostCode(strings: TemplateStringsArray, ...values: unknown[]): PlayerCode {
-	let body = strings[0];
-	for (let i = 0; i < values.length; i++) {
-		body += JSON.stringify(values[i]);
-		body += strings[i + 1];
-	}
-	return `${DATA_PROPS_FN}\n${body}` as PlayerCode;
-}
 
 describe('15.5 Effects Host Matrix', () => {
 	for (const row of effectHostCases) {
@@ -147,8 +118,20 @@ describe('15.5 Effects Host Matrix', () => {
 			`);
 			expect(rc).toBe(OK);
 
-			const observed = await shard.runPlayer('p1', effectHostCode`
+			const observed = await shard.runPlayer('p1', code`
 				(function() {
+					// An entry's data properties, own or inherited getters included.
+					function dataProps(obj) {
+						const props = new Set();
+						for (let proto = obj; proto && proto !== Object.prototype; proto = Object.getPrototypeOf(proto)) {
+							for (const key of Object.getOwnPropertyNames(proto)) {
+								if (key === 'constructor' || key[0] === '_' || key[0] === '#') continue;
+								const d = Object.getOwnPropertyDescriptor(proto, key);
+								if (d.get || typeof d.value !== 'function') props.add(key);
+							}
+						}
+						return Array.from(props).sort();
+					}
 					const spec = ${targetSpec};
 					const expectedPower = ${row.expectedPower ?? null};
 					const expectedEffect = ${row.expectedEffect ?? null};

@@ -1,45 +1,44 @@
 import { describe, test, expect, code,
-	COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
+	OK, COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
 	FLAGS_LIMIT,
 } from '../../src/index.js';
 import { flagCreateValidationCases } from '../../src/matrices/flag-create-validation.js';
 
-describe('Flags', () => {
-	test('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+// COLOR_WHITE is the last color constant (COLORS_ALL runs 1-10).
+const NOT_A_COLOR = COLOR_WHITE + 1;
 
-		const result = await shard.runPlayer('p1', code`
-			const rc = Game.rooms['W1N1'].createFlag(25, 25, 'alpha');
-			const flag = Game.flags['alpha'];
-			({
-				rc,
-				exists: !!flag,
-				name: flag ? flag.name : null,
-				x: flag ? flag.pos.x : null,
-				y: flag ? flag.pos.y : null,
-				room: flag ? flag.pos.roomName : null,
-			})
-		`) as { rc: string; exists: boolean; name: string; x: number; y: number; room: string };
-		expect(result.rc).toBe('alpha');
-		expect(result.exists).toBe(true);
-		expect(result.name).toBe('alpha');
-		expect(result.x).toBe(25);
-		expect(result.y).toBe(25);
-		expect(result.room).toBe('W1N1');
+describe('Flags', () => {
+	test('FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player only', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
+		});
+
+		const rc = await shard.runPlayer('p1', code`Game.rooms['W1N1'].createFlag(25, 25, 'alpha')`);
+		expect(rc).toBe('alpha');
+		const seen = await shard.runPlayers({
+			p1: code`const flag = Game.flags.alpha; flag && [flag.name, flag.pos.x, flag.pos.y, flag.pos.roomName]`,
+			p2: code`Game.flags.alpha ?? null`,
+		});
+		expect(seen).toEqual({ p1: ['alpha', 25, 25, 'W1N1'], p2: null });
 	});
 
 	test('FLAG-002 a created flag stores name, color, and secondaryColor', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const result = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createFlag(10, 10, 'colored', COLOR_RED, COLOR_BLUE);
+		const rc = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].createFlag(10, 10, 'colored', COLOR_RED, COLOR_BLUE)
+		`);
+		expect(rc).toBe('colored');
+		// The next tick reads the stored flag.
+		const stored = await shard.runPlayer('p1', code`
 			const flag = Game.flags['colored'];
-			flag ? ({ name: flag.name, color: flag.color, secondary: flag.secondaryColor }) : null
-		`) as { name: string; color: number; secondary: number } | null;
-		expect(result).not.toBeNull();
-		expect(result!.name).toBe('colored');
-		expect(result!.color).toBe(COLOR_RED);
-		expect(result!.secondary).toBe(COLOR_BLUE);
+			[flag.name, flag.color, flag.secondaryColor]
+		`);
+		expect(stored).toEqual(['colored', COLOR_RED, COLOR_BLUE]);
 	});
 
 	test('FLAG-004 Flag.remove() removes the flag from the player flag set', async ({ shard }) => {
@@ -55,7 +54,7 @@ describe('Flags', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.flags['toRemove'].remove()
 		`);
-		expect(rc).toBe(0); // OK
+		expect(rc).toBe(OK);
 
 		// After the tick processes the remove intent, the flag should be gone.
 		const stillExists = await shard.runPlayer('p1', code`
@@ -76,7 +75,7 @@ describe('Flags', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.flags['recolor'].setColor(COLOR_GREEN, COLOR_WHITE)
 		`);
-		expect(rc).toBe(0); // OK
+		expect(rc).toBe(OK);
 
 		const result = await shard.runPlayer('p1', code`
 			const flag = Game.flags['recolor'];
@@ -98,7 +97,7 @@ describe('Flags', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.flags['movable'].setPosition(30, 35)
 		`);
-		expect(rc).toBe(0); // OK
+		expect(rc).toBe(OK);
 
 		const result = await shard.runPlayer('p1', code`
 			const flag = Game.flags['movable'];
@@ -125,14 +124,15 @@ describe('Flags', () => {
 				});
 			}
 			const x = blockers.has('invalid-coords') ? -1 : 25;
-			const color = blockers.has('invalid-color') ? 99 : COLOR_RED;
+			const color = blockers.has('invalid-color') ? NOT_A_COLOR : COLOR_RED;
+			const secondaryColor = blockers.has('invalid-secondary-color') ? NOT_A_COLOR : COLOR_BLUE;
 
 			const rc = await shard.runPlayer('p1', code`
 				if (${blockers.has('name-created')}) Game.rooms['W1N1'].createFlag(10, 10, ${name});
 				if (${blockers.has('flag-cap-full')}) {
 					for (let i = 0; i < ${FLAGS_LIMIT}; i++) Game.flags['stub' + i] = {};
 				}
-				Game.rooms['W1N1'].createFlag(${x}, 25, ${name}, ${color}, COLOR_BLUE)
+				Game.rooms['W1N1'].createFlag(${x}, 25, ${name}, ${color}, ${secondaryColor})
 			`);
 			expect(rc).toBe(row.expectedRc);
 		});

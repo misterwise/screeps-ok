@@ -10,10 +10,11 @@ import {
 	LAB_HITS, TERMINAL_HITS, CONTAINER_HITS,
 	NUKER_HITS, FACTORY_HITS,
 } from '../index.js';
+import { structureCapability } from '../helpers/structure-capability.js';
 
-// Canonical initial hits for structures with fixed hit totals.
-// Excludes structures with RCL-scaled or dynamic hitsMax (ramparts, walls).
-export const structureHitsCases = [
+// Canonical initial hits for each buildable structure, with the capability its
+// feature needs.
+export const structureHitsCases = ([
 	{ structureType: STRUCTURE_SPAWN, expectedHits: SPAWN_HITS },
 	{ structureType: STRUCTURE_EXTENSION, expectedHits: EXTENSION_HITS },
 	{ structureType: STRUCTURE_ROAD, expectedHits: ROAD_HITS },
@@ -30,4 +31,4 @@ export const structureHitsCases = [
 	{ structureType: STRUCTURE_CONTAINER, expectedHits: CONTAINER_HITS },
 	{ structureType: STRUCTURE_NUKER, expectedHits: NUKER_HITS },
 	{ structureType: STRUCTURE_FACTORY, expectedHits: FACTORY_HITS },
-] as const;
+] as const).map(row => ({ ...row, capability: structureCapability[row.structureType] }));

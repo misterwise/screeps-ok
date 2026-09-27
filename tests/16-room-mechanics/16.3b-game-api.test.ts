@@ -9,6 +9,7 @@ import {
 	SPAWN_ENERGY_CAPACITY, EXTENSION_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { roomFindPlayerRelativeCases } from '../../src/matrices/room-find.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 describe('room visibility', () => {
 	test('ROOM-VIS-001 visible room has a Game.rooms entry on that tick', async ({ shard }) => {
@@ -54,30 +55,28 @@ describe('room visibility', () => {
 });
 
 describe('room energy tracking', () => {
-	test('ROOM-ENERGY-001 [active-extensions] room.energyAvailable sums stored energy in active extensions', async ({ shard }) => {
+	// A full spawn keeps spawn regeneration out of the totals.
+	async function activeSpawnAndExtensions(shard: ShardFixture, extensionEnergy: [number, number]) {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		await shard.placeStructure('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_EXTENSION,
-			owner: 'p1',
-			store: { energy: 20 },
+			pos: [25, 24], structureType: STRUCTURE_SPAWN, owner: 'p1', store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
-		await shard.placeStructure('W1N1', {
-			pos: [26, 25],
-			structureType: STRUCTURE_EXTENSION,
-			owner: 'p1',
-			store: { energy: 17 },
-		});
+		for (const [i, energy] of extensionEnergy.entries()) {
+			await shard.placeStructure('W1N1', {
+				pos: [25 + i, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1', store: { energy },
+			});
+		}
 		await shard.tick();
+	}
 
-		const energyAvailable = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].energyAvailable
-		`);
+	test('ROOM-ENERGY-001:activeStructures room.energyAvailable sums stored energy in active spawns and extensions', async ({ shard }) => {
+		await activeSpawnAndExtensions(shard, [20, 17]);
 
-		expect(energyAvailable).toBe(37);
+		const energyAvailable = await shard.runPlayer('p1', code`Game.rooms['W1N1'].energyAvailable`);
+		expect(energyAvailable).toBe(SPAWN_ENERGY_CAPACITY + 20 + 17);
 	});
 
-	test('ROOM-ENERGY-001 [inactive-extension] room.energyAvailable excludes an inactive extension', async ({ shard }) => {
+	test('ROOM-ENERGY-001:inactiveExtension room.energyAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -107,30 +106,14 @@ describe('room energy tracking', () => {
 		});
 	});
 
-	test('ROOM-ENERGY-002 [active-extensions] room.energyCapacityAvailable sums energy capacity in active extensions', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		await shard.placeStructure('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_EXTENSION,
-			owner: 'p1',
-			store: { energy: 0 },
-		});
-		await shard.placeStructure('W1N1', {
-			pos: [26, 25],
-			structureType: STRUCTURE_EXTENSION,
-			owner: 'p1',
-			store: { energy: 0 },
-		});
-		await shard.tick();
+	test('ROOM-ENERGY-002:activeStructures room.energyCapacityAvailable sums energy capacity in active spawns and extensions', async ({ shard }) => {
+		await activeSpawnAndExtensions(shard, [0, 0]);
 
-		const energyCapacityAvailable = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].energyCapacityAvailable
-		`);
-
-		expect(energyCapacityAvailable).toBe(100);
+		const energyCapacityAvailable = await shard.runPlayer('p1', code`Game.rooms['W1N1'].energyCapacityAvailable`);
+		expect(energyCapacityAvailable).toBe(SPAWN_ENERGY_CAPACITY + 2 * EXTENSION_ENERGY_CAPACITY[2]);
 	});
 
-	test('ROOM-ENERGY-002 [inactive-extension] room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
+	test('ROOM-ENERGY-002:inactiveExtension room.energyCapacityAvailable excludes an inactive extension', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],

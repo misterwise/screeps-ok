@@ -2,6 +2,7 @@ import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CR
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
+import { INVADER_OWNER, ONE_CREEP_RAID_RANDOM, ROOM, setupRaidRoom } from '../invader-raid-helpers.js';
 
 describe('adapter contract: setup', () => {
 	describe('createShard', () => {
@@ -1239,6 +1240,20 @@ describe('adapter contract: setup', () => {
 				else expect(err.message).toMatch(/placeObject/);
 			}
 			expect(accepted).toEqual([]);
+		});
+	});
+
+	describe('runInvaderRaidSpawner', () => {
+		test('consumes the random sequence it is given and fails once it runs out', async ({ shard }) => {
+			shard.requires('invaderRaidSpawner');
+			await setupRaidRoom(shard, { state: { raidGoal: 1 } });
+			// One draw short of what a one-creep raid consumes.
+			await expect(shard.runInvaderRaidSpawner({ random: ONE_CREEP_RAID_RANDOM.slice(0, -1) })).rejects.toThrow();
+
+			await shard.clearInvaderRaidCreeps(ROOM);
+			await shard.setInvaderRaidState(ROOM, { active: false, raidGoal: 1 });
+			await shard.runInvaderRaidSpawner({ random: ONE_CREEP_RAID_RANDOM });
+			expect((await shard.findInRoom(ROOM, FIND_CREEPS)).filter(creep => creep.owner === INVADER_OWNER)).toHaveLength(1);
 		});
 	});
 });

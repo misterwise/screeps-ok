@@ -30,9 +30,8 @@ describe('Stronghold layout', () => {
 
 				const allStructures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 
-				const core = allStructures.find(s => s.id === coreId);
-				expect(core).toBeDefined();
-				expect(core!.structureType).toBe(STRUCTURE_INVADER_CORE);
+				// The deployed core stays, with no deploy time left to read.
+				expect((await shard.expectStructure(coreId, STRUCTURE_INVADER_CORE)).ticksToDeploy).toBeNull();
 
 				const cores = allStructures.filter(
 					s => s.structureType === STRUCTURE_INVADER_CORE,

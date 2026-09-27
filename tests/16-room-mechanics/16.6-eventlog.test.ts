@@ -14,9 +14,14 @@ import { describe, test, expect, code,
 	RESOURCE_ENERGY, LINK_LOSS_RATIO, CONTROLLER_RESERVE,
 	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST, DISMANTLE_POWER,
 	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
-	HARVEST_DEPOSIT_POWER, RESOURCE_SILICON,
+	HARVEST_DEPOSIT_POWER, RESOURCE_SILICON, RESOURCE_HYDROGEN, STRUCTURE_EXTRACTOR,
+	TOWER_CAPACITY, WALL_HITS, body,
+	type PlayerCode,
 } from '../../src/index.js';
 import { nukeEventLogCases } from '../../src/matrices/eventlog-nuke.js';
+import {
+	eventLogSourceCases, EVENT_LOG_ATTACK_PARTS, EVENT_LOG_TOWER_RANGE, EVENT_LOG_WORK_PARTS,
+} from '../../src/matrices/eventlog-sources.js';
 
 type EventEntry = { event: number; objectId: string; data?: any };
 
@@ -45,33 +50,17 @@ describe('room.getEventLog()', () => {
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE],
 		});
-		await shard.tick();
 
-		// place* handles ≠ engine objectIds on xxscreeps. Resolve real engine
-		// ids via player code so the event objectId/targetId comparisons are exact.
-		const ids = JSON.parse(await shard.runPlayer('p1', code`
-			JSON.stringify({
-				attacker: Game.getObjectById(${attackerId}).id,
-				target: Game.getObjectById(${targetId}).id,
-			})
-		`) as string) as { attacker: string; target: string };
+		// place* handles aren't engine ids on xxscreeps; the event log carries engine ids.
+		const attacker = await shard.runPlayer('p1', code`
+			const attacker = Game.getObjectById(${attackerId});
+			attacker.attack(Game.getObjectById(${targetId}));
+			attacker.id
+		`) as string;
 
-		// Attack generates an EVENT_ATTACK entry.
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
-
-		// getEventLog after the attack tick should return an array with the attack event.
-		const events = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].getEventLog()
-		`) as Array<{ event: number; objectId: string; data: any }>;
-		expect(Array.isArray(events)).toBe(true);
-
-		const attackEvent = expectExactlyOne(events,
-			e => e.event === EVENT_ATTACK && e.objectId === ids.attacker);
-		expect(attackEvent.data.targetId).toBe(ids.target);
-		expect(attackEvent.data.damage).toBe(ATTACK_POWER);
-		expect(attackEvent.data.attackType).toBe(EVENT_ATTACK_TYPE_MELEE);
+		// The attack's entry is what the parsed log holds; its payload is ROOM-EVENTLOG-002's.
+		const events = await shard.runPlayer('p1', code`Game.rooms['W1N1'].getEventLog()`) as EventEntry[];
+		expect(events.map(e => [e.event, e.objectId])).toEqual([[EVENT_ATTACK, attacker]]);
 	});
 
 	test('ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string', async ({ shard }) => {
@@ -129,90 +118,81 @@ describe('room.getEventLog()', () => {
 		expect(harvest.data).toEqual({ targetId: ids.deposit, amount: 3 * HARVEST_DEPOSIT_POWER });
 	});
 
-	test('ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping', async ({ shard }) => {
+	for (const row of eventLogSourceCases) {
+		test(`ROOM-EVENTLOG-002:${row.label} logs the actor, target and canonical payload`, async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 6, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				],
+			});
+			const towerPos: [number, number] = [25, 15];
+			const targetPos: [number, number] = [25, 15 + EVENT_LOG_TOWER_RANGE];
+			let actorId: string;
+			let targetId: string;
+			let act: PlayerCode;
+			switch (row.label) {
+				case 'creepAttack':
+					actorId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: body(EVENT_LOG_ATTACK_PARTS, ATTACK, MOVE) });
+					// No ATTACK parts on the target, so no hit-back entry.
+					targetId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p2', body: body(3, TOUGH, MOVE) });
+					act = code`Game.getObjectById(${actorId}).attack(Game.getObjectById(${targetId}))`;
+					break;
+				case 'towerAttack':
+				case 'towerHeal':
+					actorId = await shard.placeStructure('W1N1', { pos: towerPos, structureType: STRUCTURE_TOWER, owner: 'p1', store: { energy: TOWER_CAPACITY } });
+					targetId = await shard.placeCreep('W1N1', { pos: targetPos, owner: row.label === 'towerAttack' ? 'p2' : 'p1', body: body(9, TOUGH, MOVE) });
+					act = row.label === 'towerAttack'
+						? code`Game.getObjectById(${actorId}).attack(Game.getObjectById(${targetId}))`
+						: code`Game.getObjectById(${actorId}).heal(Game.getObjectById(${targetId}))`;
+					break;
+				case 'towerRepair':
+					actorId = await shard.placeStructure('W1N1', { pos: towerPos, structureType: STRUCTURE_TOWER, owner: 'p1', store: { energy: TOWER_CAPACITY } });
+					targetId = await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_WALL, hits: WALL_HITS });
+					act = code`Game.getObjectById(${actorId}).repair(Game.getObjectById(${targetId}))`;
+					break;
+				case 'mineralHarvest':
+					await shard.placeStructure('W1N1', { pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1' });
+					targetId = await shard.placeMineral('W1N1', { pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 1 });
+					actorId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [...body(EVENT_LOG_WORK_PARTS, WORK), CARRY, MOVE] });
+					act = code`Game.getObjectById(${actorId}).harvest(Game.getObjectById(${targetId}))`;
+					break;
+			}
+
+			// Engine ids, which the log carries; the tower heal needs a wound to close.
+			const ids = await shard.runPlayer('p1', code`[Game.getObjectById(${actorId}).id, Game.getObjectById(${targetId}).id]`) as [string, string];
+			if (row.label === 'towerHeal') {
+				const bruiserId = await shard.placeCreep('W1N1', { pos: [targetPos[0] + 1, targetPos[1]], owner: 'p2', body: body(20, ATTACK, MOVE) });
+				expect(await shard.runPlayer('p2', code`Game.getObjectById(${bruiserId}).attack(Game.getObjectById(${targetId}))`)).toBe(OK);
+			}
+			expect(await shard.runPlayer('p1', act)).toBe(OK);
+
+			const events = await shard.runPlayer('p1', code`Game.rooms['W1N1'].getEventLog()`) as EventEntry[];
+			expect(events.filter(e => e.objectId === ids[0])).toEqual([
+				{ event: row.event, objectId: ids[0], data: { targetId: ids[1], ...row.data } },
+			]);
+		});
+	}
+
+	test('ROOM-EVENTLOG-004 room events are only exposed for the current tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
-				{ name: 'W1N1', rcl: 3, owner: 'p1' },
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
+		const attackerId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [ATTACK, MOVE] });
+		const targetId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p2', body: [TOUGH, TOUGH, MOVE] });
 
-		// Place a tower and a damaged friendly creep to trigger a heal event.
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		// Place a friendly creep adjacent to the tower, then damage it.
-		const friendlyId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1', body: [TOUGH, TOUGH, MOVE, MOVE],
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 27], owner: 'p2', body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		// place* handles ≠ engine objectIds on xxscreeps. Resolve real engine
-		// ids via player code so the event objectId/targetId comparisons are exact.
-		const ids = JSON.parse(await shard.runPlayer('p1', code`
-			JSON.stringify({
-				tower: Game.getObjectById(${towerId}).id,
-				friendly: Game.getObjectById(${friendlyId}).id,
-			})
-		`) as string) as { tower: string; friendly: string };
-
-		// Damage the friendly creep.
-		await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${friendlyId}))
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 		`);
-		await shard.tick();
-
-		// Now have the tower heal the damaged creep. This should generate an EVENT_HEAL entry.
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${towerId}).heal(Game.getObjectById(${friendlyId}))
-		`);
-
-		const events = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].getEventLog()
-		`) as Array<{ event: number; objectId: string; data: any }>;
-		expect(Array.isArray(events)).toBe(true);
-
-		const healEvent = expectExactlyOne(events,
-			e => e.event === EVENT_HEAL && e.objectId === ids.tower);
-		expect(healEvent.data.targetId).toBe(ids.friendly);
-		// Range 1 is inside TOWER_OPTIMAL_RANGE: the full nominal heal.
-		expect(healEvent.data.amount).toBe(TOWER_POWER_HEAL);
-		// Tower heal is ranged (EVENT_HEAL_TYPE_RANGED = 2), not melee.
-		expect(healEvent.data.healType).toBe(EVENT_HEAL_TYPE_RANGED);
-	});
-
-	test('ROOM-EVENTLOG-004 room events are only exposed for the current tick', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE],
-		});
-		await shard.tick();
-
-		// Generate a move event by moving the creep.
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).move(TOP)
-		`);
-
-		// Verify the previous tick had events.
-		// Now do a no-op tick — just read the event log with no player actions.
-		await shard.tick();
-		const events = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].getEventLog()
-		`) as unknown[];
-		// The no-op tick + runPlayer tick means two ticks have passed since the
-		// move. The runPlayer tick itself is the observation tick. If nothing
-		// happened in the room during that tick, the log should be empty.
-		// However, runPlayer itself counts as a tick — any implicit events
-		// (controller downgrade tick, etc.) could appear. Filter for user events only.
-		const userEvents = (events as Array<{ event: number }>).filter(
-			e => e.event === EVENT_ATTACK,
-		);
-		expect(userEvents).toEqual([]);
+		expect(rc).toBe(OK);
+		const read = code`Game.rooms['W1N1'].getEventLog().map(e => e.event)`;
+		// The tick after the attack shows its entry; the one after that, nothing.
+		expect([await shard.runPlayer('p1', read), await shard.runPlayer('p1', read)]).toEqual([[EVENT_ATTACK], []]);
 	});
 
 	test('ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"', async ({ shard }) => {
@@ -243,17 +223,17 @@ describe('room.getEventLog()', () => {
 		`) as Array<{ event: number; objectId: string; data?: any }>;
 		expect(partialEvents.find(e => e.event === EVENT_OBJECT_DESTROYED)).toBeUndefined();
 
-		// Killing blow.
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
+		// Killing blow; the target's engine id, which the log carries.
+		const victimId = await shard.runPlayer('p1', code`
+			const target = Game.getObjectById(${targetId});
+			Game.getObjectById(${attackerId}).attack(target);
+			target.id
+		`) as string;
 		const deathEvents = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].getEventLog()
 		`) as Array<{ event: number; objectId: string; data?: any }>;
-		// Identify by event type — placeCreep handle ≠ engine objectId on
-		// xxscreeps, so direct objectId comparison would mismatch.
 		const destroyed = expectExactlyOne(deathEvents, e => e.event === EVENT_OBJECT_DESTROYED);
-		expect(destroyed.data).toBeDefined();
+		expect(destroyed.objectId).toBe(victimId);
 		expect(destroyed.data.type).toBe('creep');
 	});
 

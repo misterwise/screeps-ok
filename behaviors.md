@@ -2343,8 +2343,8 @@ Coverage Notes
 
 ### 15.1 Hits & Destruction
 - `STRUCTURE-HITS-001` `matrix` `verified_vanilla`
-  Fixed durability values for structures with constant hit totals match the
-  canonical Screeps constants.
+  A structure completed by `build()` starts with `hits` equal to its type's
+  canonical `*_HITS` constant, for each buildable structure type.
 - `STRUCTURE-HITS-002` `behavior` `verified_vanilla`
   Destroyable structures expose `hits` and `hitsMax`.
 - `STRUCTURE-HITS-003` `behavior` `verified_vanilla`
@@ -2389,8 +2389,8 @@ Notes
   returns `OK`.
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
   `structure.destroy()` returns the first failing check's code, in this order:
-  `:notOwner` another player owns the room's controller, or `:noController`
-  the room has none, `ERR_NOT_OWNER`; `:busy` a hostile creep, or
+  `:notOwner` another player owns the room's controller, `:neutralController`
+  nobody does, or `:noController` the room has none, `ERR_NOT_OWNER`; `:busy` a hostile creep, or
   `:busyPowerCreep` a hostile power creep, is in the room, `ERR_BUSY`.
 
 ### 15.4b Attack Notification APIs
@@ -2618,7 +2618,8 @@ Notes
   `EVENT_HEAL` of `healType` `EVENT_HEAL_TYPE_RANGED` and the range-scaled
   `amount`; tower `repair`, an `EVENT_REPAIR` of the range-scaled `amount` and
   `energySpent` `TOWER_ENERGY_COST`; and creep `harvest` of a mineral, an
-  `EVENT_HARVEST` of the `amount` harvested.
+  `EVENT_HARVEST` whose `amount` is the WORK parts' harvest power, even where
+  the mineral held less.
 - `ROOM-EVENTLOG-003` `behavior` `verified_vanilla`
   `room.getEventLog(true)` returns the current tick's raw event-log JSON
   string.
@@ -2746,7 +2747,8 @@ Notes
   failing check's code, in this order: `:invalidCoords` a coordinate is
   outside 0-49, `ERR_INVALID_ARGS`; `:flagCapFull` the player has
   `FLAGS_LIMIT` flags, `ERR_FULL`; `:invalidColor` `color` isn't a color
-  constant, `ERR_INVALID_ARGS`; `:nameExists` one of the player's flags has
+  constant, or `:invalidSecondaryColor` `secondaryColor` isn't,
+  `ERR_INVALID_ARGS`; `:nameExists` one of the player's flags has
   the name, or `:nameCreated` a flag created earlier in the tick does,
   `ERR_NAME_EXISTS`; `:invalidNameLength` the name is longer than 100
   characters, `ERR_INVALID_ARGS`.
@@ -2805,8 +2807,8 @@ neighbors and no better section exists.
 - `SOURCE-REGEN-005` `behavior` `verified_vanilla`
   A source at full capacity returns `undefined` for `ticksToRegeneration`.
 - `SOURCE-REGEN-006` `behavior` `verified_vanilla`
-  When a room's ownership state changes (neutral ↔ reserved ↔ owned), source
-  capacity updates to the new room-state value on the next regeneration.
+  After a room's ownership state changes (neutral ↔ reserved ↔ owned), the
+  source's next regeneration refills it to the new state's capacity.
 
 ### 17.2 Source Power Effects
 - `SOURCE-POWER-001` `matrix` `verified_vanilla` `capability: powerEffects`

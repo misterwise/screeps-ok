@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	OK,
-	PWR_REGEN_SOURCE, PWR_DISRUPT_SOURCE, PWR_REGEN_MINERAL, RESOURCE_HYDROGEN,
+	PWR_REGEN_SOURCE, PWR_DISRUPT_SOURCE, PWR_REGEN_MINERAL, RESOURCE_HYDROGEN, SOURCE_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 import { sourcePowerCases } from '../../src/matrices/source-power.js';
@@ -8,9 +8,18 @@ import { mineralPowerCases } from '../../src/matrices/mineral-power.js';
 
 const LEVEL_WORDS = ['One', 'Two', 'Three', 'Four', 'Five'];
 
-// Reads around the first two pulses; the first lands period - 1 ticks after the use tick.
-async function readPulses(shard: ShardFixture, period: number, read: () => Promise<number>) {
-	await shard.tick(period - 2);
+// The tick after a use: the target's effect time left and the power's cooldown.
+function effectTimers(targetId: string, power: number) {
+	return code`[
+		Game.getObjectById(${targetId}).effects.find(e => e.power === ${power}).ticksRemaining,
+		Object.values(Game.powerCreeps)[0].powers[${power}].cooldown,
+	]`;
+}
+
+// Reads around the first two pulses; the first lands period - 1 ticks after
+// the use tick, `elapsed` ticks of which have already passed.
+async function readPulses(shard: ShardFixture, period: number, elapsed: number, read: () => Promise<number>) {
+	await shard.tick(period - 2 - elapsed);
 	const beforeFirst = await read();
 	await shard.tick(1);
 	const first = await read();
@@ -31,7 +40,7 @@ describe('Source power effects', () => {
 				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 			});
 			const sourceId = await shard.placeSource('W1N1', {
-				pos: [25, 25], energy: 0, energyCapacity: 3000,
+				pos: [25, 25], energy: 0, energyCapacity: SOURCE_ENERGY_CAPACITY,
 			});
 			await shard.placePowerCreep('W1N1', {
 				pos: [25, 26], owner: 'p1',
@@ -43,8 +52,10 @@ describe('Source power effects', () => {
 				Object.values(Game.powerCreeps)[0].usePower(PWR_REGEN_SOURCE, Game.getObjectById(${sourceId}))
 			`);
 			expect(rc).toBe(OK);
+			expect(await shard.runPlayer('p1', effectTimers(sourceId, PWR_REGEN_SOURCE)))
+				.toEqual([row.expectedDuration - 1, row.expectedCooldown - 1]);
 
-			const pulses = await readPulses(shard, row.expectedPeriod,
+			const pulses = await readPulses(shard, row.expectedPeriod, 1,
 				async () => (await shard.expectObject(sourceId, 'source')).energy);
 			const effect = row.expectedEffect;
 			expect(pulses).toEqual([0, effect, effect, 2 * effect]);
@@ -59,7 +70,7 @@ describe('Source power effects', () => {
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
 		const sourceId = await shard.placeSource('W1N1', {
-			pos: [25, 25], energy: 0, energyCapacity: 3000, ticksToRegeneration: 10,
+			pos: [25, 25], energy: 0, energyCapacity: SOURCE_ENERGY_CAPACITY, ticksToRegeneration: 10,
 		});
 		await shard.placePowerCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
@@ -108,8 +119,10 @@ describe('Mineral power effects', () => {
 				Object.values(Game.powerCreeps)[0].usePower(PWR_REGEN_MINERAL, Game.getObjectById(${mineralId}))
 			`);
 			expect(rc).toBe(OK);
+			expect(await shard.runPlayer('p1', effectTimers(mineralId, PWR_REGEN_MINERAL)))
+				.toEqual([row.expectedDuration - 1, row.expectedCooldown - 1]);
 
-			const pulses = await readPulses(shard, row.expectedPeriod,
+			const pulses = await readPulses(shard, row.expectedPeriod, 1,
 				async () => (await shard.expectObject(mineralId, 'mineral')).mineralAmount);
 			const effect = row.expectedEffect;
 			expect(pulses).toEqual([1000, 1000 + effect, 1000 + effect, 1000 + 2 * effect]);

@@ -1,6 +1,7 @@
 import {
-	describe, test, expect, code,
-	ATTACK, MOVE,
+	describe, test, expect, code, body,
+	OK, ATTACK, MOVE, RANGED_ATTACK, TOUGH,
+	ENERGY_REGEN_TIME, SAFE_MODE_DURATION, FIND_CREEPS, STRUCTURE_KEEPER_LAIR,
 	CONTROLLER_RESERVE,
 	EFFECT_COLLAPSE_TIMER, INVADER_CORE_CONTROLLER_POWER,
 	FIND_STRUCTURES, FIND_RUINS,
@@ -8,6 +9,7 @@ import {
 } from '../../src/index.js';
 import { npcOwnershipCases } from '../../src/matrices/npc-ownership.js';
 import type { ControllerSnapshot } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 describe('Keeper lair', () => {
 	test('KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns', async ({ shard }) => {
@@ -33,47 +35,53 @@ describe('Keeper lair', () => {
 		expect(readings).toEqual([2, 1, null]);
 	});
 
-	test('KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+	test('KEEPER-LAIR-002:keeperMissing a keeper lair with no keeper starts an ENERGY_REGEN_TIME spawn timer', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const lairId = await shard.placeObject('W1N1', 'keeperLair', { pos: [25, 25] });
 
-		// Place a keeper lair without a keeper — it should start spawning.
-		const lairId = await shard.placeObject('W1N1', 'keeperLair', {
-			pos: [25, 25],
-		});
+		// The lair's first tick finds no keeper (keeper-lairs/tick.js:12-16).
 		await shard.tick();
-		await shard.tick();
-
-		const ttl = await shard.runPlayer('p1', code`
-			const lair = Game.getObjectById(${lairId});
-			lair ? lair.ticksToSpawn : null
-		`) as number | null;
-		// After a couple ticks, the lair should have a spawn timer.
-		expect(ttl).not.toBeNull();
+		expect(await shard.runPlayer('p1', code`Game.getObjectById(${lairId}).ticksToSpawn`)).toBe(ENERGY_REGEN_TIME - 1);
 	});
 
-	test('KEEPER-LAIR-003 keeper lair spawns a source keeper when timer completes', async ({ shard }) => {
+	test('KEEPER-LAIR-002:keeperDamaged a keeper lair whose keeper is below full hits starts a new spawn timer', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
+		const lairId = await shard.placeObject('W1N1', 'keeperLair', { pos: [25, 25], ticksToSpawn: 1 });
+		await shard.tick();
+		const keeper = (await shard.findInRoom('W1N1', FIND_CREEPS))[0];
+		expect(keeper.pos).toMatchObject({ x: 25, y: 25 });
 
-		// Place keeper lair with a very short spawn time.
-		await shard.placeObject('W1N1', 'keeperLair', {
-			pos: [25, 25],
-			ticksToSpawn: 2, // Spawn in 2 ticks
+		// One ranged hit from out of melee reach leaves it below full hits.
+		const archerId = await shard.placeCreep('W1N1', { pos: [25, 28], owner: 'p1', body: [...body(20, TOUGH), RANGED_ATTACK, MOVE] });
+		const readings = [await shard.runPlayer('p1', code`[
+			Game.getObjectById(${lairId}).ticksToSpawn ?? null,
+			Game.getObjectById(${archerId}).rangedAttack(Game.getObjectById(${keeper.id})),
+		]`)];
+		for (let i = 0; i < 2; i++) {
+			readings.push(await shard.runPlayer('p1', code`[Game.getObjectById(${lairId}).ticksToSpawn ?? null]`));
+		}
+		// The damage lands after the lair's tick, so the next tick's lair starts the timer.
+		expect(readings).toEqual([[null, OK], [null], [ENERGY_REGEN_TIME - 1]]);
+	});
+
+	test('KEEPER-LAIR-003 keeper lair spawns a source keeper on its tile the tick the timer completes', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
 		});
-		await shard.tick();
-		await shard.tick();
+		const lairId = await shard.placeObject('W1N1', 'keeperLair', { pos: [25, 25], ticksToSpawn: 2 });
 		await shard.tick();
 
-		// Exactly one source keeper, on the lair's own tile.
-		const result = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS).map(c => ({ x: c.pos.x, y: c.pos.y }))
-		`) as { x: number; y: number }[];
-		expect(result).toEqual([{ x: 25, y: 25 }]);
+		const keeperOwner = npcOwnershipCases.find(row => row.structureType === STRUCTURE_KEEPER_LAIR)!.expectedUsername;
+		const read = code`[
+			Game.getObjectById(${lairId}).ticksToSpawn ?? null,
+			Game.rooms.W1N1.find(FIND_HOSTILE_CREEPS).map(c => [c.pos.x, c.pos.y, c.owner.username]),
+		]`;
+		expect([await shard.runPlayer('p1', read), await shard.runPlayer('p1', read)])
+			.toEqual([[1, []], [null, [[25, 25, keeperOwner]]]]);
 	});
 });
 
@@ -102,9 +110,8 @@ describe('Invader core', () => {
 			core ? core.ticksToDeploy : null
 		`) as number | null;
 
-		if (ttd1 !== null && ttd2 !== null && ttd1 > 0) {
-			expect(ttd2).toBe(ttd1 - 1);
-		}
+		// Seeded 20 at placement; one tick has elapsed at the first read.
+		expect([ttd1, ttd2]).toEqual([19, 18]);
 	});
 
 	test('INVADER-CORE-002 invader core exposes its level', async ({ shard }) => {
@@ -141,94 +148,67 @@ describe('Invader core', () => {
 		});
 		await shard.tick();
 
-		// Incubation exposes the public spawning state on the core.
-		const pendingName = await shard.runPlayer('p1', code`
-			const core = Game.getObjectById(${coreId});
-			core && core.spawning ? core.spawning.name : null
-		`);
-		expect(pendingName).toBe('defender1');
-
-		// Each runPlayer call advances a tick; poll until the defender is born.
-		let born: { x: number; y: number; coreSpawning: boolean } | null = null;
-		for (let i = 0; i < 10 && !born; i++) {
-			born = await shard.runPlayer('p1', code`
+		// Each read shows the tick before it runs: the core's spawning name, and the
+		// defender once it is born beside the core.
+		const readings = [];
+		for (let i = 0; i < 6; i++) {
+			readings.push(await shard.runPlayer('p1', code`
 				const core = Game.getObjectById(${coreId});
-				const creep = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)
-					.find(c => c.name === 'defender1' && !c.spawning);
-				creep
-					? { x: creep.pos.x, y: creep.pos.y, coreSpawning: !!(core && core.spawning) }
-					: null
-			`) as { x: number; y: number; coreSpawning: boolean } | null;
+				const creep = Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS).find(c => c.name === 'defender1' && !c.spawning);
+				[core.spawning ? core.spawning.name : null, creep ? Math.max(Math.abs(creep.pos.x - 25), Math.abs(creep.pos.y - 25)) : null]
+			`));
 		}
-		expect(born).not.toBeNull();
-		// The defender is born on a tile adjacent to the core, and the core's
-		// spawning state clears in the same tick.
-		const range = Math.max(Math.abs(born!.x - 25), Math.abs(born!.y - 25));
-		expect(range).toBe(1);
-		expect(born!.coreSpawning).toBe(false);
+		// Seeded 6 ticks out; born on the tick spawnTime - 1 (invader-core/tick.js:28-38).
+		expect(readings).toEqual([...Array(5).fill(['defender1', null]), [null, 1]]);
 	});
 
-	test('INVADER-CORE-004 invader core collapse timer clears the room controller', async ({ shard }) => {
+	// Per tick after a core seeded to collapse in `ticksToCollapse`: whether the
+	// core stands, and the controller's owner, level, safe mode and power.
+	async function collapseSeries(shard: ShardFixture, coreId: string, ticks: number) {
+		const series = [];
+		for (let i = 0; i < ticks; i++) {
+			await shard.tick();
+			const controller = (await shard.findInRoom('W1N1', FIND_STRUCTURES))
+				.find((s): s is ControllerSnapshot => s.structureType === STRUCTURE_CONTROLLER)!;
+			series.push({
+				core: await shard.getObject(coreId) !== null,
+				owner: controller.owner ?? null,
+				level: controller.level,
+				safeMode: controller.safeMode,
+				isPowerEnabled: controller.isPowerEnabled,
+			});
+		}
+		return series;
+	}
+	const ticksToCollapse = 6;
+
+	test('INVADER-CORE-004 invader core collapse timer clears the room controller the tick it expires', async ({ shard }) => {
 		shard.requires('invaderCore');
 		await shard.createShard({
 			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', safeMode: SAFE_MODE_DURATION, powerEnabled: true }],
 		});
+		const coreId = await shard.placeObject('W1N1', 'invaderCore', { pos: [25, 25], level: 0, ticksToCollapse });
 
-		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
-			pos: [25, 25],
-			level: 0,
-			ticksToCollapse: 6,
-		});
-		await shard.tick();
-
-		// The pending collapse is exposed as EFFECT_COLLAPSE_TIMER.
-		const pending = await shard.runPlayer('p1', code`
-			const core = Game.getObjectById(${coreId});
-			const collapse = ((core && core.effects) || [])
-				.find(e => e.effect === ${EFFECT_COLLAPSE_TIMER});
-			collapse ? collapse.ticksRemaining : null
-		`) as number | null;
-		expect(pending).not.toBeNull();
-		expect(pending!).toBeGreaterThan(0);
-
-		// Run past collapse expiry, then inspect via snapshots — the player
-		// loses room visibility once its controller is cleared.
-		for (let i = 0; i < 8; i++) await shard.tick();
-
-		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-		const controller = structures.find(
-			(s): s is ControllerSnapshot => s.structureType === STRUCTURE_CONTROLLER,
-		);
-		expect(controller).toBeDefined();
-		expect(controller!.owner ?? null).toBeNull();
-		expect(controller!.level).toBe(0);
-		expect(controller!.progress).toBeNull();
-		expect(controller!.isPowerEnabled).toBe(false);
-		expect(controller!.safeMode).toBeNull();
+		const series = await collapseSeries(shard, coreId, ticksToCollapse + 1);
+		expect(series.map(({ owner, level, isPowerEnabled }) => [owner, level, isPowerEnabled])).toEqual([
+			...Array(ticksToCollapse).fill(['p1', 2, true]),
+			[null, 0, false],
+		]);
+		expect(series.map(row => row.safeMode)).toEqual([
+			...Array.from({ length: ticksToCollapse }, (_, i) => SAFE_MODE_DURATION - 1 - i),
+			null,
+		]);
 	});
 
 	test('INVADER-CORE-005 expired collapse timer removes the invader core without a ruin', async ({ shard }) => {
 		shard.requires('invaderCore');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
+		await shard.ownedRoom('p1');
+		const coreId = await shard.placeObject('W1N1', 'invaderCore', { pos: [30, 30], level: 0, ticksToCollapse });
 
-		const coreId = await shard.placeObject('W1N1', 'invaderCore', {
-			pos: [30, 30],
-			level: 0,
-			ticksToCollapse: 6,
-		});
-		await shard.tick();
-		expect(await shard.getObject(coreId)).not.toBeNull();
-
-		for (let i = 0; i < 8; i++) await shard.tick();
-
-		// Collapse removal is silent: no core, no ruin left behind.
-		expect(await shard.getObject(coreId)).toBeNull();
-		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
-		expect(ruins.filter(r => r.pos.x === 30 && r.pos.y === 30)).toHaveLength(0);
+		const series = await collapseSeries(shard, coreId, ticksToCollapse + 1);
+		expect(series.map(row => row.core)).toEqual([...Array(ticksToCollapse).fill(true), false]);
+		expect(await shard.findInRoom('W1N1', FIND_RUINS)).toEqual([]);
 	});
 
 	test('INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power', async ({ shard }) => {

@@ -39,11 +39,8 @@ describe('Power bank', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		await shard.tick();
-
 		const attacker = await shard.expectObject(attackerId, 'creep');
-		const expectedReflect = ATTACK_POWER * POWER_BANK_HIT_BACK;
-		expect(attacker.hits).toBe(initialHp - expectedReflect);
+		expect(attacker.hits).toBe(initialHp - ATTACK_POWER * POWER_BANK_HIT_BACK);
 	});
 
 	// ---- POWER-BANK-002: ticksToDecay counts down to removal ----

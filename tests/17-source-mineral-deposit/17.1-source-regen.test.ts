@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
-	SOURCE_ENERGY_CAPACITY, SOURCE_ENERGY_NEUTRAL_CAPACITY,
-	OK, CLAIM, MOVE, FIND_STRUCTURES, body,
+	SOURCE_ENERGY_CAPACITY, SOURCE_ENERGY_NEUTRAL_CAPACITY, ENERGY_REGEN_TIME, HARVEST_POWER,
+	OK, CLAIM, MOVE, WORK, CARRY, FIND_STRUCTURES, body,
 } from '../../src/index.js';
 import { sourceRegenCases } from '../../src/matrices/source-regen.js';
 
@@ -10,19 +10,15 @@ describe('source regeneration', () => {
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],
 			energy: 0,
-			energyCapacity: 3000,
-			ticksToRegeneration: 300,
+			energyCapacity: SOURCE_ENERGY_CAPACITY,
+			ticksToRegeneration: ENERGY_REGEN_TIME,
 		});
 
-		// After 299 ticks, source should still be depleted
-		await shard.tick(299);
-		const before = await shard.expectObject(srcId, 'source');
-		expect(before.energy).toBe(0);
-
-		// On tick 300, source should regenerate
-		await shard.tick(1);
-		const after = await shard.expectObject(srcId, 'source');
-		expect(after.energy).toBe(3000);
+		// Depleted a tick before the timer runs out, full on the tick it does.
+		await shard.tick(ENERGY_REGEN_TIME - 1);
+		expect((await shard.expectObject(srcId, 'source')).energy).toBe(0);
+		await shard.tick();
+		expect((await shard.expectObject(srcId, 'source')).energy).toBe(SOURCE_ENERGY_CAPACITY);
 	}, 120000);
 
 	// Each state is reached the way a player reaches it, with the capacity read before and after.
@@ -40,6 +36,9 @@ describe('source regeneration', () => {
 			await shard.tick();
 			const capacity = async () => (await shard.expectObject(srcId, 'source')).energyCapacity;
 			if (roomState === 'keeper') {
+				// After a tick the capacity is the engine's: vanilla's source tick sets it
+				// from the room every tick (sources/tick.js:57-58), and xxscreeps places a
+				// source at its room-status hook's value.
 				expect(await capacity()).toBe(expectedCapacity);
 				return;
 			}
@@ -60,18 +59,23 @@ describe('source regeneration', () => {
 		});
 	}
 
-	test('SOURCE-REGEN-003 a source below full capacity exposes ticksToRegeneration', async ({ shard }) => {
+	test('SOURCE-REGEN-003 a source drained below full capacity exposes ticksToRegeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],
-			energy: 0,
-			energyCapacity: 3000,
-			ticksToRegeneration: 300,
+			energy: SOURCE_ENERGY_CAPACITY,
+			energyCapacity: SOURCE_ENERGY_CAPACITY,
 		});
+		const harvesterId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p1', body: [WORK, CARRY, MOVE] });
+		expect((await shard.expectObject(srcId, 'source')).ticksToRegeneration).toBeNull();
 
+		// The harvest's tick starts the timer (sources/tick.js:12-15).
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${harvesterId}).harvest(Game.getObjectById(${srcId}))
+		`);
+		expect(rc).toBe(OK);
 		const src = await shard.expectObject(srcId, 'source');
-		expect(src.energy).toBe(0);
-		expect(src.ticksToRegeneration).toBeGreaterThan(0);
+		expect([src.energy, src.ticksToRegeneration]).toEqual([SOURCE_ENERGY_CAPACITY - HARVEST_POWER, ENERGY_REGEN_TIME - 1]);
 	});
 
 	test('SOURCE-REGEN-004 ticksToRegeneration decreases by 1 each tick', async ({ shard }) => {
@@ -79,8 +83,8 @@ describe('source regeneration', () => {
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],
 			energy: 0,
-			energyCapacity: 3000,
-			ticksToRegeneration: 300,
+			energyCapacity: SOURCE_ENERGY_CAPACITY,
+			ticksToRegeneration: ENERGY_REGEN_TIME,
 		});
 		await shard.tick();
 
@@ -98,8 +102,8 @@ describe('source regeneration', () => {
 		await shard.ownedRoom('p1');
 		const srcId = await shard.placeSource('W1N1', {
 			pos: [25, 25],
-			energy: 3000,
-			energyCapacity: 3000,
+			energy: SOURCE_ENERGY_CAPACITY,
+			energyCapacity: SOURCE_ENERGY_CAPACITY,
 		});
 		await shard.tick();
 
@@ -110,7 +114,7 @@ describe('source regeneration', () => {
 		expect(isUndefined).toBe(true);
 	});
 
-	test('SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller', async ({ shard }) => {
+	test('SOURCE-REGEN-006 after a room is claimed, the next regeneration refills its source to the new capacity', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -118,44 +122,25 @@ describe('source regeneration', () => {
 				{ name: 'W2N1' },
 			],
 		});
-		// Place a source in the unowned room with neutral capacity.
+		// A drained neutral source, a few ticks from regenerating.
+		const ticksToRegeneration = 5;
 		const srcId = await shard.placeSource('W2N1', {
 			pos: [10, 10],
 			energy: 0,
 			energyCapacity: SOURCE_ENERGY_NEUTRAL_CAPACITY,
-			ticksToRegeneration: 3,
+			ticksToRegeneration,
 		});
-
-		// Place a CLAIM creep adjacent to the controller.
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		if (!ctrlPos) throw new Error('W2N1 has no controller');
+		const ctrlPos = (await shard.getControllerPos('W2N1'))!;
 		const claimerId = await shard.placeCreep('W2N1', {
 			pos: [ctrlPos.x + 1, ctrlPos.y], owner: 'p1',
 			body: [CLAIM, MOVE],
 		});
-		await shard.tick();
 
-		// Verify neutral capacity before claiming.
-		const beforeCap = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).energyCapacity
-		`) as number;
-		expect(beforeCap).toBe(SOURCE_ENERGY_NEUTRAL_CAPACITY);
-
-		// Claim the controller.
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${claimerId}).claimController(
-				Game.rooms['W2N1'].controller
-			)
+			Game.getObjectById(${claimerId}).claimController(Game.rooms['W2N1'].controller)
 		`);
 		expect(rc).toBe(OK);
-
-		// Source tick processor updates energyCapacity when the controller gains an owner.
-		// tick(2): claim resolves + source processor checks controller state.
-		await shard.tick(2);
-
-		const afterCap = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).energyCapacity
-		`) as number;
-		expect(afterCap).toBe(SOURCE_ENERGY_CAPACITY);
+		await shard.tick(ticksToRegeneration - 1);
+		expect((await shard.expectObject(srcId, 'source')).energy).toBe(SOURCE_ENERGY_CAPACITY);
 	});
 });

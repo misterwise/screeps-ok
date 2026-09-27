@@ -41,6 +41,7 @@ export const EXTENSION_ENERGY_CAPACITY: Record<number, number> = C.EXTENSION_ENE
 export const RAMPART_HITS_MAX: Record<number, number> = C.RAMPART_HITS_MAX;
 export const MINERAL_DENSITY: Record<number, number> = C.MINERAL_DENSITY;
 export const MINERAL_DENSITY_PROBABILITY: Record<number, number> = C.MINERAL_DENSITY_PROBABILITY;
+export const MINERAL_REGEN_TIME: number = C.MINERAL_REGEN_TIME;
 export const RUIN_DECAY_STRUCTURES: Record<string, number> = C.RUIN_DECAY_STRUCTURES;
 // Not in @screeps/common: @screeps/engine processor/intents/creeps/rangedMassAttack.js:32.
 export const RANGED_ATTACK_DISTANCE_RATE: Record<number, number> = { 0: 1, 1: 1, 2: 0.4, 3: 0.1 };

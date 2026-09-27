@@ -104,6 +104,30 @@
 			"why": "Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only.",
 			"tests": ["PORTAL-001:powerCreep"]
 		},
+		"invader-core-collapses-one-tick-early": {
+			"actual": "The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:180-197`) remove the core and release its room's controller once `optionalExpiryTime(#collapseTime)` reads 0 against processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so both land a tick before the timer expires.",
+			"expected": "Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh.",
+			"why": "Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Same processor clock convention as `controller-timer-anchors-one-tick-late`.",
+			"tests": ["INVADER-CORE-004", "INVADER-CORE-005"]
+		},
+		"event-log-kept-while-room-sleeps": {
+			"actual": "A room's event log is reset only when its processor runs (`engine/processor/room.ts:105-107`); a room that sleeps through a tick keeps exposing the previous processed tick's entries, so an attack's EVENT_ATTACK still reads two ticks later with nothing done in between.",
+			"expected": "Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events.",
+			"why": "Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick.",
+			"tests": ["ROOM-EVENTLOG-004"]
+		},
+		"mineral-harvest-event-logs-capped-amount": {
+			"actual": "The `harvest` intent processor (`mods/classic/harvestable/processor.ts:35-44`) logs the amount the target's harvest hook returns, which for a mineral is capped by the amount left.",
+			"expected": "Vanilla `processor/intents/creeps/harvest.js:88-110` logs `harvestAmount`, the WORK parts' harvest power, whatever the mineral had left.",
+			"why": "Found 2026-09-27 when ROOM-EVENTLOG-002 got its five sources as cases (Decision 19); the mineral case harvests a nearly empty mineral to tell the two apart.",
+			"tests": ["ROOM-EVENTLOG-002:mineralHarvest"]
+		},
+		"mineral-regen-timer-one-tick-long": {
+			"actual": "The mineral tick processor (`mods/classic/mineral/processor.ts:28-31`) starts a depleted mineral's timer at `Game.time + MINERAL_REGEN_TIME` with processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so `ticksToRegeneration` reads `MINERAL_REGEN_TIME` on the tick after and runs a tick long.",
+			"expected": "Vanilla `processor/intents/minerals/tick.js:10-13` sets `nextRegenerationTime = gameTime + MINERAL_REGEN_TIME` on the mineral's first depleted tick, so the next tick reads `MINERAL_REGEN_TIME - 1`.",
+			"why": "Found 2026-09-27 when MINERAL-REGEN-004 stopped reading a timer the adapter placed and let the engine start it. The source timer (SOURCE-REGEN-003) matches vanilla. Same processor clock convention as `controller-timer-anchors-one-tick-late`.",
+			"tests": ["MINERAL-REGEN-004"]
+		},
 		"tower-targets-creeps-and-destructible-only": {
 			"actual": "`StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller.",
 			"expected": "Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits.",

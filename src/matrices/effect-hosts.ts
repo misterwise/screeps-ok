@@ -10,6 +10,7 @@ import {
 	STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_TOWER,
 	type CapabilityName,
 } from '../index.js';
+import { structureCapability } from '../helpers/structure-capability.js';
 import { toLabelToken } from './validation-cases.js';
 
 type RoomPoint = readonly [number, number];
@@ -64,7 +65,6 @@ function powerEffectCase(
 		readonly expectedEffect?: number | null;
 		readonly expectedPower?: number;
 		readonly expectedLevel?: number;
-		readonly capability?: CapabilityName;
 	} = {},
 ): EffectHostCase {
 	const powerLevel = options.powerLevel ?? 1;
@@ -77,7 +77,7 @@ function powerEffectCase(
 		expectedPower: options.expectedPower ?? power,
 		expectedLevel: options.expectedLevel ?? powerLevel,
 		target,
-		capability: options.capability,
+		capability: target.kind === 'structure' ? structureCapability[target.structureType] : undefined,
 	};
 	if (options.expectedEffect !== null) {
 		return { ...result, expectedEffect: options.expectedEffect ?? power };
@@ -118,23 +118,23 @@ export const effectHostCases: readonly EffectHostCase[] = [
 	}),
 	powerEffectCase('PWR_OPERATE_OBSERVER', 'StructureObserver', PWR_OPERATE_OBSERVER, {
 		kind: 'structure', structureType: STRUCTURE_OBSERVER, pos: [25, 25],
-	}, { capability: 'observer' }),
+	}),
 	powerEffectCase('PWR_OPERATE_FACTORY', 'StructureFactory', PWR_OPERATE_FACTORY, {
 		kind: 'structure', structureType: STRUCTURE_FACTORY, pos: [25, 25],
 		extra: { store: { energy: 100 } },
-	}, { capability: 'factory' }),
+	}),
 	powerEffectCase('PWR_OPERATE_TERMINAL', 'StructureTerminal', PWR_OPERATE_TERMINAL, {
 		kind: 'structure', structureType: STRUCTURE_TERMINAL, pos: [25, 25],
 		extra: { store: { energy: 1000 } },
-	}, { capability: 'market' }),
+	}),
 	powerEffectCase('PWR_DISRUPT_TERMINAL', 'StructureTerminal', PWR_DISRUPT_TERMINAL, {
 		kind: 'structure', structureType: STRUCTURE_TERMINAL, pos: [25, 25],
 		extra: { store: { energy: 1000 } },
-	}, { capability: 'market' }),
+	}),
 	powerEffectCase('PWR_OPERATE_LAB', 'StructureLab', PWR_OPERATE_LAB, {
 		kind: 'structure', structureType: STRUCTURE_LAB, pos: [25, 25],
 		extra: { store: { energy: 100 } },
-	}, { capability: 'chemistry' }),
+	}),
 	powerEffectCase('PWR_OPERATE_POWER', 'StructurePowerSpawn', PWR_OPERATE_POWER, {
 		kind: 'structure', structureType: STRUCTURE_POWER_SPAWN, pos: [25, 25],
 		extra: { store: { energy: 1000, power: 100 } },

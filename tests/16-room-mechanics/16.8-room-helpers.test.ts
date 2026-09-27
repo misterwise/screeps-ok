@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, FIND_EXIT_LEFT } from '../../src/index.js';
 
 // Two documented Room methods that are easy to leave out because nothing else
 // depends on them internally.
@@ -30,17 +30,11 @@ describe('Room helpers: getPositionAt and findExitTo', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1' }],
 		});
-		await shard.tick();
 
+		// W2N1 lies west: FIND_EXIT_LEFT, the value describeExits keys it under.
 		const result = await shard.runPlayer('p1', code`
-			(function () {
-				const exits = Game.map.describeExits('W1N1');
-				let expected = null;
-				for (const dir in exits) { if (exits[dir] === 'W2N1') expected = Number(dir); }
-				return [Game.rooms['W1N1'].findExitTo('W2N1'), expected];
-			})()
-		`) as [number, number];
-
-		expect(result[0]).toBe(result[1]);
+			[Game.rooms['W1N1'].findExitTo('W2N1'), Game.map.describeExits('W1N1')[${FIND_EXIT_LEFT}]]
+		`);
+		expect(result).toEqual([FIND_EXIT_LEFT, 'W2N1']);
 	});
 });

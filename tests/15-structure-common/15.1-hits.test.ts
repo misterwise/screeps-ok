@@ -1,43 +1,45 @@
 import { describe, test, expect, code,
 	OK,
-	MOVE, ATTACK,
-	STRUCTURE_TERMINAL, STRUCTURE_FACTORY, STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN,
-	STRUCTURE_OBSERVER, STRUCTURE_RAMPART, STRUCTURE_EXTENSION,
-	FIND_RUINS, FIND_DROPPED_RESOURCES, RESOURCE_ENERGY,
-	ATTACK_POWER,
+	MOVE, ATTACK, WORK, CARRY,
+	STRUCTURE_RAMPART, STRUCTURE_EXTENSION, STRUCTURE_EXTRACTOR, STRUCTURE_SPAWN,
+	FIND_STRUCTURES, RESOURCE_HYDROGEN,
+	ATTACK_POWER, CARRY_CAPACITY, CONSTRUCTION_COST, CONTROLLER_STRUCTURES,
 } from '../../src/index.js';
 import { structureHitsCases } from '../../src/matrices/structure-hits.js';
 
-// Minimum RCL to place each structure type.
-const minRcl: Record<string, number> = {
-	spawn: 1, extension: 2, road: 1, constructedWall: 2, rampart: 2,
-	link: 5, storage: 4, tower: 3, observer: 8, powerSpawn: 8,
-	extractor: 6, lab: 6, terminal: 6, container: 1, nuker: 8, factory: 7,
-};
-
-// Capability required to place each structure type.
-const requiredCap: Record<string, string | undefined> = {
-	terminal: 'terminal',
-	factory: 'factory',
-	nuker: 'nuke',
-	powerSpawn: 'powerSpawn',
-	observer: 'observer',
-};
+// The lowest controller level that allows a structure type (at least 1).
+function minRcl(structureType: string): number {
+	const level = Object.entries(CONTROLLER_STRUCTURES[structureType])
+		.find(([, count]) => count > 0)![0];
+	return Math.max(1, Number(level));
+}
 
 describe('Structure hits', () => {
-	for (const { structureType, expectedHits } of structureHitsCases) {
-		test(`STRUCTURE-HITS-001:${structureType} initializes with ${expectedHits} hits`, async ({ shard }) => {
-			const cap = requiredCap[structureType];
-			if (cap) shard.requires(cap as any);
-
-			const rcl = minRcl[structureType] ?? 1;
-			await shard.ownedRoom('p1', 'W1N1', rcl);
-			const id = await shard.placeStructure('W1N1', {
-				pos: [25, 25], structureType, owner: 'p1',
+	for (const { structureType, expectedHits, capability } of structureHitsCases) {
+		test(`STRUCTURE-HITS-001:${structureType} a built ${structureType} starts with ${expectedHits} hits`, async ({ shard }) => {
+			if (capability) shard.requires(capability);
+			await shard.ownedRoom('p1', 'W1N1', minRcl(structureType));
+			// An extractor is built on a mineral.
+			if (structureType === STRUCTURE_EXTRACTOR) {
+				await shard.placeMineral('W1N1', { pos: [25, 25], mineralType: RESOURCE_HYDROGEN });
+			}
+			// One build point short, so a single build completes it.
+			const siteId = await shard.placeSite('W1N1', {
+				pos: [25, 25], owner: 'p1', structureType,
+				progress: CONSTRUCTION_COST[structureType] - 1,
+				...(structureType === STRUCTURE_SPAWN ? { name: 'Built' } : {}),
+			});
+			const builderId = await shard.placeCreep('W1N1', {
+				pos: [25, 26], owner: 'p1', body: [WORK, CARRY, MOVE], store: { energy: CARRY_CAPACITY },
 			});
 
-			const struct = await shard.expectObject(id, 'structure');
-			expect(struct.hits).toBe(expectedHits);
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${builderId}).build(Game.getObjectById(${siteId}))
+			`);
+			expect(rc).toBe(OK);
+			const built = (await shard.findInRoom('W1N1', FIND_STRUCTURES))
+				.filter(s => s.structureType === structureType && s.pos.x === 25 && s.pos.y === 25);
+			expect(built.map(s => s.hits)).toEqual([expectedHits]);
 		});
 	}
 
@@ -72,65 +74,11 @@ describe('Structure hits', () => {
 			pos: [25, 25], owner: 'p2',
 			body: [ATTACK, MOVE],
 		});
-		await shard.tick();
 
-		await shard.runPlayer('p2', code`
+		const rc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId}))
 		`);
-		await shard.tick();
-
-		const obj = await shard.getObject(rampartId);
-		expect(obj).toBeNull();
-	});
-
-	test('RUIN-004 destroying a structure creates a ruin containing remaining store', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const extId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			store: { energy: 50 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${extId}).destroy()
-		`);
 		expect(rc).toBe(OK);
-
-		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
-		const ruin = ruins.find(r => r.pos.x === 25 && r.pos.y === 25);
-		expect(ruin).toBeDefined();
-		expect(ruin!.store.energy).toBe(50);
-	});
-
-	test('RUIN-005 on decay, ruin is removed and its store spills as a dropped pile at full amount', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const ruinId = await shard.placeRuin('W1N1', {
-			pos: [25, 25],
-			structureType: STRUCTURE_EXTENSION,
-			ticksToDecay: 5,
-			store: { energy: 50 },
-		});
-
-		// Before: ruin present with its 50-energy store; tile has no drop.
-		const before = await shard.expectObject(ruinId, 'ruin');
-		expect(before.store.energy).toBe(50);
-		const beforeDrops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		expect(beforeDrops.find(d => d.pos.x === 25 && d.pos.y === 25)).toBeUndefined();
-
-		// Advance past the decay timer.
-		await shard.tick(5);
-
-		// After: ruin gone; tile has an energy pile equal to the original store.
-		// (Spill happens via ruins/tick.js → _create-energy on the decay tick;
-		// energy/tick.js does not process the freshly-inserted pile that tick.)
-		const after = await shard.getObject(ruinId);
-		expect(after).toBeNull();
-
-		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const pile = drops.find(d =>
-			d.resourceType === RESOURCE_ENERGY && d.pos.x === 25 && d.pos.y === 25,
-		);
-		expect(pile).toBeDefined();
-		expect(pile!.amount).toBe(50);
+		expect(await shard.getObject(rampartId)).toBeNull();
 	});
 });

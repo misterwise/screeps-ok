@@ -1,83 +1,14 @@
 import {
 	describe, test, expect,
 	FIND_CREEPS, INVADERS_ENERGY_GOAL,
-	MOVE, TERRAIN_PLAIN, TERRAIN_WALL,
+	MOVE,
 } from '../../src/index.js';
-import type {
-	CreepSnapshot, InvaderRaidRoomStateSpec, RoomSpec, TerrainSpec,
-} from '../../src/index.js';
+import type { CreepSnapshot } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
+import { CORE_ROOM, INVADER_OWNER, ONE_CREEP_RAID_RANDOM, ROOM, setupRaidRoom } from '../invader-raid-helpers.js';
 import {
 	invaderRaidCompositionCases, invaderRaidExpectedBody,
 } from '../../src/matrices/invader-raid-composition.js';
-
-const ROOM = 'W1N1';
-const CORE_ROOM = 'W1N2';
-const INVADER_OWNER = 'sk';
-const ONE_CREEP_RAID_RANDOM = [0, 0.1, 0, 0, 0.001, 0.5, 0.5] as const;
-
-interface RaidSetupOptions {
-	readonly roomName?: string;
-	readonly coreRoom?: string;
-	readonly coreLevel?: number | null;
-	readonly exitTiles?: ReadonlyArray<readonly [number, number]>;
-	readonly owner?: string;
-	readonly rcl?: number;
-	readonly players?: readonly string[];
-	readonly extraRooms?: readonly RoomSpec[];
-	readonly source?: boolean;
-	readonly state?: InvaderRaidRoomStateSpec;
-}
-
-function edgeTerrain(openTiles: ReadonlyArray<readonly [number, number]>): TerrainSpec {
-	const terrain = new Array(2500).fill(TERRAIN_PLAIN) as TerrainSpec;
-	for (let i = 0; i < 50; i++) {
-		terrain[i] = TERRAIN_WALL;
-		terrain[49 * 50 + i] = TERRAIN_WALL;
-		terrain[i * 50] = TERRAIN_WALL;
-		terrain[i * 50 + 49] = TERRAIN_WALL;
-	}
-	for (const [x, y] of openTiles) {
-		terrain[y * 50 + x] = TERRAIN_PLAIN;
-	}
-	return terrain;
-}
-
-async function setupRaidRoom(shard: ShardFixture, options: RaidSetupOptions = {}): Promise<void> {
-	const roomName = options.roomName ?? ROOM;
-	const coreRoom = options.coreRoom ?? CORE_ROOM;
-	const rooms = new Map<string, RoomSpec>();
-	rooms.set(roomName, {
-		name: roomName,
-		terrain: edgeTerrain(options.exitTiles ?? [[25, 0]]),
-		...(options.owner ? { owner: options.owner, rcl: options.rcl ?? 1 } : {}),
-	});
-	if (options.coreLevel !== null) {
-		rooms.set(coreRoom, { name: coreRoom });
-	}
-	for (const extraRoom of options.extraRooms ?? []) {
-		rooms.set(extraRoom.name, extraRoom);
-	}
-
-	await shard.createShard({
-		players: [...(options.players ?? ['p1', 'p2'])],
-		rooms: [...rooms.values()],
-	});
-
-	if (options.source ?? true) {
-		await shard.placeSource(roomName, { pos: [25, 25], energy: 3000, energyCapacity: 3000 });
-	}
-	if (options.coreLevel !== null) {
-		await shard.placeObject(coreRoom, 'invaderCore', {
-			pos: [25, 25],
-			level: options.coreLevel ?? 1,
-		});
-	}
-	await shard.setInvaderRaidState(roomName, {
-		active: false,
-		...options.state,
-	});
-}
 
 async function runRaidSpawner(
 	shard: ShardFixture,
@@ -270,6 +201,19 @@ describe('Invader raid spawning', () => {
 		expect(await invaderCreeps(shard)).toHaveLength(0);
 	});
 
+	test('INVADER-RAID-007 an adjacent room with no controller leaves that exit qualifying', async ({ shard }) => {
+		shard.requires('invaderRaidSpawner');
+		// The only exit leads into the core's room, which has no controller.
+		await setupRaidRoom(shard, {
+			extraRooms: [{ name: CORE_ROOM, controller: false }],
+			state: { raidGoal: 1 },
+		});
+
+		await runRaidSpawner(shard);
+
+		expect(await invaderCreeps(shard)).toHaveLength(1);
+	});
+
 	test('INVADER-RAID-008 one qualifying one-tile exit places the raid exactly on that edge tile', async ({ shard }) => {
 		shard.requires('invaderRaidSpawner');
 		await setupRaidRoom(shard, {
@@ -309,7 +253,7 @@ describe('Invader raid spawning', () => {
 		});
 	}
 
-	test('INVADER-RAID-010 successful raid resets harvested budget for the next spawner pass', async ({ shard }) => {
+	test('INVADER-RAID-010 successful raid resets the harvested budget and sets a new threshold', async ({ shard }) => {
 		shard.requires('invaderRaidSpawner');
 		await setupRaidRoom(shard, {
 			state: {
@@ -317,14 +261,20 @@ describe('Invader raid spawning', () => {
 				harvestedEnergy: INVADERS_ENERGY_GOAL,
 			},
 		});
-
-		await runRaidSpawner(shard);
+		// The raid's last two draws set the next threshold (cronjobs.js:433-437):
+		// 0 makes it floor(INVADERS_ENERGY_GOAL × 0.7), and 0.5 leaves it unscaled.
+		const nextGoal = Math.floor(INVADERS_ENERGY_GOAL * 0.7);
+		await runRaidSpawner(shard, [...ONE_CREEP_RAID_RANDOM.slice(0, -2), 0, 0.5]);
 		expect(await invaderCreeps(shard)).toHaveLength(1);
 
-		await shard.clearInvaderRaidCreeps(ROOM);
-		await shard.setInvaderRaidState(ROOM, { active: false });
-		await runRaidSpawner(shard);
-
-		expect(await invaderCreeps(shard)).toHaveLength(0);
+		const counts = [];
+		for (const harvestedEnergy of [undefined, nextGoal - 1, nextGoal]) {
+			await shard.clearInvaderRaidCreeps(ROOM);
+			await shard.setInvaderRaidState(ROOM, { active: false, ...(harvestedEnergy === undefined ? {} : { harvestedEnergy }) });
+			await runRaidSpawner(shard);
+			counts.push((await invaderCreeps(shard)).length);
+		}
+		// The budget restarted at 0, and the new threshold is the one that counts.
+		expect(counts).toEqual([0, 0, 1]);
 	});
 });

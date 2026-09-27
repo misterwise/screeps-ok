@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA,
-	MINERAL_DENSITY,
+	MINERAL_DENSITY, MINERAL_REGEN_TIME, RESOURCE_HYDROGEN, RESOURCE_LEMERGIUM,
 } from '../../src/index.js';
 import { mineralRegenCases } from '../../src/matrices/mineral-regen.js';
 
@@ -8,7 +8,7 @@ describe('mineral regeneration', () => {
 	test('MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as undefined', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 25], mineralType: RESOURCE_HYDROGEN, mineralAmount: MINERAL_DENSITY[DENSITY_HIGH],
 		});
 		await shard.tick();
 
@@ -17,79 +17,64 @@ describe('mineral regeneration', () => {
 			const m = Game.getObjectById(${id});
 			({ amount: m.mineralAmount, hasTimer: m.ticksToRegeneration !== undefined })
 		`);
-		expect(result).toEqual({ amount: 50000, hasTimer: false });
+		expect(result).toEqual({ amount: MINERAL_DENSITY[DENSITY_HIGH], hasTimer: false });
 	});
 
 	test('MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		// No timer placed: the mineral's first tick starts one (minerals/tick.js:10-13).
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'H', mineralAmount: 0,
-			ticksToRegeneration: 10,
+			pos: [25, 25], mineralType: RESOURCE_HYDROGEN, mineralAmount: 0,
 		});
 
-		// After placing, observe the initial ticksToRegeneration.
-		const before = await shard.expectObject(id, 'mineral');
-		const t0 = before.ticksToRegeneration;
-		expect(t0).toBeGreaterThan(0);
-
-		// Tick 3 times and verify it decreased by 3.
-		await shard.tick(3);
-		const after = await shard.expectObject(id, 'mineral');
-		expect(after.ticksToRegeneration).toBe(t0! - 3);
+		const readings = [];
+		for (let i = 0; i < 3; i++) {
+			await shard.tick();
+			readings.push((await shard.expectObject(id, 'mineral')).ticksToRegeneration);
+		}
+		expect(readings).toEqual([MINERAL_REGEN_TIME - 1, MINERAL_REGEN_TIME - 2, MINERAL_REGEN_TIME - 3]);
 	});
 
 	test('MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// Place a depleted mineral that regenerates in 3 ticks.
+		// Placed three ticks from regenerating, at the default DENSITY_HIGH.
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'H', mineralAmount: 0,
+			pos: [25, 25], mineralType: RESOURCE_HYDROGEN, mineralAmount: 0,
 			ticksToRegeneration: 3,
 		});
 
-		const before = await shard.expectObject(id, 'mineral');
-		expect(before.mineralAmount).toBe(0);
-
-		// Tick past the regeneration time.
-		// Engine regenerates at gameTime >= nextRegenerationTime - 1.
-		await shard.tick(5);
-
-		const after = await shard.expectObject(id, 'mineral');
-		// Default density is DENSITY_HIGH → MINERAL_DENSITY[3] = 70000.
-		expect(after.mineralAmount).toBe(MINERAL_DENSITY[DENSITY_HIGH]);
-		// Regeneration clears the timer; the getter reads undefined until the next depletion.
-		expect(after.ticksToRegeneration).toBeNull();
+		const readings = [];
+		for (let i = 0; i < 3; i++) {
+			await shard.tick();
+			const mineral = await shard.expectObject(id, 'mineral');
+			readings.push([mineral.mineralAmount, mineral.ticksToRegeneration]);
+		}
+		// Refilled on the tick the timer runs out, which clears it.
+		expect(readings).toEqual([[0, 2], [0, 1], [MINERAL_DENSITY[DENSITY_HIGH], null]]);
 	});
 
 	test('MINERAL-REGEN-005 mineral type remains the same after regeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'L', mineralAmount: 0,
+			pos: [25, 25], mineralType: RESOURCE_LEMERGIUM, mineralAmount: 0,
 			ticksToRegeneration: 3,
 		});
 
-		await shard.tick(5);
+		await shard.tick(3);
 
 		const mineral = await shard.expectObject(id, 'mineral');
-		expect(mineral.mineralType).toBe('L');
-		expect(mineral.mineralAmount).toBeGreaterThan(0);
+		expect([mineral.mineralType, mineral.mineralAmount]).toEqual([RESOURCE_LEMERGIUM, MINERAL_DENSITY[DENSITY_HIGH]]);
 	});
 
 	test('MINERAL-REGEN-006 mineral.density exposes the placed density level', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// Place one mineral per density level at distinct positions.
-		const placements = [
-			{ density: DENSITY_LOW, pos: [25, 20] as [number, number] },
-			{ density: DENSITY_MODERATE, pos: [25, 22] as [number, number] },
-			{ density: DENSITY_HIGH, pos: [25, 24] as [number, number] },
-			{ density: DENSITY_ULTRA, pos: [25, 26] as [number, number] },
-		];
-		for (const { density, pos } of placements) {
-			const id = await shard.placeMineral('W1N1', {
-				pos, mineralType: 'H', density,
-			});
-			const mineral = await shard.expectObject(id, 'mineral');
-			expect(mineral.density).toBe(density);
+		const densities = [DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA];
+		const ids = [];
+		for (const [i, density] of densities.entries()) {
+			ids.push(await shard.placeMineral('W1N1', { pos: [25, 20 + 2 * i], mineralType: RESOURCE_HYDROGEN, density }));
 		}
+
+		expect(await shard.runPlayer('p1', code`${ids}.map(id => Game.getObjectById(id).density)`)).toEqual(densities);
 	});
 
 	// ---- Matrix: density-keyed refill amount (MINERAL-REGEN-001) ----
@@ -100,7 +85,7 @@ describe('mineral regeneration', () => {
 		test(`MINERAL-REGEN-001:${label} density=${density} regenerates to MINERAL_DENSITY[${density}]=${expectedAmount}`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
 			const id = await shard.placeMineral('W1N1', {
-				pos: [25, 25], mineralType: 'H', density,
+				pos: [25, 25], mineralType: RESOURCE_HYDROGEN, density,
 				mineralAmount: 0, ticksToRegeneration: 3,
 			});
 
@@ -122,7 +107,7 @@ describe('mineral regeneration', () => {
 	test('MINERAL-REGEN-007 DENSITY_LOW redensifies on regeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'H', density: DENSITY_LOW,
+			pos: [25, 25], mineralType: RESOURCE_HYDROGEN, density: DENSITY_LOW,
 			mineralAmount: 0, ticksToRegeneration: 3,
 		});
 
@@ -136,7 +121,7 @@ describe('mineral regeneration', () => {
 	test('MINERAL-REGEN-008 DENSITY_ULTRA redensifies on regeneration', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeMineral('W1N1', {
-			pos: [25, 25], mineralType: 'H', density: DENSITY_ULTRA,
+			pos: [25, 25], mineralType: RESOURCE_HYDROGEN, density: DENSITY_ULTRA,
 			mineralAmount: 0, ticksToRegeneration: 3,
 		});
 
@@ -162,7 +147,7 @@ describe('mineral regeneration', () => {
 			shard.requires('randomInjection');
 			await shard.ownedRoom('p1');
 			const id = await shard.placeMineral('W1N1', {
-				pos: [25, 25], mineralType: 'H', density,
+				pos: [25, 25], mineralType: RESOURCE_HYDROGEN, density,
 				mineralAmount: 0, ticksToRegeneration: 3,
 			});
 
@@ -176,7 +161,7 @@ describe('mineral regeneration', () => {
 			shard.requires('randomInjection');
 			await shard.ownedRoom('p1');
 			const id = await shard.placeMineral('W1N1', {
-				pos: [25, 25], mineralType: 'H', density,
+				pos: [25, 25], mineralType: RESOURCE_HYDROGEN, density,
 				mineralAmount: 0, ticksToRegeneration: 3,
 			});
 

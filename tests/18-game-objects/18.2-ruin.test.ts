@@ -4,7 +4,7 @@ import {
 	CARRY, MOVE, ATTACK,
 	RESOURCE_ENERGY,
 	RUIN_DECAY, RUIN_DECAY_STRUCTURES,
-	FIND_RUINS,
+	FIND_RUINS, FIND_DROPPED_RESOURCES, ATTACK_POWER,
 	STRUCTURE_CONTAINER, STRUCTURE_WALL,
 	body,
 	STRUCTURE_POWER_BANK,
@@ -107,47 +107,52 @@ describe('Ruin', () => {
 		expect(creep.store.energy).toBe(10);
 	});
 
-	test('RUIN-004 destroying a structure creates a ruin at its position in the same tick', async ({ shard }) => {
+	test('RUIN-004 a structure destroyed by an attack leaves a ruin with its store in the same tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
 		});
-		const wallId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_WALL, hits: 1,
+		const stored = 50;
+		// Two ATTACK parts take the container's last hits.
+		const containerId = await shard.placeStructure('W1N1', {
+			pos: [25, 25], structureType: STRUCTURE_CONTAINER, hits: 2 * ATTACK_POWER, store: { energy: stored },
 		});
 		const attackerId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			body: body(2, ATTACK, MOVE),
 		});
-		await shard.tick();
 
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${wallId}))
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${containerId}))
 		`);
-
+		expect(rc).toBe(OK);
+		expect(await shard.getObject(containerId)).toBeNull();
 		const ruins = await shard.findInRoom('W1N1', FIND_RUINS);
-		const ruin = ruins.find(r => r.pos.x === 25 && r.pos.y === 25);
-		expect(ruin).toBeDefined();
-		expect(ruin!.structureType).toBe(STRUCTURE_WALL);
+		expect(ruins.map(r => ({ pos: [r.pos.x, r.pos.y], structureType: r.structureType, store: r.store })))
+			.toEqual([{ pos: [25, 25], structureType: STRUCTURE_CONTAINER, store: { energy: stored } }]);
 	});
 
-	test('RUIN-005 ruin is removed when ticksToDecay reaches 0', async ({ shard }) => {
+	test('RUIN-005 a ruin is removed when ticksToDecay reaches 0, leaving its store on the tile', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		const stored = 50;
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],
 			structureType: STRUCTURE_CONTAINER,
 			ticksToDecay: 3,
+			store: { energy: stored },
 		});
 		await shard.tick();
 
-		// Removed during the tick that reads 1.
-		const readings: (number | null)[] = [];
-		for (let i = 0; i < 3; i++) {
-			readings.push(await shard.runPlayer('p1', code`
-				Game.getObjectById(${ruinId})?.ticksToDecay ?? null
-			`) as number | null);
+		const readings = [];
+		for (let i = 0; i < 2; i++) {
+			readings.push(await shard.runPlayer('p1', code`Game.getObjectById(${ruinId}).ticksToDecay`));
 		}
-		expect(readings).toEqual([2, 1, null]);
+		expect(readings).toEqual([2, 1]);
+		// Removed during the tick that read 1; the fresh pile has not decayed yet.
+		expect(await shard.getObject(ruinId)).toBeNull();
+		const piles = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(piles.map(p => ({ pos: [p.pos.x, p.pos.y], resourceType: p.resourceType, amount: p.amount })))
+			.toEqual([{ pos: [25, 25], resourceType: RESOURCE_ENERGY, amount: stored }]);
 	});
 
 	test('RUIN-006 ruin ticksToDecay strictly decreases each tick', async ({ shard }) => {

@@ -1,36 +1,30 @@
 import { describe, test, expect, code,
 	OK, CONSTRUCTION_COST, STRUCTURE_ROAD,
 	CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
-	FIND_CONSTRUCTION_SITES, TERRAIN_SWAMP, TERRAIN_WALL,
+	FIND_CONSTRUCTION_SITES, TERRAIN_SWAMP, TERRAIN_WALL, STRUCTURE_EXTRACTOR, RESOURCE_HYDROGEN,
 } from '../../src/index.js';
 import { constructionCostCases } from '../../src/matrices/construction-cost.js';
 
-// Capability required to place each structure type as a construction site.
-const siteCap: Record<string, string | undefined> = {
-	terminal: 'terminal',
-	factory: 'factory',
-	nuker: 'nuke',
-	powerSpawn: 'powerSpawn',
-};
-
 // ── CONSTRUCTION-COST-001: canonical cost table ─────────────
-// Matrix-backed: each buildable structure's CONSTRUCTION_COST entry is checked
-// against the canonical @screeps/common value (which the matrix sources from).
+// The player creates each site, so the engine sets its progressTotal
+// (create-construction-site.js:35-45).
 
 describe('Construction costs', () => {
-	for (const { structureType, expectedCost } of constructionCostCases) {
+	for (const { structureType, expectedCost, capability } of constructionCostCases) {
 		test(`CONSTRUCTION-COST-001:${structureType} costs ${expectedCost}`, async ({ shard }) => {
-			const cap = siteCap[structureType];
-			if (cap) shard.requires(cap as any);
-
+			if (capability) shard.requires(capability);
 			await shard.ownedRoom('p1', 'W1N1', 8);
-			const siteId = await shard.placeSite('W1N1', {
-				pos: [25, 25], owner: 'p1',
-				structureType,
-			});
+			// An extractor site needs a mineral under it.
+			if (structureType === STRUCTURE_EXTRACTOR) {
+				await shard.placeMineral('W1N1', { pos: [25, 25], mineralType: RESOURCE_HYDROGEN });
+			}
 
-			const site = await shard.expectObject(siteId, 'site');
-			expect(site.progressTotal).toBe(expectedCost);
+			const rc = await shard.runPlayer('p1', code`
+				Game.rooms.W1N1.createConstructionSite(25, 25, ${structureType})
+			`);
+			expect(rc).toBe(OK);
+			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
+			expect(sites.map(site => [site.structureType, site.progressTotal])).toEqual([[structureType, expectedCost]]);
 		});
 	}
 
@@ -63,7 +57,6 @@ describe('Construction costs', () => {
 				Game.rooms['W1N1'].createConstructionSite(${x}, ${y}, STRUCTURE_ROAD)
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
 			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
 			const site = sites.find(s => s.pos.x === x && s.pos.y === y);

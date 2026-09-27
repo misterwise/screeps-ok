@@ -862,16 +862,18 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `STRUCTURE-HITS-001`
 - `Canonical Source`
-  Canonical structure hit constants and official structure constructors.
+  Canonical structure hit constants and the build processor that creates each
+  structure (`processor/intents/creeps/build.js`).
 - `Dimensions`
   structure type
 - `Applicability`
-  Structures with fixed hit totals
+  Every buildable structure type, at the lowest level that allows it
 - `Exclusions`
   RCL-scaled `hitsMax`, roads by terrain, and structures with dynamic limits
 - `Verification Notes`
-  Variable-hit families stay with their local mechanics. The executable case
-  list lives in `src/matrices/structure-hits.ts`.
+  Each case builds a site placed one point short, so the engine, not the
+  adapter's placement, sets the hits. The executable case list lives in
+  `src/matrices/structure-hits.ts`.
 
 ### CONSTRUCTION-COST
 
@@ -887,8 +889,9 @@ checks both. Each definition has these fields, in this order:
   Terrain multipliers for roads (`ROAD-TERRAIN-RATIO`) and construction-site
   progress side behavior
 - `Verification Notes`
-  This family covers base construction cost only. The executable case list lives
-  in `src/matrices/construction-cost.ts`.
+  This family covers base construction cost only. Each case creates its site
+  through `createConstructionSite()`, so the engine sets `progressTotal`. The
+  executable case list lives in `src/matrices/construction-cost.ts`.
 
 ### CONSTRUCTION-SITE-OVER-RUIN
 
@@ -990,9 +993,10 @@ checks both. Each definition has these fields, in this order:
   deposit harvest, which the docs promise and vanilla doesn't log
   (`ROOM-EVENTLOG-028`); raw JSON form and current-tick exposure
 - `Verification Notes`
-  No case list enumerates the sources yet: the test
-  (`tests/16-room-mechanics/16.6-eventlog.test.ts`) checks the tower's
-  `EVENT_HEAL`, and `ROOM-EVENTLOG-001`'s test logs a creep melee attack.
+  `src/matrices/eventlog-sources.ts` lists the five sources, keyed
+  `:creepAttack`, `:towerAttack`, `:towerHeal`, `:towerRepair` and
+  `:mineralHarvest`; towers act at range 10, inside the falloff band, and the
+  mineral holds less than the harvest power.
 
 ### ROOM-EVENTLOG-NUKE
 
@@ -1925,9 +1929,11 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `Structure.destroy()` ownership of the room's controller (another
-  player's, or none) and room-busy state (hostile creeps or power creeps).
+  player's, nobody's, or none: `game/structures.js:76`) and room-busy state
+  (hostile creeps or power creeps).
 - `Exclusions`
-  Ruin creation outcome, owned by separate `RUIN-*` entries.
+  Ruin creation outcome, owned by separate `RUIN-*` entries. The three
+  controller conditions exclude each other.
 - `Verification Notes`
   `ConstructionSite.remove()` is single-branch (`ERR_NOT_OWNER`) and
   intentionally not part of this family. `:busyPowerCreep` needs
@@ -2579,8 +2585,8 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   `RoomPosition.createFlag()` is owned by `ROOMPOS-ACTION-002`. A placed and
   a same-tick flag can't share one name, and a name too long to create
-  can't have been created. Not yet listed: an invalid `secondaryColor`
-  (`ERR_INVALID_ARGS`, `game/rooms.js:1001-1003`).
+  can't have been created. An invalid `secondaryColor` is checked right after
+  `color` (`game/rooms.js:998-1003`).
 - `Verification Notes`
   The cap is reached by filling the tick's `Game.flags`, which vanilla
   counts (`game/rooms.js:984`). The executable case list lives in

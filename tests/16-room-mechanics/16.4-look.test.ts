@@ -24,10 +24,7 @@ describe('Room look API', () => {
 			const items = Game.rooms['W1N1'].lookAt(25, 25);
 			items.map(i => i.type).sort()
 		`);
-		const types = result as string[];
-		expect(types).toContain('terrain');
-		expect(types).toContain('structure');
-		expect(types).toContain('creep');
+		expect(result).toEqual(['creep', 'structure', 'terrain']);
 	});
 
 	test('ROOM-LOOK-002 lookForAt(LOOK_STRUCTURES) returns only structures at the tile', async ({ shard }) => {
@@ -91,9 +88,7 @@ describe('Room look API', () => {
 			const area = Game.rooms['W1N1'].lookForAtArea(LOOK_CREEPS, 5, 5, 15, 15, true);
 			area.map(entry => entry.creep.name)
 		`);
-		const names = result as string[];
-		expect(names).toContain('InArea');
-		expect(names).not.toContain('OutOfArea');
+		expect(result).toEqual(['InArea']);
 	});
 
 	test('ROOM-LOOK-006 lookForAt returns ERR_INVALID_ARGS for an unrecognized LOOK type', async ({ shard }) => {
@@ -297,7 +292,8 @@ describe('Room look API', () => {
 		expect(result.creepWrapName).toBe('AreaCreep');
 		expect(result.creepWrapKeys).toEqual(['creep', 'type']);
 		expect(result.terrainEntryType).toBe('terrain');
-		expect(['plain', 'swamp', 'wall']).toContain(result.terrainEntryTerrain);
+		// Default terrain: every interior tile is plain.
+		expect(result.terrainEntryTerrain).toBe('plain');
 		expect(result.terrainWrapKeys).toEqual(['terrain', 'type']);
 	});
 });

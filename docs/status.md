@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-53%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-58%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [3047](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 03:48 UTC |
-| 🔴 | **xxscreeps** | [2749](#xxscreeps-passing-tests) | [110](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
+| 🔴 | **xxscreeps** | [2745](#xxscreeps-passing-tests) | [110](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -33,6 +33,10 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy`
 - `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
 - `Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities`
+- `Invader core INVADER-CORE-004 invader core collapse timer clears the room controller`
+- `Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin`
+- `room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick`
+- `mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick`
 
 ## xxscreeps unexpected failures
 
@@ -63,6 +67,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeRcl`, which no test passed or failed
 - `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNotEnough`, which no test passed or failed
 - `portal-ignores-power-creeps` registers `PORTAL-001:powerCreep`, which no test passed or failed
+- `mineral-harvest-event-logs-capped-amount` registers `ROOM-EVENTLOG-002:mineralHarvest`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:powerCreep`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:structure`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:controller`, which no test passed or failed
@@ -85,7 +90,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeSiteCapFull`, which no test passed or failed
 - `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotOwnerCreep`, which no test passed or failed
 - `recycle-inactive-spawn-checked-before-target` registers `RECYCLE-CREEP-005:spawningTargetBeforeRcl`, which no test passed or failed
-- 4 registered test(s) now pass; see Regression traps triggered
+- 8 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -194,7 +199,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 56 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 53 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 60 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 57 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -217,6 +222,10 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28). | 0 |
 | `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28). | 0 |
 | `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | 0 |
+| `invader-core-collapses-one-tick-early` | The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:180-197`) remove the core and release its room's controller once `optionalExpiryTime(#collapseTime)` reads 0 against processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so both land a tick before the timer expires. | Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh. | Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Same processor clock convention as `controller-timer-anchors-one-tick-late`. | 0 |
+| `event-log-kept-while-room-sleeps` | A room's event log is reset only when its processor runs (`engine/processor/room.ts:105-107`); a room that sleeps through a tick keeps exposing the previous processed tick's entries, so an attack's EVENT_ATTACK still reads two ticks later with nothing done in between. | Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events. | Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick. | 0 |
+| `mineral-harvest-event-logs-capped-amount` | The `harvest` intent processor (`mods/classic/harvestable/processor.ts:35-44`) logs the amount the target's harvest hook returns, which for a mineral is capped by the amount left. | Vanilla `processor/intents/creeps/harvest.js:88-110` logs `harvestAmount`, the WORK parts' harvest power, whatever the mineral had left. | Found 2026-09-27 when ROOM-EVENTLOG-002 got its five sources as cases (Decision 19); the mineral case harvests a nearly empty mineral to tell the two apart. | 0 |
+| `mineral-regen-timer-one-tick-long` | The mineral tick processor (`mods/classic/mineral/processor.ts:28-31`) starts a depleted mineral's timer at `Game.time + MINERAL_REGEN_TIME` with processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so `ticksToRegeneration` reads `MINERAL_REGEN_TIME` on the tick after and runs a tick long. | Vanilla `processor/intents/minerals/tick.js:10-13` sets `nextRegenerationTime = gameTime + MINERAL_REGEN_TIME` on the mineral's first depleted tick, so the next tick reads `MINERAL_REGEN_TIME - 1`. | Found 2026-09-27 when MINERAL-REGEN-004 stopped reading a timer the adapter placed and let the engine start it. The source timer (SOURCE-REGEN-003) matches vanilla. Same processor clock convention as `controller-timer-anchors-one-tick-late`. | 0 |
 | `tower-targets-creeps-and-destructible-only` | `StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller. | Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits. | Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only. | 0 |
 | `attack-controller-safe-mode-checked-before-cooldown` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`. | Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`). | Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row). | 0 |
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | 0 |
@@ -386,6 +395,30 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-portal-ignores-power-creeps">
 <summary><code>portal-ignores-power-creeps</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-invader-core-collapses-one-tick-early">
+<summary><code>invader-core-collapses-one-tick-early</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-event-log-kept-while-room-sleeps">
+<summary><code>event-log-kept-while-room-sleeps</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-mineral-harvest-event-logs-capped-amount">
+<summary><code>mineral-harvest-event-logs-capped-amount</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-mineral-regen-timer-one-tick-long">
+<summary><code>mineral-regen-timer-one-tick-long</code> — 0 tests</summary>
 
 
 </details>
@@ -4630,7 +4663,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2749 tests across 144 files</summary>
+<summary>2745 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -7072,7 +7105,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-001 creep landing on a portal tile is transported next tick without a move intent
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (11)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (9)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns
 - Keeper lair KEEPER-LAIR-002 keeper lair starts a new spawn timer when keeper is missing
@@ -7080,8 +7113,6 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-001 ticksToDeploy counts down
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
-- Invader core INVADER-CORE-004 invader core collapse timer clears the room controller
-- Invader core INVADER-CORE-005 expired collapse timer removes the invader core without a ruin
 - NPC ownership NPC-OWNERSHIP-001:keeperLair a keeperLair is not my, and Source Keeper owns it
 - NPC ownership NPC-OWNERSHIP-001:powerBank a powerBank is not my, and Power Bank owns it
 - NPC ownership NPC-OWNERSHIP-001:invaderCore a invaderCore is not my, and Invader owns it
@@ -7219,13 +7250,12 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns a 2500-element Uint8Array indexed y * 50 + x
 - Room terrain access ROOM-TERRAIN-004 Room.Terrain.getRawBuffer(destinationArray) fills and returns destinationArray
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (34)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (33)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
 - room.getEventLog() ROOM-EVENTLOG-028 harvesting a deposit logs EVENT_HARVEST
 - room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping
-- room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 - room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"
 - room.getEventLog() ROOM-EVENTLOG-006 EVENT_OBJECT_DESTROYED is emitted on structure destruction by attack with data.type === structureType
 - room.getEventLog() ROOM-EVENTLOG-027 Structure.destroy emits EVENT_OBJECT_DESTROYED with structureType
@@ -7305,10 +7335,9 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 source capacity updates to owned-room value after claiming the controller
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (14)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as undefined
-- mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
 - mineral regeneration MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount
 - mineral regeneration MINERAL-REGEN-005 mineral type remains the same after regeneration
 - mineral regeneration MINERAL-REGEN-006 mineral.density exposes the placed density level

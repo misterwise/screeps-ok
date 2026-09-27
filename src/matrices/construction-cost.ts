@@ -1,4 +1,5 @@
-import { CONSTRUCTION_COST } from '../index.js';
+import { CONSTRUCTION_COST, type CapabilityName } from '../index.js';
+import { structureCapability } from '../helpers/structure-capability.js';
 
 type BuildableStructureType = keyof typeof CONSTRUCTION_COST;
 
@@ -7,4 +8,5 @@ export const constructionCostCases = (
 ).map(([structureType, cost]) => ({
 	structureType,
 	expectedCost: cost,
-})) as ReadonlyArray<{ structureType: BuildableStructureType; expectedCost: number }>;
+	capability: structureCapability[structureType],
+})) as ReadonlyArray<{ structureType: BuildableStructureType; expectedCost: number; capability?: CapabilityName }>;
