@@ -80,6 +80,18 @@
 			"why": "Found 2026-09-27 when safe mode's refusal became a condition of each method's validation matrix (it had been one code-only row).",
 			"tests": ["COMBAT-HEAL-007:invalidTargetBeforeSafeMode", "COMBAT-HEAL-007:rangeBeforeSafeMode", "COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode"]
 		},
+		"creep-combat-rejects-power-creep-targets": {
+			"actual": "`checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET.",
+			"expected": "Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it.",
+			"why": "Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`.",
+			"tests": ["COMBAT-MELEE-007:powerCreep", "COMBAT-RANGED-005:powerCreep", "COMBAT-HEAL-003:powerCreep"]
+		},
+		"tower-targets-creeps-and-destructible-only": {
+			"actual": "`StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller.",
+			"expected": "Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits.",
+			"why": "Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only.",
+			"tests": ["TOWER-ATTACK-003:powerCreep", "TOWER-ATTACK-003:structure", "TOWER-ATTACK-003:controller", "TOWER-HEAL-003:powerCreep", "TOWER-REPAIR-003:controller"]
+		},
 		"attack-controller-safe-mode-checked-before-cooldown": {
 			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`.",
 			"expected": "Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`).",

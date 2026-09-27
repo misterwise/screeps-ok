@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER,
 	STRUCTURE_TOWER, STRUCTURE_ROAD,
 	TOWER_POWER_ATTACK, TOWER_POWER_HEAL, TOWER_POWER_REPAIR,
-	ATTACK, MOVE, TOUGH, body,
+	ATTACK, MOVE, TOUGH, body, TOWER_CAPACITY,
 } from '../../src/index.js';
 import { towerPowerCases } from '../../src/matrices/tower-power.js';
 
@@ -25,7 +25,7 @@ describe('Tower power effects', () => {
 			const power = row.power === 'operate' ? PWR_OPERATE_TOWER : PWR_DISRUPT_TOWER;
 			const towerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-				store: { energy: 1000 },
+				store: { energy: TOWER_CAPACITY },
 			});
 			await shard.placePowerCreep('W1N1', {
 				pos: [25, 26], owner: 'p1',
@@ -91,7 +91,7 @@ describe('Tower power effects', () => {
 
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		// Place two power creeps — one for operate, one for disrupt.
 		await shard.placePowerCreep('W1N1', {
@@ -106,26 +106,19 @@ describe('Tower power effects', () => {
 		});
 		await shard.tick();
 
-		// Apply operate.
-		await shard.runPlayer('p1', code`
-			const pcs = Object.values(Game.powerCreeps);
-			const op = pcs.find(p => p.name === 'Operator');
-			op.usePower(PWR_OPERATE_TOWER, Game.getObjectById(${towerId}))
-		`);
+		const rcs = [
+			await shard.runPlayer('p1', code`
+				Game.powerCreeps.Operator.usePower(PWR_OPERATE_TOWER, Game.getObjectById(${towerId}))
+			`),
+			await shard.runPlayer('p1', code`
+				Game.powerCreeps.Disruptor.usePower(PWR_DISRUPT_TOWER, Game.getObjectById(${towerId}))
+			`),
+		];
+		expect(rcs).toEqual([OK, OK]);
 
-		// Apply disrupt.
-		await shard.runPlayer('p1', code`
-			const pcs = Object.values(Game.powerCreeps);
-			const dis = pcs.find(p => p.name === 'Disruptor');
-			dis.usePower(PWR_DISRUPT_TOWER, Game.getObjectById(${towerId}))
-		`);
-
-		// Both effects should be present.
 		const effects = await shard.runPlayer('p1', code`
-			const tower = Game.getObjectById(${towerId});
-			tower.effects ? tower.effects.map(e => e.effect).sort() : []
-		`) as number[];
-		expect(effects).toContain(PWR_OPERATE_TOWER);
-		expect(effects).toContain(PWR_DISRUPT_TOWER);
+			Game.getObjectById(${towerId}).effects.map(e => e.effect).sort((a, b) => a - b)
+		`);
+		expect(effects).toEqual([PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER].sort((a, b) => a - b));
 	});
 });

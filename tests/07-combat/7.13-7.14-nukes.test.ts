@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK,
+	OK, ERR_NOT_IN_RANGE,
 	MOVE, TOUGH, CLAIM, body,
 	STRUCTURE_NUKER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
@@ -7,8 +7,9 @@ import { describe, test, expect, code,
 	CONTROLLER_NUKE_BLOCKED_UPGRADE, CONTROLLER_ATTACK_BLOCKED_UPGRADE,
 	BODYPART_HITS,
 	FIND_TOMBSTONES, FIND_RUINS, FIND_DROPPED_RESOURCES, FIND_CONSTRUCTION_SITES,
-	FIND_SOURCES, FIND_MINERALS, FIND_NUKES,
-	RESOURCE_ENERGY, RESOURCE_GHODIUM, RESOURCE_SILICON,
+	FIND_SOURCES, FIND_MINERALS, FIND_NUKES, FIND_STRUCTURES,
+	RESOURCE_ENERGY, RESOURCE_GHODIUM, RESOURCE_HYDROGEN, RESOURCE_SILICON,
+	STRUCTURE_CONTROLLER, SOURCE_ENERGY_CAPACITY, SPAWN_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { nukeLaunchValidationCases } from '../../src/matrices/nuke-launch-validation.js';
 import { nukerPropCases } from '../../src/matrices/nuker-props.js';
@@ -59,7 +60,6 @@ describe('Nuke launch — section 7.13', () => {
 			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		// After launch, both energy and ghodium are consumed in full. Some adapters
 		// drop zeroed entries from the store map entirely; treat undefined as 0.
@@ -68,26 +68,31 @@ describe('Nuke launch — section 7.13', () => {
 		expect(nuker.store.G ?? 0).toBe(0);
 	});
 
-	test('NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK', async ({ shard }) => {
+	test('NUKE-LAUNCH-003 launchNuke reaches a room NUKE_RANGE away and no farther', async ({ shard }) => {
 		shard.requires('nuke');
-		// W1N1 → W2N1 = distance 1 (well within NUKE_RANGE = 10).
+		// Vanilla compares room coordinates without wrapping (game/structures.js:1376-1381).
+		const edgeRoom = `W${1 + NUKE_RANGE}N1`;
+		const beyondRoom = `W${2 + NUKE_RANGE}N1`;
 		await shard.createShard({
-			players: ['p1', 'p2'],
+			players: ['p1'],
 			rooms: [
 				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				{ name: edgeRoom },
 			],
 		});
 		const nukerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
+			store: nukerStore('full'),
 		});
-		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
+		const rcs = await shard.runPlayer('p1', code`
+			const nuker = Game.getObjectById(${nukerId});
+			[
+				nuker.launchNuke(new RoomPosition(25, 25, ${beyondRoom})),
+				nuker.launchNuke(new RoomPosition(25, 25, ${edgeRoom})),
+			]
 		`);
-		expect(rc).toBe(OK);
+		expect(rcs).toEqual([ERR_NOT_IN_RANGE, OK]);
 	});
 
 	for (const row of nukeLaunchValidationCases) {
@@ -153,7 +158,6 @@ describe('Nuke launch — section 7.13', () => {
 			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(20, 20, 'W1N1'))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const nukeInfo = await shard.runPlayer('p1', code`
 			const nukes = Game.rooms['W1N1'].find(FIND_NUKES);
@@ -188,7 +192,6 @@ describe('Nuke launch — section 7.13', () => {
 			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const targetOwnerNukeCount = await shard.runPlayer('p2', code`
 			Game.rooms['W2N1'].find(FIND_NUKES).length
@@ -306,17 +309,12 @@ describe('Nuke launch — section 7.13', () => {
 			store: nukerStore('full'),
 			cooldown: 2,
 		});
-		const short1 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${shortCooldownId}).cooldown
-		`) as number;
-		const short2 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${shortCooldownId}).cooldown
-		`) as number;
-		const short3 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${shortCooldownId}).cooldown
-		`) as number;
-		expect(short2).toBe(Math.max(0, short1 - 1));
-		expect(short3).toBe(0);
+		const short = [];
+		for (let i = 0; i < 4; i++) {
+			short.push(await shard.runPlayer('p1', code`Game.getObjectById(${shortCooldownId}).cooldown`));
+		}
+		// Seeded 2 at placement: one tick passes per read, and 0 holds.
+		expect(short).toEqual([2, 1, 0, 0]);
 	});
 
 	for (const row of nukerPropCases) {
@@ -423,7 +421,7 @@ describe('Nuke impact — section 7.14', () => {
 		// Place all four ephemeral object types far from ground zero so the test
 		// proves the room-wide cleanup, not just the blast cleanup.
 		await shard.placeDroppedResource('W1N1', {
-			pos: [10, 10], resourceType: 'energy', amount: 500,
+			pos: [10, 10], resourceType: RESOURCE_ENERGY, amount: 500,
 		});
 		await shard.placeSite('W1N1', {
 			pos: [11, 11], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -497,7 +495,6 @@ describe('Nuke impact — section 7.14', () => {
 				rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
 			});
 
-			let observed: unknown;
 			let placedId: string | null = null;
 			let nukePos: [number, number] = row.location === 'blastCenter' ? [25, 25] : [35, 35];
 
@@ -510,39 +507,35 @@ describe('Nuke impact — section 7.14', () => {
 					store: {},
 				});
 			} else if (row.objectType === 'spawningSpawn') {
-				const spawnId = await shard.placeStructure('W1N1', {
+				placedId = await shard.placeStructure('W1N1', {
 					pos: [10, 10],
 					structureType: STRUCTURE_SPAWN,
 					owner: 'p1',
-					store: { energy: 300 },
+					store: { energy: SPAWN_ENERGY_CAPACITY },
 				});
-				await shard.tick();
 				const rc = await shard.runPlayer('p1', code`
-					Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'NukeMatrixSpawned')
+					Game.getObjectById(${placedId}).spawnCreep([MOVE], 'NukeMatrixSpawned')
 				`);
 				expect(rc).toBe(OK);
-				const spawning = await shard.runPlayer('p1', code`
-					!!Game.getObjectById(${spawnId}).spawning
-				`);
-				expect(spawning).toBe(true);
+				expect((await shard.expectStructure(placedId, STRUCTURE_SPAWN)).spawning).not.toBeNull();
 			} else if (row.objectType === 'controller') {
-				const controllerPos = await shard.getControllerPos('W1N1');
-				if (!controllerPos) throw new Error('W1N1 has no controller');
-				nukePos = [controllerPos.x, controllerPos.y];
+				const controller = (await shard.findInRoom('W1N1', FIND_STRUCTURES))
+					.find(structure => structure.structureType === STRUCTURE_CONTROLLER)!;
+				placedId = controller.id;
+				nukePos = [controller.pos.x, controller.pos.y];
 			} else if (row.objectType === 'source') {
-				await shard.placeSource('W1N1', {
+				placedId = await shard.placeSource('W1N1', {
 					pos: [25, 25],
-					energy: 1000,
-					energyCapacity: 3000,
+					energy: SOURCE_ENERGY_CAPACITY,
+					energyCapacity: SOURCE_ENERGY_CAPACITY,
 				});
 			} else if (row.objectType === 'mineral') {
-				await shard.placeMineral('W1N1', {
+				placedId = await shard.placeMineral('W1N1', {
 					pos: [25, 25],
-					mineralType: RESOURCE_SILICON,
-					mineralAmount: 5000,
+					mineralType: RESOURCE_HYDROGEN,
 				});
 			} else if (row.objectType === 'deposit') {
-				await shard.placeObject('W1N1', 'deposit', {
+				placedId = await shard.placeObject('W1N1', 'deposit', {
 					pos: [25, 25],
 					depositType: RESOURCE_SILICON,
 				});
@@ -566,44 +559,13 @@ describe('Nuke impact — section 7.14', () => {
 			});
 			await shard.tick(2);
 
-			if (row.objectType === 'powerCreep') {
-				observed = await shard.runPlayer('p1', code`
-					Game.getObjectById(${placedId}) === null
-				`);
-				expect(observed).toBe(true);
-			} else if (row.objectType === 'spawningSpawn') {
-				observed = await shard.runPlayer('p1', code`
-					const spawn = Game.spawns[Object.keys(Game.spawns)[0]];
-					spawn ? spawn.spawning : 'missing'
-				`);
-				expect(observed).toBeNull();
-			} else if (row.objectType === 'controller') {
-				observed = await shard.runPlayer('p1', code`
-					!!Game.rooms['W1N1'].controller
-				`);
-				expect(observed).toBe(true);
-			} else if (row.objectType === 'source') {
-				const sources = await shard.findInRoom('W1N1', FIND_SOURCES);
-				expect(sources).toHaveLength(1);
-			} else if (row.objectType === 'mineral') {
-				const minerals = await shard.findInRoom('W1N1', FIND_MINERALS);
-				expect(minerals).toHaveLength(1);
-			} else if (row.objectType === 'deposit') {
-				observed = await shard.runPlayer('p1', code`
-					Game.rooms['W1N1'].find(FIND_DEPOSITS).length
-				`);
-				expect(observed).toBe(1);
-			} else if (row.objectType === 'flag') {
-				observed = await shard.runPlayer('p1', code`
-					!!Game.flags['NukeMatrixFlag']
-				`);
-				expect(observed).toBe(true);
-			} else if (row.objectType === 'portal') {
-				observed = await shard.runPlayer('p1', code`
-					Game.getObjectById(${placedId}) !== null
-				`);
-				expect(observed).toBe(true);
-			}
+			// What impact did to the object, in the case list's terms.
+			const outcome = await shard.runPlayer('p1', row.objectType === 'spawningSpawn'
+				? code`Game.getObjectById(${placedId}).spawning === null ? 'spawningCleared' : 'stillSpawning'`
+				: row.objectType === 'flag'
+					? code`Game.flags.NukeMatrixFlag ? 'survives' : 'roomObjectRemoved'`
+					: code`Game.getObjectById(${placedId}) ? 'survives' : 'roomObjectRemoved'`);
+			expect(outcome).toBe(row.expected);
 		});
 	}
 

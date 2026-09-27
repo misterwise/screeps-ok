@@ -8,10 +8,19 @@ export const boostCreepValidationCases = makeValidationCases('BOOST-CREEP-010', 
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'spawning', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'not-enough-energy', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'not-enough-mineral', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'not-found', expectedRc: ERR_NOT_FOUND },
-] as const);
+	{ condition: 'too-many-parts', expectedRc: ERR_NOT_FOUND },
+] as const, [
+	// A source stands in for the creep whose spawning and body the others set.
+	['invalid-target', 'spawning'],
+	['invalid-target', 'not-found'],
+	['invalid-target', 'too-many-parts'],
+	// A creep with no matching part has none to count.
+	['not-found', 'too-many-parts'],
+]);
 
 export type BoostCreepValidationCase = typeof boostCreepValidationCases[number];

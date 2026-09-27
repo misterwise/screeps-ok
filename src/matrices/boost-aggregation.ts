@@ -1,18 +1,28 @@
-import { BOOSTS } from '../index.js';
+import { boostTableCases, type BoostMechanic } from './boost-tables.js';
 
-// Canonical list of additive boost mechanics — mechanics where the per-part
-// effect is multiplied by the base output and summed across active parts.
-//
-// This family is about the summation pattern, not the numeric multipliers
-// (those are in boost-tables.ts).
-export const boostAdditivesMechanics: readonly string[] = (() => {
-	const mechanics = new Set<string>();
-	for (const compounds of Object.values(BOOSTS)) {
-		for (const effects of Object.values(compounds)) {
-			for (const mechanic of Object.keys(effects)) {
-				mechanics.add(mechanic);
-			}
-		}
-	}
-	return [...mechanics].sort();
-})();
+export interface BoostAggregationCase {
+	label: BoostMechanic;
+	bodyPart: string;
+	compound: string;
+	mechanic: BoostMechanic;
+	multiplier: number;
+	boosted: number;
+	unboosted: number;
+}
+
+// One case per additive BOOSTS mechanic (all but TOUGH's `damage`): two parts
+// boosted with the first compound that boosts it, beside one unboosted part.
+export const boostAggregationCases: readonly BoostAggregationCase[] = [
+	...new Set(boostTableCases.map(row => row.mechanic)),
+].filter(mechanic => mechanic !== 'damage').map(mechanic => {
+	const first = boostTableCases.find(row => row.mechanic === mechanic)!;
+	return {
+		label: mechanic,
+		bodyPart: first.bodyPart,
+		compound: first.compound,
+		mechanic,
+		multiplier: first.multiplier,
+		boosted: 2,
+		unboosted: 1,
+	};
+});

@@ -1,4 +1,8 @@
-import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, STRUCTURE_RAMPART, STRUCTURE_ROAD, BODYPART_HITS, SAFE_MODE_DURATION, body } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, RANGED_ATTACK_DISTANCE_RATE, STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_SPAWN, BODYPART_HITS, SAFE_MODE_DURATION, body,
+	PWR_GENERATE_OPS, RAMPART_HITS_MAX, ROAD_HITS, SPAWN_HITS,
+} from '../../src/index.js';
+
+const rmaDamage = (range: number) => Math.round(RANGED_ATTACK_POWER * RANGED_ATTACK_DISTANCE_RATE[range]);
 import { combatRmaValidationCases } from '../../src/matrices/combat-rma-validation.js';
 import { rangedMassAttackRangeCases } from '../../src/matrices/ranged-mass-attack.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -23,43 +27,50 @@ describe('creep.rangedMassAttack()', () => {
 				Game.getObjectById(${attackerId}).rangedMassAttack()
 			`);
 			expect(rc).toBe(OK);
-
-			await shard.tick();
-
 			const target = await shard.expectObject(targetId, 'creep');
-			expect(target.hits).toBe(600 - expectedDamage);
+			expect(target.hits).toBe(6 * BODYPART_HITS - expectedDamage);
 		});
 	}
 
-	test('COMBAT-RMA-001 rangedMassAttack() damages every hostile creep within range 3 in a single call', async ({ shard }) => {
+	test('COMBAT-RMA-001 rangedMassAttack() damages every hostile creep, power creep and structure within range 3 in one call', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		// p2 attacks in p1's room: p1's creep at range 1, power creep at range 2,
+		// spawn at range 3, and a creep at range 4 that stays whole.
 		await shard.createShard({
 			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
+			rooms: [
+				{ name: 'W1N1', rcl: 1, owner: 'p1' },
+				{ name: 'W2N1', rcl: 1, owner: 'p2' },
+			],
 		});
 		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
+			pos: [25, 25], owner: 'p2',
 			body: [RANGED_ATTACK, MOVE],
 		});
-		const t1 = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2', // range 1
-			body: body(3, TOUGH, MOVE),
-		});
-		const t2 = await shard.placeCreep('W1N1', {
-			pos: [26, 25], owner: 'p2', // range 1
-			body: body(3, TOUGH, MOVE),
-			name: 'target2',
-		});
+		const creepId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p1', body: body(3, TOUGH, MOVE), name: 'near' });
+		const powerCreepId = await shard.placePowerCreep('W1N1', { pos: [27, 25], owner: 'p1', powers: { [PWR_GENERATE_OPS]: 1 } });
+		const spawnId = await shard.placeStructure('W1N1', { pos: [25, 22], structureType: STRUCTURE_SPAWN, owner: 'p1' });
+		const farId = await shard.placeCreep('W1N1', { pos: [29, 25], owner: 'p1', body: body(3, TOUGH, MOVE), name: 'far' });
 
-		const rc = await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${attackerId}).rangedMassAttack()
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
-		const target1 = await shard.expectObject(t1, 'creep');
-		const target2 = await shard.expectObject(t2, 'creep');
-		expect(target1.hits).toBe(400 - 10);
-		expect(target2.hits).toBe(400 - 10);
+		expect({
+			creep: (await shard.expectObject(creepId, 'creep')).hits,
+			spawn: (await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).hits,
+			far: (await shard.expectObject(farId, 'creep')).hits,
+		}).toEqual({
+			creep: 4 * BODYPART_HITS - rmaDamage(1),
+			spawn: SPAWN_HITS - rmaDamage(3),
+			far: 4 * BODYPART_HITS,
+		});
+		// Power creeps have no snapshot; the next tick reads what this one left.
+		const powerCreep = await shard.runPlayer('p1', code`
+			const powerCreep = Game.getObjectById(${powerCreepId});
+			[powerCreep.hits, powerCreep.hitsMax]
+		`) as [number, number];
+		expect(powerCreep[0]).toBe(powerCreep[1] - rmaDamage(2));
 	});
 
 	test('COMBAT-RMA-003 rangedMassAttack() does not damage own creeps or unowned structures', async ({ shard }) => {
@@ -78,7 +89,7 @@ describe('creep.rangedMassAttack()', () => {
 		});
 		// Unowned road at range 1
 		const roadId = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_ROAD, hits: 5000,
+			pos: [26, 25], structureType: STRUCTURE_ROAD,
 		});
 		// Hostile creep at range 2 to confirm the attack actually fires
 		const hostileId = await shard.placeCreep('W1N1', {
@@ -90,17 +101,16 @@ describe('creep.rangedMassAttack()', () => {
 			Game.getObjectById(${attackerId}).rangedMassAttack()
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const friendly = await shard.expectObject(friendlyId, 'creep');
-		expect(friendly.hits).toBe(400);
+		expect(friendly.hits).toBe(4 * BODYPART_HITS);
 
 		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.hits).toBe(5000);
+		expect(road.hits).toBe(ROAD_HITS);
 
 		// Hostile took damage, proving the attack resolved
 		const hostile = await shard.expectObject(hostileId, 'creep');
-		expect(hostile.hits).toBe(400 - 4);
+		expect(hostile.hits).toBe(4 * BODYPART_HITS - rmaDamage(2));
 	});
 
 	test('COMBAT-RMA-004 rangedMassAttack damage to a creep under a hostile rampart redirects to the rampart', async ({ shard }) => {
@@ -115,7 +125,7 @@ describe('creep.rangedMassAttack()', () => {
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
-		const rampartHits = 1_000_000;
+		const rampartHits = RAMPART_HITS_MAX[3];
 		const rampartId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
 			hits: rampartHits,
@@ -134,10 +144,9 @@ describe('creep.rangedMassAttack()', () => {
 			Game.getObjectById(${attackerId}).rangedMassAttack()
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(rampart.hits).toBe(rampartHits - RANGED_ATTACK_POWER); // range 1 → 10
+		expect(rampart.hits).toBe(rampartHits - rmaDamage(1));
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(target.hits).toBe(6 * BODYPART_HITS);
 	});

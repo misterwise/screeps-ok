@@ -1,4 +1,6 @@
-import { describe, test, expect, code, OK, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD, STRUCTURE_RAMPART, } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, TOUGH, ATTACK, body, STRUCTURE_TOWER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_WALL,
+	ATTACK_POWER, BODYPART_HITS, TOWER_CAPACITY, TOWER_ENERGY_COST, WALL_HITS,
+} from '../../src/index.js';
 import { towerAttackValidationCases } from '../../src/matrices/tower-attack-validation.js';
 import { towerHealValidationCases } from '../../src/matrices/tower-heal-validation.js';
 import { towerRepairValidationCases } from '../../src/matrices/tower-repair-validation.js';
@@ -23,7 +25,7 @@ describe('StructureTower', () => {
 			});
 			const towerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-				store: { energy: 1000 },
+				store: { energy: TOWER_CAPACITY },
 			});
 			const targetId = await shard.placeCreep('W1N1', {
 				pos: [25, 25 + range], owner: 'p2',
@@ -34,21 +36,20 @@ describe('StructureTower', () => {
 				Game.getObjectById(${towerId}).attack(Game.getObjectById(${targetId}))
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
 			const target = await shard.expectObject(targetId, 'creep');
-			expect(target.hits).toBe(1000 - expectedAmount);
+			expect(target.hits).toBe(10 * BODYPART_HITS - expectedAmount);
 		});
 	}
 
-	test('TOWER-ATTACK-001 tower.attack() spends 10 energy in the same tick', async ({ shard }) => {
+	test('TOWER-ATTACK-001 tower.attack() spends TOWER_ENERGY_COST energy in the same tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
 		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p2',
@@ -59,10 +60,9 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).attack(Game.getObjectById(${targetId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(990);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY - TOWER_ENERGY_COST);
 	});
 
 	for (const { range, expectedAmount } of towerHealRangeCases) {
@@ -76,7 +76,7 @@ describe('StructureTower', () => {
 			});
 			const towerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-				store: { energy: 1000 },
+				store: { energy: TOWER_CAPACITY },
 			});
 			const targetId = await shard.placeCreep('W1N1', {
 				pos: [25, 25 + range], owner: 'p1',
@@ -91,30 +91,28 @@ describe('StructureTower', () => {
 				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 			`);
 			expect(damageRc).toBe(OK);
-			await shard.tick();
 
-			const injured = await shard.expectObject(targetId, 'creep');
-			expect(injured.hits).toBe(500);
+			const injuredHits = 11 * BODYPART_HITS - 20 * ATTACK_POWER;
+			expect((await shard.expectObject(targetId, 'creep')).hits).toBe(injuredHits);
 
 			const healRc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${towerId}).heal(Game.getObjectById(${targetId}))
 			`);
 			expect(healRc).toBe(OK);
-			await shard.tick();
 
 			const healed = await shard.expectObject(targetId, 'creep');
-			expect(healed.hits).toBe(500 + expectedAmount);
+			expect(healed.hits).toBe(injuredHits + expectedAmount);
 		});
 	}
 
-	test('TOWER-HEAL-003 [friendly-creep] tower.heal() returns OK for an in-range friendly creep', async ({ shard }) => {
+	test('TOWER-HEAL-001 tower.heal() spends TOWER_ENERGY_COST energy in the same tick', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
 		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p1',
@@ -125,30 +123,9 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).heal(Game.getObjectById(${targetId}))
 		`);
 		expect(healRc).toBe(OK);
-	});
-
-	test('TOWER-HEAL-001 tower.heal() spends 10 energy in the same tick', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
-		});
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p1',
-			body: body(9, TOUGH, MOVE),
-		});
-
-		const healRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${towerId}).heal(Game.getObjectById(${targetId}))
-		`);
-		expect(healRc).toBe(OK);
-		await shard.tick();
 
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(990);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY - TOWER_ENERGY_COST);
 	});
 
 	for (const { range, expectedAmount } of towerRepairRangeCases) {
@@ -156,41 +133,39 @@ describe('StructureTower', () => {
 			await shard.ownedRoom('p1', 'W1N1', 3);
 			const towerId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-				store: { energy: 1000 },
+				store: { energy: TOWER_CAPACITY },
 			});
-			const roadId = await shard.placeStructure('W1N1', {
-				pos: [25, 25 + range], structureType: STRUCTURE_ROAD, hits: 100,
+			const wallId = await shard.placeStructure('W1N1', {
+				pos: [25, 25 + range], structureType: STRUCTURE_WALL, hits: WALL_HITS,
 			});
 
 			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${towerId}).repair(Game.getObjectById(${roadId}))
+				Game.getObjectById(${towerId}).repair(Game.getObjectById(${wallId}))
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
-			const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-			expect(road.hits).toBe(100 + expectedAmount);
+			const wall = await shard.expectStructure(wallId, STRUCTURE_WALL);
+			expect(wall.hits).toBe(WALL_HITS + expectedAmount);
 		});
 	}
 
-	test('TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick', async ({ shard }) => {
+	test('TOWER-REPAIR-001 tower.repair() spends TOWER_ENERGY_COST energy in the same tick', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
-		const roadId = await shard.placeStructure('W1N1', {
-			pos: [25, 28], structureType: STRUCTURE_ROAD, hits: 100,
+		const wallId = await shard.placeStructure('W1N1', {
+			pos: [25, 28], structureType: STRUCTURE_WALL, hits: WALL_HITS,
 		});
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${towerId}).repair(Game.getObjectById(${roadId}))
+			Game.getObjectById(${towerId}).repair(Game.getObjectById(${wallId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(990);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY - TOWER_ENERGY_COST);
 	});
 
 	test(`${staleTowerAttackCase.catalogId}:${staleTowerAttackCase.label} stale cached StructureTower.attack() throws a runtime error`, async ({ shard }) => {
@@ -205,7 +180,7 @@ describe('StructureTower', () => {
 		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p1',
@@ -234,7 +209,7 @@ describe('StructureTower', () => {
 		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p1',
@@ -260,7 +235,7 @@ describe('StructureTower', () => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const roadId = await shard.placeStructure('W1N1', {
 			pos: [25, 28], structureType: STRUCTURE_ROAD, hits: 100,
@@ -296,7 +271,7 @@ describe('StructureTower', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_TOWER,
 				owner,
-				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+				...(blockers.has('not-enough') ? {} : { store: { energy: TOWER_CAPACITY } }),
 			});
 			const targetId = blockers.has('invalid-target')
 				? await shard.placeSource('W1N1', { pos: [25, 28] })
@@ -328,7 +303,7 @@ describe('StructureTower', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_TOWER,
 				owner,
-				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+				...(blockers.has('not-enough') ? {} : { store: { energy: TOWER_CAPACITY } }),
 			});
 			const targetId = blockers.has('invalid-target')
 				? await shard.placeSource('W1N1', { pos: [25, 28] })
@@ -360,7 +335,7 @@ describe('StructureTower', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_TOWER,
 				owner,
-				...(blockers.has('not-enough') ? {} : { store: { energy: 1000 } }),
+				...(blockers.has('not-enough') ? {} : { store: { energy: TOWER_CAPACITY } }),
 			});
 			const targetId = blockers.has('invalid-target')
 				? await shard.placeSource('W1N1', { pos: [25, 28] })
@@ -384,7 +359,7 @@ describe('StructureTower', () => {
 		});
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p2', body: [TOUGH, MOVE],
@@ -404,14 +379,14 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).attack(globalThis.__screepsOkStaleArgTowerAttack)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(1000);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY);
 	});
 
 	test(`${staleArgTowerHealCase.catalogId}:${staleArgTowerHealCase.label} StructureTower.heal() rejects a stale cached Creep target`, async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const targetId = await shard.placeCreep('W1N1', {
 			pos: [25, 28], owner: 'p1', body: [TOUGH, MOVE], name: 'TowerHealTarget',
@@ -429,14 +404,14 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).heal(globalThis.__screepsOkStaleArgTowerHeal)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(1000);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY);
 	});
 
 	test(`${staleArgTowerRepairCase.catalogId}:${staleArgTowerRepairCase.label} StructureTower.repair() rejects a stale cached Structure target`, async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
+			store: { energy: TOWER_CAPACITY },
 		});
 		const rampartId = await shard.placeStructure('W1N1', {
 			pos: [25, 28], structureType: STRUCTURE_RAMPART, owner: 'p1',
@@ -455,6 +430,6 @@ describe('StructureTower', () => {
 			Game.getObjectById(${towerId}).repair(globalThis.__screepsOkStaleArgTowerRepair)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(1000);
+		expect(tower.store.energy).toBe(TOWER_CAPACITY);
 	});
 });

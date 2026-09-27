@@ -1,131 +1,95 @@
 import { describe, test, expect, code,
 	OK,
-	STRUCTURE_LAB,
-	MOVE, ATTACK,
-	LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
+	STRUCTURE_LAB, FIND_DROPPED_RESOURCES,
+	MOVE, ATTACK, WORK,
+	RESOURCE_UTRIUM_HYDRIDE, LAB_ENERGY_CAPACITY,
 	LAB_UNBOOST_MINERAL, LAB_REACTION_AMOUNT,
-	REACTION_TIME, ENERGY_DECAY,
+	REACTIONS, REACTION_TIME, ENERGY_DECAY,
 } from '../../src/index.js';
+import { boostTableCases } from '../../src/matrices/boost-tables.js';
 import { unboostValidationCases } from '../../src/matrices/unboost-validation.js';
 
+const UH = RESOURCE_UTRIUM_HYDRIDE;
+const firstCompound = (mechanic: string) => boostTableCases.find(row => row.mechanic === mechanic)!.compound;
+const lastCompound = (mechanic: string) => boostTableCases.filter(row => row.mechanic === mechanic).at(-1)!.compound;
+
+// Ticks of every reaction on the way to `compound`, reagents included
+// (utils.js:665-669).
+function totalReactionTime(compound: string): number {
+	if (!REACTION_TIME[compound]) return 0;
+	const [a, b] = Object.entries(REACTIONS).flatMap(([first, products]) =>
+		Object.entries(products).filter(([, product]) => product === compound).map(([second]) => [first, second]))[0];
+	return REACTION_TIME[compound] + totalReactionTime(a) + totalReactionTime(b);
+}
+
 describe('lab.unboostCreep()', () => {
-	test('UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab', async ({ shard }) => {
+	test('UNBOOST-001 unboostCreep returns OK and removes every boost from the creep', async ({ shard }) => {
 		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Set up a lab with UH and boost a creep first.
 		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL },
+			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1', store: { energy: LAB_ENERGY_CAPACITY },
 		});
+		const boosts = [firstCompound('attack'), firstCompound('build'), firstCompound('fatigue')];
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [ATTACK, MOVE],
+			pos: [25, 26], owner: 'p1', body: [ATTACK, WORK, MOVE], boosts: { ...boosts },
 		});
-		await shard.tick();
-
-		// Boost the creep.
-		const boostRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${labId}).boostCreep(Game.getObjectById(${creepId}))
-		`);
-		expect(boostRc).toBe(OK);
-
-		// Verify creep is boosted.
 		const boosted = await shard.expectObject(creepId, 'creep');
-		expect(boosted.body.find(p => p.type === 'attack')!.boost).toBe('UH');
+		expect(boosted.body.map(part => part.boost ?? null)).toEqual(boosts);
 
-		// Unboost — lab needs no mineral for unboost, just cooldown check.
-		const unboostRc = await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${labId}).unboostCreep(Game.getObjectById(${creepId}))
 		`);
-		expect(unboostRc).toBe(OK);
-
-		// After unboost, creep should have no boosts.
+		expect(rc).toBe(OK);
 		const unboosted = await shard.expectObject(creepId, 'creep');
-		expect(unboosted.body.every(p => !p.boost)).toBe(true);
+		expect(unboosted.body.map(part => part.boost ?? null)).toEqual([null, null, null]);
 	});
 
 	test('UNBOOST-004 unboost drops LAB_UNBOOST_MINERAL per part as a resource pile at the creep tile', async ({ shard }) => {
-		// Engine processor `processor/intents/labs/unboost-creep.js` invokes
-		// `_create-energy(target.x, target.y, ...)` so the returned compounds
-		// land on the creep's own tile (which is adjacent to the lab), not in
-		// the lab's store. The amount per body part is `LAB_UNBOOST_MINERAL`.
 		shard.requires('chemistry');
 		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Two ATTACK parts, both boosted with UH.
 		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL * 2 },
+			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1', store: { energy: LAB_ENERGY_CAPACITY },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [ATTACK, ATTACK, MOVE],
+			pos: [25, 26], owner: 'p1', body: [ATTACK, ATTACK, MOVE], boosts: { 0: UH, 1: UH },
 		});
-		await shard.tick();
 
-		const boostRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${labId}).boostCreep(Game.getObjectById(${creepId}))
-		`);
-		expect(boostRc).toBe(OK);
-
-		const unboostRc = await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${labId}).unboostCreep(Game.getObjectById(${creepId}))
 		`);
-		expect(unboostRc).toBe(OK);
-
-		// Resources are dropped at the creep position; with 2 boosted parts the
-		// pile contains 2 * LAB_UNBOOST_MINERAL of UH at creation. The lookForAt
-		// runs in a subsequent runPlayer (= 1 extra tick), so the dropped pile
-		// has already been ticked once by the energy decay processor — back out
-		// `Math.ceil(amount / ENERGY_DECAY)` to compute the observable amount.
-		const drops = await shard.runPlayer('p1', code`
-			const pile = Game.rooms['W1N1'].lookForAt(LOOK_RESOURCES, 25, 26);
-			pile.map(r => ({ type: r.resourceType, amount: r.amount }))
-		`) as Array<{ type: string; amount: number }>;
-		const uh = drops.find(d => d.type === 'UH');
-		expect(uh).toBeDefined();
-		const initialAmount = LAB_UNBOOST_MINERAL * 2;
-		const afterOneDecayTick = initialAmount - Math.ceil(initialAmount / ENERGY_DECAY);
-		expect(uh!.amount).toBe(afterOneDecayTick);
+		expect(rc).toBe(OK);
+		// The pile decays once on the tick it lands (DROP-DECAY-001).
+		const dropped = 2 * LAB_UNBOOST_MINERAL;
+		const piles = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(piles.map(pile => ({ pos: [pile.pos.x, pile.pos.y], resourceType: pile.resourceType, amount: pile.amount })))
+			.toEqual([{ pos: [25, 26], resourceType: UH, amount: dropped - Math.ceil(dropped / ENERGY_DECAY) }]);
+		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
+		expect(lab.store).toEqual({ energy: LAB_ENERGY_CAPACITY });
 	});
 
-	test('UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT', async ({ shard }) => {
-		// Engine `processor/intents/labs/unboost-creep.js` lines 32-48: cooldown
-		// is summed across all returned compounds as
-		// `parts * calcTotalReactionsTime(r) * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT`.
-		// For a single UH-boosted ATTACK part, calcTotalReactionsTime(UH) is just
-		// REACTION_TIME[UH] (UH = U + H, neither reagent has a REACTION_TIME entry),
-		// so the cooldown formula reduces to REACTION_TIME[UH] * 15 / 5 = 30.
+	test('UNBOOST-005 unboost cooldown sums parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT over compounds', async ({ shard }) => {
 		shard.requires('chemistry');
+		// Two parts carry a tier-3 attack compound and one a tier-1 build compound.
+		const attackCompound = lastCompound('attack');
+		const buildCompound = firstCompound('build');
 		await shard.ownedRoom('p1', 'W1N1', 6);
-
 		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL },
+			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1', store: { energy: LAB_ENERGY_CAPACITY },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [ATTACK, MOVE],
+			pos: [25, 26], owner: 'p1', body: [ATTACK, ATTACK, WORK, MOVE],
+			boosts: { 0: attackCompound, 1: attackCompound, 2: buildCompound },
 		});
-		await shard.tick();
 
-		const boostRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${labId}).boostCreep(Game.getObjectById(${creepId}))
-		`);
-		expect(boostRc).toBe(OK);
-
-		const unboostRc = await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${labId}).unboostCreep(Game.getObjectById(${creepId}))
 		`);
-		expect(unboostRc).toBe(OK);
-
-		// runPlayer is one full tick — cooldown is decremented by 1 by the time
-		// the next runPlayer reads it. UH is tier-1, so reagent recursion bottoms
-		// out and the formula is REACTION_TIME[UH] * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT.
-		const expectedCooldown = REACTION_TIME['UH'] * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT;
+		expect(rc).toBe(OK);
+		const cooldown = (2 * totalReactionTime(attackCompound) + totalReactionTime(buildCompound))
+			* LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT;
+		// The snapshot reads the tick after the unboost.
 		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
-		expect(lab.cooldown).toBe(expectedCooldown - 1);
+		expect(lab.cooldown).toBe(cooldown - 1);
 	});
 
 	for (const row of unboostValidationCases) {
@@ -144,7 +108,7 @@ describe('lab.unboostCreep()', () => {
 				structureType: STRUCTURE_LAB,
 				owner: labOwner,
 				store: { energy: LAB_ENERGY_CAPACITY },
-				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['UH'] } : {}),
+				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME[UH] } : {}),
 			});
 			const targetPos: [number, number] = blockers.has('range') ? [25, 28] : [25, 26];
 			const targetId = blockers.has('invalid-target')
@@ -158,7 +122,7 @@ describe('lab.unboostCreep()', () => {
 					pos: targetPos,
 					owner: targetOwner,
 					body: [ATTACK, MOVE],
-					boosts: blockers.has('not-found') ? {} : { 0: 'UH' },
+					boosts: blockers.has('not-found') ? {} : { 0: UH },
 				});
 			await shard.tick();
 

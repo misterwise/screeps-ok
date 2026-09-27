@@ -537,11 +537,9 @@ checks both. Each definition has these fields, in this order:
   What the processor then does with an accepted target, range falloff, and
   tower intent priority
 - `Verification Notes`
-  No case list enumerates the target classes yet. The tests
-  (`tests/07-combat/7.12-tower-intent.test.ts`,
-  `tests/07-combat/7.9-7.11-tower.test.ts`) run a hostile creep and a
-  construction site for `attack`, a friendly creep for `heal`, and a damaged
-  rampart and a creep for `repair`.
+  `src/matrices/tower-targets.ts` lists the 18 cases, keyed by target class
+  (`TOWER-ATTACK-003:powerCreep`); the structure is a wall and the controller
+  the room's own. Return codes only.
 
 ### TOWER-POWER
 
@@ -695,14 +693,17 @@ checks both. Each definition has these fields, in this order:
 - `Dimensions`
   mechanic, body composition with mixed boosted and unboosted active parts
 - `Applicability`
-  Additive mechanics: attack, ranged attack, heal, harvest, build, repair,
-  dismantle, upgrade, move, and carry capacity
+  Every `BOOSTS` mechanic but `TOUGH`'s `damage`: `attack`, `rangedAttack`,
+  `rangedMassAttack`, `heal`, `rangedHeal`, `harvest`, `build`, `repair`,
+  `dismantle`, `upgradeController`, `fatigue` and `capacity`
 - `Exclusions`
   `TOUGH`, boost application/removal, and per-compound magnitudes
 - `Verification Notes`
   This family is about per-part summation, not the numeric multipliers
-  themselves. The executable case list lives in
-  `src/matrices/boost-aggregation.ts`.
+  themselves. `src/matrices/boost-aggregation.ts` lists one case per
+  mechanic: two parts boosted with the first compound for it beside one
+  unboosted part. Build, repair and upgrade floor the sum
+  (`build.js:78`, `repair.js:38`, `upgradeController.js:53`).
 
 ### BOOST-TABLES
 
@@ -721,9 +722,11 @@ checks both. Each definition has these fields, in this order:
   Mixed-part aggregation and boost application/removal costs
 - `Verification Notes`
   Numeric boost magnitudes are owned here; mechanic-specific non-table rules
-  remain in the local boost facets. The case list is
-  `src/matrices/boost-tables.ts`, which no test runs yet: the section 8 tests
-  loop over `BOOSTS` directly.
+  remain in the local boost facets. `src/matrices/boost-tables.ts` lists
+  every `BOOSTS` (part, compound, mechanic) triple with the row that owns
+  it, keyed `:<compound><Mechanic>`. The creep is placed boosted, except for
+  `capacity`, which the engine derives when a lab boosts the creep; build
+  and upgrade boost enough parts that their floor drops nothing.
 
 ### CREEP-DEATH-SOURCES
 
@@ -1632,14 +1635,15 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `boostCreep(creep, bodyPartsCount?)` ownership, active-structure state,
-  target validity (target is a non-spawning creep), range, resource
-  availability (energy then mineral), and matching unboosted body-part
-  availability.
+  target validity (a creep, then not spawning), range, resource availability
+  (energy then mineral), and matching unboosted body-part availability (any,
+  then at least `bodyPartsCount`, `game/structures.js:433-437`).
 - `Exclusions`
   Successful body-part selection and boost type mapping, owned by
-  `BOOST-CREEP-001..009`. Not yet listed: a spawning creep target
-  (`ERR_INVALID_TARGET`), and a `bodyPartsCount` above the creep's
-  unboosted matching parts (`ERR_NOT_FOUND`, `game/structures.js:433-437`).
+  `BOOST-CREEP-001..009`. A source stands in for the creep under
+  `invalid-target`, so it is excluded against `spawning`, `not-found` and
+  `too-many-parts`, the creep's own conditions; `not-found` against
+  `too-many-parts`, since a creep with no matching part has none to count.
 - `Verification Notes`
   The executable case list lives in `src/matrices/boost-creep-validation.ts`.
 

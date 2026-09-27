@@ -1135,7 +1135,7 @@ Coverage Notes
   Attacking a creep or structure on a rampart-occupied tile hits the rampart instead.
 - `COMBAT-MELEE-006` `behavior` `verified_vanilla`
   After a melee attack the target's ATTACK parts deal counter-damage back to the
-  attacker, unless the attacker stands on its own rampart.
+  attacker, unless a rampart, whoever owns it, stands on the attacker's tile.
 - `COMBAT-MELEE-007` `behavior` `verified_vanilla`
   `attack()` accepts a creep, a power creep, or a structure as its target; any
   other object is `COMBAT-MELEE-009:invalidTarget`.
@@ -1270,7 +1270,8 @@ Coverage Notes
   matches the damage keeps it alive and a lethal hit healed back leaves it at
   the net.
 - `COMBAT-SIMULT-003` `behavior` `verified_vanilla`
-  Overkill damage does not carry over to the next tick.
+  Lethal damage a same-tick heal outweighs does not carry over: on the next
+  tick with no damage or healing, the creep's hits stay at the net.
 
 ### 7.8 Tower Attack
 - `TOWER-ATTACK-001` `behavior` `verified_vanilla`
@@ -1457,11 +1458,13 @@ Coverage Notes
   `lab.boostCreep(creep, bodyPartsCount?)` returns the first failing check's
   code, in this order: `:notOwner` the lab isn't the player's,
   `ERR_NOT_OWNER`; `:rcl` it is inactive, `ERR_RCL_NOT_ENOUGH`;
-  `:invalidTarget` the target isn't a creep, `ERR_INVALID_TARGET`; `:range` it
-  isn't adjacent, `ERR_NOT_IN_RANGE`; `:notEnoughEnergy` the lab holds less
-  than `LAB_BOOST_ENERGY` energy, or `:notEnoughMineral` less than
+  `:invalidTarget` the target isn't a creep, or `:spawning` it is still
+  spawning, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:notEnoughEnergy` the lab holds less than
+  `LAB_BOOST_ENERGY` energy, or `:notEnoughMineral` less than
   `LAB_BOOST_MINERAL` of its compound, `ERR_NOT_ENOUGH_RESOURCES`; `:notFound`
-  the creep has no unboosted part the compound boosts, `ERR_NOT_FOUND`.
+  the creep has no unboosted part the compound boosts, or `:tooManyParts`
+  fewer than `bodyPartsCount`, `ERR_NOT_FOUND`.
 
 ### 8.2 Unboost
 - `UNBOOST-001` `behavior` `verified_vanilla`
@@ -1486,9 +1489,10 @@ Coverage Notes
 ### 8.3 Per-Part Boost Aggregation
 - `BOOST-AGGREGATION-001` `matrix` `verified_vanilla`
   For additive boost mechanics, total effect equals the sum of each active
-  body part's individual boosted or unboosted contribution across attack,
-  ranged attack, heal, harvest, build, repair, dismantle, upgrade, move, and
-  carry capacity.
+  body part's individual boosted or unboosted contribution across `attack`,
+  `rangedAttack`, `rangedMassAttack`, `heal`, `rangedHeal`, `harvest`,
+  `build`, `repair`, `dismantle`, `upgradeController`, move `fatigue`, and
+  carry `capacity`; build, repair and upgrade round the sum down.
 
 Coverage Notes
 - `TOUGH` is excluded from this matrix because boosted `TOUGH` modifies damage

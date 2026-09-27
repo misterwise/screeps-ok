@@ -11,7 +11,7 @@ const matricesDir = path.join(root, 'src/matrices');
 
 // Lists whose rows' tests check only part of the row; the Tests area realigns them.
 const pending = new Set([
-	'storeSingleExtensionCases', 'storeRestrictedCases', 'boostTableCases', 'boostAdditivesMechanics',
+	'storeSingleExtensionCases', 'storeRestrictedCases',
 ]);
 
 describe('matrices', () => {

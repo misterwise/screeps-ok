@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-18%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-26%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -29,6 +29,14 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 - `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:invalidTargetBeforeSafeMode`, which no test passed or failed
 - `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:rangeBeforeSafeMode`, which no test passed or failed
 - `heal-safe-mode-checked-before-target` registers `COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode`, which no test passed or failed
+- `creep-combat-rejects-power-creep-targets` registers `COMBAT-MELEE-007:powerCreep`, which no test passed or failed
+- `creep-combat-rejects-power-creep-targets` registers `COMBAT-RANGED-005:powerCreep`, which no test passed or failed
+- `creep-combat-rejects-power-creep-targets` registers `COMBAT-HEAL-003:powerCreep`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:powerCreep`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:structure`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:controller`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-HEAL-003:powerCreep`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-REPAIR-003:controller`, which no test passed or failed
 - `attack-controller-safe-mode-checked-before-cooldown` registers `CTRL-ATTACK-007:cooldownBeforeSafeMode`, which no test passed or failed
 - `move-bodypart-checked-before-fatigue` registers `MOVE-BASIC-027:fatigueBeforeNoBodypart`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeNameCreatedThisTick`, which no test passed or failed
@@ -151,7 +159,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 51 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 48 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 53 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 50 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -170,6 +178,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | [16](#xxscreeps-gap-stale-argument-throws-instead-of-invalid-target) |
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | [1](#xxscreeps-gap-pull-range-checked-before-spawning-target) |
 | `heal-safe-mode-checked-before-target` | `checkHeal` and `checkRangedHeal` (`mods/classic/combat/creep.ts:169-186`) run `checkSafeMode` straight after the body-part check, so a heal in another player's safe mode returns `ERR_NO_BODYPART` before an invalid target, and `heal` before range. | Vanilla checks `heal`'s target and range before safe mode (`game/creeps.js:689-699`) and `rangedHeal`'s target before safe mode (`:717-724`), returning `ERR_INVALID_TARGET` or `ERR_NOT_IN_RANGE`. | Found 2026-09-27 when safe mode's refusal became a condition of each method's validation matrix (it had been one code-only row). | 0 |
+| `creep-combat-rejects-power-creep-targets` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET. | Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it. | Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`. | 0 |
+| `tower-targets-creeps-and-destructible-only` | `StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller. | Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits. | Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only. | 0 |
 | `attack-controller-safe-mode-checked-before-cooldown` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`. | Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`). | Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row). | 0 |
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | 0 |
 | `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | [1](#xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target) |
@@ -314,6 +324,18 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-heal-safe-mode-checked-before-target">
 <summary><code>heal-safe-mode-checked-before-target</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-creep-combat-rejects-power-creep-targets">
+<summary><code>creep-combat-rejects-power-creep-targets</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-tower-targets-creeps-and-destructible-only">
+<summary><code>tower-targets-creeps-and-destructible-only</code> — 0 tests</summary>
 
 
 </details>

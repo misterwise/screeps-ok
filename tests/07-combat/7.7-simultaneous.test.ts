@@ -2,344 +2,159 @@ import { describe, test, expect, code,
 	OK,
 	MOVE, ATTACK, RANGED_ATTACK, TOUGH, HEAL, body,
 	ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, BODYPART_HITS,
-	FIND_TOMBSTONES,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
-// Simultaneous Damage & Healing — vanilla engine resolves damage and healing in
-// the same tick. See @screeps/engine/src/processor/intents/creeps/tick.js:118-135:
-//   1. _damageToApply is applied (subtracts from object.hits)
-//   2. _healToApply is added
-//   3. hits capped at hitsMax
-//   4. death check (object.hits <= 0)
-// Net result: newHits = clamp(oldHits - damage + heal, 0, hitsMax).
-// A creep survives a tick if heal >= damage even when oldHits == damage.
+// Vanilla resolves a creep's damage and healing together at the end of the
+// tick (processor/intents/creeps/tick.js:118-135): damage, then heal, then the
+// hitsMax cap, then the death check, with both accumulators cleared.
+
+async function twoPlayers(shard: ShardFixture) {
+	await shard.createShard({
+		players: ['p1', 'p2'],
+		rooms: [
+			{ name: 'W1N1', rcl: 1, owner: 'p1' },
+			{ name: 'W2N1', rcl: 1, owner: 'p2' },
+		],
+	});
+}
+
+// A p1 target at 30 hits with a 1-ATTACK p2 attacker and a 5-HEAL p1 healer
+// beside it: one tick of both is lethal damage healed back.
+async function nearlyDeadTarget(shard: ShardFixture) {
+	await twoPlayers(shard);
+	const targetId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [TOUGH, TOUGH, MOVE] });
+	const seederId = await shard.placeCreep('W1N1', { pos: [26, 25], owner: 'p2', body: body(9, ATTACK, MOVE) });
+	const attackerId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p2', body: [ATTACK, MOVE] });
+	const healerId = await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p1', body: body(5, HEAL, MOVE) });
+
+	const seedRc = await shard.runPlayer('p2', code`
+		Game.getObjectById(${seederId}).attack(Game.getObjectById(${targetId}))
+	`);
+	expect(seedRc).toBe(OK);
+	const hits = 3 * BODYPART_HITS - 9 * ATTACK_POWER;
+	expect((await shard.expectObject(targetId, 'creep')).hits).toBe(hits);
+
+	const results = await shard.runPlayers({
+		p1: code`Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))`,
+		p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
+	});
+	expect(results).toEqual({ p1: OK, p2: OK });
+	return { targetId, net: hits + 5 * HEAL_POWER - ATTACK_POWER };
+}
 
 describe('Simultaneous damage & healing resolution', () => {
-	test('COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		// Target has lots of TOUGH so it cannot be at full HP after a single attack
-		// (heal would otherwise be capped to hitsMax and the arithmetic would be hidden).
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [...body(8, TOUGH), MOVE],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [HEAL, MOVE],
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p2',
-			body: [ATTACK, MOVE],
-		});
-		await shard.tick();
+	test('COMBAT-SIMULT-001:net newHits = oldHits + healing - damage in the same tick', async ({ shard }) => {
+		await twoPlayers(shard);
+		const targetId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: body(8, TOUGH, MOVE) });
+		const healerId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p1', body: [HEAL, MOVE] });
+		const attackerId = await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p2', body: [ATTACK, MOVE] });
 
-		const before = await shard.expectObject(targetId, 'creep');
-		const oldHits = before.hits;
-		// Pre-damage so we are not at full HP and the heal is observable.
+		// A wound first, so the heal isn't capped at hitsMax.
 		const seedRc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 		`);
 		expect(seedRc).toBe(OK);
-		await shard.tick();
+		const wounded = 9 * BODYPART_HITS - ATTACK_POWER;
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded);
 
-		const mid = await shard.expectObject(targetId, 'creep');
-		expect(mid.hits).toBe(oldHits - ATTACK_POWER);
-
-		// Now: same tick attack + heal.
 		const results = await shard.runPlayers({
 			p1: code`Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))`,
 			p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
 		});
-		expect(results.p1).toBe(OK);
-		expect(results.p2).toBe(OK);
-		await shard.tick();
-
-		const after = await shard.expectObject(targetId, 'creep');
-		expect(after.hits).toBe(mid.hits + HEAL_POWER - ATTACK_POWER);
+		expect(results).toEqual({ p1: OK, p2: OK });
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded + HEAL_POWER - ATTACK_POWER);
 	});
 
-	test('COMBAT-SIMULT-001 a creep survives if healing equals damage in the same tick', async ({ shard }) => {
-		// Heal exactly equals damage → tick.js applies damage then heal, so hits
-		// returns to its original value. Death check at the end of the tick finds
-		// hits > 0 and the creep survives unchanged.
-		// Math: 2 ATTACK parts deal 60 damage. 5 HEAL parts heal 60. Exact tie.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [...body(8, TOUGH), MOVE],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [...body(5, HEAL), MOVE], // 60 heal
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p2',
-			body: [...body(2, ATTACK), MOVE], // 60 dmg
-		});
-		await shard.tick();
+	test('COMBAT-SIMULT-001:healMatchesDamage a creep whose healing matches the damage keeps its hits', async ({ shard }) => {
+		await twoPlayers(shard);
+		const targetId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: body(8, TOUGH, MOVE) });
+		// Five HEAL parts restore what two ATTACK parts deal.
+		const healerId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p1', body: body(5, HEAL, MOVE) });
+		const attackerId = await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p2', body: body(2, ATTACK, MOVE) });
+		expect(5 * HEAL_POWER).toBe(2 * ATTACK_POWER);
 
-		// Pre-damage the target so heal is not capped at hitsMax.
-		await shard.runPlayer('p2', code`
+		const seedRc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 		`);
-		await shard.tick();
-		const mid = await shard.expectObject(targetId, 'creep');
-		const startHits = mid.hits;
-		expect(startHits).toBeGreaterThan(60);
+		expect(seedRc).toBe(OK);
+		const wounded = 9 * BODYPART_HITS - 2 * ATTACK_POWER;
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded);
 
-		// Same-tick exact tie: 60 damage in, 60 heal in.
 		const results = await shard.runPlayers({
 			p1: code`Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))`,
 			p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
 		});
-		expect(results.p1).toBe(OK);
-		expect(results.p2).toBe(OK);
-		await shard.tick();
-
-		// Survives with hits unchanged.
-		const after = await shard.expectObject(targetId, 'creep');
-		expect(after).toBeDefined();
-		expect(after.hits).toBe(startHits);
+		expect(results).toEqual({ p1: OK, p2: OK });
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded);
 	});
 
-	test('COMBAT-SIMULT-003 overkill damage does not carry over to the next tick', async ({ shard }) => {
-		// If damage > hits + heal, the creep dies this tick. Overkill is discarded;
-		// nothing persists to a next tick. The previous tick's resolved hits is the
-		// final state for that creep.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [TOUGH, MOVE], // 200 hits
-		});
-		// Massive damage on a small target.
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2',
-			body: [...body(10, ATTACK), MOVE], // 300 dmg
-		});
-		await shard.tick();
-
-		const before = await shard.expectObject(targetId, 'creep');
-		expect(before.hits).toBe(2 * BODYPART_HITS);
-
-		const rc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Target died this tick; tombstone created.
-		const after = await shard.getObject(targetId);
-		expect(after).toBeNull();
-
-		// A tombstone is left at the target's position. Overkill does not
-		// reanimate the creep next tick or affect adjacent creeps.
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const ts = tombstones.find(t => t.pos.x === 25 && t.pos.y === 25);
-		expect(ts).toBeDefined();
-
-		// Verify the attacker is unchanged after the kill (no overkill bleed).
-		await shard.tick();
-		const attacker = await shard.expectObject(attackerId, 'creep');
-		expect(attacker.hits).toBe(attacker.hitsMax);
+	test('COMBAT-SIMULT-001:lethalHealedBack a lethal hit healed back in the same tick leaves the creep at the net', async ({ shard }) => {
+		const { targetId, net } = await nearlyDeadTarget(shard);
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(net);
 	});
 
-	test('COMBAT-SIMULT-001 a creep dies only if hits reach 0 after simultaneous resolution', async ({ shard }) => {
-		// Setup: damage > hits, healing brings net change above 0 → creep survives.
-		// Verify the death check happens AFTER both damage and heal apply.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		// Target: 1 TOUGH + 1 MOVE = 200 hits. Pre-damage to leave it at 30 hits.
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [TOUGH, TOUGH, MOVE], // 300 hits
-		});
-		// Attacker deals 30 damage per tick.
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2',
-			body: [ATTACK, MOVE],
-		});
-		// Healer: 5 HEAL parts heal 60 hits per tick > 30 damage → creep survives.
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p1',
-			body: [...body(5, HEAL), MOVE],
-		});
-		await shard.tick();
+	test('COMBAT-SIMULT-001:lethal same-tick heal does not save a creep when damage exceeds hits + heal', async ({ shard }) => {
+		// The HEAL part still has hits when the intents queue, so both return OK;
+		// the death is decided when the tick resolves.
+		await twoPlayers(shard);
+		// Damage lands front to back, so the HEAL part keeps the last hits.
+		const targetId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [MOVE, HEAL] });
+		const seederId = await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p2', body: body(6, ATTACK, MOVE) });
+		const rangerId = await shard.placeCreep('W1N1', { pos: [22, 25], owner: 'p2', body: [RANGED_ATTACK, MOVE] });
+		const attackerId = await shard.placeCreep('W1N1', { pos: [26, 25], owner: 'p2', body: [ATTACK, MOVE] });
 
-		// Pre-damage to bring target hits to 30.
-		// 9 hits of ATTACK_POWER = 270 damage. Starting from 300, ends at 30.
-		for (let i = 0; i < 9; i++) {
-			// Healer is friendly to target — but only attacker fires this loop.
-			// Use a separate damager in p2 chain.
-			await shard.runPlayer('p2', code`
-				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-			`);
-			await shard.tick();
-		}
-		const mid = await shard.expectObject(targetId, 'creep');
-		expect(mid.hits).toBe(30);
+		const seedRcs = await shard.runPlayer('p2', code`[
+			Game.getObjectById(${seederId}).attack(Game.getObjectById(${targetId})),
+			Game.getObjectById(${rangerId}).rangedAttack(Game.getObjectById(${targetId})),
+		]`);
+		expect(seedRcs).toEqual([OK, OK]);
+		const hits = 2 * BODYPART_HITS - 6 * ATTACK_POWER - RANGED_ATTACK_POWER;
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(hits);
+		expect(hits + HEAL_POWER - ATTACK_POWER).toBeLessThan(0);
 
-		// Same tick: 30 damage (kill) + 60 heal = +30 net → creep is at 60 after.
-		const results = await shard.runPlayers({
-			p1: code`Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))`,
-			p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
-		});
-		expect(results.p1).toBe(OK);
-		expect(results.p2).toBe(OK);
-		await shard.tick();
-
-		const after = await shard.expectObject(targetId, 'creep');
-		expect(after).toBeDefined();
-		// 30 - 30 + 60 = 60.
-		expect(after.hits).toBe(60);
-	});
-
-	test('COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)', async ({ shard }) => {
-		// Death case for the same rule. Self-heal cannot save a creep when incoming
-		// damage > current hits + heal: damage and heal are summed first, then the
-		// death check sees hits <= 0. Both intents return OK at submission because
-		// the HEAL part is still active when the intent is queued — the kill is
-		// decided at tick resolution, not at intent time.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		// Body [MOVE, HEAL] = 200 hits. Vanilla applies damage front-to-back, so
-		// MOVE absorbs the first 100 damage; HEAL still has hits (and is active for
-		// self-healing) until the very end.
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [MOVE, HEAL],
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p2',
-			body: [ATTACK, MOVE],
-		});
-		// Ranger only exists to trim the last 10 hits without overshooting ATTACK_POWER.
-		const rangerId = await shard.placeCreep('W1N1', {
-			pos: [22, 25], owner: 'p2',
-			body: [RANGED_ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		// Pre-damage to 10 hits: 6 melee ticks (180) + 1 ranged tick (10) = 190.
-		for (let i = 0; i < 6; i++) {
-			const rc = await shard.runPlayer('p2', code`
-				Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-			`);
-			expect(rc).toBe(OK);
-			await shard.tick();
-		}
-		const rangedRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${rangerId}).rangedAttack(Game.getObjectById(${targetId}))
-		`);
-		expect(rangedRc).toBe(OK);
-		await shard.tick();
-
-		const mid = await shard.expectObject(targetId, 'creep');
-		expect(mid.hits).toBe(2 * BODYPART_HITS - 6 * ATTACK_POWER - RANGED_ATTACK_POWER);
-		// Below ATTACK_POWER - HEAL_POWER, so attack alone outruns heal.
-		expect(mid.hits).toBeLessThan(ATTACK_POWER - HEAL_POWER);
-
-		// Same-tick: 30 dmg in, 12 heal in, starting from 10. Net = -8 → dies.
 		const results = await shard.runPlayers({
 			p1: code`Game.getObjectById(${targetId}).heal(Game.getObjectById(${targetId}))`,
 			p2: code`Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))`,
 		});
-		expect(results.p1).toBe(OK);
-		expect(results.p2).toBe(OK);
-		await shard.tick();
-
-		// Creep is gone after resolution despite the same-tick self-heal.
-		const after = await shard.getObject(targetId);
-		expect(after).toBeNull();
-
-		// Tombstone left at the target's last position.
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const ts = tombstones.find(t => t.pos.x === 25 && t.pos.y === 25);
-		expect(ts).toBeDefined();
+		expect(results).toEqual({ p1: OK, p2: OK });
+		expect(await shard.getObject(targetId)).toBeNull();
 	});
 
-	test('COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently', async ({ shard }) => {
-		// Two attackers + two healers in the same tick. _damageToApply and _healToApply
-		// accumulate across all sources before the tick.js resolution step.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [...body(8, TOUGH), MOVE],
-		});
-		const a1Id = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2', body: [ATTACK, MOVE], name: 'a1',
-		});
-		const a2Id = await shard.placeCreep('W1N1', {
-			pos: [26, 25], owner: 'p2', body: [ATTACK, MOVE], name: 'a2',
-		});
-		const h1Id = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p1', body: [HEAL, MOVE], name: 'h1',
-		});
-		const h2Id = await shard.placeCreep('W1N1', {
-			pos: [25, 24], owner: 'p1', body: [HEAL, MOVE], name: 'h2',
-		});
-		await shard.tick();
+	test('COMBAT-SIMULT-001:summedSources damage and healing sum over every source', async ({ shard }) => {
+		await twoPlayers(shard);
+		const targetId = await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: body(8, TOUGH, MOVE) });
+		const a1Id = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p2', body: [ATTACK, MOVE], name: 'a1' });
+		const a2Id = await shard.placeCreep('W1N1', { pos: [26, 25], owner: 'p2', body: [ATTACK, MOVE], name: 'a2' });
+		const h1Id = await shard.placeCreep('W1N1', { pos: [24, 25], owner: 'p1', body: [HEAL, MOVE], name: 'h1' });
+		const h2Id = await shard.placeCreep('W1N1', { pos: [25, 24], owner: 'p1', body: [HEAL, MOVE], name: 'h2' });
 
-		// Pre-damage so heal is not capped.
-		await shard.runPlayer('p2', code`
+		const seedRc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${a1Id}).attack(Game.getObjectById(${targetId}))
 		`);
-		await shard.tick();
-		const mid = await shard.expectObject(targetId, 'creep');
-		const startHits = mid.hits;
+		expect(seedRc).toBe(OK);
+		const wounded = 9 * BODYPART_HITS - ATTACK_POWER;
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded);
 
-		// Same tick: 2 attackers (60 damage) + 2 healers (24 heal).
 		const results = await shard.runPlayers({
-			p1: code`
-				const r1 = Game.getObjectById(${h1Id}).heal(Game.getObjectById(${targetId}));
-				const r2 = Game.getObjectById(${h2Id}).heal(Game.getObjectById(${targetId}));
-				[r1, r2]
-			`,
-			p2: code`
-				const r1 = Game.getObjectById(${a1Id}).attack(Game.getObjectById(${targetId}));
-				const r2 = Game.getObjectById(${a2Id}).attack(Game.getObjectById(${targetId}));
-				[r1, r2]
-			`,
+			p1: code`[
+				Game.getObjectById(${h1Id}).heal(Game.getObjectById(${targetId})),
+				Game.getObjectById(${h2Id}).heal(Game.getObjectById(${targetId})),
+			]`,
+			p2: code`[
+				Game.getObjectById(${a1Id}).attack(Game.getObjectById(${targetId})),
+				Game.getObjectById(${a2Id}).attack(Game.getObjectById(${targetId})),
+			]`,
 		});
-		expect(results.p1).toEqual([OK, OK]);
-		expect(results.p2).toEqual([OK, OK]);
-		await shard.tick();
+		expect(results).toEqual({ p1: [OK, OK], p2: [OK, OK] });
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(wounded - 2 * ATTACK_POWER + 2 * HEAL_POWER);
+	});
 
-		const after = await shard.expectObject(targetId, 'creep');
-		// Net: -60 + 24 = -36
-		expect(after.hits).toBe(startHits - 2 * ATTACK_POWER + 2 * HEAL_POWER);
+	test('COMBAT-SIMULT-003 a heal-saved creep\'s hits stay put on the next idle tick', async ({ shard }) => {
+		const { targetId, net } = await nearlyDeadTarget(shard);
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(net);
+
+		await shard.tick();
+		expect((await shard.expectObject(targetId, 'creep')).hits).toBe(net);
 	});
 });

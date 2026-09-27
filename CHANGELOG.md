@@ -154,7 +154,8 @@ changes since `v0.1.0-alpha` are not itemized.
   `:ticksToLive`), `COMBAT-RMA-002` and `TOWER-ATTACK/HEAL/REPAIR-002` by
   range (`:range3`), `RAMPART-DECAY-003` by RCL (`:rcl2`), the boost
   magnitude rows `BOOST-{RANGED,HEAL,ATTACK,DISMANTLE,HARVEST,BUILD,UPGRADE,
-  TOUGH,MOVE,CARRY}-001` by compound (`:XGHO2`), `UNDOC-IDCTOR-001` by
+  TOUGH,MOVE,CARRY}-001` by compound and mechanic (`:XGHO2Damage`,
+  `:KORangedAttack`), `UNDOC-IDCTOR-001` by
   constructor (`:Creep`), `STRONGHOLD-LAYOUT-001` by template (`:bunker1`),
   `INVADER-RAID-009` by case (`:centerSmallRaid`). Re-keyed: `LAB-RUN-001`
   by product (`:UH2O`; the key was the first reagent, which up to ten
@@ -190,6 +191,29 @@ changes since `v0.1.0-alpha` are not itemized.
   spawned-power-creep half. `PATHFINDER-016`, `-021`, `-022` and `-023` state
   exact outcomes (a weighted search's cost, complete paths within
   `maxOps: 2000`, and which neighbour a directed search never loads).
+- Combat rows keyed by case: `COMBAT-MELEE-005` (`:creep`, `:structure`),
+  `COMBAT-MELEE-006` (`:counterDamage`, `:attackerOnRampart`; the row now says
+  any rampart on the attacker's tile stops the hit-back, not only its own),
+  `COMBAT-MELEE-007` and `COMBAT-RANGED-005` (`:creep`, `:powerCreep`,
+  `:structure`), `COMBAT-HEAL-003` (`:creep`, `:powerCreep`) and
+  `COMBAT-SIMULT-001` (`:net`, `:healMatchesDamage`, `:lethalHealedBack`,
+  `:lethal`, `:summedSources`); all were bare IDs. `COMBAT-SIMULT-003` now
+  states what vanilla shows: lethal damage a same-tick heal outweighs leaves
+  the creep's hits at the net on the next idle tick.
+- Tower rows: `TOWER-ATTACK-003`, `TOWER-HEAL-003` and `TOWER-REPAIR-003`
+  are keyed by target class (`:creep`, `:powerCreep`, `:structure`,
+  `:controller`, `:constructionSite`, `:source`; they were bare IDs, one
+  `[friendly-creep]`). `TOWER-INTENT-002` is keyed `:heal` (heal over repair
+  and attack) and `:repair` (repair over attack).
+- Boost rows: the magnitude rows gain the mechanics they had no test for
+  (`BOOST-RANGED-001:KORangedMassAttack`, `BOOST-HEAL-001:LORangedHeal`,
+  `BOOST-BUILD-001:LHBuild`, each for all three tiers).
+  `BOOST-AGGREGATION-001` is keyed by mechanic (`:attack` … `:capacity`,
+  twelve; it was two bare-ID tests), `BOOST-HARVEST-002` by the `WORK`
+  action it runs (`:build`, `:repair`, `:dismantle`, `:upgradeController`)
+  and `BOOST-BUILD-002` by `:build` and `:repair`. `BOOST-CREEP-010` gains
+  `:spawning` and `:tooManyParts` with their pairs, and its `:invalidTarget`
+  is a source.
 - Now keyed by condition, each validation row running its conditions alone
   and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
   `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,
