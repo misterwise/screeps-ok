@@ -4,7 +4,7 @@
 			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract.",
 			"expected": "The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`.",
 			"tests": ["MOVE-PULL-012:pullerFirst"],
-			"why": "Vanilla bug; upstream fix is screeps/engine#156 (open)."
+			"why": "Canonical claim is reported: screeps/engine#156 (open) fixes the order-dependent fatigue as a vanilla bug."
 		},
 		"eventlog-structure-destroy-intent-missing": {
 			"actual": "Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`).",
@@ -21,31 +21,31 @@
 		"power-creep-ticks-to-live-not-undefined-when-unspawned": {
 			"actual": "Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`.",
 			"expected": "Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death).",
-			"why": "Canonical claim is PR-derived: screeps/engine#148 (open) fixes unspawned power creeps returning a weird null value for their TTL. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"why": "Canonical claim is documented: PowerCreep.ticksToLive is 'Undefined if the creep is not spawned in the world.' screeps/engine#148 (open) fixes vanilla's NaN.",
 			"tests": ["POWERCREEP-LIFETIME-002", "POWERCREEP-DEATH-002"]
 		},
 		"market-history-empty-array-missing": {
 			"actual": "Stable vanilla's `Game.market.getHistory` (`@screeps/engine/src/game/market.js:41-52`) returns `{}` for an invalid resource (line 48) and `JSON.parse(JSON.stringify(history[resource] || {}))` for a valid-but-empty resource (line 50) — always an object, never `[]`.",
 			"expected": "Game.market.getHistory returns an empty array for invalid resources and valid resources with no history.",
-			"why": "Canonical claim is PR-derived: screeps/engine#131 (open) fixes the incorrect return types for Game.market.getHistory(). xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"why": "Canonical claim is documented: Game.market.getHistory 'Returns an array of objects'. screeps/engine#131 (open) fixes vanilla's object return.",
 			"tests": ["MARKET-QUERY-006"]
 		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "Stable vanilla's `_findClosestByPath2` (`@screeps/engine/src/game/rooms.js:304-374`) never reads `opts.range`: it hardcodes `{range: 1, pos: i}` on the PathFinder goal at line 328 and post-filters reachability with `lastPos.isNearTo(obj)` at line 368.",
 			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",
-			"why": "Canonical claim is PR-derived: screeps/engine#121 (open, enhancement/needs-testing) proposes honoring the range option (#136 is a closed duplicate). Stable vanilla has not shipped it, so this row is an expected failure on BOTH adapters until upstream lands — it is not an xxscreeps bug.",
+			"why": "Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, whose range option finds a path to a position in that linear range of the target. screeps/engine#121 (open) proposes honoring it. It fails on both adapters; it is not an xxscreeps bug.",
 			"tests": ["ROOMPOS-FIND-010"]
 		},
 		"movecache-fatigue-visualization-recomputes": {
 			"actual": "Stable vanilla's `Creep.moveTo` short-circuits `if (fatigue>0 && !opts.visualizePathStyle) return ERR_TIRED` (`@screeps/engine/src/game/creeps.js:173`), so setting `visualizePathStyle` bypasses the early return. The reusable-cache branch (`creeps.js:241-302`) then calls `moveByPath` → `move` (which returns `ERR_TIRED`) and falls through to `findPathTo` at line 283, which re-invokes the supplied `costCallback`.",
 			"expected": "A fatigued moveTo call with a valid reusable path and visualizePathStyle returns ERR_TIRED without recomputing a path.",
-			"why": "Canonical claim is PR-derived: screeps/engine#152 (open) stops moveTo recomputing a path when the creep is fatigued, visualizePathStyle is set, and a valid memorized path exists. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
+			"why": "Canonical claim is reported: screeps/engine#152 (open) stops moveTo recomputing a path when the creep is fatigued, visualizePathStyle is set, and a valid memorized path exists. xxscreeps already implements it; vanilla stays expected-fail until upstream lands.",
 			"tests": ["UNDOC-MOVECACHE-004"]
 		},
 		"moveto-all-routes-blocked-walks-into-creeps": {
 			"actual": "Stable vanilla's `Creep.moveTo` (`@screeps/engine/src/game/creeps.js:283-302`) returns a partial path from `findPathTo` without a destination-occupancy check; if `path.length > 0` it calls `this.move(path[0].direction)` and returns OK, walking the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63).",
 			"expected": "creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep.",
-			"why": "Canonical claim is PR-derived: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is an expected failure on BOTH adapters until upstream does — it is not an xxscreeps bug.",
+			"why": "Canonical claim is reported: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is an expected failure on BOTH adapters until upstream does — it is not an xxscreeps bug.",
 			"tests": ["MOVE-COLLISION-007"]
 		}
 	}

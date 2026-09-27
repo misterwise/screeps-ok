@@ -59,7 +59,7 @@ reference implementations; an engine that installs the package owns its own.
 | `npm run parity` | Full suite on both adapters, then regenerates the status docs. Takes minutes: once per change, not per edit. |
 | `npm run parity -- <vitest-args>` | Filtered run. Writes `reports/<adapter>-partial.json` and leaves the docs alone. |
 | `npm run status:refresh` | Regenerates the status docs from existing reports. Runs no tests. |
-| `npm run check` | The static checks pre-commit and CI run: typecheck, capability gates, doc references, engine-free framework tests. Rewrites the generated files it owns. |
+| `npm run check` | The static checks pre-commit and CI run: typecheck, capability gates, catalog labels, doc references, engine-free framework tests. Rewrites the generated files it owns. |
 
 - **Capture, don't stream.** Suite output runs to thousands of lines.
   Redirect it and read the log:

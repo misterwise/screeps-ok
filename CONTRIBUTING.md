@@ -65,9 +65,10 @@ Read in this order:
   Extend an existing family before starting a new one.
 - An entry needs a canonical source: stable vanilla does it, the Screeps API
   docs promise it, or an upstream bug report or fix says vanilla gets
-  documented behavior wrong. Record which in the entry or its `parity.json`
-  gap. An entry that only restates an unmerged feature proposal doesn't
-  belong in the catalog.
+  documented behavior wrong. Its label records which (`verified_vanilla`,
+  `documented`, `reported`; see How to read in `behaviors.md`), and a vanilla
+  `parity.json` gap cites the doc or report. An entry that only restates an
+  unmerged feature proposal doesn't belong in the catalog.
 - A test earns its ID by covering the whole entry. If it covers only part,
   rewrite the test or split the entry; don't tag partial coverage.
 - Name the kind of change in the PR: merge, drop, or split. After a merge,
@@ -159,8 +160,8 @@ different Node version, rather than the change.
 Before opening a PR, run the smallest useful validation set for your change:
 
 1. `npm run check`: the static checks pre-commit and CI run (typecheck,
-   capability gates, doc references, the engine-free framework tests, and the
-   generated files)
+   capability gates, catalog labels, doc references, the engine-free
+   framework tests, and the generated files)
 2. Targeted `npm test -- <adapter> <file-or-filter>`
 3. `npm run parity` if you changed tests, the catalog, an adapter, or parity
    declarations: the full suite on both adapters, which also regenerates the

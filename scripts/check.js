@@ -1,7 +1,7 @@
 // The static checks the pre-commit hook and CI both run, from the tree under
-// check: typecheck, capability gates, doc references, engine-internals drift,
-// the framework tests that boot no engine, and the generators whose output is
-// committed.
+// check: typecheck, capability gates, catalog labels, doc references,
+// engine-internals drift, the framework tests that boot no engine, and the
+// generators whose output is committed.
 // Callers compare the regenerated files with the committed ones.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -27,6 +27,7 @@ const steps = [
 	['starter', [script('generate-starter.js')]],
 	['typecheck', [require.resolve('typescript/bin/tsc'), '--noEmit']],
 	['capability gates', [script('validate-capabilities.js')]],
+	['catalog labels', [script('validate-catalog.js')]],
 	['doc references', [script('validate-docs.js')]],
 	['engine-internals drift', engineInternalsDrift],
 	['framework tests', [require.resolve('vitest/vitest.mjs'), 'run', ...engineFreeTests], { SCREEPS_OK_ADAPTER: 'none' }],

@@ -317,8 +317,8 @@ it. Do not:
 - use a matrix only to hide unclear scope
 
 If the definition is incomplete, finish it before writing the test family. If
-the applicability set is not stable, keep the catalog item as
-`needs_vanilla_verification` or a note until the family is explicit.
+the applicability set is not stable, keep the claim in a Note until the
+family is explicit.
 
 ## Write from the idiom, not only the method
 

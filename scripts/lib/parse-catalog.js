@@ -2,14 +2,17 @@
  * Shared catalog parser for behaviors.md.
  *
  * Extracts catalog entries with their IDs, sections, capabilities, and
- * oracle status. Used by generate-coverage.js and validate-capabilities.js.
+ * labels; a row with a malformed ID or label fails the parse.
  */
 import { readFileSync } from 'node:fs';
 import { CATALOG_ID_RE } from './catalog-id.js';
 
 const ROW_RE = /^-\s+`([^`]+)`\s+`(?:behavior|matrix)`/;
 const CLASS_RE = /`(behavior|matrix)`/;
-const ORACLE_RE = /`(verified_vanilla|needs_vanilla_verification)`/;
+const LABEL_RE = /^-\s+`[^`]+`\s+`(?:behavior|matrix)`\s+`([^`]+)`/;
+
+// A row's label names its canonical source (behaviors.md, "How to read").
+export const CATALOG_LABELS = ['verified_vanilla', 'documented', 'reported'];
 const CAPABILITY_RE = /`capability:\s*(\w+)`/;
 const ROW_CAPABILITY_RE = /`capability:\s*(\w+)`/g;
 const SECTION_RE = /^(#{1,3})\s+(.+)/;
@@ -48,7 +51,10 @@ export function parseCatalog(behaviorsPath) {
 			throw new Error(`${behaviorsPath}: row id ${id} is not FAMILY-001 or FAMILY-SUBFAMILY-001`);
 		}
 		const classMatch = line.match(CLASS_RE);
-		const oracleMatch = line.match(ORACLE_RE);
+		const label = line.match(LABEL_RE)?.[1];
+		if (!CATALOG_LABELS.includes(label)) {
+			throw new Error(`${behaviorsPath}: row ${id} is labeled ${label ? `\`${label}\`` : 'nothing'}, not one of ${CATALOG_LABELS.join(', ')}`);
+		}
 
 		// A row tag adds to its section's capability, e.g. `chemistry` plus `powerEffects`.
 		const rowCapabilities = [...line.matchAll(ROW_CAPABILITY_RE)].map(m => m[1]);
@@ -60,7 +66,7 @@ export function parseCatalog(behaviorsPath) {
 			capability: currentCapability,
 			capabilities: [...new Set([currentCapability, ...rowCapabilities].filter(Boolean))],
 			entryClass: classMatch ? classMatch[1] : null,
-			oracle: oracleMatch ? oracleMatch[1] : null,
+			oracle: label,
 		});
 	}
 

@@ -10,10 +10,16 @@ conformance test or one generated test family.
 - Coverage (which entries have tests) is tracked by scanning `tests/` — see
   `docs/coverage.html` for the current report
 - Facets marked with a capability tag require that adapter capability
-- Entries use the inline form `` `ID` `class` `oracle` ``
+- Entries use the inline form `` `ID` `class` `label` ``
 - `class` is one of `behavior` or `matrix`
-- `oracle` records the current reference status, such as
-  `verified_vanilla` or `needs_vanilla_verification`
+- `label` names the entry's canonical source: `verified_vanilla` when stable
+  vanilla does it (the vanilla adapter runs it green, or, where the harness
+  can't yet, a Note cites the vanilla source); `documented` when the Screeps
+  API documentation promises it and vanilla lacks it or gets it wrong;
+  `reported` when an upstream bug report or fix says vanilla gets it wrong.
+  A `documented` or `reported` entry's vanilla gap or capability says which
+  part vanilla misses, and `npm run check` holds each label against the
+  vanilla adapter
 - Matrix-backed and scoped shared-rule definitions live in
   `docs/behavior-matrices.md`
 
@@ -56,9 +62,9 @@ conformance test or one generated test family.
   divergence. Do not let wrapper ownership accidentally remove parity coverage
   for inherited movement behavior.
 - A catalog entry must describe established behavioral truth, not an
-  attractive hypothesis. If a claimed rule has not yet been demonstrated well
-  enough to trust as vanilla behavior, keep it in `Notes`, `Coverage Notes`, or
-  `Framework Notes` until the behavior itself is established.
+  attractive hypothesis: it needs one of the three sources its label names. A
+  rule none of them establishes stays out of the catalog, and a feature
+  proposal is not a source.
 - Do not use catalog entries for editorial guidance, framework limitations,
   inferred internal algorithms, or broad umbrella statements.
 - Keep non-normative material under section-local `Notes`, `Coverage Notes`, or
@@ -269,7 +275,7 @@ Coverage Notes
   `creep.pull(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, caller busy state, target
   validity, and range.
-- `MOVE-PULL-012` `behavior` `needs_vanilla_verification`
+- `MOVE-PULL-012` `behavior` `reported`
   When the puller dies from `ticksToLive === 1` on the same tick a pull
   resolves, the pull still completes — the pulled creep moves into the
   puller's old tile — and the move's fatigue is buried with the dying
@@ -297,7 +303,7 @@ Coverage Notes
   In a circular movement chain (A moves to B's tile, B moves to C's tile,
   C moves to A's tile), all creeps either rotate positions simultaneously or
   all remain in place.
-- `MOVE-COLLISION-007` `behavior` `needs_vanilla_verification`
+- `MOVE-COLLISION-007` `behavior` `reported`
   When `creep.moveTo(target, { ignoreCreeps: false })` would have to pass
   through a tile occupied by a stationary creep on every viable route,
   the call returns `ERR_NO_PATH` rather than `OK`. Distinct from
@@ -3099,7 +3105,7 @@ Coverage Notes
   Nuke-specific event-log details match the canonical matrix for `EVENT_ATTACK`
   object/target ids, absence of creep attack events from room-wide nuke kills,
   and rampart-before-covered-structure ordering.
-- `ROOM-EVENTLOG-027` `behavior` `needs_vanilla_verification`
+- `ROOM-EVENTLOG-027` `behavior` `documented`
   `EVENT_OBJECT_DESTROYED` is emitted when an owner calls
   `Structure.destroy()` (non-attack destruction), with `data.type` set to
   the destroyed `structureType`. Distinct from `ROOM-EVENTLOG-006`, which
@@ -3386,7 +3392,7 @@ Coverage Notes
   `PowerCreep.create()` failure codes match the canonical validation matrix
   for invalid arguments (including names longer than 100 characters),
   duplicate name, and insufficient free power levels.
-- `POWERCREEP-CREATE-003` `behavior` `needs_vanilla_verification`
+- `POWERCREEP-CREATE-003` `behavior` `documented`
   `PowerCreep.create()` accepts a 100-character name and the created power
   creep preserves that exact name.
 - `POWERCREEP-SPAWN-001` `behavior` `verified_vanilla`
@@ -3398,12 +3404,12 @@ Coverage Notes
   busy, invalid target, ownership, inactive power spawn, and spawn cooldown.
 - `POWERCREEP-LIFETIME-001` `behavior` `verified_vanilla`
   A spawned power creep's `ticksToLive` decreases by `1` each tick.
-- `POWERCREEP-LIFETIME-002` `behavior` `needs_vanilla_verification`
+- `POWERCREEP-LIFETIME-002` `behavior` `documented`
   An unspawned power creep exposes `ticksToLive === undefined` to player code.
 - `POWERCREEP-DEATH-001` `behavior` `verified_vanilla`
   A power creep death creates a tombstone on the death tile with the power
   creep snapshot fields and `TOMBSTONE_DECAY_POWER_CREEP` decay time.
-- `POWERCREEP-DEATH-002` `behavior` `needs_vanilla_verification`
+- `POWERCREEP-DEATH-002` `behavior` `documented`
   After a spawned power creep dies and becomes unspawned again, it exposes
   `ticksToLive === undefined` to player code.
 - `POWERCREEP-RENEW-001` `behavior` `verified_vanilla`
@@ -3418,7 +3424,7 @@ Coverage Notes
   `powerCreep.delete()` returns `ERR_BUSY` for a spawned power creep.
 - `POWERCREEP-DELETE-003` `behavior` `verified_vanilla`
   `powerCreep.delete()` returns `ERR_NOT_OWNER` for an unowned power creep.
-- `POWERCREEP-RENAME-001` `behavior` `needs_vanilla_verification`
+- `POWERCREEP-RENAME-001` `behavior` `documented`
   `PowerCreep.rename()` accepts a 100-character name and preserves that exact
   name.
 - `POWERCREEP-RENAME-002` `behavior` `verified_vanilla`
@@ -3626,7 +3632,7 @@ Notes
 - `MARKET-QUERY-005` `behavior` `verified_vanilla`
   Exposed order prices and market credits use public credit units rather than
   the engine's internal milli-credit storage.
-- `MARKET-QUERY-006` `behavior` `needs_vanilla_verification`
+- `MARKET-QUERY-006` `behavior` `documented`
   `Game.market.getHistory(invalidResource)` and valid resources with no
   history return an empty array (`[]`), not an empty object.
 ---
@@ -3749,7 +3755,7 @@ Coverage Notes
   search. A callback that walls off the cheapest route causes the
   function to return the next-cheapest reachable target instead of the
   range-1 result.
-- `ROOMPOS-FIND-010` `behavior` `needs_vanilla_verification`
+- `ROOMPOS-FIND-010` `behavior` `documented`
   `RoomPosition.findClosestByPath(..., { range: N })` uses `N` as the goal
   range when deciding whether a candidate is path-reachable.
 - `ROOMPOS-FIND-011` `behavior` `verified_vanilla`
@@ -4175,9 +4181,8 @@ and depended on by real bots, but is not described on `docs.screeps.com`.
 Entries are scoped to observable outcomes only — engine-internal properties
 that have no effect on player code are out of scope.
 
-Entries in this section start at `needs_vanilla_verification` by default.
-An entry only graduates to `verified_vanilla` after the canonical behavior is
-confirmed against vanilla in this repo.
+With no documentation to promise them, entries here are `verified_vanilla`
+or `reported`.
 
 ### 27.1 Memory Deserialization Short-Circuit (memhack)
 
@@ -4462,16 +4467,16 @@ encoding is engine-internal.
   `SYSTEM_USERNAME` is defined as a non-empty string constant on the global
   scope (reachable as `SYSTEM_USERNAME` or `global.SYSTEM_USERNAME` from
   user code).
-- `UNDOC-SYSUSER-002` `behavior` `needs_vanilla_verification`
-  A `Controller.sign` placed by the engine (novice area, respawn area,
-  system-reserved rooms) has `sign.username === SYSTEM_USERNAME`.
+- `UNDOC-SYSUSER-002` `behavior` `verified_vanilla`
+  A controller carrying a server-set sign (novice and respawn areas)
+  reports `sign.username === SYSTEM_USERNAME`, in place of any player's
+  sign.
 
 Coverage Notes
-- `UNDOC-SYSUSER-002` is fixture-blocked: the current `RoomSpec` has no
-  way to mark a room as a novice-area / respawn-area room so the engine
-  auto-places a system-owned sign. Deferring until the fixture gains
-  support, or until a different observable invariant (e.g. test reading a
-  pre-existing system sign in a real sandbox) is available.
+- `UNDOC-SYSUSER-002` is vanilla's controller `sign` getter, which reads
+  the server's `hardSign` before a player's sign
+  (`@screeps/engine/src/game/structures.js:186-196`). No test runs it:
+  `RoomSpec` can't set a server sign.
 
 ### 27.9 Engine-Written Memory Keys
 
@@ -4492,7 +4497,7 @@ the key is undocumented even though the behavior that produces it
   Deleting `creep.memory._move` before a subsequent `moveTo` call causes
   that call to recompute the path rather than reuse; the engine writes a
   fresh `_move` object whose `time` equals the current `Game.time`.
-- `UNDOC-MOVECACHE-004` `behavior` `needs_vanilla_verification`
+- `UNDOC-MOVECACHE-004` `behavior` `reported`
   With a valid reusable `creep.memory._move`, `visualizePathStyle`, and
   `fatigue > 0`, `moveTo()` returns `ERR_TIRED` without recomputing a path.
 
@@ -4546,9 +4551,8 @@ Coverage Notes
   framework can express the needed capability combination cleanly.
 
 Framework Notes
-- The current adapter contract (`src/adapter.ts`) exposes no normalized way
-  to capture room-history/client action-log payloads, so this section is
-  gated on `actionLogCapture` and starts at `needs_vanilla_verification`.
+- Tests read the payload through the adapter's `captureActionLog`, gated on
+  `actionLogCapture`.
 - Future tests should assert a normalized rendered payload, not raw engine
   storage. Vanilla stores object `actionLog` objects in room objects/history;
   xxscreeps stores `#actionLog` vectors and renders them for backend clients.
@@ -4888,35 +4892,15 @@ Coverage Notes
   sections: `MAP-*` for `Game.map`, `LEGACY-PATH-*` and section 2 for
   pathfinding, and `RENEW-CREEP-*` for `renewCreep`. Section 28 owns
   only the deprecation-notice emission.
-- None of these notices are emitted at runtime by `xxscreeps`, so every
-  entry in this section is a latent parity gap. Static-surface handling
-  in `xxscreeps` is uneven: `Game.map.isRoomAvailable` and
-  `Game.map.getTerrainAt` carry a JSDoc `@deprecated` tag;
-  `PathFinder.use` is a no-op function with no tag; `opts.avoid` and
-  `opts.ignore` are simply unhandled options on `Room.findPath` /
-  `findClosestByPath` (neither honored nor flagged); and
-  `renewCreep` on a boosted creep hard-rejects with `ERR_NO_BODYPART`
-  rather than proceeding with a notice (tracked separately as
-  `renew-rejects-boosted-creep` covering `RENEW-CREEP-004`..`006`).
-  None of these gaps are wired into
-  `docs/xxscreeps-parity-gaps.md` as deprecation-notice entries because
-  the framework has no console-capture adapter path (see Framework
-  Notes).
 
 Framework Notes
-- The current adapter contract (`src/adapter.ts`) exposes no API for
-  reading a player's `console.log` output. Asserting these entries
-  requires either extending the adapter with a capability-gated
-  log-capture method or routing console output through a known side
-  channel (e.g. writing to `Memory` from a monkey-patched `console.log`).
-  Until that plumbing exists, entries in this section cannot be directly
-  asserted and must remain at `needs_vanilla_verification`.
+- Tests read the notice through the adapter's `captureConsoleLogs`,
+  gated on `deprecationNotices`.
 - The catalog rule against console-output inspection in
   `docs/test-authoring.md` concerns using console as a stand-in for
   gameplay state. Deprecation notices are a case where the console
-  emission is itself the gameplay-adjacent observable; any future
-  verification path should be narrowly scoped to this section rather
-  than lifted as a general pattern.
+  emission is itself the gameplay-adjacent observable, so console capture
+  stays scoped to this section.
 - `Game.notify()` is split by the Summary scope rule: its return codes and
   per-tick intent cap are catalog surface, its delivery is not. Deprecation
   notices are distinct from both halves: emission is engine-mandated and
@@ -4937,8 +4921,7 @@ The second half only manifests with two or more shards in play: cross-shard
 creep traversal, `InterShardMemory.getRemote`, per-shard `Memory` and
 `RawMemory.segments` isolation, and the post-traversal value of
 `PowerCreep.shard`. The current adapter contract creates one isolated world
-per test, so these entries are gated on a future `multiShard` capability and
-remain `needs_vanilla_verification` until a multi-shard harness lands.
+per test, so these entries are gated on a future `multiShard` capability.
 
 Cross-references:
 - Same-shard portal mechanics and the shape of `portal.destination` (both
@@ -4964,22 +4947,22 @@ object (`{shard, room}`, no `x`/`y`) is `PORTAL-003` in section 13.6. The
 entries below cover only the cross-shard *consequences* of stepping onto
 such a portal — none of which are testable on a single-shard harness.
 
-- `INTERSHARD-PORTAL-001` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `INTERSHARD-PORTAL-001` `behavior` `documented` `capability: multiShard`
   A creep standing on an inter-shard portal disappears from the source
   shard on the next tick and re-materializes at `destination.room` on
   `destination.shard`, retaining `name`, `body`, `hits`, and store
   contents.
-- `INTERSHARD-PORTAL-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `INTERSHARD-PORTAL-002` `behavior` `documented` `capability: multiShard`
   A creep migrated by `INTERSHARD-PORTAL-001` retains its
   `Memory.creeps[name]` entry as visible on the destination shard's
   `Memory` (memory crosses with the creep, separate from the per-shard
   `Memory` isolation in 29.5).
 
 ### 29.3 InterShardMemory `capability: interShardMemory`
-- `ISM-002` `behavior` `verified_vanilla`
+- `ISM-002` `behavior` `documented`
   After `InterShardMemory.setLocal(s)` with string `s`, a subsequent
   `InterShardMemory.getLocal()` on the same tick returns exactly `s`.
-- `ISM-005` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `ISM-005` `behavior` `documented` `capability: multiShard`
   `InterShardMemory.getRemote(shardName)` returns the string shard
   `shardName` stored with `setLocal`.
 
@@ -4990,32 +4973,32 @@ Notes
   delay, so the catalog pins none of them.
 
 ### 29.4 CPU Shard Limits `capability: cpuShardLimits`
-- `CPU-SHARD-001` `behavior` `needs_vanilla_verification`
+- `CPU-SHARD-001` `behavior` `documented`
   `Game.cpu.shardLimits` is a plain object whose keys are shard names
   (strings) and whose values are non-negative integers.
-- `CPU-SHARD-002` `behavior` `needs_vanilla_verification`
+- `CPU-SHARD-002` `behavior` `documented`
   The sum of `Object.values(Game.cpu.shardLimits)` equals the player's
   daily CPU allowance (the cap reported by `Game.cpu.limit` summed
   across all shards).
-- `CPU-SHARD-003` `matrix` `needs_vanilla_verification`
+- `CPU-SHARD-003` `matrix` `documented`
   `Game.cpu.setShardLimits(map)` return-code matrix:
   - sum of values equals the daily allowance and every key is a known
     shard name → `OK`
   - sum of values does not equal the daily allowance → `ERR_INVALID_ARGS`
   - any key is not a known shard name → `ERR_INVALID_ARGS`
   - any value is negative or not an integer → `ERR_INVALID_ARGS`
-- `CPU-SHARD-004` `behavior` `needs_vanilla_verification`
+- `CPU-SHARD-004` `behavior` `documented`
   A successful `Game.cpu.setShardLimits` call within 12 hours of the
   previous successful call returns `ERR_BUSY` and leaves
   `Game.cpu.shardLimits` unchanged. Wall-clock dependent; deferred until
   the harness exposes a time-skip hook.
 
 ### 29.5 Per-Shard Memory Isolation `capability: multiShard`
-- `SHARD-MEMORY-001` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `SHARD-MEMORY-001` `behavior` `documented` `capability: multiShard`
   `Memory` is per-shard: a write to `Memory.foo` on shard A is not
   visible via `Memory.foo` on shard B on the same or any later tick.
   The cross-shard channel is `InterShardMemory` only.
-- `SHARD-MEMORY-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `SHARD-MEMORY-002` `behavior` `documented` `capability: multiShard`
   `RawMemory.segments` and segments published via
   `RawMemory.setPublicSegments` / readable via
   `RawMemory.setActiveForeignSegment` are scoped to the shard on which
@@ -5026,7 +5009,7 @@ Notes
 - `SHARD-PCREEP-001` `behavior` `verified_vanilla`
   An unspawned `PowerCreep` (created via `Game.gpl` allocation but not
   yet spawned at a power spawn) exposes `pc.shard === undefined`.
-- `SHARD-PCREEP-002` `behavior` `needs_vanilla_verification` `capability: multiShard`
+- `SHARD-PCREEP-002` `behavior` `documented` `capability: multiShard`
   A spawned `PowerCreep` exposes `pc.shard` as the string name of the
   shard where it currently resides; the value updates to the destination
   shard's name after the creep traverses an inter-shard portal.
@@ -5046,22 +5029,13 @@ Coverage Notes
   in `ISM-002`.
 
 Framework Notes
-- The current adapter contract (`src/adapter.ts`) creates one isolated
-  shard world per test. Entries gated on `multiShard` therefore cannot
-  be self-verified today and ship as `needs_vanilla_verification` with
-  the capability flag `false` on both adapters until a multi-shard
-  harness lands. Tracking the harness work and the remaining deferred
-  entries is out of scope here; revisit when the work is queued.
-- xxscreeps has no `InterShardMemory` module, no
-  `Game.cpu.shardLimits` / `setShardLimits`, and no `PowerCreep` class.
-  All entries in 29.3, 29.4, and 29.6 ship gated on capabilities the
-  xxscreeps adapter currently reports as `false`. See
-  `docs/xxscreeps-parity-gaps.md` for the upstream tracking.
-- The open-source `@screeps/engine` and `screeps-server-mockup` do not
-  ship an `InterShardMemory` module or seed `Game.cpu.shardLimits`
-  (the closed-source MMO server provides both), so no reference adapter
-  runs 29.3 or 29.4: `interShardMemory` and `cpuShardLimits` are `false`
-  on both. Their canonical source is the Screeps API documentation.
+- The adapter contract (`src/adapter.ts`) creates one shard world per
+  test, so no adapter declares `multiShard`.
+- The open-source engine ships no `InterShardMemory` module and doesn't
+  seed `Game.cpu.shardLimits` (the closed-source MMO server provides
+  both), so no reference adapter runs 29.3 or 29.4: `interShardMemory`
+  and `cpuShardLimits` are `false` on both, and the Screeps API
+  documentation is their source.
 
 ---
 
@@ -5089,7 +5063,7 @@ internal consistency.
   time — so only monotonicity is pinned, never values.)
 
 ### 30.3 Halt
-- `CPU-HALT-001` `behavior` `needs_vanilla_verification`
+- `CPU-HALT-001` `behavior` `verified_vanilla`
   `Game.cpu.halt()` terminates execution at the call site (code after it
   does not run) and destroys the player VM: the next tick starts in a
   fresh VM with all persistent globals gone.
@@ -5101,10 +5075,12 @@ Notes
   `{}`. Both adapters in this repo run isolated sandboxes, so the entries
   are asserted unconditionally; a non-IVM adapter would need capability
   flags here.
-- `CPU-HALT-001` is harness-blocked: both adapters cache one sandbox per
-  simulation, so after `halt()` disposes it every subsequent `runPlayer`
-  fails instead of observing the fresh-VM state. Testing it needs
-  sandbox-recreation support in the adapters.
+- `CPU-HALT-001` is vanilla's driver disposing the player's isolate and
+  clearing its VM for the next tick
+  (`@screeps/driver/lib/runtime/user-vm.js:68-71`, `make.js:280-283`). No
+  test runs it: both adapters cache one sandbox per simulation, so after
+  `halt()` disposes it every subsequent `runPlayer` fails instead of
+  observing the fresh-VM state.
 - `Game.cpu.generatePixel()`, `Game.cpu.unlock()`, and the
   `unlocked`/`unlockedTime` fields are MMO-backend surface absent from the
   open-source engine and are out of scope (see also `SHAPE-GAME-002`, which
