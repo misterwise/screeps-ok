@@ -92,7 +92,8 @@ That includes:
   extent is engine-reported rather than derived from the spec. Tests that
   depend on it — `Game.map.getWorldSize()`, or a distance that wraps across
   world edges — read `Game.map.getWorldSize()` in the sandbox and require
-  `liveWorldSize`
+  `liveWorldSize`. Requested rooms may lie on either side of the map origin
+  (`W1N1` and `E1S1` in one shard)
 - apply room ownership and controller level from `RoomSpec.owner` and
   `RoomSpec.rcl`
 - set the controller's `isPowerEnabled` from `RoomSpec.powerEnabled`

@@ -42,19 +42,42 @@ matches vanilla and a failing one names a real difference:
 - Adapters report what the engine did, with no defaults, fallbacks or clamps
   of their own.
 
-Changes between `v0.1.0-alpha` and the review are not itemized.
+These notes count from `fd25c92`, `master` before the review began, and the
+ID tables compare its tests with this release's. Changes between
+`v0.1.0-alpha` and `fd25c92` were not recorded. If you are upgrading from the
+alpha, they include 17 capability flags your adapter must declare
+(`actionLogCapture`, `cpuShardLimits`, `deprecationNotices`,
+`interShardMemory`, `invaderRaidSpawner`, `liveWorldSize`, `marketBasics`,
+`multiShard`, `powerBank`, `powerCreepAccountApi`, `powerEffects`,
+`powerSpawn`, `randomInjection`, `roomStatus`, `strongholdDeploy`, `terminal`,
+`terminalSend`), the `parity.json` overlay (`extends`, `expected_passes`), and
+the dropped `ROOM-TRANSITION-006`; `git log v0.1.0-alpha..fd25c92` has the
+rest.
 
 ### Upgrading
 
 1. Update your adapter for each item under Adapter contract below.
-   `tests/00-adapter-contract/` checks them.
-2. Move anything your adapter declared under `limitations` to `skips` in its
-   `parity.json`.
-3. Run the full suite. It now fails on any `parity.json` registration that
-   matches no test. Look each one up under Test IDs that moved or went below
-   and register its replacement, or delete it.
+   `tests/00-adapter-contract/` checks them. Delete the adapter's
+   `limitations`: each
+   flag skipped tests that now run (`pullSelfHang` → `MOVE-PULL-011:self`,
+   `controllerDowngrade` → the `CTRL-DOWNGRADE` tests and
+   `CTRL-SAFEMODE-009:downgradeTimer`, `xxscreepsPathFinderUseMissing` →
+   `LEGACY-PATH-003`). If your engine still can't run one, list it under
+   `skips` in your `parity.json`.
+2. Make your `parity.json` load; a file that breaks its schema now fails the
+   run. Remove the legacy `summary` and `status` keys, give every gap
+   `actual`, `expected` and a non-empty `tests`, and drop any
+   `expected_passes` entry that names a gap the base no longer registers.
+3. Run the full suite once, unfiltered and unsharded. It fails on each
+   registration that matches no test, including tests your adapter skips for a
+   missing capability. Look each ID up under Test IDs that moved or went below
+   and register its replacement, or delete it. It also fails on each
+   registered test that now passes: rows restated below can flip a gap.
 4. Expect new failures from exact assertions, new rows and new validation
    conditions. Each is an adapter bug to fix or an engine gap to register.
+5. If your CI shards the suite, each shard writes `reports/<name>-partial.json`
+   and none checks for orphaned registrations; run an unsharded full run to
+   check them.
 
 ### Adapter contract
 
@@ -121,7 +144,7 @@ Each item needs a change in your adapter unless it says otherwise.
   `progress` (default 0; `checkRoomSpec()` rejects it without an owner, at
   level 8, or at `CONTROLLER_LEVELS[rcl]` and above). `PlayerSpec.credits`
   sets `Game.market.credits` (default `DEFAULT_PLAYER_CREDITS`, 10,000,000,
-  the credits both reference adapters had hard-coded; `playerMillicredits()`
+  the credits the vanilla adapter had hard-coded; `playerMillicredits()`
   gives your engine's thousandths). `PlayerSpec.modules` installs code modules
   beside your adapter's own `main`, so player code can `require()` them
   (`playerModules()` rejects a `main`). An invader core placed with
@@ -141,6 +164,11 @@ Each item needs a change in your adapter unless it says otherwise.
   `options.signal` is already aborted throws its reason before any tick;
   `findInRoom` refuses player-relative constants; and the `placeObject`
   defaults and `captureConsoleLogs` behave as specified.
+- `ObserverSnapshot` has no `cooldown`: an observer has no cooldown getter.
+  Stop setting it.
+- `expectedShape(adapter, target, canonical)` takes the adapter first and
+  returns synchronously, where it was `async (target, canonical)`. It matters
+  only to tests of your own that call it.
 - `screeps-ok` exports `withCornerWalls` and `MarketOrderSpec`, which the
   starter adapter imports; it had not compiled against the package. Nothing
   to do.
@@ -150,10 +178,12 @@ Each item needs a change in your adapter unless it says otherwise.
 These change when a run passes or fails, so a CI that passed before can fail
 now.
 
-- A full run (no filter, no `--shard`; CI checks the merged shards) fails when
-  a registered test ID matches no test that passed or failed: a typo, a
-  renamed or dropped ID, or a test your adapter skips for a missing
-  capability. Drop a base gap your engine can't run with `expected_passes`.
+- A full run (no filter, no `--shard`) fails when a registered test ID
+  matches no test that passed or failed: a typo, a renamed or dropped ID, or
+  a test your adapter skips for a missing capability. Drop a base gap your
+  engine can't run with `expected_passes`. A sharded run doesn't check this;
+  this repository's CI merges its shards' reports and checks them with a
+  script the package doesn't ship.
 - A run fails on an unexpected pass even when vitest itself exited 0.
 - A test file that fails to load, or an unhandled error, is a genuine failure,
   where it had been forgiven when every failed test was registered.
@@ -174,18 +204,23 @@ now.
   wins over its describe block's bare ID. A name that runs on past an ID
   (`GPL-002a`, `POWER-GENERATE-OPS-001`) carries none.
 - A `:key` is one camelCase token, a letter then letters or digits
-  (`LAB-REVERSE-001:GH2O`). The reporter had cut a key at its first digit,
-  `-` or `_`, so a key with a digit now matches as written, and kebab-case or
-  snake_case keys are renamed (see Test IDs that moved or went).
+  (`LAB-REVERSE-001:GH2O`), read whole. The reporter had cut a key at its
+  first `-` or `+` (`NUKE-LAUNCH-008:not-owner` registered as
+  `NUKE-LAUNCH-008:not`) and ignored a key containing a digit or `_`, so the
+  test registered as its bare ID. Kebab-case keys are renamed (see Test IDs
+  that moved or went); a test whose key has a digit or `_` can now be
+  registered by its key.
 - Registering a bare ID covers every `:key` test of it, as the adapter guide
   documented; a keyed registration wins over the bare one. Before, a bare
   registration matched only tests named with the bare ID.
 - A test under `tests/NN-*/` (other than `00-*`) whose name carries no
   catalog ID, or two, fails the run: nothing could register or cover it.
-- Only an unfiltered run writes `reports/<name>.json`. A filtered or sharded
-  run (any vitest argument, `--shard` included) writes
-  `reports/<name>-partial.json`, and vitest run directly writes no report. A
-  CI that shards the suite collects `<name>-partial.json` from each shard.
+- Reports are written only when `CI` is set. Then only an unfiltered run
+  writes `reports/<name>.json`; a filtered or sharded run (any vitest
+  argument, `--shard` included) writes `reports/<name>-partial.json`, and
+  vitest run directly writes no report. A CI that shards the suite collects
+  `<name>-partial.json` from each shard. `runSuite()`'s `reportName` option is
+  gone; the runner names the report from the adapter.
 - `parity.json` takes `skips`, for tests your engine can't run at all (one
   that hangs a tick, say): `{ "<skip id>": { "why": "…", "tests": [ids] } }`.
   The fixture skips them before they touch the adapter, the reporter lists
@@ -201,10 +236,12 @@ changes that need no action).
 
 **Folded into a validation row.** Each creep and structure method's failure
 codes now belong to one validation row. Its test runs each failure condition
-alone (`HARVEST-015:range`) and each ordered pair (`:rangeBeforeNotEnough`,
+alone (`HARVEST-015:range`) and each ordered pair (`:rangeBeforeHostileRoom`,
 where vanilla checks range first), so rows that each tested one code went.
 Register the validation row's condition in place of the old row: for
-`HARVEST-002`, register `HARVEST-015:range`.
+`HARVEST-002`, register `HARVEST-015:range`. Where an old row covered several
+failure forms it maps to several conditions; the bare validation row covers
+every condition and pair.
 
 | Validation row | Old row → its condition |
 | --- | --- |
@@ -216,7 +253,7 @@ Register the validation row's condition in place of the old row: for
 | `COMBAT-RANGEDHEAL-006` | `COMBAT-RANGEDHEAL-004` → `:range`; `COMBAT-RANGEDHEAL-005` → `:noBodypart` |
 | `CONSTRUCTION-SITE-011` | `CONSTRUCTION-SITE-002` → `:siteCapFull`; `CONSTRUCTION-SITE-003` → `:rclOrStructureCap`; `CONSTRUCTION-SITE-007` → `:invalidTarget`; `CONSTRUCTION-SITE-014` → `:hostileReservation` |
 | `CTRL-ATTACK-007` | `CTRL-ATTACK-002` → `:noBodypart`; `CTRL-ATTACK-004` → `:range`; `CTRL-ATTACK-006` → `:invalidControllerState` |
-| `CTRL-CLAIM-008` | `CTRL-CLAIM-002` → `:noBodypart`; `CTRL-CLAIM-003` → `:invalidControllerState`; `CTRL-CLAIM-004` → `:range`; `CTRL-CLAIM-005` → `:gclNotEnough`; `CTRL-CLAIM-006` → `:invalidControllerState` |
+| `CTRL-CLAIM-008` | `CTRL-CLAIM-002` → `:noBodypart`; `CTRL-CLAIM-003` → `:invalidControllerState`, `:hostileReservation`; `CTRL-CLAIM-004` → `:range`; `CTRL-CLAIM-005` → `:gclNotEnough`; `CTRL-CLAIM-006` → `:invalidControllerState` |
 | `CTRL-GENSAFE-005` | `CTRL-GENSAFE-002` → `:range`; `CTRL-GENSAFE-004` → `:notEnough` |
 | `CTRL-RESERVE-008` | `CTRL-RESERVE-002` → `:noBodypart`; `CTRL-RESERVE-003` → `:invalidControllerState`; `CTRL-RESERVE-004` → `:range` |
 | `CTRL-SAFEMODE-009` | `CTRL-SAFEMODE-003` → `:notEnough`; `CTRL-SAFEMODE-004` → `:cooldown`; `CTRL-SAFEMODE-005` → `:downgradeTimer`; `CTRL-SAFEMODE-007` → `:busy` |
@@ -227,10 +264,10 @@ Register the validation row's condition in place of the old row: for
 | `DROP-011` | `DROP-004` → `:notEnough`; `DROP-005` → `:notOwner`; `DROP-006` → `:busy`; `DROP-007` → `:invalidArgs` |
 | `FACTORY-PRODUCE-011` | `FACTORY-PRODUCE-003` → `:notEnough`; `FACTORY-PRODUCE-004` → `:full`; `FACTORY-PRODUCE-005` → `:powerEffect`; `FACTORY-PRODUCE-006` → `:cooldown`; `FACTORY-PRODUCE-007` → `:rcl`; `FACTORY-PRODUCE-008` → `:invalidArgs`; `FACTORY-PRODUCE-009` → `:levelMismatch`; `FACTORY-PRODUCE-010` → `:notOwner` |
 | `FLAG-009` | `FLAG-007` → `:nameCreated`; `FLAG-008` → `:flagCapFull` |
-| `HARVEST-015` | `HARVEST-002` → `:range`; `HARVEST-003` → `:noBodypart`; `HARVEST-004` → `:depleted`; `HARVEST-010` → `:hostileRoom`; `HARVEST-011` → `:notOwner`; `HARVEST-012` → `:busy`; `HARVEST-013` → `:invalidTarget` |
+| `HARVEST-015` | `HARVEST-002` → `:range`; `HARVEST-003` → `:noBodypart`; `HARVEST-004` → `:depleted`; `HARVEST-010` → `:hostileRoom`, `:hostileReservation`; `HARVEST-011` → `:notOwner`; `HARVEST-012` → `:busy`; `HARVEST-013` → `:noTarget`, `:nullTarget`, `:invalidTarget`, `:plainObjectTarget` |
 | `HARVEST-MINERAL-014` | `HARVEST-MINERAL-004` → `:depleted`; `HARVEST-MINERAL-006` → `:noExtractor`; `HARVEST-MINERAL-007` → `:extractorNotOwner`; `HARVEST-MINERAL-008` → `:inactiveExtractor`; `HARVEST-MINERAL-009` → `:cooldown`; `HARVEST-MINERAL-010` → `:range` |
-| `LAB-REVERSE-013` | `LAB-REVERSE-005` → `:range`; `LAB-REVERSE-006` → `:notEnough`; `LAB-REVERSE-007` → `:full`; `LAB-REVERSE-008` → `:invalidReversePair`, `:sameLab`; `LAB-REVERSE-009` → `:invalidTarget`; `LAB-REVERSE-010` → `:cooldown`; `LAB-REVERSE-011` → `:rcl`; `LAB-REVERSE-012` → `:notOwner` |
-| `LAB-RUN-013` | `LAB-RUN-005` → `:range`; `LAB-RUN-006` → `:notEnough`; `LAB-RUN-007` → `:full`; `LAB-RUN-008` → `:invalidArgs`; `LAB-RUN-009` → `:invalidTarget`; `LAB-RUN-010` → `:cooldown`; `LAB-RUN-011` → `:rcl`; `LAB-RUN-012` → `:notOwner` |
+| `LAB-REVERSE-013` | `LAB-REVERSE-005` → `:range`, `:rangeLab2`; `LAB-REVERSE-006` → `:notEnough`; `LAB-REVERSE-007` → `:full`, `:fullLab2`; `LAB-REVERSE-008` → `:invalidReversePair`, `:sameLab`; `LAB-REVERSE-009` → `:invalidTarget`, `:invalidLab1`, `:notALab`, `:selfTarget`; `LAB-REVERSE-010` → `:cooldown`; `LAB-REVERSE-011` → `:rcl`; `LAB-REVERSE-012` → `:notOwner` |
+| `LAB-RUN-013` | `LAB-RUN-005` → `:range`, `:rangeLab1`; `LAB-RUN-006` → `:notEnough`, `:notEnoughLab1`; `LAB-RUN-007` → `:full`; `LAB-RUN-008` → `:invalidArgs`, `:noProduct`; `LAB-RUN-009` → `:invalidTarget`, `:invalidLab1`, `:notALab`, `:selfTarget`; `LAB-RUN-010` → `:cooldown`; `LAB-RUN-011` → `:rcl`; `LAB-RUN-012` → `:notOwner` |
 | `LINK-014` | `LINK-004` → `:selfTarget`; `LINK-005` → `:invalidTarget`; `LINK-006` → `:targetNotOwner`; `LINK-007` → `:invalidArgs`; `LINK-008` → `:cooldown`; `LINK-009` → `:rcl`; `LINK-010` → `:notEnoughAmount`; `LINK-011` → `:full`; `LINK-012` → `:range` |
 | `MOVE-BASIC-027` | `MOVE-BASIC-003` → `:fatigue`; `MOVE-BASIC-004` → `:noBodypart`; `MOVE-BASIC-005` → `:invalidArgs`; `MOVE-BASIC-007` → `:range`; `MOVE-BASIC-023` → `:notOwner`; `MOVE-BASIC-024` → `:busy` |
 | `MOVE-PULL-011` | `MOVE-PULL-004` → `:range`; `MOVE-PULL-007:self` → `:self`; `MOVE-PULL-007:nonCreep` → `:invalidTarget`; `MOVE-PULL-007:spawning` → `:spawningTarget` |
@@ -241,14 +278,14 @@ Register the validation row's condition in place of the old row: for
 | `RENEW-CREEP-011` | `RENEW-CREEP-001` → `:range`; `RENEW-CREEP-007` → `:claimPart`; `RENEW-CREEP-008` → `:notEnough`; `RENEW-CREEP-009` → `:busy`; `RENEW-CREEP-010` → `:full` |
 | `REPAIR-010` | `REPAIR-003` → `:range`; `REPAIR-004` → `:notEnough`; `REPAIR-007` → `:noBodypart` |
 | `SPAWN-CREATE-014` | `SPAWN-CREATE-001` → `:invalidBody`; `SPAWN-CREATE-002` → `:oversizedBody`; `SPAWN-CREATE-003` → `:nameExists`, `:nameSpawning`; `SPAWN-CREATE-007` → `:notEnoughSelected`; `SPAWN-CREATE-008` → `:nameExists`, `:nameSpawning`; `SPAWN-CREATE-009` → `:busy`; `SPAWN-CREATE-012` → `:invalidPart` |
-| `STRUCTURE-API-007` | `STRUCTURE-API-001` → `:notOwner`; `STRUCTURE-API-002` → `:busy` |
+| `STRUCTURE-API-007` | `STRUCTURE-API-001` → `:notOwner`, `:noController`; `STRUCTURE-API-002` → `:busy`, `:busyPowerCreep` |
 | `TERMINAL-SEND-013` | `TERMINAL-SEND-005` → `:invalidRoom`, `:invalidResource`, `:invalidDescription`; `TERMINAL-SEND-006` → `:notEnoughAmount`, `:notEnoughEnergyCost`; `TERMINAL-SEND-007` → `:cooldown`; `TERMINAL-SEND-008` → `:rcl`; `TERMINAL-SEND-009` → `:notOwner` |
 | `TOWER-ATTACK-005` | `TOWER-ATTACK-004` → `:notEnough` |
 | `TOWER-HEAL-005` | `TOWER-HEAL-004` → `:notEnough` |
 | `TOWER-REPAIR-005` | `TOWER-REPAIR-004` → `:notEnough` |
-| `TRANSFER-015` | `TRANSFER-003` → `:range`; `TRANSFER-004` → `:notEnough`; `TRANSFER-005` → `:invalidArgs`; `TRANSFER-006` → `:full`; `TRANSFER-007` → `:invalidTarget`, `:invalidCapacity`; `TRANSFER-008` → `:labMineral`; `TRANSFER-009` → `:notOwner`; `TRANSFER-010` → `:busy`; `TRANSFER-013` → `:fullAmount` |
+| `TRANSFER-015` | `TRANSFER-003` → `:range`; `TRANSFER-004` → `:notEnough`; `TRANSFER-005` → `:invalidArgs`, `:invalidResource`, `:noResource`; `TRANSFER-006` → `:full`; `TRANSFER-007` → `:invalidTarget`, `:invalidCapacity`; `TRANSFER-008` → `:labMineral`; `TRANSFER-009` → `:notOwner`; `TRANSFER-010` → `:busy`; `TRANSFER-013` → `:fullAmount` |
 | `UNBOOST-006` | `UNBOOST-002` → `:notFound`; `UNBOOST-003` → `:range` |
-| `WITHDRAW-017` | `WITHDRAW-003` → `:range`; `WITHDRAW-004` → `:notEnough`; `WITHDRAW-005` → `:targetNotOwner`; `WITHDRAW-007` → `:full`; `WITHDRAW-008` → `:disruptedTerminal`; `WITHDRAW-009` → `:notOwner`; `WITHDRAW-010` → `:busy`; `WITHDRAW-011` → `:invalidArgs`; `WITHDRAW-012` → `:safemodeNotOwner`; `WITHDRAW-013` → `:invalidNuker`; `WITHDRAW-014` → `:invalidCapacity`; `WITHDRAW-016` → `:fullAmount` |
+| `WITHDRAW-017` | `WITHDRAW-003` → `:range`; `WITHDRAW-004` → `:notEnough`; `WITHDRAW-005` → `:targetNotOwner`; `WITHDRAW-007` → `:full`; `WITHDRAW-008` → `:disruptedTerminal`; `WITHDRAW-009` → `:notOwner`; `WITHDRAW-010` → `:busy`; `WITHDRAW-011` → `:invalidArgs`, `:invalidResource`; `WITHDRAW-012` → `:safemodeNotOwner`; `WITHDRAW-013` → `:invalidNuker`, `:invalidPowerBank`; `WITHDRAW-014` → `:invalidCapacity`; `WITHDRAW-016` → `:fullAmount` |
 
 **Another player's safe mode** had one row, `CTRL-SAFEMODE-006`, keyed by
 method. It is now a condition of each method's validation row, at vanilla's
@@ -266,16 +303,17 @@ safe-mode-refused action, keyed by action.
 | `CTRL-SAFEMODE-006:attackController` | `CTRL-ATTACK-007:safeMode` |
 | `CTRL-SAFEMODE-006:withdraw` | `WITHDRAW-017:safemodeNotOwner` |
 
-**Restated by another row.** The row on the right already stated the dropped
-row's behavior, and now carries any test the dropped row had:
+**Merged into another row.** The dropped row restated the row on the right, or
+its test now runs there (`RAMPART-PROTECT-001`'s test attacked with a tower,
+which the new `TOWER-ATTACK-006` owns):
 
 | Was | Register now |
 | --- | --- |
 | `BOOST-CREEP-007` | `BOOST-ATTACK-001` |
 | `BOOST-CREEP-008` | `BOOST-HEAL-001` |
-| `COMBAT-SIMULT-002` | `COMBAT-SIMULT-001` |
-| `COMBAT-SIMULT-004` | `COMBAT-SIMULT-001` |
-| `COMBAT-SIMULT-005` | `COMBAT-SIMULT-001` |
+| `COMBAT-SIMULT-002` | `COMBAT-SIMULT-001:healMatchesDamage` |
+| `COMBAT-SIMULT-004` | `COMBAT-SIMULT-001:lethal` |
+| `COMBAT-SIMULT-005` | `COMBAT-SIMULT-001:summedSources` |
 | `CONSTRUCTION-COST-002` | `CONSTRUCTION-COST-001` |
 | `CREEP-DEATH-002` | `TOMBSTONE-001` |
 | `CREEP-SPAWNING-001` | `SPAWN-TIMING-002` |
@@ -315,14 +353,14 @@ row's behavior, and now carries any test the dropped row had:
 | `STRUCTURE-HITS-005` | `RUIN-005` |
 | `TOMBSTONE-002` | `CREEP-DEATH-006` |
 | `TOWER-INTENT-001` | `TOWER-INTENT-003` |
-| `UNDOC-CTOR-001` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-002` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-003` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-004` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-005` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-006` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-007` | `UNDOC-IDCTOR-001` |
-| `UNDOC-CTOR-008` | `UNDOC-IDCTOR-001` |
+| `UNDOC-CTOR-001` | `UNDOC-IDCTOR-001:Creep` |
+| `UNDOC-CTOR-002` | `UNDOC-IDCTOR-001:Source` |
+| `UNDOC-CTOR-003` | `UNDOC-IDCTOR-001:Structure` |
+| `UNDOC-CTOR-004` | `UNDOC-IDCTOR-001:Resource` |
+| `UNDOC-CTOR-005` | `UNDOC-IDCTOR-001:ConstructionSite` |
+| `UNDOC-CTOR-006` | `UNDOC-IDCTOR-001:Mineral` |
+| `UNDOC-CTOR-007` | `UNDOC-IDCTOR-001:Tombstone` |
+| `UNDOC-CTOR-008` | `UNDOC-IDCTOR-001:Ruin` |
 
 **Dropped, with nothing to register instead:**
 
@@ -343,13 +381,19 @@ row's behavior, and now carries any test the dropped row had:
 | --- | --- | --- |
 | `CTRL-STRUCTLIMIT-002:<type>` | `:<type>Below` and `:<type>At` (`:spawn` → `:spawnAt`) | The below and at cases shared one key per type. |
 | `GPL-002a`, `GPL-002b`, `GPL-002c`, `GPL-002d`, `GPL-002e` | `GPL-002:belowLevelOne`, `:levelOne`, … | A letter suffix carries no ID, so nothing could register them. |
-| `INTENT-CREEP-001:<blocking method>` | `:<pair>` (`:healBlocksRangedHeal`) | The blocking method alone named several pairs. |
-| `LAB-RUN-001:<first reagent>` (`:H`, `:L`, `:O`, `:X`, `:Z`) | `:<product>` (`:UH2O`) | Up to ten reactions shared a first reagent. |
+| `INTENT-CREEP-001:attack`, `INTENT-CREEP-001:build`, `INTENT-CREEP-001:dismantle`, `INTENT-CREEP-001:heal`, `INTENT-CREEP-001:rangedHeal`, `INTENT-CREEP-001:rangedMassAttack`, `INTENT-CREEP-001:repair` | One key per pair, `:<blocker>Blocks<blocked>` (`:healBlocksRangedHeal`) | The key was the blocking method, which named several pairs. |
+| `LAB-RUN-001:H`, `LAB-RUN-001:L`, `LAB-RUN-001:O`, `LAB-RUN-001:X`, `LAB-RUN-001:Z` | Each reaction's product (`:OH` for H + O, `:UH2O`) | Keys were reagent pairs (`H+O`) that the old reporter cut at `+`, so one key covered every reaction with that first reagent. |
+| `LAB-RUN-001:OH`, `LAB-RUN-001:ZK` | The same keys, now naming other reactions: check what they gate | They still match, but now name the H + O and Z + K reactions, where they named the ten reactions with OH as first reagent and ZK + UL. |
 | `MOVE-COLLISION-003b` | `MOVE-COLLISION-003:hostile` (and `:sameOwner`) | A letter suffix carries no ID. |
-| `POWER-GENERATE-OPS-001`, `POWER-GENERATE-OPS-002`, `POWER-GENERATE-OPS-003` | `POWER-GENERATE-001`, `POWER-GENERATE-002`, `POWER-GENERATE-003`, keyed by level | A three-segment ID never matched the reporter. |
+| `POWER-GENERATE-OPS-001`, `POWER-GENERATE-OPS-002`, `POWER-GENERATE-OPS-003` (registered as `GENERATE-OPS-001`, `GENERATE-OPS-002`, `GENERATE-OPS-003`) | `POWER-GENERATE-001` (keyed by level), `POWER-GENERATE-002`, `POWER-GENERATE-003` | The old reporter read a three-segment ID from its second segment. |
 | `STORE-SINGLE-001:extension` | `:extensionRcl0` … `:extensionRcl8` | An extension's capacity depends on the room level. |
-| `NUKE-LAUNCH-008:cooldown-before-inactive`, `:cooldown-before-range`, `:inactive-before-range`, `:cooldown-before-resources`, `:inactive-before-resources`, `:range-before-resources` | `:cooldownBeforeInactiveRcl`, `:cooldownBeforeOutOfRange`, `:inactiveRclBeforeOutOfRange`; each `…-before-resources` pair splits into `…BeforeMissingEnergy` and `…BeforeMissingGhodium` (`:outOfRangeBeforeMissingEnergy`) | The pairs use their conditions' names, and the row now runs every pair. |
-| Kebab-case and snake_case keys: `NUKE-LAUNCH-008`, `NUKER-PROPS-001`, `NUKE-FLIGHT-004`, `ROOM-EVENTLOG-026`, `ACTIONLOG-CREEP-001`, `ACTIONLOG-TARGET-001`, `ACTIONLOG-STRUCT-001`, `FACTORY-PRODUCE-001`, `FACTORY-COMMODITY-001` | camelCase (`:not-owner` → `:notOwner`, `:ghodium_melt` → `:ghodiumMelt`) | A key is one camelCase token; the reporter had cut keys at the first `-` or `_`, so these never matched as written. |
+| `ACTIONLOG-CREEP-001`, kebab-case keys | `ACTIONLOG-CREEP-001:attack` → `:attackTargetCoordinates`; `ACTIONLOG-CREEP-001:build` → `:buildSiteCoordinates`; `ACTIONLOG-CREEP-001:harvest` → `:harvestSourceCoordinates`; `ACTIONLOG-CREEP-001:heal` → `:healTargetCoordinates`; `ACTIONLOG-CREEP-001:ranged` → `:rangedHealTargetCoordinates`; `ACTIONLOG-CREEP-001:repair` → `:repairStructureCoordinates`; `ACTIONLOG-CREEP-001:reserve` → `:reserveControllerCoordinates`; `ACTIONLOG-CREEP-001:upgrade` → `:upgradeControllerCoordinates` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `ACTIONLOG-STRUCT-001`, kebab-case keys | `ACTIONLOG-STRUCT-001:lab` → `:labRunReactionReagentCoordinates`, `:labReverseReactionOutputCoordinates`; `ACTIONLOG-STRUCT-001:link` → `:linkTransferTargetCoordinates`; `ACTIONLOG-STRUCT-001:tower` → `:towerAttackTargetCoordinates`, `:towerHealTargetCoordinates`, `:towerRepairTargetCoordinates` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `ACTIONLOG-TARGET-001`, kebab-case keys | `ACTIONLOG-TARGET-001:creep` → `:creepDamagedByCreep`, `:creepHealedByCreep`, `:creepDamagedByTower`, `:creepHealedByTower` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `NUKE-FLIGHT-004`, kebab-case keys | `NUKE-FLIGHT-004:launch` → `:launchRoomDoesNotListTargetNuke`; `NUKE-FLIGHT-004:target` → `:targetRoomVisibleToTargetOwner`, `:targetRoomHiddenFromLauncherWithoutVisibility` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `NUKE-LAUNCH-008`, kebab-case keys | `NUKE-LAUNCH-008:not` → `:notOwner`; `NUKE-LAUNCH-008:invalid` → `:invalidArgumentShape`; `NUKE-LAUNCH-008:inactive` → `:inactiveRcl`, `:inactiveRclBeforeOutOfRange`, `:inactiveRclBeforeMissingEnergy`, `:inactiveRclBeforeMissingGhodium`; `NUKE-LAUNCH-008:out` → `:outOfRange`; `NUKE-LAUNCH-008:missing` → `:missingEnergy`, `:missingGhodium`; `NUKE-LAUNCH-008:range` → `:outOfRangeBeforeMissingEnergy`, `:outOfRangeBeforeMissingGhodium`; `NUKE-LAUNCH-008:cooldown` → `:cooldown` still matches, the condition alone; its pairs are now `:cooldownBeforeInactiveRcl`, `:cooldownBeforeOutOfRange`, `:cooldownBeforeMissingEnergy`, `:cooldownBeforeMissingGhodium` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `NUKER-PROPS-001`, kebab-case keys | `NUKER-PROPS-001:energy` → `:energyAlias`, `:energyCapacityAlias`; `NUKER-PROPS-001:ghodium` → `:ghodiumAlias`, `:ghodiumCapacityAlias` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
+| `ROOM-EVENTLOG-026`, kebab-case keys | `ROOM-EVENTLOG-026:attack` → `:attackObjectIsNukeTargetIsStructure`; `ROOM-EVENTLOG-026:rampart` → `:rampartAttackEntryPrecedesCoveredStructure`; `ROOM-EVENTLOG-026:roomwide` → `:roomwideCreepKillEmitsNoAttackEvent` | Keys were kebab-case (`:not-owner`), which the old reporter cut at the first `-`. |
 
 **Validation pairs that went.** Each pair's second condition can't hold
 alongside its first: the first replaces the object the second needs (a
@@ -365,12 +409,14 @@ to search. Register the pair's first condition instead:
 ### Catalog changes that need no action
 
 None of these stops a registration matching. Each can surface a new failure
-on your engine, which the row's text explains.
+on your engine, which the row's text explains, and a restated row can also
+turn a registered gap into an unexpected pass, which fails the run.
 
-- **Keyed by case.** These rows' tests were one test, or several under one
-  bare ID, and now run one test per case, keyed `ID:case`. A bare
+- **Keyed by case.** These rows' tests were one test, or several the old
+  reporter read as one bare ID, and now run one test per case, keyed
+  `ID:case`. A bare
   registration still covers every case; register one case to narrow a gap:
-  `BOOST-AGGREGATION-001`, `BOOST-ATTACK-001`, `BOOST-BUILD-001`, `BOOST-BUILD-002`, `BOOST-CARRY-001`, `BOOST-DISMANTLE-001`, `BOOST-HARVEST-001`, `BOOST-HARVEST-002`, `BOOST-HEAL-001`, `BOOST-MOVE-001`, `BOOST-RANGED-001`, `BOOST-TOUGH-001`, `BOOST-UPGRADE-001`, `COMBAT-HEAL-003`, `COMBAT-MELEE-005`, `COMBAT-MELEE-006`, `COMBAT-MELEE-007`, `COMBAT-RANGED-005`, `COMBAT-RMA-002`, `COMBAT-SIMULT-001`, `CONSTRUCTION-SITE-009`, `CONSTRUCTION-SITE-017`, `CREEP-DEATH-008`, `CTRL-DOWNGRADE-009`, `CTRL-DOWNGRADE-010`, `CTRL-STRUCTLIMIT-001`, `CTRL-UPGRADE-007`, `CTRL-UPGRADE-012`, `DEPOSIT-001`, `DEPRECATED-PATH-002`, `DEPRECATED-PATH-003`, `EFFECT-HOST-001`, `INTENT-CREEP-002`, `INTENT-CREEP-003`, `INTENT-CREEP-004`, `INTENT-LIMIT-001`, `INTENT-LIMIT-002`, `INVADER-CORE-004`, `INVADER-RAID-009`, `KEEPER-LAIR-002`, `MARKET-DEAL-003`, `MARKET-ORDER-002`, `MARKET-ORDER-006`, `MARKET-ORDER-008`, `MINERAL-POWER-001`, `MOVE-BASIC-001`, `MOVE-COLLISION-003`, `MOVE-COLLISION-005`, `NPC-OWNERSHIP-001`, `PORTAL-001`, `PORTAL-004`, `POWER-COMBAT-001`, `POWER-DISRUPT-001`, `POWER-DISRUPT-002`, `POWER-DISRUPT-003`, `POWER-OPERATE-001`, `POWER-OPERATE-002`, `POWER-OPERATE-005`, `POWER-REGEN-002`, `POWER-SPAWN-002`, `POWERCREEP-CREATE-002`, `POWERCREEP-ENABLE-002`, `POWERCREEP-RENEW-002`, `POWERCREEP-SPAWN-002`, `POWERCREEP-UPGRADE-002`, `RAMPART-DECAY-003`, `RAWMEMORY-002`, `ROAD-WEAR-001`, `ROOM-ENERGY-001`, `ROOM-ENERGY-002`, `ROOM-EVENTLOG-002`, `ROOM-TERRAIN-001`, `ROOMPOS-SPATIAL-005`, `RUIN-002`, `SHARD-PCREEP-001`, `SOURCE-POWER-001`, `SOURCE-REGEN-001`, `STORE-ACCESS-001`, `STORE-OPEN-003`, `STORE-RESTRICTED-002`, `STORE-RESTRICTED-003`, `STORE-RESTRICTED-005`, `STORE-SINGLE-002`, `STORE-SINGLE-003`, `STORE-SINGLE-004`, `STRONGHOLD-LAYOUT-001`, `TIMER-COOLDOWN-001`, `TIMER-SAFEMODE-001`, `TOWER-ATTACK-002`, `TOWER-ATTACK-003`, `TOWER-HEAL-002`, `TOWER-HEAL-003`, `TOWER-INTENT-002`, `TOWER-POWER-001`, `TOWER-REPAIR-002`, `TOWER-REPAIR-003`, `TRANSFER-002`, `UNDOC-IDCTOR-001`, `UNDOC-JSONOBJ-001`, `UNDOC-MEMHACK-011`, `UNDOC-STALERECV-002`, `WALL-002`, `WITHDRAW-002`, `WITHDRAW-006`.
+  `BOOST-AGGREGATION-001`, `BOOST-ATTACK-001`, `BOOST-BUILD-001`, `BOOST-BUILD-002`, `BOOST-CARRY-001`, `BOOST-DISMANTLE-001`, `BOOST-HARVEST-001`, `BOOST-HARVEST-002`, `BOOST-HEAL-001`, `BOOST-MOVE-001`, `BOOST-RANGED-001`, `BOOST-TOUGH-001`, `BOOST-UPGRADE-001`, `COMBAT-HEAL-003`, `COMBAT-MELEE-005`, `COMBAT-MELEE-006`, `COMBAT-MELEE-007`, `COMBAT-RANGED-005`, `COMBAT-RMA-002`, `COMBAT-SIMULT-001`, `CONSTRUCTION-SITE-009`, `CONSTRUCTION-SITE-017`, `CREEP-DEATH-008`, `CTRL-DOWNGRADE-009`, `CTRL-DOWNGRADE-010`, `CTRL-STRUCTLIMIT-001`, `CTRL-STRUCTLIMIT-002`, `CTRL-UPGRADE-007`, `CTRL-UPGRADE-012`, `DEPOSIT-001`, `DEPRECATED-PATH-002`, `DEPRECATED-PATH-003`, `EFFECT-HOST-001`, `INTENT-CREEP-002`, `INTENT-CREEP-003`, `INTENT-CREEP-004`, `INTENT-LIMIT-001`, `INTENT-LIMIT-002`, `INVADER-CORE-004`, `INVADER-RAID-009`, `KEEPER-LAIR-002`, `MARKET-DEAL-003`, `MARKET-ORDER-002`, `MARKET-ORDER-006`, `MARKET-ORDER-008`, `MINERAL-POWER-001`, `MOVE-BASIC-001`, `MOVE-COLLISION-003`, `MOVE-COLLISION-005`, `NPC-OWNERSHIP-001`, `NUKE-IMPACT-014`, `PORTAL-001`, `PORTAL-004`, `POWER-COMBAT-001`, `POWER-DISRUPT-001`, `POWER-DISRUPT-002`, `POWER-DISRUPT-003`, `POWER-OPERATE-001`, `POWER-OPERATE-002`, `POWER-OPERATE-005`, `POWER-REGEN-002`, `POWER-SPAWN-002`, `POWERCREEP-CREATE-002`, `POWERCREEP-ENABLE-002`, `POWERCREEP-RENEW-002`, `POWERCREEP-SPAWN-002`, `POWERCREEP-UPGRADE-002`, `RAMPART-DECAY-003`, `RAWMEMORY-002`, `ROAD-WEAR-001`, `ROOM-ENERGY-001`, `ROOM-ENERGY-002`, `ROOM-EVENTLOG-002`, `ROOM-TERRAIN-001`, `ROOMPOS-SPATIAL-005`, `RUIN-002`, `SHARD-PCREEP-001`, `SOURCE-POWER-001`, `SOURCE-REGEN-001`, `STORE-ACCESS-001`, `STORE-OPEN-003`, `STORE-RESTRICTED-002`, `STORE-RESTRICTED-003`, `STORE-RESTRICTED-005`, `STORE-SINGLE-002`, `STORE-SINGLE-003`, `STORE-SINGLE-004`, `STRONGHOLD-LAYOUT-001`, `TIMER-COOLDOWN-001`, `TIMER-SAFEMODE-001`, `TOWER-ATTACK-002`, `TOWER-ATTACK-003`, `TOWER-HEAL-002`, `TOWER-HEAL-003`, `TOWER-INTENT-002`, `TOWER-POWER-001`, `TOWER-REPAIR-002`, `TOWER-REPAIR-003`, `TRANSFER-002`, `UNDOC-IDCTOR-001`, `UNDOC-JSONOBJ-001`, `UNDOC-MEMHACK-011`, `UNDOC-STALERECV-002`, `WALL-002`, `WITHDRAW-002`, `WITHDRAW-006`.
 - **New rows:** `CTRL-UPGRADE-017` (a level-up adds a safe-mode charge),
   `GCL-001` (`Game.gcl`'s values, keyed by level edge), `INVADER-CORE-006`
   (an invader core's fresh reservation), `MEMORY-007` (each object's `memory`
@@ -386,22 +432,22 @@ on your engine, which the row's text explains.
   `TOWER-ATTACK-006` (a tower attack on an object under a rampart hits the
   rampart).
 - **New validation conditions,** each run alone and in pairs: vanilla
-  branches the rows had no condition for, among them `HARVEST-015`
-  `:hostileReservation`, `:noTarget`, `:nullTarget` and `:plainObjectTarget`;
-  `TRANSFER-015` `:invalidResource`, `:noResource` and `:labMineral`;
-  `WITHDRAW-017` `:disruptedTerminal` and `:invalidPowerBank`;
-  `SPAWN-CREATE-014` `:missingName`, `:invalidOptions`, `:nameTaken`,
-  `:oversizedBody` and `:notEnoughSelected`; `RENEW-CREEP-011`
-  `:spawningTarget`, `:notOwnerCreep` and `:claimPart`; `LAB-RUN-013` and
-  `LAB-REVERSE-013` `:missingLab1`, `:selfLab1`, `:invalidLab1`, `:notALab`
-  and `:selfTarget`; `CTRL-CLAIM-008` `:novice`, `:notController` and
-  `:hostileReservation`; `CTRL-ATTACK-007:invulnerable`; `:fortified` in
-  `COMBAT-MELEE-009`, `COMBAT-RANGED-007` and `DISMANTLE-009`; `:rcl`, an
-  inactive spawn, in the three spawn rows; `NUKE-LAUNCH-008`'s novice and
-  respawn areas; `BOOST-CREEP-010` `:spawning` and `:tooManyParts`;
-  `LINK-014:noController`; `STRUCTURE-API-007:neutralController`;
-  `FLAG-009:invalidSecondaryColor`; and `POWERCREEP-UPGRADE-002:powerMaxLevel`.
-  The test output names every condition a row runs.
+  branches no row had covered. `BOOST-CREEP-010` `:spawning` and
+  `:tooManyParts`; `:fortified` (a target under `PWR_FORTIFY`) in
+  `COMBAT-MELEE-009`, `COMBAT-RANGED-007` and `DISMANTLE-009`;
+  `CONSTRUCTION-SITE-011` `:invalidCoords`, `:invalidType`, `:wallTerrain`,
+  `:nameCreatedThisTick` and `:nameTaken`; `CTRL-ATTACK-007:invulnerable` (a
+  stronghold's controller); `CTRL-CLAIM-008` `:novice` and `:notController`;
+  `CTRL-RESERVE-008` `:notController` and `:hostileReservation`;
+  `CTRL-SAFEMODE-009:upgradeBlocked`; `DROP-011:notEnoughAmount`;
+  `FLAG-009:invalidSecondaryColor`; `LAB-RUN-013` and `LAB-REVERSE-013`
+  `:missingLab1` and `:selfLab1`; `LINK-014:noController`;
+  `POWERCREEP-UPGRADE-002:powerMaxLevel`; `:rcl`, an inactive spawn, in
+  `SPAWN-CREATE-014`, `RENEW-CREEP-011` and `RECYCLE-CREEP-005`;
+  `SPAWN-CREATE-014` `:missingName`, `:invalidOptions` and `:nameTaken`;
+  `RENEW-CREEP-011` `:spawningTarget` and `:notOwnerCreep`;
+  `RECYCLE-CREEP-005:spawningTarget`; and
+  `STRUCTURE-API-007:neutralController`.
 - **Restated rows,** whose claim changed to match vanilla or the docs:
   `DISMANTLE-002` (energy is `floor(hits × DISMANTLE_COST)`),
   `RECYCLE-CREEP-002` (recycling returns the body at the full rate, not
@@ -440,7 +486,9 @@ on your engine, which the row's text explains.
 
 - `'screeps-ok'` resolves to compiled JavaScript and declarations in `dist/`,
   so your `tsc` reads declarations under `skipLibCheck` instead of checking
-  the framework's source under your compiler flags. Inside the suite, vitest
-  resolves it to `src/`, the copy the tests import.
+  the framework's source under your compiler flags. `npm install` builds
+  `dist/`, in a clone and for a git dependency alike (`npm run build` rebuilds
+  it). Inside the suite, vitest resolves `'screeps-ok'` to `src/`, the copy
+  the tests import.
 - The starter adapter (`starter/xxscreeps/`) and the shipped
   `parity/xxscreeps.json` base are regenerated for this contract.
