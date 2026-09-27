@@ -83,13 +83,13 @@
 		"renew-recycle-target-creep-checked-late": {
 			"actual": "`checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one.",
 			"expected": "Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state.",
-			"why": "Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28).",
+			"why": "Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions.",
 			"tests": ["RENEW-CREEP-011:spawningTarget", "RENEW-CREEP-011:spawningTargetBeforeClaimPart", "RENEW-CREEP-011:spawningTargetBeforeNotOwner", "RENEW-CREEP-011:spawningTargetBeforeNotOwnerCreep", "RENEW-CREEP-011:spawningTargetBeforeRcl", "RENEW-CREEP-011:spawningTargetBeforeRange", "RENEW-CREEP-011:spawningTargetBeforeNotEnough", "RENEW-CREEP-011:notOwnerCreepBeforeRcl", "RECYCLE-CREEP-005:spawningTarget", "RECYCLE-CREEP-005:spawningTargetBeforeNotOwnerCreep", "RECYCLE-CREEP-005:spawningTargetBeforeRange"]
 		},
 		"spawn-creep-accepts-non-object-options": {
 			"actual": "`StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns.",
 			"expected": "Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name.",
-			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28).",
+			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition.",
 			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
 		},
 		"attack-controller-ignores-invulnerability": {
@@ -137,7 +137,7 @@
 		"mineral-harvest-event-logs-capped-amount": {
 			"actual": "The `harvest` intent processor (`mods/classic/harvestable/processor.ts:35-44`) logs the amount the target's harvest hook returns, which for a mineral is capped by the amount left.",
 			"expected": "Vanilla `processor/intents/creeps/harvest.js:88-110` logs `harvestAmount`, the WORK parts' harvest power, whatever the mineral had left.",
-			"why": "Found 2026-09-27 when ROOM-EVENTLOG-002 got its five sources as cases (Decision 19); the mineral case harvests a nearly empty mineral to tell the two apart.",
+			"why": "Found 2026-09-27 when ROOM-EVENTLOG-002 got its five sources as cases; the mineral case harvests a nearly empty mineral to tell the two apart.",
 			"tests": ["ROOM-EVENTLOG-002:mineralHarvest"]
 		},
 		"mineral-regen-timer-one-tick-long": {
@@ -149,7 +149,7 @@
 		"tower-targets-creeps-and-destructible-only": {
 			"actual": "`StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller.",
 			"expected": "Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits.",
-			"why": "Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only.",
+			"why": "Found 2026-09-27 when TOWER-*-003 got a case list for each target class; the tests had run a creep and a construction site only.",
 			"tests": ["TOWER-ATTACK-003:powerCreep", "TOWER-ATTACK-003:structure", "TOWER-ATTACK-003:controller", "TOWER-HEAL-003:powerCreep", "TOWER-REPAIR-003:controller", "TOWER-ATTACK-006:structure"]
 		},
 		"attack-controller-safe-mode-checked-before-cooldown": {
@@ -179,13 +179,13 @@
 		"claim-reserve-controller-type-checked-first": {
 			"actual": "`checkClaimController` and `checkReserveController` (`mods/classic/controller/creep.ts:164-205`) run `checkTarget(target, StructureController)` before the CLAIM part and range, so a structure that isn't a controller returns `ERR_INVALID_TARGET` from a creep with no CLAIM part or out of range.",
 			"expected": "Vanilla checks a target is any structure first, then the CLAIM part (claim only) and range, and only then that it is a controller (`game/creeps.js:856-868`, `:963-972`), returning `ERR_NO_BODYPART` or `ERR_NOT_IN_RANGE`.",
-			"why": "Found 2026-09-27 when CTRL-CLAIM-008 and CTRL-RESERVE-008 took vanilla's not-a-controller branch as a condition (Decision 28).",
+			"why": "Found 2026-09-27 when CTRL-CLAIM-008 and CTRL-RESERVE-008 took vanilla's not-a-controller branch as a condition.",
 			"tests": ["CTRL-CLAIM-008:noBodypartBeforeNotController", "CTRL-CLAIM-008:rangeBeforeNotController", "CTRL-RESERVE-008:rangeBeforeNotController"]
 		},
 		"construction-site-name-created-returns-name-exists": {
 			"actual": "`Room.createConstructionSite` (`mods/classic/construction/room.ts:59-64`) returns `ERR_NAME_EXISTS` for a spawn name an earlier call took this tick, and records the name before `checkCreateConstructionSite` runs, so a create that then fails still takes it.",
 			"expected": "Vanilla returns `ERR_INVALID_ARGS` for a name created earlier in the tick (`game/rooms.js:1045-1047`), and records a name only when the create succeeds (`:1088`).",
-			"why": "Found 2026-09-27 when CONSTRUCTION-SITE-011 took vanilla's spawn-name branches as conditions (Decision 28).",
+			"why": "Found 2026-09-27 when CONSTRUCTION-SITE-011 took vanilla's spawn-name branches as conditions.",
 			"tests": ["CONSTRUCTION-SITE-011:nameCreatedThisTick", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeNotOwner", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeHostileReservation", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeInvalidTarget", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeWallTerrain", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeSiteCapFull"]
 		},
 		"destroy-ignores-hostile-power-creeps": {
