@@ -162,7 +162,9 @@ changes since `v0.1.0-alpha` are not itemized.
   section 16.5 owns `Room.Terrain` (`ROOM-TERRAIN-002` now pins every
   buffer element, and the new `ROOM-TERRAIN-004` owns
   `getRawBuffer(destinationArray)`), and 21.3's `MAP-TERRAIN-001` owns
-  `Game.map.getRoomTerrain`.
+  `Game.map.getRoomTerrain`. `STRUCTURE-ACTIVE-005`, which pinned the tie
+  between equally distant structures to vanilla's storage scan order, an
+  order nothing specifies.
 - New: `GCL-001`, keyed by level edge (`:belowLevelTwo`, `:levelTwo`,
   `:levelThree`), pins `Game.gcl`'s values, where only its keys were pinned.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this

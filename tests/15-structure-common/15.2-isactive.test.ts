@@ -97,28 +97,4 @@ describe('Structure isActive()', () => {
 		expect(results.road).toBe(true);
 		expect(results.container).toBe(true);
 	});
-
-	test('STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order', async ({ shard }) => {
-		// At RCL 2, max 5 extensions allowed. Place 6 — only 5 should be active.
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const ids: string[] = [];
-		for (let i = 0; i < 6; i++) {
-			ids.push(await shard.placeStructure('W1N1', {
-				pos: [21, 2 + i], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			}));
-		}
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const ids = ${ids};
-			({
-				activeIds: ids.filter(id => Game.getObjectById(id).isActive()),
-				inactiveIds: ids.filter(id => !Game.getObjectById(id).isActive()),
-			})
-		`) as { activeIds: string[]; inactiveIds: string[] };
-		expect(result).toEqual({
-			activeIds: ids.slice(0, 5),
-			inactiveIds: [ids[5]],
-		});
-	});
 });

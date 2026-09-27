@@ -2645,11 +2645,11 @@ Coverage Notes
 - `STRUCTURE-ACTIVE-004` `behavior` `verified_vanilla`
   Structures with no owner or no controller limit table entry return `true`
   from `isActive()`.
-- `STRUCTURE-ACTIVE-005` `behavior` `verified_vanilla`
-  When same-type owned structures are at equal controller distance, `isActive()`
-  breaks the tie by the room's object scan order, so the earliest-inserted
-  structures are the active ones. The order itself is an engine storage artifact
-  rather than a specified contract.
+
+Notes
+- Which of several same-type structures at equal controller distance stays
+  active isn't cataloged: vanilla breaks the tie by the order its storage
+  query returns room objects, which nothing specifies.
 
 ### 15.3 Construction Costs
 - `CONSTRUCTION-COST-001` `matrix` `verified_vanilla`
