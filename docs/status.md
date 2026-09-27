@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-35%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2753%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-111-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,58 +16,12 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2881](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 02:39 UTC |
-| 🔴 | **xxscreeps** | [2611](#xxscreeps-passing-tests) | [78](#xxscreeps-expected-failures) | [2](#xxscreeps-unexpected-failures) | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
+| 🟡 | **vanilla** | [3047](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 03:48 UTC |
+| 🟡 | **xxscreeps** | [2753](#xxscreeps-passing-tests) | [111](#xxscreeps-expected-failures) | — | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
-
-## 🚨 Regression traps triggered
-
-Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
-
-**xxscreeps**
-
-- `creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target`
-- `creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
-- `creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target`
-- `creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target`
-- `creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target`
-- `creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target`
-- `creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target`
-- `creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target`
-- `creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target`
-- `StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target`
-- `StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target`
-- `StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target`
-- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
-- `Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target`
-- `Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target`
-
-## xxscreeps unexpected failures
-
-- `Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active`
-- `Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part`
-- `pull-range-checked-before-spawning-target` registers `MOVE-PULL-011:spawningTargetBeforeRange`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoords`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap`, which no test passed or failed
-- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull`, which no test passed or failed
-- `destroy-ignores-hostile-power-creeps` registers `STRUCTURE-API-007:busyPowerCreep`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPart`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotOwner`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeRcl`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeRange`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotEnough`, which no test passed or failed
-- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeFull`, which no test passed or failed
-- `recycle-inactive-spawn-checked-before-target` registers `RECYCLE-CREEP-005:invalidTargetBeforeRcl`, which no test passed or failed
-- 17 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -176,7 +130,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 47 expected-failure classifications against vanilla's canonical behavior, covering 78 tests. That includes 43 open parity gaps covering 70 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 47 expected-failure classifications against vanilla's canonical behavior, covering 111 tests. That includes 43 open parity gaps covering 103 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -192,11 +146,11 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | No upstream report yet; raise the RoomObject toJSON with laverdet before a PR. Room, RoomPosition and Flag already serialize and stay pinned. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | Reported upstream as an encapsulation-leak observation in laverdet/xxscreeps#328 (2026-07-20). No player-bot replication, so it is not queued for a PR; the gap stays open pending laverdet's read. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
-| `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | 0 |
-| `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | 0 |
-| `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | 0 |
-| `construction-site-invalid-coords-throws` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`. | Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`). | Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it. | 0 |
-| `destroy-ignores-hostile-power-creeps` | `checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`. | Vanilla returns `ERR_BUSY` when the room holds hostile creeps or hostile power creeps (`game/structures.js:80-82`). | Found 2026-09-26 when STRUCTURE-API-007 took STRUCTURE-API-002's power-creep form as a condition; the row's test had placed only a creep. | 0 |
+| `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | [16](#xxscreeps-gap-stale-argument-throws-instead-of-invalid-target) |
+| `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | [1](#xxscreeps-gap-pull-range-checked-before-spawning-target) |
+| `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | [1](#xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target) |
+| `construction-site-invalid-coords-throws` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`. | Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`). | Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it. | [7](#xxscreeps-gap-construction-site-invalid-coords-throws) |
+| `destroy-ignores-hostile-power-creeps` | `checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`. | Vanilla returns `ERR_BUSY` when the room holds hostile creeps or hostile power creeps (`game/structures.js:80-82`). | Found 2026-09-26 when STRUCTURE-API-007 took STRUCTURE-API-002's power-creep form as a condition; the row's test had placed only a creep. | [1](#xxscreeps-gap-destroy-ignores-hostile-power-creeps) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, range among them; screeps/engine#121 (open) proposes honoring it. Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `factory-power-effect-not-implemented` | `checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY. | Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check. | Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 | `power-bank-ruin-spills-one-tick-late` | `createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth. | Vanilla `processor/intents/structures/_destroy.js:21-36` stamps `destroyTime: gameTime` and `decayTime: gameTime + (RUIN_DECAY_STRUCTURES[type] \|\| RUIN_DECAY)` on the destruction tick, so the next tick reads `RUIN_DECAY - 1` or `RUIN_DECAY_STRUCTURES[type] - 1`. The ruin processor spills the store when `gameTime >= decayTime - 1`, which is the ninth tick for a power bank. | POWER-BANK-004 caught the spill side. RUIN-002 caught the decay reading on 2026-09-25, when its rows were rewritten to destroy a real structure instead of seeding the decay value they asserted. Same processor clock convention as `bury-creep-stamps-next-tick`; the upstream fix is `Game.time - 1` for both stamps in `createRuin`. | [3](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
@@ -222,8 +176,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | Found 2026-09-25 when DEPOSIT-004's `(49990, 50000]` band was pinned. Upstream fix: `- 1` on the decay anchor, matching the cooldown line above it. | [1](#xxscreeps-gap-deposit-decay-anchors-one-tick-late) |
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | Found 2026-09-25 when CTRL-UPGRADE-010's `(0, CONTROLLER_NUKE_BLOCKED_UPGRADE]` band was pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; upstream fix is `- 1` on the anchor. | [1](#xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late) |
 | `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned. Unlike `controller-timer-anchors-one-tick-late` this write reads a tick short, not long, because vanilla's formula is relative and carries its own `+ 1`. Same file, separate line to fix. | [1](#xxscreeps-gap-controller-downgrade-step-one-tick-short) |
-| `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too. | 0 |
-| `recycle-inactive-spawn-checked-before-target` | `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`. | Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`). | Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it. | 0 |
+| `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too. | [6](#xxscreeps-gap-renew-claim-creep-returns-no-bodypart) |
+| `recycle-inactive-spawn-checked-before-target` | `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`. | Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`). | Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it. | [1](#xxscreeps-gap-recycle-inactive-spawn-checked-before-target) |
 | `pathfinder-search-nullish-goal-throws` | `search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick. | Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys. | Found 2026-09-25 when PATHFINDER-014's either-outcome test (accepting a throw) was made unconditional. The empty-array case (PATHFINDER-013) passes because it never enters the map callback. | [1](#xxscreeps-gap-pathfinder-search-nullish-goal-throws) |
 | `bury-power-creep-stamps-next-tick` | `buryPowerCreep` (`mods/mmo/powercreep/processor.ts:23-41`) stamps `deathTime = Game.time` and `#decayTime = Game.time + TOMBSTONE_DECAY_POWER_CREEP` from the processor clock, which reads one tick past vanilla's `gameTime`. A power creep's tombstone therefore reads `deathTime` one past the tick the player issued `suicide()` on, and `ticksToDecay` of `TOMBSTONE_DECAY_POWER_CREEP` on the next tick. | Vanilla `processor/global-intents/power/_diePowerCreep.js` stamps `deathTime: gameTime` and `decayTime: gameTime + TOMBSTONE_DECAY_POWER_CREEP` on the death tick. `deathTime` equals the tick of the `suicide()` call, and the next tick reads `TOMBSTONE_DECAY_POWER_CREEP - 1`. | Found 2026-09-25 when POWERCREEP-DEATH-001, which only checked that a live power creep had a positive TTL, was rewritten to kill one through suicide(). Same fix as `bury-creep-stamps-next-tick`, applied in the power-creep mod's copy. | [1](#xxscreeps-gap-bury-power-creep-stamps-next-tick) |
 | `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
@@ -304,32 +258,58 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-stale-argument-throws-instead-of-invalid-target">
-<summary><code>stale-argument-throws-instead-of-invalid-target</code> — 0 tests</summary>
+<summary><code>stale-argument-throws-instead-of-invalid-target</code> — 16 tests</summary>
 
+- `creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
+- `creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target`
+- `creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target`
+- `creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target`
+- `creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target`
+- `creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target`
+- `creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target`
+- `creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target`
+- `StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target`
+- `StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target`
+- `StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target`
+- `Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target`
+- `Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target`
+- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
 
 </details>
 
 <details id="xxscreeps-gap-pull-range-checked-before-spawning-target">
-<summary><code>pull-range-checked-before-spawning-target</code> — 0 tests</summary>
+<summary><code>pull-range-checked-before-spawning-target</code> — 1 test</summary>
 
+- `creep.pull() MOVE-PULL-011:spawningTargetBeforeRange pull() validation returns the canonical code`
 
 </details>
 
 <details id="xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target">
-<summary><code>transfer-negative-amount-lost-on-storeless-target</code> — 0 tests</summary>
+<summary><code>transfer-negative-amount-lost-on-storeless-target</code> — 1 test</summary>
 
+- `creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code`
 
 </details>
 
 <details id="xxscreeps-gap-construction-site-invalid-coords-throws">
-<summary><code>construction-site-invalid-coords-throws</code> — 0 tests</summary>
+<summary><code>construction-site-invalid-coords-throws</code> — 7 tests</summary>
 
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoords createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code`
+- `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
 
 </details>
 
 <details id="xxscreeps-gap-destroy-ignores-hostile-power-creeps">
-<summary><code>destroy-ignores-hostile-power-creeps</code> — 0 tests</summary>
+<summary><code>destroy-ignores-hostile-power-creeps</code> — 1 test</summary>
 
+- `structure.destroy() STRUCTURE-API-007:busyPowerCreep destroy() validation returns the canonical code`
 
 </details>
 
@@ -526,14 +506,21 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-renew-claim-creep-returns-no-bodypart">
-<summary><code>renew-claim-creep-returns-no-bodypart</code> — 0 tests</summary>
+<summary><code>renew-claim-creep-returns-no-bodypart</code> — 6 tests</summary>
 
+- `Spawn.renewCreep RENEW-CREEP-011:claimPart renewCreep() validation returns the canonical code`
+- `Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeNotOwner renewCreep() validation returns the canonical code`
+- `Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeRcl renewCreep() validation returns the canonical code`
+- `Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeRange renewCreep() validation returns the canonical code`
+- `Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeNotEnough renewCreep() validation returns the canonical code`
+- `Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeFull renewCreep() validation returns the canonical code`
 
 </details>
 
 <details id="xxscreeps-gap-recycle-inactive-spawn-checked-before-target">
-<summary><code>recycle-inactive-spawn-checked-before-target</code> — 0 tests</summary>
+<summary><code>recycle-inactive-spawn-checked-before-target</code> — 1 test</summary>
 
+- `Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRcl recycleCreep() validation returns the canonical code`
 
 </details>
 
@@ -641,7 +628,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2881 tests across 158 files</summary>
+<summary>3047 tests across 158 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -934,26 +921,26 @@ Click a count to jump to the affected test list.
 - creep.move() MOVE-BASIC-001 [LEFT] move(direction) moves one tile toward the direction constant
 - creep.move() MOVE-BASIC-001 [TOP_LEFT] move(direction) moves one tile toward the direction constant
 - creep.move() MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move
-- creep.move() MOVE-BASIC-004 move() returns ERR_NO_BODYPART when the creep has no active MOVE parts
-- creep.move() MOVE-BASIC-005 move() returns ERR_INVALID_ARGS for invalid direction
 - creep.move() MOVE-BASIC-006 move(targetCreep) on adjacent creep returns OK
-- creep.move() MOVE-BASIC-007 move(targetCreep) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.move() MOVE-BASIC-023 move() returns ERR_NOT_OWNER on unowned creep
-- creep.move() MOVE-BASIC-024 move() returns ERR_BUSY while spawning
 - creep.move() MOVE-BASIC-025 move(targetCreep) moves toward the target creep
-- creep.move() MOVE-BASIC-027:notOwner move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busy move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:fatigue move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:noBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:invalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeBusy move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeFatigue move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeNoBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busyBeforeNoBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busyBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:fatigueBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:noBodypartBeforeInvalidArgs move(direction) validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwner move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busy move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:range move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:fatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:noBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:invalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeBusy move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeRange move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeFatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeRange move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:rangeBeforeFatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:rangeBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:fatigueBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:noBodypartBeforeInvalidArgs move() validation returns the canonical code
 - creep.moveByPath() MOVE-BASIC-008 moveByPath() moves the creep one step along a provided path
 - creep.moveByPath() MOVE-BASIC-009 moveByPath() moves along a serialized path string
 - creep.moveByPath() MOVE-BASIC-010 moveByPath() moves along an array of RoomPosition objects
@@ -971,12 +958,11 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (11)
+**`tests/01-movement/1.2-fatigue.test.ts`** (10)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
 - creep fatigue MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains
-- creep fatigue MOVE-BASIC-003 move() returns ERR_TIRED while the creep has fatigue > 0
 - creep fatigue MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick
 - creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
 - creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
@@ -1000,30 +986,33 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (24)
+**`tests/01-movement/1.5-pulling.test.ts`** (27)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
 - creep.pull() MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile
-- creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
-- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
-- creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
-- creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
 - creep.pull() MOVE-PULL-009 pulled creep moving away from puller breaks the pull
 - creep.pull() MOVE-PULL-010 pull() returns OK but does not resolve when puller is fatigued
 - creep.pull() MOVE-PULL-011:notOwner pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busy pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:self pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:spawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:range pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeBusy pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeInvalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:notOwnerBeforeSelf pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:notOwnerBeforeSpawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:busyBeforeSelf pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:busyBeforeSpawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:spawningTargetBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-012:pulledFirst pulled-first iteration — same intended outcome (consistency check)
 - creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target
 
@@ -1093,63 +1082,74 @@ Click a count to jump to the affected test list.
 - PathFinder.search across rooms is directed, not a flood PATHFINDER-022 a goal two rooms away completes well inside the default op budget
 - PathFinder.search across rooms is directed, not a flood PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters
 
-**`tests/03-harvesting/3.1-source-harvest.test.ts`** (42)
+**`tests/03-harvesting/3.1-source-harvest.test.ts`** (59)
 
 - creep.harvest() HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store
 - creep.harvest() HARVEST-009 harvest reduces source energy by the harvested amount
 - creep.harvest() HARVEST-001 multiple WORK parts harvest proportionally
-- creep.harvest() HARVEST-002 returns ERR_NOT_IN_RANGE when not adjacent
 - creep.harvest() HARVEST-007 harvest() requires range 1: diagonal-adjacent OK, distance 2 returns ERR_NOT_IN_RANGE
 - creep.harvest() HARVEST-008 harvest() returns OK on success
-- creep.harvest() HARVEST-003 returns ERR_NO_BODYPART without WORK parts
-- creep.harvest() HARVEST-004 cannot harvest from depleted source
 - creep.harvest() HARVEST-014 harvest is capped by remaining source energy
 - creep.harvest() HARVEST-005 successful harvest(source) increases store.energy by the harvested amount
 - creep.harvest() HARVEST-006 harvest can exceed free carry capacity and drops overflow as a resource
-- creep.harvest() HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player
-- creep.harvest() HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep
-- creep.harvest() HARVEST-012 harvest returns ERR_BUSY while the creep is spawning
-- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets
 - creep.harvest() HARVEST-015:notOwner harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busy harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:range harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:hostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:hostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeBusy harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeNoBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeNoBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeRange harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTargetBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTargetBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTargetBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:invalidTargetBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depletedBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depletedBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:depletedBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:rangeBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:rangeBeforeHostileReservation harvest(source) validation returns the canonical code
 
-**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (68)
+**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (62)
 
 - creep.harvest(mineral) HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part
 - creep.harvest(mineral) HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity
 - creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest
-- creep.harvest(mineral) HARVEST-MINERAL-004 harvest returns ERR_NOT_ENOUGH_RESOURCES on depleted mineral
 - creep.harvest(mineral) HARVEST-MINERAL-005 harvested resource key matches mineral.mineralType
-- creep.harvest(mineral) HARVEST-MINERAL-006 harvest(mineral) returns ERR_NOT_FOUND without extractor
-- creep.harvest(mineral) HARVEST-MINERAL-007 harvest(mineral) returns ERR_NOT_OWNER when extractor owned by another player
-- creep.harvest(mineral) HARVEST-MINERAL-008 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor inactive
-- creep.harvest(mineral) HARVEST-MINERAL-009 harvest(mineral) returns ERR_TIRED during extractor cooldown
-- creep.harvest(mineral) HARVEST-MINERAL-010 harvest(mineral) returns ERR_NOT_IN_RANGE when not adjacent
 - creep.harvest(mineral) HARVEST-MINERAL-011 harvest(mineral) returns OK when all preconditions met
 - creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity
 - creep.harvest(mineral) HARVEST-MINERAL-013 partial harvest when mineral amount < full amount
@@ -1209,11 +1209,9 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
 
-**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (26)
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (24)
 
 - creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
-- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
 - creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
 - creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwner harvest(deposit) validation returns the canonical code
@@ -1238,27 +1236,21 @@ Click a count to jump to the affected test list.
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (71)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (89)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
-- creep.transfer() TRANSFER-003 returns ERR_NOT_IN_RANGE when far
-- creep.transfer() TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store
-- creep.transfer() TRANSFER-005 requires a resource type — omitted or unknown returns ERR_INVALID_ARGS
-- creep.transfer() TRANSFER-006 returns ERR_FULL when target store has no free capacity
-- creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type
-- creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET
-- creep.transfer() TRANSFER-009 transfer returns ERR_NOT_OWNER on unowned creep
-- creep.transfer() TRANSFER-010 transfer returns ERR_BUSY while spawning
 - creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController
 - creep.transfer() TRANSFER-012 transferring mineral into empty lab initializes mineral slot
-- creep.transfer() TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity
 - creep.transfer() TRANSFER-014 transfer to another creep follows same store mechanics
 - creep.transfer() TRANSFER-015:notOwner transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busy transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:range transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:full transfer() validation returns the canonical code
@@ -1266,28 +1258,49 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:fullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeBusy transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeInvalidTarget transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeNotEnoughAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeInvalidTarget transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeNotEnoughAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeInvalidCapacity transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnough transfer() validation returns the canonical code
@@ -1299,6 +1312,9 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeNotEnoughAmount transfer() validation returns the canonical code
@@ -1312,31 +1328,22 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (144)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (159)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
-- creep.withdraw() WITHDRAW-003 returns ERR_NOT_IN_RANGE
-- creep.withdraw() WITHDRAW-004 returns ERR_NOT_ENOUGH_RESOURCES from empty container
-- creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target
 - creep.withdraw() WITHDRAW-006 withdraw() works on tombstones and ruins
-- creep.withdraw() WITHDRAW-007 returns ERR_FULL when the creep has no free capacity
-- creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
-- creep.withdraw() WITHDRAW-009 withdraw returns ERR_NOT_OWNER on unowned creep
-- creep.withdraw() WITHDRAW-010 withdraw returns ERR_BUSY while spawning
-- creep.withdraw() WITHDRAW-011 withdraw returns ERR_INVALID_ARGS for invalid resourceType or negative amount
-- creep.withdraw() WITHDRAW-012 withdraw returns ERR_NOT_OWNER during hostile safe mode
-- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
-- creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource
 - creep.withdraw() WITHDRAW-015 withdrawing last mineral from lab clears mineral slot
-- creep.withdraw() WITHDRAW-016 withdraw returns ERR_FULL when amount exceeds creep free capacity
 - creep.withdraw() WITHDRAW-017:notOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busy withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminal withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:range withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:full withdraw() validation returns the canonical code
@@ -1344,33 +1351,52 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:notEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeBusy withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeDisruptedTerminal withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeDisruptedTerminal withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeDisruptedTerminal withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeDisruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidPowerBank withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidNuker withdraw() validation returns the canonical code
@@ -1379,6 +1405,11 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
@@ -1387,6 +1418,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
@@ -1397,6 +1429,10 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFullAmount withdraw() validation returns the canonical code
@@ -1412,10 +1448,6 @@ Click a count to jump to the affected test list.
 - creep.drop() DROP-001 drop() creates a dropped resource at the creep position
 - creep.drop() DROP-002 drops partial amount
 - creep.drop() DROP-003 dropping onto an existing pile of the same type merges into it
-- creep.drop() DROP-004 returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource
-- creep.drop() DROP-005 drop returns ERR_NOT_OWNER on unowned creep
-- creep.drop() DROP-006 drop returns ERR_BUSY while spawning
-- creep.drop() DROP-007 drop returns ERR_INVALID_ARGS for invalid resourceType
 - creep.drop() DROP-008 drop inserts into same-tile container before creating pile
 - creep.drop() DROP-009 drop onto empty tile creates a new Resource
 - creep.drop() DROP-010 dropping different resource type creates separate Resource
@@ -1423,19 +1455,18 @@ Click a count to jump to the affected test list.
 - creep.drop() DROP-011:busy drop() validation returns the canonical code
 - creep.drop() DROP-011:invalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:notEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:notEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeBusy drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeInvalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:notOwnerBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:busyBeforeInvalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:busyBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:busyBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:invalidArgsBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:invalidArgsBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.pickup() PICKUP-001 picks up dropped resource
 - creep.pickup() PICKUP-002 pickup is capped by the creep free capacity, remainder stays on the tile
-- creep.pickup() PICKUP-003 returns ERR_NOT_IN_RANGE when the resource is not adjacent
-- creep.pickup() PICKUP-004 returns ERR_FULL when the creep has no free capacity
-- creep.pickup() PICKUP-005 pickup returns ERR_NOT_OWNER on unowned creep
-- creep.pickup() PICKUP-006 pickup returns ERR_BUSY while spawning
-- creep.pickup() PICKUP-007 pickup returns ERR_INVALID_TARGET for a non-Resource target
 - creep.pickup() PICKUP-008 pickup removes resource pile when amount reaches 0
 - creep.pickup() PICKUP-009 pickup reduces resource pile amount by picked-up quantity
 - creep.pickup() PICKUP-010:notOwner pickup() validation returns the canonical code
@@ -1459,15 +1490,12 @@ Click a count to jump to the affected test list.
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (38)
+**`tests/05-construction-repair/5.1-build.test.ts`** (35)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
-- creep.build() BUILD-003 returns ERR_NOT_IN_RANGE when too far
 - creep.build() BUILD-006 build() returns OK on success
 - creep.build() BUILD-005 build() returns OK at Chebyshev range 3 and ERR_NOT_IN_RANGE at range 4
-- creep.build() BUILD-007 returns ERR_NO_BODYPART when the creep has no WORK parts
-- creep.build() BUILD-008 returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy
 - creep.build() BUILD-010 partial build uses only available energy when below full build amount
 - creep.build() BUILD-009 a creep can build another player's construction site
 - creep.build() BUILD-011:notOwner build() validation returns the canonical code
@@ -1500,15 +1528,12 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target
 
-**`tests/05-construction-repair/5.2-repair.test.ts`** (31)
+**`tests/05-construction-repair/5.2-repair.test.ts`** (28)
 
 - creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
 - creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
-- creep.repair() REPAIR-003 returns ERR_NOT_IN_RANGE when too far
-- creep.repair() REPAIR-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
 - creep.repair() REPAIR-005 repair() succeeds at Chebyshev range 3 and fails at range 4
 - creep.repair() REPAIR-006 repair() does not exceed the structure's hitsMax
-- creep.repair() REPAIR-007 returns ERR_NO_BODYPART when the creep has no WORK parts
 - creep.repair() REPAIR-009 partial repair when energy is below full repair cost
 - creep.repair() REPAIR-008 a creep can repair another player's structure
 - creep.repair() REPAIR-010:notOwner repair() validation returns the canonical code
@@ -1534,16 +1559,14 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
 - creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (24)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (22)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
-- creep.dismantle() DISMANTLE-003 returns ERR_NOT_IN_RANGE
 - creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile
 - creep.dismantle() DISMANTLE-006 dismantle() has Chebyshev range 1 — adjacent only
 - creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
-- creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 - creep.dismantle() DISMANTLE-009:notOwner dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busy dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypart dismantle() validation returns the canonical code
@@ -1561,19 +1584,16 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (69)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (89)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
 - room.createConstructionSite() BUILD-004 completed construction site is replaced by the built structure on the same tile
-- room.createConstructionSite() CONSTRUCTION-SITE-002 createConstructionSite returns ERR_FULL after MAX_CONSTRUCTION_SITES
-- room.createConstructionSite() CONSTRUCTION-SITE-003 createConstructionSite returns ERR_RCL_NOT_ENOUGH for a structure unavailable at the room's RCL
 - room.createConstructionSite() CONSTRUCTION-SITE-004 a hostile creep moving onto a construction site destroys it
 - room.createConstructionSite() CONSTRUCTION-SITE-005 a site placed under an already-standing hostile creep survives the next tick
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() UNDOC-STALERECV-001:constructionSiteRemove stale cached ConstructionSite.remove() throws a runtime error
-- room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
-- room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+- room.createConstructionSite() CONSTRUCTION-SITE-008 a road site can be placed on a wall terrain tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-tower] a ruin does not block placing a construction site on its tile
@@ -1611,42 +1631,60 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-container] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-tower] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [rampart-allows-tower] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
+- room.createConstructionSite() CONSTRUCTION-SITE-010 RoomPosition.createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
-- room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type
 - room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoords createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidType createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservation createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:wallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeHostileReservation createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeWallTerrain createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeHostileReservation createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeWallTerrain createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:wallTerrainBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-019 a construction site never surfaces through a structure-scoped lookup
 
 **`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (110)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (109)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
 - controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player
-- controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
-- controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player
-- controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
-- controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
 - controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-CLAIM-008:notOwner claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busy claimController() validation returns the canonical code
@@ -1655,30 +1693,33 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-008:noBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:range claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:hostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeBusy claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeGclNotEnough claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:notOwnerBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeGclNotEnough claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:busyBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeInvalidControllerState claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:noBodypartBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:noBodypartBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:noBodypartBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:rangeBeforeInvalidControllerState claimController() validation returns the canonical code
-- controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
-- controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
-- controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-CLAIM-008:rangeBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
@@ -1690,27 +1731,29 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-008:invalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:range reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:hostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:noBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeBusy reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeInvalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:notOwnerBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeInvalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:busyBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeInvalidControllerState reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:rangeBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:rangeBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:rangeBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:hostileReservationBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
-- controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
-- controller mechanics CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-SIGN-002 signController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)
 - controller mechanics CTRL-SIGN-004:busy signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:invalidTarget signController() validation returns the canonical code
@@ -1720,7 +1763,6 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-SIGN-004:busyBeforeRange signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:busyBeforeNotController signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:rangeBeforeNotController signController() validation returns the canonical code
-- controller mechanics CTRL-ATTACK-006 attackController returns ERR_INVALID_TARGET on an unowned, unreserved controller
 - controller mechanics CTRL-ATTACK-005 attackController is allowed on the player's own controller and applies the downgrade + upgradeBlocked effects
 - controller mechanics CTRL-ATTACK-007:notOwner attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busy attackController() validation returns the canonical code
@@ -1801,24 +1843,20 @@ Click a count to jump to the affected test list.
 - Game.gcl GCL-001:levelTwo Game.gcl follows vanilla GCL math at level 2, progress 0
 - Game.gcl GCL-001:levelThree Game.gcl follows vanilla GCL math at level 3, progress 0
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (52)
+**`tests/06-controller/6.4-upgrade.test.ts`** (48)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
-- creep.upgradeController() CTRL-UPGRADE-003 returns ERR_NOT_IN_RANGE when not within range 3
-- creep.upgradeController() CTRL-UPGRADE-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
 - creep.upgradeController() CTRL-UPGRADE-005 upgradeController succeeds at Chebyshev range 3 and fails at range 4
 - creep.upgradeController() CTRL-UPGRADE-006 upgrade at RCL 8 is capped at CONTROLLER_MAX_UPGRADE_PER_TICK
 - creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
-- creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 - creep.upgradeController() CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold
 - creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore
-- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -1856,12 +1894,10 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-013:upgradeBlockedBeforeNotOwnerController upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:rangeBeforeNotOwnerController upgradeController() validation returns the canonical code
 
-**`tests/06-controller/6.6-gensafemode.test.ts`** (19)
+**`tests/06-controller/6.6-gensafemode.test.ts`** (17)
 
 - creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store
-- creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - creep.generateSafeMode() CTRL-GENSAFE-003 generateSafeMode increments the controller's safeModeAvailable
-- creep.generateSafeMode() CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium
 - creep.generateSafeMode() CTRL-GENSAFE-005:notOwner generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:busy generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnough generateSafeMode() validation returns the canonical code
@@ -1893,15 +1929,11 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
 - Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there
 
-**`tests/06-controller/6.8-safemode.test.ts`** (24)
+**`tests/06-controller/6.8-safemode.test.ts`** (29)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
-- Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
-- Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
-- Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
 - Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent
-- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
 - Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack returns guard code under safe mode
@@ -1913,12 +1945,21 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwner activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnough activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:cooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:downgradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:busy activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeNotEnough activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeCooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeUpgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeBusy activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeUpgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlockedBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlockedBeforeBusy activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:downgradeTimerBeforeBusy activateSafeMode() validation returns the canonical code
 
 **`tests/06-controller/6.9-unclaim.test.ts`** (4)
 
@@ -1927,17 +1968,15 @@ Click a count to jump to the affected test list.
 - StructureController.unclaim() CTRL-UNCLAIM-005 unclaim() starts a fresh safe-mode cooldown rather than clearing it
 - StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (90)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (82)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
 - creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
-- creep.attack() COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent
-- creep.attack() COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts
 - creep.attack() COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2
 - creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead
 - creep.attack() COMBAT-MELEE-006 target ATTACK parts deal counter-damage back to a melee attacker
 - creep.attack() COMBAT-MELEE-008 counter-damage scales at ATTACK_POWER per target ATTACK part
-- creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures (non-attackable target → ERR_INVALID_TARGET)
+- creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures
 - creep.attack() COMBAT-MELEE-009:notOwner attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:busy attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypart attack() validation returns the canonical code
@@ -1955,11 +1994,9 @@ Click a count to jump to the affected test list.
 - creep.attack() COMBAT-MELEE-009:invalidTargetBeforeRange attack() validation returns the canonical code
 - creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target
 - creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
-- creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
-- creep.rangedAttack() COMBAT-RANGED-004 returns ERR_NO_BODYPART without RANGED_ATTACK parts
 - creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead
-- creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures (non-attackable → ERR_INVALID_TARGET)
+- creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures
 - creep.rangedAttack() COMBAT-RANGED-007:notOwner rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:busy rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypart rangedAttack() validation returns the canonical code
@@ -1979,8 +2016,6 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
 - creep.heal() COMBAT-HEAL-003 heal accepts any creep target regardless of ownership
-- creep.heal() COMBAT-HEAL-005 heal returns ERR_NOT_IN_RANGE beyond range 1
-- creep.heal() COMBAT-HEAL-006 heal returns ERR_NO_BODYPART without HEAL parts
 - creep.heal() COMBAT-HEAL-007:notOwner heal() validation returns the canonical code
 - creep.heal() COMBAT-HEAL-007:busy heal() validation returns the canonical code
 - creep.heal() COMBAT-HEAL-007:noBodypart heal() validation returns the canonical code
@@ -2000,8 +2035,6 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-RANGEDHEAL-001 rangedHeal heals RANGED_HEAL_POWER HP per HEAL part at range
 - creep.heal() COMBAT-RANGEDHEAL-002 rangedHeal accepts targets at range 1 through 3, ERR_NOT_IN_RANGE at range 4
 - creep.heal() COMBAT-RANGEDHEAL-003 rangedHeal takes priority over rangedAttack when both queue in the same tick
-- creep.heal() COMBAT-RANGEDHEAL-004 rangedHeal returns ERR_NOT_IN_RANGE beyond range 3
-- creep.heal() COMBAT-RANGEDHEAL-005 rangedHeal returns ERR_NO_BODYPART without HEAL parts
 - creep.heal() COMBAT-RANGEDHEAL-006:notOwner rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:busy rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypart rangedHeal() validation returns the canonical code
@@ -2027,13 +2060,10 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (97)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (95)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
-- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
-- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:notOwner launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:invalidArgumentShape launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
@@ -2041,16 +2071,17 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:outOfRange launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:missingEnergy launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:missingGhodium launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceSource launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:respawnSource launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceTarget launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:respawnTarget launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceSourceBeforeCooldown launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeInactive launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeRange launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldownBeforeResources launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeRange launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:inactiveBeforeResources launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:rangeBeforeResources launchNuke validation returns the canonical code
-- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
 - Nuke launch — section 7.13 NUKE-LAUNCH-009 launchNuke can target a position in the nuker's own room
 - Nuke launch — section 7.13 NUKE-LAUNCH-010 launchNuke can target an in-range room not visible to the launcher
 - Nuke launch — section 7.13 NUKE-LAUNCH-011 launchNuke queues an intent without same-tick store, cooldown, or nuke visibility changes
@@ -2177,7 +2208,7 @@ Click a count to jump to the affected test list.
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently
 
-**`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
+**`tests/07-combat/7.9-7.11-tower.test.ts`** (49)
 
 - StructureTower TOWER-ATTACK-002 [range=3] tower.attack() deals the expected falloff damage
 - StructureTower TOWER-ATTACK-002 [range=10] tower.attack() deals the expected falloff damage
@@ -2192,9 +2223,6 @@ Click a count to jump to the affected test list.
 - StructureTower TOWER-REPAIR-002 [range=10] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-002 [range=20] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick
-- StructureTower TOWER-HEAL-004 tower.heal() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
-- StructureTower TOWER-REPAIR-004 tower.repair() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
-- StructureTower TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
 - StructureTower UNDOC-STALERECV-001:towerAttack stale cached StructureTower.attack() throws a runtime error
 - StructureTower UNDOC-STALERECV-001:towerHeal stale cached StructureTower.heal() throws a runtime error
 - StructureTower UNDOC-STALERECV-001:towerRepair stale cached StructureTower.repair() throws a runtime error
@@ -2232,14 +2260,11 @@ Click a count to jump to the affected test list.
 - StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target
 - StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target
 
-**`tests/08-boosts/8.1-boost-application.test.ts`** (35)
+**`tests/08-boosts/8.1-boost-application.test.ts`** (32)
 
 - Lab boostCreep BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted
 - Lab boostCreep BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part
 - Lab boostCreep BOOST-CREEP-003 boostCreep with bodyPartsCount limits the number of parts boosted
-- Lab boostCreep BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
-- Lab boostCreep BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral
-- Lab boostCreep BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts
 - Lab boostCreep BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound
 - Lab boostCreep BOOST-CREEP-010:notOwner boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:rcl boostCreep() validation returns the canonical code
@@ -2270,13 +2295,11 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-010:notEnoughEnergyBeforeNotFound boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:notEnoughMineralBeforeNotFound boostCreep() validation returns the canonical code
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (32)
+**`tests/08-boosts/8.2-unboost.test.ts`** (30)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
-- lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
 - lab.unboostCreep() UNBOOST-004 unboost drops LAB_UNBOOST_MINERAL per part as a resource pile at the creep tile
 - lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
-- lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - lab.unboostCreep() UNBOOST-006:invalidTarget unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:labNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:creepNotOwner unboostCreep() validation returns the canonical code
@@ -2348,22 +2371,15 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (87)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-015 without energyStructures, spawnCreep drains spawns nearest-first, then extensions nearest-first
 - StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
 - StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
-- StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
-- StructureSpawn SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep
-- StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
 - StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
-- StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
-- StructureSpawn SPAWN-CREATE-002 spawnCreep returns ERR_INVALID_ARGS for a body exceeding MAX_CREEP_SIZE
 - StructureSpawn SPAWN-CREATE-013 spawnCreep deducts the body cost from the spawn and contributing extensions
-- StructureSpawn SPAWN-CREATE-012 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name
-- StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
@@ -2373,32 +2389,77 @@ Click a count to jump to the affected test list.
 - StructureSpawn UNDOC-STALERECV-001:spawnCreep stale cached StructureSpawn.spawnCreep() throws a runtime error
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptions spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExists spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawning spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameExists spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameSpawning spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidDirections spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotOwner spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeRcl spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidPart spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busyBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeInvalidPart spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBodyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBodyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPartBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPartBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notEnoughBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 
 **`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (2)
 
@@ -2414,58 +2475,70 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (33)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (41)
 
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep returns OK and increases creep TTL by the per-part renew amount
-- Spawn.renewCreep RENEW-CREEP-008 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy
-- Spawn.renewCreep RENEW-CREEP-001 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
-- Spawn.renewCreep RENEW-CREEP-010 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME
-- Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part
 - Spawn.renewCreep RENEW-CREEP-003 renewCreep spends the correct energy cost
 - Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep
 - Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
 - Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources
-- Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning
 - Spawn.renewCreep UNDOC-STALERECV-001:spawnRenewCreep stale cached StructureSpawn.renewCreep() throws a runtime error
 - Spawn.renewCreep RENEW-CREEP-011:busy renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTarget renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPart renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwner renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:range renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:full renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeInvalidTarget renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:busyBeforeClaimPart renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotOwner renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotOwner renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeRcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeNotOwner renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeRcl renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeRange renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeNotEnough renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:claimPartBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeRcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeRange renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeNotEnough renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (16)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (20)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
-- Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
 - Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 - Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rcl recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:range recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeInvalidTarget recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeRcl recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeRange recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRcl recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRange recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target
 
@@ -2527,32 +2600,26 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 - Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (60)
+**`tests/10-structures-energy/10.4-link.test.ts`** (66)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
 - StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
 - StructureLink LINK-003 transfer loss rounds up: sending 1 energy delivers 0
-- StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself
-- StructureLink LINK-005 transferEnergy returns ERR_INVALID_TARGET when target is not a StructureLink
-- StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player
-- StructureLink LINK-007 transferEnergy returns ERR_INVALID_ARGS for a negative amount
-- StructureLink LINK-008 transferEnergy returns ERR_TIRED while source link has cooldown > 0
-- StructureLink LINK-009 transferEnergy returns ERR_RCL_NOT_ENOUGH when source link is inactive
-- StructureLink LINK-010 transferEnergy returns ERR_NOT_ENOUGH_ENERGY when source lacks the requested amount
-- StructureLink LINK-011 transferEnergy returns ERR_FULL when target lacks free capacity for the amount
-- StructureLink LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room
 - StructureLink LINK-013 transferEnergy with no amount transfers all stored energy
 - StructureLink UNDOC-STALERECV-001:linkTransferEnergy stale cached StructureLink.transferEnergy() throws a runtime error
 - StructureLink LINK-014:invalidArgs transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTarget transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTarget transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:full transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:range transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeInvalidTarget transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeSelfTarget transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeTargetNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeCooldown transferEnergy() validation returns the canonical code
@@ -2565,32 +2632,44 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:invalidTargetBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidTargetBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeSourceNotOwner transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeCooldown transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeRcl transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:targetNotOwnerBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:sourceNotOwnerBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:rclBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmountBeforeFull transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmountBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:fullBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target
 
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (171)
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (256)
 
 - Lab runReaction LAB-RUN-001:H+O runReaction produces OH
 - Lab runReaction LAB-RUN-001:H+L runReaction produces LH
@@ -2628,51 +2707,99 @@ Click a count to jump to the affected test list.
 - Lab runReaction LAB-RUN-001:ZK+UL runReaction produces G
 - Lab runReaction LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab
 - Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]
-- Lab runReaction LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far
-- Lab runReaction LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty
-- Lab runReaction LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity
-- Lab runReaction LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product
-- Lab runReaction LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab
-- Lab runReaction LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown
-- Lab runReaction LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
 - Lab runReaction LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount
-- Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab
 - Lab runReaction LAB-RUN-013:notOwner runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldown runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:range runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:full runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:noProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeCooldown runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeRcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeRcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeRange runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidTargetBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidTargetBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeNotEnough runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeRangeLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeRangeLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeRange runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNoProduct runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:fullBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:fullBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:fullBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:fullBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeNoProduct runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notEnoughBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:noProductBeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-001:G reverseReaction splits into UL+ZK
 - Lab reverseReaction LAB-REVERSE-001:GH reverseReaction splits into G+H
 - Lab reverseReaction LAB-REVERSE-001:GH2O reverseReaction splits into GH+OH
@@ -2709,62 +2836,99 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-001:ZO reverseReaction splits into O+Z
 - Lab reverseReaction LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs
 - Lab reverseReaction LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]
-- Lab reverseReaction LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far
-- Lab reverseReaction LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound
-- Lab reverseReaction LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity
-- Lab reverseReaction LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair
-- Lab reverseReaction LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab
-- Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
-- Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
 - Lab reverseReaction LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount
-- Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab
 - Lab reverseReaction LAB-REVERSE-013:notOwner reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldown reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:range reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:full reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:fullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeCooldown reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeSelfTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeRangeLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeSameLab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeRange reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeFull reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:fullBeforeFullLab2 reverseReaction() validation returns the canonical code
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (112)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (104)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -2789,14 +2953,6 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:zynthiumBar produce(zynthium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
-- Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
-- Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
-- Factory production FACTORY-PRODUCE-005 produce returns ERR_BUSY when commodity requires level but no PWR_OPERATE_FACTORY active
-- Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
-- Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
-- Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
-- Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
-- Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player
 - Factory production FACTORY-PRODUCE-011:notOwner produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:cooldown produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:invalidArgs produce() validation returns the canonical code
@@ -2939,17 +3095,12 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (50)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (45)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown
 - Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
 - Terminal send TERMINAL-SEND-004 PWR_OPERATE_TERMINAL reduces energy cost
-- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
-- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
-- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
-- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
-- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
 - Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
 - Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
 - Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
@@ -2992,13 +3143,9 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 - Terminal send TERMINAL-SEND-015 send across opposite world edges charges calcTransactionCost at the wrapped distance
 
-**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (16)
+**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (12)
 
 - StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick
-- StructureObserver OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE
-- StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
-- StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
-- StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player
 - StructureObserver OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit
 - StructureObserver OBSERVER-007:notOwner observeRoom() validation returns the canonical code
 - StructureObserver OBSERVER-007:invalidArgs observeRoom() validation returns the canonical code
@@ -3129,14 +3276,18 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (12)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (16)
 
-- structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
-- structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
 - structure.destroy() STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store
 - structure.destroy() STRUCTURE-API-007:notOwner destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noController destroy() validation returns the canonical code
 - structure.destroy() STRUCTURE-API-007:busy destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:busyPowerCreep destroy() validation returns the canonical code
 - structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusy destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusyPowerCreep destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noControllerBeforeBusy destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noControllerBeforeBusyPowerCreep destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:busyBeforeBusyPowerCreep destroy() validation returns the canonical code
 - structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
 - structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
 - structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK for an owned structure with a boolean argument
@@ -3267,28 +3418,30 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (25)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
 - Flags FLAG-004 Flag.remove() removes the flag from the player flag set
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
-- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
-- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
 - Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
 - Flags FLAG-009:invalidCoords createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFull createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:nameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeFlagCapFull createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeInvalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:invalidCoordsBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeInvalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:flagCapFullBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:invalidColorBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
@@ -4002,15 +4155,15 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 190 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
+xxscreeps has 200 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [90](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [99](#xxscreeps-skip-capability-powereffects) |
 | capability | `powerCreepAccountApi` | Account-level power-creep management from game code: `PowerCreep.create` plus the `rename` / `upgrade` / `delete` instance methods, and the unspawned-roster states only they can reach. | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `market` | Full market order lifecycle, deals, history, and adapter-side order placement. | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Per-room inactive Invader raid spawning orchestration. | [21](#xxscreeps-skip-capability-invaderraidspawner) |
-| capability | `roomStatus` | Public room-status setup through RoomSpec.status. | [7](#xxscreeps-skip-capability-roomstatus) |
+| capability | `roomStatus` | Public room-status setup through RoomSpec.status. | [8](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [7](#xxscreeps-skip-capability-deprecationnotices) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
 | capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [1](#xxscreeps-skip-capability-intershardmemory) |
@@ -4018,11 +4171,20 @@ xxscreeps has 190 skipped tests, grouped by the mechanism that gated them. **Cap
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powereffects">
-<summary><code>capability:powerEffects</code> — 90 tests across 15 files</summary>
+<summary><code>capability:powerEffects</code> — 99 tests across 15 files</summary>
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (10)
 
-- creep.withdraw() WITHDRAW-008 terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect
+- creep.withdraw() WITHDRAW-017:disruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeDisruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeDisruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeDisruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeDisruptedTerminal withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:disruptedTerminalBeforeNotEnough withdraw() validation returns the canonical code
 
 **`tests/07-combat/7.17-tower-power.test.ts`** (11)
 
@@ -4276,14 +4438,15 @@ Click a count to jump to the affected test list.
 </details>
 
 <details id="xxscreeps-skip-capability-roomstatus">
-<summary><code>capability:roomStatus</code> — 7 tests across 2 files</summary>
+<summary><code>capability:roomStatus</code> — 8 tests across 2 files</summary>
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (4)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (5)
 
-- Nuke launch — section 7.13 NUKE-LAUNCH-014 launchNuke returns ERR_INVALID_TARGET when source-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-015 launchNuke returns ERR_INVALID_TARGET when source-room-respawn status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-016 launchNuke returns ERR_INVALID_TARGET when destination-room-novice status is active
-- Nuke launch — section 7.13 NUKE-LAUNCH-017 launchNuke returns ERR_INVALID_TARGET when destination-room-respawn status is active
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceSource launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:respawnSource launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceTarget launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:respawnTarget launchNuke validation returns the canonical code
+- Nuke launch — section 7.13 NUKE-LAUNCH-008:noviceSourceBeforeCooldown launchNuke validation returns the canonical code
 
 **`tests/21-map/21.1-room-queries.test.ts`** (3)
 
@@ -4341,7 +4504,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2611 tests across 144 files</summary>
+<summary>2753 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4634,26 +4797,26 @@ Click a count to jump to the affected test list.
 - creep.move() MOVE-BASIC-001 [LEFT] move(direction) moves one tile toward the direction constant
 - creep.move() MOVE-BASIC-001 [TOP_LEFT] move(direction) moves one tile toward the direction constant
 - creep.move() MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move
-- creep.move() MOVE-BASIC-004 move() returns ERR_NO_BODYPART when the creep has no active MOVE parts
-- creep.move() MOVE-BASIC-005 move() returns ERR_INVALID_ARGS for invalid direction
 - creep.move() MOVE-BASIC-006 move(targetCreep) on adjacent creep returns OK
-- creep.move() MOVE-BASIC-007 move(targetCreep) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.move() MOVE-BASIC-023 move() returns ERR_NOT_OWNER on unowned creep
-- creep.move() MOVE-BASIC-024 move() returns ERR_BUSY while spawning
 - creep.move() MOVE-BASIC-025 move(targetCreep) moves toward the target creep
-- creep.move() MOVE-BASIC-027:notOwner move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busy move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:fatigue move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:noBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:invalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeBusy move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeFatigue move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeNoBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:notOwnerBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busyBeforeNoBodypart move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:busyBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:fatigueBeforeInvalidArgs move(direction) validation returns the canonical code
-- creep.move() MOVE-BASIC-027:noBodypartBeforeInvalidArgs move(direction) validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwner move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busy move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:range move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:fatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:noBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:invalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeBusy move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeRange move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeFatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:notOwnerBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeRange move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:busyBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:rangeBeforeFatigue move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:rangeBeforeNoBodypart move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:fatigueBeforeInvalidArgs move() validation returns the canonical code
+- creep.move() MOVE-BASIC-027:noBodypartBeforeInvalidArgs move() validation returns the canonical code
 - creep.moveByPath() MOVE-BASIC-008 moveByPath() moves the creep one step along a provided path
 - creep.moveByPath() MOVE-BASIC-009 moveByPath() moves along a serialized path string
 - creep.moveByPath() MOVE-BASIC-010 moveByPath() moves along an array of RoomPosition objects
@@ -4671,12 +4834,11 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (11)
+**`tests/01-movement/1.2-fatigue.test.ts`** (10)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
 - creep fatigue MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains
-- creep fatigue MOVE-BASIC-003 move() returns ERR_TIRED while the creep has fatigue > 0
 - creep fatigue MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick
 - creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
 - creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
@@ -4700,28 +4862,30 @@ Click a count to jump to the affected test list.
 - Room transitions ROOM-TRANSITION-005 body, hits, and store preserved across room transition
 - Room transitions ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile
 
-**`tests/01-movement/1.5-pulling.test.ts`** (24)
+**`tests/01-movement/1.5-pulling.test.ts`** (26)
 
 - creep.pull() MOVE-PULL-001 pull() on an adjacent friendly creep returns OK
 - creep.pull() MOVE-PULL-002 the pulled creep must call move() toward the puller in the same tick for the pull to complete
 - creep.pull() MOVE-PULL-003 when a pull completes, the pulled creep moves into the puller's previous tile
-- creep.pull() MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent
 - creep.pull() MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep
 - creep.pull() MOVE-PULL-006 pull can chain through multiple creeps in a train
-- creep.pull() MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self
-- creep.pull() MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep
-- creep.pull() MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep
 - creep.pull() MOVE-PULL-008 pull() on adjacent enemy returns OK
 - creep.pull() MOVE-PULL-009 pulled creep moving away from puller breaks the pull
 - creep.pull() MOVE-PULL-010 pull() returns OK but does not resolve when puller is fatigued
 - creep.pull() MOVE-PULL-011:notOwner pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busy pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:self pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:spawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:range pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeBusy pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeInvalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:notOwnerBeforeSelf pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:notOwnerBeforeSpawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:notOwnerBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeInvalidTarget pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:busyBeforeSelf pull() validation returns the canonical code
+- creep.pull() MOVE-PULL-011:busyBeforeSpawningTarget pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:busyBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-011:invalidTargetBeforeRange pull() validation returns the canonical code
 - creep.pull() MOVE-PULL-012:pullerFirst puller-first iteration — fatigue dies with the puller, not stranded on the pulled creep
@@ -4791,63 +4955,74 @@ Click a count to jump to the affected test list.
 - PathFinder.search across rooms is directed, not a flood PATHFINDER-022 a goal two rooms away completes well inside the default op budget
 - PathFinder.search across rooms is directed, not a flood PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters
 
-**`tests/03-harvesting/3.1-source-harvest.test.ts`** (42)
+**`tests/03-harvesting/3.1-source-harvest.test.ts`** (59)
 
 - creep.harvest() HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store
 - creep.harvest() HARVEST-009 harvest reduces source energy by the harvested amount
 - creep.harvest() HARVEST-001 multiple WORK parts harvest proportionally
-- creep.harvest() HARVEST-002 returns ERR_NOT_IN_RANGE when not adjacent
 - creep.harvest() HARVEST-007 harvest() requires range 1: diagonal-adjacent OK, distance 2 returns ERR_NOT_IN_RANGE
 - creep.harvest() HARVEST-008 harvest() returns OK on success
-- creep.harvest() HARVEST-003 returns ERR_NO_BODYPART without WORK parts
-- creep.harvest() HARVEST-004 cannot harvest from depleted source
 - creep.harvest() HARVEST-014 harvest is capped by remaining source energy
 - creep.harvest() HARVEST-005 successful harvest(source) increases store.energy by the harvested amount
 - creep.harvest() HARVEST-006 harvest can exceed free carry capacity and drops overflow as a resource
-- creep.harvest() HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player
-- creep.harvest() HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep
-- creep.harvest() HARVEST-012 harvest returns ERR_BUSY while the creep is spawning
-- creep.harvest() HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets
 - creep.harvest() HARVEST-015:notOwner harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busy harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:range harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:hostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:hostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeBusy harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeNoBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:notOwnerBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:notOwnerBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeNoBodypart harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:busyBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:busyBeforeRange harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeNoTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeNullTarget harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforePlainObjectTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeInvalidTarget harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:noBodypartBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noBodypartBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:noTargetBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:nullTargetBeforeHostileReservation harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:plainObjectTargetBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeDepleted harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:invalidTargetBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:invalidTargetBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depletedBeforeRange harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:depletedBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:depletedBeforeHostileReservation harvest(source) validation returns the canonical code
 - creep.harvest() HARVEST-015:rangeBeforeHostileRoom harvest(source) validation returns the canonical code
+- creep.harvest() HARVEST-015:rangeBeforeHostileReservation harvest(source) validation returns the canonical code
 
-**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (68)
+**`tests/03-harvesting/3.2-mineral-harvest.test.ts`** (62)
 
 - creep.harvest(mineral) HARVEST-MINERAL-001 harvest on a mineral with an extractor returns OK and deposits HARVEST_MINERAL_POWER per WORK part
 - creep.harvest(mineral) HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity
 - creep.harvest(mineral) HARVEST-MINERAL-003 extractor enters cooldown after harvest
-- creep.harvest(mineral) HARVEST-MINERAL-004 harvest returns ERR_NOT_ENOUGH_RESOURCES on depleted mineral
 - creep.harvest(mineral) HARVEST-MINERAL-005 harvested resource key matches mineral.mineralType
-- creep.harvest(mineral) HARVEST-MINERAL-006 harvest(mineral) returns ERR_NOT_FOUND without extractor
-- creep.harvest(mineral) HARVEST-MINERAL-007 harvest(mineral) returns ERR_NOT_OWNER when extractor owned by another player
-- creep.harvest(mineral) HARVEST-MINERAL-008 harvest(mineral) returns ERR_RCL_NOT_ENOUGH when extractor inactive
-- creep.harvest(mineral) HARVEST-MINERAL-009 harvest(mineral) returns ERR_TIRED during extractor cooldown
-- creep.harvest(mineral) HARVEST-MINERAL-010 harvest(mineral) returns ERR_NOT_IN_RANGE when not adjacent
 - creep.harvest(mineral) HARVEST-MINERAL-011 harvest(mineral) returns OK when all preconditions met
 - creep.harvest(mineral) HARVEST-MINERAL-012 harvest(mineral) overflows mineral when exceeding carry capacity
 - creep.harvest(mineral) HARVEST-MINERAL-013 partial harvest when mineral amount < full amount
@@ -4907,11 +5082,9 @@ Click a count to jump to the affected test list.
 - creep.harvest(mineral) HARVEST-MINERAL-014:extractorNotOwnerBeforeCooldown harvest(mineral) validation returns the canonical code
 - creep.harvest(mineral) HARVEST-MINERAL-014:inactiveExtractorBeforeCooldown harvest(mineral) validation returns the canonical code
 
-**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (26)
+**`tests/03-harvesting/3.3-deposit-harvest.test.ts`** (24)
 
 - creep.harvest(deposit) DEPOSIT-HARVEST-001 harvest(deposit) adds HARVEST_DEPOSIT_POWER per WORK to creep store
-- creep.harvest(deposit) DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent
-- creep.harvest(deposit) DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown
 - creep.harvest(deposit) DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met
 - creep.harvest(deposit) DEPOSIT-HARVEST-005 harvest(deposit) overflows resource when exceeding carry capacity
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:notOwner harvest(deposit) validation returns the canonical code
@@ -4936,27 +5109,21 @@ Click a count to jump to the affected test list.
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (68)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (86)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
-- creep.transfer() TRANSFER-003 returns ERR_NOT_IN_RANGE when far
-- creep.transfer() TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store
-- creep.transfer() TRANSFER-005 requires a resource type — omitted or unknown returns ERR_INVALID_ARGS
-- creep.transfer() TRANSFER-006 returns ERR_FULL when target store has no free capacity
-- creep.transfer() TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type
-- creep.transfer() TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET
-- creep.transfer() TRANSFER-009 transfer returns ERR_NOT_OWNER on unowned creep
-- creep.transfer() TRANSFER-010 transfer returns ERR_BUSY while spawning
 - creep.transfer() TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController
 - creep.transfer() TRANSFER-012 transferring mineral into empty lab initializes mineral slot
-- creep.transfer() TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity
 - creep.transfer() TRANSFER-014 transfer to another creep follows same store mechanics
 - creep.transfer() TRANSFER-015:notOwner transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busy transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:range transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:full transfer() validation returns the canonical code
@@ -4964,27 +5131,48 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:fullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeBusy transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:notOwnerBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notOwnerBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidArgs transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:busyBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidResource transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeNoResource transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidCapacity transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidArgsBeforeLabMineral transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeInvalidTarget transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeNotEnoughAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:invalidResourceBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeInvalidTarget transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeFull transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeNotEnoughAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:noResourceBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeInvalidCapacity transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidTargetBeforeNotEnough transfer() validation returns the canonical code
@@ -4996,6 +5184,9 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidCapacityBeforeFullAmount transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeRange transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeNotEnough transfer() validation returns the canonical code
+- creep.transfer() TRANSFER-015:labMineralBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeNotEnough transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:rangeBeforeNotEnoughAmount transfer() validation returns the canonical code
@@ -5007,30 +5198,21 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:fullBeforeFullAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:notEnoughAmountBeforeFullAmount transfer() validation returns the canonical code
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (142)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (148)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
-- creep.withdraw() WITHDRAW-003 returns ERR_NOT_IN_RANGE
-- creep.withdraw() WITHDRAW-004 returns ERR_NOT_ENOUGH_RESOURCES from empty container
-- creep.withdraw() WITHDRAW-005 returns ERR_NOT_OWNER when a non-public enemy rampart covers the target
 - creep.withdraw() WITHDRAW-006 withdraw() works on tombstones and ruins
-- creep.withdraw() WITHDRAW-007 returns ERR_FULL when the creep has no free capacity
-- creep.withdraw() WITHDRAW-009 withdraw returns ERR_NOT_OWNER on unowned creep
-- creep.withdraw() WITHDRAW-010 withdraw returns ERR_BUSY while spawning
-- creep.withdraw() WITHDRAW-011 withdraw returns ERR_INVALID_ARGS for invalid resourceType or negative amount
-- creep.withdraw() WITHDRAW-012 withdraw returns ERR_NOT_OWNER during hostile safe mode
-- creep.withdraw() WITHDRAW-013 withdraw returns ERR_INVALID_TARGET for nukers
-- creep.withdraw() WITHDRAW-014 withdraw returns ERR_INVALID_TARGET when target cannot hold requested resource
 - creep.withdraw() WITHDRAW-015 withdrawing last mineral from lab clears mineral slot
-- creep.withdraw() WITHDRAW-016 withdraw returns ERR_FULL when amount exceeds creep free capacity
 - creep.withdraw() WITHDRAW-017:notOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busy withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:range withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:full withdraw() validation returns the canonical code
@@ -5038,33 +5220,48 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:notEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeBusy withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:notOwnerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidArgs withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:busyBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:busyBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidResource withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidTarget withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidArgsBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidTarget withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeTargetNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeSafemodeNotOwner withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeInvalidPowerBank withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidResourceBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeTargetNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeSafemodeNotOwner withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidTargetBeforeInvalidNuker withdraw() validation returns the canonical code
@@ -5081,6 +5278,7 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:targetNotOwnerBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidNuker withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidPowerBank withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeInvalidCapacity withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:safemodeNotOwnerBeforeFull withdraw() validation returns the canonical code
@@ -5091,6 +5289,10 @@ Click a count to jump to the affected test list.
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeFullAmount withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidNukerBeforeNotEnough withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeRange withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeFull withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeFullAmount withdraw() validation returns the canonical code
+- creep.withdraw() WITHDRAW-017:invalidPowerBankBeforeNotEnough withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeRange withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFull withdraw() validation returns the canonical code
 - creep.withdraw() WITHDRAW-017:invalidCapacityBeforeFullAmount withdraw() validation returns the canonical code
@@ -5106,10 +5308,6 @@ Click a count to jump to the affected test list.
 - creep.drop() DROP-001 drop() creates a dropped resource at the creep position
 - creep.drop() DROP-002 drops partial amount
 - creep.drop() DROP-003 dropping onto an existing pile of the same type merges into it
-- creep.drop() DROP-004 returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource
-- creep.drop() DROP-005 drop returns ERR_NOT_OWNER on unowned creep
-- creep.drop() DROP-006 drop returns ERR_BUSY while spawning
-- creep.drop() DROP-007 drop returns ERR_INVALID_ARGS for invalid resourceType
 - creep.drop() DROP-008 drop inserts into same-tile container before creating pile
 - creep.drop() DROP-009 drop onto empty tile creates a new Resource
 - creep.drop() DROP-010 dropping different resource type creates separate Resource
@@ -5117,19 +5315,18 @@ Click a count to jump to the affected test list.
 - creep.drop() DROP-011:busy drop() validation returns the canonical code
 - creep.drop() DROP-011:invalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:notEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:notEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeBusy drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeInvalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:notOwnerBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:notOwnerBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:busyBeforeInvalidArgs drop() validation returns the canonical code
 - creep.drop() DROP-011:busyBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:busyBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.drop() DROP-011:invalidArgsBeforeNotEnough drop() validation returns the canonical code
+- creep.drop() DROP-011:invalidArgsBeforeNotEnoughAmount drop() validation returns the canonical code
 - creep.pickup() PICKUP-001 picks up dropped resource
 - creep.pickup() PICKUP-002 pickup is capped by the creep free capacity, remainder stays on the tile
-- creep.pickup() PICKUP-003 returns ERR_NOT_IN_RANGE when the resource is not adjacent
-- creep.pickup() PICKUP-004 returns ERR_FULL when the creep has no free capacity
-- creep.pickup() PICKUP-005 pickup returns ERR_NOT_OWNER on unowned creep
-- creep.pickup() PICKUP-006 pickup returns ERR_BUSY while spawning
-- creep.pickup() PICKUP-007 pickup returns ERR_INVALID_TARGET for a non-Resource target
 - creep.pickup() PICKUP-008 pickup removes resource pile when amount reaches 0
 - creep.pickup() PICKUP-009 pickup reduces resource pile amount by picked-up quantity
 - creep.pickup() PICKUP-010:notOwner pickup() validation returns the canonical code
@@ -5152,15 +5349,12 @@ Click a count to jump to the affected test list.
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
-**`tests/05-construction-repair/5.1-build.test.ts`** (37)
+**`tests/05-construction-repair/5.1-build.test.ts`** (34)
 
 - creep.build() BUILD-001 increases site progress by BUILD_POWER per WORK part
 - creep.build() BUILD-002 spends 1 energy per build progress point
-- creep.build() BUILD-003 returns ERR_NOT_IN_RANGE when too far
 - creep.build() BUILD-006 build() returns OK on success
 - creep.build() BUILD-005 build() returns OK at Chebyshev range 3 and ERR_NOT_IN_RANGE at range 4
-- creep.build() BUILD-007 returns ERR_NO_BODYPART when the creep has no WORK parts
-- creep.build() BUILD-008 returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy
 - creep.build() BUILD-010 partial build uses only available energy when below full build amount
 - creep.build() BUILD-009 a creep can build another player's construction site
 - creep.build() BUILD-011:notOwner build() validation returns the canonical code
@@ -5192,15 +5386,12 @@ Click a count to jump to the affected test list.
 - creep.build() BUILD-011:invalidTargetBeforeBlockedTarget build() validation returns the canonical code
 - creep.build() BUILD-011:rangeBeforeBlockedTarget build() validation returns the canonical code
 
-**`tests/05-construction-repair/5.2-repair.test.ts`** (30)
+**`tests/05-construction-repair/5.2-repair.test.ts`** (27)
 
 - creep.repair() REPAIR-001 repairs REPAIR_POWER HP per WORK part per tick
 - creep.repair() REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired
-- creep.repair() REPAIR-003 returns ERR_NOT_IN_RANGE when too far
-- creep.repair() REPAIR-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
 - creep.repair() REPAIR-005 repair() succeeds at Chebyshev range 3 and fails at range 4
 - creep.repair() REPAIR-006 repair() does not exceed the structure's hitsMax
-- creep.repair() REPAIR-007 returns ERR_NO_BODYPART when the creep has no WORK parts
 - creep.repair() REPAIR-009 partial repair when energy is below full repair cost
 - creep.repair() REPAIR-008 a creep can repair another player's structure
 - creep.repair() REPAIR-010:notOwner repair() validation returns the canonical code
@@ -5225,16 +5416,14 @@ Click a count to jump to the affected test list.
 - creep.repair() REPAIR-010:notEnoughBeforeRange repair() validation returns the canonical code
 - creep.repair() REPAIR-010:invalidTargetBeforeRange repair() validation returns the canonical code
 
-**`tests/05-construction-repair/5.3-dismantle.test.ts`** (23)
+**`tests/05-construction-repair/5.3-dismantle.test.ts`** (21)
 
 - creep.dismantle() DISMANTLE-001 removes DISMANTLE_POWER HP per WORK part from structure
 - creep.dismantle() DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)
-- creep.dismantle() DISMANTLE-003 returns ERR_NOT_IN_RANGE
 - creep.dismantle() DISMANTLE-004 damage is redirected to a rampart on the target tile
 - creep.dismantle() DISMANTLE-006 dismantle() has Chebyshev range 1 — adjacent only
 - creep.dismantle() DISMANTLE-007 structure is destroyed when dismantling reduces hits to 0
 - creep.dismantle() DISMANTLE-008 overflow energy from dismantle is dropped at the creep's tile
-- creep.dismantle() DISMANTLE-005 returns ERR_NO_BODYPART when the creep has no WORK parts
 - creep.dismantle() DISMANTLE-009:notOwner dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:busy dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:noBodypart dismantle() validation returns the canonical code
@@ -5251,19 +5440,16 @@ Click a count to jump to the affected test list.
 - creep.dismantle() DISMANTLE-009:noBodypartBeforeRange dismantle() validation returns the canonical code
 - creep.dismantle() DISMANTLE-009:invalidTargetBeforeRange dismantle() validation returns the canonical code
 
-**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (69)
+**`tests/05-construction-repair/5.4-construction-sites.test.ts`** (82)
 
 - room.createConstructionSite() CONSTRUCTION-SITE-001 creates a construction site via player code
 - room.createConstructionSite() BUILD-004 construction site is removed when build progress reaches progressTotal
 - room.createConstructionSite() BUILD-004 completed construction site is replaced by the built structure on the same tile
-- room.createConstructionSite() CONSTRUCTION-SITE-002 createConstructionSite returns ERR_FULL after MAX_CONSTRUCTION_SITES
-- room.createConstructionSite() CONSTRUCTION-SITE-003 createConstructionSite returns ERR_RCL_NOT_ENOUGH for a structure unavailable at the room's RCL
 - room.createConstructionSite() CONSTRUCTION-SITE-004 a hostile creep moving onto a construction site destroys it
 - room.createConstructionSite() CONSTRUCTION-SITE-005 a site placed under an already-standing hostile creep survives the next tick
 - room.createConstructionSite() CONSTRUCTION-SITE-006 ConstructionSite.remove() deletes the site for the owner
 - room.createConstructionSite() UNDOC-STALERECV-001:constructionSiteRemove stale cached ConstructionSite.remove() throws a runtime error
-- room.createConstructionSite() CONSTRUCTION-SITE-007 only one construction site can exist at a given position
-- room.createConstructionSite() CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile
+- room.createConstructionSite() CONSTRUCTION-SITE-008 a road site can be placed on a wall terrain tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-spawn] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-extension] a ruin does not block placing a construction site on its tile
 - room.createConstructionSite() CONSTRUCTION-SITE-009 [spawn-ruin-place-tower] a ruin does not block placing a construction site on its tile
@@ -5301,42 +5487,53 @@ Click a count to jump to the affected test list.
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-container] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [road-allows-tower] structure under construction-site placement obeys road/rampart stacking
 - room.createConstructionSite() CONSTRUCTION-SITE-017 [rampart-allows-tower] structure under construction-site placement obeys road/rampart stacking
-- room.createConstructionSite() CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
+- room.createConstructionSite() CONSTRUCTION-SITE-010 RoomPosition.createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type
 - room.createConstructionSite() CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH
 - room.createConstructionSite() CONSTRUCTION-SITE-013 a controller reserved by the caller behaves as rcl 0 — road and container only
-- room.createConstructionSite() CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type
 - room.createConstructionSite() CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidType createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgs createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservation createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:wallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:siteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeHostileReservation createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeWallTerrain createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTypeBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeNotOwner createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeHostileReservation createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidArgsBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:notOwnerBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeWallTerrain createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:hostileReservationBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeInvalidTarget createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeWallTerrain createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:rclOrStructureCapBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-011:invalidTargetBeforeSiteCapFull createConstructionSite() validation returns the canonical code
+- room.createConstructionSite() CONSTRUCTION-SITE-011:wallTerrainBeforeSiteCapFull createConstructionSite() validation returns the canonical code
 - room.createConstructionSite() CONSTRUCTION-SITE-019 a construction site never surfaces through a structure-scoped lookup
 
 **`tests/05-construction-repair/5.5-my-construction-sites.test.ts`** (1)
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (108)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (107)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
 - controller mechanics CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player
-- controller mechanics CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part
-- controller mechanics CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player
-- controller mechanics CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded
-- controller mechanics CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned
 - controller mechanics CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller
 - controller mechanics CTRL-CLAIM-008:notOwner claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busy claimController() validation returns the canonical code
@@ -5345,30 +5542,33 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-CLAIM-008:noBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:range claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:hostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeBusy claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeGclNotEnough claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:notOwnerBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:notOwnerBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeGclNotEnough claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:busyBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:busyBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidTarget claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:gclNotEnoughBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeNoBodypart claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:invalidTargetBeforeInvalidControllerState claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:noBodypartBeforeRange claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:noBodypartBeforeInvalidControllerState claimController() validation returns the canonical code
+- controller mechanics CTRL-CLAIM-008:noBodypartBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-CLAIM-008:rangeBeforeInvalidControllerState claimController() validation returns the canonical code
-- controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
-- controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
-- controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
+- controller mechanics CTRL-CLAIM-008:rangeBeforeHostileReservation claimController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
@@ -5378,27 +5578,29 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-008:invalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:range reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:hostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:noBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeBusy reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeInvalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:notOwnerBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:notOwnerBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeInvalidTarget reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:busyBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busyBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeRange reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeInvalidControllerState reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTargetBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:rangeBeforeInvalidControllerState reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:rangeBeforeHostileReservation reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:rangeBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidControllerStateBeforeNoBodypart reserveController() validation returns the canonical code
+- controller mechanics CTRL-RESERVE-008:hostileReservationBeforeNoBodypart reserveController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-001 attackController reduces a hostile controller ticksToDowngrade by CONTROLLER_CLAIM_DOWNGRADE per CLAIM part
-- controller mechanics CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller
-- controller mechanics CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-SIGN-002 signController returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - controller mechanics CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)
 - controller mechanics CTRL-SIGN-004:busy signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:invalidTarget signController() validation returns the canonical code
@@ -5408,7 +5610,6 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-SIGN-004:busyBeforeRange signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:busyBeforeNotController signController() validation returns the canonical code
 - controller mechanics CTRL-SIGN-004:rangeBeforeNotController signController() validation returns the canonical code
-- controller mechanics CTRL-ATTACK-006 attackController returns ERR_INVALID_TARGET on an unowned, unreserved controller
 - controller mechanics CTRL-ATTACK-005 attackController is allowed on the player's own controller and applies the downgrade + upgradeBlocked effects
 - controller mechanics CTRL-ATTACK-007:notOwner attackController() validation returns the canonical code
 - controller mechanics CTRL-ATTACK-007:busy attackController() validation returns the canonical code
@@ -5487,21 +5688,17 @@ Click a count to jump to the affected test list.
 
 - Game.gcl GCL-001:belowLevelTwo Game.gcl follows vanilla GCL math at level 1, progress 999999
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (49)
+**`tests/06-controller/6.4-upgrade.test.ts`** (45)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
-- creep.upgradeController() CTRL-UPGRADE-003 returns ERR_NOT_IN_RANGE when not within range 3
-- creep.upgradeController() CTRL-UPGRADE-004 returns ERR_NOT_ENOUGH_RESOURCES without energy
 - creep.upgradeController() CTRL-UPGRADE-005 upgradeController succeeds at Chebyshev range 3 and fails at range 4
 - creep.upgradeController() CTRL-UPGRADE-006 upgrade at RCL 8 is capped at CONTROLLER_MAX_UPGRADE_PER_TICK
 - creep.upgradeController() CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
-- creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
-- creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -5539,12 +5736,10 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-013:upgradeBlockedBeforeNotOwnerController upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:rangeBeforeNotOwnerController upgradeController() validation returns the canonical code
 
-**`tests/06-controller/6.6-gensafemode.test.ts`** (19)
+**`tests/06-controller/6.6-gensafemode.test.ts`** (17)
 
 - creep.generateSafeMode() CTRL-GENSAFE-001 generateSafeMode consumes SAFE_MODE_COST ghodium from the creep store
-- creep.generateSafeMode() CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller
 - creep.generateSafeMode() CTRL-GENSAFE-003 generateSafeMode increments the controller's safeModeAvailable
-- creep.generateSafeMode() CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium
 - creep.generateSafeMode() CTRL-GENSAFE-005:notOwner generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:busy generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnough generateSafeMode() validation returns the canonical code
@@ -5572,15 +5767,11 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 - Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
 
-**`tests/06-controller/6.8-safemode.test.ts`** (24)
+**`tests/06-controller/6.8-safemode.test.ts`** (29)
 
 - Safe mode mechanics CTRL-SAFEMODE-001 activateSafeMode returns OK, consumes one charge, and starts safe mode
 - Safe mode mechanics CTRL-SAFEMODE-002 activateSafeMode starts a cooldown period
-- Safe mode mechanics CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0
-- Safe mode mechanics CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active
-- Safe mode mechanics CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode
 - Safe mode mechanics CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent
-- Safe mode mechanics CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD
 - Safe mode mechanics CTRL-SAFEMODE-006:attack hostile attack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedAttack hostile rangedAttack returns guard code under safe mode
 - Safe mode mechanics CTRL-SAFEMODE-006:rangedMassAttack hostile rangedMassAttack returns guard code under safe mode
@@ -5592,29 +5783,36 @@ Click a count to jump to the affected test list.
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwner activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnough activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:cooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:downgradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:busy activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeNotEnough activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeCooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeUpgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notOwnerBeforeBusy activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeCooldown activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeUpgradeBlocked activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
 - Safe mode mechanics CTRL-SAFEMODE-009:notEnoughBeforeBusy activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlockedBeforeDowngradeTimer activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:upgradeBlockedBeforeBusy activateSafeMode() validation returns the canonical code
+- Safe mode mechanics CTRL-SAFEMODE-009:downgradeTimerBeforeBusy activateSafeMode() validation returns the canonical code
 
 **`tests/06-controller/6.9-unclaim.test.ts`** (2)
 
 - StructureController.unclaim() CTRL-UNCLAIM-004 unclaim() resets safeModeAvailable to 0
 - StructureController.unclaim() CTRL-UNCLAIM-006 unclaim() resets isPowerEnabled to false
 
-**`tests/07-combat/7.1-melee-attack.test.ts`** (86)
+**`tests/07-combat/7.1-melee-attack.test.ts`** (78)
 
 - creep.attack() COMBAT-MELEE-001 deals ATTACK_POWER damage per ATTACK part
 - creep.attack() COMBAT-MELEE-001 multiple ATTACK parts stack damage
-- creep.attack() COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent
-- creep.attack() COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts
 - creep.attack() COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2
 - creep.attack() COMBAT-MELEE-005 attack on a creep under a rampart hits the rampart instead
 - creep.attack() COMBAT-MELEE-006 target ATTACK parts deal counter-damage back to a melee attacker
 - creep.attack() COMBAT-MELEE-008 counter-damage scales at ATTACK_POWER per target ATTACK part
-- creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures (non-attackable target → ERR_INVALID_TARGET)
+- creep.attack() COMBAT-MELEE-007 attack accepts creeps and structures
 - creep.attack() COMBAT-MELEE-009:notOwner attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:busy attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:noBodypart attack() validation returns the canonical code
@@ -5631,11 +5829,9 @@ Click a count to jump to the affected test list.
 - creep.attack() COMBAT-MELEE-009:noBodypartBeforeRange attack() validation returns the canonical code
 - creep.attack() COMBAT-MELEE-009:invalidTargetBeforeRange attack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-001 deals RANGED_ATTACK_POWER damage per RANGED_ATTACK part
-- creep.rangedAttack() COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3
 - creep.rangedAttack() COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3
-- creep.rangedAttack() COMBAT-RANGED-004 returns ERR_NO_BODYPART without RANGED_ATTACK parts
 - creep.rangedAttack() COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead
-- creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures (non-attackable → ERR_INVALID_TARGET)
+- creep.rangedAttack() COMBAT-RANGED-005 rangedAttack accepts creeps and structures
 - creep.rangedAttack() COMBAT-RANGED-007:notOwner rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:busy rangedAttack() validation returns the canonical code
 - creep.rangedAttack() COMBAT-RANGED-007:noBodypart rangedAttack() validation returns the canonical code
@@ -5654,8 +5850,6 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-HEAL-001 heals HEAL_POWER HP per HEAL part when adjacent
 - creep.heal() COMBAT-HEAL-002 heal range is exactly 1 — ERR_NOT_IN_RANGE at range 2
 - creep.heal() COMBAT-HEAL-003 heal accepts any creep target regardless of ownership
-- creep.heal() COMBAT-HEAL-005 heal returns ERR_NOT_IN_RANGE beyond range 1
-- creep.heal() COMBAT-HEAL-006 heal returns ERR_NO_BODYPART without HEAL parts
 - creep.heal() COMBAT-HEAL-007:notOwner heal() validation returns the canonical code
 - creep.heal() COMBAT-HEAL-007:busy heal() validation returns the canonical code
 - creep.heal() COMBAT-HEAL-007:noBodypart heal() validation returns the canonical code
@@ -5675,8 +5869,6 @@ Click a count to jump to the affected test list.
 - creep.heal() COMBAT-RANGEDHEAL-001 rangedHeal heals RANGED_HEAL_POWER HP per HEAL part at range
 - creep.heal() COMBAT-RANGEDHEAL-002 rangedHeal accepts targets at range 1 through 3, ERR_NOT_IN_RANGE at range 4
 - creep.heal() COMBAT-RANGEDHEAL-003 rangedHeal takes priority over rangedAttack when both queue in the same tick
-- creep.heal() COMBAT-RANGEDHEAL-004 rangedHeal returns ERR_NOT_IN_RANGE beyond range 3
-- creep.heal() COMBAT-RANGEDHEAL-005 rangedHeal returns ERR_NO_BODYPART without HEAL parts
 - creep.heal() COMBAT-RANGEDHEAL-006:notOwner rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:busy rangedHeal() validation returns the canonical code
 - creep.heal() COMBAT-RANGEDHEAL-006:noBodypart rangedHeal() validation returns the canonical code
@@ -5700,13 +5892,10 @@ Click a count to jump to the affected test list.
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (93)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (90)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
 - Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
-- Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
-- Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:notOwner launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:invalidArgumentShape launchNuke validation returns the canonical code
 - Nuke launch — section 7.13 NUKE-LAUNCH-008:cooldown launchNuke validation returns the canonical code
@@ -5832,7 +6021,7 @@ Click a count to jump to the affected test list.
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently
 
-**`tests/07-combat/7.9-7.11-tower.test.ts`** (49)
+**`tests/07-combat/7.9-7.11-tower.test.ts`** (46)
 
 - StructureTower TOWER-ATTACK-002 [range=3] tower.attack() deals the expected falloff damage
 - StructureTower TOWER-ATTACK-002 [range=10] tower.attack() deals the expected falloff damage
@@ -5847,9 +6036,6 @@ Click a count to jump to the affected test list.
 - StructureTower TOWER-REPAIR-002 [range=10] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-002 [range=20] tower.repair() restores the expected falloff amount
 - StructureTower TOWER-REPAIR-001 tower.repair() spends 10 energy in the same tick
-- StructureTower TOWER-HEAL-004 tower.heal() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
-- StructureTower TOWER-REPAIR-004 tower.repair() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
-- StructureTower TOWER-ATTACK-004 tower.attack() returns ERR_NOT_ENOUGH_ENERGY when stored energy is below TOWER_ENERGY_COST
 - StructureTower UNDOC-STALERECV-001:towerAttack stale cached StructureTower.attack() throws a runtime error
 - StructureTower UNDOC-STALERECV-001:towerHeal stale cached StructureTower.heal() throws a runtime error
 - StructureTower UNDOC-STALERECV-001:towerRepair stale cached StructureTower.repair() throws a runtime error
@@ -5884,14 +6070,11 @@ Click a count to jump to the affected test list.
 - StructureTower TOWER-REPAIR-005:invalidTargetBeforeRcl tower.repair() validation returns the canonical code
 - StructureTower TOWER-REPAIR-005:notEnoughBeforeRcl tower.repair() validation returns the canonical code
 
-**`tests/08-boosts/8.1-boost-application.test.ts`** (35)
+**`tests/08-boosts/8.1-boost-application.test.ts`** (32)
 
 - Lab boostCreep BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted
 - Lab boostCreep BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part
 - Lab boostCreep BOOST-CREEP-003 boostCreep with bodyPartsCount limits the number of parts boosted
-- Lab boostCreep BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
-- Lab boostCreep BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral
-- Lab boostCreep BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts
 - Lab boostCreep BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound
 - Lab boostCreep BOOST-CREEP-010:notOwner boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:rcl boostCreep() validation returns the canonical code
@@ -5922,13 +6105,11 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-010:notEnoughEnergyBeforeNotFound boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:notEnoughMineralBeforeNotFound boostCreep() validation returns the canonical code
 
-**`tests/08-boosts/8.2-unboost.test.ts`** (32)
+**`tests/08-boosts/8.2-unboost.test.ts`** (30)
 
 - lab.unboostCreep() UNBOOST-001 unboostCreep returns OK, removes boosts, and drops compounds near the lab
-- lab.unboostCreep() UNBOOST-002 unboostCreep returns ERR_NOT_FOUND when creep has no boosts
 - lab.unboostCreep() UNBOOST-004 unboost drops LAB_UNBOOST_MINERAL per part as a resource pile at the creep tile
 - lab.unboostCreep() UNBOOST-005 unboost sets lab cooldown to parts * calcTotalReactionsTime * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT
-- lab.unboostCreep() UNBOOST-003 unboostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - lab.unboostCreep() UNBOOST-006:invalidTarget unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:labNotOwner unboostCreep() validation returns the canonical code
 - lab.unboostCreep() UNBOOST-006:creepNotOwner unboostCreep() validation returns the canonical code
@@ -6000,22 +6181,15 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (87)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-015 without energyStructures, spawnCreep drains spawns nearest-first, then extensions nearest-first
 - StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
 - StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
-- StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
-- StructureSpawn SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep
-- StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
 - StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
-- StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
-- StructureSpawn SPAWN-CREATE-002 spawnCreep returns ERR_INVALID_ARGS for a body exceeding MAX_CREEP_SIZE
 - StructureSpawn SPAWN-CREATE-013 spawnCreep deducts the body cost from the spawn and contributing extensions
-- StructureSpawn SPAWN-CREATE-012 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name
-- StructureSpawn SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning
 - StructureSpawn SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory
 - StructureSpawn SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length
 - StructureSpawn SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears
@@ -6025,32 +6199,77 @@ Click a count to jump to the affected test list.
 - StructureSpawn UNDOC-STALERECV-001:spawnCreep stale cached StructureSpawn.spawnCreep() throws a runtime error
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptions spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExists spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawning spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameExists spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameSpawning spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidNameOrOptionsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidDirections spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameExistsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidDirections spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotOwner spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeRcl spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeInvalidPart spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:nameSpawningBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotOwner spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidDirectionsBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeBusy spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeRcl spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:notOwnerBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notOwnerBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busyBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeInvalidPart spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:busyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeInvalidBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeOversizedBody spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeInvalidPart spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:rclBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 - StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidBodyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBodyBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:oversizedBodyBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPartBeforeNotEnough spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:invalidPartBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
+- StructureSpawn SPAWN-CREATE-014:notEnoughBeforeNotEnoughSelected spawnCreep() validation returns the canonical code
 
 **`tests/09-spawning-lifecycle/9.2-duration-direction.test.ts`** (1)
 
@@ -6065,56 +6284,62 @@ Click a count to jump to the affected test list.
 - Spawn stomping SPAWN-STOMP-006 restricted directions: no stomp if open tile exists outside chosen directions
 - Spawn stomping SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles
 
-**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (31)
+**`tests/09-spawning-lifecycle/9.4-renew.test.ts`** (34)
 
 - Spawn.renewCreep RENEW-CREEP-002 renewCreep returns OK and increases creep TTL by the per-part renew amount
-- Spawn.renewCreep RENEW-CREEP-008 renewCreep returns ERR_NOT_ENOUGH_ENERGY when spawn has insufficient energy
-- Spawn.renewCreep RENEW-CREEP-001 renewCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
-- Spawn.renewCreep RENEW-CREEP-010 renewCreep returns ERR_FULL when creep is already at CREEP_LIFE_TIME
 - Spawn.renewCreep RENEW-CREEP-003 renewCreep spends the correct energy cost
 - Spawn.renewCreep RENEW-CREEP-004 renewCreep removes all boosts from the target creep
 - Spawn.renewCreep RENEW-CREEP-005 renewCreep does not refund removed boost compounds or energy
 - Spawn.renewCreep RENEW-CREEP-006 boost removal that reduces storeCapacity drops excess carried resources
-- Spawn.renewCreep RENEW-CREEP-009 renewCreep returns ERR_BUSY when the spawn is currently spawning
 - Spawn.renewCreep UNDOC-STALERECV-001:spawnRenewCreep stale cached StructureSpawn.renewCreep() throws a runtime error
 - Spawn.renewCreep RENEW-CREEP-011:busy renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTarget renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwner renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:range renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:full renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeInvalidTarget renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:busyBeforeClaimPart renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotOwner renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:busyBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotOwner renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeRcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:invalidTargetBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeRcl renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeRange renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notOwnerBeforeFull renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeRange renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeNotEnough renewCreep() validation returns the canonical code
+- Spawn.renewCreep RENEW-CREEP-011:rclBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeNotEnough renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (15)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (18)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
-- Spawn.recycleCreep RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep
 - Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
 - Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 - Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rcl recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:range recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeInvalidTarget recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeRcl recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawnBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTargetBeforeRange recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeNotOwnerCreep recycleCreep() validation returns the canonical code
+- Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 
 **`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (18)
@@ -6169,32 +6394,26 @@ Click a count to jump to the affected test list.
 - Container decay CONTAINER-001:owned room container in owned room decays by 5000 every 500 ticks
 - Container decay CONTAINER-002 when a container is destroyed its contents become dropped resources
 
-**`tests/10-structures-energy/10.4-link.test.ts`** (59)
+**`tests/10-structures-energy/10.4-link.test.ts`** (65)
 
 - StructureLink LINK-001 transferEnergy returns OK, decreases source energy by amount, increases target energy by amount minus loss
 - StructureLink LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance
 - StructureLink LINK-003 transfer loss rounds up: sending 1 energy delivers 0
-- StructureLink LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself
-- StructureLink LINK-005 transferEnergy returns ERR_INVALID_TARGET when target is not a StructureLink
-- StructureLink LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player
-- StructureLink LINK-007 transferEnergy returns ERR_INVALID_ARGS for a negative amount
-- StructureLink LINK-008 transferEnergy returns ERR_TIRED while source link has cooldown > 0
-- StructureLink LINK-009 transferEnergy returns ERR_RCL_NOT_ENOUGH when source link is inactive
-- StructureLink LINK-010 transferEnergy returns ERR_NOT_ENOUGH_ENERGY when source lacks the requested amount
-- StructureLink LINK-011 transferEnergy returns ERR_FULL when target lacks free capacity for the amount
-- StructureLink LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room
 - StructureLink LINK-013 transferEnergy with no amount transfers all stored energy
 - StructureLink UNDOC-STALERECV-001:linkTransferEnergy stale cached StructureLink.transferEnergy() throws a runtime error
 - StructureLink LINK-014:invalidArgs transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTarget transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTarget transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:full transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:range transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeInvalidTarget transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidArgsBeforeSelfTarget transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeTargetNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidArgsBeforeCooldown transferEnergy() validation returns the canonical code
@@ -6207,31 +6426,43 @@ Click a count to jump to the affected test list.
 - StructureLink LINK-014:invalidTargetBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:invalidTargetBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:invalidTargetBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeSourceNotOwner transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeCooldown transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeRcl transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:selfTargetBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeSourceNotOwner transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:targetNotOwnerBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:targetNotOwnerBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeCooldown transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:sourceNotOwnerBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:sourceNotOwnerBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeRcl transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:cooldownBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:cooldownBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeNotEnough transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:rclBeforeNotEnoughAmount transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:rclBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeFull transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:notEnoughBeforeRange transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmountBeforeFull transferEnergy() validation returns the canonical code
+- StructureLink LINK-014:notEnoughAmountBeforeRange transferEnergy() validation returns the canonical code
 - StructureLink LINK-014:fullBeforeRange transferEnergy() validation returns the canonical code
 
-**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (169)
+**`tests/11-structures-production/11.1-11.2-lab.test.ts`** (254)
 
 - Lab runReaction LAB-RUN-001:H+O runReaction produces OH
 - Lab runReaction LAB-RUN-001:H+L runReaction produces LH
@@ -6269,50 +6500,98 @@ Click a count to jump to the affected test list.
 - Lab runReaction LAB-RUN-001:ZK+UL runReaction produces G
 - Lab runReaction LAB-RUN-002 runReaction consumes LAB_REACTION_AMOUNT from each reagent lab
 - Lab runReaction LAB-RUN-004 runReaction sets cooldown to REACTION_TIME[product]
-- Lab runReaction LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far
-- Lab runReaction LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty
-- Lab runReaction LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity
-- Lab runReaction LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product
-- Lab runReaction LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab
-- Lab runReaction LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown
-- Lab runReaction LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
-- Lab runReaction LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab
 - Lab runReaction LAB-RUN-013:notOwner runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldown runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:range runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:full runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:noProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeCooldown runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeRcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notOwnerBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notOwnerBeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeRcl runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:cooldownBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:cooldownBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeInvalidLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rclBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rclBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeInvalidTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeNotALab runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeSelfTarget runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeRange runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidLab1BeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidTargetBeforeRangeLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeRange runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:invalidTargetBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeNotEnough runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:invalidTargetBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeRangeLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notALabBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeRangeLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:selfTargetBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeRange runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNotEnoughLab1 runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeNoProduct runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeLab1BeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeFull runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:rangeBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:rangeBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:fullBeforeNotEnoughLab1 runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:fullBeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:fullBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:fullBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeNotEnough runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeNoProduct runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughLab1BeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:notEnoughBeforeNoProduct runReaction() validation returns the canonical code
 - Lab runReaction LAB-RUN-013:notEnoughBeforeInvalidArgs runReaction() validation returns the canonical code
+- Lab runReaction LAB-RUN-013:noProductBeforeInvalidArgs runReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-001:G reverseReaction splits into UL+ZK
 - Lab reverseReaction LAB-REVERSE-001:GH reverseReaction splits into G+H
 - Lab reverseReaction LAB-REVERSE-001:GH2O reverseReaction splits into GH+OH
@@ -6349,61 +6628,98 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-001:ZO reverseReaction splits into O+Z
 - Lab reverseReaction LAB-REVERSE-002 reverseReaction consumes LAB_REACTION_AMOUNT compound and distributes to output labs
 - Lab reverseReaction LAB-REVERSE-004 reverseReaction sets cooldown to REACTION_TIME[compound]
-- Lab reverseReaction LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far
-- Lab reverseReaction LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound
-- Lab reverseReaction LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity
-- Lab reverseReaction LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair
-- Lab reverseReaction LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab
-- Lab reverseReaction LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown
-- Lab reverseReaction LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive
-- Lab reverseReaction LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab
 - Lab reverseReaction LAB-REVERSE-013:notOwner reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldown reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:range reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:full reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:fullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeCooldown reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notOwnerBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRcl reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:cooldownBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:cooldownBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidLab1 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeSelfTarget reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rclBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rclBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeInvalidTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeNotALab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeSelfTarget reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeRangeLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeSameLab reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidLab1BeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeRange reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidTargetBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notALabBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeRange reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:selfTargetBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeBeforeRangeLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeSameLab reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:rangeBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeNotEnough reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeInvalidReversePair reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:rangeLab2BeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeNotEnough reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:sameLabBeforeFull reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeInvalidReversePair reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:notEnoughBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFull reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFullLab2 reverseReaction() validation returns the canonical code
+- Lab reverseReaction LAB-REVERSE-013:fullBeforeFullLab2 reverseReaction() validation returns the canonical code
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (108)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (101)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -6428,13 +6744,6 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-001:Z produce(Z) consumes components and yields 500
 - Factory production FACTORY-PRODUCE-001:zynthiumBar produce(zynthium_bar) consumes components and yields 100
 - Factory production FACTORY-PRODUCE-002 produce returns OK and sets cooldown to COMMODITIES[resource].cooldown
-- Factory production FACTORY-PRODUCE-003 produce returns ERR_NOT_ENOUGH_RESOURCES when lacking components
-- Factory production FACTORY-PRODUCE-004 produce returns ERR_FULL when output would exceed store capacity
-- Factory production FACTORY-PRODUCE-006 produce returns ERR_TIRED while factory is on cooldown
-- Factory production FACTORY-PRODUCE-007 produce returns ERR_RCL_NOT_ENOUGH when factory is inactive due to low RCL
-- Factory production FACTORY-PRODUCE-008 produce returns ERR_INVALID_ARGS when resourceType is not a factory commodity
-- Factory production FACTORY-PRODUCE-009 produce returns ERR_INVALID_TARGET when commodity requires a different factory level
-- Factory production FACTORY-PRODUCE-010 produce returns ERR_NOT_OWNER when factory is not owned by the player
 - Factory production FACTORY-PRODUCE-011:notOwner produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:cooldown produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:invalidArgs produce() validation returns the canonical code
@@ -6569,15 +6878,10 @@ Click a count to jump to the affected test list.
 - Road decay ROAD-DECAY-001:wall road on wall terrain decays by 15000 per interval
 - Road decay ROAD-DECAY-003 road is removed when decay reduces hits to 0 or below
 
-**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (47)
+**`tests/13-structures-infrastructure/13.3-terminal.test.ts`** (42)
 
 - Terminal send TERMINAL-SEND-001 successful send returns OK and sets cooldown
 - Terminal send TERMINAL-SEND-003 send deducts energy cost from the sender
-- Terminal send TERMINAL-SEND-005 send returns ERR_INVALID_ARGS for invalid arguments
-- Terminal send TERMINAL-SEND-006 send returns ERR_NOT_ENOUGH_RESOURCES when lacking resource or energy cost
-- Terminal send TERMINAL-SEND-007 send returns ERR_TIRED while terminal is on cooldown
-- Terminal send TERMINAL-SEND-008 send returns ERR_RCL_NOT_ENOUGH when terminal is inactive
-- Terminal send TERMINAL-SEND-009 send returns ERR_NOT_OWNER when terminal is not owned by player
 - Terminal send TERMINAL-SEND-010 successful send sets cooldown exactly to TERMINAL_COOLDOWN
 - Terminal send TERMINAL-SEND-011 send to a room with no player terminal: OK, no transfer, no cooldown
 - Terminal send TERMINAL-SEND-012 successful send delivers the resource amount to the target terminal
@@ -6619,13 +6923,9 @@ Click a count to jump to the affected test list.
 - Terminal send TERMINAL-SEND-013:notEnoughEnergyCostBeforeInvalidDescription send() validation returns the canonical code
 - Terminal send TERMINAL-SEND-014 send accepts amount 1 and charges resource, energy cost, and cooldown
 
-**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (15)
+**`tests/13-structures-infrastructure/13.4-observer.test.ts`** (11)
 
 - StructureObserver OBSERVER-001 observeRoom returns OK and makes the target room visible on the next tick
-- StructureObserver OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE
-- StructureObserver OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name
-- StructureObserver OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive
-- StructureObserver OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player
 - StructureObserver OBSERVER-007:notOwner observeRoom() validation returns the canonical code
 - StructureObserver OBSERVER-007:invalidArgs observeRoom() validation returns the canonical code
 - StructureObserver OBSERVER-007:rcl observeRoom() validation returns the canonical code
@@ -6720,14 +7020,17 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
-**`tests/15-structure-common/15.4-structure-api.test.ts`** (12)
+**`tests/15-structure-common/15.4-structure-api.test.ts`** (15)
 
-- structure.destroy() STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player
-- structure.destroy() STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room
 - structure.destroy() STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store
 - structure.destroy() STRUCTURE-API-007:notOwner destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noController destroy() validation returns the canonical code
 - structure.destroy() STRUCTURE-API-007:busy destroy() validation returns the canonical code
 - structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusy destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:notOwnerBeforeBusyPowerCreep destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noControllerBeforeBusy destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:noControllerBeforeBusyPowerCreep destroy() validation returns the canonical code
+- structure.destroy() STRUCTURE-API-007:busyBeforeBusyPowerCreep destroy() validation returns the canonical code
 - structure.notifyWhenAttacked() STRUCTURE-API-004 notifyWhenAttacked returns ERR_NOT_OWNER on a non-owned structure
 - structure.notifyWhenAttacked() STRUCTURE-API-005 notifyWhenAttacked returns ERR_INVALID_ARGS when enabled is not boolean
 - structure.notifyWhenAttacked() STRUCTURE-API-006 notifyWhenAttacked returns OK for an owned structure with a boolean argument
@@ -6831,28 +7134,30 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (25)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
 - Flags FLAG-004 Flag.remove() removes the flag from the player flag set
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
-- Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
-- Flags FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT
 - Flags FLAG-006 Flag.setPosition moves the flag to the requested room position
 - Flags FLAG-009:invalidCoords createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFull createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:nameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeFlagCapFull createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeInvalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:invalidCoordsBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidCoordsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeInvalidColor createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:flagCapFullBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:flagCapFullBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeNameExists createFlag() validation returns the canonical code
+- Flags FLAG-009:invalidColorBeforeNameCreated createFlag() validation returns the canonical code
 - Flags FLAG-009:invalidColorBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-009:nameExistsBeforeInvalidNameLength createFlag() validation returns the canonical code
 - Flags FLAG-010 RoomPosition.createFlag without room visibility throws before validation
