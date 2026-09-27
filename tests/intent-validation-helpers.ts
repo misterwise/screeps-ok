@@ -3,7 +3,7 @@ import type { ShardFixture } from '../src/fixture.js';
 import type { PlayerCode } from '../src/code.js';
 import type { StaleArgumentCase } from '../src/matrices/stale-argument.js';
 import {
-	code, CARRY, FIND_CREEPS, MOVE, STRUCTURE_SPAWN, WORK,
+	code, CARRY, CLAIM, FIND_CREEPS, MOVE, STRUCTURE_SPAWN, WORK,
 } from '../src/index.js';
 
 interface BusyCreepOptions {
@@ -44,6 +44,22 @@ export async function spawnBusyCreep(shard: ShardFixture, options: BusyCreepOpti
 	const creep = creeps.find(candidate => candidate.name === name);
 	if (!creep) throw new Error(`spawnBusyCreep: could not find spawning creep '${name}'`);
 	return creep.id;
+}
+
+// No room spec field reserves a controller: `reserver` reserves the neutral
+// room in-test, with enough CLAIM parts to outlast the next few ticks.
+export async function reserveRoom(shard: ShardFixture, reserver: string, roomName: string): Promise<void> {
+	const ctrlPos = await shard.getControllerPos(roomName);
+	const reserverId = await shard.placeCreep(roomName, {
+		pos: [ctrlPos!.x, ctrlPos!.y + 1],
+		owner: reserver,
+		body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
+	});
+	await shard.tick();
+	const rc = await shard.runPlayer(reserver, code`
+		Game.getObjectById(${reserverId}).reserveController(Game.rooms[${roomName}].controller)
+	`);
+	if (rc !== 0) throw new Error(`reserveRoom: reserveController returned ${rc}`);
 }
 
 interface FatiguedCreepOptions {

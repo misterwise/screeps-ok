@@ -1216,7 +1216,7 @@ checks both. Each definition has these fields, in this order:
   threshold is the first that isn't a whole number)
 - `Exclusions`
   GCL growth from upgrading (`CTRL-UPGRADE-008`) and the room limit a level
-  sets (`CTRL-CLAIM-005`)
+  sets (`CTRL-CLAIM-008:gclNotEnough`)
 - `Verification Notes`
   The case list is inline in `tests/06-controller/6.11-gcl.test.ts`.
 
@@ -1914,14 +1914,14 @@ checks both. Each definition has these fields, in this order:
   (`safeModeAvailable === 0`), and cooldown (`safeModeCooldown`).
 - `Exclusions`
   Cross-shard safe mode propagation; same-tick double-activation race,
-  owned by `CTRL-SAFEMODE-008`. The cooldown/busy pair is excluded because
-  public API state cannot establish both active safe mode and a separate
-  safe-mode cooldown on the same controller.
+  owned by `CTRL-SAFEMODE-008`. The cooldown comes from activating, which
+  another active safe mode, an attack's `upgradeBlocked` or a low timer
+  would refuse, so it pairs with none of them.
 - `Verification Notes`
   Distinct from `CTRL-SAFEMODE-BLOCKED`, which describes how active safe
-  mode blocks hostile actions. Verified vanilla API-guard order is:
-  ownership → safe-mode availability → safe-mode cooldown → already-active
-  busy. The executable case list lives in
+  mode blocks hostile actions. The three `ERR_TIRED` conditions are one
+  expression (`game/structures.js:219-222`); `:upgradeBlocked` is set by
+  another player's `attackController`. The executable case list lives in
   `src/matrices/ctrl-safemode-validation.ts`.
 
 ### STRUCTURE-DESTROY-VALIDATION
@@ -2140,11 +2140,12 @@ checks both. Each definition has these fields, in this order:
   invalid-controller-state/cooldown pair is excluded because attack cooldown
   is only established by successfully attacking a controller, which makes the
   later invalid-controller-state setup unavailable through public API state.
+  Another player's safe mode, checked after the cooldown, is owned by
+  `CTRL-SAFEMODE-006`. Not yet listed: a controller under
+  `EFFECT_INVULNERABILITY` returns `ERR_INVALID_TARGET` last
+  (`game/creeps.js:911-913`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → target shape
-  validity → body-part availability → range → controller-state validity →
-  attack cooldown. The executable case list lives in
-  `src/matrices/ctrl-attack-validation.ts`.
+  The executable case list lives in `src/matrices/ctrl-attack-validation.ts`.
 
 ### CTRL-CLAIM-VALIDATION
 
@@ -2165,12 +2166,12 @@ checks both. Each definition has these fields, in this order:
   Successful claim side-effects (`safeModeAvailable`, downgrade timer
   reset) — owned by separate `CTRL-CLAIM-*` entries. The novice-room
   `ERR_FULL` branch is not in the executable matrix because that room status
-  is not exposed by the public fixture API.
+  is not exposed by the public fixture API, nor is another player's safe
+  mode (`ERR_NO_BODYPART`) after the controller checks. An owned and a
+  reserved controller exclude each other.
 - `Verification Notes`
-  Verified vanilla API-guard order for the covered branches is: ownership
-  → busy → GCL availability → target validity → body-part availability →
-  range → controller-state validity. The executable case list lives in
-  `src/matrices/ctrl-claim-validation.ts`.
+  A reservation is made in-test with `reserveController`. The executable
+  case list lives in `src/matrices/ctrl-claim-validation.ts`.
 
 ### CTRL-RESERVE-VALIDATION
 
@@ -2190,10 +2191,10 @@ checks both. Each definition has these fields, in this order:
   controller), and range.
 - `Exclusions`
   Reservation-reduction (handled via `attackController`), owned by
-  `CTRL-RESERVE-007`.
+  `CTRL-RESERVE-007`. An owned and a reserved controller exclude each
+  other.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → target validity →
-  range → controller-state validity → body-part availability. The executable
+  A reservation is made in-test with `reserveController`. The executable
   case list lives in `src/matrices/ctrl-reserve-validation.ts`.
 
 ### CTRL-UPGRADE-VALIDATION
@@ -2217,12 +2218,9 @@ checks both. Each definition has these fields, in this order:
   Progress math and level-advance side effects, owned by
   `CTRL-UPGRADE-001..012`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: creep ownership → busy → body-part
-  availability → energy availability → target validity → upgrade-blocked
-  validity → range → controller ownership. A final invalid-controller-state
-  guard exists in source but is not player-observable through public
-  controller state. The executable case list lives in
-  `src/matrices/ctrl-upgrade-validation.ts`.
+  A final invalid-controller-state guard exists in source but is not
+  player-observable through public controller state. The executable case
+  list lives in `src/matrices/ctrl-upgrade-validation.ts`.
 
 ### CTRL-GENSAFE-VALIDATION
 
@@ -2243,9 +2241,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   `safeModeAvailable` increment side-effect, owned by `CTRL-GENSAFE-003`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → Ghodium
-  availability → target validity → range. The executable case list lives in
-  `src/matrices/ctrl-gensafe-validation.ts`.
+  The executable case list lives in `src/matrices/ctrl-gensafe-validation.ts`.
 
 ### CTRL-SIGN-VALIDATION
 
@@ -2266,10 +2262,7 @@ checks both. Each definition has these fields, in this order:
   cannot be paired with range or not-controller because an invalid target has
   no meaningful range or non-controller object state.
 - `Verification Notes`
-  No `ERR_NOT_OWNER` branch — any creep may sign any controller. Vanilla has
-  no sign-length API guard. Verified API-guard order is: busy → target
-  validity → range → target-is-controller validity. The executable case list
-  lives in `src/matrices/ctrl-sign-validation.ts`.
+  The executable case list lives in `src/matrices/ctrl-sign-validation.ts`.
 
 ### HARVEST-VALIDATION
 

@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
-	OK, ERR_NO_BODYPART, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET, ERR_GCL_NOT_ENOUGH,
-	CLAIM, MOVE, WORK,
+	OK, ERR_INVALID_TARGET,
+	CLAIM, MOVE,
 	STRUCTURE_CONTAINER,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
 	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
@@ -10,7 +10,7 @@ import { ctrlAttackValidationCases } from '../../src/matrices/ctrl-attack-valida
 import { ctrlClaimValidationCases } from '../../src/matrices/ctrl-claim-validation.js';
 import { ctrlReserveValidationCases } from '../../src/matrices/ctrl-reserve-validation.js';
 import { ctrlSignValidationCases } from '../../src/matrices/ctrl-sign-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { reserveRoom, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('controller mechanics', () => {
 	test('CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant', async ({ shard }) => {
@@ -120,158 +120,6 @@ describe('controller mechanics', () => {
 		expect((reservation?.ticksToEnd ?? 0)).toBeGreaterThan(0);
 	});
 
-	test('CTRL-CLAIM-002 claimController returns ERR_NO_BODYPART without a CLAIM part', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [WORK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).claimController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-	});
-
-	test('CTRL-CLAIM-003 claimController returns ERR_INVALID_TARGET when the controller is reserved by a hostile player', async ({ shard }) => {
-		// Engine creeps.js:838-840 gates claim on `target.reservation`, and
-		// the controller tick processor (`processor/intents/controllers/tick.js:12`)
-		// deletes reservations once `gameTime >= endTime - 1`. Each CLAIM
-		// part on the reserver adds CONTROLLER_RESERVE (1 tick) to endTime,
-		// so a single-CLAIM reservation decays within one tick of the
-		// reserve intent — too short to survive the intermediate tick before
-		// p1's claim runs. Give the reserver enough CLAIM parts to keep the
-		// reservation alive through reserve → tick → claim.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-				{ name: 'W3N1' }, // unowned neutral room
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W3N1');
-
-		// p2 reserves the neutral controller. 5 CLAIM parts → endTime =
-		// gameTime + 1 + 5, well above the decay threshold at p1's claim tick.
-		const reserverId = await shard.placeCreep('W3N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p2',
-			body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
-		});
-		// p1's claimer stands on another adjacent tile (avoid x=0 border).
-		const claimerId = await shard.placeCreep('W3N1', {
-			pos: [ctrlPos!.x, ctrlPos!.y + 1],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const reserveRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${reserverId}).reserveController(
-				Game.rooms['W3N1'].controller
-			)
-		`);
-		expect(reserveRc).toBe(OK);
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${claimerId}).claimController(
-				Game.rooms['W3N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('CTRL-CLAIM-004 claimController returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		// Place the creep two tiles away (range 2).
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 2, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).claimController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('CTRL-CLAIM-005 claimController returns ERR_GCL_NOT_ENOUGH when the GCL room cap is exceeded', async ({ shard }) => {
-		// Game.gcl.level is derived from user.gcl with GCL_POW=2.4 / GCL_MULTIPLY=1e6,
-		// so any gcl value below 1e6 yields level 1 → cap of 1 owned room. Start
-		// p1 with gcl=0, give them W1N1, and have them try to claim a second
-		// controller; the engine's claim check rejects with ERR_GCL_NOT_ENOUGH.
-		await shard.createShard({
-			players: [{ name: 'p1', gcl: { level: 1 } }],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).claimController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_GCL_NOT_ENOUGH);
-	});
-
-	test('CTRL-CLAIM-006 claimController returns ERR_INVALID_TARGET when the controller is already owned', async ({ shard }) => {
-		// p1 attempts to claim its own controller and gets ERR_INVALID_TARGET;
-		// the engine's checkClaim rejects owned controllers before the body
-		// check, so a single-player setup is enough.
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).claimController(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
 	test('CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller', async ({ shard }) => {
 		// Engine: @screeps/engine/src/game/structures.js:139 OwnedStructure.my
 		//   (o) => _.isUndefined(o.user) ? undefined : o.user == runtimeData.user._id
@@ -308,18 +156,31 @@ describe('controller mechanics', () => {
 			const blockers = new Set(row.blockers);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			const reserved = blockers.has('hostile-reservation');
+			// W1N1's controller is owned (the invalid-controller-state form); a
+			// reserved one is the neutral W2N1's.
+			const targetRoom = reserved ? 'W2N1' : 'W1N1';
 			await shard.createShard({
 				players: blockers.has('gcl-not-enough') ? [{ name: 'p1', gcl: { level: 1 } }, 'p2'] : ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: roomOwner },
+					...(reserved ? [{ name: 'W2N1' }] : []),
+				],
 			});
-			const ctrlPos = await shard.getControllerPos('W1N1');
+			if (reserved) {
+				await reserveRoom(shard, 'p2', 'W2N1');
+				if (blockers.has('busy') || owner === 'p2') {
+					await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+			}
+			const ctrlPos = await shard.getControllerPos(targetRoom);
 			const creepId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
 					body: [MOVE],
 				})
-				: await shard.placeCreep('W1N1', {
+				: await shard.placeCreep(targetRoom, {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
 					owner,
 					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
@@ -333,82 +194,13 @@ describe('controller mechanics', () => {
 					Game.getObjectById(${creepId}).claimController(Game.getObjectById(${sourceId}))
 				`)
 				: await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).claimController(Game.rooms['W1N1'].controller)
+					Game.getObjectById(${creepId}).claimController(Game.rooms[${targetRoom}].controller)
 				`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
 
 	// ── 6.2 Reserve Controller ────────────────────────────────
-
-	test('CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [WORK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).reserveController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-	});
-
-	test('CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).reserveController(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 2, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).reserveController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
 
 	test('CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver', async ({ shard }) => {
 		// Engine controllers/tick.js:10 — reservation is cleared when
@@ -695,9 +487,13 @@ describe('controller mechanics', () => {
 					{ name: 'W2N1' },
 				],
 			});
-			const targetRoom = blockers.has('busy') || blockers.has('invalid-controller-state') ? 'W1N1' : 'W2N1';
+			const reserved = blockers.has('hostile-reservation');
+			// A spawning creep sits in W1N1; it targets W1N1's owned controller
+			// unless the case needs W2N1's reserved one.
+			const targetRoom = blockers.has('invalid-controller-state') || blockers.has('busy') && !reserved ? 'W1N1' : 'W2N1';
 			const ctrlPos = await shard.getControllerPos(targetRoom);
-			if (owner === 'p2' && !blockers.has('busy')) {
+			if (reserved) await reserveRoom(shard, 'p2', 'W2N1');
+			if (owner === 'p2' && !blockers.has('busy') || reserved && blockers.has('busy')) {
 				await shard.placeCreep(targetRoom, { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
 			const creepId = blockers.has('busy')
@@ -768,30 +564,6 @@ describe('controller mechanics', () => {
 		expect(probe.before - after).toBe(2 * CONTROLLER_CLAIM_DOWNGRADE + 2);
 	});
 
-	test('CTRL-ATTACK-002 attackController returns ERR_NO_BODYPART without a CLAIM part', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [WORK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).attackController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-	});
-
 	test('CTRL-ATTACK-003 attackController sets upgradeBlocked on the target controller', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
@@ -823,50 +595,7 @@ describe('controller mechanics', () => {
 		expect(upgradeBlocked).toBe(CONTROLLER_ATTACK_BLOCKED_UPGRADE - 2);
 	});
 
-	test('CTRL-ATTACK-004 attackController returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 2, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).attackController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	// ── 6.5 Sign Controller ───────────────────────────────────
-
-	test('CTRL-SIGN-002 signController returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 2, ctrlPos!.y],
-			owner: 'p1',
-			body: [MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).signController(
-				Game.rooms['W1N1'].controller, 'hello'
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
 
 	test('CTRL-SIGN-003 signController works on a hostile controller (any player can sign any controller)', async ({ shard }) => {
 		// Engine rules: signController has no ownership check. Catalog claim
@@ -937,33 +666,6 @@ describe('controller mechanics', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
-
-	test('CTRL-ATTACK-006 attackController returns ERR_INVALID_TARGET on an unowned, unreserved controller', async ({ shard }) => {
-		// Engine game/creeps.js:902-904 — attackController requires the target
-		// to have `owner` or `reservation`. A fresh unowned, unreserved
-		// controller returns ERR_INVALID_TARGET at the API layer.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' }, // unowned, unreserved
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).attackController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
 
 	test('CTRL-ATTACK-005 attackController is allowed on the player\'s own controller and applies the downgrade + upgradeBlocked effects', async ({ shard }) => {
 		// Engine has no own-user guard on attackController (see

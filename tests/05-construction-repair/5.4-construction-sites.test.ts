@@ -11,6 +11,7 @@ import { constructionSiteCreateValidationCases } from '../../src/matrices/constr
 import { constructionSiteOverRuinCases } from '../../src/matrices/construction-site-over-ruin.js';
 import { constructionSiteOverStructureCases } from '../../src/matrices/construction-site-over-structure.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
+import { reserveRoom } from '../intent-validation-helpers.js';
 
 const STRUCTURE_TYPES_UNOWNED = new Set<string>([STRUCTURE_ROAD, STRUCTURE_CONTAINER]);
 
@@ -438,20 +439,7 @@ describe('room.createConstructionSite()', () => {
 			if (owner === 'p2' || reserved) {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
-			if (reserved) {
-				const ctrlPos = await shard.getControllerPos('W1N1');
-				await shard.placeCreep('W1N1', {
-					pos: [ctrlPos!.x + 1, ctrlPos!.y],
-					owner: 'p2',
-					body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
-					name: 'reserver',
-				});
-				await shard.tick();
-				const reserveRc = await shard.runPlayer('p2', code`
-					Game.creeps['reserver'].reserveController(Game.rooms['W1N1'].controller)
-				`);
-				expect(reserveRc).toBe(OK);
-			}
+			if (reserved) await reserveRoom(shard, 'p2', 'W1N1');
 			if (blockers.has('site-cap-full')) {
 				for (let i = 0; i < MAX_CONSTRUCTION_SITES; i++) {
 					await shard.placeSite('W1N1', {

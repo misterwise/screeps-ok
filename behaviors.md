@@ -840,16 +840,6 @@ Coverage Notes
 - `CTRL-CLAIM-001` `behavior` `verified_vanilla`
   On success, the controller is set to level 1 with the claiming player as
   owner.
-- `CTRL-CLAIM-002` `behavior` `verified_vanilla`
-  `claimController()` requires at least one CLAIM body part.
-- `CTRL-CLAIM-003` `behavior` `verified_vanilla`
-  The controller must be unowned (level 0) and not reserved by a hostile player.
-- `CTRL-CLAIM-004` `behavior` `verified_vanilla`
-  Range is 1 (adjacent).
-- `CTRL-CLAIM-005` `behavior` `verified_vanilla`
-  GCL room cap is checked — returns ERR_GCL_NOT_ENOUGH if exceeded.
-- `CTRL-CLAIM-006` `behavior` `verified_vanilla`
-  Returns ERR_INVALID_TARGET if the controller is already owned.
 - `CTRL-CLAIM-007` `behavior` `verified_vanilla`
   `controller.my` returns `undefined` on a never-owned controller (vanilla
   `OwnedStructure.my` returns `undefined` when `user` is unset). This is the
@@ -858,9 +848,14 @@ Coverage Notes
   (CTRL-DOWNGRADE-002), where the engine sets `user` to `null` rather than
   clearing it.
 - `CTRL-CLAIM-008` `matrix` `verified_vanilla`
-  `creep.claimController(target)` failure return codes and precedence match
-  the canonical validation matrix for ownership, caller busy state, body-part
-  requirements, GCL availability, target validity, and range.
+  `creep.claimController(target)` returns the first failing check's code, in
+  this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it is spawning, `ERR_BUSY`; `:gclNotEnough` the player's GCL allows
+  no more rooms, `ERR_GCL_NOT_ENOUGH`; `:invalidTarget` the target isn't a
+  structure, `ERR_INVALID_TARGET`; `:noBodypart` the creep has no active CLAIM
+  part, `ERR_NO_BODYPART`; `:range` the controller isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is owned, or
+  `:hostileReservation` another player reserves it, `ERR_INVALID_TARGET`.
 
 ### 6.2 Reserve Controller
 - `CTRL-RESERVE-001` `behavior` `verified_vanilla`
@@ -868,12 +863,6 @@ Coverage Notes
   next tick, exposes a `reservation` owned by the caller with a positive
   `ticksToEnd`. (The fresh reservation's exact length is `CTRL-RESERVE-011`;
   the per-CLAIM renewal arithmetic is `CTRL-RESERVE-009`.)
-- `CTRL-RESERVE-002` `behavior` `verified_vanilla`
-  `reserveController()` requires at least one CLAIM body part.
-- `CTRL-RESERVE-003` `behavior` `verified_vanilla`
-  The controller must be unowned (level 0).
-- `CTRL-RESERVE-004` `behavior` `verified_vanilla`
-  Range is 1 (adjacent).
 - `CTRL-RESERVE-006` `behavior` `verified_vanilla`
   The reservation timer decreases by 1 per tick when no creep is actively
   reserving the controller. (Observable via the player-facing `ticksToEnd`
@@ -884,9 +873,13 @@ Coverage Notes
   reads that much lower than the tick's decay alone would leave it
   (`processor/intents/creeps/attackController.js:33-40`).
 - `CTRL-RESERVE-008` `matrix` `verified_vanilla`
-  `creep.reserveController(target)` failure return codes and precedence match
-  the canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.reserveController(target)` returns the first failing check's code, in
+  this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it is spawning, `ERR_BUSY`; `:invalidTarget` the target isn't a
+  structure, `ERR_INVALID_TARGET`; `:range` the controller isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is owned, or
+  `:hostileReservation` another player reserves it, `ERR_INVALID_TARGET`;
+  `:noBodypart` the creep has no active CLAIM part, `ERR_NO_BODYPART`.
 - `CTRL-RESERVE-009` `behavior` `verified_vanilla`
   Renewing an existing reservation credits exactly `CONTROLLER_RESERVE` (1)
   tick per CLAIM part and nothing else, so against the 1-per-tick decay of
@@ -916,34 +909,28 @@ Coverage Notes
 - `CTRL-ATTACK-001` `behavior` `verified_vanilla`
   Reduces the downgrade timer by CONTROLLER_CLAIM_DOWNGRADE (300) per CLAIM
   part.
-- `CTRL-ATTACK-002` `behavior` `verified_vanilla`
-  `attackController()` requires at least one CLAIM body part.
 - `CTRL-ATTACK-003` `behavior` `verified_vanilla`
   Sets upgradeBlocked for CONTROLLER_ATTACK_BLOCKED_UPGRADE (1000) ticks.
-- `CTRL-ATTACK-004` `behavior` `verified_vanilla`
-  Range is 1 (adjacent).
 - `CTRL-ATTACK-005` `behavior` `verified_vanilla`
   `attackController()` is not blocked against the player's own controller: the
   intent returns `OK`, decrements the controller's own `ticksToDowngrade` by
   `CONTROLLER_CLAIM_DOWNGRADE` per CLAIM part, and sets `upgradeBlocked` as on
   a hostile attack.
-- `CTRL-ATTACK-006` `behavior` `verified_vanilla`
-  `attackController()` returns `ERR_INVALID_TARGET` when the controller is
-  unowned.
 - `CTRL-ATTACK-007` `matrix` `verified_vanilla`
-  `creep.attackController(target)` failure return codes and precedence match
-  the canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, range, and cooldown.
+  `creep.attackController(target)` returns the first failing check's code, in
+  this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it is spawning, `ERR_BUSY`; `:invalidTarget` the target isn't a
+  controller, `ERR_INVALID_TARGET`; `:noBodypart` the creep has no active
+  CLAIM part, `ERR_NO_BODYPART`; `:range` the controller isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is neither owned nor
+  reserved, `ERR_INVALID_TARGET`; `:cooldown` its `upgradeBlocked` is above 0,
+  `ERR_TIRED`.
 
 ### 6.4 Upgrade Controller
 - `CTRL-UPGRADE-001` `behavior` `verified_vanilla`
   Each WORK part contributes 1 progress per tick.
 - `CTRL-UPGRADE-002` `behavior` `verified_vanilla`
   Upgrading costs 1 energy per progress point.
-- `CTRL-UPGRADE-003` `behavior` `verified_vanilla`
-  `upgradeController()` returns ERR_NOT_IN_RANGE when not within range 3.
-- `CTRL-UPGRADE-004` `behavior` `verified_vanilla`
-  Returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
 - `CTRL-UPGRADE-005` `behavior` `verified_vanilla`
   `upgradeController()` has a range of 3.
 - `CTRL-UPGRADE-006` `behavior` `verified_vanilla`
@@ -953,10 +940,6 @@ Coverage Notes
   and `undefined` at level 8.
 - `CTRL-UPGRADE-008` `behavior` `verified_vanilla`
   GCL progress is incremented alongside controller progress.
-- `CTRL-UPGRADE-009` `behavior` `verified_vanilla`
-  `upgradeController()` returns `ERR_INVALID_TARGET` while the controller's
-  `upgradeBlocked` window is active (client-side check in
-  `@screeps/engine/src/game/creeps.js:937`).
 - `CTRL-UPGRADE-010` `behavior` `verified_vanilla`
   `upgradeController()` is blocked for CONTROLLER_NUKE_BLOCKED_UPGRADE (200)
   ticks after a nuke lands.
@@ -969,14 +952,14 @@ Coverage Notes
   controller advances to the next level and `progress` keeps the excess over
   the threshold (`0` on reaching level 8).
 - `CTRL-UPGRADE-013` `matrix` `verified_vanilla`
-  `creep.upgradeController(target)` failure return codes and precedence match
-  the canonical validation matrix for ownership, caller busy state, body-part
-  requirements, resource availability, target validity, and range.
-- `CTRL-UPGRADE-014` `behavior` `verified_vanilla`
-  `upgradeController()` against a creep whose `store` lacks the `energy`
-  key entirely (not `store.energy === 0`) returns
-  `ERR_NOT_ENOUGH_RESOURCES`; controller `progress` is unchanged and no
-  `EVENT_UPGRADE_CONTROLLER` is emitted.
+  `creep.upgradeController(target)` returns the first failing check's code, in
+  this order: `:notOwnerCreep` the creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK
+  part, `ERR_NO_BODYPART`; `:notEnough` it carries no energy,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:invalidTarget` the target isn't a controller,
+  or `:upgradeBlocked` its `upgradeBlocked` is above 0, `ERR_INVALID_TARGET`;
+  `:range` it is more than 3 tiles away, `ERR_NOT_IN_RANGE`;
+  `:notOwnerController` it isn't the player's, `ERR_NOT_OWNER`.
 - `CTRL-UPGRADE-015` `behavior` `verified_vanilla`
   A level-up is gated on the downgrade timer: when `ticksToDowngrade` is
   more than `CONTROLLER_DOWNGRADE_RESTORE` below `CONTROLLER_DOWNGRADE[level]`,
@@ -999,31 +982,28 @@ Coverage Notes
 ### 6.5 Sign Controller
 - `CTRL-SIGN-001` `behavior` `verified_vanilla`
   `signController()` stores text on the controller.
-- `CTRL-SIGN-002` `behavior` `verified_vanilla`
-  Range is 1 (adjacent).
 - `CTRL-SIGN-003` `behavior` `verified_vanilla`
   Any player can sign any controller (including hostile).
 - `CTRL-SIGN-004` `matrix` `verified_vanilla`
-  `creep.signController(target, sign)` failure return codes and precedence
-  match the canonical validation matrix for caller busy state, registered
-  target validity, target-is-controller validity, and range. Vanilla does
-  not validate the `sign` argument's length or type at the API layer, so
-  no argument-validity branch is exercised.
+  `creep.signController(target, text)` returns the first failing check's code,
+  in this order: `:busy` the creep is spawning, `ERR_BUSY`; `:invalidTarget`
+  the target isn't a structure, `ERR_INVALID_TARGET`; `:range` it isn't
+  adjacent, `ERR_NOT_IN_RANGE`; `:notController` it isn't a controller,
+  `ERR_INVALID_TARGET`. Vanilla checks neither the creep's owner nor the text.
 
 ### 6.6 Generate Safe Mode
 - `CTRL-GENSAFE-001` `behavior` `verified_vanilla`
   `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's
   store.
-- `CTRL-GENSAFE-002` `behavior` `verified_vanilla`
-  Range is 1 (adjacent).
 - `CTRL-GENSAFE-003` `behavior` `verified_vanilla`
   On success, increments the controller's safeModeAvailable count.
-- `CTRL-GENSAFE-004` `behavior` `verified_vanilla`
-  Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
 - `CTRL-GENSAFE-005` `matrix` `verified_vanilla`
-  `creep.generateSafeMode(target)` failure return codes and precedence match
-  the canonical validation matrix for ownership, caller busy state, resource
-  availability, target validity, and range.
+  `creep.generateSafeMode(target)` returns the first failing check's code, in
+  this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
+  `:busy` it is spawning, `ERR_BUSY`; `:notEnough` it carries less than
+  `SAFE_MODE_COST` ghodium, `ERR_NOT_ENOUGH_RESOURCES`; `:invalidTarget` the
+  target isn't a controller, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`.
 
 ### 6.7 Downgrade & Level Loss
 - `CTRL-DOWNGRADE-001` `behavior` `verified_vanilla`
@@ -1076,33 +1056,25 @@ Coverage Notes
 - `CTRL-SAFEMODE-002` `behavior` `verified_vanilla`
   Safe mode activation starts a SAFE_MODE_COOLDOWN period during which
   `activateSafeMode()` cannot be used again.
-- `CTRL-SAFEMODE-003` `behavior` `verified_vanilla`
-  `activateSafeMode()` returns ERR_NOT_ENOUGH_RESOURCES when
-  `safeModeAvailable` is 0.
-- `CTRL-SAFEMODE-004` `behavior` `verified_vanilla`
-  `activateSafeMode()` returns ERR_TIRED when the controller's safe mode
-  cooldown is active.
-- `CTRL-SAFEMODE-005` `behavior` `verified_vanilla`
-  `activateSafeMode()` returns `ERR_TIRED` and does not activate when
-  `ticksToDowngrade < CONTROLLER_DOWNGRADE[level] / 2 -
-  CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`.
 - `CTRL-SAFEMODE-006` `matrix` `verified_vanilla`
   Hostile creep intents in a foreign safe-moded room short-circuit at the
   Creep prototype guard with a method-specific return code, across
   `attack()`, `rangedAttack()`, `rangedMassAttack()`, `dismantle()`,
   `withdraw()`, `heal()`, `rangedHeal()`, and `attackController()`.
-- `CTRL-SAFEMODE-007` `behavior` `verified_vanilla`
-  `activateSafeMode()` returns `ERR_BUSY` when another owned controller already
-  has an active safe mode.
 - `CTRL-SAFEMODE-008` `behavior` `verified_vanilla`
   When `activateSafeMode()` is called on two different owned controllers in the
   same tick, both calls return `OK` but only the most recent call's intent is
   processed; the earlier intent is dropped so its controller keeps its
   `safeModeAvailable` charge and does not enter safe mode.
 - `CTRL-SAFEMODE-009` `matrix` `verified_vanilla`
-  `controller.activateSafeMode()` failure return codes and precedence match
-  the canonical validation matrix for ownership, controller-busy state,
-  resource availability, and cooldown.
+  `controller.activateSafeMode()` returns the first failing check's code, in
+  this order: `:notOwner` the controller isn't the player's, `ERR_NOT_OWNER`;
+  `:notEnough` its `safeModeAvailable` is 0, `ERR_NOT_ENOUGH_RESOURCES`;
+  `:cooldown` its `safeModeCooldown` is set, `:upgradeBlocked` its
+  `upgradeBlocked` is above 0, or `:downgradeTimer` its `ticksToDowngrade` is
+  below `CONTROLLER_DOWNGRADE[level] / 2 -
+  CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD`, `ERR_TIRED`; `:busy` another of
+  the player's controllers is in safe mode, `ERR_BUSY`.
 
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`

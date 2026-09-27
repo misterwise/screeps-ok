@@ -225,7 +225,19 @@ changes since `v0.1.0-alpha` are not itemized.
   `:invalidCoords`, `:invalidType` and `:wallTerrain`.
   `CONSTRUCTION-SITE-008` keeps only that a road may be placed on a wall,
   and `CONSTRUCTION-SITE-010` only `RoomPosition.createConstructionSite()`'s
-  delegation.
+  delegation. `CTRL-CLAIM-002` (`CTRL-CLAIM-008:noBodypart`), `-003`
+  (`:invalidControllerState`, and `:hostileReservation`, new), `-004`
+  (`:range`), `-005` (`:gclNotEnough`), `-006` (`:invalidControllerState`);
+  `CTRL-RESERVE-002` (`CTRL-RESERVE-008:noBodypart`), `-003`
+  (`:invalidControllerState`), `-004` (`:range`), with the new
+  `:hostileReservation`; `CTRL-ATTACK-002` (`CTRL-ATTACK-007:noBodypart`),
+  `-004` (`:range`), `-006` (`:invalidControllerState`); `CTRL-SIGN-002`
+  (`CTRL-SIGN-004:range`); `CTRL-UPGRADE-003` (`CTRL-UPGRADE-013:range`),
+  `-004` and `-014` (`:notEnough`), `-009` (`:upgradeBlocked`);
+  `CTRL-GENSAFE-002` (`CTRL-GENSAFE-005:range`), `-004` (`:notEnough`);
+  `CTRL-SAFEMODE-003` (`CTRL-SAFEMODE-009:notEnough`), `-004` (`:cooldown`),
+  `-005` (`:downgradeTimer`, new), `-007` (`:busy`), with the new
+  `:upgradeBlocked`.
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

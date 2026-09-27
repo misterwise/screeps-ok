@@ -1,12 +1,12 @@
 import { describe, test, expect, code, body,
 	OK, ERR_NOT_IN_RANGE,
-	WORK, CARRY, MOVE, CLAIM,
+	WORK, CARRY, MOVE,
 	HARVEST_POWER, CARRY_CAPACITY, ENERGY_DECAY, FIND_DROPPED_RESOURCES,
 	RESOURCE_ENERGY, STRUCTURE_CONTAINER,
 } from '../../src/index.js';
 import type { PlayerCode } from '../../src/index.js';
 import { harvestValidationCases } from '../../src/matrices/harvest-validation.js';
-import { spawnBusyCreep } from '../intent-validation-helpers.js';
+import { reserveRoom, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.harvest()', () => {
 	test('HARVEST-001 harvest deposits HARVEST_POWER energy per WORK part into the creep store', async ({ shard }) => {
@@ -204,23 +204,11 @@ describe('creep.harvest()', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const hostileRoom = blockers.has('hostile-room');
 			if (blockers.has('hostile-reservation')) {
-				// No spec field reserves a room: p2 reserves the neutral W1N1 first.
 				await shard.createShard({ players: ['p1', 'p2'], rooms: [{ name: 'W1N1' }] });
-				const ctrlPos = await shard.getControllerPos('W1N1');
-				await shard.placeCreep('W1N1', {
-					pos: [ctrlPos!.x + 1, ctrlPos!.y],
-					owner: 'p2',
-					body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
-					name: 'reserver',
-				});
 				if (owner === 'p2') {
 					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 				}
-				await shard.tick();
-				const reserveRc = await shard.runPlayer('p2', code`
-					Game.creeps['reserver'].reserveController(Game.rooms['W1N1'].controller)
-				`);
-				expect(reserveRc).toBe(OK);
+				await reserveRoom(shard, 'p2', 'W1N1');
 			} else if (owner === 'p2' || hostileRoom) {
 				await shard.createShard({
 					players: ['p1', 'p2'],

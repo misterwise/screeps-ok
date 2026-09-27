@@ -9,7 +9,11 @@ export const ctrlReserveValidationCases = makeValidationCases('CTRL-RESERVE-008'
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'invalid-controller-state', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'hostile-reservation', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
-] as const);
+] as const, [
+	['invalid-target', 'hostile-reservation'],
+	['invalid-controller-state', 'hostile-reservation'],
+]);
 
 export type CtrlReserveValidationCase = typeof ctrlReserveValidationCases[number];

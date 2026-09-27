@@ -1,9 +1,8 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES, ERR_INVALID_TARGET,
+	OK, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	WORK, CARRY, MOVE, CLAIM, UPGRADE_CONTROLLER_POWER,
 	CONTROLLER_LEVELS, CONTROLLER_MAX_UPGRADE_PER_TICK,
 	CONTROLLER_NUKE_BLOCKED_UPGRADE, CONTROLLER_DOWNGRADE, CONTROLLER_DOWNGRADE_RESTORE,
-	EVENT_UPGRADE_CONTROLLER,
 } from '../../src/index.js';
 import { body } from '../../src/helpers/body.js';
 import { ctrlUpgradeValidationCases } from '../../src/matrices/ctrl-upgrade-validation.js';
@@ -48,38 +47,6 @@ describe('creep.upgradeController()', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(50 - 2 * UPGRADE_CONTROLLER_POWER);
-	});
-
-	test('CTRL-UPGRADE-003 returns ERR_NOT_IN_RANGE when not within range 3', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			store: { energy: 50 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			creep.upgradeController(creep.room.controller)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('CTRL-UPGRADE-004 returns ERR_NOT_ENOUGH_RESOURCES without energy', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			creep.upgradeController(creep.room.controller)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
 	test('CTRL-UPGRADE-005 upgradeController succeeds at Chebyshev range 3 and fails at range 4', async ({ shard }) => {
@@ -182,51 +149,6 @@ describe('creep.upgradeController()', () => {
 		`) as number;
 		// Two WORK parts at UPGRADE_CONTROLLER_POWER (1) each → +2 GCL progress.
 		expect(after - before).toBe(2 * UPGRADE_CONTROLLER_POWER);
-	});
-
-	test('CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active', async ({ shard }) => {
-		// Engine client check @screeps/engine/src/game/creeps.js:937 returns
-		// ERR_INVALID_TARGET when upgradeBlocked is set. Catalog originally
-		// said ERR_BUSY — corrected.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 2, owner: 'p2' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-
-		// Hostile creep attacks p2's controller to set upgradeBlocked on it.
-		const attackerId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CLAIM, MOVE],
-		});
-		// p2's upgrader stands on another adjacent tile (avoid x=0 border).
-		const upgraderId = await shard.placeCreep('W2N1', {
-			pos: [ctrlPos!.x, ctrlPos!.y + 1],
-			owner: 'p2',
-			body: [WORK, CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		await shard.tick();
-
-		const attackRc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attackController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(attackRc).toBe(OK);
-		await shard.tick();
-
-		// p2 attempts to upgrade their own controller — upgradeBlocked rejects it.
-		const upgradeRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${upgraderId}).upgradeController(
-				Game.rooms['W2N1'].controller
-			)
-		`);
-		expect(upgradeRc).toBe(ERR_INVALID_TARGET);
 	});
 
 	test('CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room', async ({ shard }) => {
@@ -438,49 +360,6 @@ describe('creep.upgradeController()', () => {
 		})`) as { level: number; ttd: number };
 		expect(result.level).toBe(2);
 		expect(result.ttd).toBe(CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE);
-	});
-
-	test('CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event', async ({ shard }) => {
-		// Engine creep API @screeps/engine/src/game/creeps.js:930 — `!this.carry.energy`
-		// fences the case where `store` lacks the `energy` key entirely. Without the
-		// API fence, the processor's `object.store.energy <= 0` check (which evaluates
-		// `undefined <= 0` as false) would let the upgrade proceed and produce
-		// NaN progress. Reported as engine #151.
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			store: {},
-		});
-
-		const progressBefore = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.progress
-		`) as number;
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).upgradeController(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		await shard.tick();
-
-		const progressAfter = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.progress
-		`) as number;
-		expect(progressAfter).toBe(progressBefore);
-
-		// The upgrade event must not appear because the API rejected the call
-		// before the intent was queued.
-		const events = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].getEventLog()
-		`) as Array<{ event: number }>;
-		const upgradeEvents = events.filter(e => e.event === EVENT_UPGRADE_CONTROLLER);
-		expect(upgradeEvents).toHaveLength(0);
 	});
 
 	for (const row of ctrlUpgradeValidationCases) {

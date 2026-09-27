@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_BUSY,
+	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED,
 	MOVE, ATTACK, RANGED_ATTACK, WORK, HEAL, CLAIM, CARRY,
 	STRUCTURE_RAMPART, STRUCTURE_CONTAINER,
 	CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD, CONTROLLER_DOWNGRADE, SAFE_MODE_DURATION, SAFE_MODE_COOLDOWN,
@@ -51,63 +51,6 @@ describe('Safe mode mechanics', () => {
 		expect(cooldown).toBe(SAFE_MODE_COOLDOWN - 2);
 	});
 
-	// ---- CTRL-SAFEMODE-003: ERR_NOT_ENOUGH_RESOURCES when no charges ----
-	test('CTRL-SAFEMODE-003 activateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when safeModeAvailable is 0', async ({ shard }) => {
-		await shard.ownedRoom('p1'); // default safeModeAvailable=0
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.activateSafeMode()
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	// ---- CTRL-SAFEMODE-004: ERR_TIRED when cooldown is active ----
-	test('CTRL-SAFEMODE-004 activateSafeMode returns ERR_TIRED when safe mode cooldown is active', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeModeAvailable: 2 }],
-		});
-
-		// Activate once to start cooldown.
-		const rc1 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.activateSafeMode()
-		`);
-		expect(rc1).toBe(OK);
-		await shard.tick();
-
-		// Safe mode is now active with cooldown. Try to activate again.
-		const rc2 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.activateSafeMode()
-		`);
-		expect(rc2).toBe(ERR_TIRED);
-	});
-
-	test('CTRL-SAFEMODE-007 activateSafeMode returns ERR_BUSY when another owned controller already has active safe mode', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 },
-				{ name: 'W2N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 },
-			],
-		});
-
-		// Place a creep in W2N1 so p1 has visibility there.
-		await shard.placeCreep('W2N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });
-
-		// Activate safe mode on first room.
-		const rc1 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.activateSafeMode()
-		`);
-		expect(rc1).toBe(OK);
-		await shard.tick();
-
-		// Try to activate on second room — should fail with ERR_BUSY.
-		const rc2 = await shard.runPlayer('p1', code`
-			Game.rooms['W2N1'].controller.activateSafeMode()
-		`);
-		expect(rc2).toBe(ERR_BUSY);
-	});
-
 	// ---- CTRL-SAFEMODE-008: same-tick double activation dedupe ----
 	test('CTRL-SAFEMODE-008 same-tick activateSafeMode on two controllers processes only the most recent intent', async ({ shard }) => {
 		await shard.createShard({
@@ -157,34 +100,6 @@ describe('Safe mode mechanics', () => {
 		// Second intent processed: W2N1 consumed its charge and entered safe mode.
 		expect(after.w2Available).toBe(0);
 		expect(after.w2SafeMode).toBe(SAFE_MODE_DURATION - 2);
-	});
-
-	// ---- CTRL-SAFEMODE-005: downgrade timer below threshold ----
-	test('CTRL-SAFEMODE-005 activateSafeMode fails when downgrade timer is below CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 4, owner: 'p1', safeModeAvailable: 1, ticksToDowngrade: 100 }],
-		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const ctrl = Game.rooms['W1N1'].controller;
-			({ rc: ctrl.activateSafeMode(), ttd: ctrl.ticksToDowngrade })
-		`) as { rc: number; ttd: number };
-
-		// Seeded 100; well under CONTROLLER_DOWNGRADE[4] / 2 - threshold.
-		expect(result.ttd).toBe(99);
-		expect(result.ttd).toBeLessThan(CONTROLLER_DOWNGRADE[4] / 2 - CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD);
-		expect(result.rc).toBe(ERR_TIRED);
-
-		// Confirm safe mode did not activate after the tick processes.
-		await shard.tick();
-		const after = await shard.runPlayer('p1', code`
-			const ctrl = Game.rooms['W1N1'].controller;
-			({ safeMode: ctrl.safeMode, safeModeAvailable: ctrl.safeModeAvailable })
-		`) as { safeMode: number | undefined; safeModeAvailable: number };
-		expect(after.safeMode).toBeUndefined();
-		expect(after.safeModeAvailable).toBe(1);
 	});
 
 	// ---- CTRL-SAFEMODE-006: hostile cross-room intents blocked matrix ----
@@ -304,12 +219,26 @@ describe('Safe mode mechanics', () => {
 						rcl: 1,
 						owner: 'p1',
 						safeModeAvailable: blockers.has('not-enough') ? blockers.has('cooldown') ? 1 : 0 : 2,
+						...(blockers.has('downgrade-timer')
+							? { ticksToDowngrade: CONTROLLER_DOWNGRADE[1] / 2 - CONTROLLER_DOWNGRADE_SAFEMODE_THRESHOLD - 1 }
+							: {}),
 					},
 					...(blockers.has('busy') ? [{ name: 'W2N1', rcl: 1, owner: 'p1', safeModeAvailable: 1 }] : []),
 				],
 			});
 			if (blockers.has('not-owner')) {
 				await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p2', body: [MOVE] });
+			}
+			if (blockers.has('upgrade-blocked')) {
+				const ctrlPos = await shard.getControllerPos('W1N1');
+				const attackerId = await shard.placeCreep('W1N1', {
+					pos: [ctrlPos!.x + 1, ctrlPos!.y], owner: 'p2', body: [CLAIM, MOVE],
+				});
+				await shard.tick();
+				const attackRc = await shard.runPlayer('p2', code`
+					Game.getObjectById(${attackerId}).attackController(Game.rooms['W1N1'].controller)
+				`);
+				expect(attackRc).toBe(OK);
 			}
 			if (blockers.has('busy')) {
 				await shard.placeCreep('W2N1', { pos: [25, 25], owner: 'p1', body: [MOVE] });

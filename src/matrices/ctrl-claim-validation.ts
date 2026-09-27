@@ -12,6 +12,10 @@ export const ctrlClaimValidationCases = makeValidationCases('CTRL-CLAIM-008', [
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'invalid-controller-state', expectedRc: ERR_INVALID_TARGET },
-] as const);
+	{ condition: 'hostile-reservation', expectedRc: ERR_INVALID_TARGET },
+] as const, [
+	['invalid-target', 'hostile-reservation'],
+	['invalid-controller-state', 'hostile-reservation'],
+]);
 
 export type CtrlClaimValidationCase = typeof ctrlClaimValidationCases[number];

@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES,
+	OK,
 	MOVE, CARRY,
 	RESOURCE_GHODIUM,
 	SAFE_MODE_COST,
@@ -34,28 +34,6 @@ describe('creep.generateSafeMode()', () => {
 		expect(creep.store.G ?? 0).toBe(0);
 	});
 
-	test('CTRL-GENSAFE-002 generateSafeMode returns ERR_NOT_IN_RANGE when not adjacent to the controller', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 2, ctrlPos!.y],
-			owner: 'p1',
-			body: [CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY, MOVE],
-			store: { [RESOURCE_GHODIUM]: SAFE_MODE_COST },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).generateSafeMode(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('CTRL-GENSAFE-003 generateSafeMode increments the controller\'s safeModeAvailable', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
@@ -85,25 +63,6 @@ describe('creep.generateSafeMode()', () => {
 			Game.rooms['W1N1'].controller.safeModeAvailable
 		`) as number;
 		expect(available).toBe(1);
-	});
-
-	test('CTRL-GENSAFE-004 generateSafeMode returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const ctrlPos = await shard.getControllerPos('W1N1');
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p1',
-			body: [CARRY, MOVE],
-			// no ghodium
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).generateSafeMode(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
 	for (const row of ctrlGensafeValidationCases) {
