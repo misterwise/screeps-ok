@@ -28,6 +28,12 @@ describe('catalog labels', () => {
 			.toEqual(['documented', 'reported']);
 	});
 
+	test('a row\'s text on its header line fails the parse; capability tags may follow the label', () => {
+		expect(catalogOf('- `GAP-001` `behavior` `documented` Text on the header line.')).toThrow(/GAP-001's first line/);
+		expect(catalogOf('- `GAP-001` `behavior` `documented` `capability: powerEffects`\n  Text.')().map(e => e.capabilities))
+			.toEqual([['multiShard', 'powerEffects']]);
+	});
+
 	test('verified_vanilla fails on a row vanilla lacks the capability for or registers', () => {
 		const entries = catalogOf('- `GAP-001` `behavior` `verified_vanilla`')();
 		expect(catalogLabelErrors(entries, new Set(), vanilla)).toEqual([

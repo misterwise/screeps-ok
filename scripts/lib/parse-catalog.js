@@ -10,6 +10,7 @@ import { CATALOG_ID_RE } from './catalog-id.js';
 const ROW_RE = /^-\s+`([^`]+)`\s+`(?:behavior|matrix)`/;
 const CLASS_RE = /`(behavior|matrix)`/;
 const LABEL_RE = /^-\s+`[^`]+`\s+`(?:behavior|matrix)`\s+`([^`]+)`/;
+const HEADER_ONLY_RE = /^-\s+`[^`]+`\s+`(?:behavior|matrix)`\s+`[^`]+`(?:\s+`capability:\s*\w+`)*\s*$/;
 
 // A row's label names its canonical source (behaviors.md, "How to read").
 export const CATALOG_LABELS = ['verified_vanilla', 'documented', 'reported'];
@@ -57,6 +58,9 @@ export function parseCatalog(behaviorsPath) {
 		const label = line.match(LABEL_RE)?.[1];
 		if (!CATALOG_LABELS.includes(label)) {
 			throw new Error(`${behaviorsPath}: row ${id} is labeled ${label ? `\`${label}\`` : 'nothing'}, not one of ${CATALOG_LABELS.join(', ')}`);
+		}
+		if (!HEADER_ONLY_RE.test(line)) {
+			throw new Error(`${behaviorsPath}: row ${id}'s first line holds only its id, class, label and capability tags; its text starts on the next line`);
 		}
 
 		// A row tag adds to its section's capability, e.g. `chemistry` plus `powerEffects`.
