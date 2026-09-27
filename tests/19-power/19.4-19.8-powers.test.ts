@@ -136,8 +136,6 @@ describe('Operate powers', () => {
 		`);
 		expect(rc).toBe(ERR_TIRED);
 	});
-
-	// POWER-OPERATE-004: PWR_OPERATE_FACTORY changes production level (already tested in FACTORY-COMMODITY-003)
 });
 
 describe('Disrupt powers', () => {

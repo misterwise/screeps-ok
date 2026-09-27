@@ -7,7 +7,7 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 
 describe('Tower intent priority', () => {
-	// Shared setup for TOWER-INTENT-001/002/003:
+	// Shared setup for the TOWER-INTENT tests:
 	// Tower with energy, an enemy creep (attack target), a damaged friendly
 	// creep (heal target), and a damaged friendly rampart (repair target).
 	// All within optimal range (range <= 5) for deterministic amounts.

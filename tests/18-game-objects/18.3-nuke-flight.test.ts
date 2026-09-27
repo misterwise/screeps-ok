@@ -88,8 +88,6 @@ describe('Nuke flight', () => {
 		expect(ttl2).toBe(ttl1! - 4);
 	});
 
-	// ---- NUKE-FLIGHT-003: in-flight nuke is visible in target room ----
-
 	for (const row of nukeFlightVisibilityCases) {
 		test(`NUKE-FLIGHT-004:${row.label} in-flight nuke visibility follows player perspective`, async ({ shard }) => {
 			shard.requires('nuke');
