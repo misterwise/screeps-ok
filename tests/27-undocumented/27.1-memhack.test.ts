@@ -364,40 +364,6 @@ describe('Undocumented API Surface — memhack', () => {
 		expect(parsed.mutated).toBeUndefined();
 	});
 
-	test('UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-
-		const result = await shard.runPlayer('p1', code`
-			Memory;
-			const desc = Object.getOwnPropertyDescriptor(global, 'Memory');
-			({
-				hasDesc: desc !== undefined,
-				hasValue: desc && 'value' in desc,
-				hasGetter: desc && typeof desc.get === 'function',
-				hasSetter: desc && typeof desc.set === 'function',
-				configurable: desc && desc.configurable === true,
-				enumerable: desc && desc.enumerable === true,
-				valueIsObject: desc && typeof desc.value === 'object' && desc.value !== null,
-			})
-		`) as {
-			hasDesc: boolean;
-			hasValue: boolean;
-			hasGetter: boolean;
-			hasSetter: boolean;
-			configurable: boolean;
-			enumerable: boolean;
-			valueIsObject: boolean;
-		};
-
-		expect(result.hasDesc).toBe(true);
-		expect(result.hasValue).toBe(true);
-		expect(result.hasGetter).toBe(false);
-		expect(result.hasSetter).toBe(false);
-		expect(result.configurable).toBe(true);
-		expect(result.enumerable).toBe(true);
-		expect(result.valueIsObject).toBe(true);
-	});
-
 	test('UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeStructure('W1N1', {

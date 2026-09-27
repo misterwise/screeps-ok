@@ -463,39 +463,4 @@ describe('Room history action log', () => {
 		const laterTick = await shard.captureActionLog('W1N1');
 		expectNoAction(laterTick, ids.attacker!, 'attack');
 	});
-
-	test('ACTIONLOG-DEDUP-001 a repeated same-type marker exposes only the later payload for that object and tick', async ({ shard }) => {
-		shard.requires('actionLogCapture');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
-		});
-		const tower = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		const first = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p2',
-			body: body(5, TOUGH, MOVE),
-		});
-		const second = await shard.placeCreep('W1N1', {
-			pos: [26, 28], owner: 'p2',
-			body: body(5, TOUGH, MOVE),
-		});
-		const ids = await resolveIds(shard, { tower });
-
-		const result = await shard.runPlayer('p1', code`
-			const tower = Game.getObjectById(${tower});
-			({
-				first: tower.attack(Game.getObjectById(${first})),
-				second: tower.attack(Game.getObjectById(${second})),
-			})
-		`) as { first: number; second: number };
-		expect(result.first).toBe(OK);
-		expect(result.second).toBe(OK);
-
-		const capture = await shard.captureActionLog('W1N1');
-		const entry = expectAction(capture, ids.tower!, 'attack', { x: 26, y: 28 });
-		expect(Object.keys(entry.actionLog).filter(action => action === 'attack')).toEqual(['attack']);
-	});
 });

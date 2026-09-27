@@ -193,13 +193,6 @@ Intentional shape divergences are declared in the adapter's `shapeDivergences` (
 - Status: INTENTIONAL — expected failure, accepted value divergence.
 - Decision (2026-07-20): xxscreeps returns `undefined` where vanilla returns `false` for `controller.my` after a claimed controller goes neutral (unclaim or RCL 1 downgrade). Truthiness is identical; only strict `=== false` checks diverge. Accepted on three upstream rulings: laverdet called vanilla's `controller.my === undefined` shape "a dumb quirk" ([#128](https://github.com/laverdet/xxscreeps/pull/128) review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix ([#193](https://github.com/laverdet/xxscreeps/issues/193)), and rejected codifying strict conformance to vanilla's exact undefined-in shapes ([#215](https://github.com/laverdet/xxscreeps/pull/215) review, 2026-06-03). Not shape-foldable — the divergence is a runtime value in behavior tests, not key presence — so it stays in `parity.json` and the rows run as regression traps. Do not re-queue an upstream fix.
 
-### rawmemory-set-invalidates-parsed-memhack
-
-- Tests: UNDOC-MEMHACK-012
-- Status: INTENTIONAL — expected failure, accepted mechanism-level divergence (was filed as a RESIDUAL after pin `15df4bea`, when the RawMemory.set mutation-preservation rows started passing).
-- Cause: first `Memory` access preserves xxscreeps's global accessor descriptor instead of replacing it with a value descriptor for the parsed object, so `Object.getOwnPropertyDescriptor(global, 'Memory')` still reports `get`/`set`.
-- Decision (2026-07-25): accepted. The row asserts how the engine implements in-tick `Memory` pinning, not what player code can observe. Its own catalog text names the consequences it exists to protect — MEMORY-002 and UNDOC-MEMHACK-007/008/009/010 — and all of those pass on xxscreeps, which pins the same in-tick reference without flipping the descriptor. The MemHack bot pattern is unaffected because the accessor descriptor is configurable, so `delete global.Memory` followed by reassignment still works (the sibling rows prove it). Asserting the mechanism cuts against the repo rule that tests observe player behavior rather than engine internals, so the row is held intentional and stays a regression trap. Do not re-queue an upstream fix.
-
 ### memory-parsed-json-not-refreshed-across-ticks
 
 - Tests: UNDOC-MEMJSON-001, UNDOC-MEMJSON-003, UNDOC-MEMJSON-004, UNDOC-MEMHACK-011

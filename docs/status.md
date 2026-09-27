@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-6%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [3047](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 03:48 UTC |
-| 🔴 | **xxscreeps** | [2753](#xxscreeps-passing-tests) | [111](#xxscreeps-expected-failures) | — | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
+| 🔴 | **xxscreeps** | [2753](#xxscreeps-passing-tests) | [110](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -25,6 +25,7 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps unexpected failures
 
+- `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 - `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:invalidTargetBeforeSafeMode`, which no test passed or failed
 - `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:rangeBeforeSafeMode`, which no test passed or failed
 - `heal-safe-mode-checked-before-target` registers `COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode`, which no test passed or failed
@@ -138,7 +139,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 50 expected-failure classifications against vanilla's canonical behavior, covering 111 tests. That includes 46 open parity gaps covering 103 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 49 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 46 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -582,7 +583,6 @@ These are known vanilla differences that the engine maintainers have decided not
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
 | `controller-my-reset-returns-undefined` | After `release()` clears controller `#user` to null on unclaim or RCL 1 downgrade, `OwnedStructure.my` (`mods/classic/structure/structure.ts`) returns `undefined` for null users. Upstream `main` now matches vanilla for never-owned controllers but also returns `undefined` after a previously owned controller becomes neutral. | Vanilla returns `false` for `controller.my` after a claimed controller becomes neutral through unclaim or RCL 1 downgrade, while `owner` is null and `level` is 0. | Accepted `undefined`-vs-`false` value divergence: truthiness is identical, so only strict `=== false` checks diverge. laverdet called vanilla's `controller.my === undefined` shape 'a dumb quirk' (xxscreeps#128 review, 2026-04-22), steered `structure.my` to `undefined` for null users in the FIND_HOSTILE_STRUCTURES fix (xxscreeps#193), and rejected codifying strict conformance to vanilla's exact undefined-in shapes (xxscreeps#215 review, 2026-06-03). Do not re-queue an upstream fix; the rows stay as regression traps. | [2](#xxscreeps-gap-controller-my-reset-returns-undefined) |
-| `rawmemory-set-invalidates-parsed-memhack` | First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object. | Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter. | Accepted 2026-07-25: the row asserts an engine mechanism, not a player-observable behavior. UNDOC-MEMHACK-012 reads `Object.getOwnPropertyDescriptor(global, 'Memory')` and asserts value-vs-accessor shape; the row's own text says the descriptor flip 'is what pins the in-tick reference for MEMORY-002 and UNDOC-MEMHACK-007/008/009/010' — and every one of those rows PASSES on xxscreeps, which achieves the same pinning without flipping the descriptor. So the observable consequences are already covered and green, and what remains is introspection of how the engine implements them, which cuts against this repo's rule that tests assert observable player behavior rather than engine internals. The MemHack bot pattern itself is unaffected: the accessor descriptor is configurable, so `delete global.Memory` plus reassignment still works (proven by the sibling rows). Do not queue an upstream fix; the row stays as a regression trap. | [1](#xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack) |
 | `memory-parsed-json-not-refreshed-across-ticks` | xxscreeps caches the parsed-memory `json` object as module-level state (`mods/meta/memory/memory.ts`) and does NOT re-parse raw memory at the start of each tick. Tick-end serialization correctly produces vanilla-compatible raw memory (function keys dropped, `NaN`/`Infinity` → `null` via `JSON.stringify`) but the in-memory `Memory` object on the next tick still contains the original values (the function object, `NaN`, `Infinity`) because it's the same cached `json` reference, not a fresh parse of the raw string. Same root cause for `UNDOC-MEMHACK-011`'s tick-3 `Memory.x` assertions: when a tick skips save via `delete RawMemory._parsed`, raw memory is correctly preserved, but `Memory` on the next tick still reflects the cached (mutated) object instead of a fresh parse. | `Memory` on each tick reflects a fresh `JSON.parse(RawMemory.get())` — values that `JSON.stringify` coerces (functions stripped, `NaN`/`Infinity` → `null`) round-trip to those coerced forms when read on the next tick, matching vanilla's per-tick-re-parse semantics. | Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps. | [4](#xxscreeps-gap-memory-parsed-json-not-refreshed-across-ticks) |
 | `power-bank-shape-exposes-store-extension` | xxscreeps declares the bank's loot as a public schema field — `store: powerBankStoreFormat` in the `powerBankShape` struct (`mods/modern/powerbank/schema.ts`) — and `withOverlay` publishes schema fields, with enumerability keyed off the `#` prefix (`schema/overlay.ts:65`), so the backing storage appears on the player-facing surface next to the canonical `power` projection (`@enumerable get power() { return this.store[C.RESOURCE_POWER]; }`). Upstream documents it as an intentional extension rather than treating it as a leak. | The canonical StructurePowerBank data-property surface exposes `power` but does not expose a `store` property. Vanilla keeps the same internal representation and publishes only the projection (`power: (o) => o.store.power`, `@screeps/engine/src/game/structures.js:585`), and is deliberate about the distinction — `StructurePowerSpawn` twenty lines later does declare `store: _storeGetter`. | Accepted 2026-07-25: upstream documents this member as a deliberate xxscreeps extension, and the rename that would remove it is not viable. laverdet's `035d70bf` ("docs: sync with Screeps API", 2026-07-14) annotated the field `@public` with "this member is an xxscreeps extension; the official API only exposes the amount via `power`" — in that 97-file sweep the phrase "xxscreeps extension" appears exactly twice, here and on `getTerrain`'s `version` param, so the field was audited against the official API and kept on purpose rather than leaking unnoticed. Three findings from prototyping the `store` → `'#store'` rename against `upstream/main`: (1) `createRuin` (`mods/classic/structure/ruin.ts:68-76`) duck-types the loot out of the public name — `structure as never as Record<'store', Store \| undefined>` — so hiding the field empties the ruin a destroyed bank leaves behind, defeating the structure's purpose; (2) the blob upgrader migrates by reading with the old layout and writing with the new (`engine/schema/build/index.ts:66-92`), and members are looked up by name (`schema/write.ts:39`), so a renamed composed member arrives `undefined` and the room load THROWS — verified by replicating `makeUpgrader` against the real schema primitives, where renaming or adding a composed member throws while absent primitives merely default to 0; (3) the rename is lossy even with that fixed, since a rename is a drop plus an add. Not shape-foldable into `shapeDivergences`: that declaration's `roomObject` target is global to every room-object row (correct for `effects`, which every room object inherits), whereas `store` is power-bank-only, so folding it would stop walls and roads being asserted against a store-free surface. Do not queue an upstream fix; the row stays as a regression trap so an upstream removal surfaces as an unexpected pass. | [1](#xxscreeps-gap-power-bank-shape-exposes-store-extension) |
 
@@ -593,13 +593,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0`
 - `StructureController.unclaim() CTRL-UNCLAIM-001 unclaim() resets the controller to level 0 and leaves room structures intact`
-
-</details>
-
-<details id="xxscreeps-gap-rawmemory-set-invalidates-parsed-memhack">
-<summary><code>rawmemory-set-invalidates-parsed-memhack</code> — 1 test</summary>
-
-- `Undocumented API Surface — memhack UNDOC-MEMHACK-012 first Memory access flips the descriptor from getter to value`
 
 </details>
 

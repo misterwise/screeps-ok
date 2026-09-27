@@ -37,13 +37,6 @@
 			"why": "NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix.",
 			"tests": ["CTRL-UNCLAIM-005", "CTRL-DOWNGRADE-010:levelZero"]
 		},
-		"rawmemory-set-invalidates-parsed-memhack": {
-			"intentional": true,
-			"why": "Accepted 2026-07-25: the row asserts an engine mechanism, not a player-observable behavior. UNDOC-MEMHACK-012 reads `Object.getOwnPropertyDescriptor(global, 'Memory')` and asserts value-vs-accessor shape; the row's own text says the descriptor flip 'is what pins the in-tick reference for MEMORY-002 and UNDOC-MEMHACK-007/008/009/010' — and every one of those rows PASSES on xxscreeps, which achieves the same pinning without flipping the descriptor. So the observable consequences are already covered and green, and what remains is introspection of how the engine implements them, which cuts against this repo's rule that tests assert observable player behavior rather than engine internals. The MemHack bot pattern itself is unaffected: the accessor descriptor is configurable, so `delete global.Memory` plus reassignment still works (proven by the sibling rows). Do not queue an upstream fix; the row stays as a regression trap.",
-			"actual": "First `Memory` access preserves xxscreeps's global `Memory` accessor descriptor instead of replacing it with a value descriptor for the parsed object.",
-			"expected": "Vanilla redefines `global.Memory` to a configurable enumerable value descriptor on first access, with no getter or setter.",
-			"tests": ["UNDOC-MEMHACK-012"]
-		},
 		"memory-parsed-json-not-refreshed-across-ticks": {
 			"intentional": true,
 			"why": "Withdrawn from laverdet/xxscreeps#329 (2026-07-21) per laverdet's review bar: 'Have you observed these values (NaN, Infinity) causing problems with user scripts? ... if this is just a matter of chasing a spec then I don't want to do it.' No observed breakage exists — the corpus has no non-finite-into-Memory repro, and every real bot shipping `delete RawMemory._parsed` (ZeSwarm, the MemHack wiki pattern) pairs it with a heap-cached `Memory` clobber or `RawMemory.set`, both of which bypass or already invalidate the cached parse; the mutate-then-bare-delete victim shape loses its mutations on vanilla itself, so nobody ships it. laverdet's cached-parse design (32c9fdb) deliberately trades per-tick-re-parse semantics for CPU and already diverges on prototypes, toJSON, getters, Dates, circular flattening, and sparse arrays — these rows pin the same accepted class. Do not re-queue an upstream fix without an actual user-script report; the rows stay as regression traps.",

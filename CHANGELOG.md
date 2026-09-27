@@ -169,6 +169,12 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Dropped: `UNDOC-MEMHACK-012` (the `Memory` property descriptor after first
+  access; what a bot observes of it is `MEMORY-002` and
+  `UNDOC-MEMHACK-007`..`-010`) and `ACTIONLOG-DEDUP-001` (its test could not
+  fail: a second same-type intent replaces the first before any marker).
+  xxscreeps's intentional gap `rawmemory-set-invalidates-parsed-memhack` goes
+  with the first.
 - Dropped: `CTRL-SAFEMODE-006` (`:attack` … `:attackController`). Another
   player's safe mode is now a condition of each method's validation row, at
   vanilla's place in its check order: `COMBAT-MELEE-009`,
