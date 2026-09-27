@@ -378,9 +378,7 @@ Coverage Notes
 - `PATHFINDER-022` `behavior` `verified_vanilla`
   A cross-room search to a goal two rooms away over open terrain completes
   (`incomplete: false`, path ends in the goal room) with `ops` on the order of
-  the path length, well inside the default `maxOps`. In-room searches cannot
-  distinguish a directed search from a flood because a room fits inside the
-  budget; a two-room hop does not.
+  the path length, well inside the default `maxOps`.
 - `PATHFINDER-023` `behavior` `verified_vanilla`
   `roomCallback` is only invoked for rooms the directed search actually
   enters. Over open terrain with the goal in the eastern neighbor, the
@@ -759,9 +757,7 @@ Coverage Notes
 - `BUILD-008` `behavior` `verified_vanilla`
   `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
 - `BUILD-009` `behavior` `verified_vanilla`
-  A creep can build any visible construction site, regardless of which
-  player owns it (vanilla has no alliance system; the literal rule is
-  "no ownership check on the site").
+  A creep can build any visible construction site, whichever player owns it.
 
 - `BUILD-010` `behavior` `verified_vanilla`
   When the creep has less energy than the full build amount (5 × WORK parts),
@@ -792,8 +788,8 @@ Coverage Notes
 - `REPAIR-007` `behavior` `verified_vanilla`
   `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - `REPAIR-008` `behavior` `verified_vanilla`
-  A creep can repair any visible structure, regardless of which player
-  owns the surrounding room (engine repair.js never checks ownership).
+  A creep can repair any visible structure, whichever player owns it or its
+  room.
 
 - `REPAIR-009` `behavior` `verified_vanilla`
   When the creep has less energy than the full repair cost (WORK part count),
@@ -857,10 +853,6 @@ Coverage Notes
   Only one construction site can exist at a given position.
 - `CONSTRUCTION-SITE-008` `behavior` `verified_vanilla`
   Cannot place a construction site on a wall terrain tile (except roads).
-  Coverage Notes: test exists but is gated on both adapters — vanilla
-  caches `staticTerrainData` at runner startup so player-side wall checks
-  ignore custom DB terrain (driver/runtime/make.js:18-51), and xxscreeps
-  has terrain capability false.
 - `CONSTRUCTION-SITE-009` `matrix` `verified_vanilla`
   A ruin does not block construction-site placement at its tile, for
   any pairing of the ruin's destroyed `structureType` and the placed
@@ -899,17 +891,11 @@ Coverage Notes
   rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
   from the caller's user, before the rcl check runs.
 - `CONSTRUCTION-SITE-016` `behavior` `verified_vanilla`
-  When a room's RCL leaves `sites + active > CONTROLLER_STRUCTURES[type][rcl]`
-  for a given structure type (e.g. after a downgrade, or via direct fixture
-  setup), build progress on surplus sites still accumulates and the sites
-  complete normally; the resulting surplus structures are produced.
-  Per-structure-type tick handlers then disable the surplus active
-  structures (e.g. `_calc_spawns.js` sets `off=true` on excess
-  spawns/extensions; `checkStructureAgainstController` reports them
-  inactive). Counter to engine issue #59, which speculated a build-time
-  gate; vanilla and xxscreeps both treat the cap as a placement-time and
-  active-structure check only, not a build-time one. Distinct from
-  `CONSTRUCTION-SITE-003`, which gates at placement time.
+  When a room already holds as many structures and sites of a type as
+  `CONTROLLER_STRUCTURES[type][level]` allows (after a downgrade, say), build
+  progress on the surplus sites still accumulates and completes them; the cap
+  gates placement (`CONSTRUCTION-SITE-003`) and activity
+  (`CTRL-STRUCTLIMIT-002`), not building.
 - `CONSTRUCTION-SITE-017` `matrix` `verified_vanilla`
   A construction site cannot be placed on a tile already occupied by a
   non-road/non-rampart structure unless the placed type is itself road or
@@ -987,12 +973,10 @@ Coverage Notes
   reserving the controller. (Observable via the player-facing `ticksToEnd`
   getter, which derives from a fixed `endTime` minus `gameTime`.)
 - `CTRL-RESERVE-007` `behavior` `verified_vanilla`
-  `attackController()` on a controller reserved by another player reduces the
-  reservation's `endTime` by `CONTROLLER_RESERVE` (1) per CLAIM part.
-  (Catalog note: the original entry said `reserveController()` reduces a
-  hostile reservation, but the engine API blocks that path with
-  `ERR_INVALID_TARGET`; the actual reduction mechanism is attackController —
-  engine `processor/intents/creeps/attackController.js:33-40`.)
+  `attackController()` on a controller reserved by another player cuts
+  `CONTROLLER_RESERVE` (1) per CLAIM part from the reservation: `ticksToEnd`
+  reads that much lower than the tick's decay alone would leave it
+  (`processor/intents/creeps/attackController.js:33-40`).
 - `CTRL-RESERVE-008` `matrix` `verified_vanilla`
   `creep.reserveController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
@@ -1059,8 +1043,8 @@ Coverage Notes
 - `CTRL-UPGRADE-006` `behavior` `verified_vanilla`
   At RCL 8, upgrade is capped at CONTROLLER_MAX_UPGRADE_PER_TICK (15).
 - `CTRL-UPGRADE-007` `matrix` `verified_vanilla`
-  Progress thresholds per level: 200, 45K, 135K, 405K, 1.215M, 3.645M,
-  10.935M.
+  `controller.progressTotal` reads `CONTROLLER_LEVELS[level]` at levels 1-7
+  and `undefined` at level 8.
 - `CTRL-UPGRADE-008` `behavior` `verified_vanilla`
   GCL progress is incremented alongside controller progress.
 - `CTRL-UPGRADE-009` `behavior` `verified_vanilla`
@@ -1075,8 +1059,9 @@ Coverage Notes
   count), `upgradeController()` contributes progress equal to the available
   energy.
 - `CTRL-UPGRADE-012` `behavior` `verified_vanilla`
-  When controller progress reaches the level threshold, the controller
-  advances to the next level and progress resets to zero.
+  When an upgrade carries controller progress to the level threshold, the
+  controller advances to the next level and `progress` keeps the excess over
+  the threshold (`0` on reaching level 8).
 - `CTRL-UPGRADE-013` `matrix` `verified_vanilla`
   `creep.upgradeController(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, body-part
@@ -1085,8 +1070,7 @@ Coverage Notes
   `upgradeController()` against a creep whose `store` lacks the `energy`
   key entirely (not `store.energy === 0`) returns
   `ERR_NOT_ENOUGH_RESOURCES`; controller `progress` is unchanged and no
-  `EVENT_UPGRADE_CONTROLLER` is emitted. Fences the `undefined <= 0`
-  coercion bypass that would otherwise produce `NaN` progress.
+  `EVENT_UPGRADE_CONTROLLER` is emitted.
 - `CTRL-UPGRADE-015` `behavior` `verified_vanilla`
   A level-up is gated on the downgrade timer: when `ticksToDowngrade` is
   more than `CONTROLLER_DOWNGRADE_RESTORE` below `CONTROLLER_DOWNGRADE[level]`,
@@ -1217,16 +1201,12 @@ Coverage Notes
 
 ### 6.9 Unclaim
 - `CTRL-UNCLAIM-001` `behavior` `verified_vanilla`
-  `StructureController.unclaim()` resets the controller to level 0 (unowned),
-  clearing `user` (set to `null`), `progress`, `downgradeTime`, and `safeMode`
-  in a single processor step (the safe-mode charge/cooldown and power-enable
-  resets in the same step are owned by CTRL-UNCLAIM-004/-005/-006). After
-  unclaim, `controller.my` is `false` (the previously-owned sentinel —
-  distinct from never-owned `undefined`, covered by CTRL-CLAIM-007). Owned
-  structures in the room are **not** destroyed by unclaim itself; they remain
-  present and simply become inactive because every
-  `CONTROLLER_STRUCTURES[type][0]` is 0 (already covered by
-  `CTRL-STRUCTLIMIT-002`).
+  After `StructureController.unclaim()` resolves, the controller reads level
+  `0`, `my === false` (the previously-owned sentinel, distinct from the
+  never-owned `undefined` of `CTRL-CLAIM-007`), and `undefined` for
+  `progress`, `ticksToDowngrade` and `safeMode`. The room's owned
+  structures remain (their inactivity is `CTRL-STRUCTLIMIT-002`); the
+  safe-mode and power-enable resets are `CTRL-UNCLAIM-004` to `-006`.
 - `CTRL-UNCLAIM-004` `behavior` `verified_vanilla`
   After `unclaim()` resolves, the controller's `safeModeAvailable` is 0.
 - `CTRL-UNCLAIM-005` `behavior` `verified_vanilla`
@@ -1617,16 +1597,14 @@ Coverage Notes
 
 ### 8.2 Unboost
 - `UNBOOST-001` `behavior` `verified_vanilla`
-  `Lab.unboostCreep()` returns `OK`, removes all boosts from the creep, and
-  drops returned compounds near the lab.
+  `Lab.unboostCreep()` returns `OK` and removes all boosts from the creep.
 - `UNBOOST-002` `behavior` `verified_vanilla`
   `unboostCreep()` returns `ERR_NOT_FOUND` when the creep has no boosts.
 - `UNBOOST-003` `behavior` `verified_vanilla`
   `unboostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
 - `UNBOOST-004` `behavior` `verified_vanilla`
   Each unboosted body part drops `LAB_UNBOOST_MINERAL` (15) of its compound as
-  a resource pile on the creep's own tile (not the lab's store): the engine
-  unboost processor calls `_create-energy(target.x, target.y, ...)`.
+  a resource pile on the creep's own tile, not into the lab's store.
 - `UNBOOST-005` `behavior` `verified_vanilla`
   Lab cooldown after a successful unboost equals
   `sum_over_compounds(parts * calcTotalReactionsTime(compound)
@@ -2294,8 +2272,9 @@ Coverage Notes
 - `WALL-001` `behavior` `verified_vanilla`
   Ordinary constructed walls do not decay.
 - `WALL-002` `behavior` `verified_vanilla`
-  A constructed wall has `hitsMax = WALL_HITS_MAX` only while the room
-  controller level allows constructed walls in that room.
+  A constructed wall's `hitsMax` is `WALL_HITS_MAX` while the room's controller
+  level allows constructed walls, and `0` while it doesn't
+  (`processor/intents/constructedWalls/tick.js:11`).
 
 Coverage Notes
 - Initial wall hits on creation belong with construction behavior rather than
@@ -2318,9 +2297,7 @@ Coverage Notes
   A road produced by completing a construction site initializes with
   `ROAD_HITS` (5000) scaled by the underlying terrain ratio:
   1× on plain, `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp,
-  `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on natural wall. The engine
-  branches on terrain at completion time, independent of the site's stored
-  `progressTotal`.
+  `CONSTRUCTION_COST_ROAD_WALL_RATIO` (150×) on natural wall.
 - `ROAD-DECAY-001` `matrix` `verified_vanilla`
   Road decay amount by underlying terrain matches the canonical Screeps
   constants for plain, swamp, and wall terrain.
@@ -2335,16 +2312,15 @@ Coverage Notes
 
 ### 13.2 Road — Wear
 - `ROAD-WEAR-001` `matrix` `verified_vanilla`
-  When a unit moves onto a road tile, road wear advances `nextDecayTime` earlier
-  by the canonical amount for that mover type: `ROAD_WEAROUT * body.length` for
-  creeps and `ROAD_WEAROUT_POWER_CREEP` for power creeps.
+  When a unit moves onto a road tile, road wear lowers the road's
+  `ticksToDecay` by the canonical amount for that mover type:
+  `ROAD_WEAROUT * body.length` for creeps and `ROAD_WEAROUT_POWER_CREEP` for
+  power creeps.
 - `ROAD-WEAR-002` `behavior` `verified_vanilla`
   Road wear is applied in the same tick each time a unit successfully moves onto
   the road tile.
 - `ROAD-WEAR-003` `behavior` `verified_vanilla`
-  Road wear applies identically when the road is on a natural-wall tile —
-  the engine keys off the presence of the road structure, not the underlying
-  terrain.
+  Road wear applies identically when the road is on a natural-wall tile.
 
 ### 13.3 Terminal
 - `TERMINAL-SEND-001` `behavior` `verified_vanilla`
@@ -2357,8 +2333,8 @@ Coverage Notes
   `round(TERMINAL_COOLDOWN * POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1])`.
 - `TERMINAL-SEND-003` `behavior` `verified_vanilla`
   When a terminal send resolves, the sending terminal spends
-  `calcTerminalEnergyCost(amount, distance)` energy for the source room and
-  target room, and the receiving terminal does not pay the transfer cost.
+  `Game.market.calcTransactionCost(amount, sourceRoom, targetRoom)` energy,
+  and the receiving terminal pays nothing.
 - `TERMINAL-SEND-004` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_TERMINAL` is active, terminal send energy cost is
   multiplied by `POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1]` and rounded
@@ -2383,8 +2359,8 @@ Coverage Notes
   When a queued terminal send resolves successfully, the sending terminal's
   `cooldown` becomes `TERMINAL_COOLDOWN`.
 - `TERMINAL-SEND-011` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` can return `OK` but resolve to
-  no transfer and no cooldown when the target room has no player terminal.
+  `send(resourceType, amount, targetRoomName)` returns `OK` but resolves to no
+  transfer and no cooldown when the target room has no player terminal.
 - `TERMINAL-SEND-012` `behavior` `verified_vanilla`
   When a terminal send resolves successfully, the target terminal receives the
   sent resource amount.
@@ -2539,15 +2515,13 @@ Coverage Notes
 
 ### 14.5 Stronghold Layout `capability: strongholdDeploy`
 - `STRONGHOLD-LAYOUT-001` `matrix` `verified_vanilla`
-  When a deploying invader core's deploy timer reaches its trigger
-  (`core.deployTime <= gameTime + 1`), the engine places the canonical
-  stronghold structure layout for `core.templateName` relative to the core
-  position. For each canonical bunker template (`bunker1`–`bunker5`) listed
-  in `docs/behavior-matrices.md` under `STRONGHOLD-LAYOUT`, every non-core
-  template entry produces a structure of the listed `type` at the listed
-  `(dx, dy)` offset from the core; the invader core itself remains in place
-  with its `deployTime` cleared and no extra invader-core structure is
-  created.
+  On the tick a deploying invader core's `ticksToDeploy` reads `1`, it deploys
+  its template's stronghold: for each canonical bunker template
+  (`bunker1`–`bunker5`) listed in `docs/behavior-matrices.md` under
+  `STRONGHOLD-LAYOUT`, the next tick shows a structure of each non-core entry's
+  `type` at its `(dx, dy)` offset from the core, the core in place with
+  `ticksToDeploy` `undefined`, and no second invader core
+  (`processor/intents/invader-core/stronghold/stronghold.js:26-37`).
 
 Coverage Notes
 - Per-rampart hits scaling (`STRONGHOLD_RAMPART_HITS`), per-tile effect
@@ -2762,16 +2736,8 @@ Coverage Notes
 ### 16.1b Survival Info
 - `ROOM-SURVIVAL-001` `behavior` `verified_vanilla`
   When a room is not part of an active survival game, `room.survivalInfo`
-  is `undefined`, not `null`. The own property is set as
-  `this.survivalInfo = gameInfo` in `screeps-engine/src/game/rooms.js:437`
-  where `gameInfo` is read from `runtimeData.games[gameId]` and stays
-  `undefined` for rooms outside a survival game; the property is therefore
-  present on the room with value `undefined`. Observable as
-  `typeof room.survivalInfo === 'undefined'` and as
-  `JSON.parse(JSON.stringify(room)).survivalInfo === undefined` (key
-  dropped by `JSON.stringify`). The property's *presence* on the room
-  shape is owned by `SHAPE-ROOM-001`; this entry pins the *value type*
-  when no survival game is active.
+  is `undefined`, not `null` (`game/rooms.js:437`). Its presence on the room
+  is `SHAPE-ROOM-001`'s.
 
 ### 16.2 Energy Tracking
 - `ROOM-ENERGY-001` `behavior` `verified_vanilla`
@@ -2850,12 +2816,10 @@ Coverage Notes
   requested look-type key in the entry.
 - `ROOM-LOOK-006` `behavior` `verified_vanilla`
   `lookForAt(type, x, y)` returns `ERR_INVALID_ARGS` when `type` is neither
-  `LOOK_TERRAIN` nor a registered `LOOK_*` constant. Engine `rooms.js`
-  performs this validation before reading the tile.
+  `LOOK_TERRAIN` nor a registered `LOOK_*` constant.
 - `ROOM-LOOK-007` `behavior` `verified_vanilla`
   `lookForAt(LOOK_ENERGY, x, y)` returns the same dropped `Resource` objects
-  as `lookForAt(LOOK_RESOURCES, x, y)` because both look constants resolve
-  to the room's dropped-resource backing register.
+  as `lookForAt(LOOK_RESOURCES, x, y)`.
 - `ROOM-LOOK-008` `behavior` `verified_vanilla`
   `lookForAtArea(LOOK_ENERGY, top, left, bottom, right, true)` returns the
   same dropped `Resource` objects as the equivalent call with
@@ -2864,8 +2828,7 @@ Coverage Notes
 - `ROOM-LOOK-009` `behavior` `verified_vanilla`
   `lookAt(x, y)` on a tile holding a dropped resource yields two entries
   for the same resource — one with `type: "energy"` and one with
-  `type: "resource"` — because `lookAt` walks both look constants against
-  the dropped-resource backing register.
+  `type: "resource"`.
 - `ROOM-LOOK-010` `behavior` `verified_vanilla`
   `lookForAt(type, x, y)` returns `[]` (not `ERR_INVALID_ARGS`) for a valid
   built-in `LOOK_*` constant whose register is empty at the queried tile —
@@ -2883,8 +2846,7 @@ Coverage Notes
 - `ROOM-LOOK-012` `behavior` `verified_vanilla`
   When multiple objects of the queried `LOOK_*` type share a tile,
   `lookForAtArea(type, ..., false)` returns all of them in the same
-  per-cell array (preserving the engine's spatial-register insertion
-  order). Cells of bounding-box tiles that contain no matching objects
+  per-cell array. Cells of bounding-box tiles that contain no matching objects
   remain `undefined`.
 - `ROOM-LOOK-013` `behavior` `verified_vanilla`
   `lookAtArea(top, left, bottom, right, false)` returns a dense
@@ -3280,8 +3242,9 @@ neighbors and no better section exists.
   `Game.gpl.level`, `progress`, and `progressTotal` follow the vanilla account
   power formula at threshold edges:
   `level = floor((power / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW))`,
-  `progress = power - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`, and
-  `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`.
+  `progress = power - base`,
+  and `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`
+  for `base = level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`.
 
 ### 19.0 Power Creep Allocation `capability: powerCreeps`
 - `GPL-003` `behavior` `verified_vanilla`
@@ -3520,8 +3483,9 @@ Notes
 ### 20.4 Self-Contained Queries `capability: marketBasics`
 - `MARKET-QUERY-001` `behavior` `verified_vanilla`
   `Game.market.calcTransactionCost(amount, roomName1, roomName2)` returns
-  `ceil(amount * (1 - exp(-distance / 30)))`, where `distance` is the room
-  distance between the two rooms.
+  `ceil(amount * (1 - exp(-distance / 30)))`, where `distance` is
+  `Game.map.getRoomLinearDistance(roomName1, roomName2, true)`, wrapping
+  across the world's edges.
 - `MARKET-QUERY-007` `behavior` `verified_vanilla`
   `Game.market.getAllOrders({ resourceType: invalid })` returns an empty
   array (`[]`).
@@ -3884,9 +3848,7 @@ Coverage Notes
 - `MEMORY-006` `behavior` `verified_vanilla`
   `RawMemory.set(value)` followed in the same tick by a `Memory` access and
   a mutation persists the *mutated parsed* object across the tick boundary,
-  not `value` verbatim. Vanilla parses `value` on first access, sets
-  `RawMemory._parsed = parsed`, and end-of-tick serialization stringifies
-  `_parsed` (which carries the post-access mutation), overriding `value`.
+  not `value` verbatim.
 
 ### 25.2 RawMemory
 - `RAWMEMORY-001` `behavior` `verified_vanilla`
@@ -4899,9 +4861,8 @@ internal consistency.
   number.
 - `CPU-USED-002` `behavior` `verified_vanilla`
   `Game.cpu.getUsed()` is monotonically non-decreasing within a tick, and
-  strictly increases after measurable synchronous work. (What the meter
-  counts is engine-specific — vanilla meters CPU time, xxscreeps wall
-  time — so only monotonicity is pinned, never values.)
+  strictly increases after measurable synchronous work. What the meter
+  counts is engine-specific, so only monotonicity is pinned.
 
 ### 30.3 Halt
 - `CPU-HALT-001` `behavior` `verified_vanilla`

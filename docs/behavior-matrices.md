@@ -490,17 +490,19 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `CTRL-UPGRADE-007`
 - `Canonical Source`
-  `CONTROLLER_LEVELS`.
+  The controller's `progressTotal` getter,
+  `@screeps/engine/src/game/structures.js:181`, from `CONTROLLER_LEVELS`.
 - `Dimensions`
-  controller level (1-7)
+  controller level (1-8)
 - `Applicability`
-  The progress an owned controller needs to reach its next level
+  An owned controller at each level: `CONTROLLER_LEVELS[level]` at 1-7,
+  `undefined` at 8
 - `Exclusions`
-  Level 8, which has no next level, and the upgrade amount per tick
+  The upgrade amount per tick, and level-up (`CTRL-UPGRADE-012`)
 - `Verification Notes`
-  The test (`tests/06-controller/6.4-upgrade.test.ts`) compares
-  `CONTROLLER_LEVELS` with the row's literal table and never reads a
-  controller, so no engine runs it.
+  The test (`tests/06-controller/6.4-upgrade.test.ts`) still compares
+  `CONTROLLER_LEVELS` with a literal table and never reads a controller, so
+  no engine runs the row yet.
 
 ### TOWER-RANGE
 
