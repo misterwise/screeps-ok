@@ -13,6 +13,14 @@ export function catalogIdsIn(text) {
 	return [...text.matchAll(ID_IN_TEXT_RE)].map(m => m[0]);
 }
 
+// The ids a document names that aren't catalog rows, with their 1-based lines.
+export function unknownCatalogIds(text, rowIds) {
+	return text.split('\n').flatMap((line, i) => catalogIdsIn(line)
+		.map(baseCatalogId)
+		.filter(id => !rowIds.has(id))
+		.map(id => ({ id, line: i + 1 })));
+}
+
 // Comments name rows a file deliberately leaves to another; only code claims them.
 export function stripComments(source) {
 	return source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');

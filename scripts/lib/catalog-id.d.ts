@@ -1,6 +1,7 @@
 export const CATALOG_ID_RE: RegExp;
 export const TEST_ID_RE: RegExp;
 export function catalogIdsIn(text: string): string[];
+export function unknownCatalogIds(text: string, rowIds: Set<string>): { id: string; line: number }[];
 export function stripComments(source: string): string;
 export function isCatalogTestFile(file: string): boolean;
 export function suitePath(file: string): string;

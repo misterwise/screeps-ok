@@ -77,7 +77,11 @@ Read in this order:
   implementation. Two tests that look alike are not duplicates until you've
   confirmed they assert the same behavior.
 - Renaming or dropping an ID is a consumer-visible change; note it in
-  `CHANGELOG.md`.
+  `CHANGELOG.md`. A dropped ID's number is retired, never reused, so a
+  registration that still names it fails as orphaned instead of matching a
+  different entry. The catalog's own notes don't record drops, and
+  `npm run check` fails on an ID `behaviors.md` or
+  `docs/behavior-matrices.md` names that no entry has.
 
 ### Adding or updating an adapter
 

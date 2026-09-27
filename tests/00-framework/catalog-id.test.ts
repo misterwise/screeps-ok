@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import { suitePath, testCatalogId } from '../../scripts/lib/catalog-id.js';
+import { suitePath, testCatalogId, unknownCatalogIds } from '../../scripts/lib/catalog-id.js';
 import { parseCatalog } from '../../scripts/lib/parse-catalog.js';
 
 const dirs: string[] = [];
@@ -22,6 +22,17 @@ describe('catalog ids', () => {
 	test('a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse', () => {
 		expect(catalogOf('- `POWER-GENERATE-OPS-001` `behavior` `verified_vanilla`')).toThrow(/POWER-GENERATE-OPS-001/);
 		expect(catalogOf('- `MOVE2-001` `behavior` `verified_vanilla`')).toThrow(/MOVE2-001/);
+	});
+
+	test('a row id that appears twice fails the parse', () => {
+		expect(catalogOf('- `MOVE-001` `behavior` `verified_vanilla`\n- `MOVE-001` `matrix` `verified_vanilla`'))
+			.toThrow(/MOVE-001 appears twice/);
+	});
+
+	test('an id the text names that no row has is reported with its line', () => {
+		const rows = new Set(['MOVE-001', 'MOVE-PULL-002']);
+		expect(unknownCatalogIds('`MOVE-001` and `MOVE-PULL-002:first`\nFormer MOVE-003 dropped', rows))
+			.toEqual([{ id: 'MOVE-003', line: 2 }]);
 	});
 
 	test('conforming row ids parse', () => {

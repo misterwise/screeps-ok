@@ -2,7 +2,7 @@
  * Shared catalog parser for behaviors.md.
  *
  * Extracts catalog entries with their IDs, sections, capabilities, and
- * labels; a row with a malformed ID or label fails the parse.
+ * labels; a malformed or repeated ID, or a malformed label, fails the parse.
  */
 import { readFileSync } from 'node:fs';
 import { CATALOG_ID_RE } from './catalog-id.js';
@@ -20,6 +20,7 @@ const SECTION_RE = /^(#{1,3})\s+(.+)/;
 export function parseCatalog(behaviorsPath) {
 	const lines = readFileSync(behaviorsPath, 'utf8').split('\n');
 	const entries = [];
+	const seen = new Set();
 	let currentSection = '';
 	let currentSubsection = '';
 	let sectionCapability = null;
@@ -50,6 +51,8 @@ export function parseCatalog(behaviorsPath) {
 		if (!CATALOG_ID_RE.test(id)) {
 			throw new Error(`${behaviorsPath}: row id ${id} is not FAMILY-001 or FAMILY-SUBFAMILY-001`);
 		}
+		if (seen.has(id)) throw new Error(`${behaviorsPath}: row id ${id} appears twice`);
+		seen.add(id);
 		const classMatch = line.match(CLASS_RE);
 		const label = line.match(LABEL_RE)?.[1];
 		if (!CATALOG_LABELS.includes(label)) {
