@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-4%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -25,18 +25,21 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## vanilla unexpected failures
 
+- `deposit-harvest-logs-no-event` registers `ROOM-EVENTLOG-028`, which no test passed or failed
+- `terrain-raw-buffer-throws-on-plain-array` registers `ROOM-TERRAIN-005`, which no test passed or failed
 - `power-creep-shard-empty-on-open-source-driver` registers `SHARD-PCREEP-002`, which no test passed or failed
 
 ## xxscreeps unexpected failures
 
 - `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
+- `terrain-raw-buffer-fills-any-array` registers `ROOM-TERRAIN-005`, which no test passed or failed
 - `gcl-progress-total-absolute-threshold` registers `GCL-001:levelTwo`, which no test passed or failed
 - `gcl-progress-total-absolute-threshold` registers `GCL-001:levelThree`, which no test passed or failed
 - `controller-unclaim-clears-safe-mode-cooldown` registers `CTRL-DOWNGRADE-010:levelZero`, which no test passed or failed
 
 ## vanilla expected failures
 
-vanilla currently declares 9 expected-failure classifications against vanilla's canonical behavior, covering 10 tests. That includes 9 open parity gaps covering 10 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 11 expected-failure classifications against vanilla's canonical behavior, covering 10 tests. That includes 11 open parity gaps covering 10 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -44,6 +47,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
+| `deposit-harvest-logs-no-event` | Vanilla's harvest processor pushes EVENT_HARVEST for a source (`@screeps/engine/src/processor/intents/creeps/harvest.js:63`) and a mineral (`:110`) but not for a deposit, so a deposit harvest leaves no entry in `room.getEventLog()`. | A deposit harvest logs EVENT_HARVEST with the creep as objectId, the deposit as data.targetId, and the amount harvested. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_HARVEST as 'A creep performed harvest in the room' with targetId and amount, and a deposit harvest is a harvest. | 0 |
+| `terrain-raw-buffer-throws-on-plain-array` | Vanilla's `Room.Terrain.getRawBuffer` (`@screeps/engine/src/game/rooms.js:1235-1240`) calls `Uint8Array.prototype.set` on the destination, which throws a TypeError for anything that isn't a typed array. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. | 0 |
 | `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | Canonical claim is reported: screeps/engine#156 (open) fixes the order-dependent fatigue as a vanilla bug. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
 | `eventlog-structure-destroy-intent-missing` | Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`). | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-name-truncated-to-50-chars` | Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars. | Power creeps preserve 100-character names exactly through create and rename. | Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.' | [2](#vanilla-gap-power-creep-name-truncated-to-50-chars) |
@@ -55,6 +60,18 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `moveto-all-routes-blocked-walks-into-creeps` | Stable vanilla's `Creep.moveTo` (`@screeps/engine/src/game/creeps.js:283-302`) returns a partial path from `findPathTo` without a destination-occupancy check; if `path.length > 0` it calls `this.move(path[0].direction)` and returns OK, walking the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | Canonical claim is reported: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is an expected failure on BOTH adapters until upstream does — it is not an xxscreeps bug. | [1](#vanilla-gap-moveto-all-routes-blocked-walks-into-creeps) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="vanilla-gap-deposit-harvest-logs-no-event">
+<summary><code>deposit-harvest-logs-no-event</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="vanilla-gap-terrain-raw-buffer-throws-on-plain-array">
+<summary><code>terrain-raw-buffer-throws-on-plain-array</code> — 0 tests</summary>
+
+
+</details>
 
 <details id="vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death">
 <summary><code>pull-fatigue-stranded-on-puller-ttl-death</code> — 1 test</summary>
@@ -124,7 +141,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 36 open parity gaps covering 68 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 37 open parity gaps covering 68 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -132,6 +149,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
+| `terrain-raw-buffer-fills-any-array` | `Terrain.getRawBuffer` (`game/terrain.ts:97-105`) writes the 2500 values into whatever destination it is given, a plain array included, and returns it. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Found 2026-09-26 by ROOM-TERRAIN-005. Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. Vanilla throws instead (its own gap), so neither engine returns the code. | 0 |
 | `gcl-progress-total-absolute-threshold` | `Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357. | Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next. | Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0. | 0 |
 | `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix. The row's saturation phase also depends on `reserve-fresh-reservation-one-tick-long`: with only the cap fixed, the 50-CLAIM saturators stall near 4950 and the row still fails, so it flips only when both are fixed. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
@@ -170,6 +188,12 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-terrain-raw-buffer-fills-any-array">
+<summary><code>terrain-raw-buffer-fills-any-array</code> — 0 tests</summary>
+
+
+</details>
 
 <details id="xxscreeps-gap-gcl-progress-total-absolute-threshold">
 <summary><code>gcl-progress-total-absolute-threshold</code> — 0 tests</summary>

@@ -2826,6 +2826,9 @@ Coverage Notes
 - `ROOM-TERRAIN-004` `behavior` `verified_vanilla`
   `Room.Terrain.getRawBuffer(destinationArray)` copies the terrain into
   `destinationArray` and returns that same array.
+- `ROOM-TERRAIN-005` `behavior` `documented`
+  `Room.Terrain.getRawBuffer(destinationArray)` returns `ERR_INVALID_ARGS`
+  when `destinationArray` isn't a typed array.
 
 Notes
 - `Game.map.getRoomTerrain(roomName)`, the other way to obtain a
@@ -2949,6 +2952,9 @@ Notes
   the destroyed `structureType`. Distinct from `ROOM-EVENTLOG-006`, which
   covers attack-induced destruction; this entry covers the
   `Structure.destroy()` intent path.
+- `ROOM-EVENTLOG-028` `behavior` `documented` `capability: deposit`
+  A creep's `harvest` of a deposit logs an `EVENT_HARVEST` with the creep as
+  `objectId`, the deposit as `data.targetId`, and the `amount` harvested.
 
 ### 16.7 Flags
 - `FLAG-001` `behavior` `verified_vanilla`

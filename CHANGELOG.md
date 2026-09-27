@@ -193,6 +193,11 @@ changes since `v0.1.0-alpha` are not itemized.
   (each object's `memory` is its `Memory` collection entry).
   `CTRL-DOWNGRADE-009`/`-010` now cover the step to level 0 too and are keyed
   by landing level (`:levelOne`, `:levelZero`).
+- New, promised by the API docs and failing on vanilla (registered in its
+  `parity.json`): `ROOM-EVENTLOG-028` (a deposit harvest logs
+  `EVENT_HARVEST`; needs `deposit`) and `ROOM-TERRAIN-005`
+  (`getRawBuffer(destinationArray)` returns `ERR_INVALID_ARGS` for a
+  non-typed array; xxscreeps fails it too).
 - New: `GCL-001`, keyed by level edge (`:belowLevelTwo`, `:levelTwo`,
   `:levelThree`), pins `Game.gcl`'s values, where only its keys were pinned.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this

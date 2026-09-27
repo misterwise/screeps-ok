@@ -1,6 +1,6 @@
 import {
 	describe, test, expect, code,
-	TERRAIN_WALL, TERRAIN_SWAMP,
+	TERRAIN_WALL, TERRAIN_SWAMP, ERR_INVALID_ARGS,
 } from '../../src/index.js';
 import { roomTerrainCases, roomTerrainLayout } from '../../src/matrices/room-terrain.js';
 
@@ -62,5 +62,20 @@ describe('Room terrain access', () => {
 		expect(result.same).toBe(true);
 		expect(result.filled).toEqual(result.copy);
 		expect(result.filled[10 * 50 + 11]).toBe(TERRAIN_WALL);
+	});
+
+	test('ROOM-TERRAIN-005 Room.Terrain.getRawBuffer(destinationArray) returns ERR_INVALID_ARGS for a plain array', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+
+		const result = await shard.runPlayer('p1', code`
+			(() => {
+				try {
+					return new Room.Terrain('W1N1').getRawBuffer([]);
+				} catch (error) {
+					return 'threw ' + error.name;
+				}
+			})()
+		`);
+		expect(result).toBe(ERR_INVALID_ARGS);
 	});
 });

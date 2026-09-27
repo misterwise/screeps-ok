@@ -1011,8 +1011,8 @@ checks both. Each definition has these fields, in this order:
   exits, controller actions, source harvest, build, creep repair, creep heals,
   ranged and mass attacks, hit-back, nukes, dismantle, powers); invader-core
   controller actions and transfers, which only its NPC logic drives; a
-  deposit harvest, for which vanilla logs nothing (`creeps/harvest.js` pushes
-  for sources and minerals only); raw JSON form and current-tick exposure
+  deposit harvest, which the docs promise and vanilla doesn't log
+  (`ROOM-EVENTLOG-028`); raw JSON form and current-tick exposure
 - `Verification Notes`
   No case list enumerates the sources yet: the test
   (`tests/16-room-mechanics/16.6-eventlog.test.ts`) checks the tower's

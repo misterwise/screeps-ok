@@ -1,5 +1,17 @@
 {
 	"expected_failures": {
+		"deposit-harvest-logs-no-event": {
+			"actual": "Vanilla's harvest processor pushes EVENT_HARVEST for a source (`@screeps/engine/src/processor/intents/creeps/harvest.js:63`) and a mineral (`:110`) but not for a deposit, so a deposit harvest leaves no entry in `room.getEventLog()`.",
+			"expected": "A deposit harvest logs EVENT_HARVEST with the creep as objectId, the deposit as data.targetId, and the amount harvested.",
+			"why": "Canonical claim is documented: the Room.getEventLog reference defines EVENT_HARVEST as 'A creep performed harvest in the room' with targetId and amount, and a deposit harvest is a harvest.",
+			"tests": ["ROOM-EVENTLOG-028"]
+		},
+		"terrain-raw-buffer-throws-on-plain-array": {
+			"actual": "Vanilla's `Room.Terrain.getRawBuffer` (`@screeps/engine/src/game/rooms.js:1235-1240`) calls `Uint8Array.prototype.set` on the destination, which throws a TypeError for anything that isn't a typed array.",
+			"expected": "`getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array.",
+			"why": "Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'.",
+			"tests": ["ROOM-TERRAIN-005"]
+		},
 		"pull-fatigue-stranded-on-puller-ttl-death": {
 			"actual": "When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract.",
 			"expected": "The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`.",

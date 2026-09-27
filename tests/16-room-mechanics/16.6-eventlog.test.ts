@@ -14,6 +14,7 @@ import { describe, test, expect, code,
 	RESOURCE_ENERGY, LINK_LOSS_RATIO, CONTROLLER_RESERVE,
 	HARVEST_POWER, BUILD_POWER, REPAIR_POWER, REPAIR_COST, DISMANTLE_POWER,
 	NUKE_DAMAGE, PWR_OPERATE_SPAWN,
+	HARVEST_DEPOSIT_POWER, RESOURCE_SILICON,
 } from '../../src/index.js';
 import { nukeEventLogCases } from '../../src/matrices/eventlog-nuke.js';
 
@@ -100,6 +101,32 @@ describe('room.getEventLog()', () => {
 		const parsed = JSON.parse(raw);
 		expect(Array.isArray(parsed)).toBe(true);
 		expectExactlyOne(parsed, e => e.event === EVENT_ATTACK);
+	});
+
+	test('ROOM-EVENTLOG-028 harvesting a deposit logs EVENT_HARVEST', async ({ shard }) => {
+		shard.requires('deposit');
+		await shard.ownedRoom('p1');
+		const depositId = await shard.placeObject('W1N1', 'deposit', {
+			pos: [25, 26], depositType: RESOURCE_SILICON,
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [WORK, WORK, WORK, CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const ids = JSON.parse(await shard.runPlayer('p1', code`
+			JSON.stringify({ creep: Game.getObjectById(${creepId}).id, deposit: Game.getObjectById(${depositId}).id })
+		`) as string) as { creep: string; deposit: string };
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${depositId}))
+		`);
+		expect(rc).toBe(OK);
+
+		const events = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].getEventLog()
+		`) as EventEntry[];
+		const harvest = expectExactlyOne(events, e => e.event === EVENT_HARVEST && e.objectId === ids.creep);
+		expect(harvest.data).toEqual({ targetId: ids.deposit, amount: 3 * HARVEST_DEPOSIT_POWER });
 	});
 
 	test('ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping', async ({ shard }) => {
