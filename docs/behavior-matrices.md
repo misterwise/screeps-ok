@@ -2388,6 +2388,25 @@ checks both. Each definition has these fields, in this order:
   part. The executable case list lives in
   `src/matrices/move-basic-validation.ts`.
 
+### MOVE-COLLISION-BLOCKER
+
+- `Catalog Entries`
+  `MOVE-COLLISION-005`
+- `Canonical Source`
+  Vanilla's movement resolution, which treats every creep that isn't moving
+  as an obstacle, whoever owns it (`processor/intents/movement.js:22`).
+- `Dimensions`
+  the blocker's owner
+- `Applicability`
+  A stationary creep of the mover's own player (`:own`) or of another
+  (`:hostile`), outside safe mode
+- `Exclusions`
+  Safe mode's own-creeps-only blocking, owned by `SAFEMODE-COMBAT-002`; a
+  blocker that is itself moving, owned by `MOVE-COLLISION-004` and `-006`
+- `Verification Notes`
+  The two cases are the two keyed tests in
+  `tests/01-movement/1.6-collision.test.ts`.
+
 ### MOVE-PULL-VALIDATION
 
 - `Catalog Entries`

@@ -270,8 +270,9 @@ Coverage Notes
 - `MOVE-COLLISION-004` `behavior` `verified_vanilla`
   A creep can move onto a tile vacated by another creep moving away in the
   same tick.
-- `MOVE-COLLISION-005` `behavior` `verified_vanilla`
-  A hostile creep blocks movement onto its tile.
+- `MOVE-COLLISION-005` `matrix` `verified_vanilla`
+  A stationary creep blocks movement onto its tile, whether it is the
+  player's own (`:own`) or another player's (`:hostile`).
 - `MOVE-COLLISION-006` `behavior` `verified_vanilla`
   In a circular movement chain (A moves to B's tile, B moves to C's tile,
   C moves to A's tile), all the creeps rotate: a creep that is itself moving
@@ -341,8 +342,9 @@ Coverage Notes
 - `PATHFINDER-015` `behavior` `verified_vanilla`
   `maxCost` limits search by cumulative path cost.
 - `PATHFINDER-016` `behavior` `verified_vanilla`
-  `heuristicWeight` is accepted and can change search behavior without changing
-  the result shape.
+  A `heuristicWeight` above 1 can return a costlier path than the least-cost
+  one: around a column of cost 50 with one gap, weight 1 detours through the
+  gap (cost 40) and weight 9 crosses the column (cost 69).
 - `PATHFINDER-017` `behavior` `verified_vanilla`
   When the origin is already within goal range, the returned path is empty.
 - `PATHFINDER-018` `behavior` `verified_vanilla`
@@ -355,19 +357,18 @@ Coverage Notes
   `PathFinder.search()` can return a path spanning multiple rooms when origin
   and goal are in different rooms.
 - `PATHFINDER-021` `behavior` `verified_vanilla`
-  `PathFinder.search()` is directed toward the goal: the `ops` reported for an
-  open same-room path stay on the order of the path length, far below the
-  room's tile count, so the `maxOps` budget is spent on progress rather than
-  on a uniform-cost flood. A flood returns the same path but exhausts the
-  default budget on longer searches and reports reachable goals `incomplete`.
+  `PathFinder.search()` is directed toward the goal: across an open room it
+  returns the complete 40-step, cost-40 path to a goal 40 tiles away within
+  `maxOps: 2000`, a budget a uniform-cost flood (about 2250 tiles) exhausts
+  first.
 - `PATHFINDER-022` `behavior` `verified_vanilla`
   A cross-room search to a goal two rooms away over open terrain completes
-  (`incomplete: false`, path ends in the goal room) with `ops` on the order of
-  the path length, well inside the default `maxOps`.
+  within `maxOps: 2000` (`incomplete: false`) with the straight 69-step path
+  into the goal room.
 - `PATHFINDER-023` `behavior` `verified_vanilla`
   `roomCallback` is only invoked for rooms the directed search actually
-  enters. Over open terrain with the goal in the eastern neighbor, the
-  callback sees the origin room and the goal room and never the western
+  enters. Over open terrain with the goal in the western neighbor, the
+  callback sees the origin room and the goal room and never the eastern
   neighbor; a flood would load it.
 
 ### 2.2 CostMatrix

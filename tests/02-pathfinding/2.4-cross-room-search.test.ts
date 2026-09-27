@@ -15,7 +15,7 @@ import { describe, test, expect, code } from '../../src/index.js';
 // searches cost 20 and 70 ops and both complete. PATHFINDER-021 pins the same
 // property in-room; these two rows pin the cross-room case it cannot reach.
 describe('PathFinder.search across rooms is directed, not a flood', () => {
-	test('PATHFINDER-022 a goal two rooms away completes well inside the default op budget', async ({ shard }) => {
+	test('PATHFINDER-022 a goal two rooms away completes within a 2000-op budget', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -29,22 +29,15 @@ describe('PathFinder.search across rooms is directed, not a flood', () => {
 		const result = await shard.runPlayer('p1', code`
 			const r = PathFinder.search(
 				new RoomPosition(10, 25, 'W1N1'),
-				{ pos: new RoomPosition(40, 25, 'W3N1'), range: 1 }
+				{ pos: new RoomPosition(40, 25, 'W3N1'), range: 1 },
+				{ maxOps: 2000 },
 			);
-			({
-				incomplete: r.incomplete,
-				ops: r.ops,
-				len: r.path.length,
-				endRoom: r.path.length ? r.path[r.path.length - 1].roomName : null,
-			})
-		`) as { incomplete: boolean; ops: number; len: number; endRoom: string | null };
-
-		expect(result.incomplete).toBe(false);
-		expect(result.endRoom).toBe('W3N1');
-		expect(result.len).toBeGreaterThan(0);
-		// A directed search costs a small multiple of the path length. A flood costs
-		// the whole default budget and never arrives.
-		expect(result.ops).toBeLessThan(result.len * 20);
+			const end = r.path[r.path.length - 1];
+			({ incomplete: r.incomplete, len: r.path.length, endRoom: end.roomName, endRange: Math.max(Math.abs(end.x - 40), Math.abs(end.y - 25)) })
+		`);
+		// West: 10 steps to W1N1's x=0, one room of 50 tiles, then W3N1's x=49 to 41; which tile
+		// in range of the goal it ends on is a tie.
+		expect(result).toEqual({ incomplete: false, len: 10 + 50 + 9, endRoom: 'W3N1', endRange: 1 });
 	});
 
 	test('PATHFINDER-023 roomCallback is only consulted for rooms the directed search enters', async ({ shard }) => {
@@ -58,8 +51,8 @@ describe('PathFinder.search across rooms is directed, not a flood', () => {
 		});
 		await shard.tick();
 
-		// Open terrain, goal in the eastern neighbor: a directed search never
-		// reaches the western exit, so W0N1 is never loaded. A flood loads it.
+		// Open terrain, goal in the western neighbor W2N1: a directed search never
+		// reaches the eastern exit, so W0N1 is never loaded. A flood loads it.
 		const seen = await shard.runPlayer('p1', code`
 			const seen = [];
 			PathFinder.search(
@@ -70,8 +63,6 @@ describe('PathFinder.search across rooms is directed, not a flood', () => {
 			seen.sort()
 		`) as string[];
 
-		expect(seen).toContain('W1N1');
-		expect(seen).toContain('W2N1');
-		expect(seen).not.toContain('W0N1');
+		expect(seen).toEqual(['W1N1', 'W2N1']);
 	});
 });

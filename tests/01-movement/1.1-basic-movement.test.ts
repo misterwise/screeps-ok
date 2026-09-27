@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	MOVE, WORK, OK, ERR_NO_BODYPART, ERR_NOT_FOUND, ERR_NO_PATH, ERR_TIRED,
 	ERR_INVALID_ARGS, ERR_INVALID_TARGET,
-	TOP,
+	TOP, PWR_GENERATE_OPS, TERRAIN_WALL,
 } from '../../src/index.js';
 import { moveDirectionCases } from '../../src/matrices/move-directions.js';
 import {
@@ -22,18 +22,33 @@ describe('creep.move()', () => {
 				Game.getObjectById(${id}).move(${direction})
 			`);
 			expect(rc).toBe(OK);
+			expect((await shard.expectObject(id, 'creep')).pos).toEqual({ x: 25 + dx, y: 25 + dy, roomName: 'W1N1' });
+		});
 
+		test(`MOVE-BASIC-001:powerCreep${label[0].toUpperCase()}${label.slice(1)} a spawned power creep's move(direction) moves one tile toward it`, async ({ shard }) => {
+			shard.requires('powerCreeps');
+			await shard.ownedRoom('p1', 'W1N1', 8);
+			const id = await shard.placePowerCreep('W1N1', {
+				pos: [25, 25], owner: 'p1', powers: { [PWR_GENERATE_OPS]: 1 },
+			});
 			await shard.tick();
-			const c = await shard.expectObject(id, 'creep');
-			expect(c.pos.x).toBe(25 + dx);
-			expect(c.pos.y).toBe(25 + dy);
+
+			const moved = await shard.runPlayer('p1', code`
+				const pc = Game.getObjectById(${id});
+				pc.move(${direction})
+			`);
+			expect(moved).toBe(OK);
+			expect(await shard.runPlayer('p1', code`
+				const pc = Game.getObjectById(${id});
+				({ x: pc.pos.x, y: pc.pos.y })
+			`)).toEqual({ x: 25 + dx, y: 25 + dy });
 		});
 	}
 
 	test('MOVE-BASIC-002 move() into a wall tile returns OK but the creep does not move', async ({ shard }) => {
 		shard.requires('terrain', 'custom terrain setup is required for wall-movement assertions');
 		const terrain = new Array(2500).fill(0);
-		terrain[24 * 50 + 25] = 1;
+		terrain[24 * 50 + 25] = TERRAIN_WALL;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', terrain }],
@@ -46,11 +61,7 @@ describe('creep.move()', () => {
 			Game.getObjectById(${id}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-
-		await shard.tick();
-		const c = await shard.expectObject(id, 'creep');
-		expect(c.pos.x).toBe(25);
-		expect(c.pos.y).toBe(25);
+		expect((await shard.expectObject(id, 'creep')).pos).toEqual({ x: 25, y: 25, roomName: 'W1N1' });
 	});
 
 	test('MOVE-BASIC-006 move(targetCreep) on adjacent creep returns OK', async ({ shard }) => {
@@ -154,19 +165,14 @@ describe('creep.moveByPath()', () => {
 		});
 		await shard.tick();
 
-		// Use Room.findPath to generate a real Screeps path, then call moveByPath
-		// with it. The path leads from the creep at [25,25] to [25,20] (TOP * 5).
-		await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${id});
-			const path = creep.room.findPath(creep.pos, new RoomPosition(25, 20, 'W1N1'));
-			creep.moveByPath(path)
-		`);
-
-		const creep = await shard.expectObject(id, 'creep');
-		// First step of the path takes the creep one tile closer to [25, 20]
-		// (i.e., one tile north).
-		expect(creep.pos.x).toBe(25);
-		expect(creep.pos.y).toBe(24);
+		// A path in findPath's step shape, written out so no tie-break picks it.
+		expect(await shard.runPlayer('p1', code`
+			Game.getObjectById(${id}).moveByPath([
+				{ x: 25, y: 24, dx: 0, dy: -1, direction: TOP },
+				{ x: 25, y: 23, dx: 0, dy: -1, direction: TOP },
+			])
+		`)).toBe(OK);
+		expect((await shard.expectObject(id, 'creep')).pos).toEqual({ x: 25, y: 24, roomName: 'W1N1' });
 	});
 
 	test('MOVE-BASIC-009 moveByPath() moves along a serialized path string', async ({ shard }) => {
@@ -176,16 +182,13 @@ describe('creep.moveByPath()', () => {
 		});
 		await shard.tick();
 
-		await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${id});
-			const path = creep.room.findPath(creep.pos, new RoomPosition(25, 20, 'W1N1'));
-			const serialized = Room.serializePath(path);
-			creep.moveByPath(serialized)
-		`);
-
-		const creep = await shard.expectObject(id, 'creep');
-		expect(creep.pos.x).toBe(25);
-		expect(creep.pos.y).toBe(24);
+		expect(await shard.runPlayer('p1', code`
+			Game.getObjectById(${id}).moveByPath(Room.serializePath([
+				{ x: 25, y: 24, dx: 0, dy: -1, direction: TOP },
+				{ x: 25, y: 23, dx: 0, dy: -1, direction: TOP },
+			]))
+		`)).toBe(OK);
+		expect((await shard.expectObject(id, 'creep')).pos).toEqual({ x: 25, y: 24, roomName: 'W1N1' });
 	});
 
 	test('MOVE-BASIC-010 moveByPath() moves along an array of RoomPosition objects', async ({ shard }) => {
@@ -401,11 +404,7 @@ describe('creep.moveTo()', () => {
 			Game.getObjectById(${id}).moveTo(25, 25)
 		`);
 		expect(rc).toBe(OK);
-
-		await shard.tick();
-		const c = await shard.expectObject(id, 'creep');
-		expect(c.pos.x).toBe(25);
-		expect(c.pos.y).toBe(25);
+		expect((await shard.expectObject(id, 'creep')).pos).toEqual({ x: 25, y: 25, roomName: 'W1N1' });
 	});
 
 	test('MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path', async ({ shard }) => {

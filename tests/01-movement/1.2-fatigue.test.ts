@@ -1,37 +1,11 @@
 import { describe, test, expect, code,
 	MOVE, WORK, CARRY, RANGED_ATTACK, OK,
-	BODYPART_HITS,
+	BODYPART_HITS, TERRAIN_SWAMP,
 	body,
 } from '../../src/index.js';
 
 describe('creep fatigue', () => {
-	test('MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE],
-		});
-		await shard.tick();
-		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
-
-		const creep = await shard.expectObject(id, 'creep');
-		expect(creep.pos.y).toBe(24);
-		expect(creep.fatigue).toBe(0);
-	});
-
-	test('MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [WORK, MOVE],
-		});
-		await shard.tick();
-		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
-
-		const creep = await shard.expectObject(id, 'creep');
-		expect(creep.pos.y).toBe(24);
-		expect(creep.fatigue).toBe(0);
-	});
-
-	test('MOVE-FATIGUE-001 insufficient MOVE parts leave residual fatigue on plains', async ({ shard }) => {
+	test('MOVE-FATIGUE-001 each non-MOVE part on plains generates 2 fatigue', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [WORK, WORK, MOVE],
@@ -47,15 +21,15 @@ describe('creep fatigue', () => {
 	test('MOVE-FATIGUE-002 each undamaged MOVE part reduces fatigue by 2 at the start of each tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [WORK, WORK, WORK, MOVE],
+			pos: [25, 25], owner: 'p1', body: [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE],
 		});
 		await shard.tick();
 
+		// 5 weighted parts make 10; two MOVE parts take off 4 a tick.
 		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
 		const after1 = await shard.expectObject(id, 'creep');
-		expect(after1.fatigue).toBe(4);
+		expect(after1.fatigue).toBe(6);
 
-		// 1 tick: MOVE reduces fatigue by 2 → 4-2 = 2
 		await shard.tick();
 		const after2 = await shard.expectObject(id, 'creep');
 		expect(after2.fatigue).toBe(2);
@@ -64,11 +38,12 @@ describe('creep fatigue', () => {
 	test('MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [CARRY, MOVE],
+			pos: [25, 25], owner: 'p1', body: [CARRY, CARRY, CARRY, MOVE],
 		});
 		await shard.tick();
 		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
 
+		// Weighted, three CARRY parts would leave 6 - 2 = 4.
 		const creep = await shard.expectObject(id, 'creep');
 		expect(creep.pos.y).toBe(24);
 		expect(creep.fatigue).toBe(0);
@@ -92,7 +67,7 @@ describe('creep fatigue', () => {
 		shard.requires('terrain', 'swamp tile required for swamp fatigue assertion');
 		// [25, 24] = swamp, everything else plain.
 		const terrain = new Array(2500).fill(0);
-		terrain[24 * 50 + 25] = 2;
+		terrain[24 * 50 + 25] = TERRAIN_SWAMP;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', terrain }],
@@ -129,25 +104,6 @@ describe('MOVE-FATIGUE-008 fatigue reduction cannot go below zero', () => {
 		const creep = await shard.expectObject(id, 'creep');
 		expect(creep.pos.y).toBe(24);
 		expect(creep.fatigue).toBe(0);
-	});
-
-	test('MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		// 2 WORK + 1 MOVE: move generates 4 fatigue, reduced by 2 → 2 residual.
-		// Next tick: 1 MOVE reduces by 2 → 0 (not -0 or negative).
-		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [WORK, WORK, MOVE],
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`Game.getObjectById(${id}).move(TOP)`);
-		const after1 = await shard.expectObject(id, 'creep');
-		expect(after1.fatigue).toBe(2);
-
-		// One more tick: fatigue 2 - 2 = 0.
-		await shard.tick();
-		const after2 = await shard.expectObject(id, 'creep');
-		expect(after2.fatigue).toBe(0);
 	});
 });
 

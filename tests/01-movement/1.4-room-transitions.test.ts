@@ -13,15 +13,10 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
-			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
-		`) as { x: number; y: number } | null;
-		expect(exitInfo).not.toBeNull();
-
+		// Only the corners are walled: (0, 25) is a left exit tile, W2N1's (49, 25).
 		// Place creep adjacent to the exit tile.
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [exitInfo!.x + 1, exitInfo!.y], owner: 'p1', body: [MOVE],
+			pos: [1, 25], owner: 'p1', body: [MOVE],
 			name: 'Traveler',
 		});
 		await shard.tick();
@@ -40,7 +35,7 @@ describe('Room transitions', () => {
 		const traveler = creeps.find(c => c.name === 'Traveler');
 		expect(traveler).toBeDefined();
 		expect(traveler!.pos.x).toBe(49);
-		expect(traveler!.pos.y).toBe(exitInfo!.y);
+		expect(traveler!.pos.y).toBe(25);
 		expect(traveler!.pos.roomName).toBe('W2N1');
 	});
 
@@ -54,14 +49,9 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
-			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
-		`) as { x: number; y: number } | null;
-		expect(exitInfo).not.toBeNull();
-
+		// Only the corners are walled: (0, 25) is a left exit tile, W2N1's (49, 25).
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [exitInfo!.x + 1, exitInfo!.y], owner: 'p1',
+			pos: [1, 25], owner: 'p1',
 			body: [MOVE],
 			name: 'Persistent',
 		});
@@ -87,22 +77,14 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
-			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
-		`) as { x: number; y: number } | null;
-		expect(exitInfo).not.toBeNull();
-
+		// Only the corners are walled: (0, 25) is a left exit tile, W2N1's (49, 25).
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [exitInfo!.x + 1, exitInfo!.y], owner: 'p1',
+			pos: [1, 25], owner: 'p1',
 			body: [WORK, CARRY, MOVE],
 			store: { energy: 25 },
 			name: 'Packed',
 		});
 		await shard.tick();
-
-		// Snapshot state before transition.
-		const before = await shard.expectObject(creepId, 'creep');
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).move(LEFT)
@@ -113,17 +95,12 @@ describe('Room transitions', () => {
 		const after = await shard.expectObject(creepId, 'creep');
 		expect(after.pos.roomName).toBe('W2N1');
 
-		// Body parts preserved.
 		expect(after.body.map(p => ({ type: p.type, hits: p.hits }))).toEqual(
-			before.body.map(p => ({ type: p.type, hits: p.hits })),
+			[WORK, CARRY, MOVE].map(type => ({ type, hits: BODYPART_HITS })),
 		);
-
-		// Hits preserved.
-		expect(after.hits).toBe(before.hits);
-		expect(after.hitsMax).toBe(before.hitsMax);
-
-		// Store preserved.
-		expect(after.store.energy).toBe(before.store.energy);
+		expect(after.hits).toBe(3 * BODYPART_HITS);
+		expect(after.hitsMax).toBe(3 * BODYPART_HITS);
+		expect(after.store).toEqual({ energy: 25 });
 	});
 
 	test('ROOM-TRANSITION-003 fatigue resets to 0 when moving onto an exit tile', async ({ shard }) => {
@@ -136,17 +113,12 @@ describe('Room transitions', () => {
 		});
 		await shard.tick();
 
-		const exitInfo = await shard.runPlayer('p1', code`
-			const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
-			exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
-		`) as { x: number; y: number } | null;
-		expect(exitInfo).not.toBeNull();
-
+		// Only the corners are walled: (0, 25) is a left exit tile, W2N1's (49, 25).
 		// 4 WORK + 1 MOVE: a plain move generates 8 fatigue and the MOVE part
 		// reduces by 2, leaving residual 6 after the move. The exit-tile reset
 		// rule overrides that and forces fatigue to 0.
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [exitInfo!.x + 1, exitInfo!.y], owner: 'p1',
+			pos: [1, 25], owner: 'p1',
 			body: [WORK, WORK, WORK, WORK, MOVE],
 		});
 		await shard.tick();
@@ -160,5 +132,4 @@ describe('Room transitions', () => {
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.fatigue).toBe(0);
 	});
-
 });

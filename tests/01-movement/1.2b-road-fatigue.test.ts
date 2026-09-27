@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	OK, MOVE, WORK,
-	STRUCTURE_ROAD, TOP, TERRAIN_WALL,
+	STRUCTURE_ROAD, TOP, TERRAIN_SWAMP, TERRAIN_WALL,
 } from '../../src/index.js';
 
 function terrainWithWalls(walls: Array<[number, number]>): Array<0 | 1 | 2> {
@@ -29,10 +29,10 @@ describe('Road fatigue', () => {
 		await shard.placeStructure('W1N1', {
 			pos: [25, 24], structureType: STRUCTURE_ROAD,
 		});
-		// 1 WORK + 1 MOVE: on road, 1 non-move * 1 = 1 fatigue, -2 from MOVE = 0
+		// 3 WORK + 1 MOVE: on the road 3 * 1 - 2 = 1; plains would leave 3 * 2 - 2 = 4.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [WORK, MOVE],
+			body: [WORK, WORK, WORK, MOVE],
 		});
 		await shard.tick();
 
@@ -40,19 +40,17 @@ describe('Road fatigue', () => {
 			Game.getObjectById(${creepId}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.pos.y).toBe(24);
-		// On road: 1 non-move part * 1 (road cost) = 1 fatigue, 1 MOVE removes 2 → net 0
-		expect(creep.fatigue).toBe(0);
+		expect(creep.fatigue).toBe(1);
 	});
 
 	test('ROAD-FATIGUE-002 a road on swamp reduces the fatigue multiplier to 1', async ({ shard }) => {
 		shard.requires('terrain', 'swamp tile required for swamp-road fatigue assertion');
 		// [25, 24] = swamp, everything else plain.
 		const terrain = new Array(2500).fill(0);
-		terrain[24 * 50 + 25] = 2;
+		terrain[24 * 50 + 25] = TERRAIN_SWAMP;
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', terrain }],

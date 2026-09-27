@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK,
 	WORK, CARRY, MOVE, body,
 	STRUCTURE_CONTAINER, STRUCTURE_EXTRACTOR, HARVEST_MINERAL_POWER, EXTRACTOR_COOLDOWN,
-	ENERGY_DECAY, FIND_DROPPED_RESOURCES,
+	ENERGY_DECAY, FIND_DROPPED_RESOURCES, RESOURCE_HYDROGEN, RESOURCE_OXYGEN, RESOURCE_UTRIUM,
 } from '../../src/index.js';
 import { harvestMineralValidationCases } from '../../src/matrices/harvest-mineral-validation.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -14,7 +14,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 50000,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -26,11 +26,10 @@ describe('creep.harvest(mineral)', () => {
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		// 2 WORK parts * HARVEST_MINERAL_POWER = 2
-		expect(creep.store.H).toBe(2 * HARVEST_MINERAL_POWER);
+		expect(creep.store[RESOURCE_HYDROGEN]).toBe(2 * HARVEST_MINERAL_POWER);
 	});
 
 	test('HARVEST-MINERAL-002 harvest reduces mineral amount by the harvested quantity', async ({ shard }) => {
@@ -39,7 +38,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 50000,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -50,7 +49,6 @@ describe('creep.harvest(mineral)', () => {
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
 		`);
-		await shard.tick();
 
 		const mineral = await shard.expectObject(mineralId, 'mineral');
 		expect(mineral.mineralAmount).toBe(50000 - HARVEST_MINERAL_POWER);
@@ -62,7 +60,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 50000,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -73,19 +71,17 @@ describe('creep.harvest(mineral)', () => {
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
 		`);
-		await shard.tick();
 
-		// Cooldown is set to EXTRACTOR_COOLDOWN on harvest, then decremented
-		// by 1 during the tick that processes the intent.
+		// Read on the tick that processed the harvest.
 		const extractor = await shard.expectStructure(extractorId, STRUCTURE_EXTRACTOR);
-		expect(extractor.cooldown).toBe(EXTRACTOR_COOLDOWN - 1);
+		expect(extractor.cooldown).toBe(EXTRACTOR_COOLDOWN);
 	});
 
 	test('HARVEST-MINERAL-005 harvested resource key matches mineral.mineralType', async ({ shard }) => {
 		// Assert the mineral's mineralType determines the resource dispatched
 		// into the creep's store. Cover two distinct types (one per room, as
 		// the real game allows only one mineral per room) to prove actual
-		// dispatch — not a hard-coded 'H'.
+		// dispatch — not a hard-coded hydrogen.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -99,7 +95,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const oMineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'O', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_OXYGEN, mineralAmount: 50000,
 		});
 		const oCreepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -111,7 +107,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const uMineralId = await shard.placeMineral('W2N1', {
-			pos: [25, 26], mineralType: 'U', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_UTRIUM, mineralAmount: 50000,
 		});
 		const uCreepId = await shard.placeCreep('W2N1', {
 			pos: [25, 25], owner: 'p1',
@@ -123,17 +119,12 @@ describe('creep.harvest(mineral)', () => {
 			Game.getObjectById(${oCreepId}).harvest(Game.getObjectById(${oMineralId}));
 			Game.getObjectById(${uCreepId}).harvest(Game.getObjectById(${uMineralId}));
 		`);
-		await shard.tick();
 
 		const oCreep = await shard.expectObject(oCreepId, 'creep');
-		expect(oCreep.store.O).toBe(HARVEST_MINERAL_POWER);
-		expect(oCreep.store.U ?? 0).toBe(0);
-		expect(oCreep.store.H ?? 0).toBe(0);
+		expect(oCreep.store).toEqual({ [RESOURCE_OXYGEN]: HARVEST_MINERAL_POWER });
 
 		const uCreep = await shard.expectObject(uCreepId, 'creep');
-		expect(uCreep.store.U).toBe(HARVEST_MINERAL_POWER);
-		expect(uCreep.store.O ?? 0).toBe(0);
-		expect(uCreep.store.H ?? 0).toBe(0);
+		expect(uCreep.store).toEqual({ [RESOURCE_UTRIUM]: HARVEST_MINERAL_POWER });
 	});
 
 	test('HARVEST-MINERAL-011 harvest(mineral) returns OK when all preconditions met', async ({ shard }) => {
@@ -142,7 +133,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 50000,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -162,7 +153,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 50000,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 50000,
 		});
 		// 10 WORK = 10 mineral/tick, 1 CARRY (50 cap) pre-loaded with 45 energy → 5 free.
 		// Overflow = 10 - 5 = 5 mineral. In-tick decay reduces by ceil(5/ENERGY_DECAY) = 1.
@@ -179,13 +170,13 @@ describe('creep.harvest(mineral)', () => {
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(45);
-		expect((creep.store as Record<string, number>).H).toBe(5);
+		expect(creep.store[RESOURCE_HYDROGEN]).toBe(5);
 
 		const mineral = await shard.expectObject(mineralId, 'mineral');
 		expect(mineral.mineralAmount).toBe(50000 - 10 * HARVEST_MINERAL_POWER);
 
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === 'H');
+		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === RESOURCE_HYDROGEN);
 		expect(pile).toBeDefined();
 		const overflow = 10 * HARVEST_MINERAL_POWER - 5;
 		expect(pile!.amount).toBe(overflow - Math.ceil(overflow / ENERGY_DECAY));
@@ -197,7 +188,7 @@ describe('creep.harvest(mineral)', () => {
 			pos: [25, 26], structureType: STRUCTURE_EXTRACTOR, owner: 'p1',
 		});
 		const mineralId = await shard.placeMineral('W1N1', {
-			pos: [25, 26], mineralType: 'H', mineralAmount: 2,
+			pos: [25, 26], mineralType: RESOURCE_HYDROGEN, mineralAmount: 2,
 		});
 		// 5 WORK = 5 mineral/tick, but only 2 available.
 		const creepId = await shard.placeCreep('W1N1', {
@@ -209,10 +200,9 @@ describe('creep.harvest(mineral)', () => {
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${mineralId}))
 		`);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect((creep.store as Record<string, number>).H).toBe(2);
+		expect(creep.store[RESOURCE_HYDROGEN]).toBe(2);
 
 		const mineral = await shard.expectObject(mineralId, 'mineral');
 		expect(mineral.mineralAmount).toBe(0);
@@ -255,7 +245,7 @@ describe('creep.harvest(mineral)', () => {
 				})
 				: await shard.placeMineral('W1N1', {
 					pos: targetPos,
-					mineralType: 'H',
+					mineralType: RESOURCE_HYDROGEN,
 					mineralAmount: blockers.has('depleted') ? 0 : 50000,
 				});
 			if (!blockers.has('invalid-target') && !blockers.has('no-extractor')) {

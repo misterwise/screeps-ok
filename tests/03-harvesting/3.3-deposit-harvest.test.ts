@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK,
 	WORK, CARRY, MOVE, body,
 	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
-	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER,
+	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER, HARVEST_DEPOSIT_POWER,
 } from '../../src/index.js';
 import { depositHarvestValidationCases } from '../../src/matrices/deposit-harvest-validation.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -24,11 +24,9 @@ describe('creep.harvest(deposit)', () => {
 			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${depositId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// HARVEST_DEPOSIT_POWER = 1 per WORK part; 3 WORK = 3 silicon.
-		expect((creep.store as Record<string, number>)[RESOURCE_SILICON]).toBe(3);
+		expect(creep.store[RESOURCE_SILICON]).toBe(3 * HARVEST_DEPOSIT_POWER);
 	});
 
 	test('DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met', async ({ shard }) => {
@@ -69,9 +67,7 @@ describe('creep.harvest(deposit)', () => {
 		`);
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		const totalStored = (creep.store.energy ?? 0) +
-			((creep.store as Record<string, number>)[RESOURCE_SILICON] ?? 0);
-		expect(totalStored).toBe(CARRY_CAPACITY);
+		expect(creep.store).toEqual({ energy: 45, [RESOURCE_SILICON]: CARRY_CAPACITY - 45 });
 
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		const pile = drops.find(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === RESOURCE_SILICON);

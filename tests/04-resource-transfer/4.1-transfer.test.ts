@@ -3,7 +3,7 @@ import { describe, test, expect, code, body,
 	CARRY, MOVE, WORK,
 	RESOURCE_ENERGY, RESOURCE_HYDROGEN, RESOURCE_OXYGEN,
 	STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_LAB, STRUCTURE_EXTENSION,
-	SPAWN_ENERGY_CAPACITY,
+	SPAWN_ENERGY_CAPACITY, CONTAINER_CAPACITY,
 	UPGRADE_CONTROLLER_POWER,
 } from '../../src/index.js';
 import { transferValidationCases } from '../../src/matrices/transfer-validation.js';
@@ -14,57 +14,43 @@ const staleTransferStructureCase = staleArgumentCases.find(row => row.key === 'c
 const staleTransferCreepCase = staleArgumentCases.find(row => row.key === 'creepTransferCreep')!;
 
 describe('creep.transfer()', () => {
-	test('TRANSFER-001 transfers energy from the creep store to the target store', async ({ shard }) => {
+	test('TRANSFER-001 transfer() moves the amount from the creep store to the target store', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
+			pos: [25, 25], owner: 'p1', body: [CARRY, MOVE], store: { [RESOURCE_ENERGY]: 50 },
 		});
 		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-			store: {},
+			pos: [25, 26], structureType: STRUCTURE_CONTAINER, store: {},
 		});
 
-		const rc = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			const target = Game.getObjectById(${containerId});
-			creep.transfer(target, RESOURCE_ENERGY)
-		`);
-		expect(rc).toBe(OK);
-
-		await shard.tick();
-
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy ?? 0).toBe(0);
-		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
-		expect(container.store.energy).toBe(50);
+		expect(await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${containerId}), RESOURCE_ENERGY, 20)
+		`)).toBe(OK);
+		expect((await shard.expectObject(creepId, 'creep')).store.energy).toBe(30);
+		expect((await shard.expectStructure(containerId, STRUCTURE_CONTAINER)).store.energy).toBe(20);
 	});
 
-	test('TRANSFER-002 transfers partial amount', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
+	// Omitting amount moves the lesser of what the creep holds and what the target has room for.
+	for (const { key, held, stored, moved } of [
+		{ key: 'sourceLimited', held: 50, stored: 0, moved: 50 },
+		{ key: 'capacityLimited', held: 50, stored: CONTAINER_CAPACITY - 30, moved: 30 },
+	]) {
+		test(`TRANSFER-002:${key} transfer() without an amount moves ${moved}`, async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const creepId = await shard.placeCreep('W1N1', {
+				pos: [25, 25], owner: 'p1', body: [CARRY, MOVE], store: { [RESOURCE_ENERGY]: held },
+			});
+			const containerId = await shard.placeStructure('W1N1', {
+				pos: [25, 26], structureType: STRUCTURE_CONTAINER, store: stored ? { [RESOURCE_ENERGY]: stored } : {},
+			});
+
+			expect(await shard.runPlayer('p1', code`
+				Game.getObjectById(${creepId}).transfer(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
+			`)).toBe(OK);
+			expect((await shard.expectObject(creepId, 'creep')).store.energy ?? 0).toBe(held - moved);
+			expect((await shard.expectStructure(containerId, STRUCTURE_CONTAINER)).store.energy).toBe(stored + moved);
 		});
-		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-			store: {},
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			const target = Game.getObjectById(${containerId});
-			creep.transfer(target, RESOURCE_ENERGY, 20)
-		`);
-		expect(rc).toBe(OK);
-
-		await shard.tick();
-
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(30);
-	});
+	}
 
 	test('TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController', async ({ shard }) => {
 		await shard.ownedRoom('p1');
@@ -110,7 +96,7 @@ describe('creep.transfer()', () => {
 
 		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
 		expect((lab.store as Record<string, number>).H).toBe(10);
-		expect(lab.mineralType).toBe('H');
+		expect(lab.mineralType).toBe(RESOURCE_HYDROGEN);
 	});
 
 	test('TRANSFER-014 transfer to another creep follows same store mechanics', async ({ shard }) => {

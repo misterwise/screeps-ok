@@ -169,6 +169,14 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Movement and resource rows keyed by case: `MOVE-COLLISION-003` (`:sameOwner`,
+  `:hostile`), `MOVE-COLLISION-005` (`:own`, `:hostile`; the row now says any
+  stationary creep blocks), `TRANSFER-002` and `WITHDRAW-002` (`:sourceLimited`,
+  `:capacityLimited`), `WITHDRAW-006` (`:tombstone`, `:ruin`). New:
+  `MOVE-BASIC-001:powerCreep<Direction>` (`:powerCreepTopRight`), the row's
+  spawned-power-creep half. `PATHFINDER-016`, `-021`, `-022` and `-023` state
+  exact outcomes (a weighted search's cost, complete paths within
+  `maxOps: 2000`, and which neighbour a directed search never loads).
 - Now keyed by condition, each validation row running its conditions alone
   and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
   `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,

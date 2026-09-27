@@ -1,13 +1,13 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, TERRAIN_WALL } from '../../src/index.js';
 
 function singleExitTerrain(openEdge: 'top' | 'bottom'): Array<0 | 1 | 2> {
 	const terrain = new Array<0 | 1 | 2>(2500).fill(0);
 	const idx = (x: number, y: number) => y * 50 + x;
 	for (let i = 0; i < 50; i++) {
-		if (openEdge !== 'top') terrain[idx(i, 0)] = 1;
-		if (openEdge !== 'bottom') terrain[idx(i, 49)] = 1;
-		terrain[idx(0, i)] = 1;
-		terrain[idx(49, i)] = 1;
+		if (openEdge !== 'top') terrain[idx(i, 0)] = TERRAIN_WALL;
+		if (openEdge !== 'bottom') terrain[idx(i, 49)] = TERRAIN_WALL;
+		terrain[idx(0, i)] = TERRAIN_WALL;
+		terrain[idx(49, i)] = TERRAIN_WALL;
 	}
 	return terrain;
 }
@@ -100,24 +100,16 @@ describe('Legacy Pathfinding', () => {
 
 		const result = await shard.runPlayer('p1', code`
 			const room = Game.rooms['W1N1'];
-			try {
-				const path = room.findPath(
-					new RoomPosition(25, 25, 'W2N1'),
-					new RoomPosition(30, 30, 'W1N1'),
-					{}
-				);
-				({ length: path.length, isArray: Array.isArray(path), threw: false })
-			} catch(e) {
-				({ threw: true, error: String(e) })
-			}
-		`) as { length?: number; isArray?: boolean; threw: boolean; error?: string };
+			const from = new RoomPosition(25, 25, 'W2N1');
+			const to = new RoomPosition(30, 30, 'W1N1');
+			({ steps: room.findPath(from, to, {}), serialized: room.findPath(from, to, { serialize: true }) })
+		`);
 
-		expect(result.threw).toBe(false);
-		expect(result.isArray).toBe(true);
-		expect(result.length).toBe(0);
+		expect(result).toEqual({ steps: [], serialized: '' });
 	});
 
 	test('LEGACY-PATH-005 findPath() with cross-room destination returns only intra-room steps', async ({ shard }) => {
+		shard.requires('terrain');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
@@ -151,15 +143,11 @@ describe('Legacy Pathfinding', () => {
 
 		const result = await shard.runPlayer('p1', code`
 			const room = Game.rooms['W1N1'];
-			const path = room.findPath(
-				new RoomPosition(25, 25, 'W1N1'),
-				new RoomPosition(25, 25, 'W1N1')
-			);
-			({ length: path.length, isArray: Array.isArray(path) })
-		`) as { length: number; isArray: boolean };
+			const at = new RoomPosition(25, 25, 'W1N1');
+			({ steps: room.findPath(at, at), serialized: room.findPath(at, at, { serialize: true }) })
+		`);
 
-		expect(result.isArray).toBe(true);
-		expect(result.length).toBe(0);
+		expect(result).toEqual({ steps: [], serialized: '' });
 	});
 
 	test('LEGACY-PATH-007 findPath() returns a single step for adjacent positions', async ({ shard }) => {

@@ -102,7 +102,9 @@ describe('PathFinder', () => {
 			})
 		`) as { incomplete: boolean; path: Array<{ x: number; y: number }> };
 
+		// Around the blocked column: (11,8) or (11,12) and back, 4 steps at cost 1.
 		expect(result.incomplete).toBe(false);
+		expect(result.path).toHaveLength(4);
 		expect(result.path).not.toContainEqual({ x: 11, y: 10 });
 		expect(result.path[result.path.length - 1]).toEqual({ x: 12, y: 10 });
 	});
@@ -467,36 +469,22 @@ describe('PathFinder', () => {
 		expect(result.belowCapIncomplete).toBe(true);
 	});
 
-	test('PATHFINDER-016 heuristicWeight option accepted without changing result shape', async ({ shard }) => {
+	test('PATHFINDER-016 a heuristicWeight above 1 can trade path cost for search effort', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const result = await shard.runPlayer('p1', code`
-			const origin = new RoomPosition(10, 10, 'W1N1');
-			const goal = { pos: new RoomPosition(20, 20, 'W1N1'), range: 1 };
-			const result = PathFinder.search(origin, goal, { heuristicWeight: 2 });
-			({
-				pathIsArray: Array.isArray(result.path),
-				pathLength: result.path.length,
-				hasOps: typeof result.ops === 'number',
-				hasCost: typeof result.cost === 'number',
-				hasIncomplete: typeof result.incomplete === 'boolean',
-				incomplete: result.incomplete,
-			})
-		`) as {
-			pathIsArray: boolean;
-			pathLength: number;
-			hasOps: boolean;
-			hasCost: boolean;
-			hasIncomplete: boolean;
-			incomplete: boolean;
-		};
-
-		expect(result.pathIsArray).toBe(true);
-		expect(result.pathLength).toBe(9);
-		expect(result.hasOps).toBe(true);
-		expect(result.hasCost).toBe(true);
-		expect(result.hasIncomplete).toBe(true);
-		expect(result.incomplete).toBe(false);
+		// A column at x=20 costs 50 but for a gap at (20,5). The least-cost path detours through the
+		// gap: 20 diagonal steps each way, cost 40. Weighted 9, the search crosses the column: 19 + 50.
+		const costs = await shard.runPlayer('p1', code`
+			const cm = new PathFinder.CostMatrix();
+			for (let y = 0; y < 50; y++) if (y !== 5) cm.set(20, y, 50);
+			const search = heuristicWeight => PathFinder.search(
+				new RoomPosition(10, 25, 'W1N1'),
+				{ pos: new RoomPosition(30, 25, 'W1N1'), range: 0 },
+				{ roomCallback: () => cm, maxRooms: 1, heuristicWeight },
+			);
+			[1, 9].map(weight => { const r = search(weight); return { incomplete: r.incomplete, cost: r.cost }; })
+		`);
+		expect(costs).toEqual([{ incomplete: false, cost: 40 }, { incomplete: false, cost: 19 + 50 }]);
 	});
 
 	test('PATHFINDER-017 origin within goal range produces empty path', async ({ shard }) => {
@@ -622,25 +610,19 @@ describe('PathFinder', () => {
 	// destinations as unreachable. Found 2026-08-06 in the Rust engine's adapter runtime,
 	// which expanded 2537 nodes for a 38-step cross-room path the real engine did in 33.
 	//
-	// In an open 50x50 room a 40-step straight path costs A* ~40 expansions and Dijkstra
-	// ~2000+ (it floods every tile within cost 40). The bound below sits far above any
-	// plausible tie-breaking/heuristic-weight variation and far below a flood.
-	test('PATHFINDER-021 search is heuristic-guided (A*), not a uniform-cost flood', async ({ shard }) => {
+	// In an open 50x50 room a 40-step straight path costs A* ~40 expansions and a flood
+	// ~2250 (every tile within cost 40), past vanilla's default budget of 2000.
+	test('PATHFINDER-021 a 40-step open path completes within a 2000-op budget', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
 			const result = PathFinder.search(
 				new RoomPosition(5, 25, 'W1N1'),
 				{ pos: new RoomPosition(45, 25, 'W1N1'), range: 0 },
-				{ maxOps: 20000, plainCost: 1, swampCost: 5 }
+				{ maxOps: 2000, plainCost: 1, swampCost: 5 }
 			);
-			({ incomplete: result.incomplete, pathLength: result.path.length, ops: result.ops, cost: result.cost })
-		`) as { incomplete: boolean; pathLength: number; ops: number; cost: number };
-
-		expect(result.incomplete).toBe(false);
-		expect(result.pathLength).toBe(40);
-		expect(result.cost).toBe(40);
-		expect(result.ops).toBeGreaterThan(0);
-		expect(result.ops).toBeLessThan(400);
+			({ incomplete: result.incomplete, pathLength: result.path.length, cost: result.cost })
+		`);
+		expect(result).toEqual({ incomplete: false, pathLength: 40, cost: 40 });
 	});
 });

@@ -4,11 +4,14 @@ describe('CostMatrix', () => {
 	test('COSTMATRIX-001 new CostMatrix() creates a matrix with all values 0', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const value = await shard.runPlayer('p1', code`
-			new PathFinder.CostMatrix().get(25, 25)
+		const nonzero = await shard.runPlayer('p1', code`
+			const cm = new PathFinder.CostMatrix();
+			let nonzero = 0;
+			for (let x = 0; x < 50; x++) for (let y = 0; y < 50; y++) if (cm.get(x, y) !== 0) nonzero++;
+			nonzero
 		`);
 
-		expect(value).toBe(0);
+		expect(nonzero).toBe(0);
 	});
 
 	test('COSTMATRIX-002 CostMatrix.set(x, y, cost) and get(x, y) round-trip the assigned value', async ({ shard }) => {
@@ -43,31 +46,18 @@ describe('CostMatrix', () => {
 			cm.set(10, 10, 42);
 			cm.set(11, 10, 7);
 			const clone = cm.clone();
-			const bitsEqualBefore = cm._bits.length === clone._bits.length
-				&& Array.prototype.every.call(cm._bits, (value, index) => value === clone._bits[index]);
-			const sharesBits = cm._bits === clone._bits;
-			const cloneIsCostMatrix = clone instanceof PathFinder.CostMatrix;
+			const copied = [clone.get(10, 10), clone.get(11, 10), clone.get(12, 10)];
 			clone.set(10, 10, 99);
+			cm.set(11, 10, 8);
 			({
-				original: cm.get(10, 10),
-				cloned: clone.get(10, 10),
-				cloneIsCostMatrix,
-				bitsEqualBefore,
-				sharesBits,
+				isCostMatrix: clone instanceof PathFinder.CostMatrix,
+				copied,
+				original: [cm.get(10, 10), cm.get(11, 10)],
+				cloned: [clone.get(10, 10), clone.get(11, 10)],
 			})
-		`) as {
-			original: number;
-			cloned: number;
-			cloneIsCostMatrix: boolean;
-			bitsEqualBefore: boolean;
-			sharesBits: boolean;
-		};
+		`);
 
-		expect(result.original).toBe(42);
-		expect(result.cloned).toBe(99);
-		expect(result.cloneIsCostMatrix).toBe(true);
-		expect(result.bitsEqualBefore).toBe(true);
-		expect(result.sharesBits).toBe(false);
+		expect(result).toEqual({ isCostMatrix: true, copied: [42, 7, 0], original: [42, 8], cloned: [99, 7] });
 	});
 
 	test('COSTMATRIX-005 set(x, y, cost) clamps assigned values into 0..255', async ({ shard }) => {
@@ -116,9 +106,8 @@ describe('CostMatrix', () => {
 			baselineIncomplete: boolean;
 		};
 
-		expect(result.zeroIncomplete).toBe(false);
-		expect(result.baselineIncomplete).toBe(false);
-		expect(result.zeroCost).toBe(result.baselineCost);
+		// Ten diagonal plain steps.
+		expect(result).toEqual({ zeroCost: 10, zeroIncomplete: false, baselineCost: 10, baselineIncomplete: false });
 	});
 
 	test('COSTMATRIX-008 CostMatrix values 1–254 override terrain cost', async ({ shard }) => {

@@ -1,58 +1,35 @@
-import { describe, test, expect, code, OK, MOVE, RIGHT, BOTTOM, TOP_LEFT, ERR_NO_PATH } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, RIGHT, BOTTOM, TOP_LEFT, ERR_NO_PATH, FIND_CREEPS } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 describe('creep movement collision', () => {
-	test('MOVE-COLLISION-001 creep cannot move onto a tile occupied by a stationary creep', async ({ shard }) => {
+	// a at (25,25) and b at (25,23) both move onto the empty (25,24); vanilla's
+	// rate sort picks the winner (movement.js:139), so neither test names it.
+	async function contestTile(shard: ShardFixture) {
 		await shard.ownedRoom('p1');
-		const moverId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'mover',
-		});
-		const blockerId = await shard.placeCreep('W1N1', {
-			pos: [25, 24], owner: 'p1', body: [MOVE], name: 'blocker',
-		});
+		await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p1', body: [MOVE], name: 'a' });
+		await shard.placeCreep('W1N1', { pos: [25, 23], owner: 'p1', body: [MOVE], name: 'b' });
+		const rcs = await shard.runPlayer('p1', code`[Game.creeps['a'].move(TOP), Game.creeps['b'].move(BOTTOM)]`);
+		const positions: Record<string, [number, number]> = {};
+		for (const c of await shard.findInRoom('W1N1', FIND_CREEPS)) {
+			if (c.kind === 'creep') positions[c.name] = [c.pos.x, c.pos.y];
+		}
+		return { rcs, positions };
+	}
 
-		// mover tries to move TOP into blocker's tile.
-		const rc = await shard.runPlayer('p1', code`
-			Game.creeps['mover'].move(TOP)
-		`);
-		expect(rc).toBe(OK);
-
-		// mover should not have moved — blocker is stationary on [25,24].
-		const mover = await shard.expectObject(moverId, 'creep');
-		expect(mover.pos.x).toBe(25);
-		expect(mover.pos.y).toBe(25);
-
-		// blocker stays put.
-		const blocker = await shard.expectObject(blockerId, 'creep');
-		expect(blocker.pos.x).toBe(25);
-		expect(blocker.pos.y).toBe(24);
+	test('MOVE-COLLISION-001 exactly one of two creeps moving onto the same empty tile occupies it', async ({ shard }) => {
+		const { positions } = await contestTile(shard);
+		expect(Object.values(positions).filter(([x, y]) => x === 25 && y === 24)).toHaveLength(1);
 	});
 
-	test('MOVE-COLLISION-002 two creeps moving to the same empty tile — only one succeeds', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		// Both creeps are equidistant from the target tile [25,24].
-		const aId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'a',
-		});
-		const bId = await shard.placeCreep('W1N1', {
-			pos: [25, 23], owner: 'p1', body: [MOVE], name: 'b',
-		});
-
-		// Both move toward [25,24]: a moves TOP, b moves BOTTOM.
-		await shard.runPlayer('p1', code`
-			Game.creeps['a'].move(TOP);
-			Game.creeps['b'].move(BOTTOM);
-		`);
-
-		const a = await shard.expectObject(aId, 'creep');
-		const b = await shard.expectObject(bId, 'creep');
-
-		// Exactly one creep should be at [25,24], the other stays.
-		const aArrived = a.pos.x === 25 && a.pos.y === 24;
-		const bArrived = b.pos.x === 25 && b.pos.y === 24;
-		expect(aArrived !== bArrived).toBe(true);
+	test('MOVE-COLLISION-002 the creep that loses the tile stays on its own and got OK from move()', async ({ shard }) => {
+		const { rcs, positions } = await contestTile(shard);
+		expect(rcs).toEqual([OK, OK]);
+		const start: Record<string, [number, number]> = { a: [25, 25], b: [25, 23] };
+		const loser = Object.keys(start).find(name => positions[name][1] !== 24)!;
+		expect(positions[loser]).toEqual(start[loser]);
 	});
 
-	test('MOVE-COLLISION-003 two same-owner creeps can swap tiles by moving toward each other', async ({ shard }) => {
+	test('MOVE-COLLISION-003:sameOwner two same-owner creeps can swap tiles by moving toward each other', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const aId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'a',
@@ -76,7 +53,7 @@ describe('creep movement collision', () => {
 		expect(b.pos.y).toBe(25);
 	});
 
-	test('MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other', async ({ shard }) => {
+	test('MOVE-COLLISION-003:hostile two hostile creeps can also swap tiles by moving toward each other', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -129,7 +106,26 @@ describe('creep movement collision', () => {
 		expect(follower.pos.y).toBe(24);
 	});
 
-	test('MOVE-COLLISION-005 hostile creep blocks movement onto its tile', async ({ shard }) => {
+	test('MOVE-COLLISION-005:own the player\'s own stationary creep blocks movement onto its tile', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const moverId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'mover',
+		});
+		const blockerId = await shard.placeCreep('W1N1', {
+			pos: [25, 24], owner: 'p1', body: [MOVE], name: 'blocker',
+		});
+
+		// mover tries to move TOP into blocker's tile.
+		const rc = await shard.runPlayer('p1', code`
+			Game.creeps['mover'].move(TOP)
+		`);
+		expect(rc).toBe(OK);
+
+		expect((await shard.expectObject(moverId, 'creep')).pos).toEqual({ x: 25, y: 25, roomName: 'W1N1' });
+		expect((await shard.expectObject(blockerId, 'creep')).pos).toEqual({ x: 25, y: 24, roomName: 'W1N1' });
+	});
+
+	test('MOVE-COLLISION-005:hostile a hostile stationary creep blocks movement onto its tile', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -146,10 +142,8 @@ describe('creep movement collision', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// mover blocked by stationary hostile creep.
-		const mover = await shard.expectObject(moverId, 'creep');
-		expect(mover.pos.x).toBe(25);
-		expect(mover.pos.y).toBe(25);
+		expect((await shard.expectObject(moverId, 'creep')).pos).toEqual({ x: 25, y: 25, roomName: 'W1N1' });
+		expect((await shard.expectObject(hostileId, 'creep')).pos).toEqual({ x: 25, y: 24, roomName: 'W1N1' });
 	});
 
 	test('MOVE-COLLISION-006 circular chain (A→B→C→A) rotates', async ({ shard }) => {

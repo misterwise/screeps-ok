@@ -1,5 +1,5 @@
 import { describe, test, expect, code, body,
-	OK, FIND_CREEPS,
+	OK, ERR_TIRED, FIND_CREEPS,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
 import { movePullValidationCases } from '../../src/matrices/move-pull-validation.js';
@@ -52,8 +52,6 @@ describe('creep.pull()', () => {
 		expect(rc.pull).toBe(OK);
 		expect(rc.move).toBe(OK);
 
-		await shard.tick();
-
 		const puller = await shard.expectObject(pullerId, 'creep');
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(puller.pos.y).toBe(24);
@@ -82,10 +80,7 @@ describe('creep.pull()', () => {
 				targetMove: heavy.move(puller),
 			})
 		`) as { pull: number; move: number; targetMove: number };
-		expect(rc.pull).toBe(OK);
-		expect(rc.move).toBe(OK);
-
-		await shard.tick();
+		expect(rc).toEqual({ pull: OK, move: OK, targetMove: OK });
 
 		const puller = await shard.expectObject(pullerId, 'creep');
 		const target = await shard.expectObject(targetId, 'creep');
@@ -240,16 +235,16 @@ describe('creep.pull()', () => {
 		await shard.runPlayer('p1', code`Game.creeps['puller'].move(TOP)`);
 		const afterMove = await shard.expectObject(pullerId, 'creep');
 		expect(afterMove.pos.y).toBe(24);
-		expect(afterMove.fatigue).toBeGreaterThan(0);
+		// 3 WORK make 6; one MOVE takes off 2.
+		expect(afterMove.fatigue).toBe(4);
 
-		// Puller is fatigued but adjacent. pull() returns OK, move() returns
-		// ERR_TIRED. Since the puller cannot move, the pull does not resolve.
+		// Every call a pull needs is made: the puller's move is refused, so nothing moves.
 		const rc = await shard.runPlayer('p1', code`
 			const puller = Game.creeps['puller'];
 			const target = Game.creeps['target'];
-			puller.pull(target)
+			({ pull: puller.pull(target), move: puller.move(TOP), follow: target.move(puller) })
 		`);
-		expect(rc).toBe(OK);
+		expect(rc).toEqual({ pull: OK, move: ERR_TIRED, follow: OK });
 
 		const puller = await shard.expectObject(pullerId, 'creep');
 		const target = await shard.expectObject(targetId, 'creep');
