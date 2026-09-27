@@ -4913,15 +4913,14 @@ Framework Notes
 
 The Screeps shard model has two halves. The first is single-shard observable:
 shard identity (`Game.shard.*`), the local half of `InterShardMemory`, the
-shape of cross-shard portal destinations, and `Game.cpu.shardLimits` /
-`Game.cpu.setShardLimits`. These entries can be asserted on a single-shard
-harness and gate on `interShardMemory` or `cpuShardLimits` capabilities.
+shape of cross-shard portal destinations, `Game.cpu.shardLimits` /
+`Game.cpu.setShardLimits`, and a power creep's `shard`. These entries can be
+asserted on a single-shard harness.
 
 The second half only manifests with two or more shards in play: cross-shard
-creep traversal, `InterShardMemory.getRemote`, per-shard `Memory` and
-`RawMemory.segments` isolation, and the post-traversal value of
-`PowerCreep.shard`. The current adapter contract creates one isolated world
-per test, so these entries are gated on a future `multiShard` capability.
+creep traversal, `InterShardMemory.getRemote`, and per-shard `Memory`
+isolation. The current adapter contract creates one isolated world per test,
+so these entries are gated on a future `multiShard` capability.
 
 Cross-references:
 - Same-shard portal mechanics and the shape of `portal.destination` (both
@@ -4948,15 +4947,9 @@ entries below cover only the cross-shard *consequences* of stepping onto
 such a portal — none of which are testable on a single-shard harness.
 
 - `INTERSHARD-PORTAL-001` `behavior` `documented` `capability: multiShard`
-  A creep standing on an inter-shard portal disappears from the source
-  shard on the next tick and re-materializes at `destination.room` on
-  `destination.shard`, retaining `name`, `body`, `hits`, and store
-  contents.
-- `INTERSHARD-PORTAL-002` `behavior` `documented` `capability: multiShard`
-  A creep migrated by `INTERSHARD-PORTAL-001` retains its
-  `Memory.creeps[name]` entry as visible on the destination shard's
-  `Memory` (memory crosses with the creep, separate from the per-shard
-  `Memory` isolation in 29.5).
+  A creep that moves onto an inter-shard portal leaves the source shard
+  and arrives in `destination.room` on `destination.shard` as the same
+  creep, keeping its `name`, `body`, `hits`, and store contents.
 
 ### 29.3 InterShardMemory `capability: interShardMemory`
 - `ISM-002` `behavior` `documented`
@@ -4974,45 +4967,28 @@ Notes
 
 ### 29.4 CPU Shard Limits `capability: cpuShardLimits`
 - `CPU-SHARD-001` `behavior` `documented`
-  `Game.cpu.shardLimits` is a plain object whose keys are shard names
-  (strings) and whose values are non-negative integers.
-- `CPU-SHARD-002` `behavior` `documented`
-  The sum of `Object.values(Game.cpu.shardLimits)` equals the player's
-  daily CPU allowance (the cap reported by `Game.cpu.limit` summed
-  across all shards).
-- `CPU-SHARD-003` `matrix` `documented`
-  `Game.cpu.setShardLimits(map)` return-code matrix:
-  - sum of values equals the daily allowance and every key is a known
-    shard name → `OK`
-  - sum of values does not equal the daily allowance → `ERR_INVALID_ARGS`
-  - any key is not a known shard name → `ERR_INVALID_ARGS`
-  - any value is negative or not an integer → `ERR_INVALID_ARGS`
+  `Game.cpu.shardLimits` is an object keyed by shard name whose entry for
+  `Game.shard.name` equals `Game.cpu.limit`.
+- `CPU-SHARD-003` `behavior` `documented`
+  `Game.cpu.setShardLimits(limits)` returns `ERR_INVALID_ARGS` when
+  `limits` doesn't total the CPU `Game.cpu.shardLimits` does.
 - `CPU-SHARD-004` `behavior` `documented`
-  A successful `Game.cpu.setShardLimits` call within 12 hours of the
-  previous successful call returns `ERR_BUSY` and leaves
-  `Game.cpu.shardLimits` unchanged. Wall-clock dependent; deferred until
-  the harness exposes a time-skip hook.
+  `Game.cpu.setShardLimits(limits)` returns `OK` for limits that total the
+  CPU `Game.cpu.shardLimits` does, and `ERR_BUSY` when called again within
+  12 hours of that success.
 
 ### 29.5 Per-Shard Memory Isolation `capability: multiShard`
 - `SHARD-MEMORY-001` `behavior` `documented` `capability: multiShard`
   `Memory` is per-shard: a write to `Memory.foo` on shard A is not
   visible via `Memory.foo` on shard B on the same or any later tick.
-  The cross-shard channel is `InterShardMemory` only.
-- `SHARD-MEMORY-002` `behavior` `documented` `capability: multiShard`
-  `RawMemory.segments` and segments published via
-  `RawMemory.setPublicSegments` / readable via
-  `RawMemory.setActiveForeignSegment` are scoped to the shard on which
-  they were written; foreign-segment reads from another shard return no
-  data even when the writing user matches.
 
 ### 29.6 PowerCreep Shard Home `capability: powerCreeps`
 - `SHARD-PCREEP-001` `behavior` `verified_vanilla`
   An unspawned `PowerCreep` (created via `Game.gpl` allocation but not
   yet spawned at a power spawn) exposes `pc.shard === undefined`.
-- `SHARD-PCREEP-002` `behavior` `documented` `capability: multiShard`
-  A spawned `PowerCreep` exposes `pc.shard` as the string name of the
-  shard where it currently resides; the value updates to the destination
-  shard's name after the creep traverses an inter-shard portal.
+- `SHARD-PCREEP-002` `behavior` `documented`
+  A spawned `PowerCreep` exposes `pc.shard` as the name of its shard,
+  `Game.shard.name`.
 
 Coverage Notes
 - The shape of `Game.shard` (`{name, type, ptr}`, exact key set) is
@@ -5027,6 +5003,10 @@ Coverage Notes
   string round-trip is the player's responsibility; entries above do not
   assert serialization fidelity beyond the byte-for-byte string contract
   in `ISM-002`.
+- `SHARD-PCREEP-002`'s source is `PowerCreep.shard`, "the name of the
+  shard where the power creep is spawned". Vanilla's spawn processor stamps
+  the shard name its driver passes (`processor/global-intents/power/spawnPowerCreep.js:25`),
+  and the open-source driver passes `''`, so vanilla reads `undefined`.
 
 Framework Notes
 - The adapter contract (`src/adapter.ts`) creates one shard world per

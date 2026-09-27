@@ -154,6 +154,15 @@ changes since `v0.1.0-alpha` are not itemized.
   `setLocal`, no rejection mode, no over-limit behavior and no cross-shard
   delay, and no open-source engine implements `InterShardMemory`.
   `ISM-005` no longer claims `null` for a shard that never wrote.
+  `INTERSHARD-PORTAL-002` (a creep's `Memory` crossing shards: the docs say
+  each shard's `Memory` is isolated), `CPU-SHARD-002` and `SHARD-MEMORY-002`
+  (no documented source).
+- Re-scoped to what the API documentation states: `CPU-SHARD-001` (this
+  shard's entry equals `Game.cpu.limit`), `CPU-SHARD-003` (a changed total
+  is `ERR_INVALID_ARGS`; now `behavior`), `CPU-SHARD-004` (`OK`, then
+  `ERR_BUSY`), and `SHARD-PCREEP-002`, which now runs on one shard (a
+  spawned power creep's `shard` is `Game.shard.name`) and no longer needs
+  `multiShard`.
 - `SOURCE-REGEN-001` is keyed by room state: `:owned`, `:reserved`,
   `:neutral`, `:keeper`.
 - Keyed by row as their tests now run their case lists: `RAWMEMORY-002`

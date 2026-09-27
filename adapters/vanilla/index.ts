@@ -1384,7 +1384,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			store: spec.store ?? {},
 			storeCapacity,
 			powers,
-			shard: 'shard0',
+			// What vanilla's spawn stamps (`spawnPowerCreep.js:25`): the open-source driver's shard name, `''`.
+			shard: '',
 			spawnCooldownTime: null,
 			deleteTime: null,
 			room: roomName,

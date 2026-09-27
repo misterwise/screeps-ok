@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2897%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2642%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2642%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,16 +16,20 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2897](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-27 00:03 UTC |
+| 🔴 | **vanilla** | [2897](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-27 00:03 UTC |
 | 🟡 | **xxscreeps** | [2642](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-27 00:02 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
+## vanilla unexpected failures
+
+- `power-creep-shard-empty-on-open-source-driver` registers `SHARD-PCREEP-002`, which no test passed or failed
+
 ## vanilla expected failures
 
-vanilla currently declares 8 expected-failure classifications against vanilla's canonical behavior, covering 10 tests. That includes 8 open parity gaps covering 10 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 9 expected-failure classifications against vanilla's canonical behavior, covering 10 tests. That includes 9 open parity gaps covering 10 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -36,6 +40,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | Canonical claim is reported: screeps/engine#156 (open) fixes the order-dependent fatigue as a vanilla bug. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
 | `eventlog-structure-destroy-intent-missing` | Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`). | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-name-truncated-to-50-chars` | Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars. | Power creeps preserve 100-character names exactly through create and rename. | Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.' | [2](#vanilla-gap-power-creep-name-truncated-to-50-chars) |
+| `power-creep-shard-empty-on-open-source-driver` | Vanilla's spawn processor stamps the shard name its driver passes (`@screeps/engine/src/processor/global-intents/power/spawnPowerCreep.js:25`), and the open-source driver passes `shardName: ''` (`@screeps/driver/lib/index.js:446`) while naming the shard `os.hostname()` in `Game.shard` (`index.js:36-40`). The getter `o.shard \|\| undefined` (`game/power-creeps.js:53`) reads `undefined` for a spawned power creep. | A spawned power creep's `shard` is `Game.shard.name`. | Canonical claim is documented: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' | 0 |
 | `power-creep-ticks-to-live-not-undefined-when-unspawned` | Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`. | Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death). | Canonical claim is documented: PowerCreep.ticksToLive is 'Undefined if the creep is not spawned in the world.' screeps/engine#148 (open) fixes vanilla's NaN. | [2](#vanilla-gap-power-creep-ticks-to-live-not-undefined-when-unspawned) |
 | `market-history-empty-array-missing` | Stable vanilla's `Game.market.getHistory` (`@screeps/engine/src/game/market.js:41-52`) returns `{}` for an invalid resource (line 48) and `JSON.parse(JSON.stringify(history[resource] \|\| {}))` for a valid-but-empty resource (line 50) — always an object, never `[]`. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | Canonical claim is documented: Game.market.getHistory 'Returns an array of objects'. screeps/engine#131 (open) fixes vanilla's object return. | [1](#vanilla-gap-market-history-empty-array-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | Stable vanilla's `_findClosestByPath2` (`@screeps/engine/src/game/rooms.js:304-374`) never reads `opts.range`: it hardcodes `{range: 1, pos: i}` on the PathFinder goal at line 328 and post-filters reachability with `lastPos.isNearTo(obj)` at line 368. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, whose range option finds a path to a position in that linear range of the target. screeps/engine#121 (open) proposes honoring it. It fails on both adapters; it is not an xxscreeps bug. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
@@ -63,6 +68,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Power creep lifecycle POWERCREEP-CREATE-003 PowerCreep.create accepts and preserves a 100-character name`
 - `Power creep lifecycle POWERCREEP-RENAME-001 PowerCreep.rename accepts and preserves a 100-character name`
+
+</details>
+
+<details id="vanilla-gap-power-creep-shard-empty-on-open-source-driver">
+<summary><code>power-creep-shard-empty-on-open-source-driver</code> — 0 tests</summary>
+
 
 </details>
 

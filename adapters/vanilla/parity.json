@@ -18,6 +18,12 @@
 			"why": "Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.'",
 			"tests": ["POWERCREEP-CREATE-003", "POWERCREEP-RENAME-001"]
 		},
+		"power-creep-shard-empty-on-open-source-driver": {
+			"actual": "Vanilla's spawn processor stamps the shard name its driver passes (`@screeps/engine/src/processor/global-intents/power/spawnPowerCreep.js:25`), and the open-source driver passes `shardName: ''` (`@screeps/driver/lib/index.js:446`) while naming the shard `os.hostname()` in `Game.shard` (`index.js:36-40`). The getter `o.shard || undefined` (`game/power-creeps.js:53`) reads `undefined` for a spawned power creep.",
+			"expected": "A spawned power creep's `shard` is `Game.shard.name`.",
+			"why": "Canonical claim is documented: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.'",
+			"tests": ["SHARD-PCREEP-002"]
+		},
 		"power-creep-ticks-to-live-not-undefined-when-unspawned": {
 			"actual": "Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`.",
 			"expected": "Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death).",

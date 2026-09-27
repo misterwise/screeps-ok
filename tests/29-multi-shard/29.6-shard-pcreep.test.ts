@@ -1,16 +1,12 @@
 /**
  * 29.6 PowerCreep Shard Home — single-shard observable
  *
- * `SHARD-PCREEP-001` asserts the `shard` field on an unspawned PowerCreep
- * before it lands at a power spawn. Vanilla single-shard semantics for
- * this read are observable without a multi-shard harness.
+ * A power creep's `shard` before and after it spawns, observable on one
+ * shard.
  *
- * The sibling `SHARD-PCREEP-002` (spawned PowerCreep tracking its shard
- * name and updating after portal traversal) is gated on `multiShard` and
- * not covered here.
- *
- * Gated on `powerCreepAccountApi`: reaching the unspawned state needs
- * `PowerCreep.create`, which xxscreeps exposes only through its backend.
+ * `SHARD-PCREEP-001` is gated on `powerCreepAccountApi`: reaching the
+ * unspawned state needs `PowerCreep.create`, which xxscreeps exposes only
+ * through its backend.
  */
 import { describe, test, expect, code, OK } from '../../src/index.js';
 
@@ -36,5 +32,17 @@ describe('PowerCreep shard home', () => {
 
 		expect(probe.exists).toBe(true);
 		expect(probe.typeofShard).toBe('undefined');
+	});
+
+	test('SHARD-PCREEP-002 a spawned PowerCreep reports Game.shard.name as its shard', async ({ shard }) => {
+		shard.requires('powerCreeps');
+		await shard.ownedRoom('p1', 'W1N1', 8);
+		const pcId = await shard.placePowerCreep('W1N1', { pos: [25, 25], owner: 'p1', powers: {} });
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			({ shard: String(Game.getObjectById(${pcId}).shard), name: Game.shard.name })
+		`) as { shard: string; name: string };
+		expect(result.shard).toBe(result.name);
 	});
 });

@@ -1433,25 +1433,6 @@ checks both. Each definition has these fields, in this order:
   `RAWMEMORY-003`. The executable case list lives in
   `src/matrices/rawmemory-segments.ts`.
 
-### CPU-SHARD-LIMITS
-
-- `Catalog Entries`
-  `CPU-SHARD-003`
-- `Canonical Source`
-  The Screeps API documentation for `Game.cpu.setShardLimits(limits)`.
-- `Dimensions`
-  rejection branch
-- `Applicability`
-  A map whose values don't sum to the allowance, one naming an unknown shard,
-  one with a negative value, and one with a non-integer value, each
-  `ERR_INVALID_ARGS`
-- `Exclusions`
-  The successful call and its once-per-12-hours limit (`CPU-SHARD-004`)
-- `Verification Notes`
-  The case list is inline in
-  `tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`. No reference adapter
-  declares `cpuShardLimits`.
-
 ### SHAPE-STRUCT
 
 - `Catalog Entries`
