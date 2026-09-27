@@ -3767,9 +3767,11 @@ Notes
   `launchNuke`; factory `produce`; creep `harvest` of a mineral whose
   extractor is cooling and of a cooling deposit; and power creep `usePower`
   against its power's `cooldown`.
-- `TIMER-SAFEMODE-001` `behavior` `verified_vanilla`
-  Effects gated by `safeMode` stop blocking in the same tick the exposed safe
-  mode timer reaches `0`.
+- `TIMER-SAFEMODE-001` `matrix` `verified_vanilla`
+  Each action a room's safe mode refuses a hostile caller is refused on the
+  tick the controller's `safeMode` reads `1` and allowed on the next, when it
+  reads `undefined`: the eight hostile creep intents of `CTRL-SAFEMODE-006`,
+  and a power creep's `usePower` and `enableRoom` in that room.
 
 Coverage Notes
 - Effect expiry has no shared edge (some checks use `endTime > time`, others

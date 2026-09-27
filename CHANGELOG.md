@@ -186,6 +186,7 @@ changes since `v0.1.0-alpha` are not itemized.
   one-tick `PWR_OPERATE_SPAWN` spawn).
 - Enumerated from vanilla's source, where each claimed a family no list
   spanned: `TIMER-COOLDOWN-001` (eleven cooldown-gated actions, now
+  `matrix`), `TIMER-SAFEMODE-001` (ten safe-mode-refused actions, now
   `matrix`), `TOWER-ATTACK-003`/`-HEAL-003`/`-REPAIR-003` (six target
   classes; the controller and other hitless structures are accepted),
   `INTENT-CREEP-002`/`-003` (the creep methods and intent names), and

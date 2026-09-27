@@ -283,6 +283,29 @@ checks both. Each definition has these fields, in this order:
   No case list enumerates the family yet: the test
   (`tests/23-store-api/23.5-timers.test.ts`) runs `runReaction` only.
 
+### TIMER-SAFEMODE
+
+- `Catalog Entries`
+  `TIMER-SAFEMODE-001`
+- `Canonical Source`
+  Vanilla's game-layer safe-mode refusals, which read the controller's
+  `safeMode` getter (`@screeps/engine/src/game/structures.js:184`, `undefined`
+  once the timer has run out): `game/creeps.js` for the intents
+  `CTRL-SAFEMODE-006` lists, `game/power-creeps.js:258` (`usePower`,
+  `ERR_INVALID_ARGS`) and `:311` (`enableRoom`, `ERR_INVALID_TARGET`).
+- `Dimensions`
+  gated action
+- `Applicability`
+  The ten actions the row lists, each on the controller's last safe-mode tick
+  (`safeMode` reads `1`) and the tick after
+- `Exclusions`
+  Safe mode's effect on movement and on construction-site stomping
+  (`SAFEMODE-COMBAT-002`), and `claimController`, whose guard is unreachable
+  (`CTRL-SAFEMODE-006`)
+- `Verification Notes`
+  No case list enumerates the family yet: the test
+  (`tests/23-store-api/23.5-timers.test.ts`) runs a hostile `attack` only.
+
 ### NPC-OWNERSHIP
 
 - `Catalog Entries`
