@@ -96,25 +96,26 @@ describe('creep.suicide()', () => {
 
 	test('CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		// Half a lifetime: a tick of difference moves the floor.
+		const ticksToLive = CREEP_LIFE_TIME / 2;
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [CARRY, MOVE],
 			store: { [RESOURCE_POWER]: 30 },
 			name: 'SuicideEnergyCreep',
+			ticksToLive,
 		});
-		await shard.tick();
 
-		await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p1', code`
 			Game.creeps['SuicideEnergyCreep'].suicide()
 		`);
-		// runPlayer processed the suicide (1 tick). Observe via findInRoom.
+		expect(rc).toBe(OK);
+		const bodyCost = BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find(t => t.creepName === 'SuicideEnergyCreep');
-		expect(tomb).toBeDefined();
-		if (tomb) {
-			expect(tomb.store.energy).toBe(19);
-			expect(tomb.store.power).toBe(30);
-		}
+		expect(tombstones.map(t => t.store)).toEqual([{
+			energy: Math.floor(bodyCost * CREEP_CORPSE_RATE * ticksToLive / CREEP_LIFE_TIME),
+			[RESOURCE_POWER]: 30,
+		}]);
 	});
 
 	test('CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate', async ({ shard }) => {
@@ -290,12 +291,12 @@ describe('Creep spawning state', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// 2 parts × CREEP_SPAWN_TIME ticks — check partway through.
+		// 2 parts × CREEP_SPAWN_TIME ticks: partway through, on the spawn's tile.
 		const spawning = await shard.runPlayer('p1', code`
 			const c = Game.creeps['SpawningCheck'];
-			c ? c.spawning : null
+			c && [c.spawning, c.pos.x, c.pos.y]
 		`);
-		expect(spawning).toBe(true);
+		expect(spawning).toEqual([true, 25, 25]);
 	});
 
 	test('CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning', async ({ shard }) => {

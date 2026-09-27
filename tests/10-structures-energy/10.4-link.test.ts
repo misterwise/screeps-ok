@@ -15,23 +15,23 @@ describe('StructureLink', () => {
 		});
 		const link1 = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 400 },
+			store: { energy: LINK_CAPACITY },
 		});
 		const link2 = await shard.placeStructure('W1N1', {
 			pos: [25, 35], structureType: STRUCTURE_LINK, owner: 'p1',
 			store: { energy: 0 },
 		});
+		const amount = 100;
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
+			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), ${amount})
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const src = await shard.expectStructure(link1, STRUCTURE_LINK);
-		expect(src.store.energy).toBe(300);
+		expect(src.store.energy).toBe(LINK_CAPACITY - amount);
 		const dst = await shard.expectStructure(link2, STRUCTURE_LINK);
-		expect(dst.store.energy).toBe(100 - Math.ceil(100 * LINK_LOSS_RATIO));
+		expect(dst.store.energy).toBe(amount - Math.ceil(amount * LINK_LOSS_RATIO));
 	});
 
 	test('LINK-002 transferEnergy sets source cooldown to LINK_COOLDOWN * Chebyshev distance', async ({ shard }) => {
@@ -167,7 +167,8 @@ describe('StructureLink', () => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: blockers.has('rcl') ? 4 : 5, owner: 'p1' },
+					blockers.has('no-controller') ? { name: 'W1N1', controller: false }
+						: { name: 'W1N1', rcl: blockers.has('rcl') ? 4 : 5, owner: 'p1' },
 					{ name: 'W2N1', rcl: 5, owner: 'p1' },
 				],
 			});

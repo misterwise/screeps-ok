@@ -27,11 +27,9 @@ describe('StructureSpawn energy regeneration', () => {
 		});
 		await shard.tick();
 
+		// One tick's regeneration in by the first reading, then one a tick to the cap.
 		const readings = await spawnEnergySeries(shard, spawnId, 14);
-		expect(readings[0]).toBeLessThan(SPAWN_ENERGY_CAPACITY);
-		const expected = readings.map((_, i) => Math.min(readings[0] + i, SPAWN_ENERGY_CAPACITY));
-		expect(readings).toEqual(expected);
-		expect(readings[readings.length - 1]).toBe(SPAWN_ENERGY_CAPACITY);
+		expect(readings).toEqual(readings.map((_, i) => Math.min(SPAWN_ENERGY_CAPACITY - 9 + i, SPAWN_ENERGY_CAPACITY)));
 	});
 
 	test('SPAWN-REGEN-002 the gate is the room total: a spawn below capacity does not regenerate once spawns and extensions hold SPAWN_ENERGY_CAPACITY', async ({ shard }) => {

@@ -7,7 +7,7 @@ import { describe, test, expect, code,
 import { terminalSendValidationCases } from '../../src/matrices/terminal-send-validation.js';
 
 describe('Terminal send', () => {
-	test('TERMINAL-SEND-001 successful send returns OK and sets cooldown', async ({ shard }) => {
+	test('TERMINAL-SEND-001 send returns OK and queues the transfer, leaving the store as it was that tick', async ({ shard }) => {
 		shard.requires('terminalSend');
 		await shard.createShard({
 			players: ['p1'],
@@ -16,27 +16,21 @@ describe('Terminal send', () => {
 				{ name: 'W5N1', rcl: 6, owner: 'p1' },
 			],
 		});
-
+		const stored = 100000;
 		const srcId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
-			store: { energy: 100000 },
+			store: { energy: stored },
 		});
 		await shard.placeStructure('W5N1', {
 			pos: [25, 25], structureType: STRUCTURE_TERMINAL, owner: 'p1',
 			store: { energy: 0 },
 		});
-		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).send(RESOURCE_ENERGY, 100, 'W5N1')
+		const result = await shard.runPlayer('p1', code`
+			const terminal = Game.getObjectById(${srcId});
+			[terminal.send(RESOURCE_ENERGY, 100, 'W5N1'), terminal.store.energy]
 		`);
-		expect(rc).toBe(OK);
-
-		// Cooldown is anchored on the send tick; read one tick later.
-		const cooldown = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).cooldown
-		`) as number;
-		expect(cooldown).toBe(TERMINAL_COOLDOWN - 1);
+		expect(result).toEqual([OK, stored]);
 	});
 
 	test('TERMINAL-SEND-002 successful send with PWR_OPERATE_TERMINAL sets reduced cooldown', async ({ shard }) => {
@@ -68,10 +62,11 @@ describe('Terminal send', () => {
 		await shard.tick();
 
 		// Activate PWR_OPERATE_TERMINAL on the terminal.
-		await shard.runPlayer('p1', code`
+		const useRc = await shard.runPlayer('p1', code`
 			const pcs = Object.values(Game.powerCreeps);
 			pcs[0].usePower(PWR_OPERATE_TERMINAL, Game.getObjectById(${srcId}))
 		`);
+		expect(useRc).toBe(OK);
 
 		// Power effect applies next tick. Now send.
 		const rc = await shard.runPlayer('p1', code`
@@ -79,15 +74,9 @@ describe('Terminal send', () => {
 		`);
 		expect(rc).toBe(OK);
 
-		// Cooldown should be reduced by the power effect.
-		const cooldown = await shard.runPlayer('p1', code`
-			Game.getObjectById(${srcId}).cooldown
-		`) as number;
-		// Normal cooldown is TERMINAL_COOLDOWN (10). With PWR_OPERATE_TERMINAL level 1,
-		// cooldown = round(10 * effect[0]) = round(10 * 0.9) = 9. Minus 1 for the tick = 8.
-		const effect = (POWER_INFO as any)[PWR_OPERATE_TERMINAL].effect[0];
-		const expectedCooldown = Math.round(10 * effect) - 1;
-		expect(cooldown).toBe(expectedCooldown);
+		// The level-1 effect scales TERMINAL_COOLDOWN; the snapshot reads the tick after the send.
+		const effect = POWER_INFO[PWR_OPERATE_TERMINAL].effect![0];
+		expect((await shard.expectStructure(srcId, STRUCTURE_TERMINAL)).cooldown).toBe(Math.round(TERMINAL_COOLDOWN * effect) - 1);
 	});
 
 	test('TERMINAL-SEND-003 send deducts energy cost from the sender', async ({ shard }) => {
@@ -241,7 +230,7 @@ describe('Terminal send', () => {
 
 		const src = await shard.expectStructure(srcId, STRUCTURE_TERMINAL);
 		// Intent cleared but no transfer recorded → no cooldown, no resource loss.
-		expect(src.cooldown ?? 0).toBe(0);
+		expect(src.cooldown).toBe(0);
 		expect(src.store.energy).toBe(100000);
 	});
 

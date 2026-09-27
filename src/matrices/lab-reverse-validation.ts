@@ -8,7 +8,9 @@ export const labReverseValidationCases = makeValidationCases('LAB-REVERSE-013', 
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
+	{ condition: 'missing-lab1', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'invalid-lab1', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'self-lab1', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'not-a-lab', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'self-target', expectedRc: ERR_INVALID_TARGET },
@@ -20,9 +22,15 @@ export const labReverseValidationCases = makeValidationCases('LAB-REVERSE-013', 
 	{ condition: 'full', expectedRc: ERR_FULL },
 	{ condition: 'full-lab2', expectedRc: ERR_FULL },
 ] as const, [
-	// A container as lab1 has no range or store to fail on.
+	// The forms of lab1 exclude each other, and a lab1 that isn't another lab
+	// has no range or store to fail on; same-lab makes lab2 that lab1.
+	['missing-lab1', 'invalid-lab1'],
+	['missing-lab1', 'self-lab1'],
+	['invalid-lab1', 'self-lab1'],
 	['invalid-lab1', 'range'],
 	['invalid-lab1', 'full'],
+	...(['missing-lab1', 'self-lab1'] as const).flatMap(lab1 =>
+		(['range', 'same-lab', 'full'] as const).map(right => [lab1, right] as const)),
 	// The forms of lab2 exclude each other; same-lab sets lab2 too, and a lab2
 	// that isn't another lab has no range or store to fail on.
 	['invalid-target', 'not-a-lab'],

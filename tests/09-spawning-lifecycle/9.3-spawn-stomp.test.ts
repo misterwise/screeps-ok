@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	MOVE, TOUGH,
 	STRUCTURE_SPAWN, STRUCTURE_WALL,
 	FIND_CREEPS, FIND_TOMBSTONES, BODYPART_HITS,
-	CREEP_SPAWN_TIME,
+	CREEP_SPAWN_TIME, SPAWN_ENERGY_CAPACITY,
 	TERRAIN_WALL,
 	BOTTOM,
 } from '../../src/index.js';
@@ -252,42 +252,34 @@ describe('Spawn stomping', () => {
 		expect(hostile.hits).toBe(2 * BODYPART_HITS);
 	});
 
-	test('SPAWN-STOMP-005 no stomp when all tiles blocked but no hostiles', async ({ shard }) => {
+	test('SPAWN-STOMP-005 no stomp when every exit tile is blocked but none holds a hostile creep', async ({ shard }) => {
 		shard.requires('terrain');
 		await shard.ownedRoom('p1', 'W1N1', 1);
 
-		// Wall all 8 adjacent tiles — no hostiles, no open tiles.
+		// Seven exit tiles walled, the eighth held by the spawn owner's creep.
 		const terrain = new Array<0 | 1 | 2>(2500).fill(0);
-		const allAdj = [
-			[24, 24], [25, 24], [26, 24],
-			[24, 25], [26, 25],
-			[24, 26], [25, 26], [26, 26],
-		];
-		for (const [x, y] of allAdj) {
+		for (const [x, y] of [[24, 24], [25, 24], [26, 24], [24, 25], [26, 25], [24, 26], [26, 26]]) {
 			terrain[y * 50 + x] = TERRAIN_WALL;
 		}
 		await shard.setTerrain('W1N1', terrain);
-
+		const ownId = await shard.placeCreep('W1N1', { pos: [25, 26], owner: 'p1', body: [TOUGH, MOVE] });
 		await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
-		await shard.tick();
 
-		await shard.runPlayer('p1', code`
+		const rc = await shard.runPlayer('p1', code`
 			Object.values(Game.spawns)[0].spawnCreep([MOVE], 'Stuck')
 		`);
-		// Advance past spawn time — creep should not spawn (no exit tile).
-		await shard.tick(CREEP_SPAWN_TIME + 2);
+		expect(rc).toBe(OK);
+		// The tick the spawn completes: with no exit and no hostile to stomp,
+		// the creep stays on the spawn (spawns/_born-creep.js:81).
+		await shard.tick(CREEP_SPAWN_TIME - 1);
 
-		// The creep should still be in spawning state or not exist at the
-		// position. Check that no non-spawning creep named 'Stuck' exists.
 		const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 		const stuck = creeps.find(c => c.name === 'Stuck');
-		if (stuck) {
-			// Creep exists but should still be spawning (delayed).
-			expect(stuck.spawning).toBe(true);
-		}
-		// Either spawning or not found — both indicate no stomp occurred.
+		expect(stuck && { spawning: stuck.spawning, x: stuck.pos.x, y: stuck.pos.y }).toEqual({ spawning: true, x: 25, y: 25 });
+		const own = await shard.expectObject(ownId, 'creep');
+		expect({ hits: own.hits, x: own.pos.x, y: own.pos.y }).toEqual({ hits: 2 * BODYPART_HITS, x: 25, y: 26 });
 	});
 });

@@ -11,6 +11,7 @@ export const linkValidationCases = makeValidationCases('LINK-014', [
 	{ condition: 'target-not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'source-not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
+	{ condition: 'no-controller', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_ENERGY },
 	{ condition: 'not-enough-amount', expectedRc: ERR_NOT_ENOUGH_ENERGY },
@@ -25,6 +26,8 @@ export const linkValidationCases = makeValidationCases('LINK-014', [
 	['self-target', 'full'],
 	['self-target', 'range'],
 	['not-enough', 'not-enough-amount'],
+	// A room without a controller has no level to fall short of.
+	['no-controller', 'rcl'],
 ]);
 
 export type LinkValidationCase = typeof linkValidationCases[number];

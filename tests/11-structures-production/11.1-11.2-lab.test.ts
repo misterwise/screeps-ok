@@ -181,7 +181,9 @@ describe('Lab runReaction', () => {
 				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
 			});
 			// Reagents H + O make OH; H + H makes nothing. A far lab is at range 3.
-			const lab1 = blockers.has('invalid-lab1')
+			const lab1 = blockers.has('missing-lab1') ? null
+				: blockers.has('self-lab1') ? labId
+				: blockers.has('invalid-lab1')
 				? await shard.placeStructure('W1N1', {
 					pos: [25, 27], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
 				})
@@ -213,8 +215,9 @@ describe('Lab runReaction', () => {
 			}
 
 			const rc = await shard.runPlayer('p1', code`
+				const lab1 = ${lab1};
 				const lab2 = ${lab2};
-				Game.getObjectById(${labId}).runReaction(Game.getObjectById(${lab1}), lab2 && Game.getObjectById(lab2))
+				Game.getObjectById(${labId}).runReaction(lab1 && Game.getObjectById(lab1), lab2 && Game.getObjectById(lab2))
 			`);
 			expect(rc).toBe(row.expectedRc);
 		});
@@ -403,8 +406,12 @@ describe('Lab reverseReaction', () => {
 				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
 			});
 			// OH reverses to H in lab1 and O in lab2. A far lab is at range 3.
-			let lab1Id: string;
-			if (blockers.has('invalid-lab1')) {
+			let lab1Id: string | null;
+			if (blockers.has('missing-lab1')) {
+				lab1Id = null;
+			} else if (blockers.has('self-lab1')) {
+				lab1Id = labId;
+			} else if (blockers.has('invalid-lab1')) {
 				lab1Id = await shard.placeStructure('W1N1', {
 					pos: [25, 27], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
 				});
@@ -437,8 +444,9 @@ describe('Lab reverseReaction', () => {
 			}
 
 			const rc = await shard.runPlayer('p1', code`
+				const lab1 = ${lab1Id};
 				const lab2 = ${lab2Id};
-				Game.getObjectById(${labId}).reverseReaction(Game.getObjectById(${lab1Id}), lab2 && Game.getObjectById(lab2))
+				Game.getObjectById(${labId}).reverseReaction(lab1 && Game.getObjectById(lab1), lab2 && Game.getObjectById(lab2))
 			`);
 			expect(rc).toBe(row.expectedRc);
 		});

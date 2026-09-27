@@ -1562,11 +1562,13 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Successful product mapping, owned by `LAB-RUN-001`. Reverse-reaction
   failure ordering is owned by `LAB-REVERSE-VALIDATION`. The forms of
-  lab2 exclude each other, and a lab1 or lab2 that isn't another lab pairs
-  with none of that lab's range, store or mineral conditions, nor with the
-  product conditions its reagent would decide.
+  lab1 (missing, not a lab, the calling lab) exclude each other, as do
+  lab2's, and a lab1 or lab2 that isn't another lab pairs with none of that
+  lab's range, store or mineral conditions, nor with the product conditions
+  its reagent would decide.
 - `Verification Notes`
-  Vanilla checks lab1, then lab2 (not a lab, or the calling lab), then both
+  Vanilla checks lab1, then lab2 (each missing, not a lab, or the calling
+  lab), then both
   ranges, capacity, both amounts, then the product (`game/structures.js:
   327-353`). The executable case list lives in
   `src/matrices/lab-run-validation.ts`.
@@ -1589,9 +1591,11 @@ checks both. Each definition has these fields, in this order:
   (lab1/lab2 are labs), range, store capacity (lab1/lab2 cannot hold
   outputs), compound availability, and cooldown.
 - `Exclusions`
-  Successful split mapping, owned by `LAB-REVERSE-001`. The forms of lab2,
-  same-lab included, exclude each other, and a lab1 or lab2 that isn't
-  another lab pairs with none of that lab's range or store conditions.
+  Successful split mapping, owned by `LAB-REVERSE-001`. The forms of lab1
+  (missing, not a lab, the calling lab) exclude each other, as do lab2's,
+  same-lab included, and a lab1 or lab2 that isn't another lab pairs with
+  none of that lab's range or store conditions; a missing lab1 or the
+  calling lab as lab1 leaves no other lab for same-lab to repeat.
 - `Verification Notes`
   The executable case list lives in `src/matrices/lab-reverse-validation.ts`.
 
@@ -1716,9 +1720,9 @@ checks both. Each definition has these fields, in this order:
   separate `LINK-*` behavior entries.
 - `Verification Notes`
   A source link that isn't the player's is refused only under a rampart
-  (`game/structures.js:500-502`). Not yet listed: a link in a room with no
-  controller (`ERR_RCL_NOT_ENOUGH`). The executable case list lives in
-  `src/matrices/link-validation.ts`.
+  (`game/structures.js:500-502`); a room with no controller refuses before the
+  level check (`:507-509`), so `no-controller` is excluded against `rcl`. The
+  executable case list lives in `src/matrices/link-validation.ts`.
 
 ### TOWER-ATTACK-VALIDATION
 

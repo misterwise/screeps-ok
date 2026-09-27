@@ -86,11 +86,29 @@
 			"why": "Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`.",
 			"tests": ["COMBAT-MELEE-007:powerCreep", "COMBAT-RANGED-005:powerCreep", "COMBAT-HEAL-003:powerCreep"]
 		},
+		"renew-recycle-target-creep-checked-late": {
+			"actual": "`checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one.",
+			"expected": "Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state.",
+			"why": "Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28).",
+			"tests": ["RENEW-CREEP-011:spawningTarget", "RENEW-CREEP-011:spawningTargetBeforeClaimPart", "RENEW-CREEP-011:spawningTargetBeforeNotOwner", "RENEW-CREEP-011:spawningTargetBeforeNotOwnerCreep", "RENEW-CREEP-011:spawningTargetBeforeRcl", "RENEW-CREEP-011:spawningTargetBeforeRange", "RENEW-CREEP-011:spawningTargetBeforeNotEnough", "RENEW-CREEP-011:notOwnerCreepBeforeRcl", "RECYCLE-CREEP-005:spawningTarget", "RECYCLE-CREEP-005:spawningTargetBeforeNotOwnerCreep", "RECYCLE-CREEP-005:spawningTargetBeforeRange"]
+		},
+		"spawn-creep-accepts-non-object-options": {
+			"actual": "`StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns.",
+			"expected": "Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name.",
+			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28).",
+			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
+		},
+		"portal-ignores-power-creeps": {
+			"actual": "The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is.",
+			"expected": "Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep.",
+			"why": "Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only.",
+			"tests": ["PORTAL-001:powerCreep"]
+		},
 		"tower-targets-creeps-and-destructible-only": {
 			"actual": "`StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller.",
 			"expected": "Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits.",
 			"why": "Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only.",
-			"tests": ["TOWER-ATTACK-003:powerCreep", "TOWER-ATTACK-003:structure", "TOWER-ATTACK-003:controller", "TOWER-HEAL-003:powerCreep", "TOWER-REPAIR-003:controller"]
+			"tests": ["TOWER-ATTACK-003:powerCreep", "TOWER-ATTACK-003:structure", "TOWER-ATTACK-003:controller", "TOWER-HEAL-003:powerCreep", "TOWER-REPAIR-003:controller", "TOWER-ATTACK-006:structure"]
 		},
 		"attack-controller-safe-mode-checked-before-cooldown": {
 			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`.",
@@ -144,7 +162,7 @@
 			"why": "Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`.",
 			"actual": "`checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY.",
 			"expected": "Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check.",
-			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough"]
+			"tests": ["FACTORY-PRODUCE-011:powerEffect", "FACTORY-PRODUCE-011:powerEffectBeforeNotEnough", "FACTORY-COMMODITY-002"]
 		},
 		"power-bank-ruin-spills-one-tick-late": {
 			"actual": "`createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth.",
@@ -268,10 +286,10 @@
 			"tests": ["TERMINAL-SEND-015"]
 		},
 		"bury-creep-stamps-next-tick": {
-			"actual": "`buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late.",
+			"actual": "`buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, the corpse's `lifeRate` reads the same getter (`:46`), so a recycled or suicided creep returns a tick's less body energy and boost, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late.",
 			"expected": "Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`.",
 			"why": "Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`.",
-			"tests": ["CREEP-DEATH-006", "CREEP-DEATH-007", "TOMBSTONE-001", "TOMBSTONE-012"]
+			"tests": ["CREEP-DEATH-006", "CREEP-DEATH-007", "TOMBSTONE-001", "TOMBSTONE-012", "RECYCLE-CREEP-002", "RECYCLE-CREEP-003", "CREEP-DEATH-009"]
 		},
 		"deposit-decay-anchors-one-tick-late": {
 			"actual": "The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor.",
@@ -295,13 +313,13 @@
 			"actual": "`checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy.",
 			"expected": "Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks.",
 			"why": "Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too.",
-			"tests": ["RENEW-CREEP-011:claimPart", "RENEW-CREEP-011:claimPartBeforeNotOwner", "RENEW-CREEP-011:claimPartBeforeRcl", "RENEW-CREEP-011:claimPartBeforeRange", "RENEW-CREEP-011:claimPartBeforeNotEnough", "RENEW-CREEP-011:claimPartBeforeFull"]
+			"tests": ["RENEW-CREEP-011:claimPart", "RENEW-CREEP-011:claimPartBeforeNotOwner", "RENEW-CREEP-011:claimPartBeforeRcl", "RENEW-CREEP-011:claimPartBeforeRange", "RENEW-CREEP-011:claimPartBeforeNotEnough", "RENEW-CREEP-011:claimPartBeforeFull", "RENEW-CREEP-011:claimPartBeforeNotOwnerCreep"]
 		},
 		"recycle-inactive-spawn-checked-before-target": {
 			"actual": "`checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`.",
 			"expected": "Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`).",
 			"why": "Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it.",
-			"tests": ["RECYCLE-CREEP-005:invalidTargetBeforeRcl"]
+			"tests": ["RECYCLE-CREEP-005:invalidTargetBeforeRcl", "RECYCLE-CREEP-005:spawningTargetBeforeRcl"]
 		},
 		"pathfinder-search-nullish-goal-throws": {
 			"actual": "`search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick.",

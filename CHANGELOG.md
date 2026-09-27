@@ -191,6 +191,22 @@ changes since `v0.1.0-alpha` are not itemized.
   spawned-power-creep half. `PATHFINDER-016`, `-021`, `-022` and `-023` state
   exact outcomes (a weighted search's cost, complete paths within
   `maxOps: 2000`, and which neighbour a directed search never loads).
+- Spawn, lab and link validation rows gain the vanilla branches they had no
+  condition for, each with its pairs: `SPAWN-CREATE-014` `:missingName`,
+  `:invalidOptions` and `:nameTaken` (another spawn started the name earlier
+  in the tick); `RENEW-CREEP-011` `:spawningTarget` and `:notOwnerCreep`;
+  `RECYCLE-CREEP-005` `:spawningTarget`; `LINK-014` `:noController`;
+  `LAB-RUN-013` and `LAB-REVERSE-013` `:missingLab1` and `:selfLab1`.
+  Restated rows: `RECYCLE-CREEP-002` (recycling returns the body at the full
+  rate, not `CREEP_CORPSE_RATE`), `RENEW-CREEP-003` (the cost formula is
+  vanilla's `ceil(SPAWN_RENEW_RATIO × bodyCost / CREEP_SPAWN_TIME /
+  body.length)`), `FACTORY-COMMODITY-001` (its "chain membership" clause
+  goes). Keyed by case: `WALL-002` (`:rcl1`, `:rcl2`), `TOWER-ATTACK-006`
+  (`:creep`, `:structure`), `POWER-SPAWN-002` (`:boosted`, `:capped`, the
+  stored-power cap on the effect's last tick), `PORTAL-001` (`:placed`,
+  `:moved`, `:powerCreep`) and `PORTAL-004` (`:temporary`, `:permanent`).
+  `FACTORY-PRODUCE-001` now runs the 23 leveled recipes too, under
+  `powerCreeps` and `powerEffects`.
 - Combat rows keyed by case: `COMBAT-MELEE-005` (`:creep`, `:structure`),
   `COMBAT-MELEE-006` (`:counterDamage`, `:attackerOnRampart`; the row now says
   any rampart on the attacker's tile stops the hit-back, not only its own),

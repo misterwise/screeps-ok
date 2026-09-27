@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-26%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-53%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,22 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [3047](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 03:48 UTC |
-| 🔴 | **xxscreeps** | [2753](#xxscreeps-passing-tests) | [110](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
+| 🔴 | **xxscreeps** | [2749](#xxscreeps-passing-tests) | [110](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [200](#xxscreeps-skipped-tests) | 2026-09-27 03:46 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## 🚨 Regression traps triggered
+
+Tests tagged as known parity gaps have started passing. Investigate and drop the gap from the adapter's `parity.json` if the engine has fixed the behavior.
+
+**xxscreeps**
+
+- `Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position`
+- `Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy`
+- `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
+- `Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities`
 
 ## xxscreeps unexpected failures
 
@@ -32,11 +43,32 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 - `creep-combat-rejects-power-creep-targets` registers `COMBAT-MELEE-007:powerCreep`, which no test passed or failed
 - `creep-combat-rejects-power-creep-targets` registers `COMBAT-RANGED-005:powerCreep`, which no test passed or failed
 - `creep-combat-rejects-power-creep-targets` registers `COMBAT-HEAL-003:powerCreep`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTarget`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeClaimPart`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeNotOwner`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeNotOwnerCreep`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeRcl`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeRange`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:spawningTargetBeforeNotEnough`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RENEW-CREEP-011:notOwnerCreepBeforeRcl`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RECYCLE-CREEP-005:spawningTarget`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RECYCLE-CREEP-005:spawningTargetBeforeNotOwnerCreep`, which no test passed or failed
+- `renew-recycle-target-creep-checked-late` registers `RECYCLE-CREEP-005:spawningTargetBeforeRange`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptions`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNameExists`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNameTaken`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNotOwner`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeBusy`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeRcl`, which no test passed or failed
+- `spawn-creep-accepts-non-object-options` registers `SPAWN-CREATE-014:invalidOptionsBeforeNotEnough`, which no test passed or failed
+- `portal-ignores-power-creeps` registers `PORTAL-001:powerCreep`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:powerCreep`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:structure`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-003:controller`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-HEAL-003:powerCreep`, which no test passed or failed
 - `tower-targets-creeps-and-destructible-only` registers `TOWER-REPAIR-003:controller`, which no test passed or failed
+- `tower-targets-creeps-and-destructible-only` registers `TOWER-ATTACK-006:structure`, which no test passed or failed
 - `attack-controller-safe-mode-checked-before-cooldown` registers `CTRL-ATTACK-007:cooldownBeforeSafeMode`, which no test passed or failed
 - `move-bodypart-checked-before-fatigue` registers `MOVE-BASIC-027:fatigueBeforeNoBodypart`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeNameCreatedThisTick`, which no test passed or failed
@@ -51,6 +83,9 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 - `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeInvalidTarget`, which no test passed or failed
 - `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeWallTerrain`, which no test passed or failed
 - `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeSiteCapFull`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotOwnerCreep`, which no test passed or failed
+- `recycle-inactive-spawn-checked-before-target` registers `RECYCLE-CREEP-005:spawningTargetBeforeRcl`, which no test passed or failed
+- 4 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -159,7 +194,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 53 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 50 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 56 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 53 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -179,6 +214,9 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | [1](#xxscreeps-gap-pull-range-checked-before-spawning-target) |
 | `heal-safe-mode-checked-before-target` | `checkHeal` and `checkRangedHeal` (`mods/classic/combat/creep.ts:169-186`) run `checkSafeMode` straight after the body-part check, so a heal in another player's safe mode returns `ERR_NO_BODYPART` before an invalid target, and `heal` before range. | Vanilla checks `heal`'s target and range before safe mode (`game/creeps.js:689-699`) and `rangedHeal`'s target before safe mode (`:717-724`), returning `ERR_INVALID_TARGET` or `ERR_NOT_IN_RANGE`. | Found 2026-09-27 when safe mode's refusal became a condition of each method's validation matrix (it had been one code-only row). | 0 |
 | `creep-combat-rejects-power-creep-targets` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET. | Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it. | Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`. | 0 |
+| `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28). | 0 |
+| `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28). | 0 |
+| `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | 0 |
 | `tower-targets-creeps-and-destructible-only` | `StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller. | Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits. | Found 2026-09-27 when TOWER-*-003 got a case list for each target class (Decision 19); the tests had run a creep and a construction site only. | 0 |
 | `attack-controller-safe-mode-checked-before-cooldown` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`. | Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`). | Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row). | 0 |
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | 0 |
@@ -208,7 +246,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `segment-over-limit-drops-segment-not-tick` | `flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes. | Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error. | Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes. | [1](#xxscreeps-gap-segment-over-limit-drops-segment-not-tick) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile. | [1](#xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping) |
 | `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites. | [1](#xxscreeps-gap-terminal-send-cost-ignores-world-wrap) |
-| `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`. | [4](#xxscreeps-gap-bury-creep-stamps-next-tick) |
+| `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, the corpse's `lifeRate` reads the same getter (`:46`), so a recycled or suicided creep returns a tick's less body energy and boost, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`. | [4](#xxscreeps-gap-bury-creep-stamps-next-tick) |
 | `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | Found 2026-09-25 when DEPOSIT-004's `(49990, 50000]` band was pinned. Upstream fix: `- 1` on the decay anchor, matching the cooldown line above it. | [1](#xxscreeps-gap-deposit-decay-anchors-one-tick-late) |
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | Found 2026-09-25 when CTRL-UPGRADE-010's `(0, CONTROLLER_NUKE_BLOCKED_UPGRADE]` band was pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; upstream fix is `- 1` on the anchor. | [1](#xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late) |
 | `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned. Unlike `controller-timer-anchors-one-tick-late` this write reads a tick short, not long, because vanilla's formula is relative and carries its own `+ 1`. Same file, separate line to fix. | [1](#xxscreeps-gap-controller-downgrade-step-one-tick-short) |
@@ -330,6 +368,24 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-creep-combat-rejects-power-creep-targets">
 <summary><code>creep-combat-rejects-power-creep-targets</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-renew-recycle-target-creep-checked-late">
+<summary><code>renew-recycle-target-creep-checked-late</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-spawn-creep-accepts-non-object-options">
+<summary><code>spawn-creep-accepts-non-object-options</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-portal-ignores-power-creeps">
+<summary><code>portal-ignores-power-creeps</code> — 0 tests</summary>
 
 
 </details>
@@ -4574,7 +4630,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2753 tests across 144 files</summary>
+<summary>2749 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6391,11 +6447,9 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (18)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (16)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep
-- Spawn.recycleCreep RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position
-- Spawn.recycleCreep RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy
 - Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
@@ -6412,13 +6466,12 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (18)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (17)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
 - creep.suicide() CREEP-SUICIDE-003 suicide returns ERR_NOT_OWNER on another player's creep
 - creep.suicide() CREEP-SUICIDE-004 suicide returns ERR_BUSY on a spawning creep
-- creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone
 - creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate
 - creep.suicide() CREEP-DEATH-008 [source=suicide] preserves carried resources in the tombstone
 - creep.suicide() CREEP-DEATH-008 [source=ticksToLive] preserves carried resources in the tombstone
@@ -6789,7 +6842,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:fullBeforeFullLab2 reverseReaction() validation returns the canonical code
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (101)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (100)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -6891,7 +6944,6 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:zynthiumBar COMMODITIES[zynthium_bar].level is undefined
-- Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities
 
 **`tests/11-structures-production/11.6-power-spawn.test.ts`** (5)
 

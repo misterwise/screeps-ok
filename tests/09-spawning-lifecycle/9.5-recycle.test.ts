@@ -1,116 +1,90 @@
 import { describe, test, expect, code,
 	OK,
-	MOVE, WORK, CARRY, BODYPART_COST,
+	MOVE, WORK, CARRY, ATTACK, BODYPART_COST,
 	STRUCTURE_SPAWN, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
-	CREEP_LIFE_TIME,
+	CREEP_LIFE_TIME, SPAWN_ENERGY_CAPACITY, LAB_BOOST_ENERGY, LAB_BOOST_MINERAL, RESOURCE_UTRIUM_HYDRIDE,
 } from '../../src/index.js';
 import { recycleCreepValidationCases } from '../../src/matrices/recycle-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
-import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
+import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
 
 const staleSpawnRecycleCreepCase = staleReceiverCases.find(row => row.key === 'spawnRecycleCreep')!;
 const staleArgSpawnRecycleCreepCase = staleArgumentCases.find(row => row.key === 'spawnRecycleCreep')!;
 
 describe('Spawn.recycleCreep', () => {
-	test('RECYCLE-CREEP-001 recycleCreep returns OK for an adjacent owned creep', async ({ shard }) => {
+	test('RECYCLE-CREEP-001 recycleCreep destroys an adjacent owned creep in the tick it is called', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			body: [WORK, CARRY, MOVE],
 		});
-		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
-			const spawn = Game.getObjectById(${spawnId});
-			const creep = Game.getObjectById(${creepId});
-			spawn.recycleCreep(creep)
+			Game.getObjectById(${spawnId}).recycleCreep(Game.getObjectById(${creepId}))
 		`);
 		expect(rc).toBe(OK);
+		expect(await shard.getObject(creepId)).toBeNull();
 	});
 
-	test('RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position', async ({ shard }) => {
+	// A tick of difference moves these floors: 2/15 energy per tick for a
+	// 200-cost body, a TTL of half a lifetime.
+	const ticksToLive = CREEP_LIFE_TIME / 2;
+
+	test('RECYCLE-CREEP-002 recycling leaves floor(remaining TTL / CREEP_LIFE_TIME × body cost) energy in a tombstone', async ({ shard }) => {
+		// Vanilla spawns/recycle-creep.js:22 kills at drop rate 1.0, not
+		// CREEP_CORPSE_RATE (creeps/_die.js:42-57).
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
-		// Body: [WORK, CARRY, MOVE] — total cost = 200.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			body: [WORK, CARRY, MOVE],
-			ticksToLive: 1000,
+			ticksToLive,
 		});
-		await shard.tick();
 
-		// Capture user-tick gameTime + ttl alongside the recycle call so we
-		// can derive the intent-tick TTL via tomb.deathTime. Vanilla and
-		// xxscreeps process the recycle intent at different offsets from
-		// user code (same-tick vs +1), so observing TTL in a separate
-		// runPlayer would misalign the expected energy by one tick.
-		const result = await shard.runPlayer('p1', code`
-			const spawn = Game.getObjectById(${spawnId});
-			const creep = Game.getObjectById(${creepId});
-			const userTime = Game.time;
-			const userTtl = creep.ticksToLive;
-			const rc = spawn.recycleCreep(creep);
-			({ userTime, userTtl, rc })
-		`) as { userTime: number; userTtl: number; rc: number };
-		expect(result.rc).toBe(OK);
-
-		// Canonical recycle (recycle-creep.js → _die.js with dropRate=1.0):
-		// kills creep *immediately*, creates a tombstone at the creep's position,
-		// tombstone.store.energy = floor(1.0 * intentTtl / CREEP_LIFE_TIME * bodyCost).
-		// No multi-tick body removal, no FIND_DROPPED_RESOURCES.
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
-		expect(tomb).toBeDefined();
-
-		// Canonical _die accumulates `part_cost * lifeRate` per part into a
-		// float, then floors the total once (_die.js:44-57). That equals
-		// floor(totalBodyCost * lifeRate) with dropRate = 1.0 for recycle.
-		// intentTtl = ageTime - intentTime; userTtl = ageTime - userTime;
-		// so intentTtl = userTtl - (deathTime - userTime).
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${spawnId}).recycleCreep(Game.getObjectById(${creepId}))
+		`);
+		expect(rc).toBe(OK);
 		const bodyCost = BODYPART_COST[WORK] + BODYPART_COST[CARRY] + BODYPART_COST[MOVE];
-		const intentTtl = result.userTtl - (tomb!.deathTime - result.userTime);
-		const expectedEnergy = Math.floor(bodyCost * intentTtl / CREEP_LIFE_TIME);
-		expect(tomb!.store.energy).toBe(expectedEnergy);
-
-		// No dropped resource on the ground.
-		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const energyDrop = drops.find(r => r.pos.x === 25 && r.pos.y === 26 && r.resourceType === 'energy');
-		expect(energyDrop).toBeUndefined();
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		expect(tombstones.map(t => ({ pos: [t.pos.x, t.pos.y], store: t.store })))
+			.toEqual([{ pos: [25, 26], store: { energy: Math.floor(bodyCost * ticksToLive / CREEP_LIFE_TIME) } }]);
+		expect(await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES)).toEqual([]);
 	});
 
-	test('RECYCLE-CREEP-003 recycleCreep destroys the creep and drops energy', async ({ shard }) => {
+	test('RECYCLE-CREEP-003 recycling a boosted creep returns its boost compound and energy with the body', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
+			body: [ATTACK, MOVE],
+			boosts: { 0: RESOURCE_UTRIUM_HYDRIDE },
+			ticksToLive,
 		});
-		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
-			const spawn = Game.getObjectById(${spawnId});
-			const creep = Game.getObjectById(${creepId});
-			spawn.recycleCreep(creep)
+			Game.getObjectById(${spawnId}).recycleCreep(Game.getObjectById(${creepId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Creep should be destroyed (first body part removed each tick).
-		// After one tick, creep may still exist with fewer parts or be dead.
-		// After enough ticks it will be fully recycled.
-		// The recycle process drops energy at the spawn tile.
-		// Just verify the intent was accepted — full lifecycle tested below.
+		// Each boosted part returns LAB_BOOST_MINERAL and LAB_BOOST_ENERGY at the
+		// same rate as the body (creeps/_die.js:44-50).
+		const lifeRate = ticksToLive / CREEP_LIFE_TIME;
+		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
+		expect(tombstones.map(t => t.store)).toEqual([{
+			energy: Math.floor((BODYPART_COST[ATTACK] + BODYPART_COST[MOVE] + LAB_BOOST_ENERGY) * lifeRate),
+			[RESOURCE_UTRIUM_HYDRIDE]: Math.floor(LAB_BOOST_MINERAL * lifeRate),
+		}]);
 	});
 
 	test(`${staleSpawnRecycleCreepCase.catalogId}:${staleSpawnRecycleCreepCase.label} stale cached StructureSpawn.recycleCreep() throws a runtime error`, async ({ shard }) => {
@@ -145,10 +119,18 @@ describe('Spawn.recycleCreep', () => {
 			const blockers = shard.validationBlockers(row);
 			const spawnOwner = blockers.has('not-owner-spawn') ? 'p2' : 'p1';
 			const creepOwner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
+			// A spawning target spawns beside the spawn from a second one, which
+			// W1N1 has at RCL 7; where W1N1 can't host it (inactive or another
+			// player's) it spawns in its owner's W2N1.
+			const spawning = blockers.has('spawning-target');
+			const spawnsNearby = spawning && !['not-owner-spawn', 'not-owner-creep', 'rcl'].some(b => blockers.has(b as never));
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				// A spawn in a room with no controller level is inactive.
-				rooms: [blockers.has('rcl') ? { name: 'W1N1' } : { name: 'W1N1', rcl: 2, owner: spawnOwner }],
+				rooms: [
+					// A spawn in a room with no controller level is inactive.
+					blockers.has('rcl') ? { name: 'W1N1' } : { name: 'W1N1', rcl: spawnsNearby ? 7 : 2, owner: spawnOwner },
+					...(spawning && !spawnsNearby ? [{ name: 'W2N1', rcl: 2, owner: creepOwner }] : []),
+				],
 			});
 			if (spawnOwner === 'p2' || creepOwner === 'p2') {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
@@ -157,15 +139,20 @@ describe('Spawn.recycleCreep', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_SPAWN,
 				owner: spawnOwner,
-				store: { energy: 300 },
+				store: { energy: SPAWN_ENERGY_CAPACITY },
 			});
+			const pos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
 			const targetId = blockers.has('invalid-target')
-				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })
-				: await shard.placeCreep('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [25, 26],
-					owner: creepOwner,
-					body: [WORK, CARRY, MOVE],
-				});
+				? await shard.placeSource('W1N1', { pos })
+				: spawning
+					? await spawnBusyCreep(shard, spawnsNearby
+						? { pos, body: [WORK, CARRY, MOVE], name: 'SpawningTarget' }
+						: { roomName: 'W2N1', owner: creepOwner, observerOwner: creepOwner === 'p1' ? undefined : 'p1', body: [WORK, CARRY, MOVE], name: 'SpawningTarget' })
+					: await shard.placeCreep('W1N1', {
+						pos,
+						owner: creepOwner,
+						body: [WORK, CARRY, MOVE],
+					});
 			if (blockers.has('rcl')) await shard.tick();
 
 			const rc = await shard.runPlayer('p1', code`

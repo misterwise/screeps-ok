@@ -6,6 +6,7 @@ import {
 	CREEP_SPAWN_TIME, MAX_CREEP_SIZE,
 	TOP, TOP_RIGHT, RIGHT, BOTTOM, LEFT,
 	FIND_CREEPS, TERRAIN_WALL,
+	SPAWN_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { spawnCreateValidationCases } from '../../src/matrices/spawn-create-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
@@ -151,31 +152,27 @@ describe('StructureSpawn', () => {
 		expect(third.store.energy ?? 0).toBe(50);
 	});
 
-	test('SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep', async ({ shard }) => {
+	test('SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) runs the checks without consuming energy or creating a creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
 		});
+		// Full, so no regeneration hides a charge.
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 200 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
 
-		const result = await shard.runPlayer('p1', code`
+		const rcs = await shard.runPlayer('p1', code`
 			const spawn = Game.getObjectById(${spawnId});
-			const rc = spawn.spawnCreep([WORK, CARRY, MOVE], 'DryRunWorker', { dryRun: true });
-			({
-				rc,
-				energy: spawn.store.energy,
-				hasCreep: !!Game.creeps['DryRunWorker'],
-			})
-		`) as { rc: number; energy: number; hasCreep: boolean };
-
-		expect(result).toEqual({
-			rc: OK,
-			energy: 200,
-			hasCreep: false,
-		});
+			[
+				spawn.spawnCreep([WORK, CARRY, MOVE], 'DryRunWorker', { dryRun: true }),
+				spawn.spawnCreep(${body(4, WORK)}, 'DryRunTooCostly', { dryRun: true }),
+			]
+		`);
+		expect(rcs).toEqual([OK, ERR_NOT_ENOUGH_ENERGY]);
+		expect((await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).store.energy).toBe(SPAWN_ENERGY_CAPACITY);
+		expect(await shard.findInRoom('W1N1', FIND_CREEPS)).toEqual([]);
 	});
 
 	test('SPAWN-CREATE-013 spawnCreep deducts the body cost from the spawn and contributing extensions', async ({ shard }) => {
@@ -230,48 +227,28 @@ describe('StructureSpawn', () => {
 
 	// ── Spawning timing ─────────────────────────────────────────
 
-	test('SPAWN-TIMING-001 spawning.needTime equals CREEP_SPAWN_TIME * body.length', async ({ shard }) => {
+	test('SPAWN-TIMING-001 spawning takes CREEP_SPAWN_TIME ticks per body part', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
+		const creepBody = [WORK, CARRY, MOVE];
+		const needTime = CREEP_SPAWN_TIME * creepBody.length;
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([WORK, CARRY, MOVE], 'TimingTest')
+			Game.getObjectById(${spawnId}).spawnCreep(${creepBody}, 'TimingTest')
 		`);
 		expect(rc).toBe(OK);
+		expect((await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).spawning?.needTime).toBe(needTime);
+
+		// The spawn tick counts as the first; the creep is out after needTime.
+		await shard.tick(needTime - 2);
+		expect((await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).spawning).not.toBeNull();
 		await shard.tick();
-
-		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		expect(spawn.spawning).not.toBeNull();
-		expect(spawn.spawning!.needTime).toBe(CREEP_SPAWN_TIME * 3);
-	});
-
-	test('SPAWN-TIMING-002 spawning completes after needTime ticks and creep appears', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'SpawnComplete')
-		`);
-		expect(rc).toBe(OK);
-
-		// CREEP_SPAWN_TIME * 1 part = 3 ticks to complete.
-		// After the runPlayer tick + 2 more ticks, spawning should be done.
-		await shard.tick(CREEP_SPAWN_TIME - 1);
-
-		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		expect(spawn.spawning).toBeNull();
-
-		// The creep should now exist in the game.
-		const exists = await shard.runPlayer('p1', code`
-			!!Game.creeps['SpawnComplete']
-		`);
-		expect(exists).toBe(true);
+		expect((await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).spawning).toBeNull();
+		const creep = (await shard.findInRoom('W1N1', FIND_CREEPS)).find(c => c.name === 'TimingTest');
+		expect(creep?.spawning).toBe(false);
 	});
 
 	test('SPAWN-TIMING-003 default spawn direction priority: TOP first, then clockwise', async ({ shard }) => {
@@ -334,36 +311,17 @@ describe('StructureSpawn', () => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
-		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'ExitCreep')
+			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'ExitCreep', { directions: [RIGHT] })
 		`);
 		expect(rc).toBe(OK);
-
-		// While spawning, creep is on spawn tile.
-		await shard.tick();
-		const spawning = await shard.runPlayer('p1', code`
-			const c = Game.creeps['ExitCreep'];
-			c ? ({ x: c.pos.x, y: c.pos.y, spawning: c.spawning }) : null
-		`) as { x: number; y: number; spawning: boolean } | null;
-		expect(spawning).not.toBeNull();
-		expect(spawning!.x).toBe(25);
-		expect(spawning!.y).toBe(25);
-		expect(spawning!.spawning).toBe(true);
-
-		// Complete spawning.
 		await shard.tick(CREEP_SPAWN_TIME - 1);
 
-		const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
-		const c = creeps.find(c => c.name === 'ExitCreep');
-		expect(c).toBeDefined();
-		expect(c!.spawning).toBe(false);
-		// Creep should no longer be on the spawn tile [25,25].
-		const onSpawn = c!.pos.x === 25 && c!.pos.y === 25;
-		expect(onSpawn).toBe(false);
+		const creep = (await shard.findInRoom('W1N1', FIND_CREEPS)).find(c => c.name === 'ExitCreep');
+		expect(creep && { spawning: creep.spawning, x: creep.pos.x, y: creep.pos.y }).toEqual({ spawning: false, x: 26, y: 25 });
 	});
 
 	test(`${staleSpawnCreepCase.catalogId}:${staleSpawnCreepCase.label} stale cached StructureSpawn.spawnCreep() throws a runtime error`, async ({ shard }) => {
@@ -397,7 +355,7 @@ describe('StructureSpawn', () => {
 				rooms: [
 					// A spawn in a room with no controller level is inactive.
 					blockers.has('rcl') ? { name: 'W1N1' } : { name: 'W1N1', rcl: 2, owner },
-					...(blockers.has('name-spawning') ? [{ name: 'W2N1', rcl: 1, owner: 'p1' }] : []),
+					...(blockers.has('name-spawning') || blockers.has('name-taken') ? [{ name: 'W2N1', rcl: 1, owner: 'p1' }] : []),
 				],
 			});
 			if (owner === 'p2') {
@@ -416,14 +374,17 @@ describe('StructureSpawn', () => {
 				})
 				: null;
 			// A name too long to spawn can still be placed, so it can also exist.
-			const name = blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
+			const name = blockers.has('missing-name') ? undefined
+				: blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
 			if (blockers.has('name-exists')) {
 				await shard.placeCreep('W1N1', { pos: [20, 21], owner: 'p1', body: [MOVE], name });
 			}
+			const otherSpawnId = blockers.has('name-spawning') || blockers.has('name-taken')
+				? await shard.placeStructure('W2N1', {
+					pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1', store: { energy: SPAWN_ENERGY_CAPACITY },
+				})
+				: null;
 			if (blockers.has('name-spawning')) {
-				const otherSpawnId = await shard.placeStructure('W2N1', {
-					pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1', store: { energy: 300 },
-				});
 				await shard.tick();
 				const otherRc = await shard.runPlayer('p1', code`
 					Game.getObjectById(${otherSpawnId}).spawnCreep(${body(6, MOVE)}, 'NewCreep')
@@ -445,13 +406,16 @@ describe('StructureSpawn', () => {
 				: blockers.has('not-enough') ? [WORK, WORK, WORK, WORK]
 				: [MOVE];
 			const directions = blockers.has('invalid-directions') ? [99] : null;
-			const rc = await shard.runPlayer('p1', code`
-				const opts = {};
+			// With name-taken the other spawn starts the name first, in the same tick.
+			const result = await shard.runPlayer('p1', code`
+				let opts = {};
 				if (${directions}) opts.directions = ${directions};
 				if (${selectedId}) opts.energyStructures = [Game.getObjectById(${selectedId})];
-				Game.getObjectById(${spawnId}).spawnCreep(${creepBody}, ${name}, opts)
+				if (${blockers.has('invalid-options')}) opts = 1;
+				const taken = ${blockers.has('name-taken')} ? Game.getObjectById(${otherSpawnId}).spawnCreep([MOVE], ${name}) : null;
+				[taken, Game.getObjectById(${spawnId}).spawnCreep(${creepBody}, ${name}, opts)]
 			`);
-			expect(rc).toBe(row.expectedRc);
+			expect(result).toEqual([blockers.has('name-taken') ? OK : null, row.expectedRc]);
 		});
 	}
 });

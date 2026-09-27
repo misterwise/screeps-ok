@@ -1,8 +1,8 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER,
 	STRUCTURE_RAMPART, STRUCTURE_TOWER, STRUCTURE_NUKER, STRUCTURE_SPAWN,
-	ATTACK, MOVE, TOUGH, body,
-	ATTACK_POWER, TOWER_POWER_ATTACK,
+	MOVE, TOUGH, body, STRUCTURE_WALL,
+	BODYPART_HITS, TOWER_POWER_ATTACK, TOWER_CAPACITY, TOWER_HITS, SPAWN_HITS, RAMPART_HITS_MAX, WALL_HITS_MAX,
 	RAMPART_DECAY_AMOUNT, RAMPART_DECAY_TIME,
 	NUKE_DAMAGE, NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
 } from '../../src/index.js';
@@ -25,77 +25,40 @@ describe('StructureRampart', () => {
 		});
 	}
 
-	test('TOWER-ATTACK-006 tower.attack on a tile with a rampart damages the rampart, not the creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 3, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 28], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: 10000000,
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p2',
-			body: body(5, TOUGH, MOVE),
-		});
+	for (const onRampart of ['creep', 'structure'] as const) {
+		test(`TOWER-ATTACK-006:${onRampart} tower.attack on a ${onRampart} under a rampart damages the rampart instead`, async ({ shard }) => {
+			// Vanilla towers/attack.js:26-29 swaps in any rampart on the target's tile.
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 3, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				],
+			});
+			const towerId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
+				store: { energy: TOWER_CAPACITY },
+			});
+			const rampartHits = RAMPART_HITS_MAX[3];
+			const rampartId = await shard.placeStructure('W1N1', {
+				pos: [25, 28], structureType: STRUCTURE_RAMPART, owner: 'p2',
+				hits: rampartHits,
+			});
+			const targetId = onRampart === 'creep'
+				? await shard.placeCreep('W1N1', { pos: [25, 28], owner: 'p2', body: body(5, TOUGH, MOVE) })
+				: await shard.placeStructure('W1N1', { pos: [25, 28], structureType: STRUCTURE_WALL, hits: WALL_HITS_MAX });
 
-		// Tower attacks the creep, but the rampart on that tile absorbs damage.
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${towerId}).attack(Game.getObjectById(${creepId}))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Creep takes zero damage; rampart absorbs the tower hit.
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.hits).toBe(600); // 6 parts (5 TOUGH + 1 MOVE) * 100
-
-		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(rampart.hits).toBe(10000000 - TOWER_POWER_ATTACK);
-	});
-
-	test('COMBAT-MELEE-005 creep.attack on a rampart-covered structure damages the rampart', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 3, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
+			const rc = await shard.runPlayer('p1', code`
+				Game.getObjectById(${towerId}).attack(Game.getObjectById(${targetId}))
+			`);
+			expect(rc).toBe(OK);
+			expect((await shard.expectStructure(rampartId, STRUCTURE_RAMPART)).hits).toBe(rampartHits - TOWER_POWER_ATTACK);
+			expect(onRampart === 'creep'
+				? (await shard.expectObject(targetId, 'creep')).hits
+				: (await shard.expectStructure(targetId, STRUCTURE_WALL)).hits,
+			).toBe(onRampart === 'creep' ? 6 * BODYPART_HITS : WALL_HITS_MAX);
 		});
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: 10000000,
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2',
-			body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${towerId}))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Tower takes zero damage; rampart absorbs the creep attack.
-		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.hits).toBe(3000);
-
-		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(rampart.hits).toBe(10000000 - ATTACK_POWER);
-	});
+	}
 
 	test('RAMPART-PROTECT-003 a non-public hostile rampart blocks hostile creep movement', async ({ shard }) => {
 		await shard.createShard({
@@ -120,7 +83,6 @@ describe('StructureRampart', () => {
 			Game.getObjectById(${creepId}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		// Creep should remain at [25,26] — blocked by the non-public rampart.
@@ -151,13 +113,11 @@ describe('StructureRampart', () => {
 			const rampart = structs.find(s => s.structureType === STRUCTURE_RAMPART);
 			rampart.setPublic(true)
 		`);
-		await shard.tick();
 
 		const rc = await shard.runPlayer('p2', code`
 			Game.getObjectById(${creepId}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.pos.y).toBe(25);
@@ -175,7 +135,6 @@ describe('StructureRampart', () => {
 			Game.getObjectById(${rampartId}).setPublic(true)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const isPublic = await shard.runPlayer('p1', code`
 			Game.getObjectById(${rampartId}).isPublic
@@ -192,16 +151,15 @@ describe('StructureRampart', () => {
 		await shard.tick();
 
 		// First set it public, then revert.
-		await shard.runPlayer('p1', code`
+		const publicRc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${rampartId}).setPublic(true)
 		`);
-		await shard.tick();
+		expect(publicRc).toBe(OK);
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${rampartId}).setPublic(false)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const isPublic = await shard.runPlayer('p1', code`
 			Game.getObjectById(${rampartId}).isPublic
@@ -297,20 +255,15 @@ describe('StructureRampart', () => {
 			launchRoomName: 'W2N1',
 			timeToLand: 3,
 		});
-		await shard.tick();
-
-		const spawnBefore = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		const spawnHitsBefore = spawnBefore.hits;
-
 		// Advance until nuke lands.
-		await shard.tick(3);
+		await shard.tick(4);
 
 		// After landing: rampart absorbed the full nuke damage, spawn is undamaged.
 		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
 		expect(rampart.hits).toBe(rampartHits - nukeDamage);
 
 		const spawnAfter = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		expect(spawnAfter.hits).toBe(spawnHitsBefore);
+		expect(spawnAfter.hits).toBe(SPAWN_HITS);
 	});
 
 	test('RAMPART-PROTECT-010 remaining nuke damage applies equally to each covered structure on the rampart tile', async ({ shard }) => {
@@ -341,9 +294,6 @@ describe('StructureRampart', () => {
 			owner: 'p1',
 			store: { energy: 0 },
 		});
-		const spawnBefore = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
-		const towerBefore = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-
 		await shard.placeNuke('W1N1', {
 			pos: [25, 25],
 			launchRoomName: 'W2N1',
@@ -353,8 +303,8 @@ describe('StructureRampart', () => {
 
 		const spawnAfter = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
 		const towerAfter = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(spawnBefore.hits - spawnAfter.hits).toBe(remainingDamage);
-		expect(towerBefore.hits - towerAfter.hits).toBe(remainingDamage);
+		expect(spawnAfter.hits).toBe(SPAWN_HITS - remainingDamage);
+		expect(towerAfter.hits).toBe(TOWER_HITS - remainingDamage);
 	});
 
 	test('RAMPART-PROTECT-009 owner creep can move onto own non-public rampart tile', async ({ shard }) => {
@@ -375,7 +325,6 @@ describe('StructureRampart', () => {
 			Game.getObjectById(${creepId}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.pos.x).toBe(25);

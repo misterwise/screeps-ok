@@ -8,7 +8,9 @@ export const labRunValidationCases = makeValidationCases('LAB-RUN-013', [
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
+	{ condition: 'missing-lab1', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'invalid-lab1', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'self-lab1', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'not-a-lab', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'self-target', expectedRc: ERR_INVALID_TARGET },
@@ -20,12 +22,14 @@ export const labRunValidationCases = makeValidationCases('LAB-RUN-013', [
 	{ condition: 'no-product', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
 ] as const, [
-	// A container as lab1 has no range, store or mineral to fail on, and no
-	// reagent for a product the calling lab's mineral could differ from.
-	['invalid-lab1', 'range-lab1'],
-	['invalid-lab1', 'not-enough-lab1'],
-	['invalid-lab1', 'no-product'],
-	['invalid-lab1', 'invalid-args'],
+	// The forms of lab1 exclude each other, and a lab1 that isn't another lab
+	// has no range, store or mineral to fail on, and no reagent for a product
+	// the calling lab's mineral could differ from.
+	['missing-lab1', 'invalid-lab1'],
+	['missing-lab1', 'self-lab1'],
+	['invalid-lab1', 'self-lab1'],
+	...(['missing-lab1', 'invalid-lab1', 'self-lab1'] as const).flatMap(lab1 =>
+		(['range-lab1', 'not-enough-lab1', 'no-product', 'invalid-args'] as const).map(right => [lab1, right] as const)),
 	// The forms of lab2 exclude each other, and a lab2 that isn't another lab
 	// has no range, store, mineral or product to fail on.
 	['invalid-target', 'not-a-lab'],

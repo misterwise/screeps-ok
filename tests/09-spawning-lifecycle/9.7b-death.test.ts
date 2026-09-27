@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, FIND_TOMBSTONES, FIND_DROPPED_RESOURCES, RESOURCE_ENERGY, RESOURCE_POWER, STRUCTURE_CONTAINER, TOMBSTONE_DECAY_PER_PART, BODYPART_COST, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CREEP_PART_MAX_ENERGY, CONTAINER_CAPACITY, LAB_BOOST_ENERGY, LAB_BOOST_MINERAL } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, FIND_TOMBSTONES, FIND_DROPPED_RESOURCES, RESOURCE_ENERGY, RESOURCE_POWER, STRUCTURE_CONTAINER, TOMBSTONE_DECAY_PER_PART, BODYPART_COST, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CREEP_PART_MAX_ENERGY, CONTAINER_CAPACITY, LAB_BOOST_ENERGY, LAB_BOOST_MINERAL, CARRY_CAPACITY, ENERGY_DECAY } from '../../src/index.js';
 
 describe('creep death', () => {
 	test('CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick', async ({ shard }) => {
@@ -8,31 +8,11 @@ describe('creep death', () => {
 			body: [MOVE],
 			ticksToLive: 2,
 		});
-		await shard.tick(); // TTL 2 → 1
-		const alive = await shard.getObject(id);
-		expect(alive).not.toBeNull();
+		await shard.tick();
+		expect((await shard.expectObject(id, 'creep')).ticksToLive).toBe(1);
 
-		await shard.tick(); // TTL 1 → 0 → dies
-		const dead = await shard.getObject(id);
-		expect(dead).toBeNull();
-	});
-
-	test('TOMBSTONE-001 death creates a tombstone at the position of death', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [20, 30], owner: 'p1',
-			body: [MOVE],
-			name: 'doomed',
-			ticksToLive: 2,
-		});
-		await shard.tick(); // TTL 1
-		await shard.tick(); // dies
-
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find(t => t.creepName === 'doomed');
-		expect(tomb).toBeDefined();
-		expect(tomb!.pos.x).toBe(20);
-		expect(tomb!.pos.y).toBe(30);
+		await shard.tick();
+		expect(await shard.getObject(id)).toBeNull();
 	});
 
 	test('CREEP-DEATH-003 death resources go into a same-tile container first', async ({ shard }) => {
@@ -225,7 +205,7 @@ describe('creep death', () => {
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [CARRY],
-			store: { energy: 50 },
+			store: { energy: CARRY_CAPACITY },
 			name: 'dropOnDecay',
 			ticksToLive: 2,
 		});
@@ -241,10 +221,11 @@ describe('creep death', () => {
 		expect(tomb).toBeUndefined();
 
 		// An age death reclaims no body energy, so the tombstone held just the
-		// carried 50. It spills in the object-tick pass on death + 4, after that
-		// tick's decay, and the pile decays 1 per tick on death + 5 and + 6.
+		// carried energy. It spills in the object-tick pass on death + 4, after
+		// that tick's decay, and the pile decays on death + 5 and + 6.
+		const decay = (amount: number) => amount - Math.ceil(amount / ENERGY_DECAY);
 		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		const energyDrop = drops.find(d => d.pos.x === 25 && d.pos.y === 25 && d.resourceType === 'energy');
-		expect(energyDrop?.amount).toBe(48);
+		const energyDrop = drops.find(d => d.pos.x === 25 && d.pos.y === 25 && d.resourceType === RESOURCE_ENERGY);
+		expect(energyDrop?.amount).toBe(decay(decay(CARRY_CAPACITY)));
 	});
 });

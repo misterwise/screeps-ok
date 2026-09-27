@@ -1,57 +1,44 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_NOT_ENOUGH_RESOURCES, ERR_FULL, ERR_BUSY, ERR_TIRED,
 	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_RCL_NOT_ENOUGH,
-	COMMODITIES, STRUCTURE_FACTORY, FACTORY_CAPACITY, PWR_OPERATE_FACTORY,
+	COMMODITIES, STRUCTURE_FACTORY, FACTORY_CAPACITY, PWR_OPERATE_FACTORY, POWER_INFO, RESOURCE_OPS,
+	RESOURCE_BATTERY, RESOURCE_COMPOSITE,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 import { factoryProduceCases } from '../../src/matrices/factory-produce.js';
 import { factoryCommodityCases } from '../../src/matrices/factory-commodity.js';
 import { factoryProduceValidationCases } from '../../src/matrices/factory-produce-validation.js';
 
 describe('Factory production', () => {
 	// ---- FACTORY-PRODUCE-001 (matrix): produce() consumes components and produces output ----
-	const level0Cases = factoryProduceCases.filter(c => c.requiredLevel === undefined);
-	for (const { resource, label, expectedAmount, expectedComponents, expectedCooldown } of level0Cases) {
+	for (const { resource, label, expectedAmount, expectedComponents, requiredLevel } of factoryProduceCases) {
 		test(`FACTORY-PRODUCE-001:${label} produce(${resource}) consumes components and yields ${expectedAmount}`, async ({ shard }) => {
 			shard.requires('factory');
+			// A leveled commodity needs a factory of its level under PWR_OPERATE_FACTORY
+			// at that level (game/structures.js:1448-1458).
+			if (requiredLevel) {
+				shard.requires('powerCreeps');
+				shard.requires('powerEffects');
+			}
 			await shard.createShard({
 				players: ['p1'],
-				rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
+				rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1', powerEnabled: !!requiredLevel }],
 			});
-
-			// Stock the factory with exactly the required components.
-			const store: Record<string, number> = {};
-			for (const [comp, amount] of Object.entries(expectedComponents)) {
-				store[comp] = amount;
-			}
 			const factoryId = await shard.placeStructure('W1N1', {
 				pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
-				store,
+				store: { ...expectedComponents },
+				...(requiredLevel ? { level: requiredLevel } : {}),
 			});
-			await shard.tick();
+			if (requiredLevel) {
+				await operateFactory(shard, factoryId, requiredLevel);
+			}
 
-			// Submit the produce intent.
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${factoryId}).produce(${resource})
 			`);
 			expect(rc).toBe(OK);
-
-			// Observe state after the tick processor applied the intent.
-			const after = await shard.runPlayer('p1', code`
-				const f = Game.getObjectById(${factoryId});
-				const storeAfter = {};
-				for (const r of Object.keys(f.store)) {
-					if (f.store[r] > 0) storeAfter[r] = f.store[r];
-				}
-				({ store: storeAfter, cooldown: f.cooldown })
-			`) as { store: Record<string, number>; cooldown: number };
-
-			// All input components should be fully consumed.
-			for (const comp of Object.keys(expectedComponents)) {
-				expect(after.store[comp] ?? 0).toBe(0);
-			}
-			// Output should be produced.
-			expect(after.store[resource] ?? 0).toBe(expectedAmount);
-			expect(after.cooldown).toBeGreaterThan(0);
+			const factory = await shard.expectStructure(factoryId, STRUCTURE_FACTORY);
+			expect(heldResources(factory.store)).toEqual({ [resource]: expectedAmount });
 		});
 	}
 
@@ -156,28 +143,28 @@ describe('Factory commodity chains', () => {
 	}
 
 	// ---- FACTORY-COMMODITY-002: level 0 factory can only produce level 0 commodities ----
-	test('FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY can produce level 0 commodities', async ({ shard }) => {
+	test('FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY produces level 0 commodities only', async ({ shard }) => {
 		shard.requires('factory');
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1' }],
 		});
-
-		// battery is level 0 (undefined) — should succeed.
+		// A level-1 factory whose effect is gone: battery is level 0, composite level 1.
 		const factoryId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
-			store: { energy: 600 },
+			store: componentsOf(RESOURCE_BATTERY, RESOURCE_COMPOSITE),
+			level: COMMODITIES[RESOURCE_COMPOSITE].level!,
 		});
-		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${factoryId}).produce(RESOURCE_BATTERY)
+		const rcs = await shard.runPlayer('p1', code`
+			const factory = Game.getObjectById(${factoryId});
+			[factory.produce(RESOURCE_BATTERY), factory.produce(RESOURCE_COMPOSITE)]
 		`);
-		expect(rc).toBe(OK);
+		expect(rcs).toEqual([OK, ERR_BUSY]);
 	});
 
 	// ---- FACTORY-COMMODITY-003: PWR_OPERATE_FACTORY at level N allows level N commodities ----
-	test('FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level N commodity production', async ({ shard }) => {
+	test('FACTORY-COMMODITY-003 PWR_OPERATE_FACTORY at level N allows level 0 and level N commodities only', async ({ shard }) => {
 		shard.requires('factory');
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
@@ -185,33 +172,47 @@ describe('Factory commodity chains', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 7, owner: 'p1', powerEnabled: true }],
 		});
-
-		// Place factory with components for composite (level 1).
+		const level = COMMODITIES[RESOURCE_COMPOSITE].level!;
+		const otherLevel = Object.keys(COMMODITIES).find(resource => COMMODITIES[resource].level === level + 1)!;
 		const factoryId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
-			store: { utrium_bar: 20, zynthium_bar: 20, energy: 20 },
+			store: componentsOf(RESOURCE_BATTERY, RESOURCE_COMPOSITE),
 		});
+		await operateFactory(shard, factoryId, level);
 
-		// Place a power creep with PWR_OPERATE_FACTORY at level 1.
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_OPERATE_FACTORY]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		// Activate PWR_OPERATE_FACTORY on the factory.
-		await shard.runPlayer('p1', code`
-			const pcs = Object.values(Game.powerCreeps);
-			const pc = pcs[0];
+		const rcs = await shard.runPlayer('p1', code`
 			const factory = Game.getObjectById(${factoryId});
-			pc.usePower(PWR_OPERATE_FACTORY, factory)
+			[factory.produce(RESOURCE_BATTERY), factory.produce(RESOURCE_COMPOSITE), factory.produce(${otherLevel})]
 		`);
-
-		// Power effect applies next tick. Now produce.
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${factoryId}).produce(RESOURCE_COMPOSITE)
-		`);
-		expect(rc).toBe(OK);
+		expect(rcs).toEqual([OK, OK, ERR_INVALID_TARGET]);
 	});
 });
+
+// A power creep beside the factory applies PWR_OPERATE_FACTORY at `level`.
+async function operateFactory(shard: ShardFixture, factoryId: string, level: number) {
+	await shard.placePowerCreep('W1N1', {
+		pos: [25, 26], owner: 'p1',
+		powers: { [PWR_OPERATE_FACTORY]: level },
+		store: { [RESOURCE_OPS]: POWER_INFO[PWR_OPERATE_FACTORY].ops! },
+	});
+	const rc = await shard.runPlayer('p1', code`
+		Object.values(Game.powerCreeps)[0].usePower(PWR_OPERATE_FACTORY, Game.getObjectById(${factoryId}))
+	`);
+	expect(rc).toBe(OK);
+}
+
+// Enough of every component to produce each resource once.
+function componentsOf(...resources: string[]): Record<string, number> {
+	const store: Record<string, number> = {};
+	for (const resource of resources) {
+		for (const [component, amount] of Object.entries(COMMODITIES[resource].components)) {
+			store[component] = (store[component] ?? 0) + amount;
+		}
+	}
+	return store;
+}
+
+// The store's non-empty entries, whether or not an engine keeps spent keys at 0.
+function heldResources(store: Record<string, number>): Record<string, number> {
+	return Object.fromEntries(Object.entries(store).filter(([, amount]) => amount > 0));
+}

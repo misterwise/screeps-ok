@@ -113,31 +113,23 @@ describe('StructureRoad', () => {
 
 	test('ROAD-WEAR-002 road wear is applied in the same tick the creep moves onto the road', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		const ticksToDecay = 1000;
 		const roadId = await shard.placeStructure('W1N1', {
 			pos: [25, 24], structureType: STRUCTURE_ROAD,
-			ticksToDecay: 1000,
+			ticksToDecay,
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: [MOVE],
 		});
-		await shard.tick();
-
-		const roadBefore = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		const ttdBefore = roadBefore.ticksToDecay;
 
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).move(TOP)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
-
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.pos.y).toBe(24);
-
-		const roadAfter = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		// Wear (ROAD_WEAROUT * 1) + 2 ticks elapsed (runPlayer + tick).
-		expect(roadAfter.ticksToDecay).toBe(ttdBefore! - ROAD_WEAROUT * 1 - 2);
+		expect((await shard.expectObject(creepId, 'creep')).pos.y).toBe(24);
+		// One part's wear, and the tick the move took.
+		expect((await shard.expectStructure(roadId, STRUCTURE_ROAD)).ticksToDecay).toBe(ticksToDecay - ROAD_WEAROUT - 1);
 	});
 
 	test('ROAD-WEAR-003 moving onto a wall-road applies the same ROAD_WEAROUT advance as plain-road', async ({ shard }) => {

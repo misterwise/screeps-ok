@@ -95,13 +95,11 @@ describe('Road decay', () => {
 			ticksToDecay: 2,
 		});
 
-		const before = await shard.expectStructure(id, STRUCTURE_ROAD);
-		expect(before.hits).toBe(ROAD_DECAY_AMOUNT);
+		await shard.tick();
+		expect(await shard.expectStructure(id, STRUCTURE_ROAD)).toMatchObject({ hits: ROAD_DECAY_AMOUNT, ticksToDecay: 1 });
 
-		// Tick past decay — road should be destroyed.
-		await shard.tick(3);
-
-		const obj = await shard.getObject(id);
-		expect(obj).toBeNull();
+		// The decay tick takes its last hits and removes it.
+		await shard.tick();
+		expect(await shard.getObject(id)).toBeNull();
 	});
 });

@@ -1582,9 +1582,12 @@ Coverage Notes
   contributing extensions.
 - `SPAWN-CREATE-014` `matrix` `verified_vanilla`
   `spawn.spawnCreep(body, name, opts?)` returns the first failing check's
-  code, in this order: `:invalidNameOrOptions` the name is longer than 100
-  characters, `ERR_INVALID_ARGS`; `:nameExists` a living creep of the player's
-  has the name, or `:nameSpawning` a spawning one does, `ERR_NAME_EXISTS`;
+  code, in this order: `:missingName` the name is missing, or
+  `:invalidOptions` `opts` isn't an object, `ERR_INVALID_ARGS`;
+  `:invalidNameOrOptions` the name is longer than 100 characters,
+  `ERR_INVALID_ARGS`; `:nameExists` a living creep of the player's has the
+  name, `:nameSpawning` a spawning one does, or `:nameTaken` another of the
+  player's spawns started it earlier in the tick, `ERR_NAME_EXISTS`;
   `:invalidDirections` `opts.directions` holds a value outside 1-8,
   `ERR_INVALID_ARGS`; `:notOwner` the spawn isn't the player's,
   `ERR_NOT_OWNER`; `:busy` it is spawning, `ERR_BUSY`; `:rcl` it is inactive,
@@ -1656,7 +1659,7 @@ Coverage Notes
   in the same tick.
 - `RENEW-CREEP-003` `behavior` `verified_vanilla`
   A successful `renewCreep()` returns `OK` and spends
-  `ceil(CREEP_SPAWN_TIME * body.length * BODYPART_COST_SUM / SPAWN_RENEW_RATIO / CREEP_LIFE_TIME)`
+  `ceil(SPAWN_RENEW_RATIO * bodyCost / CREEP_SPAWN_TIME / body.length)`
   energy in the same tick.
 - `RENEW-CREEP-004` `behavior` `verified_vanilla`
   A successful `renewCreep()` returns `OK` and removes all boosts from the
@@ -1670,9 +1673,10 @@ Coverage Notes
 - `RENEW-CREEP-011` `matrix` `verified_vanilla`
   `spawn.renewCreep(creep)` returns the first failing check's code, in this
   order: `:busy` the spawn is spawning, `ERR_BUSY`; `:invalidTarget` the
-  target isn't a creep, or `:claimPart` it has a CLAIM part,
-  `ERR_INVALID_TARGET`; `:notOwner` the spawn isn't the player's,
-  `ERR_NOT_OWNER`; `:rcl` it is inactive, `ERR_RCL_NOT_ENOUGH`; `:range` the
+  target isn't a creep, `:spawningTarget` it is spawning, or `:claimPart` it
+  has a CLAIM part, `ERR_INVALID_TARGET`; `:notOwner` the spawn isn't the
+  player's, or `:notOwnerCreep` the creep isn't, `ERR_NOT_OWNER`; `:rcl` the
+  spawn is inactive, `ERR_RCL_NOT_ENOUGH`; `:range` the
   creep isn't adjacent, `ERR_NOT_IN_RANGE`; `:notEnough` the room lacks the
   renewal's energy cost, `ERR_NOT_ENOUGH_ENERGY`; `:full` the renewal would
   take the creep's `ticksToLive` past `CREEP_LIFE_TIME`, `ERR_FULL`.
@@ -1682,16 +1686,16 @@ Coverage Notes
   `recycleCreep()` destroys an adjacent creep during the current tick's intent
   resolution.
 - `RECYCLE-CREEP-002` `behavior` `verified_vanilla`
-  Recycled body value returned as energy equals
-  `CREEP_CORPSE_RATE * remainingTTL / CREEP_LIFE_TIME` of the creep's total
-  body cost.
+  A recycled creep's tombstone holds `remainingTTL / CREEP_LIFE_TIME` of its
+  body cost in energy, rounded down: recycling returns the body at the full
+  rate, not `CREEP_CORPSE_RATE`.
 - `RECYCLE-CREEP-003` `behavior` `verified_vanilla`
   Recycling returns both energy and boost compounds from the target creep.
 - `RECYCLE-CREEP-005` `matrix` `verified_vanilla`
   `spawn.recycleCreep(creep)` returns the first failing check's code, in this
   order: `:notOwnerSpawn` the spawn isn't the player's, `ERR_NOT_OWNER`;
-  `:invalidTarget` the target isn't a creep, `ERR_INVALID_TARGET`; `:rcl` the
-  spawn is inactive, `ERR_RCL_NOT_ENOUGH`; `:notOwnerCreep` the creep isn't
+  `:invalidTarget` the target isn't a creep, or `:spawningTarget` it is
+  spawning, `ERR_INVALID_TARGET`; `:rcl` the spawn is inactive, `ERR_RCL_NOT_ENOUGH`; `:notOwnerCreep` the creep isn't
   the player's, `ERR_NOT_OWNER`; `:range` it isn't adjacent,
   `ERR_NOT_IN_RANGE`.
 
@@ -1850,8 +1854,9 @@ Coverage Notes
   `:selfTarget` it is the sending link itself, `ERR_INVALID_TARGET`;
   `:targetNotOwner` the target link isn't the player's, or `:sourceNotOwner`
   the sending link isn't and a rampart stands on it, `ERR_NOT_OWNER`;
-  `:cooldown` the sending link's `cooldown` is above 0, `ERR_TIRED`; `:rcl` it
-  is inactive, `ERR_RCL_NOT_ENOUGH`; `:notEnough` it holds no energy, or
+  `:cooldown` the sending link's `cooldown` is above 0, `ERR_TIRED`;
+  `:noController` its room has no controller, or `:rcl` it is inactive,
+  `ERR_RCL_NOT_ENOUGH`; `:notEnough` it holds no energy, or
   `:notEnoughAmount` less than `amount`, `ERR_NOT_ENOUGH_ENERGY`; `:full` the
   target can't take `amount` more energy, `ERR_FULL`; `:range` the target is
   in another room, `ERR_NOT_IN_RANGE`.
@@ -1885,9 +1890,10 @@ Coverage Notes
   `lab.runReaction(lab1, lab2)` returns the first failing check's code, in
   this order: `:notOwner` the lab isn't the player's, `ERR_NOT_OWNER`;
   `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:rcl` it is inactive,
-  `ERR_RCL_NOT_ENOUGH`; `:invalidLab1` `lab1` isn't a lab, `:invalidTarget`
-  `lab2` is missing, `:notALab` it isn't a lab, or `:selfTarget` it is the
-  calling lab, `ERR_INVALID_TARGET`; `:rangeLab1` `lab1`, or `:range` `lab2`,
+  `ERR_RCL_NOT_ENOUGH`; `:missingLab1` `lab1` is missing, `:invalidLab1` it
+  isn't a lab, `:selfLab1` it is the calling lab, `:invalidTarget` `lab2` is
+  missing, `:notALab` it isn't a lab, or `:selfTarget` it is the calling lab,
+  `ERR_INVALID_TARGET`; `:rangeLab1` `lab1`, or `:range` `lab2`,
   is more than 2 tiles away, `ERR_NOT_IN_RANGE`; `:full` the calling lab lacks
   room for the product, `ERR_FULL`; `:notEnoughLab1` `lab1`, or `:notEnough`
   `lab2`, holds less than the reaction amount, `ERR_NOT_ENOUGH_RESOURCES`;
@@ -1917,9 +1923,10 @@ Coverage Notes
   `lab.reverseReaction(lab1, lab2)` returns the first failing check's code, in
   this order: `:notOwner` the lab isn't the player's, `ERR_NOT_OWNER`;
   `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:rcl` it is inactive,
-  `ERR_RCL_NOT_ENOUGH`; `:invalidLab1` `lab1` isn't a lab, `:invalidTarget`
-  `lab2` is missing, `:notALab` it isn't a lab, or `:selfTarget` it is the
-  calling lab, `ERR_INVALID_TARGET`; `:range` `lab1`, or `:rangeLab2` `lab2`,
+  `ERR_RCL_NOT_ENOUGH`; `:missingLab1` `lab1` is missing, `:invalidLab1` it
+  isn't a lab, `:selfLab1` it is the calling lab, `:invalidTarget` `lab2` is
+  missing, `:notALab` it isn't a lab, or `:selfTarget` it is the calling lab,
+  `ERR_INVALID_TARGET`; `:range` `lab1`, or `:rangeLab2` `lab2`,
   is more than 2 tiles away, `ERR_NOT_IN_RANGE`; `:sameLab` `lab1` and `lab2`
   are one lab, `ERR_INVALID_ARGS`; `:notEnough` the calling lab holds less
   than the reaction amount of a compound, `ERR_NOT_ENOUGH_RESOURCES`;
@@ -1954,8 +1961,8 @@ Coverage Notes
 
 ### 11.5 Factory Commodity Chains `capability: factory`
 - `FACTORY-COMMODITY-001` `matrix` `verified_vanilla`
-  Factory commodity level requirements and chain membership match the canonical
-  `COMMODITIES` table for all factory-produced resources.
+  Factory commodity level requirements match the canonical `COMMODITIES` table
+  for all factory-produced resources.
 - `FACTORY-COMMODITY-002` `behavior` `verified_vanilla`
   A factory without an active `PWR_OPERATE_FACTORY` effect can produce only
   level 0 commodities.

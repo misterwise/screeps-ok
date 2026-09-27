@@ -167,6 +167,8 @@ export const RESOURCE_SILICON: 'silicon' = C.RESOURCE_SILICON;
 export const RESOURCE_METAL: 'metal' = C.RESOURCE_METAL;
 export const RESOURCE_BIOMASS: 'biomass' = C.RESOURCE_BIOMASS;
 export const RESOURCE_MIST: 'mist' = C.RESOURCE_MIST;
+export const RESOURCE_BATTERY: 'battery' = C.RESOURCE_BATTERY;
+export const RESOURCE_COMPOSITE: 'composite' = C.RESOURCE_COMPOSITE;
 
 // Gameplay
 export const HARVEST_POWER: number = C.HARVEST_POWER;

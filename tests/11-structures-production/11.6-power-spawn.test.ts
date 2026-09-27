@@ -1,8 +1,9 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_NOT_ENOUGH_RESOURCES, ERR_RCL_NOT_ENOUGH,
-	STRUCTURE_POWER_SPAWN, POWER_SPAWN_ENERGY_RATIO,
-	POWER_INFO, PWR_OPERATE_POWER,
+	STRUCTURE_POWER_SPAWN, POWER_SPAWN_ENERGY_RATIO, POWER_SPAWN_ENERGY_CAPACITY, POWER_SPAWN_POWER_CAPACITY,
+	POWER_INFO, PWR_OPERATE_POWER, RESOURCE_OPS, RESOURCE_POWER,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 describe('StructurePowerSpawn processPower', () => {
 	// ---- POWER-SPAWN-001: processPower() returns OK, consumes resources, adds GPL progress ----
@@ -12,43 +13,26 @@ describe('StructurePowerSpawn processPower', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
 		});
-
-		const startEnergy = 1000;
-		const startPower = 10;
 		const psId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
-			store: { energy: startEnergy, power: startPower },
+			store: { energy: POWER_SPAWN_ENERGY_CAPACITY, [RESOURCE_POWER]: POWER_SPAWN_POWER_CAPACITY },
 		});
-		await shard.tick();
 
-		const beforeGpl = await shard.runPlayer('p1', code`
-			Game.gpl.progress
-		`) as number;
-
-		// Submit the processPower intent.
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${psId}).processPower()
-		`);
+		const [gplBefore, rc] = await shard.runPlayer('p1', code`
+			[Game.gpl.progress, Game.getObjectById(${psId}).processPower()]
+		`) as [number, number];
 		expect(rc).toBe(OK);
-
-		// Observe store changes on next tick.
-		const after = await shard.runPlayer('p1', code`
-			const ps = Game.getObjectById(${psId});
-			({
-				energy: ps.store.energy,
-				power: ps.store[RESOURCE_POWER] ?? 0,
-				gpl: Game.gpl.progress,
-			})
-		`) as { energy: number; power: number; gpl: number };
-
-		// Should consume 1 power and POWER_SPAWN_ENERGY_RATIO (50) energy.
-		expect(after.power).toBe(startPower - 1);
-		expect(after.energy).toBe(startEnergy - POWER_SPAWN_ENERGY_RATIO);
-		expect(after.gpl - beforeGpl).toBe(1);
+		const ps = await shard.expectStructure(psId, STRUCTURE_POWER_SPAWN);
+		expect(ps.store).toEqual({
+			energy: POWER_SPAWN_ENERGY_CAPACITY - POWER_SPAWN_ENERGY_RATIO,
+			[RESOURCE_POWER]: POWER_SPAWN_POWER_CAPACITY - 1,
+		});
+		expect(await shard.runPlayer('p1', code`Game.gpl.progress`)).toBe(gplBefore + 1);
 	});
 
-	// ---- POWER-SPAWN-002: PWR_OPERATE_POWER increases power consumed ----
-	test('POWER-SPAWN-002 processPower with PWR_OPERATE_POWER consumes boosted power', async ({ shard }) => {
+	// ---- POWER-SPAWN-002: PWR_OPERATE_POWER increases power consumed, capped by what is stored ----
+	const operatePower = POWER_INFO[PWR_OPERATE_POWER];
+	async function operatedPowerSpawn(shard: ShardFixture, level: number, power: number) {
 		shard.requires('powerSpawn');
 		shard.requires('powerCreeps');
 		shard.requires('powerEffects');
@@ -56,61 +40,65 @@ describe('StructurePowerSpawn processPower', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
 		});
-
-		const powerLevel = 1;
-		const extraPower = (POWER_INFO as Record<number, { effect: number[] }>)[PWR_OPERATE_POWER].effect[powerLevel - 1];
-		const expectedPowerConsumed = 1 + extraPower;
-
-		const startEnergy = 5000;
-		const startPower = 50;
 		const psId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_POWER_SPAWN, owner: 'p1',
-			store: { energy: startEnergy, power: startPower },
+			store: { energy: POWER_SPAWN_ENERGY_CAPACITY, [RESOURCE_POWER]: power },
 		});
-
-		// Place a power creep with PWR_OPERATE_POWER at level 1.
 		await shard.placePowerCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_OPERATE_POWER]: powerLevel },
-			store: { ops: 200 },
+			powers: { [PWR_OPERATE_POWER]: level },
+			store: { [RESOURCE_OPS]: operatePower.ops! },
 		});
-		await shard.tick();
-
-		// Activate PWR_OPERATE_POWER on the power spawn.
-		await shard.runPlayer('p1', code`
-			const pcs = Object.values(Game.powerCreeps);
-			const pc = pcs[0];
-			const ps = Game.getObjectById(${psId});
-			pc.usePower(PWR_OPERATE_POWER, ps)
+		const useRc = await shard.runPlayer('p1', code`
+			Object.values(Game.powerCreeps)[0].usePower(PWR_OPERATE_POWER, Game.getObjectById(${psId}))
 		`);
+		expect(useRc).toBe(OK);
+		return psId;
+	}
 
-		const beforeGpl = await shard.runPlayer('p1', code`
-			Game.gpl.progress
-		`) as number;
+	test('POWER-SPAWN-002:boosted processPower under PWR_OPERATE_POWER converts 1 + effect power', async ({ shard }) => {
+		const level = 1;
+		const amount = 1 + operatePower.effect![level - 1];
+		const psId = await operatedPowerSpawn(shard, level, POWER_SPAWN_POWER_CAPACITY);
 
-		// Power effect applies next tick. Now processPower.
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${psId}).processPower()
-		`);
+		const [gplBefore, rc] = await shard.runPlayer('p1', code`
+			[Game.gpl.progress, Game.getObjectById(${psId}).processPower()]
+		`) as [number, number];
 		expect(rc).toBe(OK);
-
-		// Observe store changes on the next tick.
-		const after = await shard.runPlayer('p1', code`
-			const ps = Game.getObjectById(${psId});
-			({
-				energy: ps.store.energy,
-				power: ps.store[RESOURCE_POWER] ?? 0,
-				gpl: Game.gpl.progress,
-			})
-		`) as { energy: number; power: number; gpl: number };
-
-		// Should consume (1 + effect[level-1]) power per processPower.
-		expect(after.power).toBe(startPower - expectedPowerConsumed);
-		// Energy consumed is still POWER_SPAWN_ENERGY_RATIO per 1 base power.
-		// With boosted power, energy consumed = expectedPowerConsumed * POWER_SPAWN_ENERGY_RATIO.
-		expect(after.energy).toBe(startEnergy - expectedPowerConsumed * POWER_SPAWN_ENERGY_RATIO);
-		expect(after.gpl - beforeGpl).toBe(expectedPowerConsumed);
+		const ps = await shard.expectStructure(psId, STRUCTURE_POWER_SPAWN);
+		expect(ps.store).toEqual({
+			energy: POWER_SPAWN_ENERGY_CAPACITY - amount * POWER_SPAWN_ENERGY_RATIO,
+			[RESOURCE_POWER]: POWER_SPAWN_POWER_CAPACITY - amount,
+		});
+		expect(await shard.runPlayer('p1', code`Game.gpl.progress`)).toBe(gplBefore + amount);
 	});
+
+	test('POWER-SPAWN-002:capped on the effect\'s last tick processPower converts only the power stored', async ({ shard }) => {
+		// On its last tick the effect is gone from `effects` (rooms.js:1656-1657),
+		// so processPower asks for 1 power, but the processor still applies it,
+		// capped by the power stored (power-spawns/process-power.js:16-19).
+		const level = 2;
+		const stored = operatePower.effect![level - 1];
+		const psId = await operatedPowerSpawn(shard, level, stored);
+
+		await shard.tick(operatePower.duration! - 2);
+		const [ticksRemaining, gplBefore] = await shard.runPlayer('p1', code`
+			[Game.getObjectById(${psId}).effects[0].ticksRemaining, Game.gpl.progress]
+		`) as [number, number];
+		expect(ticksRemaining).toBe(1);
+		const [effects, rc] = await shard.runPlayer('p1', code`
+			const ps = Game.getObjectById(${psId});
+			[ps.effects.length, ps.processPower()]
+		`) as [number, number];
+		expect([effects, rc]).toEqual([0, OK]);
+		// The store getter reads 0 for a resource the snapshot leaves out.
+		const ps = await shard.expectStructure(psId, STRUCTURE_POWER_SPAWN);
+		expect({ energy: ps.store.energy, power: ps.store[RESOURCE_POWER] ?? 0 }).toEqual({
+			energy: POWER_SPAWN_ENERGY_CAPACITY - stored * POWER_SPAWN_ENERGY_RATIO,
+			power: 0,
+		});
+		expect(await shard.runPlayer('p1', code`Game.gpl.progress`)).toBe(gplBefore + stored);
+	}, 60_000);
 
 	// ---- POWER-SPAWN-003: ERR_NOT_ENOUGH_RESOURCES when lacking power or energy ----
 	test('POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking power', async ({ shard }) => {
