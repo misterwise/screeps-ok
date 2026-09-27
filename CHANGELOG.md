@@ -260,7 +260,20 @@ changes since `v0.1.0-alpha` are not itemized.
   inactive spawn. `LINK-004` (`LINK-014:selfTarget`, new), `-005`
   (`:invalidTarget`), `-006` (`:targetNotOwner`), `-007` (`:invalidArgs`),
   `-008` (`:cooldown`), `-009` (`:rcl`), `-010` (`:notEnoughAmount`, new),
-  `-011` (`:full`), `-012` (`:range`).
+  `-011` (`:full`), `-012` (`:range`). `LAB-RUN-005` (`LAB-RUN-013:range`,
+  and `:rangeLab1`, new), `-006` (`:notEnough`, and `:notEnoughLab1`, new),
+  `-007` (`:full`), `-008` (`:invalidArgs`, and `:noProduct`, new), `-009`
+  (`:invalidTarget`, and `:invalidLab1`, `:notALab`, `:selfTarget`, new),
+  `-010` (`:cooldown`), `-011` (`:rcl`), `-012` (`:notOwner`);
+  `LAB-REVERSE-005` (`LAB-REVERSE-013:range`, now `lab1` alone, and
+  `:rangeLab2`, new), `-006` (`:notEnough`), `-007` (`:full`, and
+  `:fullLab2`, new), `-008` (`:invalidReversePair`, `:sameLab`), `-009`
+  (`:invalidTarget`, and `:invalidLab1`, `:notALab`, `:selfTarget`, new),
+  `-010` (`:cooldown`), `-011` (`:rcl`), `-012` (`:notOwner`);
+  `FACTORY-PRODUCE-003` (`FACTORY-PRODUCE-011:notEnough`), `-004`
+  (`:full`), `-005` (`:powerEffect`), `-006` (`:cooldown`), `-007`
+  (`:rcl`), `-008` (`:invalidArgs`), `-009` (`:levelMismatch`), `-010`
+  (`:notOwner`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

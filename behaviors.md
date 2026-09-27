@@ -1865,37 +1865,18 @@ Coverage Notes
   A successful `runReaction(lab1, lab2)` returns `OK` and sets the cooldown of
   the lab calling `runReaction()` to
   `REACTION_TIME[the produced compound]`.
-- `LAB-RUN-005` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_NOT_IN_RANGE` when either `lab1` or
-  `lab2` is more than range 2 from the lab calling `runReaction()`.
-- `LAB-RUN-006` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_NOT_ENOUGH_RESOURCES` when either
-  `lab1` or `lab2` has less than the required reaction amount.
-- `LAB-RUN-007` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_FULL` when the lab calling
-  `runReaction()` lacks
-  enough free mineral capacity for the reaction output amount.
-- `LAB-RUN-008` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_INVALID_ARGS` when the minerals in
-  `lab1` and `lab2` do not define a product or the lab calling
-  `runReaction()` already holds a different mineral type.
-- `LAB-RUN-009` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_INVALID_TARGET` when either argument is
-  not another lab.
-- `LAB-RUN-010` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_TIRED` while the lab calling
-  `runReaction()` is on cooldown.
-- `LAB-RUN-011` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_RCL_NOT_ENOUGH` while the lab calling
-  `runReaction()` is inactive.
-- `LAB-RUN-012` `behavior` `verified_vanilla`
-  `runReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
-  `runReaction()` is not owned by the player.
 - `LAB-RUN-013` `matrix` `verified_vanilla`
-  `runReaction(lab1, lab2)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state,
-  argument validity, target validity, range, store capacity, resource
-  availability, and cooldown.
+  `lab.runReaction(lab1, lab2)` returns the first failing check's code, in
+  this order: `:notOwner` the lab isn't the player's, `ERR_NOT_OWNER`;
+  `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:rcl` it is inactive,
+  `ERR_RCL_NOT_ENOUGH`; `:invalidLab1` `lab1` isn't a lab, `:invalidTarget`
+  `lab2` is missing, `:notALab` it isn't a lab, or `:selfTarget` it is the
+  calling lab, `ERR_INVALID_TARGET`; `:rangeLab1` `lab1`, or `:range` `lab2`,
+  is more than 2 tiles away, `ERR_NOT_IN_RANGE`; `:full` the calling lab lacks
+  room for the product, `ERR_FULL`; `:notEnoughLab1` `lab1`, or `:notEnough`
+  `lab2`, holds less than the reaction amount, `ERR_NOT_ENOUGH_RESOURCES`;
+  `:noProduct` the two minerals make no compound, or `:invalidArgs` the
+  calling lab holds a mineral other than their product, `ERR_INVALID_ARGS`.
 
 ### 11.2 Lab Reverse Reaction `capability: chemistry`
 - `LAB-REVERSE-001` `matrix` `verified_vanilla`
@@ -1916,36 +1897,19 @@ Coverage Notes
   A successful `reverseReaction(lab1, lab2)` returns `OK` and sets the
   cooldown of the lab calling `reverseReaction()` to
   `REACTION_TIME[the consumed compound]`.
-- `LAB-REVERSE-005` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_NOT_IN_RANGE` when either `lab1`
-  or `lab2` is more than range 2 from the lab calling `reverseReaction()`.
-- `LAB-REVERSE-006` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_NOT_ENOUGH_RESOURCES` when the
-  lab calling `reverseReaction()` has less than the required compound amount.
-- `LAB-REVERSE-007` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_FULL` when either `lab1` or `lab2`
-  lacks enough free mineral capacity for the returned amount.
-- `LAB-REVERSE-008` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_INVALID_ARGS` when the reacting lab
-  mineral has no matching reverse pair for the target lab mineral types or both
-  arguments refer to the same lab.
-- `LAB-REVERSE-009` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_INVALID_TARGET` when either
-  argument is not another lab.
-- `LAB-REVERSE-010` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_TIRED` while the lab calling
-  `reverseReaction()` is on cooldown.
-- `LAB-REVERSE-011` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_RCL_NOT_ENOUGH` while the lab
-  calling `reverseReaction()` is inactive.
-- `LAB-REVERSE-012` `behavior` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` returns `ERR_NOT_OWNER` when the lab calling
-  `reverseReaction()` is not owned by the player.
 - `LAB-REVERSE-013` `matrix` `verified_vanilla`
-  `reverseReaction(lab1, lab2)` failure return codes and precedence match
-  the canonical validation matrix for ownership, active-structure state,
-  argument validity, target validity, range, store capacity, resource
-  availability, and cooldown.
+  `lab.reverseReaction(lab1, lab2)` returns the first failing check's code, in
+  this order: `:notOwner` the lab isn't the player's, `ERR_NOT_OWNER`;
+  `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:rcl` it is inactive,
+  `ERR_RCL_NOT_ENOUGH`; `:invalidLab1` `lab1` isn't a lab, `:invalidTarget`
+  `lab2` is missing, `:notALab` it isn't a lab, or `:selfTarget` it is the
+  calling lab, `ERR_INVALID_TARGET`; `:range` `lab1`, or `:rangeLab2` `lab2`,
+  is more than 2 tiles away, `ERR_NOT_IN_RANGE`; `:sameLab` `lab1` and `lab2`
+  are one lab, `ERR_INVALID_ARGS`; `:notEnough` the calling lab holds less
+  than the reaction amount of a compound, `ERR_NOT_ENOUGH_RESOURCES`;
+  `:invalidReversePair` its mineral has no reverse pair the two labs' minerals
+  fit, `ERR_INVALID_ARGS`; `:full` `lab1`, or `:fullLab2` `lab2`, lacks room
+  for its reagent, `ERR_FULL`.
 
 ### 11.3 Reaction Chain `capability: chemistry`
 Coverage Notes
@@ -1960,34 +1924,17 @@ Coverage Notes
 - `FACTORY-PRODUCE-002` `behavior` `verified_vanilla`
   A successful `produce(resourceType)` returns `OK` and sets factory cooldown to
   `COMMODITIES[resourceType].cooldown`.
-- `FACTORY-PRODUCE-003` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_NOT_ENOUGH_RESOURCES` when the factory
-  lacks any required recipe component amount.
-- `FACTORY-PRODUCE-004` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_FULL` when consuming the recipe inputs
-  and adding the output amount would exceed the factory's total store capacity.
-- `FACTORY-PRODUCE-005` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_BUSY` when the commodity's required level
-  effect from `PWR_OPERATE_FACTORY` is not currently active.
-- `FACTORY-PRODUCE-006` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_TIRED` while the factory is on cooldown.
-- `FACTORY-PRODUCE-007` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_RCL_NOT_ENOUGH` while the factory is
-  inactive.
-- `FACTORY-PRODUCE-008` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_INVALID_ARGS` when `resourceType` is not
-  a factory commodity.
-- `FACTORY-PRODUCE-009` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_INVALID_TARGET` when the commodity exists
-  but requires a different factory level than the structure's current level.
-- `FACTORY-PRODUCE-010` `behavior` `verified_vanilla`
-  `produce(resourceType)` returns `ERR_NOT_OWNER` when the factory is not owned
-  by the player.
 - `FACTORY-PRODUCE-011` `matrix` `verified_vanilla`
-  `produce(resourceType)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state,
-  argument validity, target validity (commodity level), power-effect
-  requirement, store capacity, resource availability, and cooldown.
+  `factory.produce(resourceType)` returns the first failing check's code, in
+  this order: `:notOwner` the factory isn't the player's, `ERR_NOT_OWNER`;
+  `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:invalidArgs`
+  `resourceType` isn't a commodity, `ERR_INVALID_ARGS`; `:levelMismatch` the
+  commodity needs a factory level other than the factory's,
+  `ERR_INVALID_TARGET`; `:rcl` the factory is inactive, `ERR_RCL_NOT_ENOUGH`;
+  `:powerEffect` a leveled commodity lacks an active `PWR_OPERATE_FACTORY` at
+  its level, `ERR_BUSY`; `:notEnough` a component falls short,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:full` the output wouldn't fit the store,
+  `ERR_FULL`.
 
 ### 11.5 Factory Commodity Chains `capability: factory`
 - `FACTORY-COMMODITY-001` `matrix` `verified_vanilla`
@@ -2002,7 +1949,7 @@ Coverage Notes
 
 Coverage Notes
 - Factory error-code behavior for invalid commodity level requests is covered by
-  `FACTORY-PRODUCE-009`.
+  `FACTORY-PRODUCE-011:levelMismatch`.
 
 ### 11.6 Power Spawn `capability: powerSpawn`
 - `POWER-SPAWN-001` `behavior` `verified_vanilla`

@@ -1,8 +1,7 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES,
-	ERR_FULL, ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_TIRED, ERR_RCL_NOT_ENOUGH,
+	OK,
 	STRUCTURE_LAB, STRUCTURE_CONTAINER,
-	LAB_REACTION_AMOUNT, LAB_MINERAL_CAPACITY, REACTION_TIME, REACTIONS,
+	LAB_REACTION_AMOUNT, LAB_MINERAL_CAPACITY, REACTION_TIME,
 	POWER_INFO, PWR_OPERATE_LAB,
 } from '../../src/index.js';
 import { labRunCases } from '../../src/matrices/lab-run.js';
@@ -106,196 +105,6 @@ describe('Lab runReaction', () => {
 		expect(lab.cooldown).toBe(expected - 1);
 	});
 
-	// ---- LAB-RUN-005: ERR_NOT_IN_RANGE ----
-	test('LAB-RUN-005 runReaction returns ERR_NOT_IN_RANGE when reagent lab is too far', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		// Reagent lab 1 — within range.
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		// Reagent lab 2 — range 3 (> 2), out of range.
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [28, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, O: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	// ---- LAB-RUN-006: ERR_NOT_ENOUGH_RESOURCES ----
-	test('LAB-RUN-006 runReaction returns ERR_NOT_ENOUGH_RESOURCES when reagent lab is empty', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		// Lab2 has no mineral.
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	// ---- LAB-RUN-007: ERR_FULL ----
-	test('LAB-RUN-007 runReaction returns ERR_FULL when calling lab mineral store is at capacity', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Calling lab already full of OH.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: LAB_MINERAL_CAPACITY },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, O: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
-	// ---- LAB-RUN-008: ERR_INVALID_ARGS ----
-	test('LAB-RUN-008 runReaction returns ERR_INVALID_ARGS when reagent pair has no product', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		// Both labs have H — no valid reaction for H+H.
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	// ---- LAB-RUN-009: ERR_INVALID_TARGET ----
-	test('LAB-RUN-009 runReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		// A container is not a lab.
-		const container = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_CONTAINER,
-			store: { energy: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${container}))
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	// ---- LAB-RUN-010: ERR_TIRED ----
-	test('LAB-RUN-010 runReaction returns ERR_TIRED when lab is on cooldown', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, O: 100 },
-		});
-
-		// First reaction succeeds and puts the lab on cooldown.
-		const rc1 = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc1).toBe(OK);
-
-		// Second reaction while still on cooldown.
-		const rc2 = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc2).toBe(ERR_TIRED);
-	});
-
-	// ---- LAB-RUN-011: ERR_RCL_NOT_ENOUGH ----
-	test('LAB-RUN-011 runReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard }) => {
-		shard.requires('chemistry');
-		// Lab requires RCL 6. Place at RCL 5 — lab is inactive.
-		await shard.ownedRoom('p1', 'W1N1', 5);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, O: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
-	});
-
 	// ---- LAB-RUN-003: PWR_OPERATE_LAB boosts reaction amount ----
 	test('LAB-RUN-003 runReaction with PWR_OPERATE_LAB active produces boosted amount', async ({ shard }) => {
 		shard.requires('powerCreeps');
@@ -348,38 +157,6 @@ describe('Lab runReaction', () => {
 		expect(r2.store.O ?? 0).toBe(0);
 	});
 
-	// ---- LAB-RUN-012: ERR_NOT_OWNER ----
-	test('LAB-RUN-012 runReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W2N1', rcl: 6, owner: 'p2' },
-			],
-		});
-
-		// Lab owned by p2 in p1's room — p1 cannot run reactions on it.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p2',
-			store: { energy: 2000 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, O: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.runReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
 	for (const row of labRunValidationCases) {
 		test(`LAB-RUN-013:${row.label} runReaction() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
@@ -403,20 +180,37 @@ describe('Lab runReaction', () => {
 				store: labStore,
 				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
 			});
-			const lab1 = await shard.placeStructure('W1N1', {
-				pos: [25, 27],
-				structureType: STRUCTURE_LAB,
-				owner: 'p1',
-				store: { energy: 2000, H: 100 },
-			});
-			const lab2 = blockers.has('invalid-target')
-				? null
+			// Reagents H + O make OH; H + H makes nothing. A far lab is at range 3.
+			const lab1 = blockers.has('invalid-lab1')
+				? await shard.placeStructure('W1N1', {
+					pos: [25, 27], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
+				})
 				: await shard.placeStructure('W1N1', {
+					pos: blockers.has('range-lab1') ? [25, 28] : [25, 27],
+					structureType: STRUCTURE_LAB,
+					owner: 'p1',
+					store: { energy: 2000, H: blockers.has('not-enough-lab1') ? LAB_REACTION_AMOUNT - 1 : 100 },
+				});
+			let lab2: string | null;
+			if (blockers.has('invalid-target')) {
+				lab2 = null;
+			} else if (blockers.has('self-target')) {
+				lab2 = labId;
+			} else if (blockers.has('not-a-lab')) {
+				lab2 = await shard.placeStructure('W1N1', {
+					pos: [27, 25], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
+				});
+			} else {
+				lab2 = await shard.placeStructure('W1N1', {
 					pos: blockers.has('range') ? [28, 25] : [27, 25],
 					structureType: STRUCTURE_LAB,
 					owner: 'p1',
-					store: { energy: 2000, O: blockers.has('not-enough') ? LAB_REACTION_AMOUNT - 1 : 100 },
+					store: {
+						energy: 2000,
+						[blockers.has('no-product') ? 'H' : 'O']: blockers.has('not-enough') ? LAB_REACTION_AMOUNT - 1 : 100,
+					},
 				});
+			}
 
 			const rc = await shard.runPlayer('p1', code`
 				const lab2 = ${lab2};
@@ -534,194 +328,6 @@ describe('Lab reverseReaction', () => {
 		expect(lab.cooldown).toBe(expected - 1);
 	});
 
-	// ---- LAB-REVERSE-005: ERR_NOT_IN_RANGE ----
-	test('LAB-REVERSE-005 reverseReaction returns ERR_NOT_IN_RANGE when output lab is too far', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		// Range 3 — out of range.
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [28, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	// ---- LAB-REVERSE-006: ERR_NOT_ENOUGH_RESOURCES ----
-	test('LAB-REVERSE-006 reverseReaction returns ERR_NOT_ENOUGH_RESOURCES when calling lab has insufficient compound', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Lab has less than LAB_REACTION_AMOUNT of OH.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: LAB_REACTION_AMOUNT - 1 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	// ---- LAB-REVERSE-007: ERR_FULL ----
-	test('LAB-REVERSE-007 reverseReaction returns ERR_FULL when output lab mineral store is at capacity', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: 100 },
-		});
-		// Output lab 1 is full of H — no capacity for more.
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: LAB_MINERAL_CAPACITY },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
-	// ---- LAB-REVERSE-008: ERR_INVALID_ARGS ----
-	test('LAB-REVERSE-008 reverseReaction returns ERR_INVALID_ARGS when compound has no reverse pair', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Base mineral H is not a compound — has no reverse reaction.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, H: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	// ---- LAB-REVERSE-009: ERR_INVALID_TARGET ----
-	test('LAB-REVERSE-009 reverseReaction returns ERR_INVALID_TARGET when argument is not a lab', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const container = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_CONTAINER,
-			store: { energy: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${container}))
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	// ---- LAB-REVERSE-010: ERR_TIRED ----
-	test('LAB-REVERSE-010 reverseReaction returns ERR_TIRED when lab is on cooldown', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		// First reverse succeeds and puts the lab on cooldown.
-		const rc1 = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc1).toBe(OK);
-
-		// Second reverse while still on cooldown.
-		const rc2 = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc2).toBe(ERR_TIRED);
-	});
-
-	// ---- LAB-REVERSE-011: ERR_RCL_NOT_ENOUGH ----
-	test('LAB-REVERSE-011 reverseReaction returns ERR_RCL_NOT_ENOUGH when calling lab is inactive', async ({ shard }) => {
-		shard.requires('chemistry');
-		// Lab requires RCL 6. Place at RCL 5 — lab is inactive.
-		await shard.ownedRoom('p1', 'W1N1', 5);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000, OH: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
-	});
-
 	// ---- LAB-REVERSE-003: PWR_OPERATE_LAB boosts reverse reaction amount ----
 	test('LAB-REVERSE-003 reverseReaction with PWR_OPERATE_LAB active consumes and produces boosted amount', async ({ shard }) => {
 		shard.requires('powerCreeps');
@@ -778,37 +384,6 @@ describe('Lab reverseReaction', () => {
 		expect(minerals['O']).toBe(boostedAmount);
 	});
 
-	// ---- LAB-REVERSE-012: ERR_NOT_OWNER ----
-	test('LAB-REVERSE-012 reverseReaction returns ERR_NOT_OWNER on unowned lab', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 6, owner: 'p1' },
-				{ name: 'W2N1', rcl: 6, owner: 'p2' },
-			],
-		});
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p2',
-			store: { energy: 2000, OH: 100 },
-		});
-		const lab1 = await shard.placeStructure('W1N1', {
-			pos: [25, 27], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-		const lab2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: 2000 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			lab.reverseReaction(Game.getObjectById(${lab1}), Game.getObjectById(${lab2}))
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
 	for (const row of labReverseValidationCases) {
 		test(`LAB-REVERSE-013:${row.label} reverseReaction() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
@@ -827,24 +402,41 @@ describe('Lab reverseReaction', () => {
 				store: { energy: 2000, [compound]: compoundAmount },
 				...(blockers.has('cooldown') ? { cooldown: REACTION_TIME['OH'] } : {}),
 			});
-			const lab1Id = blockers.has('invalid-target') && blockers.has('same-lab')
-				? labId
-				: await shard.placeStructure('W1N1', {
+			// OH reverses to H in lab1 and O in lab2. A far lab is at range 3.
+			let lab1Id: string;
+			if (blockers.has('invalid-target') && blockers.has('same-lab')) {
+				lab1Id = labId;
+			} else if (blockers.has('invalid-lab1')) {
+				lab1Id = await shard.placeStructure('W1N1', {
+					pos: [25, 27], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
+				});
+			} else {
+				lab1Id = await shard.placeStructure('W1N1', {
 					pos: blockers.has('range') ? [28, 25] : [25, 27],
 					structureType: STRUCTURE_LAB,
 					owner: 'p1',
 					store: blockers.has('full') ? { energy: 2000, H: LAB_MINERAL_CAPACITY } : { energy: 2000 },
 				});
-			const lab2Id = blockers.has('same-lab')
-				? lab1Id
-				: blockers.has('invalid-target')
-					? null
-					: await shard.placeStructure('W1N1', {
-						pos: blockers.has('range') ? [28, 25] : [27, 25],
-						structureType: STRUCTURE_LAB,
-						owner: 'p1',
-						store: { energy: 2000 },
-					});
+			}
+			let lab2Id: string | null;
+			if (blockers.has('same-lab')) {
+				lab2Id = lab1Id;
+			} else if (blockers.has('invalid-target')) {
+				lab2Id = null;
+			} else if (blockers.has('self-target')) {
+				lab2Id = labId;
+			} else if (blockers.has('not-a-lab')) {
+				lab2Id = await shard.placeStructure('W1N1', {
+					pos: [27, 25], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
+				});
+			} else {
+				lab2Id = await shard.placeStructure('W1N1', {
+					pos: blockers.has('range-lab2') ? [25, 22] : [27, 25],
+					structureType: STRUCTURE_LAB,
+					owner: 'p1',
+					store: blockers.has('full-lab2') ? { energy: 2000, O: LAB_MINERAL_CAPACITY } : { energy: 2000 },
+				});
+			}
 
 			const rc = await shard.runPlayer('p1', code`
 				const lab2 = ${lab2Id};

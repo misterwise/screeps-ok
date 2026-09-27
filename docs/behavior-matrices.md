@@ -219,7 +219,7 @@ checks both. Each definition has these fields, in this order:
   Reverse reactions, cooldown behavior, and error-code precedence
 - `Verification Notes`
   This matrix is about the product mapping only. Amount, cooldown, and failure
-  behavior are owned by the `LAB-RUN-002` through `LAB-RUN-012` entries. The
+  behavior are owned by `LAB-RUN-002..004` and `LAB-RUN-013`. The
   executable case list lives in `src/matrices/lab-run.ts`.
 
 ### FACTORY-COMMODITY
@@ -1565,13 +1565,14 @@ checks both. Each definition has these fields, in this order:
   full), reagent availability, and cooldown.
 - `Exclusions`
   Successful product mapping, owned by `LAB-RUN-001`. Reverse-reaction
-  failure ordering is owned by `LAB-REVERSE-VALIDATION`.
+  failure ordering is owned by `LAB-REVERSE-VALIDATION`. The forms of
+  lab2 exclude each other, and a lab1 or lab2 that isn't another lab pairs
+  with none of that lab's range, store or mineral conditions.
 - `Verification Notes`
-  Single-branch rows are owned by `LAB-RUN-005..012`. Verified vanilla
-  API-guard order is: ownership → cooldown → active RCL → target validity
-  → range → caller capacity → reagent availability → argument/reaction
-  validity.
-  The executable case list lives in `src/matrices/lab-run-validation.ts`.
+  Vanilla checks lab1, then lab2 (not a lab, or the calling lab), then both
+  ranges, capacity, both amounts, then the product (`game/structures.js:
+  327-353`). The executable case list lives in
+  `src/matrices/lab-run-validation.ts`.
 
 ### LAB-REVERSE-VALIDATION
 
@@ -1591,13 +1592,11 @@ checks both. Each definition has these fields, in this order:
   (lab1/lab2 are labs), range, store capacity (lab1/lab2 cannot hold
   outputs), compound availability, and cooldown.
 - `Exclusions`
-  Successful split mapping, owned by `LAB-REVERSE-001`.
+  Successful split mapping, owned by `LAB-REVERSE-001`. The forms of lab2,
+  same-lab included, exclude each other, and a lab1 or lab2 that isn't
+  another lab pairs with none of that lab's range or store conditions.
 - `Verification Notes`
-  Single-branch rows are owned by `LAB-REVERSE-005..012`. Verified vanilla
-  API-guard order is: ownership → cooldown → active RCL → target validity
-  → range → same-output-lab argument validity → compound availability →
-  reverse-pair validity → output capacity. The executable case list lives in
-  `src/matrices/lab-reverse-validation.ts`.
+  The executable case list lives in `src/matrices/lab-reverse-validation.ts`.
 
 ### FACTORY-PRODUCE-VALIDATION
 
@@ -1622,9 +1621,6 @@ checks both. Each definition has these fields, in this order:
   leveled commodities reduce total stored resources before adding output, so
   they cannot also exercise the factory full branch.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → cooldown → argument
-  validity → target validity (level mismatch) → active RCL → missing
-  `PWR_OPERATE_FACTORY` effect → resources → capacity.
   The executable case list lives in `src/matrices/factory-produce-validation.ts`.
 
 ### BOOST-CREEP-VALIDATION
