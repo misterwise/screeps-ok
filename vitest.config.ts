@@ -23,6 +23,9 @@ const reportName = process.env.CI ? process.env.SCREEPS_OK_REPORT_NAME : undefin
 
 export default defineConfig({
 	resolve: {
+		// A consumer adapter's 'screeps-ok' import gets the source the tests
+		// import, not the package's dist/, so the suite runs one framework copy.
+		alias: [{ find: /^screeps-ok$/, replacement: path.join(projectRoot, 'src/index.ts') }],
 		// Prevent vitest from resolving xxscreeps .ts source via symlink
 		// Force it to use the package exports (dist/)
 		conditions: ['import', 'node'],

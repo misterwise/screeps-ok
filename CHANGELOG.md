@@ -148,6 +148,13 @@ changes since `v0.1.0-alpha` are not itemized.
   them, and status shows each `why`. A skip that names no test is orphaned on
   a full run, and a test ID is skipped or registered as a gap, not both.
 
+### Package
+
+- `'screeps-ok'` resolves to compiled JavaScript and declarations in `dist/`,
+  so your `tsc` reads declarations under `skipLibCheck` instead of checking
+  the framework's source under your compiler flags. Inside the suite, vitest
+  resolves it to `src/`, the copy the tests import.
+
 ### Catalog IDs your `parity.json` may name
 
 - Renamed: `POWER-GENERATE-OPS-001`..`-003` → `POWER-GENERATE-001`..`-003`.

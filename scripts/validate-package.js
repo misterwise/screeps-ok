@@ -1,15 +1,16 @@
 // Pre-publish safety net. Confirms the tarball npm would publish contains
 // exactly what we expect — no CLAUDE files, no adapters/, no reports/,
 // and no other artefacts that could leak private context into a public
-// package. Run by `prepublishOnly` and available as `npm run validate:package`.
+// package. Run by `prepack` and available as `npm run validate:package`.
 //
 // Strategy: shell out to `npm pack --dry-run --json`, which reports every
 // file that would ship without actually producing a tarball. Compare the
 // returned file list against an allowlist of top-level directories we
 // explicitly intend to publish, plus a denylist of patterns that must
-// never appear.
+// never appear, and require every entry point package.json names.
 
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
@@ -18,6 +19,7 @@ const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 
 const allowedTopLevel = new Set([
 	'src',
+	'dist',
 	'tests',
 	'bin',
 	'scripts',
@@ -103,8 +105,18 @@ function main() {
 		}
 	}
 
+	// Every file package.json points at ships; `dist/` is built by `npm run build`.
+	const manifest = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
+	const entryPoints = new Set([manifest.main, manifest.types, ...Object.values(manifest.bin ?? {}), ...Object.values(manifest.exports['.'])]);
+	for (const entry of entryPoints) {
+		const normalized = path.posix.normalize(entry);
+		if (!files.includes(normalized)) {
+			violations.push(`${normalized} — named by package.json but missing (run npm run build)`);
+		}
+	}
+
 	if (violations.length > 0) {
-		console.error('[validate-package] tarball contains disallowed files:');
+		console.error('[validate-package] tarball is missing or contains disallowed files:');
 		for (const v of violations) console.error(`  ${v}`);
 		console.error(`\n${violations.length} violation(s). Fix the "files" field in package.json.`);
 		process.exit(1);

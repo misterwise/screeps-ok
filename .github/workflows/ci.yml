@@ -60,9 +60,9 @@ jobs:
             exit 1
           fi
 
-      # prepublishOnly runs this too; here a `files` change fails before the publish.
+      # prepack runs these too; here a `files` or build change fails before the publish.
       - name: Package contents
-        run: npm run validate:package
+        run: npm run build && npm run validate:package
 
   test:
     runs-on: ubuntu-latest

@@ -99,8 +99,7 @@ rebuild for the current runtime.
 During the alpha, `screeps-ok` is consumed by cloning this repository and
 running the suite in-place. Publishing as a package that a downstream engine
 installs with `npm i -D screeps-ok` is tracked as a pre-publish release
-gate — package metadata is not yet a stable installation contract, and
-`"exports"` still resolves to raw TypeScript.
+gate — package metadata is not yet a stable installation contract.
 
 When a test fails in your engine, start at
 [When a Test Fails](docs/adapter-guide.md#when-a-test-fails) in the adapter
