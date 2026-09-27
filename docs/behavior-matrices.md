@@ -1719,10 +1719,9 @@ checks both. Each definition has these fields, in this order:
   Same-room loss-free transfer and cross-room loss math, owned by
   separate `LINK-*` behavior entries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: amount argument validity → target
-  validity → target ownership → source ownership under rampart visibility →
-  cooldown → active RCL → source energy availability → target capacity →
-  same-room range. The executable case list lives in
+  A source link that isn't the player's is refused only under a rampart
+  (`game/structures.js:500-502`). Not yet listed: a link in a room with no
+  controller (`ERR_RCL_NOT_ENOUGH`). The executable case list lives in
   `src/matrices/link-validation.ts`.
 
 ### TOWER-ATTACK-VALIDATION

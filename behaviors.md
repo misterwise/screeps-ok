@@ -1824,39 +1824,21 @@ Coverage Notes
   `LINK_COOLDOWN * max(abs(dx), abs(dy))` between source and target.
 - `LINK-003` `behavior` `verified_vanilla`
   Transfer loss rounds up: sending 1 energy delivers 0.
-- `LINK-004` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is the source
-  link itself.
-- `LINK-005` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_INVALID_TARGET` when the target is not a
-  StructureLink.
-- `LINK-006` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_OWNER` when the target link belongs to a
-  different player.
-- `LINK-007` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_INVALID_ARGS` for a negative amount.
-- `LINK-008` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_TIRED` while the source link has cooldown > 0.
-- `LINK-009` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_RCL_NOT_ENOUGH` when the source link is
-  inactive due to insufficient room controller level.
-- `LINK-010` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_ENOUGH_ENERGY` when the source link has
-  less energy than the requested amount.
-- `LINK-011` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_FULL` when the target link lacks enough free
-  capacity for the requested amount.
-- `LINK-012` `behavior` `verified_vanilla`
-  `transferEnergy()` returns `ERR_NOT_IN_RANGE` when the target link is in a
-  different room.
 - `LINK-013` `behavior` `verified_vanilla`
   When `amount` is omitted, `transferEnergy()` transfers all of the source
   link's stored energy.
 - `LINK-014` `matrix` `verified_vanilla`
-  `transferEnergy(target, amount?)` failure return codes and precedence match
-  the canonical validation matrix for ownership, active-structure state,
-  argument validity, target validity, resource availability, store capacity,
-  and cooldown.
+  `link.transferEnergy(target, amount?)` returns the first failing check's
+  code, in this order: `:invalidArgs` `amount` is negative,
+  `ERR_INVALID_ARGS`; `:invalidTarget` the target isn't a link, or
+  `:selfTarget` it is the sending link itself, `ERR_INVALID_TARGET`;
+  `:targetNotOwner` the target link isn't the player's, or `:sourceNotOwner`
+  the sending link isn't and a rampart stands on it, `ERR_NOT_OWNER`;
+  `:cooldown` the sending link's `cooldown` is above 0, `ERR_TIRED`; `:rcl` it
+  is inactive, `ERR_RCL_NOT_ENOUGH`; `:notEnough` it holds no energy, or
+  `:notEnoughAmount` less than `amount`, `ERR_NOT_ENOUGH_ENERGY`; `:full` the
+  target can't take `amount` more energy, `ERR_FULL`; `:range` the target is
+  in another room, `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Link store-type semantics and capacity constants belong in section `23. Store API`.

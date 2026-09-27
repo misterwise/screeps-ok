@@ -549,7 +549,7 @@ gap moves into the base on the next release:
     "link-self-transfer": {
       "actual": "StructureLink.transferEnergy to self returns OK",
       "expected": "Returns ERR_INVALID_TARGET when target is the source link",
-      "tests": ["LINK-004"]
+      "tests": ["LINK-014:selfTarget"]
     }
   },
   "expected_passes": []

@@ -7,13 +7,24 @@ import { makeValidationCases } from './validation-cases.js';
 export const linkValidationCases = makeValidationCases('LINK-014', [
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'self-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'target-not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'source-not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_ENERGY },
+	{ condition: 'not-enough-amount', expectedRc: ERR_NOT_ENOUGH_ENERGY },
 	{ condition: 'full', expectedRc: ERR_FULL },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
-] as const);
+] as const, [
+	// A negative amount has no shortfall to measure.
+	['invalid-args', 'not-enough-amount'],
+	// The link sending to itself is the target: not another type, owner, store or room.
+	['invalid-target', 'self-target'],
+	['self-target', 'target-not-owner'],
+	['self-target', 'full'],
+	['self-target', 'range'],
+	['not-enough', 'not-enough-amount'],
+]);
 
 export type LinkValidationCase = typeof linkValidationCases[number];

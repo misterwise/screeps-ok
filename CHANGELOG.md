@@ -257,7 +257,10 @@ changes since `v0.1.0-alpha` are not itemized.
   (`RENEW-CREEP-011:range`), `-007` (`:claimPart`, new), `-008`
   (`:notEnough`), `-009` (`:busy`), `-010` (`:full`); `RECYCLE-CREEP-004`
   (`RECYCLE-CREEP-005:range`). The three spawn matrices also gain `:rcl`, an
-  inactive spawn.
+  inactive spawn. `LINK-004` (`LINK-014:selfTarget`, new), `-005`
+  (`:invalidTarget`), `-006` (`:targetNotOwner`), `-007` (`:invalidArgs`),
+  `-008` (`:cooldown`), `-009` (`:rcl`), `-010` (`:notEnoughAmount`, new),
+  `-011` (`:full`), `-012` (`:range`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

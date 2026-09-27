@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_INVALID_TARGET, ERR_NOT_OWNER, ERR_INVALID_ARGS, ERR_TIRED, ERR_RCL_NOT_ENOUGH, ERR_NOT_ENOUGH_ENERGY, ERR_FULL, ERR_NOT_IN_RANGE, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_TIRED, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY, } from '../../src/index.js';
 import { linkValidationCases } from '../../src/matrices/link-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
@@ -103,193 +103,6 @@ describe('StructureLink', () => {
 		expect(dst.store.energy ?? 0).toBe(0);
 	});
 
-	test('LINK-004 transferEnergy returns ERR_INVALID_TARGET when target is the source link itself', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const link = Game.getObjectById(${link1});
-			link.transferEnergy(link, 50)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('LINK-005 transferEnergy returns ERR_INVALID_TARGET when target is not a StructureLink', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const storage = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_STORAGE, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${storage}), 50)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('LINK-006 transferEnergy returns ERR_NOT_OWNER when target link belongs to a different player', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 5, owner: 'p1' },
-				{ name: 'W2N1', rcl: 5, owner: 'p2' },
-			],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p2',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 50)
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('LINK-007 transferEnergy returns ERR_INVALID_ARGS for a negative amount', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), -10)
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	test('LINK-008 transferEnergy returns ERR_TIRED while source link has cooldown > 0', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		// Distance 10 → cooldown = LINK_COOLDOWN * 10 = 10 ticks
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 400 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [25, 35], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 0 },
-		});
-
-		// Transfer to put source on cooldown
-		const first = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 50)
-		`);
-		expect(first).toBe(OK);
-		await shard.tick();
-
-		// Cooldown should still be active (10 - 1 = 9 remaining)
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 50)
-		`);
-		expect(rc).toBe(ERR_TIRED);
-	});
-
-	test('LINK-009 transferEnergy returns ERR_RCL_NOT_ENOUGH when source link is inactive', async ({ shard }) => {
-		// RCL 4 allows 0 links per CONTROLLER_STRUCTURES; RCL 5 allows 2
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 4, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 50)
-		`);
-		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
-	});
-
-	test('LINK-010 transferEnergy returns ERR_NOT_ENOUGH_ENERGY when source lacks the requested amount', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 10 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
-	});
-
-	test('LINK-011 transferEnergy returns ERR_FULL when target lacks free capacity for the amount', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 5, owner: 'p1' }],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const link2 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: LINK_CAPACITY },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 100)
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
-	test('LINK-012 transferEnergy returns ERR_NOT_IN_RANGE when target is in a different room', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 5, owner: 'p1' },
-				{ name: 'W2N1', rcl: 5, owner: 'p1' },
-			],
-		});
-		const link1 = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-			store: { energy: 100 },
-		});
-		const link2 = await shard.placeStructure('W2N1', {
-			pos: [25, 25], structureType: STRUCTURE_LINK, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${link1}).transferEnergy(Game.getObjectById(${link2}), 50)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('LINK-013 transferEnergy with no amount transfers all stored energy', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
@@ -362,7 +175,10 @@ describe('StructureLink', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_LINK,
 				owner: sourceOwner,
-				store: blockers.has('not-enough') && !blockers.has('invalid-args') ? { energy: 0 } : { energy: 100 },
+				store: blockers.has('not-enough') && !blockers.has('invalid-args') ? { energy: 0 }
+					// Less than the amount sent below.
+					: blockers.has('not-enough-amount') ? { energy: 10 }
+					: { energy: 100 },
 				...(blockers.has('cooldown') ? { cooldown: 10 } : {}),
 			});
 			if (blockers.has('source-not-owner')) {
@@ -373,7 +189,8 @@ describe('StructureLink', () => {
 				});
 			}
 			const targetRoom = blockers.has('range') ? 'W2N1' : 'W1N1';
-			const targetId = blockers.has('invalid-target')
+			const targetId = blockers.has('self-target') ? sourceId
+				: blockers.has('invalid-target')
 				? await shard.placeStructure(targetRoom, {
 					pos: [26, 25],
 					structureType: STRUCTURE_STORAGE,
