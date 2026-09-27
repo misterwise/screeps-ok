@@ -724,8 +724,10 @@ Coverage Notes
   Dropped resources decay by `ceil(amount / ENERGY_DECAY)` per tick.
 - `DROP-DECAY-002` `behavior` `verified_vanilla`
   A dropped resource disappears when its amount reaches 0.
-- `DROP-DECAY-004` `behavior` `verified_vanilla` Dropped resources are created when a creep overflows its carry capacity.
-- `DROP-DECAY-005` `behavior` `verified_vanilla` Any player's creep can pick up any dropped resource.
+- `DROP-DECAY-004` `behavior` `verified_vanilla`
+  Dropped resources are created when a creep overflows its carry capacity.
+- `DROP-DECAY-005` `behavior` `verified_vanilla`
+  Any player's creep can pick up any dropped resource.
 - `DROP-DECAY-006` `behavior` `verified_vanilla`
   Dropped resources expose their public `amount` and `resourceType` through the
   `Resource` object API.
@@ -758,7 +760,6 @@ Coverage Notes
   `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
 - `BUILD-009` `behavior` `verified_vanilla`
   A creep can build any visible construction site, whichever player owns it.
-
 - `BUILD-010` `behavior` `verified_vanilla`
   When the creep has less energy than the full build amount (5 × WORK parts),
   `build()` contributes progress equal to the available energy.
@@ -790,7 +791,6 @@ Coverage Notes
 - `REPAIR-008` `behavior` `verified_vanilla`
   A creep can repair any visible structure, whichever player owns it or its
   room.
-
 - `REPAIR-009` `behavior` `verified_vanilla`
   When the creep has less energy than the full repair cost (WORK part count),
   `repair()` restores fewer hits proportional to the available energy.
@@ -1102,10 +1102,15 @@ Coverage Notes
   no argument-validity branch is exercised.
 
 ### 6.6 Generate Safe Mode
-- `CTRL-GENSAFE-001` `behavior` `verified_vanilla` `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's store.
-- `CTRL-GENSAFE-002` `behavior` `verified_vanilla` Range is 1 (adjacent).
-- `CTRL-GENSAFE-003` `behavior` `verified_vanilla` On success, increments the controller's safeModeAvailable count.
-- `CTRL-GENSAFE-004` `behavior` `verified_vanilla` Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
+- `CTRL-GENSAFE-001` `behavior` `verified_vanilla`
+  `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's
+  store.
+- `CTRL-GENSAFE-002` `behavior` `verified_vanilla`
+  Range is 1 (adjacent).
+- `CTRL-GENSAFE-003` `behavior` `verified_vanilla`
+  On success, increments the controller's safeModeAvailable count.
+- `CTRL-GENSAFE-004` `behavior` `verified_vanilla`
+  Returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks ghodium.
 - `CTRL-GENSAFE-005` `matrix` `verified_vanilla`
   `creep.generateSafeMode(target)` failure return codes and precedence match
   the canonical validation matrix for ownership, caller busy state, resource
@@ -1261,7 +1266,6 @@ Coverage Notes
 - `COMBAT-MELEE-007` `behavior` `verified_vanilla`
   Can target creeps, power creeps, and structures; non-attackable objects
   (e.g. sources) return ERR_INVALID_TARGET.
-
 - `COMBAT-MELEE-008` `behavior` `verified_vanilla`
   Counter-damage per ATTACK part on the target is `ATTACK_POWER` (30), the
   same rate as a regular melee attack.
@@ -1286,7 +1290,6 @@ Coverage Notes
 - `COMBAT-RANGED-005` `behavior` `verified_vanilla`
   Can target creeps, power creeps, and structures; non-attackable objects
   (e.g. sources) return ERR_INVALID_TARGET.
-
 - `COMBAT-RANGED-006` `behavior` `verified_vanilla`
   `rangedAttack()` on a target standing on a hostile rampart hits the rampart
   instead of the target.
@@ -1327,7 +1330,6 @@ Coverage Notes
   imposes a type-only check, with no friend/foe restriction.
 - `COMBAT-HEAL-004` `behavior` `verified_vanilla`
   Healing a creep already at full HP returns OK but has no effect.
-
 - `COMBAT-HEAL-005` `behavior` `verified_vanilla`
   `heal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 1.
 - `COMBAT-HEAL-006` `behavior` `verified_vanilla`
@@ -1349,7 +1351,6 @@ Coverage Notes
   When both `rangedHeal()` and `rangedAttack()` intents are queued on the same
   creep in one tick, `rangedHeal` takes priority and `rangedAttack` is suppressed
   (engine intent priority table).
-
 - `COMBAT-RANGEDHEAL-004` `behavior` `verified_vanilla`
   `rangedHeal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 3.
 - `COMBAT-RANGEDHEAL-005` `behavior` `verified_vanilla`
@@ -1384,11 +1385,17 @@ Coverage Notes
   (section 8.7).
 
 ### 7.7 Simultaneous Damage & Healing
-- `COMBAT-SIMULT-001` `behavior` `verified_vanilla` Damage and healing are resolved simultaneously: `newHits = oldHits + healing - damage`.
-- `COMBAT-SIMULT-002` `behavior` `verified_vanilla` A creep survives if healing equals or exceeds damage in the same tick.
-- `COMBAT-SIMULT-003` `behavior` `verified_vanilla` Overkill damage does not carry over to the next tick.
-- `COMBAT-SIMULT-004` `behavior` `verified_vanilla` A creep dies only if hits reach 0 after simultaneous resolution.
-- `COMBAT-SIMULT-005` `behavior` `verified_vanilla` Multiple sources of damage and healing are summed independently.
+- `COMBAT-SIMULT-001` `behavior` `verified_vanilla`
+  Damage and healing are resolved simultaneously:
+  `newHits = oldHits + healing - damage`.
+- `COMBAT-SIMULT-002` `behavior` `verified_vanilla`
+  A creep survives if healing equals or exceeds damage in the same tick.
+- `COMBAT-SIMULT-003` `behavior` `verified_vanilla`
+  Overkill damage does not carry over to the next tick.
+- `COMBAT-SIMULT-004` `behavior` `verified_vanilla`
+  A creep dies only if hits reach 0 after simultaneous resolution.
+- `COMBAT-SIMULT-005` `behavior` `verified_vanilla`
+  Multiple sources of damage and healing are summed independently.
 
 ### 7.8 Tower Attack
 - `TOWER-ATTACK-001` `behavior` `verified_vanilla`
@@ -1465,13 +1472,24 @@ Coverage Notes
   same time.
 
 ### 7.13 Nukes — Launch `capability: nuke`
-- `NUKE-LAUNCH-001` `behavior` `verified_vanilla` Launching requires `NUKER_ENERGY_CAPACITY` (300000) energy and `NUKER_GHODIUM_CAPACITY` (5000) ghodium.
-- `NUKE-LAUNCH-002` `behavior` `verified_vanilla` Nuker enters a long cooldown after launch (`NUKER_COOLDOWN`, 100000 ticks).
-- `NUKE-LAUNCH-003` `behavior` `verified_vanilla` Maximum range is `NUKE_RANGE` (10 rooms).
-- `NUKE-LAUNCH-004` `behavior` `verified_vanilla` Creates an in-flight Nuke object visible in the target room via `FIND_NUKES`.
-- `NUKE-LAUNCH-005` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is insufficient.
-- `NUKE-LAUNCH-006` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
-- `NUKE-LAUNCH-007` `behavior` `verified_vanilla` `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond `NUKE_RANGE`.
+- `NUKE-LAUNCH-001` `behavior` `verified_vanilla`
+  Launching requires `NUKER_ENERGY_CAPACITY` (300000) energy and
+  `NUKER_GHODIUM_CAPACITY` (5000) ghodium.
+- `NUKE-LAUNCH-002` `behavior` `verified_vanilla`
+  Nuker enters a long cooldown after launch (`NUKER_COOLDOWN`, 100000 ticks).
+- `NUKE-LAUNCH-003` `behavior` `verified_vanilla`
+  Maximum range is `NUKE_RANGE` (10 rooms).
+- `NUKE-LAUNCH-004` `behavior` `verified_vanilla`
+  Creates an in-flight Nuke object visible in the target room via
+  `FIND_NUKES`.
+- `NUKE-LAUNCH-005` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is
+  insufficient.
+- `NUKE-LAUNCH-006` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
+- `NUKE-LAUNCH-007` `behavior` `verified_vanilla`
+  `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond
+  `NUKE_RANGE`.
 - `NUKE-LAUNCH-008` `matrix` `verified_vanilla`
   `launchNuke()` failure return codes and precedence match the canonical
   validation matrix for ownership, argument type, cooldown, active-structure
@@ -1508,12 +1526,22 @@ Coverage Notes
   constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.
 
 ### 7.14 Nukes — Impact `capability: nuke`
-- `NUKE-IMPACT-001` `behavior` `verified_vanilla` Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on launch.
-- `NUKE-IMPACT-002` `behavior` `verified_vanilla` Damage at ground zero (range 0) is `NUKE_DAMAGE[0]` (10,000,000).
-- `NUKE-IMPACT-003` `behavior` `verified_vanilla` Damage in radius 1–2 is `NUKE_DAMAGE[2]` (5,000,000).
-- `NUKE-IMPACT-005` `behavior` `verified_vanilla` Ramparts do not protect creeps from nuke damage; every creep in the room dies.
-- `NUKE-IMPACT-006` `behavior` `verified_vanilla` All dropped resources, construction sites, tombstones, and ruins in the entire room are removed when the nuke lands (room-wide cleanup, not just the blast area).
-- `NUKE-IMPACT-007` `behavior` `verified_vanilla` Nukes do not create tombstones or ruins from what they destroy.
+- `NUKE-IMPACT-001` `behavior` `verified_vanilla`
+  Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on
+  launch.
+- `NUKE-IMPACT-002` `behavior` `verified_vanilla`
+  Damage at ground zero (range 0) is `NUKE_DAMAGE[0]` (10,000,000).
+- `NUKE-IMPACT-003` `behavior` `verified_vanilla`
+  Damage in radius 1–2 is `NUKE_DAMAGE[2]` (5,000,000).
+- `NUKE-IMPACT-005` `behavior` `verified_vanilla`
+  Ramparts do not protect creeps from nuke damage; every creep in the room
+  dies.
+- `NUKE-IMPACT-006` `behavior` `verified_vanilla`
+  All dropped resources, construction sites, tombstones, and ruins in the
+  entire room are removed when the nuke lands (room-wide cleanup, not just the
+  blast area).
+- `NUKE-IMPACT-007` `behavior` `verified_vanilla`
+  Nukes do not create tombstones or ruins from what they destroy.
 - `NUKE-IMPACT-008` `matrix` `verified_vanilla`
   Additional object-type outcomes at nuke impact match the canonical matrix:
   power creeps, actively-spawning spawns, controllers, sources, minerals,
@@ -2583,7 +2611,6 @@ Coverage Notes
   branch uses `Math.floor(0.5)`. A stored `0` falls back to
   `INVADERS_ENERGY_GOAL` on the next eligibility check.
 
-
 ---
 
 ## 15. Structure Common
@@ -3246,7 +3273,7 @@ neighbors and no better section exists.
   and `progressTotal = (level + 1) ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY - base`
   for `base = level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY`.
 
-### 19.0 Power Creep Allocation `capability: powerCreeps`
+### 19.0b Power Creep Allocation `capability: powerCreeps`
 - `GPL-003` `behavior` `verified_vanilla`
   `PowerCreep.create(name, POWER_CLASS.OPERATOR)` returns
   `ERR_NOT_ENOUGH_RESOURCES` when GPL level is `0`.
@@ -3392,7 +3419,7 @@ Coverage Notes
   `PWR_SHIELD` and `PWR_FORTIFY` effect magnitudes match `POWER_INFO` for each
   supported power level.
 
-### 19.7 Combat Runtime `capability: powerCreeps`
+### 19.7b Combat Runtime `capability: powerCreeps`
 - `POWER-COMBAT-002` `behavior` `verified_vanilla` `capability: powerEffects`
   A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
   rampart at the power creep's position in the same tick.
@@ -3405,7 +3432,7 @@ Coverage Notes
   `PWR_GENERATE_OPS` amount, cooldown, and ops cost match `POWER_INFO` for
   each supported power level.
 
-### 19.8 Generate Ops Runtime `capability: powerCreeps`
+### 19.8b Generate Ops Runtime `capability: powerCreeps`
 - `POWER-GENERATE-002` `behavior` `verified_vanilla`
   A successful `usePower(PWR_GENERATE_OPS)` returns `OK` and adds ops to the
   power creep's store in the same tick.
@@ -3449,7 +3476,6 @@ Coverage Notes
   `extendOrder()` failure codes match the canonical validation matrix for
   missing order, invalid added amount, and insufficient credits for the
   extension fee.
-
 - `MARKET-ORDER-009` `behavior` `verified_vanilla`
   An order expires and is removed after `MARKET_ORDER_LIFE_TIME` ms of
   wall-clock time with no activity. Engine check uses `Date.now()`, not
@@ -3467,7 +3493,6 @@ Coverage Notes
   invalid arguments, missing owned terminal, insufficient terminal energy,
   terminal cooldown, insufficient traded resource, insufficient credits, and
   per-tick deal cap.
-
 - `MARKET-DEAL-004` `behavior` `verified_vanilla`
   A partial deal reduces the target order's remaining amount by the traded
   quantity.
@@ -3506,6 +3531,7 @@ Notes
 - `MARKET-QUERY-006` `behavior` `documented`
   `Game.market.getHistory(invalidResource)` and valid resources with no
   history return an empty array (`[]`), not an empty object.
+
 ---
 
 ## 21. Map
@@ -3952,7 +3978,7 @@ Coverage Notes
   `Game.market` exposes exactly `credits`, `incomingTransactions`,
   `orders`, and `outgoingTransactions`.
 
-### 26.5 Structure Shapes `matrix`
+### 26.5 Structure Shapes
 - `SHAPE-STRUCT-001` `matrix` `verified_vanilla`
   Each player-buildable structure type's public data-property surface
   matches its canonical shape exactly — no missing and no extra
