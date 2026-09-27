@@ -184,6 +184,14 @@ changes since `v0.1.0-alpha` are not itemized.
 - Re-scoped: `MAP-ROOM-005` covers worlds that straddle the map origin, and
   `SPAWN-TIMING-005`'s test now exercises its row (directions ignored on a
   one-tick `PWR_OPERATE_SPAWN` spawn).
+- Enumerated from vanilla's source, where each claimed a family no list
+  spanned: `TIMER-COOLDOWN-001` (eleven cooldown-gated actions, now
+  `matrix`), `TOWER-ATTACK-003`/`-HEAL-003`/`-REPAIR-003` (six target
+  classes; the controller and other hitless structures are accepted),
+  `INTENT-CREEP-002`/`-003` (the creep methods and intent names), and
+  `ROOM-EVENTLOG-002`, which named "the canonical event mapping" and now
+  covers the five event sources no single-event row owns. Their tests still
+  run the cases they did; they'll be keyed by case when they run the rest.
 - Split: `POWER-OPERATE-005` keeps operate-power target validity (under
   `powerEffects`); `usePower()` returning `ERR_INVALID_ARGS` in a room
   without power enabled is the new `POWERCREEP-ENABLE-003`, keyed by power

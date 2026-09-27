@@ -264,19 +264,24 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `TIMER-COOLDOWN-001`
 - `Canonical Source`
-  Official `cooldownTime` getters and action-gating checks across the engine.
+  Vanilla's `ERR_TIRED` branches on a `cooldownTime` the `cooldown` getter
+  exposes: `@screeps/engine/src/game/structures.js:321` (`runReaction`),
+  `:364` (`reverseReaction`), `:454` (`unboostCreep`), `:504`
+  (`transferEnergy`), `:730` (`send`), `:1370` (`launchNuke`), `:1439`
+  (`produce`); `market.js:134` (`deal`, the terminal's); `creeps.js:383`
+  and `:391` (`harvest`, the extractor's and the deposit's);
+  `power-creeps.js:268` (`usePower`, the power's).
 - `Dimensions`
-  API family using `cooldownTime`
+  gated action
 - `Applicability`
-  Actions refused while their `cooldown` getter reads above `0`: lab
-  reactions, terminal sends, factory production, deposit harvesting, and
-  power creep powers.
+  The eleven actions the source lists, each at cooldown `1` and `0`
 - `Exclusions`
-  `endTime`, `safeMode`, `decayTime`, `nextDecayTime`, `spawnTime`, and
-  `landTime`
+  Gates that aren't a `cooldown` getter: creep fatigue (`move`),
+  `upgradeBlocked` (`attackController`), `safeMode`, and a power creep's
+  wall-clock `spawnCooldownTime`
 - `Verification Notes`
-  No case list enumerates the family: the test
-  (`tests/23-store-api/23.5-timers.test.ts`) runs a lab reaction only.
+  No case list enumerates the family yet: the test
+  (`tests/23-store-api/23.5-timers.test.ts`) runs `runReaction` only.
 
 ### NPC-OWNERSHIP
 
@@ -520,15 +525,21 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `TOWER-ATTACK-003`, `TOWER-HEAL-003`, `TOWER-REPAIR-003`
 - `Canonical Source`
-  Official tower API validation and tower action processors.
+  Vanilla's tower target checks, `@screeps/engine/src/game/structures.js:770`
+  (`attack`: creeps, power creeps, structures), `:790` (`heal`: creeps,
+  power creeps) and `:810` (`repair`: structures). The controller is a
+  registered structure (`game/game.js:298-300`), so it passes.
 - `Dimensions`
   tower action, target class
 - `Applicability`
-  Target classes relevant to attackable, healable, and repairable objects
+  `attack`, `heal` and `repair` against a creep, a power creep, a structure
+  with hits, the controller (a structure without), a construction site and
+  a source: 18 return codes
 - `Exclusions`
-  Range falloff and tower intent priority
+  What the processor then does with an accepted target, range falloff, and
+  tower intent priority
 - `Verification Notes`
-  No case list enumerates the target classes. The tests
+  No case list enumerates the target classes yet. The tests
   (`tests/07-combat/7.12-tower-intent.test.ts`,
   `tests/07-combat/7.9-7.11-tower.test.ts`) run a hostile creep and a
   construction site for `attack`, a friendly creep for `heal`, and a damaged
@@ -963,18 +974,25 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `ROOM-EVENTLOG-002`
 - `Canonical Source`
-  Room event constants and event-log payload shapes from action processors.
+  Vanilla's event pushes: `@screeps/engine/src/processor/intents/_damage.js:93`
+  (creep `attack` via `creeps/attack.js`, tower `attack` via
+  `towers/attack.js:52`), `towers/heal.js:51`, `towers/repair.js:52`, and
+  `creeps/harvest.js:110` (mineral).
 - `Dimensions`
-  event type, required payload fields
+  event source
 - `Applicability`
-  Current-tick room events exposed through `room.getEventLog()`
+  The five sources the row lists, one actor and target each
 - `Exclusions`
-  Raw JSON form and current-tick-only exposure
+  Sources another 16.6 row owns (creep death and attack kills, transfers,
+  exits, controller actions, source harvest, build, creep repair, creep heals,
+  ranged and mass attacks, hit-back, nukes, dismantle, powers); invader-core
+  controller actions and transfers, which only its NPC logic drives; a
+  deposit harvest, for which vanilla logs nothing (`creeps/harvest.js` pushes
+  for sources and minerals only); raw JSON form and current-tick exposure
 - `Verification Notes`
-  No case list enumerates the event types: the test
-  (`tests/16-room-mechanics/16.6-eventlog.test.ts`) checks a tower's
-  `EVENT_HEAL`, and the other rows of section 16.6 each pin one event's
-  payload.
+  No case list enumerates the sources yet: the test
+  (`tests/16-room-mechanics/16.6-eventlog.test.ts`) checks the tower's
+  `EVENT_HEAL`, and `ROOM-EVENTLOG-001`'s test logs a creep melee attack.
 
 ### ROOM-EVENTLOG-NUKE
 
@@ -1382,15 +1400,24 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `INTENT-CREEP-002`
 - `Canonical Source`
-  Official same-method creep intent storage and replacement behavior.
+  Vanilla's driver stores one intent per object and intent name, the later
+  call replacing the earlier (`@screeps/driver/lib/runtime/runtime.js:66-71`);
+  every creep method queues through it (`@screeps/engine/src/game/creeps.js`,
+  `intents.set`).
 - `Dimensions`
   creep method
 - `Applicability`
-  Methods with single-intent overwrite semantics
+  The sixteen methods the row lists: those whose two calls can take different
+  targets, directions, resources or text
 - `Exclusions`
-  Blocking priority interactions between different methods
+  Methods whose repeated calls can't differ visibly: `rangedMassAttack`,
+  `suicide` and `generateSafeMode` take nothing that varies, a creep reaches
+  one controller for `upgradeController`, `claimController`,
+  `reserveController` and `attackController`, and `notifyWhenAttacked` sets
+  nothing a player reads. Blocking priority between different methods
+  (`INTENT-CREEP-001`, `-004`).
 - `Verification Notes`
-  No case list enumerates the methods: the test
+  No case list enumerates the methods yet: the test
   (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) calls
   `attack` twice.
 
@@ -1399,15 +1426,21 @@ checks both. Each definition has these fields, in this order:
 - `Catalog Entries`
   `INTENT-CREEP-003`
 - `Canonical Source`
-  Official `cancelOrder(methodName)` handling on creep intents.
+  `Creep.prototype.cancelOrder` (`@screeps/engine/src/game/creeps.js:1008-1014`)
+  deletes the intent stored under the name it's given
+  (`@screeps/driver/lib/runtime/runtime.js:92-99`), the intent name each
+  method queues under (`moveTo` and `moveByPath` queue `move`).
 - `Dimensions`
-  cancelable creep method
+  creep intent name
 - `Applicability`
-  Methods that support `cancelOrder(methodName)`
+  The twenty-three intents the row lists, each canceled once queued; one
+  name with nothing queued (`ERR_NOT_FOUND`); and `cancelOrder('moveTo')`
+  after a `moveTo`
 - `Exclusions`
-  Overwrite behavior and cross-method priority blocking
+  `notifyWhenAttacked`, whose intent sets nothing a player reads; overwrite
+  behavior and cross-method priority blocking
 - `Verification Notes`
-  No case list enumerates the methods: the tests
+  No case list enumerates the intents yet: the tests
   (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) cancel a
   queued `attack`, and cancel `attack` with nothing queued.
 

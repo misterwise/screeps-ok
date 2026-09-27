@@ -1469,9 +1469,9 @@ Coverage Notes
   Tower attack damage by range matches the canonical Screeps tower falloff
   curve derived from the tower attack constants.
 - `TOWER-ATTACK-003` `matrix` `verified_vanilla`
-  `tower.attack()` target acceptance and invalid-target behavior match the
-  canonical target matrix across creeps, power creeps, structures, and
-  non-attackable objects.
+  `tower.attack(target)` returns `OK` for a creep, a power creep, or any
+  structure, a hitless one such as the controller included, and
+  `ERR_INVALID_TARGET` for any other object.
 - `TOWER-ATTACK-004` `behavior` `verified_vanilla`
   `tower.attack()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
@@ -1488,9 +1488,8 @@ Coverage Notes
   Tower heal amount by range matches the canonical Screeps tower falloff curve
   derived from the tower heal constants.
 - `TOWER-HEAL-003` `matrix` `verified_vanilla`
-  `tower.heal()` target acceptance and invalid-target behavior match the
-  canonical target matrix across creeps, power creeps, structures, and
-  non-healable objects.
+  `tower.heal(target)` returns `OK` for a creep or a power creep and
+  `ERR_INVALID_TARGET` for any other object, structures included.
 - `TOWER-HEAL-004` `behavior` `verified_vanilla`
   `tower.heal()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
@@ -1507,9 +1506,9 @@ Coverage Notes
   Tower repair amount by range matches the canonical Screeps tower falloff
   curve derived from the tower repair constants.
 - `TOWER-REPAIR-003` `matrix` `verified_vanilla`
-  `tower.repair()` target acceptance and invalid-target behavior match the
-  canonical target matrix across repairable structures, non-repairable
-  structures, creeps, and other invalid targets.
+  `tower.repair(target)` returns `OK` for any structure, a hitless one such
+  as the controller included, and `ERR_INVALID_TARGET` for any other object,
+  creeps included.
 - `TOWER-REPAIR-004` `behavior` `verified_vanilla`
   `tower.repair()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
   energy is below `TOWER_ENERGY_COST`.
@@ -3015,7 +3014,15 @@ Notes
 - `ROOM-EVENTLOG-001` `behavior` `verified_vanilla`
   `room.getEventLog()` returns the current tick's parsed room event array.
 - `ROOM-EVENTLOG-002` `matrix` `verified_vanilla`
-  Current-tick event entries use the canonical event-type and payload mapping.
+  The event sources no single-event row below owns log the actor as
+  `objectId` and the target as `data.targetId`, with: creep `attack`, an
+  `EVENT_ATTACK` of `attackType` `EVENT_ATTACK_TYPE_MELEE` and `damage`
+  `ATTACK_POWER` per ATTACK part; tower `attack`, an `EVENT_ATTACK` of
+  `EVENT_ATTACK_TYPE_RANGED` and the range-scaled `damage`; tower `heal`, an
+  `EVENT_HEAL` of `healType` `EVENT_HEAL_TYPE_RANGED` and the range-scaled
+  `amount`; tower `repair`, an `EVENT_REPAIR` of the range-scaled `amount` and
+  `energySpent` `TOWER_ENERGY_COST`; and creep `harvest` of a mineral, an
+  `EVENT_HARVEST` of the `amount` harvested.
 - `ROOM-EVENTLOG-003` `behavior` `verified_vanilla`
   `room.getEventLog(true)` returns the current tick's raw event-log JSON
   string.
@@ -3876,16 +3883,19 @@ Coverage Notes
   `getFreeCapacity(otherMineral)` return `null`.
 
 ### 23.5 Timer Models
-- `TIMER-COOLDOWN-001` `behavior` `verified_vanilla`
-  For APIs gated by `cooldownTime`, the action becomes available in the same
-  tick the exposed cooldown reaches `0`.
+- `TIMER-COOLDOWN-001` `matrix` `verified_vanilla`
+  Each action vanilla gates on a cooldown its player getter exposes returns
+  `ERR_TIRED` on the tick that cooldown reads `1` and `OK` on the tick it
+  reads `0`: lab `runReaction`, `reverseReaction` and `unboostCreep`; link
+  `transferEnergy`; terminal `send` and `Game.market.deal`; nuker
+  `launchNuke`; factory `produce`; creep `harvest` of a mineral whose
+  extractor is cooling and of a cooling deposit; and power creep `usePower`
+  against its power's `cooldown`.
 - `TIMER-SAFEMODE-001` `behavior` `verified_vanilla`
   Effects gated by `safeMode` stop blocking in the same tick the exposed safe
   mode timer reaches `0`.
 
 Coverage Notes
-- Shared timer rules should not be treated as settled until their full
-  applicability inventory is explicit and verified.
 - `endTime` effect expiration is not one shared timer model; some checks use
   `endTime > time` while others use `endTime >= time`, so those behaviors should
   stay with their local mechanics.
@@ -3903,11 +3913,22 @@ Coverage Notes
   `docs/behavior-matrices.md`, the higher-priority blocking creep intent
   prevents the lower-priority intent from resolving in the same tick.
 - `INTENT-CREEP-002` `matrix` `verified_vanilla`
-  For creep methods with single-intent overwrite semantics, repeated same-tick
-  calls keep only the last intent for that method.
+  A second same-tick call to a creep method replaces the first call's intent,
+  so only the last call resolves, for each method whose two calls can differ
+  visibly: `move` (as `moveTo` and `moveByPath` also queue it), `pull`,
+  `attack`, `rangedAttack`, `heal`, `rangedHeal`, `harvest`, `build`,
+  `repair`, `dismantle`, `transfer`, `withdraw`, `pickup`, `drop`,
+  `say`, and `signController`.
 - `INTENT-CREEP-003` `matrix` `verified_vanilla`
-  For creep methods that support `cancelOrder(methodName)`, canceling a queued
-  same-tick intent prevents that method's intent from resolving.
+  `creep.cancelOrder(name)` returns `OK` and removes the intent queued this
+  tick under `name`, so it doesn't resolve, for each creep intent with a
+  visible effect: `move` (which `moveTo` and `moveByPath` queue, so
+  `cancelOrder('moveTo')` finds nothing), `pull`, `attack`, `rangedAttack`,
+  `rangedMassAttack`, `heal`, `rangedHeal`, `harvest`, `build`, `repair`,
+  `dismantle`, `upgradeController`, `claimController`, `reserveController`,
+  `attackController`, `signController`, `generateSafeMode`, `transfer`,
+  `withdraw`, `pickup`, `drop`, `say`, and `suicide`. With nothing
+  queued under `name` it returns `ERR_NOT_FOUND`.
 - `INTENT-CREEP-004` `behavior` `verified_vanilla`
   A creep's actions resolve in the engine's own fixed order, not in the order the
   player's code called them. `drop`, `transfer`, `withdraw` and `pickup` all
