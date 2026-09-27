@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_TIRED,
+	OK,
 	WORK, CARRY, MOVE, body,
 	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
 	RESOURCE_SILICON, RESOURCE_METAL, STRUCTURE_CONTAINER,
@@ -29,43 +29,6 @@ describe('creep.harvest(deposit)', () => {
 		const creep = await shard.expectObject(creepId, 'creep');
 		// HARVEST_DEPOSIT_POWER = 1 per WORK part; 3 WORK = 3 silicon.
 		expect((creep.store as Record<string, number>)[RESOURCE_SILICON]).toBe(3);
-	});
-
-	test('DEPOSIT-HARVEST-002 harvest(deposit) returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
-		shard.requires('deposit');
-		await shard.ownedRoom('p1');
-		const depositId = await shard.placeObject('W1N1', 'deposit', {
-			pos: [25, 26], depositType: RESOURCE_SILICON,
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${depositId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('DEPOSIT-HARVEST-003 harvest(deposit) returns ERR_TIRED during deposit cooldown', async ({ shard }) => {
-		shard.requires('deposit');
-		await shard.ownedRoom('p1');
-		// Pre-seed deposit with active cooldown (10 ticks into the future).
-		const depositId = await shard.placeObject('W1N1', 'deposit', {
-			pos: [25, 26], depositType: RESOURCE_SILICON, cooldown: 10,
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${depositId}))
-		`);
-		expect(rc).toBe(ERR_TIRED);
 	});
 
 	test('DEPOSIT-HARVEST-004 harvest(deposit) returns OK when preconditions met', async ({ shard }) => {

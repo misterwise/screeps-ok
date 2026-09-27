@@ -193,7 +193,15 @@ changes since `v0.1.0-alpha` are not itemized.
   `-005` (`:invalidArgs`), `-007` (`:range`, new), `-023` (`:notOwner`),
   `-024` (`:busy`); `MOVE-PULL-004` (`MOVE-PULL-011:range`),
   `MOVE-PULL-007:self` (`:self`, new), `:nonCreep` (`:invalidTarget`),
-  `:spawning` (`:spawningTarget`, new).
+  `:spawning` (`:spawningTarget`, new). `HARVEST-002` (`HARVEST-015:range`),
+  `-003` (`:noBodypart`), `-004` (`:depleted`), `-010` (`:hostileRoom`, and
+  `:hostileReservation`, new), `-011` (`:notOwner`), `-012` (`:busy`),
+  `-013` (`:noTarget`, `:nullTarget` and `:plainObjectTarget`, new, and
+  `:invalidTarget`); `HARVEST-MINERAL-004` (`HARVEST-MINERAL-014:depleted`),
+  `-006` (`:noExtractor`), `-007` (`:extractorNotOwner`), `-008`
+  (`:inactiveExtractor`), `-009` (`:cooldown`), `-010` (`:range`);
+  `DEPOSIT-HARVEST-002` (`DEPOSIT-HARVEST-006:range`), `-003`
+  (`:cooldown`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

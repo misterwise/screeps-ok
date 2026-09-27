@@ -2288,19 +2288,24 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.harvest(source)` ownership, caller busy state, body-part
-  requirements (`WORK`), target validity (target is a `Source`), range,
-  and resource availability (depleted source).
+  requirements (`WORK`), target validity (omitted, `null`, id-less, or not
+  a harvestable object), resource availability (depleted source), range,
+  and the room controller's owner or reservation.
 - `Exclusions`
   Harvest yield math, owned by `HARVEST-001..014`. Mineral and deposit
   variants are owned by `HARVEST-MINERAL-VALIDATION` and
-  `DEPOSIT-HARVEST-VALIDATION`. The busy/hostile-room pair is excluded
-  because a spawning creep cannot be placed in a hostile-controlled room
-  through the public fixture API.
+  `DEPOSIT-HARVEST-VALIDATION`. Busy is excluded with both hostile-room
+  conditions because a spawning creep cannot be placed in a room another
+  player controls or reserves through the public fixture API. The four
+  invalid-target forms exclude each other, the three with no target
+  object exclude depletion and range, and a controller is owned or
+  reserved, not both.
 - `Verification Notes`
-  Verified vanilla API-guard order for sources is: ownership → busy →
-  body-part availability → target validity → source energy availability →
-  range → hostile-room ownership. The executable case list lives in
-  `src/matrices/harvest-validation.ts`.
+  The omitted, `null` and id-less targets fail one expression
+  (`game/creeps.js:346`); an object of another type fails after the
+  source, mineral and deposit branches. A reservation is made in-test with
+  `reserveController`, since no room spec field seeds one. The executable
+  case list lives in `src/matrices/harvest-validation.ts`.
 
 ### HARVEST-MINERAL-VALIDATION
 
@@ -2323,11 +2328,7 @@ checks both. Each definition has these fields, in this order:
   Harvest yield math, owned by `HARVEST-MINERAL-001..013`.
 - `Verification Notes`
   Extractor activity is part of this family because it gates the mineral
-  branch in vanilla. Verified vanilla API-guard order for minerals is:
-  ownership → busy → body-part availability → target validity → mineral
-  availability → range → extractor presence → extractor ownership →
-  extractor active RCL → extractor cooldown.
-  The executable case list lives in
+  branch in vanilla. The executable case list lives in
   `src/matrices/harvest-mineral-validation.ts`.
 
 ### DEPOSIT-HARVEST-VALIDATION
@@ -2349,8 +2350,6 @@ checks both. Each definition has these fields, in this order:
   Harvest yield math, owned by `DEPOSIT-HARVEST-001..005`. Deposit decay
   on overharvest is owned by `DEPOSIT-*` lifecycle entries.
 - `Verification Notes`
-  Verified vanilla API-guard order for deposits is: ownership → busy →
-  body-part availability → target validity → range → deposit cooldown.
   The executable case list lives in
   `src/matrices/deposit-harvest-validation.ts`.
 

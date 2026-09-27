@@ -1,10 +1,10 @@
 import { describe, test, expect, code, body,
-	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
-	ERR_BUSY, ERR_INVALID_TARGET,
-	WORK, CARRY, MOVE,
+	OK, ERR_NOT_IN_RANGE,
+	WORK, CARRY, MOVE, CLAIM,
 	HARVEST_POWER, CARRY_CAPACITY, ENERGY_DECAY, FIND_DROPPED_RESOURCES,
-	RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_CONTAINER,
+	RESOURCE_ENERGY, STRUCTURE_CONTAINER,
 } from '../../src/index.js';
+import type { PlayerCode } from '../../src/index.js';
 import { harvestValidationCases } from '../../src/matrices/harvest-validation.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
@@ -69,27 +69,8 @@ describe('creep.harvest()', () => {
 		expect(creep.store.energy).toBe(3 * HARVEST_POWER);
 	});
 
-	test('HARVEST-002 returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [20, 20],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('HARVEST-007 harvest() requires range 1: diagonal-adjacent OK, distance 2 returns ERR_NOT_IN_RANGE', async ({ shard }) => {
-		// Boundary test for adjacency (range=1 inclusive). HARVEST-001/-005
-		// cover orthogonal-adjacent; HARVEST-002 covers the far case (distance 10).
-		// HARVEST-007 asserts the exact boundary: diagonal (Chebyshev 1) works,
-		// orthogonal distance 2 (Chebyshev 2) fails.
+		// The exact boundary: diagonal (Chebyshev 1) works, distance 2 fails.
 		await shard.ownedRoom('p1');
 		const diagCreep = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
@@ -136,38 +117,6 @@ describe('creep.harvest()', () => {
 
 		expect(rc).toBe(OK);
 		expect(rc).toBe(0);
-	});
-
-	test('HARVEST-003 returns ERR_NO_BODYPART without WORK parts', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE], // no WORK
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 26],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-	});
-
-	test('HARVEST-004 cannot harvest from depleted source', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 26], energy: 0, energyCapacity: 3000,
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
 	test('HARVEST-014 harvest is capped by remaining source energy', async ({ shard }) => {
@@ -249,110 +198,30 @@ describe('creep.harvest()', () => {
 		expect(pile!.amount).toBe(overflow - Math.ceil(overflow / ENERGY_DECAY));
 	});
 
-	test('HARVEST-010 harvest returns ERR_NOT_OWNER when room controller is owned by another player', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const creepId = await shard.placeCreep('W2N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		const srcId = await shard.placeSource('W2N1', {
-			pos: [25, 26], energy: 3000, energyCapacity: 3000,
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('HARVEST-011 harvest returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p2',
-			body: [WORK, CARRY, MOVE],
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 26], energy: 3000, energyCapacity: 3000,
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${srcId}))
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('HARVEST-012 harvest returns ERR_BUSY while the creep is spawning', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 1);
-		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		const srcId = await shard.placeSource('W1N1', {
-			pos: [25, 26], energy: 3000, energyCapacity: 3000,
-		});
-		await shard.tick();
-
-		const spawnRc = await shard.runPlayer('p1', code`
-			const spawns = Object.values(Game.spawns);
-			spawns[0].spawnCreep([WORK, CARRY, MOVE], 'Harvester')
-		`);
-		expect(spawnRc).toBe(OK);
-
-		const rc = await shard.runPlayer('p1', code`
-			const c = Game.creeps['Harvester'];
-			c ? c.harvest(Game.getObjectById(${srcId})) : -99
-		`);
-		expect(rc).toBe(ERR_BUSY);
-	});
-
-	test('HARVEST-013 harvest returns ERR_INVALID_TARGET for omitted or non-harvestable targets', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-		});
-		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-		});
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			({
-				omitted: creep.harvest(),
-				undefinedArg: creep.harvest(undefined),
-				nullArg: creep.harvest(null),
-				plainObject: creep.harvest({}),
-				container: creep.harvest(Game.getObjectById(${containerId})),
-			})
-		`) as Record<string, number>;
-		expect(result.omitted).toBe(ERR_INVALID_TARGET);
-		expect(result.undefinedArg).toBe(ERR_INVALID_TARGET);
-		expect(result.nullArg).toBe(ERR_INVALID_TARGET);
-		expect(result.plainObject).toBe(ERR_INVALID_TARGET);
-		expect(result.container).toBe(ERR_INVALID_TARGET);
-	});
-
 	for (const row of harvestValidationCases) {
 		test(`HARVEST-015:${row.label} harvest(source) validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const hostileRoom = blockers.has('hostile-room');
-			if (owner === 'p2' || hostileRoom) {
+			if (blockers.has('hostile-reservation')) {
+				// No spec field reserves a room: p2 reserves the neutral W1N1 first.
+				await shard.createShard({ players: ['p1', 'p2'], rooms: [{ name: 'W1N1' }] });
+				const ctrlPos = await shard.getControllerPos('W1N1');
+				await shard.placeCreep('W1N1', {
+					pos: [ctrlPos!.x + 1, ctrlPos!.y],
+					owner: 'p2',
+					body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
+					name: 'reserver',
+				});
+				if (owner === 'p2') {
+					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+				}
+				await shard.tick();
+				const reserveRc = await shard.runPlayer('p2', code`
+					Game.creeps['reserver'].reserveController(Game.rooms['W1N1'].controller)
+				`);
+				expect(reserveRc).toBe(OK);
+			} else if (owner === 'p2' || hostileRoom) {
 				await shard.createShard({
 					players: ['p1', 'p2'],
 					rooms: [{ name: 'W1N1', rcl: 1, owner: hostileRoom || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1' }],
@@ -379,21 +248,29 @@ describe('creep.harvest()', () => {
 					owner,
 					body: blockers.has('no-bodypart') ? [CARRY, MOVE] : [WORK, CARRY, MOVE],
 				});
-			const targetId = blockers.has('invalid-target')
-				? await shard.placeStructure('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [25, 26],
-					structureType: STRUCTURE_CONTAINER,
-					store: { energy: 50 },
-				})
-				: await shard.placeSource('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [25, 26],
-					energy: blockers.has('depleted') ? 0 : 3000,
-					energyCapacity: 3000,
-				});
+			let call: PlayerCode;
+			if (blockers.has('no-target')) {
+				call = code`Game.getObjectById(${creepId}).harvest()`;
+			} else if (blockers.has('null-target')) {
+				call = code`Game.getObjectById(${creepId}).harvest(null)`;
+			} else if (blockers.has('plain-object-target')) {
+				call = code`Game.getObjectById(${creepId}).harvest({})`;
+			} else {
+				const targetId = blockers.has('invalid-target')
+					? await shard.placeStructure('W1N1', {
+						pos: blockers.has('range') ? [30, 30] : [25, 26],
+						structureType: STRUCTURE_CONTAINER,
+						store: { energy: 50 },
+					})
+					: await shard.placeSource('W1N1', {
+						pos: blockers.has('range') ? [30, 30] : [25, 26],
+						energy: blockers.has('depleted') ? 0 : 3000,
+						energyCapacity: 3000,
+					});
+				call = code`Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))`;
+			}
 
-			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).harvest(Game.getObjectById(${targetId}))
-			`);
+			const rc = await shard.runPlayer('p1', call);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}

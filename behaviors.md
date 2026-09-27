@@ -429,12 +429,6 @@ Coverage Notes
 ### 3.1 Source Harvest
 - `HARVEST-001` `behavior` `verified_vanilla`
   Each WORK part harvests 2 energy per tick from a source.
-- `HARVEST-002` `behavior` `verified_vanilla`
-  `harvest()` returns ERR_NOT_IN_RANGE when too far.
-- `HARVEST-003` `behavior` `verified_vanilla`
-  `harvest()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- `HARVEST-004` `behavior` `verified_vanilla`
-  `harvest()` returns ERR_NOT_ENOUGH_RESOURCES when the source has 0 energy.
 - `HARVEST-005` `behavior` `verified_vanilla`
   Successful `harvest(source)` increases the creep's `store.energy` by the
   harvested amount.
@@ -448,24 +442,19 @@ Coverage Notes
 - `HARVEST-009` `behavior` `verified_vanilla`
   Successful `harvest(source)` reduces the source's `energy` by the harvested
   amount.
-- `HARVEST-010` `behavior` `verified_vanilla`
-  `harvest(source)` returns `ERR_NOT_OWNER` when the room controller is owned
-  or reserved by another player.
-- `HARVEST-011` `behavior` `verified_vanilla`
-  `harvest()` returns `ERR_NOT_OWNER` when called on a creep not owned by the
-  player.
-- `HARVEST-012` `behavior` `verified_vanilla`
-  `harvest()` returns `ERR_BUSY` while the creep is spawning.
-- `HARVEST-013` `behavior` `verified_vanilla`
-  `harvest()` returns `ERR_INVALID_TARGET` when the target is omitted, `null`,
-  `undefined`, or not a source, mineral, or deposit.
 - `HARVEST-014` `behavior` `verified_vanilla`
   When the source's remaining energy is less than the full harvest amount
   (2 × WORK parts), the creep harvests only the remaining energy.
 - `HARVEST-015` `matrix` `verified_vanilla`
-  `creep.harvest(source)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, range, and resource availability.
+  `creep.harvest(source)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:noTarget` the target is omitted, `:nullTarget` it is
+  `null`, `:plainObjectTarget` it has no `id`, or `:invalidTarget` it isn't
+  a source, mineral or deposit, `ERR_INVALID_TARGET`; `:depleted` the
+  source's `energy` is 0, `ERR_NOT_ENOUGH_RESOURCES`; `:range` it isn't
+  adjacent, `ERR_NOT_IN_RANGE`; `:hostileRoom` another player owns the
+  room's controller, or `:hostileReservation` reserves it, `ERR_NOT_OWNER`.
 
 Coverage Notes
 - Harvest boost magnitudes (UO/UHO2/XUHO2) are owned by `BOOST-HARVEST-001`
@@ -488,25 +477,8 @@ Coverage Notes
 - `HARVEST-MINERAL-003` `behavior` `verified_vanilla`
   After a successful mineral harvest, the extractor enters cooldown for
   `EXTRACTOR_COOLDOWN` ticks.
-- `HARVEST-MINERAL-004` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_NOT_ENOUGH_RESOURCES` when the mineral is
-  depleted.
 - `HARVEST-MINERAL-005` `behavior` `verified_vanilla`
   The mineral's `mineralType` determines the resource harvested.
-- `HARVEST-MINERAL-006` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_NOT_FOUND` when no extractor is present on
-  the mineral tile.
-- `HARVEST-MINERAL-007` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_NOT_OWNER` when the extractor is owned by
-  another player.
-- `HARVEST-MINERAL-008` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_RCL_NOT_ENOUGH` when the extractor is
-  inactive.
-- `HARVEST-MINERAL-009` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_TIRED` while the extractor is on cooldown.
-- `HARVEST-MINERAL-010` `behavior` `verified_vanilla`
-  `harvest(mineral)` returns `ERR_NOT_IN_RANGE` when the creep is not
-  adjacent.
 - `HARVEST-MINERAL-011` `behavior` `verified_vanilla`
   `harvest(mineral)` returns `OK` when all mineral-harvest preconditions are
   met.
@@ -517,10 +489,16 @@ Coverage Notes
   When the mineral's remaining amount is less than the full harvest amount
   (WORK part count), the creep harvests only the remaining amount.
 - `HARVEST-MINERAL-014` `matrix` `verified_vanilla`
-  `creep.harvest(mineral)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, extractor presence, range, resource
-  availability, and cooldown.
+  `creep.harvest(mineral)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a source, mineral or
+  deposit, `ERR_INVALID_TARGET`; `:depleted` the mineral's `mineralAmount`
+  is 0, `ERR_NOT_ENOUGH_RESOURCES`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:noExtractor` no extractor stands on its tile,
+  `ERR_NOT_FOUND`; `:extractorNotOwner` another player owns the extractor,
+  `ERR_NOT_OWNER`; `:inactiveExtractor` the extractor is inactive,
+  `ERR_RCL_NOT_ENOUGH`; `:cooldown` its `cooldown` is above 0, `ERR_TIRED`.
 
 Coverage Notes
 - Mineral depletion triggering regeneration is owned by `MINERAL-REGEN-004`
@@ -533,20 +511,19 @@ Coverage Notes
 - `DEPOSIT-HARVEST-001` `behavior` `verified_vanilla`
   Successful `harvest(deposit)` adds `HARVEST_DEPOSIT_POWER` units per WORK
   part of `deposit.depositType` to the creep's store.
-- `DEPOSIT-HARVEST-002` `behavior` `verified_vanilla`
-  `harvest(deposit)` returns `ERR_NOT_IN_RANGE` when the creep is not
-  adjacent.
-- `DEPOSIT-HARVEST-003` `behavior` `verified_vanilla`
-  `harvest(deposit)` returns `ERR_TIRED` while the deposit is on cooldown.
 - `DEPOSIT-HARVEST-004` `behavior` `verified_vanilla`
   `harvest(deposit)` returns `OK` when deposit-harvest preconditions are met.
 - `DEPOSIT-HARVEST-005` `behavior` `verified_vanilla`
   Successful `harvest(deposit)` can exceed free carry capacity and drops the
   overflow resource after processing.
 - `DEPOSIT-HARVEST-006` `matrix` `verified_vanilla`
-  `creep.harvest(deposit)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, range, and cooldown.
+  `creep.harvest(deposit)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a source, mineral or
+  deposit, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:cooldown` the deposit's `cooldown` is above 0,
+  `ERR_TIRED`.
 
 Coverage Notes
 - Deposit object properties and lifecycle (`depositType`, `lastCooldown`,
