@@ -152,7 +152,7 @@ describe('creep movement collision', () => {
 		expect(mover.pos.y).toBe(25);
 	});
 
-	test('MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay', async ({ shard }) => {
+	test('MOVE-COLLISION-006 circular chain (A→B→C→A) rotates', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Triangle: A→B→C→A
 		//   A at [24,24] moves RIGHT  → wants [25,24] (B's tile)
@@ -178,17 +178,9 @@ describe('creep movement collision', () => {
 		const b = await shard.expectObject(bId, 'creep');
 		const c = await shard.expectObject(cId, 'creep');
 
-		const rotated = (
-			a.pos.x === 25 && a.pos.y === 24 &&
-			b.pos.x === 25 && b.pos.y === 25 &&
-			c.pos.x === 24 && c.pos.y === 24
-		);
-		const allStayed = (
-			a.pos.x === 24 && a.pos.y === 24 &&
-			b.pos.x === 25 && b.pos.y === 24 &&
-			c.pos.x === 25 && c.pos.y === 25
-		);
-		expect(rotated || allStayed).toBe(true);
+		expect([a.pos.x, a.pos.y]).toEqual([25, 24]);
+		expect([b.pos.x, b.pos.y]).toEqual([25, 25]);
+		expect([c.pos.x, c.pos.y]).toEqual([24, 24]);
 	});
 
 	test('MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps', async ({ shard }) => {

@@ -227,13 +227,6 @@ Coverage Notes
 Coverage Notes
 - Room adjacency and coordinate topology are owned by `21. Map`
   (`MAP-ROOM-*`).
-- The previously listed `ROOM-TRANSITION-004` ("`creep.room` returns the
-  previous room for one tick after crossing") was dropped on
-  2026-04-09: vanilla source `@screeps/engine/src/game/rooms.js`
-  `RoomObject` constructor sets `this.room` and `this.pos` from the same
-  data field, so the two are always in sync and there is no observable
-  one-tick lag. Empirically verified with `creep.room.name` immediately
-  after crossing.
 - Cross-room pull is intentionally not listed as catalog behavior yet. A
   naive same-tick setup with the puller crossing first fails on vanilla
   because pull state lives in per-room `roomObjects` and is lost when the
@@ -277,19 +270,17 @@ Coverage Notes
   resolves, the pull still completes — the pulled creep moves into the
   puller's old tile — and the move's fatigue is buried with the dying
   puller; the pulled creep ends the tick at fatigue `0` regardless of
-  placement or iteration order. The two rows differ only in which creep
-  is inserted first into `roomObjects`: `:pullerFirst` and
-  `:pulledFirst`.
+  placement or iteration order (`:pullerFirst`, `:pulledFirst`).
 
 ### 1.6 Collision Resolution
 - `MOVE-COLLISION-001` `behavior` `verified_vanilla`
-  When multiple creeps attempt to occupy the same tile in the same tick, at
-  most one creep occupies that tile after movement resolves.
+  When several creeps move onto the same empty tile in the same tick, exactly
+  one of them occupies it after movement resolves.
 - `MOVE-COLLISION-002` `behavior` `verified_vanilla`
   A creep that loses collision resolution remains on its original tile and does
   not receive an action error code from `move()`.
 - `MOVE-COLLISION-003` `behavior` `verified_vanilla`
-  Two creeps moving into each other's starting tiles in the same tick can swap
+  Two creeps moving into each other's starting tiles in the same tick swap
   positions.
 - `MOVE-COLLISION-004` `behavior` `verified_vanilla`
   A creep can move onto a tile vacated by another creep moving away in the
@@ -298,8 +289,8 @@ Coverage Notes
   A hostile creep blocks movement onto its tile.
 - `MOVE-COLLISION-006` `behavior` `verified_vanilla`
   In a circular movement chain (A moves to B's tile, B moves to C's tile,
-  C moves to A's tile), all creeps either rotate positions simultaneously or
-  all remain in place.
+  C moves to A's tile), all the creeps rotate: a creep that is itself moving
+  doesn't block its tile.
 - `MOVE-COLLISION-007` `behavior` `reported`
   When `creep.moveTo(target, { ignoreCreeps: false })` would have to pass
   through a tile occupied by a stationary creep on every viable route,
@@ -309,11 +300,6 @@ Coverage Notes
   by-creeps case.
 
 Coverage Notes
-- Same-input determinism should be proven through concrete repeated scenarios,
-  not kept as a standalone abstract catalog item.
-- The exact collision-priority algorithm is not catalog truth yet.
-- Replace inferred priority-factor bullets with a small set of verified,
-  observable tie-break scenarios.
 - Structure-based movement blocking (constructedWall, rampart ownership) is
   owned by the relevant structure facets, not this section.
 
