@@ -10,9 +10,10 @@
  * Usage:
  *   node scripts/validate-capabilities.js
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { adapterCapabilities } from './lib/capabilities.js';
 import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
 import { parseCatalog } from './lib/parse-catalog.js';
 import { testFileClaims } from './lib/test-claims.js';
@@ -54,19 +55,12 @@ for (const { file, code } of testFileClaims(testsDir)) {
 const literalErrors = [];
 const adaptersDir = path.join(root, 'adapters');
 for (const name of readdirSync(adaptersDir)) {
-	const relFile = `adapters/${name}/index.ts`;
-	if (!existsSync(path.join(root, relFile))) continue;
-	const lines = readFileSync(path.join(root, relFile), 'utf8').split('\n');
-	const start = lines.findIndex(line => /\bcapabilities: AdapterCapabilities = \{$/.test(line.trim()));
-	if (start === -1) {
-		literalErrors.push(`  ${relFile}: no \`capabilities: AdapterCapabilities = {\` block`);
-		continue;
-	}
-	for (let i = start + 1; i < lines.length; i++) {
-		const line = lines[i].trim();
-		if (line === '};') break;
-		if (line === '' || line.startsWith('//') || /^\w+: (?:true|false),?(?:\s*\/\/.*)?$/.test(line)) continue;
-		literalErrors.push(`  ${relFile}:${i + 1}: capability is not a literal: ${line}`);
+	const file = path.join(adaptersDir, name, 'index.ts');
+	if (!existsSync(file)) continue;
+	try {
+		adapterCapabilities(file);
+	} catch (err) {
+		literalErrors.push(`  ${err.message}`);
 	}
 }
 
