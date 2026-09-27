@@ -237,7 +237,17 @@ changes since `v0.1.0-alpha` are not itemized.
   `CTRL-GENSAFE-002` (`CTRL-GENSAFE-005:range`), `-004` (`:notEnough`);
   `CTRL-SAFEMODE-003` (`CTRL-SAFEMODE-009:notEnough`), `-004` (`:cooldown`),
   `-005` (`:downgradeTimer`, new), `-007` (`:busy`), with the new
-  `:upgradeBlocked`.
+  `:upgradeBlocked`. `COMBAT-MELEE-002` (`COMBAT-MELEE-009:range`), `-003`
+  (`:noBodypart`); `COMBAT-RANGED-002` (`COMBAT-RANGED-007:range`), `-004`
+  (`:noBodypart`); `COMBAT-HEAL-005` (`COMBAT-HEAL-007:range`), `-006`
+  (`:noBodypart`); `COMBAT-RANGEDHEAL-004` (`COMBAT-RANGEDHEAL-006:range`),
+  `-005` (`:noBodypart`); `TOWER-ATTACK-004`, `TOWER-HEAL-004` and
+  `TOWER-REPAIR-004` (each matrix's `:notEnough`); `NUKE-LAUNCH-005`
+  (`NUKE-LAUNCH-008:missingEnergy`, `:missingGhodium`), `-006`
+  (`:cooldown`), `-007` (`:outOfRange`), `-014` to `-017` (`:noviceSource`,
+  `:respawnSource`, `:noviceTarget`, `:respawnTarget`, new, with
+  `:noviceSourceBeforeCooldown`). `COMBAT-MELEE-007` and `COMBAT-RANGED-005`
+  keep only the targets their method accepts.
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

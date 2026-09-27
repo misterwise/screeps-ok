@@ -1124,10 +1124,6 @@ Coverage Notes
 ### 7.1 Melee Attack
 - `COMBAT-MELEE-001` `behavior` `verified_vanilla`
   Each ATTACK part deals 30 damage per tick.
-- `COMBAT-MELEE-002` `behavior` `verified_vanilla`
-  `attack()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- `COMBAT-MELEE-003` `behavior` `verified_vanilla`
-  `attack()` returns ERR_NO_BODYPART when the creep has no ATTACK parts.
 - `COMBAT-MELEE-004` `behavior` `verified_vanilla`
   `attack()` has a range of 1 (adjacent).
 - `COMBAT-MELEE-005` `behavior` `verified_vanilla`
@@ -1136,15 +1132,18 @@ Coverage Notes
   After a melee attack the target's ATTACK parts deal counter-damage back to the
   attacker, unless the attacker stands on its own rampart.
 - `COMBAT-MELEE-007` `behavior` `verified_vanilla`
-  Can target creeps, power creeps, and structures; non-attackable objects
-  (e.g. sources) return ERR_INVALID_TARGET.
+  `attack()` accepts a creep, a power creep, or a structure as its target; any
+  other object is `COMBAT-MELEE-009:invalidTarget`.
 - `COMBAT-MELEE-008` `behavior` `verified_vanilla`
   Counter-damage per ATTACK part on the target is `ATTACK_POWER` (30), the
   same rate as a regular melee attack.
 - `COMBAT-MELEE-009` `matrix` `verified_vanilla`
-  `creep.attack(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.attack(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
+  is spawning, `ERR_BUSY`; `:noBodypart` it has no active ATTACK part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep, power creep or
+  structure, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Attack boost magnitudes are owned by `BOOST-ATTACK-001` (section 8.4).
@@ -1152,23 +1151,21 @@ Coverage Notes
 ### 7.2 Ranged Attack
 - `COMBAT-RANGED-001` `behavior` `verified_vanilla`
   Each RANGED_ATTACK part deals 10 damage per tick.
-- `COMBAT-RANGED-002` `behavior` `verified_vanilla`
-  `rangedAttack()` returns ERR_NOT_IN_RANGE when target is beyond range 3.
 - `COMBAT-RANGED-003` `behavior` `verified_vanilla`
   `rangedAttack()` has a range of 1–3.
-- `COMBAT-RANGED-004` `behavior` `verified_vanilla`
-  `rangedAttack()` returns ERR_NO_BODYPART when the creep has no
-  RANGED_ATTACK parts.
 - `COMBAT-RANGED-005` `behavior` `verified_vanilla`
-  Can target creeps, power creeps, and structures; non-attackable objects
-  (e.g. sources) return ERR_INVALID_TARGET.
+  `rangedAttack()` accepts a creep, a power creep, or a structure as its
+  target; any other object is `COMBAT-RANGED-007:invalidTarget`.
 - `COMBAT-RANGED-006` `behavior` `verified_vanilla`
   `rangedAttack()` on a target standing on a hostile rampart hits the rampart
   instead of the target.
 - `COMBAT-RANGED-007` `matrix` `verified_vanilla`
-  `creep.rangedAttack(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.rangedAttack(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
+  is spawning, `ERR_BUSY`; `:noBodypart` it has no active RANGED_ATTACK part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep, power creep or
+  structure, `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles away,
+  `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Ranged attack boost magnitudes are owned by `BOOST-RANGED-001`
@@ -1188,9 +1185,10 @@ Coverage Notes
   `rangedMassAttack()` damage to a target standing on a hostile rampart is
   redirected to the rampart.
 - `COMBAT-RMA-005` `matrix` `verified_vanilla`
-  `creep.rangedMassAttack()` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, and body-part
-  requirements.
+  `creep.rangedMassAttack()` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
+  is spawning, `ERR_BUSY`; `:noBodypart` it has no active RANGED_ATTACK part,
+  `ERR_NO_BODYPART`.
 
 ### 7.4 Heal
 - `COMBAT-HEAL-001` `behavior` `verified_vanilla`
@@ -1202,14 +1200,12 @@ Coverage Notes
   imposes a type-only check, with no friend/foe restriction.
 - `COMBAT-HEAL-004` `behavior` `verified_vanilla`
   Healing a creep already at full HP returns OK but has no effect.
-- `COMBAT-HEAL-005` `behavior` `verified_vanilla`
-  `heal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 1.
-- `COMBAT-HEAL-006` `behavior` `verified_vanilla`
-  `heal()` returns `ERR_NO_BODYPART` when the creep has no HEAL parts.
 - `COMBAT-HEAL-007` `matrix` `verified_vanilla`
-  `creep.heal(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.heal(target)` returns the first failing check's code, in this order:
+  `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it is
+  spawning, `ERR_BUSY`; `:noBodypart` it has no active HEAL part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep or power creep,
+  `ERR_INVALID_TARGET`; `:range` it isn't adjacent, `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Heal boost magnitudes are owned by `BOOST-HEAL-001` (section 8.6).
@@ -1223,14 +1219,13 @@ Coverage Notes
   When both `rangedHeal()` and `rangedAttack()` intents are queued on the same
   creep in one tick, `rangedHeal` takes priority and `rangedAttack` is suppressed
   (engine intent priority table).
-- `COMBAT-RANGEDHEAL-004` `behavior` `verified_vanilla`
-  `rangedHeal()` returns `ERR_NOT_IN_RANGE` when the target is beyond range 3.
-- `COMBAT-RANGEDHEAL-005` `behavior` `verified_vanilla`
-  `rangedHeal()` returns `ERR_NO_BODYPART` when the creep has no HEAL parts.
 - `COMBAT-RANGEDHEAL-006` `matrix` `verified_vanilla`
-  `creep.rangedHeal(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.rangedHeal(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
+  is spawning, `ERR_BUSY`; `:noBodypart` it has no active HEAL part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep or power creep,
+  `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles away,
+  `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Heal boost multipliers (including for rangedHeal) are owned by
@@ -1277,13 +1272,13 @@ Coverage Notes
   `tower.attack(target)` returns `OK` for a creep, a power creep, or any
   structure, a hitless one such as the controller included, and
   `ERR_INVALID_TARGET` for any other object.
-- `TOWER-ATTACK-004` `behavior` `verified_vanilla`
-  `tower.attack()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
-  energy is below `TOWER_ENERGY_COST`.
 - `TOWER-ATTACK-005` `matrix` `verified_vanilla`
-  `tower.attack(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state, target
-  validity, and resource availability.
+  `tower.attack(target)` returns the first failing check's code, in this
+  order: `:notOwner` the tower isn't the player's, `ERR_NOT_OWNER`;
+  `:invalidTarget` the target isn't a creep, power creep or structure,
+  `ERR_INVALID_TARGET`; `:notEnough` the tower holds less than
+  `TOWER_ENERGY_COST` energy, `ERR_NOT_ENOUGH_ENERGY`; `:rcl` the tower is
+  inactive, `ERR_RCL_NOT_ENOUGH`.
 - `TOWER-ATTACK-006` `behavior` `verified_vanilla`
   `tower.attack()` on an object standing on a rampart's tile damages the
   rampart instead.
@@ -1298,13 +1293,12 @@ Coverage Notes
 - `TOWER-HEAL-003` `matrix` `verified_vanilla`
   `tower.heal(target)` returns `OK` for a creep or a power creep and
   `ERR_INVALID_TARGET` for any other object, structures included.
-- `TOWER-HEAL-004` `behavior` `verified_vanilla`
-  `tower.heal()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
-  energy is below `TOWER_ENERGY_COST`.
 - `TOWER-HEAL-005` `matrix` `verified_vanilla`
-  `tower.heal(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state, target
-  validity, and resource availability.
+  `tower.heal(target)` returns the first failing check's code, in this order:
+  `:notOwner` the tower isn't the player's, `ERR_NOT_OWNER`; `:invalidTarget`
+  the target isn't a creep or power creep, `ERR_INVALID_TARGET`; `:notEnough`
+  the tower holds less than `TOWER_ENERGY_COST` energy,
+  `ERR_NOT_ENOUGH_ENERGY`; `:rcl` the tower is inactive, `ERR_RCL_NOT_ENOUGH`.
 
 ### 7.10 Tower Repair
 - `TOWER-REPAIR-001` `behavior` `verified_vanilla`
@@ -1317,13 +1311,12 @@ Coverage Notes
   `tower.repair(target)` returns `OK` for any structure, a hitless one such
   as the controller included, and `ERR_INVALID_TARGET` for any other object,
   creeps included.
-- `TOWER-REPAIR-004` `behavior` `verified_vanilla`
-  `tower.repair()` returns `ERR_NOT_ENOUGH_ENERGY` when the tower's stored
-  energy is below `TOWER_ENERGY_COST`.
 - `TOWER-REPAIR-005` `matrix` `verified_vanilla`
-  `tower.repair(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state, target
-  validity, and resource availability.
+  `tower.repair(target)` returns the first failing check's code, in this
+  order: `:notOwner` the tower isn't the player's, `ERR_NOT_OWNER`;
+  `:invalidTarget` the target isn't a structure, `ERR_INVALID_TARGET`;
+  `:notEnough` the tower holds less than `TOWER_ENERGY_COST` energy,
+  `ERR_NOT_ENOUGH_ENERGY`; `:rcl` the tower is inactive, `ERR_RCL_NOT_ENOUGH`.
 
 ### 7.11 Tower Action Priority
 - `TOWER-INTENT-002` `behavior` `verified_vanilla`
@@ -1347,18 +1340,17 @@ Coverage Notes
   `NUKER_GHODIUM_CAPACITY` ghodium, emptying the nuker.
 - `NUKE-LAUNCH-003` `behavior` `verified_vanilla`
   Maximum range is `NUKE_RANGE` (10 rooms).
-- `NUKE-LAUNCH-005` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is
-  insufficient.
-- `NUKE-LAUNCH-006` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_TIRED` when the nuker is on cooldown.
-- `NUKE-LAUNCH-007` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_NOT_IN_RANGE` when the target room is beyond
-  `NUKE_RANGE`.
 - `NUKE-LAUNCH-008` `matrix` `verified_vanilla`
-  `launchNuke()` failure return codes and precedence match the canonical
-  validation matrix for ownership, argument type, cooldown, active-structure
-  state, range, and resource availability.
+  `nuker.launchNuke(pos)` returns the first failing check's code, in this
+  order: `:notOwner` the nuker isn't the player's, `ERR_NOT_OWNER`;
+  `:invalidArgumentShape` `pos` isn't a `RoomPosition`, `ERR_INVALID_ARGS`;
+  `:noviceSource` or `:respawnSource` the nuker's room is in a novice or
+  respawn area, or `:noviceTarget` or `:respawnTarget` the target room is,
+  `ERR_INVALID_TARGET`; `:cooldown` the nuker's `cooldown` is above 0,
+  `ERR_TIRED`; `:inactiveRcl` the nuker is inactive, `ERR_RCL_NOT_ENOUGH`;
+  `:outOfRange` the target room is more than `NUKE_RANGE` rooms away on either
+  axis, `ERR_NOT_IN_RANGE`; `:missingEnergy` or `:missingGhodium` the nuker
+  isn't full of energy or of ghodium, `ERR_NOT_ENOUGH_RESOURCES`.
 - `NUKE-LAUNCH-009` `behavior` `verified_vanilla`
   `launchNuke()` can target a valid position in the nuker's own room.
 - `NUKE-LAUNCH-010` `behavior` `verified_vanilla`
@@ -1374,18 +1366,6 @@ Coverage Notes
 - `NUKE-LAUNCH-013` `behavior` `verified_vanilla`
   After launch, `nuker.cooldown` decreases by exactly `1` on each subsequent
   tick until it reaches `0`.
-- `NUKE-LAUNCH-014` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_INVALID_TARGET` when the source room is in a
-  novice area.
-- `NUKE-LAUNCH-015` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_INVALID_TARGET` when the source room is in a
-  respawn area.
-- `NUKE-LAUNCH-016` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_INVALID_TARGET` when the destination room is in
-  a novice area.
-- `NUKE-LAUNCH-017` `behavior` `verified_vanilla`
-  `launchNuke()` returns `ERR_INVALID_TARGET` when the destination room is in
-  a respawn area.
 - `NUKER-PROPS-001` `matrix` `verified_vanilla`
   `StructureNuker` legacy resource properties mirror the store and capacity
   constants: `energy`, `ghodium`, `energyCapacity`, and `ghodiumCapacity`.

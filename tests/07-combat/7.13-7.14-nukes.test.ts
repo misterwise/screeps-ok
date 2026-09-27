@@ -1,6 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_RESOURCES, ERR_TIRED, ERR_NOT_IN_RANGE,
-	ERR_INVALID_TARGET,
+	OK,
 	MOVE, TOUGH, CLAIM, body,
 	STRUCTURE_NUKER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_WALL,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
@@ -38,46 +37,6 @@ function nukerStore(kind: 'full' | 'empty' | 'energyOnly' | 'ghodiumOnly'): Reco
 			return {};
 	}
 }
-
-type NukeLaunchRoomStatusCase = {
-	catalogId: 'NUKE-LAUNCH-014' | 'NUKE-LAUNCH-015' | 'NUKE-LAUNCH-016' | 'NUKE-LAUNCH-017';
-	label: string;
-	sourceStatus?: 'novice' | 'respawn';
-	destinationStatus?: 'novice' | 'respawn';
-	statusRoomName: string;
-	expectedStatus: 'novice' | 'respawn';
-};
-
-const nukeLaunchRoomStatusCases: readonly NukeLaunchRoomStatusCase[] = [
-	{
-		catalogId: 'NUKE-LAUNCH-014',
-		label: 'source-room-novice',
-		sourceStatus: 'novice',
-		statusRoomName: 'W1N1',
-		expectedStatus: 'novice',
-	},
-	{
-		catalogId: 'NUKE-LAUNCH-015',
-		label: 'source-room-respawn',
-		sourceStatus: 'respawn',
-		statusRoomName: 'W1N1',
-		expectedStatus: 'respawn',
-	},
-	{
-		catalogId: 'NUKE-LAUNCH-016',
-		label: 'destination-room-novice',
-		destinationStatus: 'novice',
-		statusRoomName: 'W2N1',
-		expectedStatus: 'novice',
-	},
-	{
-		catalogId: 'NUKE-LAUNCH-017',
-		label: 'destination-room-respawn',
-		destinationStatus: 'respawn',
-		statusRoomName: 'W2N1',
-		expectedStatus: 'respawn',
-	},
-];
 
 describe('Nuke launch — section 7.13', () => {
 	test('NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium', async ({ shard }) => {
@@ -131,116 +90,15 @@ describe('Nuke launch — section 7.13', () => {
 		expect(rc).toBe(OK);
 	});
 
-	test('NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient', async ({ shard }) => {
-		// CONTROLLER_STRUCTURES.nuker permits one nuker per room, so each store
-		// scenario gets its own room. Co-locating multiple nukers would put two
-		// of them into the engine's "inactive" bucket and surface ERR_RCL_NOT_ENOUGH
-		// before the resource check — testing rules the catalog row doesn't claim.
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W1N2', rcl: 8, owner: 'p1' },
-				{ name: 'W1N3', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const emptyId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: {},
-		});
-		const noGId = await shard.placeStructure('W1N2', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY },
-		});
-		const noEId = await shard.placeStructure('W1N3', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		const r1 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${emptyId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(r1).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		const r2 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${noGId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(r2).toBe(ERR_NOT_ENOUGH_RESOURCES);
-
-		const r3 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${noEId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(r3).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	test('NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown', async ({ shard }) => {
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const nukerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		const r1 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(r1).toBe(OK);
-		await shard.tick();
-
-		// Refill stores so we can isolate ERR_TIRED from ERR_NOT_ENOUGH_RESOURCES.
-		// We can't directly mutate stores from player code; instead place a new
-		// nuker and run launch on the original to verify the cooldown gate fires.
-		const r2 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(r2).toBe(ERR_TIRED);
-	});
-
-	test('NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE', async ({ shard }) => {
-		// Engine: @screeps/engine/src/game/structures.js:1379-1381 — `if(Math.abs(tx-x) > C.NUKE_RANGE
-		// || Math.abs(ty-y) > C.NUKE_RANGE) return C.ERR_NOT_IN_RANGE;`. The catalog
-		// previously claimed ERR_INVALID_TARGET; this test pins the actual return code.
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const nukerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		// W1N1 → W12N1: 11 rooms east-west delta, > NUKE_RANGE (10). The target
-		// room name does not need to exist in the shard for the range check.
-		void NUKE_RANGE; // referenced for clarity
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W12N1'))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	for (const row of nukeLaunchValidationCases) {
 		test(`NUKE-LAUNCH-008:${row.label} launchNuke validation returns the canonical code`, async ({ shard }) => {
 			shard.requires(row.capability);
+			if (row.sourceStatus || row.targetStatus) shard.requires('roomStatus');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: row.roomRcl, owner: 'p1' },
-					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+					{ name: 'W1N1', rcl: row.roomRcl, owner: 'p1', status: row.sourceStatus },
+					{ name: 'W2N1', rcl: 1, owner: 'p2', status: row.targetStatus },
 				],
 			});
 			const nukerId = await shard.placeStructure('W1N1', {
@@ -268,43 +126,6 @@ describe('Nuke launch — section 7.13', () => {
 					Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, ${row.targetRoomName}))
 				`);
 			expect(rc).toBe(row.expectedRc);
-		});
-	}
-
-	for (const row of nukeLaunchRoomStatusCases) {
-		test(`${row.catalogId} launchNuke returns ERR_INVALID_TARGET when ${row.label} status is active`, async ({ shard }) => {
-			shard.requires('nuke');
-			shard.requires('roomStatus');
-			await shard.createShard({
-				players: ['p1', 'p2'],
-				rooms: [
-					{ name: 'W1N1', rcl: 8, owner: 'p1', status: row.sourceStatus },
-					{ name: 'W2N1', rcl: 1, owner: 'p2', status: row.destinationStatus },
-				],
-			});
-			const nukerId = await shard.placeStructure('W1N1', {
-				pos: [25, 25],
-				structureType: STRUCTURE_NUKER,
-				owner: 'p1',
-				store: nukerStore('full'),
-			});
-			await shard.tick();
-
-			const mapStatus = await shard.runPlayer('p1', code`
-				Game.map.getRoomStatus(${row.statusRoomName}).status
-			`);
-			expect(mapStatus).toBe(row.expectedStatus);
-
-			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-			`);
-			expect(rc).toBe(ERR_INVALID_TARGET);
-
-			await shard.tick();
-			const nuker = await shard.expectStructure(nukerId, STRUCTURE_NUKER);
-			expect(nuker.store.energy).toBe(NUKER_ENERGY_CAPACITY);
-			expect(nuker.store.G).toBe(NUKER_GHODIUM_CAPACITY);
-			expect(nuker.cooldown).toBe(0);
 		});
 	}
 

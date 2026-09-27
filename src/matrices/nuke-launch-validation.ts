@@ -1,6 +1,6 @@
 import type { CapabilityName } from '../adapter.js';
 import {
-	ERR_INVALID_ARGS, ERR_NOT_ENOUGH_RESOURCES, ERR_NOT_IN_RANGE,
+	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_NOT_ENOUGH_RESOURCES, ERR_NOT_IN_RANGE,
 	ERR_NOT_OWNER, ERR_RCL_NOT_ENOUGH, ERR_TIRED,
 } from '../constants.js';
 
@@ -14,6 +14,9 @@ export type NukeLaunchValidationCase = {
 	cooldown?: number;
 	store: 'full' | 'empty' | 'energyOnly' | 'ghodiumOnly';
 	targetRoomName: string;
+	// A novice or respawn area on the nuker's or the target's room; needs `roomStatus`.
+	sourceStatus?: 'novice' | 'respawn';
+	targetStatus?: 'novice' | 'respawn';
 	expectedRc: number;
 };
 
@@ -95,6 +98,67 @@ export const nukeLaunchValidationCases: readonly NukeLaunchValidationCase[] = [
 		store: 'energyOnly',
 		targetRoomName: 'W2N1',
 		expectedRc: ERR_NOT_ENOUGH_RESOURCES,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'noviceSource',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		sourceStatus: 'novice',
+		expectedRc: ERR_INVALID_TARGET,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'respawnSource',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		sourceStatus: 'respawn',
+		expectedRc: ERR_INVALID_TARGET,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'noviceTarget',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		targetStatus: 'novice',
+		expectedRc: ERR_INVALID_TARGET,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'respawnTarget',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		targetStatus: 'respawn',
+		expectedRc: ERR_INVALID_TARGET,
+	},
+	{
+		catalogId: 'NUKE-LAUNCH-008',
+		label: 'noviceSourceBeforeCooldown',
+		capability: 'nuke',
+		caller: 'owner',
+		arg: 'roomPosition',
+		roomRcl: 8,
+		cooldown: 50,
+		store: 'full',
+		targetRoomName: 'W2N1',
+		sourceStatus: 'novice',
+		expectedRc: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'NUKE-LAUNCH-008',

@@ -598,15 +598,12 @@ checks both. Each definition has these fields, in this order:
   `launchNuke()` ownership, argument type, cooldown, active-structure state,
   target range, and energy/ghodium availability.
 - `Exclusions`
-  Room-status restrictions are not part of this executable validation matrix;
-  `NUKE-LAUNCH-014` through `NUKE-LAUNCH-017` register and test those vanilla
-  behaviors explicitly through `RoomSpec.status`.
+  Pairs other than those the case list names: it runs each condition alone,
+  a novice source before cooldown, cooldown before inactive/range/resources,
+  inactive before range/resources, and range before resources.
 - `Verification Notes`
-  This family should include both single-blocker rows and selected precedence
-  rows: cooldown before inactive/range/resources, inactive before
-  range/resources, and range before resource availability.
-  The executable case list lives in
-  `src/matrices/nuke-launch-validation.ts`.
+  The room-status cases need `roomStatus` and set `RoomSpec.status`. The
+  executable case list lives in `src/matrices/nuke-launch-validation.ts`.
 
 ### NUKER-PROPS
 
@@ -1750,9 +1747,8 @@ checks both. Each definition has these fields, in this order:
   Range-attenuated damage curve, owned by `TOWER-ATTACK-002..003`.
 - `Verification Notes`
   Towers do not have an `ERR_NOT_IN_RANGE` branch — full room is in
-  effective range. Verified vanilla API-guard order is: ownership → target
-  validity → energy availability → active RCL.
-  The executable case list lives in `src/matrices/tower-attack-validation.ts`.
+  effective range. The executable case list lives in
+  `src/matrices/tower-attack-validation.ts`.
 
 ### TOWER-HEAL-VALIDATION
 
@@ -1771,9 +1767,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Range-attenuated heal curve, owned by `TOWER-HEAL-002..003`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → target validity → energy
-  availability → active RCL. The executable case list lives in
-  `src/matrices/tower-heal-validation.ts`.
+  The executable case list lives in `src/matrices/tower-heal-validation.ts`.
 
 ### TOWER-REPAIR-VALIDATION
 
@@ -1792,9 +1786,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Range-attenuated repair curve, owned by `TOWER-REPAIR-002..003`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → target validity → energy
-  availability → active RCL. The executable case list lives in
-  `src/matrices/tower-repair-validation.ts`.
+  The executable case list lives in `src/matrices/tower-repair-validation.ts`.
 
 ### OBSERVER-VALIDATION
 
@@ -1963,11 +1955,12 @@ checks both. Each definition has these fields, in this order:
   body-part requirements (`ATTACK`), target validity (not a hostile
   creep/PC/structure), and range.
 - `Exclusions`
-  Counter-damage rules, owned by `COMBAT-MELEE-008`.
+  Counter-damage rules, owned by `COMBAT-MELEE-008`. Another player's
+  safe mode, checked after the body part, is owned by `CTRL-SAFEMODE-006`.
+  Not yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
+  returns `ERR_INVALID_TARGET` before range (`game/creeps.js:613-616`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → target validity → range. The executable case list lives in
-  `src/matrices/combat-melee-validation.ts`.
+  The executable case list lives in `src/matrices/combat-melee-validation.ts`.
 
 ### COMBAT-RANGED-VALIDATION
 
@@ -1984,11 +1977,12 @@ checks both. Each definition has these fields, in this order:
   `creep.rangedAttack(target)` ownership, caller busy state, body-part
   requirements (`RANGED_ATTACK`), target validity, and range (≤ 3).
 - `Exclusions`
-  Rampart redirection, owned by `COMBAT-RANGED-006`.
+  Rampart redirection, owned by `COMBAT-RANGED-006`. Another player's safe
+  mode, checked after the body part, is owned by `CTRL-SAFEMODE-006`. Not
+  yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
+  returns `ERR_INVALID_TARGET` after range (`game/creeps.js:649-652`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → target validity → range. The executable case list lives in
-  `src/matrices/combat-ranged-validation.ts`.
+  The executable case list lives in `src/matrices/combat-ranged-validation.ts`.
 
 ### COMBAT-RMA-VALIDATION
 
@@ -2008,10 +2002,8 @@ checks both. Each definition has these fields, in this order:
   Damage falloff and rampart redirection, owned by
   `COMBAT-RMA-001..004` and the existing `COMBAT-RMA` matrix.
 - `Verification Notes`
-  No target argument means no target-validity or range branches.
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability. The executable case list lives in
-  `src/matrices/combat-rma-validation.ts`.
+  No target argument means no target-validity or range branches. The
+  executable case list lives in `src/matrices/combat-rma-validation.ts`.
 
 ### COMBAT-HEAL-VALIDATION
 
@@ -2032,9 +2024,7 @@ checks both. Each definition has these fields, in this order:
   Heal-amount math and self-heal mechanics, owned by separate
   `COMBAT-HEAL-*` entries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → target validity → range. The executable case list lives in
-  `src/matrices/combat-heal-validation.ts`.
+  The executable case list lives in `src/matrices/combat-heal-validation.ts`.
 
 ### COMBAT-RANGEDHEAL-VALIDATION
 
@@ -2053,8 +2043,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Heal amount falloff, owned by separate `COMBAT-RANGEDHEAL-*` entries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → target validity → range. The executable case list lives in
+  The executable case list lives in
   `src/matrices/combat-rangedheal-validation.ts`.
 
 ### BUILD-VALIDATION

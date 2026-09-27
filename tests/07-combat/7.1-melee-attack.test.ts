@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_INVALID_TARGET, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, CARRY, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN, } from '../../src/index.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
 import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
@@ -59,46 +59,6 @@ describe('creep.attack()', () => {
 
 		const target = await shard.expectObject(targetId, 'creep');
 		expect(target.hits).toBe(10 * BODYPART_HITS - 3 * ATTACK_POWER);
-	});
-
-	test('COMBAT-MELEE-002 returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [20, 20], owner: 'p2',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('COMBAT-MELEE-003 returns ERR_NO_BODYPART without ATTACK parts', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).attack(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
 	test('COMBAT-MELEE-004 attack range is exactly 1 — OK at adjacent, ERR_NOT_IN_RANGE at range 2', async ({ shard }) => {
@@ -243,9 +203,9 @@ describe('creep.attack()', () => {
 		expect(attackerHitsBefore - attacker.hits).toBe(3 * ATTACK_POWER);
 	});
 
-	test('COMBAT-MELEE-007 attack accepts creeps and structures (non-attackable target → ERR_INVALID_TARGET)', async ({ shard }) => {
+	test('COMBAT-MELEE-007 attack accepts creeps and structures', async ({ shard }) => {
 		// Engine: @screeps/engine/src/game/creeps.js:607-611 — target must be Creep,
-		// PowerCreep, StructureSpawn, or Structure. Sources are not attackable → ERR_INVALID_TARGET.
+		// PowerCreep, StructureSpawn, or Structure; COMBAT-MELEE-009:invalidTarget owns the rest.
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -266,8 +226,6 @@ describe('creep.attack()', () => {
 			pos: [26, 25], owner: 'p1',
 			body: [TOUGH, MOVE],
 		});
-		// Non-attackable Source for the negative case.
-		const sourceId = await shard.placeSource('W1N1', { pos: [24, 25], energy: 3000 });
 		await shard.tick();
 
 		const okStruct = await shard.runPlayer('p2', code`
@@ -279,12 +237,6 @@ describe('creep.attack()', () => {
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${creepTargetId}))
 		`);
 		expect(okCreep).toBe(OK);
-
-		// Source is not Creep/PowerCreep/Structure → ERR_INVALID_TARGET.
-		const invalidRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${sourceId}))
-		`);
-		expect(invalidRc).toBe(ERR_INVALID_TARGET);
 	});
 
 	for (const row of combatMeleeValidationCases) {
@@ -380,26 +332,6 @@ describe('creep.rangedAttack()', () => {
 		expect(target.hits).toBe(6 * BODYPART_HITS - RANGED_ATTACK_POWER);
 	});
 
-	test('COMBAT-RANGED-002 returns ERR_NOT_IN_RANGE beyond range 3', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [RANGED_ATTACK, MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [10, 14], owner: 'p2', // range 4
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('COMBAT-RANGED-003 rangedAttack accepts targets at range 1 through 3', async ({ shard }) => {
 		// Engine: @screeps/engine/src/game/creeps.js:645 — `!this.pos.inRangeTo(target, 3)`.
 		// Range 1, 2, and 3 all return OK; range 4+ returns ERR_NOT_IN_RANGE (covered by 002).
@@ -435,27 +367,6 @@ describe('creep.rangedAttack()', () => {
 			Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${t3}))
 		`);
 		expect(rc3).toBe(OK);
-	});
-
-	test('COMBAT-RANGED-004 returns ERR_NO_BODYPART without RANGED_ATTACK parts', async ({ shard }) => {
-		// Engine: @screeps/engine/src/game/creeps.js:634 — `_hasActiveBodypart(this.body, C.RANGED_ATTACK)`.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 27], owner: 'p2',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).rangedAttack(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
 	test('COMBAT-RANGED-006 rangedAttack on a creep under a rampart hits the rampart instead', async ({ shard }) => {
@@ -496,9 +407,9 @@ describe('creep.rangedAttack()', () => {
 		expect(target.hits).toBe(6 * BODYPART_HITS);
 	});
 
-	test('COMBAT-RANGED-005 rangedAttack accepts creeps and structures (non-attackable → ERR_INVALID_TARGET)', async ({ shard }) => {
+	test('COMBAT-RANGED-005 rangedAttack accepts creeps and structures', async ({ shard }) => {
 		// Engine: @screeps/engine/src/game/creeps.js:640-644 — target must be Creep,
-		// PowerCreep, StructureSpawn, or Structure. Source returns ERR_INVALID_TARGET.
+		// PowerCreep, StructureSpawn, or Structure; COMBAT-RANGED-007:invalidTarget owns the rest.
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -517,7 +428,6 @@ describe('creep.rangedAttack()', () => {
 			pos: [27, 25], owner: 'p1',
 			body: [TOUGH, MOVE],
 		});
-		const sourceId = await shard.placeSource('W1N1', { pos: [25, 22], energy: 3000 });
 		await shard.tick();
 
 		const okStruct = await shard.runPlayer('p2', code`
@@ -529,11 +439,6 @@ describe('creep.rangedAttack()', () => {
 			Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${creepTargetId}))
 		`);
 		expect(okCreep).toBe(OK);
-
-		const invalidRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).rangedAttack(Game.getObjectById(${sourceId}))
-		`);
-		expect(invalidRc).toBe(ERR_INVALID_TARGET);
 	});
 
 	for (const row of combatRangedValidationCases) {
@@ -700,48 +605,6 @@ describe('creep.heal()', () => {
 			Game.getObjectById(${healerId}).heal(Game.getObjectById(${hostileId}))
 		`);
 		expect(hostileRc).toBe(OK);
-	});
-
-	test('COMBAT-HEAL-005 heal returns ERR_NOT_IN_RANGE beyond range 1', async ({ shard }) => {
-		// Engine game/creeps.js:694-696 — heal uses `isNearTo` (Chebyshev 1).
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [HEAL, MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 27], owner: 'p1', // range 2
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('COMBAT-HEAL-006 heal returns ERR_NO_BODYPART without HEAL parts', async ({ shard }) => {
-		// Engine game/creeps.js:686-688 — body check runs before range check.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [MOVE, CARRY],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${healerId}).heal(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
 	for (const row of combatHealValidationCases) {
@@ -950,48 +813,6 @@ describe('creep.heal()', () => {
 		// rangedAttack suppressed by priority: enemy is unchanged.
 		const enemyAfter = await shard.expectObject(enemyId, 'creep');
 		expect(enemyAfter.hits).toBe(enemyHitsBefore);
-	});
-
-	test('COMBAT-RANGEDHEAL-004 rangedHeal returns ERR_NOT_IN_RANGE beyond range 3', async ({ shard }) => {
-		// Engine game/creeps.js:725-727 — rangedHeal uses `inRangeTo(target, 3)`.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [HEAL, MOVE],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 29], owner: 'p1', // range 4
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('COMBAT-RANGEDHEAL-005 rangedHeal returns ERR_NO_BODYPART without HEAL parts', async ({ shard }) => {
-		// Engine game/creeps.js:714-716 — body check runs before range check.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [MOVE, CARRY],
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 27], owner: 'p1',
-			body: [TOUGH, MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${healerId}).rangedHeal(Game.getObjectById(${targetId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
 	});
 
 	for (const row of combatRangedHealValidationCases) {
