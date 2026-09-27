@@ -1,5 +1,6 @@
-import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, ERR_NOT_ENOUGH_RESOURCES,
-	WORK, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_SPAWN, BUILD_POWER } from '../../src/index.js';
+import { describe, test, expect, code, body, OK, ERR_NOT_IN_RANGE,
+	WORK, CARRY, MOVE, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_SPAWN, BUILD_POWER,
+} from '../../src/index.js';
 import { buildValidationCases } from '../../src/matrices/build-validation.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
 import { expectStaleArgumentRejected, spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -71,33 +72,6 @@ describe('creep.build()', () => {
 		expect(creep.store.energy).toBe(50 - BUILD_POWER);
 	});
 
-	test('BUILD-003 returns ERR_NOT_IN_RANGE when too far', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [10, 10],
-			owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			store: { energy: 50 },
-		});
-
-		const siteId = await shard.placeSite('W1N1', {
-			pos: [20, 20],
-			owner: 'p1',
-			structureType: STRUCTURE_ROAD,
-		});
-
-		const returnCode = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			const site = Game.getObjectById(${siteId});
-			creep.build(site)
-		`);
-		expect(returnCode).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('BUILD-006 build() returns OK on success', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
@@ -143,43 +117,6 @@ describe('creep.build()', () => {
 		})`) as { rangeThree: number; rangeFour: number };
 		expect(result.rangeThree).toBe(OK);
 		expect(result.rangeFour).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('BUILD-007 returns ERR_NO_BODYPART when the creep has no WORK parts', async ({ shard }) => {
-		// Engine creeps.js:735 — `_hasActiveBodypart(body, WORK)` precedes the
-		// energy check, so a CARRY+MOVE creep with energy still gets ERR_NO_BODYPART.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const siteId = await shard.placeSite('W1N1', {
-			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-	});
-
-	test('BUILD-008 returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy', async ({ shard }) => {
-		// Engine creeps.js:738 — energy check happens after the body part check.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			// no store: empty CARRY → no energy
-		});
-		const siteId = await shard.placeSite('W1N1', {
-			pos: [25, 26], owner: 'p1', structureType: STRUCTURE_ROAD,
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).build(Game.getObjectById(${siteId}))
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
 	});
 
 	test('BUILD-010 partial build uses only available energy when below full build amount', async ({ shard }) => {

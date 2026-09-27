@@ -662,8 +662,6 @@ Coverage Notes
   Each WORK part contributes 5 progress per tick to a construction site.
 - `BUILD-002` `behavior` `verified_vanilla`
   Building costs 1 energy per progress point.
-- `BUILD-003` `behavior` `verified_vanilla`
-  `build()` returns ERR_NOT_IN_RANGE when too far.
 - `BUILD-004` `behavior` `verified_vanilla`
   When a site reaches progressTotal, the structure is created.
 - `BUILD-005` `behavior` `verified_vanilla`
@@ -671,19 +669,20 @@ Coverage Notes
   distance 4 returns ERR_NOT_IN_RANGE.
 - `BUILD-006` `behavior` `verified_vanilla`
   `build()` returns OK on success.
-- `BUILD-007` `behavior` `verified_vanilla`
-  `build()` returns ERR_NO_BODYPART when the creep has no WORK parts.
-- `BUILD-008` `behavior` `verified_vanilla`
-  `build()` returns ERR_NOT_ENOUGH_RESOURCES when the creep has no energy.
 - `BUILD-009` `behavior` `verified_vanilla`
   A creep can build any visible construction site, whichever player owns it.
 - `BUILD-010` `behavior` `verified_vanilla`
   When the creep has less energy than the full build amount (5 × WORK parts),
   `build()` contributes progress equal to the available energy.
 - `BUILD-011` `matrix` `verified_vanilla`
-  `creep.build(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, resource availability, target validity, and range.
+  `creep.build(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:notEnough` it carries no energy,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:invalidTarget` the target isn't a
+  construction site, `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles
+  away, `ERR_NOT_IN_RANGE`; `:blockedTarget` the site is for an obstacle
+  structure and a creep stands on it, `ERR_INVALID_TARGET`.
 
 Coverage Notes
 - Build boost magnitudes are owned by `BOOST-BUILD-001` and zero-extra-cost is
@@ -694,17 +693,11 @@ Coverage Notes
   Each WORK part repairs 100 hits per tick.
 - `REPAIR-002` `behavior` `verified_vanilla`
   Repairing costs 1 energy per 100 hits repaired.
-- `REPAIR-003` `behavior` `verified_vanilla`
-  `repair()` returns ERR_NOT_IN_RANGE when too far.
-- `REPAIR-004` `behavior` `verified_vanilla`
-  `repair()` returns `ERR_NOT_ENOUGH_RESOURCES` when the creep has no energy.
 - `REPAIR-005` `behavior` `verified_vanilla`
   `repair()` has a Chebyshev range of 3 — a target at distance 3 succeeds
   and distance 4 returns ERR_NOT_IN_RANGE.
 - `REPAIR-006` `behavior` `verified_vanilla`
   `repair()` cannot repair above the structure's hitsMax.
-- `REPAIR-007` `behavior` `verified_vanilla`
-  `repair()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - `REPAIR-008` `behavior` `verified_vanilla`
   A creep can repair any visible structure, whichever player owns it or its
   room.
@@ -712,9 +705,13 @@ Coverage Notes
   When the creep has less energy than the full repair cost (WORK part count),
   `repair()` restores fewer hits proportional to the available energy.
 - `REPAIR-010` `matrix` `verified_vanilla`
-  `creep.repair(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, resource availability, target validity, and range.
+  `creep.repair(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:notEnough` it carries no energy,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:invalidTarget` the target isn't a
+  structure, `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles away,
+  `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Repair boost magnitudes are owned by `BOOST-BUILD-001` and zero-extra-cost is
@@ -725,14 +722,10 @@ Coverage Notes
   Each WORK part dismantles 50 hits per tick from a structure.
 - `DISMANTLE-002` `behavior` `verified_vanilla`
   Dismantling returns 0.25 energy per hit to the creep's store.
-- `DISMANTLE-003` `behavior` `verified_vanilla`
-  `dismantle()` returns ERR_NOT_IN_RANGE when too far.
 - `DISMANTLE-004` `behavior` `verified_vanilla`
   When a rampart covers the target tile, `dismantle()` damage is redirected
   to the rampart instead of the underlying structure (same redirect as
   `attack()`).
-- `DISMANTLE-005` `behavior` `verified_vanilla`
-  `dismantle()` returns ERR_NO_BODYPART when the creep has no WORK parts.
 - `DISMANTLE-006` `behavior` `verified_vanilla`
   `dismantle()` has a Chebyshev range of 1 — adjacent only.
 - `DISMANTLE-007` `behavior` `verified_vanilla`
@@ -741,9 +734,12 @@ Coverage Notes
   When the energy returned from dismantling exceeds the creep's free carry
   capacity, the overflow is dropped as a resource.
 - `DISMANTLE-009` `matrix` `verified_vanilla`
-  `creep.dismantle(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, target validity, and range.
+  `creep.dismantle(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
+  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a structure with a
+  `CONSTRUCTION_COST` (a controller, say), `ERR_INVALID_TARGET`; `:range` it
+  isn't adjacent, `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Dismantle boost magnitudes are owned by `BOOST-DISMANTLE-001`
@@ -753,11 +749,6 @@ Coverage Notes
 ### 5.4 Construction Sites
 - `CONSTRUCTION-SITE-001` `behavior` `verified_vanilla`
   `createConstructionSite()` places a new site at a position.
-- `CONSTRUCTION-SITE-002` `behavior` `verified_vanilla`
-  MAX_CONSTRUCTION_SITES (100) is enforced as a global limit per player.
-- `CONSTRUCTION-SITE-003` `behavior` `verified_vanilla`
-  Construction site type must be valid for the room's RCL — placing a
-  structure unavailable at the current RCL returns ERR_RCL_NOT_ENOUGH.
 - `CONSTRUCTION-SITE-004` `behavior` `verified_vanilla`
   A hostile creep moving onto a construction site destroys it instantly
   (movement.js processor removes the site mid-move).
@@ -766,10 +757,9 @@ Coverage Notes
   survives — only the move intent triggers the site-destruction path.
 - `CONSTRUCTION-SITE-006` `behavior` `verified_vanilla`
   `ConstructionSite.remove()` removes the site by the owner.
-- `CONSTRUCTION-SITE-007` `behavior` `verified_vanilla`
-  Only one construction site can exist at a given position.
 - `CONSTRUCTION-SITE-008` `behavior` `verified_vanilla`
-  Cannot place a construction site on a wall terrain tile (except roads).
+  A road construction site can be placed on a wall terrain tile; other types
+  are refused there (`CONSTRUCTION-SITE-011:wallTerrain`).
 - `CONSTRUCTION-SITE-009` `matrix` `verified_vanilla`
   A ruin does not block construction-site placement at its tile, for
   any pairing of the ruin's destroyed `structureType` and the placed
@@ -777,16 +767,22 @@ Coverage Notes
   (utils.js:172-184) filters on same-type structures and existing
   construction sites but never inspects ruins, which are walkable.
 - `CONSTRUCTION-SITE-010` `behavior` `verified_vanilla`
-  Unknown construction-site structure types return `ERR_INVALID_ARGS` for
-  both `Room.createConstructionSite()` and
-  `RoomPosition.createConstructionSite()`. Engine `rooms.js`
-  `createConstructionSite` rejects types absent from `CONSTRUCTION_COST`;
-  `RoomPosition.createConstructionSite` delegates to the room method.
+  `RoomPosition.createConstructionSite(structureType, name?)` returns
+  `ERR_INVALID_ARGS` for an unknown structure type, as
+  `Room.createConstructionSite()` does (`CONSTRUCTION-SITE-011:invalidType`):
+  it delegates to the room method (`rooms.js:1630-1636`).
 - `CONSTRUCTION-SITE-011` `matrix` `verified_vanilla`
-  `Room.createConstructionSite(x, y, structureType, name?)` failure return
-  codes and precedence match the canonical validation matrix for argument
-  validity, ownership, active-structure state, target validity (terrain or
-  position), and structure-cap state.
+  `Room.createConstructionSite(x, y, structureType, name?)` returns the
+  first failing check's code, in this order: `:invalidCoords` a coordinate
+  is outside 0-49, `:invalidType` the type isn't in `CONSTRUCTION_COST`, or
+  `:invalidArgs` a spawn's name is longer than 100 characters,
+  `ERR_INVALID_ARGS`; `:notOwner` another player owns the room's
+  controller, or `:hostileReservation` reserves it, for any type,
+  `ERR_NOT_OWNER`; `:rclOrStructureCap` the room's level allows no more of
+  the type, `ERR_RCL_NOT_ENOUGH`; `:invalidTarget` a construction site
+  already stands on the tile, or `:wallTerrain` the tile is a wall and the
+  type isn't a road, `ERR_INVALID_TARGET`; `:siteCapFull` the player has
+  `MAX_CONSTRUCTION_SITES` sites, `ERR_FULL`.
 - `CONSTRUCTION-SITE-012` `behavior` `verified_vanilla`
   In a room with an unowned controller (no `level`/`user`, no reservation),
   `STRUCTURE_ROAD` and `STRUCTURE_CONTAINER` placement returns `OK`; every
@@ -802,16 +798,11 @@ Coverage Notes
   the reservation belongs to *another* user; self-reservations fall through
   to `utils.checkControllerAvailability`, which credits a level only when
   the controller has a `user`/`owner` (utils.js:341), not a reservation.
-- `CONSTRUCTION-SITE-014` `behavior` `verified_vanilla`
-  A controller reserved by another player returns `ERR_NOT_OWNER` for every
-  structure type, including road and container. Engine `rooms.js:1055-1061`
-  rejects with `ERR_NOT_OWNER` when `controller.reservation.user` differs
-  from the caller's user, before the rcl check runs.
 - `CONSTRUCTION-SITE-016` `behavior` `verified_vanilla`
   When a room already holds as many structures and sites of a type as
   `CONTROLLER_STRUCTURES[type][level]` allows (after a downgrade, say), build
   progress on the surplus sites still accumulates and completes them; the cap
-  gates placement (`CONSTRUCTION-SITE-003`) and activity
+  gates placement (`CONSTRUCTION-SITE-011:rclOrStructureCap`) and activity
   (`CTRL-STRUCTLIMIT-002`), not building.
 - `CONSTRUCTION-SITE-017` `matrix` `verified_vanilla`
   A construction site cannot be placed on a tile already occupied by a
@@ -821,7 +812,7 @@ Coverage Notes
   `ERR_INVALID_TARGET` when both sides of the pair are non-road/non-rampart
   `CONSTRUCTION_COST` types, and short-circuits otherwise. Same-type
   stacking (e.g. tower-on-tower) is owned by utils.js:172 and is out of
-  scope; site-on-site is owned by `CONSTRUCTION-SITE-007`.
+  scope; site-on-site is owned by `CONSTRUCTION-SITE-011:invalidTarget`.
 - `CONSTRUCTION-SITE-018` `behavior` `verified_vanilla`
   A player's own construction site surfaces through both owner-scoped
   APIs: `room.find(FIND_MY_CONSTRUCTION_SITES)` returns it (with

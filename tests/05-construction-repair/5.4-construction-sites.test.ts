@@ -1,5 +1,5 @@
 import { describe, test, expect, code, body,
-	OK, ERR_FULL, ERR_RCL_NOT_ENOUGH, ERR_INVALID_TARGET, ERR_INVALID_ARGS, ERR_NOT_OWNER,
+	OK, ERR_RCL_NOT_ENOUGH, ERR_INVALID_ARGS, ERR_NOT_OWNER,
 	WORK, CARRY, MOVE, CLAIM,
 	FIND_CONSTRUCTION_SITES, FIND_STRUCTURES, FIND_MY_CONSTRUCTION_SITES,
 	FIND_MY_STRUCTURES, FIND_MY_SPAWNS, LOOK_STRUCTURES,
@@ -85,40 +85,6 @@ describe('room.createConstructionSite()', () => {
 			s.structureType === STRUCTURE_ROAD &&
 			s.pos.x === 30 && s.pos.y === 31);
 		expect(road).toBeDefined();
-	});
-
-	test('CONSTRUCTION-SITE-002 createConstructionSite returns ERR_FULL after MAX_CONSTRUCTION_SITES', async ({ shard }) => {
-		// Engine rooms.js:1062 — owner site count + createdConstructionSites
-		// >= MAX_CONSTRUCTION_SITES → ERR_FULL. Pre-place 100 sites then
-		// attempt one more from player code.
-		await shard.ownedRoom('p1');
-		// 100 unique tiles in a 10x10 grid (10..19, 10..19).
-		for (let i = 0; i < MAX_CONSTRUCTION_SITES; i++) {
-			const x = 10 + (i % 10);
-			const y = 10 + Math.floor(i / 10);
-			await shard.placeSite('W1N1', {
-				pos: [x, y], owner: 'p1', structureType: STRUCTURE_ROAD,
-			});
-		}
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createConstructionSite(30, 30, STRUCTURE_ROAD)
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
-	test('CONSTRUCTION-SITE-003 createConstructionSite returns ERR_RCL_NOT_ENOUGH for a structure unavailable at the room\'s RCL', async ({ shard }) => {
-		// Engine rooms.js:1055 — checkControllerAvailability returns false
-		// when CONTROLLER_STRUCTURES[type][rcl] is 0. RCL 1 → 0 towers.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createConstructionSite(25, 25, STRUCTURE_TOWER)
-		`);
-		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
 	});
 
 	test('CONSTRUCTION-SITE-004 a hostile creep moving onto a construction site destroys it', async ({ shard }) => {
@@ -223,28 +189,10 @@ describe('room.createConstructionSite()', () => {
 		expect(err.errorKind).toBe('runtime');
 	});
 
-	test('CONSTRUCTION-SITE-007 only one construction site can exist at a given position', async ({ shard }) => {
-		// Engine utils.js:171 — checkConstructionSite returns false if any
-		// existing constructionSite occupies the tile. Player-side check
-		// surfaces ERR_INVALID_TARGET.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		await shard.placeSite('W1N1', {
-			pos: [25, 25], owner: 'p1', structureType: STRUCTURE_ROAD,
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createConstructionSite(25, 25, STRUCTURE_EXTENSION)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('CONSTRUCTION-SITE-008 cannot place a non-road site on a wall terrain tile', async ({ shard }) => {
-		// Engine utils.js:145-148 / 162-165 — checkConstructionSite returns
-		// false if the tile is a wall, except for roads. Place a road on a
-		// wall tile (allowed) and a non-road on the same tile (rejected).
+	test('CONSTRUCTION-SITE-008 a road site can be placed on a wall terrain tile', async ({ shard }) => {
+		// Engine utils.js:145-148 / 162-165 — checkConstructionSite rejects a
+		// wall tile except for roads; CONSTRUCTION-SITE-011:wallTerrain owns the
+		// rejection.
 		shard.requires('terrain', 'custom terrain required for wall placement check');
 		const wx = 20, wy = 20;
 		const terrain = new Array<0 | 1 | 2>(2500).fill(0);
@@ -259,12 +207,10 @@ describe('room.createConstructionSite()', () => {
 			}],
 		});
 
-		const result = await shard.runPlayer('p1', code`({
-			road: Game.rooms['W1N1'].createConstructionSite(${wx}, ${wy}, STRUCTURE_ROAD),
-			extension: Game.rooms['W1N1'].createConstructionSite(${wx}, ${wy}, STRUCTURE_EXTENSION),
-		})`) as { road: number; extension: number };
-		expect(result.road).toBe(OK);
-		expect(result.extension).toBe(ERR_INVALID_TARGET);
+		const rc = await shard.runPlayer('p1', code`
+			Game.rooms['W1N1'].createConstructionSite(${wx}, ${wy}, STRUCTURE_ROAD)
+		`);
+		expect(rc).toBe(OK);
 	});
 
 	for (const { label, ruinType, placedType } of constructionSiteOverRuinCases) {
@@ -335,21 +281,17 @@ describe('room.createConstructionSite()', () => {
 		});
 	}
 
-	test('CONSTRUCTION-SITE-010 createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type', async ({ shard }) => {
+	test('CONSTRUCTION-SITE-010 RoomPosition.createConstructionSite returns ERR_INVALID_ARGS for an unknown structure type', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
 		});
 		const invalidStructureType = STRUCTURE_ROAD.toUpperCase();
 
-		const result = await shard.runPlayer('p1', code`({
-			room: Game.rooms['W1N1'].createConstructionSite(25, 25, ${invalidStructureType}),
-			roomPosition: new RoomPosition(26, 25, 'W1N1').createConstructionSite(${invalidStructureType}),
-		})`) as { room: number; roomPosition: number };
-		expect(result).toEqual({
-			room: ERR_INVALID_ARGS,
-			roomPosition: ERR_INVALID_ARGS,
-		});
+		const rc = await shard.runPlayer('p1', code`
+			new RoomPosition(26, 25, 'W1N1').createConstructionSite(${invalidStructureType})
+		`);
+		expect(rc).toBe(ERR_INVALID_ARGS);
 	});
 
 	test('CONSTRUCTION-SITE-012 unowned room allows road and container, blocks other types with ERR_RCL_NOT_ENOUGH', async ({ shard }) => {
@@ -436,62 +378,12 @@ describe('room.createConstructionSite()', () => {
 		});
 	});
 
-	test('CONSTRUCTION-SITE-014 a controller reserved by another player returns ERR_NOT_OWNER for every type', async ({ shard }) => {
-		// Engine rooms.js:1055-1061 returns ERR_NOT_OWNER when
-		// controller.reservation.user differs from the caller's user, before
-		// the rcl check runs. Even road/container — which would be allowed
-		// in a fully unowned room — are rejected.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-				{ name: 'W3N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W3N1');
-		await shard.placeCreep('W3N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y],
-			owner: 'p2',
-			body: [CLAIM, CLAIM, MOVE],
-			name: 'p2reserver',
-		});
-		await shard.placeCreep('W3N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE],
-		});
-		await shard.tick();
-		const reserveRc = await shard.runPlayer('p2', code`
-			Game.creeps['p2reserver'].reserveController(Game.rooms['W3N1'].controller)
-		`);
-		expect(reserveRc).toBe(OK);
-		await shard.tick();
-
-		// See CONSTRUCTION-SITE-013 for the pre-touch rationale.
-		const result = await shard.runPlayer('p1', code`
-			void Game.rooms['W3N1'].controller.reservation;
-			({
-				road: Game.rooms['W3N1'].createConstructionSite(20, 20, STRUCTURE_ROAD),
-				container: Game.rooms['W3N1'].createConstructionSite(21, 20, STRUCTURE_CONTAINER),
-				wall: Game.rooms['W3N1'].createConstructionSite(22, 20, STRUCTURE_WALL),
-				tower: Game.rooms['W3N1'].createConstructionSite(24, 20, STRUCTURE_TOWER),
-				spawn: Game.rooms['W3N1'].createConstructionSite(25, 20, STRUCTURE_SPAWN),
-			})
-		`) as Record<string, number>;
-		expect(result).toEqual({
-			road: ERR_NOT_OWNER,
-			container: ERR_NOT_OWNER,
-			wall: ERR_NOT_OWNER,
-			tower: ERR_NOT_OWNER,
-			spawn: ERR_NOT_OWNER,
-		});
-	});
-
 	test('CONSTRUCTION-SITE-016 over-cap construction sites still complete; no build-time gate', async ({ shard }) => {
 		// Counter to engine issue #59: build progress accumulates and surplus
 		// sites complete normally even when sites + active > CONTROLLER_STRUCTURES
 		// for the structure type. RCL 1 has CONTROLLER_STRUCTURES.extension = 0,
 		// so any extension site is over-cap; placeSite bypasses the placement-time
-		// check that CONSTRUCTION-SITE-003 covers.
+		// check that CONSTRUCTION-SITE-011:rclOrStructureCap covers.
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }],
@@ -528,13 +420,37 @@ describe('room.createConstructionSite()', () => {
 	for (const row of constructionSiteCreateValidationCases) {
 		test(`CONSTRUCTION-SITE-011:${row.label} createConstructionSite() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
+			if (blockers.has('wall-terrain')) shard.requires('terrain', 'custom terrain walls the target tile');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const reserved = blockers.has('hostile-reservation');
+			const terrain = blockers.has('wall-terrain')
+				? Array.from({ length: 2500 }, (_, i) => i === 25 * 50 + 25 ? TERRAIN_WALL : 0)
+				: undefined;
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl-or-structure-cap') ? 1 : 8, owner }],
+				rooms: [{
+					name: 'W1N1',
+					// A reserved room has no owner.
+					...(reserved ? {} : { rcl: blockers.has('rcl-or-structure-cap') ? 1 : 8, owner }),
+					...(terrain ? { terrain } : {}),
+				}],
 			});
-			if (owner === 'p2') {
+			if (owner === 'p2' || reserved) {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
+			if (reserved) {
+				const ctrlPos = await shard.getControllerPos('W1N1');
+				await shard.placeCreep('W1N1', {
+					pos: [ctrlPos!.x + 1, ctrlPos!.y],
+					owner: 'p2',
+					body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE],
+					name: 'reserver',
+				});
+				await shard.tick();
+				const reserveRc = await shard.runPlayer('p2', code`
+					Game.creeps['reserver'].reserveController(Game.rooms['W1N1'].controller)
+				`);
+				expect(reserveRc).toBe(OK);
 			}
 			if (blockers.has('site-cap-full')) {
 				for (let i = 0; i < MAX_CONSTRUCTION_SITES; i++) {
@@ -559,16 +475,22 @@ describe('room.createConstructionSite()', () => {
 					owner,
 				});
 			}
-			const structureType = blockers.has('invalid-args')
-				? STRUCTURE_SPAWN
-				: blockers.has('rcl-or-structure-cap')
-					? STRUCTURE_TOWER
-					: STRUCTURE_ROAD;
+			const structureType = blockers.has('invalid-type') ? STRUCTURE_ROAD.toUpperCase()
+				: blockers.has('invalid-args') ? STRUCTURE_SPAWN
+				: blockers.has('rcl-or-structure-cap') ? STRUCTURE_TOWER
+				// A road may sit on a wall (CONSTRUCTION-SITE-008).
+				: blockers.has('wall-terrain') ? STRUCTURE_EXTENSION
+				: STRUCTURE_ROAD;
 			const name = blockers.has('invalid-args') ? 'x'.repeat(101) : undefined;
+			const x = blockers.has('invalid-coords') ? -1 : 25;
 
-			const rc = await shard.runPlayer('p1', code`
-				Game.rooms['W1N1'].createConstructionSite(25, 25, ${structureType}, ${name})
-			`);
+			// See CONSTRUCTION-SITE-013 for the pre-touch.
+			const rc = await shard.runPlayer('p1', reserved
+				? code`
+					void Game.rooms['W1N1'].controller.reservation;
+					Game.rooms['W1N1'].createConstructionSite(${x}, 25, ${structureType}, ${name})
+				`
+				: code`Game.rooms['W1N1'].createConstructionSite(${x}, 25, ${structureType}, ${name})`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}

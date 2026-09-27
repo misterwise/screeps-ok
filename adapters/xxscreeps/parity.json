@@ -87,6 +87,12 @@
 			"why": "Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first.",
 			"tests": ["TRANSFER-015:invalidArgsBeforeInvalidTarget"]
 		},
+		"construction-site-invalid-coords-throws": {
+			"actual": "`Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`.",
+			"expected": "Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`).",
+			"why": "Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it.",
+			"tests": ["CONSTRUCTION-SITE-011:invalidCoords", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation", "CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull"]
+		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
 			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",

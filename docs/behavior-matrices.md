@@ -953,7 +953,7 @@ checks both. Each definition has these fields, in this order:
   either side stacks
 - `Exclusions`
   Same-type stacking (`utils.js:172`) and site-on-site placement, owned by
-  `CONSTRUCTION-SITE-007`
+  `CONSTRUCTION-SITE-011:invalidTarget`
 - `Verification Notes`
   The executable case list lives in
   `src/matrices/construction-site-over-structure.ts`.
@@ -2075,10 +2075,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Progress-per-tick math, owned by `BUILD-001..010`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → energy availability → target validity → range → blocked
-  build tile. The executable case list lives in
-  `src/matrices/build-validation.ts`.
+  The executable case list lives in `src/matrices/build-validation.ts`.
 
 ### REPAIR-VALIDATION
 
@@ -2098,9 +2095,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Hits-per-tick math, owned by `REPAIR-001..009`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → energy availability → target validity → range. The
-  executable case list lives in `src/matrices/repair-validation.ts`.
+  The executable case list lives in `src/matrices/repair-validation.ts`.
 
 ### DISMANTLE-VALIDATION
 
@@ -2118,11 +2113,12 @@ checks both. Each definition has these fields, in this order:
   requirements (`WORK`), target validity (not a dismantleable structure),
   and range.
 - `Exclusions`
-  Dismantle yield math, owned by `DISMANTLE-001..008`.
+  Dismantle yield math, owned by `DISMANTLE-001..008`. Another player's
+  safe mode, checked after range, is owned by `CTRL-SAFEMODE-006`. Not yet
+  listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY` returns
+  `ERR_INVALID_TARGET` after that (`game/creeps.js:1040-1043`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → body-part
-  availability → target validity → range. The executable case list lives in
-  `src/matrices/dismantle-validation.ts`.
+  The executable case list lives in `src/matrices/dismantle-validation.ts`.
 
 ### CTRL-ATTACK-VALIDATION
 
@@ -2521,10 +2517,17 @@ checks both. Each definition has these fields, in this order:
   `MAX_CONSTRUCTION_SITES` cap).
 - `Exclusions`
   `RoomPosition.createConstructionSite()` delegates to the room method —
-  owned by `CONSTRUCTION-SITE-010`.
+  owned by `CONSTRUCTION-SITE-010`. Which types rcl 0 allows is owned by
+  `CONSTRUCTION-SITE-012`/`-013`, and structure stacking by
+  `CONSTRUCTION-SITE-017`. Pairs whose two conditions set the same thing
+  (the coordinate, the type, the controller's owner, the tile) are
+  excluded. Not yet listed: a spawn name another spawn or spawn site holds,
+  or one created earlier in the tick (`ERR_INVALID_ARGS`,
+  `game/rooms.js:1045-1050`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: argument validity → room ownership →
-  RCL/structure-count availability → target validity → player site cap. The
+  A reservation is made in-test with `reserveController`, and the player
+  reads `controller.reservation` before the call (see
+  `CONSTRUCTION-SITE-013`'s test). `:wallTerrain` needs `terrain`. The
   executable case list lives in
   `src/matrices/construction-site-create-validation.ts`.
 

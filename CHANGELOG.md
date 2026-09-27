@@ -216,7 +216,16 @@ changes since `v0.1.0-alpha` are not itemized.
   `-004` (`:full`), `-005` (`:notOwner`), `-006` (`:busy`), `-007`
   (`:invalidTarget`); `DROP-004` (`DROP-011:notEnough`), `-005`
   (`:notOwner`), `-006` (`:busy`), `-007` (`:invalidArgs`), and the new
-  `:notEnoughAmount`.
+  `:notEnoughAmount`. `BUILD-003` (`BUILD-011:range`), `-007`
+  (`:noBodypart`), `-008` (`:notEnough`); `REPAIR-003` (`REPAIR-010:range`),
+  `-004` (`:notEnough`), `-007` (`:noBodypart`); `DISMANTLE-003`
+  (`DISMANTLE-009:range`), `-005` (`:noBodypart`); `CONSTRUCTION-SITE-002`
+  (`CONSTRUCTION-SITE-011:siteCapFull`), `-003` (`:rclOrStructureCap`),
+  `-007` (`:invalidTarget`), `-014` (`:hostileReservation`, new), with new
+  `:invalidCoords`, `:invalidType` and `:wallTerrain`.
+  `CONSTRUCTION-SITE-008` keeps only that a road may be placed on a wall,
+  and `CONSTRUCTION-SITE-010` only `RoomPosition.createConstructionSite()`'s
+  delegation.
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up
