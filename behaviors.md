@@ -541,41 +541,30 @@ Coverage Notes
 - `TRANSFER-002` `behavior` `verified_vanilla`
   Omitting `amount` transfers as much as possible up to the source amount and
   the target's free capacity.
-- `TRANSFER-003` `behavior` `verified_vanilla`
-  `transfer()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- `TRANSFER-004` `behavior` `verified_vanilla`
-  `transfer()` returns ERR_NOT_ENOUGH_RESOURCES when creep lacks the resource.
-- `TRANSFER-005` `behavior` `verified_vanilla`
-  `transfer()` returns `ERR_INVALID_ARGS` when `resourceType` is omitted,
-  invalid, or `amount` is negative.
-- `TRANSFER-006` `behavior` `verified_vanilla`
-  `transfer()` returns ERR_FULL when target store has no free capacity.
-- `TRANSFER-007` `behavior` `verified_vanilla`
-  `transfer()` returns ERR_INVALID_TARGET for invalid targets.
-- `TRANSFER-008` `behavior` `verified_vanilla`
-  Lab transfer validates that the resource matches the lab's allowed types.
-- `TRANSFER-009` `behavior` `verified_vanilla`
-  `transfer()` returns `ERR_NOT_OWNER` when the acting creep is not owned by
-  the player.
-- `TRANSFER-010` `behavior` `verified_vanilla`
-  `transfer()` returns `ERR_BUSY` while the acting creep is spawning.
 - `TRANSFER-011` `behavior` `verified_vanilla`
   `transfer(controller, RESOURCE_ENERGY)` redirects to
   `upgradeController()` instead of ordinary transfer.
 - `TRANSFER-012` `behavior` `verified_vanilla`
   Transferring a mineral into an empty lab initializes that mineral slot
   capacity on the lab.
-- `TRANSFER-013` `behavior` `verified_vanilla`
-  `transfer()` returns `ERR_FULL` when the specified `amount` exceeds the
-  target's free capacity, even if the target has some capacity remaining.
 - `TRANSFER-014` `behavior` `verified_vanilla`
   `transfer()` to another creep is valid and follows the same store mechanics
   as transfer to a structure.
 - `TRANSFER-015` `matrix` `verified_vanilla`
-  `creep.transfer(target, resourceType, amount?)` failure return codes and
-  precedence match the canonical validation matrix for ownership, caller busy
-  state, argument validity, resource availability, target validity, store
-  capacity, and range.
+  `creep.transfer(target, resourceType, amount?)` returns the first failing
+  check's code, in this order: `:notOwner` the creep isn't the player's,
+  `ERR_NOT_OWNER`; `:busy` it is spawning, `ERR_BUSY`; `:invalidArgs`
+  `amount` is negative, `:invalidResource` `resourceType` isn't a resource
+  constant, or `:noResource` it is omitted, `ERR_INVALID_ARGS`;
+  `:invalidTarget` the target is neither a creep nor a structure with a
+  store, `:invalidCapacity` its store can't hold the resource, or
+  `:labMineral` it is a lab holding another mineral, `ERR_INVALID_TARGET`;
+  `:range` it isn't adjacent, `ERR_NOT_IN_RANGE`; `:notEnough` the creep
+  carries none of the resource, `ERR_NOT_ENOUGH_RESOURCES`; `:full` the
+  target has no free capacity for it, `ERR_FULL`; `:notEnoughAmount` the
+  creep carries less than `amount`, `ERR_NOT_ENOUGH_RESOURCES`;
+  `:fullAmount` the target's free capacity is less than `amount`,
+  `ERR_FULL`.
 
 ### 4.2 Withdraw
 - `WITHDRAW-001` `behavior` `verified_vanilla`
@@ -584,71 +573,45 @@ Coverage Notes
 - `WITHDRAW-002` `behavior` `verified_vanilla`
   Omitting `amount` withdraws as much as possible up to the target amount and
   the creep's free capacity.
-- `WITHDRAW-003` `behavior` `verified_vanilla`
-  `withdraw()` returns ERR_NOT_IN_RANGE when target is not adjacent.
-- `WITHDRAW-004` `behavior` `verified_vanilla`
-  `withdraw()` returns ERR_NOT_ENOUGH_RESOURCES when the structure lacks the resource.
-- `WITHDRAW-005` `behavior` `verified_vanilla`
-  `withdraw()` returns ERR_NOT_OWNER for hostile structures without a public rampart.
 - `WITHDRAW-006` `behavior` `verified_vanilla`
   `withdraw()` works on tombstones and ruins.
-- `WITHDRAW-007` `behavior` `verified_vanilla`
-  `withdraw()` returns ERR_FULL when the creep has no free capacity.
-- `WITHDRAW-008` `behavior` `verified_vanilla` `capability: powerEffects`
-  Terminal withdraw is blocked by PWR_DISRUPT_TERMINAL effect.
-- `WITHDRAW-009` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_NOT_OWNER` when the acting creep is not owned by
-  the player.
-- `WITHDRAW-010` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_BUSY` while the acting creep is spawning.
-- `WITHDRAW-011` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_INVALID_ARGS` when `resourceType` is invalid or
-  `amount` is negative.
-- `WITHDRAW-012` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_NOT_OWNER` during hostile safe mode.
-- `WITHDRAW-013` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_INVALID_TARGET` for nukers and power banks.
-- `WITHDRAW-014` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_INVALID_TARGET` when the target cannot hold and
-  does not contain the requested resource type.
 - `WITHDRAW-015` `behavior` `verified_vanilla`
   Withdrawing the last non-energy mineral from a lab clears that mineral slot
   capacity on the lab.
-- `WITHDRAW-016` `behavior` `verified_vanilla`
-  `withdraw()` returns `ERR_FULL` when the specified `amount` exceeds the
-  creep's free capacity, even if the creep has some capacity remaining.
 - `WITHDRAW-017` `matrix` `verified_vanilla`
-  `creep.withdraw(target, resourceType, amount?)` failure return codes and
-  precedence match the canonical validation matrix for ownership, caller busy
-  state, argument validity, target validity, resource availability, store
-  capacity, and range.
+  `creep.withdraw(target, resourceType, amount?)` returns the first failing
+  check's code, in this order: `:notOwner` the creep isn't the player's,
+  `ERR_NOT_OWNER`; `:busy` it is spawning, `ERR_BUSY`; `:invalidArgs`
+  `amount` is negative, or `:invalidResource` `resourceType` isn't a
+  resource constant, `ERR_INVALID_ARGS`; `:invalidTarget` the target isn't
+  a structure, tombstone or ruin with a store, or `:disruptedTerminal` it is
+  a terminal under `PWR_DISRUPT_TERMINAL`, `ERR_INVALID_TARGET`;
+  `:targetNotOwner` it is another player's and a non-public rampart the
+  player doesn't own covers it, or `:safemodeNotOwner` the room is in
+  another player's safe mode, `ERR_NOT_OWNER`; `:invalidNuker` it is a
+  nuker, `:invalidPowerBank` a power bank, or `:invalidCapacity` it can't
+  hold and doesn't contain the resource, `ERR_INVALID_TARGET`; `:range` it
+  isn't adjacent, `ERR_NOT_IN_RANGE`; `:full` the creep has no free
+  capacity, or `:fullAmount` less than `amount`, `ERR_FULL`; `:notEnough`
+  the target holds less than `amount`, or none of the resource when
+  `amount` is omitted, `ERR_NOT_ENOUGH_RESOURCES`.
 
 ### 4.3 Pickup
 - `PICKUP-001` `behavior` `verified_vanilla`
   `pickup(resource)` picks up an adjacent `Resource` object.
 - `PICKUP-002` `behavior` `verified_vanilla`
   The full amount is picked up, limited by the creep's free capacity.
-- `PICKUP-003` `behavior` `verified_vanilla`
-  `pickup()` returns ERR_NOT_IN_RANGE when the resource is not adjacent.
-- `PICKUP-004` `behavior` `verified_vanilla`
-  `pickup()` returns ERR_FULL when the creep has no free capacity.
-- `PICKUP-005` `behavior` `verified_vanilla`
-  `pickup()` returns `ERR_NOT_OWNER` when the acting creep is not owned by the
-  player.
-- `PICKUP-006` `behavior` `verified_vanilla`
-  `pickup()` returns `ERR_BUSY` while the acting creep is spawning.
-- `PICKUP-007` `behavior` `verified_vanilla`
-  `pickup()` returns `ERR_INVALID_TARGET` for a target that is not a
-  `Resource`.
 - `PICKUP-008` `behavior` `verified_vanilla`
   Successful `pickup()` removes the resource pile when its amount reaches 0.
 - `PICKUP-009` `behavior` `verified_vanilla`
   Successful `pickup()` reduces the resource pile's amount by the picked-up
   quantity.
 - `PICKUP-010` `matrix` `verified_vanilla`
-  `creep.pickup(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, target
-  validity, store capacity, and range.
+  `creep.pickup(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:invalidTarget` the target isn't a dropped
+  resource, `ERR_INVALID_TARGET`; `:full` the creep has no free capacity,
+  `ERR_FULL`; `:range` the resource isn't adjacent, `ERR_NOT_IN_RANGE`.
 
 ### 4.4 Drop
 - `DROP-001` `behavior` `verified_vanilla`
@@ -658,15 +621,6 @@ Coverage Notes
   Omitting `amount` drops all of the specified resource.
 - `DROP-003` `behavior` `verified_vanilla`
   Dropping onto a tile with an existing dropped resource of the same type adds to it.
-- `DROP-004` `behavior` `verified_vanilla`
-  `drop()` returns ERR_NOT_ENOUGH_RESOURCES when the creep lacks the resource.
-- `DROP-005` `behavior` `verified_vanilla`
-  `drop()` returns `ERR_NOT_OWNER` when the acting creep is not owned by the
-  player.
-- `DROP-006` `behavior` `verified_vanilla`
-  `drop()` returns `ERR_BUSY` while the acting creep is spawning.
-- `DROP-007` `behavior` `verified_vanilla`
-  `drop()` returns `ERR_INVALID_ARGS` when `resourceType` is invalid.
 - `DROP-008` `behavior` `verified_vanilla`
   Successful `drop()` inserts resources into a same-tile container before
   creating or merging a dropped resource pile.
@@ -677,9 +631,12 @@ Coverage Notes
   Dropping a different resource type onto a tile with an existing resource pile
   creates a separate `Resource` object for that type.
 - `DROP-011` `matrix` `verified_vanilla`
-  `creep.drop(resourceType, amount?)` failure return codes and precedence
-  match the canonical validation matrix for ownership, caller busy state,
-  argument validity, and resource availability.
+  `creep.drop(resourceType, amount?)` returns the first failing check's
+  code, in this order: `:notOwner` the creep isn't the player's,
+  `ERR_NOT_OWNER`; `:busy` it is spawning, `ERR_BUSY`; `:invalidArgs`
+  `resourceType` isn't a resource constant, `ERR_INVALID_ARGS`; `:notEnough`
+  the creep carries none of it, or `:notEnoughAmount` less than `amount`,
+  `ERR_NOT_ENOUGH_RESOURCES`.
 
 ### 4.5 Dropped Resources
 - `DROP-DECAY-001` `behavior` `verified_vanilla`

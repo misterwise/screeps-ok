@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-17%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-18%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2881](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 02:39 UTC |
-| 🔴 | **xxscreeps** | [2612](#xxscreeps-passing-tests) | [80](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
+| 🔴 | **xxscreeps** | [2611](#xxscreeps-passing-tests) | [80](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -30,6 +30,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 **xxscreeps**
 
 - `creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target`
+- `creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code`
 - `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
 - `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
 - `creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target`
@@ -49,7 +50,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 ## xxscreeps unexpected failures
 
 - `pull-range-checked-before-spawning-target` registers `MOVE-PULL-011:spawningTargetBeforeRange`, which no test passed or failed
-- 16 registered test(s) now pass; see Regression traps triggered
+- 17 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
 
@@ -158,7 +159,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 43 expected-failure classifications against vanilla's canonical behavior, covering 80 tests. That includes 39 open parity gaps covering 72 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 44 expected-failure classifications against vanilla's canonical behavior, covering 80 tests. That includes 40 open parity gaps covering 72 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -176,6 +177,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | 0 |
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | 0 |
+| `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | 0 |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, range among them; screeps/engine#121 (open) proposes honoring it. Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `factory-power-effect-not-implemented` | `checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY. | Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check. | Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`. | [3](#xxscreeps-gap-factory-power-effect-not-implemented) |
 | `power-bank-ruin-spills-one-tick-late` | `createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth. | Vanilla `processor/intents/structures/_destroy.js:21-36` stamps `destroyTime: gameTime` and `decayTime: gameTime + (RUIN_DECAY_STRUCTURES[type] \|\| RUIN_DECAY)` on the destruction tick, so the next tick reads `RUIN_DECAY - 1` or `RUIN_DECAY_STRUCTURES[type] - 1`. The ruin processor spills the store when `gameTime >= decayTime - 1`, which is the ninth tick for a power bank. | POWER-BANK-004 caught the spill side. RUIN-002 caught the decay reading on 2026-09-25, when its rows were rewritten to destroy a real structure instead of seeding the decay value they asserted. Same processor clock convention as `bury-creep-stamps-next-tick`; the upstream fix is `Game.time - 1` for both stamps in `createRuin`. | [3](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
@@ -289,6 +291,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-pull-range-checked-before-spawning-target">
 <summary><code>pull-range-checked-before-spawning-target</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target">
+<summary><code>transfer-negative-amount-lost-on-storeless-target</code> — 0 tests</summary>
 
 
 </details>
@@ -4297,7 +4305,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2612 tests across 144 files</summary>
+<summary>2611 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4892,7 +4900,7 @@ Click a count to jump to the affected test list.
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown harvest(deposit) validation returns the canonical code
 - creep.harvest(deposit) DEPOSIT-HARVEST-006:rangeBeforeCooldown harvest(deposit) validation returns the canonical code
 
-**`tests/04-resource-transfer/4.1-transfer.test.ts`** (69)
+**`tests/04-resource-transfer/4.1-transfer.test.ts`** (68)
 
 - creep.transfer() TRANSFER-001 transfers energy from the creep store to the target store
 - creep.transfer() TRANSFER-002 transfers partial amount
@@ -4935,7 +4943,6 @@ Click a count to jump to the affected test list.
 - creep.transfer() TRANSFER-015:busyBeforeFull transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeNotEnoughAmount transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:busyBeforeFullAmount transfer() validation returns the canonical code
-- creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidTarget transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeInvalidCapacity transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeRange transfer() validation returns the canonical code
 - creep.transfer() TRANSFER-015:invalidArgsBeforeNotEnough transfer() validation returns the canonical code

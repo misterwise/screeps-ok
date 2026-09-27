@@ -8,6 +8,9 @@ export const dropValidationCases = makeValidationCases('DROP-011', [
 	{ condition: 'busy', expectedRc: ERR_BUSY },
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
-] as const);
+	{ condition: 'not-enough-amount', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
+] as const, [
+	['not-enough', 'not-enough-amount'],
+]);
 
 export type DropValidationCase = typeof dropValidationCases[number];

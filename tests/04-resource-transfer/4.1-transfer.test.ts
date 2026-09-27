@@ -1,10 +1,9 @@
 import { describe, test, expect, code, body,
-	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES,
-	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_FULL, ERR_BUSY,
+	OK,
 	CARRY, MOVE, WORK,
-	RESOURCE_ENERGY,
-	STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_LAB, STRUCTURE_CONTROLLER, STRUCTURE_EXTENSION,
-	SPAWN_ENERGY_CAPACITY, LAB_MINERAL_CAPACITY, CARRY_CAPACITY,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN, RESOURCE_OXYGEN,
+	STRUCTURE_CONTAINER, STRUCTURE_SPAWN, STRUCTURE_LAB, STRUCTURE_EXTENSION,
+	SPAWN_ENERGY_CAPACITY,
 	UPGRADE_CONTROLLER_POWER,
 } from '../../src/index.js';
 import { transferValidationCases } from '../../src/matrices/transfer-validation.js';
@@ -67,175 +66,6 @@ describe('creep.transfer()', () => {
 		expect(creep.store.energy).toBe(30);
 	});
 
-	test('TRANSFER-003 returns ERR_NOT_IN_RANGE when far', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${spawnId}), RESOURCE_ENERGY)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('TRANSFER-004 returns ERR_NOT_ENOUGH_RESOURCES with empty store', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			// no store
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${spawnId}), RESOURCE_ENERGY)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	test('TRANSFER-005 requires a resource type — omitted or unknown returns ERR_INVALID_ARGS', async ({ shard }) => {
-		// Engine creeps.js:438: `!_.contains(C.RESOURCES_ALL, resourceType)` → ERR_INVALID_ARGS
-		// Both undefined and an unknown string fail this check.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-		});
-
-		const result = await shard.runPlayer('p1', code`
-			const creep = Game.getObjectById(${creepId});
-			const target = Game.getObjectById(${spawnId});
-			({
-				omitted: creep.transfer(target),
-				unknown: creep.transfer(target, 'not_a_resource'),
-			})
-		`) as { omitted: number; unknown: number };
-
-		expect(result.omitted).toBe(ERR_INVALID_ARGS);
-		expect(result.unknown).toBe(ERR_INVALID_ARGS);
-	});
-
-	test('TRANSFER-006 returns ERR_FULL when target store has no free capacity', async ({ shard }) => {
-		// Engine creeps.js:473: `storedAmount >= targetCapacity` → ERR_FULL.
-		// Pre-fill the spawn to SPAWN_ENERGY_CAPACITY so there is zero free capacity for energy.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: SPAWN_ENERGY_CAPACITY },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${spawnId}), RESOURCE_ENERGY)
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
-	test('TRANSFER-007 returns ERR_INVALID_TARGET when the target cannot hold the resource type', async ({ shard }) => {
-		// Engine creeps.js:459-461 — `!utils.capacityForResource(data(target.id), resourceType)`
-		// → ERR_INVALID_TARGET. Spawns accept only energy; transferring any
-		// mineral to a spawn hits this path.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { H: 10 },
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${spawnId}), RESOURCE_HYDROGEN)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('TRANSFER-008 transferring a mineral into a lab loaded with a different mineral returns ERR_INVALID_TARGET', async ({ shard }) => {
-		// Labs only accept the mineral type they currently hold (plus energy).
-		// Pre-loading the lab with 'H' sets the lab's mineral slot to H; an
-		// attempt to transfer 'O' must be rejected via capacityForResource.
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { O: 10 },
-		});
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { H: 50 },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${labId}), RESOURCE_OXYGEN)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('TRANSFER-009 transfer returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p2',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${containerId}), RESOURCE_ENERGY)
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('TRANSFER-010 transfer returns ERR_BUSY while spawning', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 1);
-		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-		});
-		await shard.tick();
-
-		const spawnRc = await shard.runPlayer('p1', code`
-			Object.values(Game.spawns)[0].spawnCreep([CARRY, MOVE], 'Hauler')
-		`);
-		expect(spawnRc).toBe(OK);
-
-		const rc = await shard.runPlayer('p1', code`
-			const c = Game.creeps['Hauler'];
-			c ? c.transfer(Game.getObjectById(${containerId}), RESOURCE_ENERGY) : -99
-		`);
-		expect(rc).toBe(ERR_BUSY);
-	});
-
 	test('TRANSFER-011 transfer(controller, RESOURCE_ENERGY) redirects to upgradeController', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const creepId = await shard.placeCreep('W1N1', {
@@ -283,24 +113,6 @@ describe('creep.transfer()', () => {
 		expect(lab.mineralType).toBe('H');
 	});
 
-	test('TRANSFER-013 transfer returns ERR_FULL when amount exceeds target free capacity', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: SPAWN_ENERGY_CAPACITY - 10 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(Game.getObjectById(${spawnId}), RESOURCE_ENERGY, 20)
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
 	test('TRANSFER-014 transfer to another creep follows same store mechanics', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const giverId = await shard.placeCreep('W1N1', {
@@ -329,31 +141,30 @@ describe('creep.transfer()', () => {
 	for (const row of transferValidationCases) {
 		test(`TRANSFER-015:${row.label} transfer() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
+			if (blockers.has('lab-mineral')) shard.requires('chemistry');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const rcl = blockers.has('lab-mineral') ? 6 : 1;
 			if (owner === 'p2') {
 				await shard.createShard({
 					players: ['p1', 'p2'],
-					rooms: [{ name: 'W1N1', rcl: 1, owner: blockers.has('busy') ? 'p2' : 'p1' }],
+					rooms: [{ name: 'W1N1', rcl, owner: blockers.has('busy') ? 'p2' : 'p1' }],
 				});
 				if (!blockers.has('busy')) {
 					await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 				}
 			} else {
-				await shard.ownedRoom('p1');
+				await shard.ownedRoom('p1', 'W1N1', rcl);
 			}
 
-			const resource = blockers.has('invalid-args')
-				? 'not_a_resource'
-				: blockers.has('invalid-capacity')
-					? 'H'
-					: RESOURCE_ENERGY;
+			const resource = blockers.has('invalid-resource') ? 'not_a_resource'
+				: blockers.has('no-resource') ? undefined
+				: blockers.has('invalid-capacity') ? RESOURCE_HYDROGEN
+				: blockers.has('lab-mineral') ? RESOURCE_OXYGEN
+				: RESOURCE_ENERGY;
+			const carried = resource === RESOURCE_HYDROGEN || resource === RESOURCE_OXYGEN ? resource : RESOURCE_ENERGY;
 			const store: Record<string, number> = blockers.has('not-enough')
 				? {}
-				: blockers.has('not-enough-amount')
-					? { energy: 10 }
-					: resource === 'H'
-						? { H: 50 }
-						: { energy: 50 };
+				: { [carried]: blockers.has('not-enough-amount') ? 10 : 50 };
 			const creepId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
 					owner,
@@ -376,6 +187,13 @@ describe('creep.transfer()', () => {
 						owner: 'p1',
 						store: { energy: 0 },
 					})
+					: blockers.has('lab-mineral')
+					? await shard.placeStructure('W1N1', {
+						pos: targetPos,
+						structureType: STRUCTURE_LAB,
+						owner: 'p1',
+						store: { H: 50 },
+					})
 					: await shard.placeStructure('W1N1', {
 						pos: targetPos,
 						structureType: STRUCTURE_SPAWN,
@@ -386,6 +204,7 @@ describe('creep.transfer()', () => {
 								? { energy: SPAWN_ENERGY_CAPACITY - 10 }
 								: { energy: 0 },
 					});
+			if (blockers.has('lab-mineral')) await shard.tick();
 			const amount = blockers.has('invalid-args') ? -1
 				: blockers.has('not-enough-amount') || blockers.has('full-amount') ? 20
 					: undefined;

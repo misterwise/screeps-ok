@@ -154,6 +154,7 @@ export const RESOURCE_POWER: 'power' = C.RESOURCE_POWER;
 export const RESOURCE_OPS: 'ops' = C.RESOURCE_OPS;
 export const RESOURCE_GHODIUM: 'G' = C.RESOURCE_GHODIUM;
 export const RESOURCE_HYDROGEN: 'H' = C.RESOURCE_HYDROGEN;
+export const RESOURCE_OXYGEN: 'O' = C.RESOURCE_OXYGEN;
 export const RESOURCE_SILICON: 'silicon' = C.RESOURCE_SILICON;
 export const RESOURCE_METAL: 'metal' = C.RESOURCE_METAL;
 export const RESOURCE_BIOMASS: 'biomass' = C.RESOURCE_BIOMASS;

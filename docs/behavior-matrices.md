@@ -2368,11 +2368,11 @@ checks both. Each definition has these fields, in this order:
   `creep.drop(resourceType, amount?)` ownership, caller busy state,
   argument validity (resourceType, amount), and resource availability.
 - `Exclusions`
-  Resource-pile merge/separate semantics, owned by `DROP-001..010`.
+  Resource-pile merge/separate semantics, owned by `DROP-001..010`. The two
+  resource-availability conditions exclude each other: each sets what the
+  creep carries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → resource-type
-  argument validity → resource availability. The executable case list lives
-  in `src/matrices/drop-validation.ts`.
+  The executable case list lives in `src/matrices/drop-validation.ts`.
 
 ### MOVE-BASIC-VALIDATION
 
@@ -2441,9 +2441,7 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Resource-pile decrement math, owned by `PICKUP-001..009`.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → target validity
-  → creep capacity → range. The executable case list lives in
-  `src/matrices/pickup-validation.ts`.
+  The executable case list lives in `src/matrices/pickup-validation.ts`.
 
 ### TRANSFER-VALIDATION
 
@@ -2463,13 +2461,14 @@ checks both. Each definition has these fields, in this order:
   hostile, wrong store kind), store capacity (target full), and range.
 - `Exclusions`
   Successful transfer side effects (link cooldown, factory store),
-  owned by `TRANSFER-001..014`.
+  owned by `TRANSFER-001..014`. Pairs that need two resource types or two
+  targets at once: the unknown and omitted resource type with each other
+  and with the capacity and lab-mineral conditions, the lab with the
+  storeless target, the capacity case, and the two full-spawn cases.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → argument
-  validity → target validity → target capacity-model validity → range →
-  generic resource availability → target full → amount-specific resource
-  availability → amount-specific target full. The executable case list
-  lives in `src/matrices/transfer-validation.ts`.
+  The negative-amount check comes first (`game/creeps.js:435-437`), so its
+  case passes a valid resource type. `:labMineral` cases need `chemistry`.
+  The executable case list lives in `src/matrices/transfer-validation.ts`.
 
 ### WITHDRAW-VALIDATION
 
@@ -2490,12 +2489,15 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Successful withdraw side effects, owned by `WITHDRAW-001..016`. The
   busy/safemode-not-owner pair is excluded because a spawning creep cannot be
-  placed in a hostile safe-mode room through public fixture state.
+  placed in a hostile safe-mode room through public fixture state; the
+  disrupted terminal with safe mode because a power creep can't use a power
+  in another player's safe mode; a power bank with a rampart owner because
+  it has no player owner; and pairs that need two targets at once.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → argument
-  validity → target validity → target ownership/safe-mode ownership →
-  invalid nuker/resource capacity → invalid capacity-model → range → creep
-  full → amount-specific creep full → target resource availability. The
+  `:disruptedTerminal` cases need `powerCreeps` and `powerEffects`: a power
+  creep casts `PWR_DISRUPT_TERMINAL` in-test. `:invalidNuker` needs `nuke`
+  and `:invalidPowerBank` needs `powerBank`. `:fullAmount` leaves the creep
+  free capacity below `amount`, past the no-free-capacity check. The
   executable case list lives in `src/matrices/withdraw-validation.ts`.
 
 ### CONSTRUCTION-SITE-CREATE-VALIDATION

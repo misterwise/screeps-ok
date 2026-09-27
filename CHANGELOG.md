@@ -201,7 +201,22 @@ changes since `v0.1.0-alpha` are not itemized.
   `-006` (`:noExtractor`), `-007` (`:extractorNotOwner`), `-008`
   (`:inactiveExtractor`), `-009` (`:cooldown`), `-010` (`:range`);
   `DEPOSIT-HARVEST-002` (`DEPOSIT-HARVEST-006:range`), `-003`
-  (`:cooldown`).
+  (`:cooldown`). `TRANSFER-003` (`TRANSFER-015:range`), `-004`
+  (`:notEnough`), `-005` (`:invalidArgs`, now a negative amount alone, and
+  `:invalidResource` and `:noResource`, new), `-006` (`:full`), `-007`
+  (`:invalidTarget`, `:invalidCapacity`), `-008` (`:labMineral`, new),
+  `-009` (`:notOwner`), `-010` (`:busy`), `-013` (`:fullAmount`);
+  `WITHDRAW-003` (`WITHDRAW-017:range`), `-004` (`:notEnough`), `-005`
+  (`:targetNotOwner`), `-007` (`:full`), `-008` (`:disruptedTerminal`, new),
+  `-009` (`:notOwner`), `-010` (`:busy`), `-011` (`:invalidArgs`, now a
+  negative amount alone, and `:invalidResource`, new), `-012`
+  (`:safemodeNotOwner`), `-013` (`:invalidNuker`, and `:invalidPowerBank`,
+  new), `-014` (`:invalidCapacity`), `-016` (`:fullAmount`, which now
+  leaves the creep some free capacity); `PICKUP-003` (`PICKUP-010:range`),
+  `-004` (`:full`), `-005` (`:notOwner`), `-006` (`:busy`), `-007`
+  (`:invalidTarget`); `DROP-004` (`DROP-011:notEnough`), `-005`
+  (`:notOwner`), `-006` (`:busy`), `-007` (`:invalidArgs`), and the new
+  `:notEnoughAmount`.
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

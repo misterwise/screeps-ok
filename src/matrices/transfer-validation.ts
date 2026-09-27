@@ -8,13 +8,26 @@ export const transferValidationCases = makeValidationCases('TRANSFER-015', [
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'busy', expectedRc: ERR_BUSY },
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
+	{ condition: 'invalid-resource', expectedRc: ERR_INVALID_ARGS },
+	{ condition: 'no-resource', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'invalid-capacity', expectedRc: ERR_INVALID_TARGET },
+	{ condition: 'lab-mineral', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'full', expectedRc: ERR_FULL },
 	{ condition: 'not-enough-amount', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'full-amount', expectedRc: ERR_FULL },
-] as const);
+] as const, [
+	['invalid-resource', 'no-resource'],
+	['invalid-resource', 'invalid-capacity'],
+	['invalid-resource', 'lab-mineral'],
+	['no-resource', 'invalid-capacity'],
+	['no-resource', 'lab-mineral'],
+	['invalid-target', 'lab-mineral'],
+	['invalid-capacity', 'lab-mineral'],
+	['lab-mineral', 'full'],
+	['lab-mineral', 'full-amount'],
+]);
 
 export type TransferValidationCase = typeof transferValidationCases[number];
