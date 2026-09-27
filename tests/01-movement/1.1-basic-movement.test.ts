@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	MOVE, WORK, OK, ERR_NO_BODYPART, ERR_NOT_FOUND, ERR_NO_PATH, ERR_TIRED,
-	ERR_INVALID_ARGS, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_BUSY, ERR_INVALID_TARGET,
-	TOP, BOTTOM, RIGHT, STRUCTURE_SPAWN,
+	ERR_INVALID_ARGS, ERR_INVALID_TARGET,
+	TOP,
 } from '../../src/index.js';
 import { moveDirectionCases } from '../../src/matrices/move-directions.js';
 import {
@@ -53,36 +53,6 @@ describe('creep.move()', () => {
 		expect(c.pos.y).toBe(25);
 	});
 
-	test('MOVE-BASIC-004 move() returns ERR_NO_BODYPART when the creep has no active MOVE parts', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [WORK],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${id}).move(TOP)
-		`);
-		expect(rc).toBe(ERR_NO_BODYPART);
-
-		await shard.tick();
-		const c = await shard.expectObject(id, 'creep');
-		expect(c.pos.x).toBe(25);
-		expect(c.pos.y).toBe(25);
-	});
-
-	test('MOVE-BASIC-005 move() returns ERR_INVALID_ARGS for invalid direction', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const id = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${id}).move(99)
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
 	test('MOVE-BASIC-006 move(targetCreep) on adjacent creep returns OK', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
@@ -97,61 +67,6 @@ describe('creep.move()', () => {
 			Game.creeps['mover'].move(Game.creeps['target'])
 		`);
 		expect(rc).toBe(OK);
-	});
-
-	test('MOVE-BASIC-007 move(targetCreep) returns ERR_NOT_IN_RANGE when not adjacent', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'mover',
-		});
-		await shard.placeCreep('W1N1', {
-			pos: [25, 20], owner: 'p1', body: [MOVE], name: 'far',
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.creeps['mover'].move(Game.creeps['far'])
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('MOVE-BASIC-023 move() returns ERR_NOT_OWNER on unowned creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const enemyId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p2', body: [MOVE],
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${enemyId}).move(TOP)
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('MOVE-BASIC-024 move() returns ERR_BUSY while spawning', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 1);
-		await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		await shard.tick();
-
-		const spawnRc = await shard.runPlayer('p1', code`
-			const spawns = Object.values(Game.spawns);
-			spawns[0].spawnCreep([MOVE, MOVE, MOVE], 'Mover')
-		`);
-		expect(spawnRc).toBe(OK);
-
-		const rc = await shard.runPlayer('p1', code`
-			const c = Game.creeps['Mover'];
-			c ? c.move(TOP) : -99
-		`);
-		expect(rc).toBe(ERR_BUSY);
 	});
 
 	test('MOVE-BASIC-025 move(targetCreep) moves toward the target creep', async ({ shard }) => {
@@ -175,7 +90,7 @@ describe('creep.move()', () => {
 	});
 
 	for (const row of moveBasicValidationCases) {
-		test(`MOVE-BASIC-027:${row.label} move(direction) validation returns the canonical code`, async ({ shard }) => {
+		test(`MOVE-BASIC-027:${row.label} move() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
@@ -193,6 +108,11 @@ describe('creep.move()', () => {
 			} else {
 				await shard.ownedRoom('p1');
 			}
+			// A creep target out of every subject's reach: the busy and fatigued
+			// creeps sit at (25,25) and (25,24).
+			const farId = blockers.has('range')
+				? await shard.placeCreep('W1N1', { pos: [25, 15], owner: 'p1', body: [MOVE] })
+				: undefined;
 
 			let creepId: string;
 			if (blockers.has('busy')) {
@@ -215,9 +135,9 @@ describe('creep.move()', () => {
 			}
 
 			const direction = blockers.has('invalid-args') ? 99 : TOP;
-			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).move(${direction})
-			`);
+			const rc = await shard.runPlayer('p1', farId
+				? code`Game.getObjectById(${creepId}).move(Game.getObjectById(${farId}))`
+				: code`Game.getObjectById(${creepId}).move(${direction})`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}

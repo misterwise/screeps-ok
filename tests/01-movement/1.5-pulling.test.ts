@@ -1,5 +1,5 @@
-import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
+import { describe, test, expect, code, body,
+	OK, FIND_CREEPS,
 	MOVE, WORK, TOP, BOTTOM, STRUCTURE_SPAWN,
 } from '../../src/index.js';
 import { movePullValidationCases } from '../../src/matrices/move-pull-validation.js';
@@ -93,25 +93,6 @@ describe('creep.pull()', () => {
 		expect(target.pos.y).toBe(25);
 	});
 
-	test('MOVE-PULL-004 pull() returns ERR_NOT_IN_RANGE when the target is not adjacent', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const pullerId = await shard.placeCreep('W1N1', {
-			pos: [10, 10], owner: 'p1',
-			body: [MOVE],
-			name: 'puller',
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [20, 20], owner: 'p1',
-			body: [WORK],
-			name: 'heavy',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.creeps['puller'].pull(Game.creeps['heavy'])
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
 	test('MOVE-PULL-005 the puller accumulates fatigue for both itself and the pulled creep', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		// Puller has only MOVE parts (zero own weight), so any post-move fatigue
@@ -188,57 +169,6 @@ describe('creep.pull()', () => {
 		expect(a.pos.x).toBe(25); expect(a.pos.y).toBe(22);
 		expect(b.pos.x).toBe(25); expect(b.pos.y).toBe(23);
 		expect(c.pos.x).toBe(25); expect(c.pos.y).toBe(24);
-	});
-
-	test('MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'solo',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			const c = Game.creeps['solo'];
-			c.pull(c)
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('MOVE-PULL-007:nonCreep pull() returns ERR_INVALID_TARGET for non-creep', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'puller',
-		});
-		const structId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.creeps['puller'].pull(Game.getObjectById(${structId}))
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
-	});
-
-	test('MOVE-PULL-007:spawning pull() returns ERR_INVALID_TARGET for spawning creep', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 1);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1', body: [MOVE, MOVE], name: 'puller',
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'Spawning')
-		`);
-
-		const rc = await shard.runPlayer('p1', code`
-			const target = Game.creeps['Spawning'];
-			target ? Game.creeps['puller'].pull(target) : -99
-		`);
-		expect(rc).toBe(ERR_INVALID_TARGET);
 	});
 
 	test('MOVE-PULL-008 pull() on adjacent enemy returns OK', async ({ shard }) => {
@@ -334,10 +264,12 @@ describe('creep.pull()', () => {
 		test(`MOVE-PULL-011:${row.label} pull() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			// A spawning target beside a spawning puller needs two active spawns.
+			const rcl = blockers.has('busy') && blockers.has('spawning-target') ? 7 : 1;
 			if (owner === 'p2') {
 				await shard.createShard({
 					players: ['p1', 'p2'],
-					rooms: [{ name: 'W1N1', rcl: 1, owner: 'p2' }],
+					rooms: [{ name: 'W1N1', rcl, owner: 'p2' }],
 				});
 				if (!blockers.has('busy')) {
 					await shard.placeCreep('W1N1', {
@@ -347,7 +279,25 @@ describe('creep.pull()', () => {
 					});
 				}
 			} else {
-				await shard.ownedRoom('p1');
+				await shard.ownedRoom('p1', 'W1N1', rcl);
+			}
+
+			// Spawned first, with a body that outlasts the puller's own setup.
+			let spawningTargetId: string | undefined;
+			if (blockers.has('spawning-target')) {
+				const spawnId = await shard.placeStructure('W1N1', {
+					pos: blockers.has('range') ? [30, 30] : [25, 26],
+					structureType: STRUCTURE_SPAWN,
+					owner,
+					store: { energy: 300 },
+				});
+				await shard.tick();
+				const spawnRc = await shard.runPlayer(owner, code`
+					Game.getObjectById(${spawnId}).spawnCreep(${body(6, MOVE)}, 'PullTarget')
+				`);
+				expect(spawnRc).toBe(OK);
+				const spawning = (await shard.findInRoom('W1N1', FIND_CREEPS)).find(c => c.name === 'PullTarget');
+				spawningTargetId = spawning!.id;
 			}
 
 			const pullerId = blockers.has('busy')
@@ -362,19 +312,26 @@ describe('creep.pull()', () => {
 					body: [MOVE],
 					name: 'puller-validation',
 				});
-			const targetId = blockers.has('invalid-target')
-				? await shard.placeStructure('W1N1', {
+			let targetId: string;
+			if (blockers.has('self')) {
+				targetId = pullerId;
+			} else if (spawningTargetId !== undefined) {
+				targetId = spawningTargetId;
+			} else if (blockers.has('invalid-target')) {
+				targetId = await shard.placeStructure('W1N1', {
 					pos: blockers.has('range') ? [30, 30] : [25, 26],
 					structureType: STRUCTURE_SPAWN,
 					owner,
 					store: { energy: 300 },
-				})
-				: await shard.placeCreep('W1N1', {
+				});
+			} else {
+				targetId = await shard.placeCreep('W1N1', {
 					pos: blockers.has('range') ? [30, 30] : [25, 26],
 					owner,
 					body: [WORK],
 					name: 'pulled-validation',
 				});
+			}
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${pullerId}).pull(Game.getObjectById(${targetId}))

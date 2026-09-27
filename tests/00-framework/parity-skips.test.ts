@@ -20,11 +20,11 @@ function parityFile(contents: object, siblings: Record<string, object> = {}) {
 }
 
 const TEST_FILE = '/suite/tests/01-section/1.1-some.test.ts';
-const hangs = { why: 'pull(self) loops the processor forever', tests: ['MOVE-PULL-007'] };
+const hangs = { why: 'pull(self) loops the processor forever', tests: ['MOVE-PULL-011'] };
 
 describe('parity.json skips', () => {
 	test('a skip needs a why and catalog test ids', () => {
-		expect(() => loadParity(parityFile({ skips: { hangs: { tests: ['MOVE-PULL-007'] } } }))).toThrow(/skip "hangs" needs "why"/);
+		expect(() => loadParity(parityFile({ skips: { hangs: { tests: ['MOVE-PULL-011'] } } }))).toThrow(/skip "hangs" needs "why"/);
 		expect(() => loadParity(parityFile({ skips: { hangs: { ...hangs, tests: [] } } }))).toThrow(/skip "hangs" needs non-empty "tests"/);
 		expect(() => loadParity(parityFile({ skips: { hangs: { ...hangs, tests: ['pull'] } } }))).toThrow(/no catalog test id/);
 		expect(() => loadParity(parityFile({ skips: { hangs: { ...hangs, reason: 'x' } } }))).toThrow(/unknown key "reason"/);
@@ -32,31 +32,31 @@ describe('parity.json skips', () => {
 
 	test('a test id is skipped or registered as a gap, not both', () => {
 		expect(() => loadParity(parityFile({
-			expected_failures: { 'some-gap': { actual: 'a', expected: 'b', tests: ['MOVE-PULL-007'] } },
+			expected_failures: { 'some-gap': { actual: 'a', expected: 'b', tests: ['MOVE-PULL-011'] } },
 			skips: { hangs },
-		}))).toThrow(/MOVE-PULL-007 is registered under both gap "some-gap" and "hangs"/);
+		}))).toThrow(/MOVE-PULL-011 is registered under both gap "some-gap" and "hangs"/);
 		expect(() => loadParity(parityFile({ skips: { hangs, again: hangs } }))).toThrow(/under both skip "hangs" and "again"/);
 	});
 
 	test('an overlay keeps the skips its base registers', () => {
 		const parity = loadParity(parityFile({ extends: './base.json' }, { 'base.json': { skips: { hangs } } }));
-		expect(parity.skipForId.get('MOVE-PULL-007')).toBe('hangs');
+		expect(parity.skipForId.get('MOVE-PULL-011')).toBe('hangs');
 	});
 
 	test('a skipped test counts under its own id or, registered bare, its row', () => {
-		const parity = loadParity(parityFile({ skips: { hangs: { ...hangs, tests: ['MOVE-PULL-007'] } } }));
+		const parity = loadParity(parityFile({ skips: { hangs: { ...hangs, tests: ['MOVE-PULL-011'] } } }));
 		const classified = classifyResults(parity, [
-			{ fullName: 'MOVE-PULL-007:self pull() returns ERR_INVALID_TARGET for self', state: 'skipped', file: TEST_FILE },
+			{ fullName: 'MOVE-PULL-011:self pull() returns ERR_INVALID_TARGET for self', state: 'skipped', file: TEST_FILE },
 			{ fullName: 'MOVE-PULL-008 an unregistered test', state: 'skipped', file: TEST_FILE },
 		], { fullRun: true });
-		expect(classified.registeredSkips.map(t => [t.id, t.skipId])).toEqual([['MOVE-PULL-007:self', 'hangs']]);
+		expect(classified.registeredSkips.map(t => [t.id, t.skipId])).toEqual([['MOVE-PULL-011:self', 'hangs']]);
 		expect(classified.orphans).toEqual([]);
 	});
 
 	test('a full run counts a skip that names no test as orphaned', () => {
 		const parity = loadParity(parityFile({ skips: { hangs } }));
 		const results = [{ fullName: 'OTHER-001 passes', state: 'passed', file: TEST_FILE }];
-		expect(classifyResults(parity, results, { fullRun: true }).orphans).toEqual(['MOVE-PULL-007']);
+		expect(classifyResults(parity, results, { fullRun: true }).orphans).toEqual(['MOVE-PULL-011']);
 		expect(classifyResults(parity, results, { fullRun: false }).orphans).toEqual([]);
 	});
 });

@@ -185,6 +185,15 @@ changes since `v0.1.0-alpha` are not itemized.
   `POWER-OPERATE-004` (`FACTORY-COMMODITY-003`), `UNDOC-CTOR-001`..`-008`
   (`UNDOC-IDCTOR-001`), `DROP-DECAY-004` (`HARVEST-006`),
   `STORE-RESTRICTED-001` (`-002`).
+- A validation matrix owns its method's failure codes: its row lists each
+  condition and code in check order, and a row that restated one of its
+  cases is dropped (the case that owns it now in parentheses; a row's extra
+  forms became new conditions, keyed and paired like the rest).
+  `MOVE-BASIC-003` (`MOVE-BASIC-027:fatigue`), `-004` (`:noBodypart`),
+  `-005` (`:invalidArgs`), `-007` (`:range`, new), `-023` (`:notOwner`),
+  `-024` (`:busy`); `MOVE-PULL-004` (`MOVE-PULL-011:range`),
+  `MOVE-PULL-007:self` (`:self`, new), `:nonCreep` (`:invalidTarget`),
+  `:spawning` (`:spawningTarget`, new).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

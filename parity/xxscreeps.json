@@ -75,6 +75,12 @@
 			"why": "UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead.",
 			"tests": ["UNDOC-STALEARG-001:creepTransferStructure", "UNDOC-STALEARG-001:creepTransferCreep", "UNDOC-STALEARG-001:creepAttackCreep", "UNDOC-STALEARG-001:creepHeal", "UNDOC-STALEARG-001:creepRangedAttack", "UNDOC-STALEARG-001:creepRangedHeal", "UNDOC-STALEARG-001:creepRepair", "UNDOC-STALEARG-001:creepDismantle", "UNDOC-STALEARG-001:creepBuild", "UNDOC-STALEARG-001:creepPull", "UNDOC-STALEARG-001:towerAttack", "UNDOC-STALEARG-001:towerHeal", "UNDOC-STALEARG-001:towerRepair", "UNDOC-STALEARG-001:linkTransferEnergy", "UNDOC-STALEARG-001:spawnRenewCreep", "UNDOC-STALEARG-001:spawnRecycleCreep"]
 		},
+		"pull-range-checked-before-spawning-target": {
+			"actual": "`checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`.",
+			"expected": "Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`).",
+			"why": "Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order.",
+			"tests": ["MOVE-PULL-011:spawningTargetBeforeRange"]
+		},
 		"roomposition-find-closest-by-path-range-ignored": {
 			"actual": "RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1.",
 			"expected": "RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability.",

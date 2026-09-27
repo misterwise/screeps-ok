@@ -572,7 +572,7 @@ engine, because it hangs a tick or takes the process down, list it under
   "skips": {
     "pull-self-hangs": {
       "why": "pull(self) loops the processor forever; tracked in <issue>",
-      "tests": ["MOVE-PULL-007:self"]
+      "tests": ["MOVE-PULL-011:self"]
     }
   }
 }

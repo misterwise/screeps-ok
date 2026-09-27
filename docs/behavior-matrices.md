@@ -2387,19 +2387,20 @@ checks both. Each definition has these fields, in this order:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `creep.move(direction)` ownership, caller busy state, body-part
-  requirements (`MOVE`), fatigue, and argument validity (direction
-  constant).
+  `creep.move(target)` ownership, caller busy state, range of a creep
+  target, fatigue, body-part requirements (`MOVE`), and argument validity
+  (direction constant).
 - `Exclusions`
-  Collision resolution, owned by `MOVE-COLLISION-*`. Pulling/`move(creep)`
-  overload, owned by `MOVE-PULL-VALIDATION`. Busy/fatigue and
+  Collision resolution, owned by `MOVE-COLLISION-*`. Busy/fatigue and
   fatigue/no-bodypart are excluded because spawning creeps do not accrue
   fatigue and fatigue cannot be generated without MOVE parts through public
-  movement state.
+  movement state; range/invalid-args because the argument is a creep or a
+  direction, not both.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → fatigue →
-  body-part availability → direction argument validity. The executable case
-  list lives in `src/matrices/move-basic-validation.ts`.
+  Vanilla checks a creep target's range before fatigue and body parts
+  (`game/creeps.js:135-138`), so an adjacent creep target returns `OK` from
+  a fatigued or MOVE-less creep. The executable case list lives in
+  `src/matrices/move-basic-validation.ts`.
 
 ### MOVE-PULL-VALIDATION
 
@@ -2414,14 +2415,15 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.pull(target)` ownership, caller busy state, target validity
-  (target not a creep, or target is self), and range.
+  (target not a creep, the creep itself, or a spawning creep), and range.
 - `Exclusions`
   Pull-pact resolution and fatigue propagation, owned by
-  `MOVE-PULL-001..010`.
+  `MOVE-PULL-001..010`. The three invalid-target forms exclude each other,
+  and self/range because the creep is never out of its own range.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → busy → target validity
-  → range. The executable case list lives in
-  `src/matrices/move-pull-validation.ts`.
+  Vanilla rejects all three invalid-target forms in one expression before
+  the range check (`game/creeps.js:1102-1109`). The executable case list
+  lives in `src/matrices/move-pull-validation.ts`.
 
 ### PICKUP-VALIDATION
 

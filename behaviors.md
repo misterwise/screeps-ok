@@ -86,18 +86,8 @@ conformance test or one generated test family.
   movement semantics, including spawned power creeps.
 - `MOVE-BASIC-002` `behavior` `verified_vanilla`
   `move()` into a wall tile returns OK but the creep does not move.
-- `MOVE-BASIC-003` `behavior` `verified_vanilla`
-  `move()` returns `ERR_TIRED` when the creep's fatigue is greater than zero.
-- `MOVE-BASIC-004` `behavior` `verified_vanilla`
-  `move()` returns `ERR_NO_BODYPART` when the creep has no active MOVE parts.
-- `MOVE-BASIC-005` `behavior` `verified_vanilla`
-  `move()` returns `ERR_INVALID_ARGS` when given a value that is not a valid
-  Screeps direction constant.
 - `MOVE-BASIC-006` `behavior` `verified_vanilla`
   `move(targetCreep)` on an adjacent creep returns `OK`.
-- `MOVE-BASIC-007` `behavior` `verified_vanilla`
-  `move(targetCreep)` returns `ERR_NOT_IN_RANGE` when the target creep is not
-  adjacent.
 - `MOVE-BASIC-008` `behavior` `verified_vanilla`
   `moveByPath()` moves the creep one step along a provided path array of path
   step objects.
@@ -136,11 +126,6 @@ conformance test or one generated test family.
   `moveTo()` returns `ERR_NO_BODYPART` when the creep has no MOVE parts.
 - `MOVE-BASIC-022` `behavior` `verified_vanilla`
   `moveTo()` returns `ERR_INVALID_TARGET` for invalid target arguments.
-- `MOVE-BASIC-023` `behavior` `verified_vanilla`
-  `move()` returns `ERR_NOT_OWNER` when called on a creep the player does not
-  own.
-- `MOVE-BASIC-024` `behavior` `verified_vanilla`
-  `move()` returns `ERR_BUSY` when the creep is still spawning.
 - `MOVE-BASIC-025` `behavior` `verified_vanilla`
   `move(targetCreep)` moves the calling creep one tile toward the target
   creep's position.
@@ -148,9 +133,13 @@ conformance test or one generated test family.
   `moveByPath()` returns `ERR_TIRED` when the creep's fatigue is greater than
   zero.
 - `MOVE-BASIC-027` `matrix` `verified_vanilla`
-  `creep.move(direction)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, body-part
-  requirements, fatigue, and argument validity.
+  `creep.move(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:range` the target is a creep that isn't
+  adjacent, `ERR_NOT_IN_RANGE`; `:fatigue` its fatigue is above 0,
+  `ERR_TIRED`; `:noBodypart` it has no active MOVE part, `ERR_NO_BODYPART`;
+  `:invalidArgs` the target is neither a creep nor a direction constant,
+  `ERR_INVALID_ARGS`.
 
 Coverage Notes
 - `move()` into an occupied tile is owned by the collision resolution facet
@@ -184,7 +173,7 @@ Coverage Notes
 
 Coverage Notes
 - The `ERR_TIRED` return code from `move()` when fatigue > 0 is owned by
-  `MOVE-BASIC-003`, not this section.
+  `MOVE-BASIC-027:fatigue`, not this section.
 
 ### 1.3 Roads
 - `ROAD-FATIGUE-001` `behavior` `verified_vanilla`
@@ -242,16 +231,10 @@ Coverage Notes
 - `MOVE-PULL-003` `behavior` `verified_vanilla`
   When a pull completes, the pulled creep moves into the puller's previous
   tile as the puller moves.
-- `MOVE-PULL-004` `behavior` `verified_vanilla`
-  `pull()` returns `ERR_NOT_IN_RANGE` when the target is not adjacent.
 - `MOVE-PULL-005` `behavior` `verified_vanilla`
   The pulling creep accumulates fatigue for both itself and the pulled creep.
 - `MOVE-PULL-006` `behavior` `verified_vanilla`
   Pull can chain through multiple creeps in a train.
-- `MOVE-PULL-007` `behavior` `verified_vanilla`
-  `pull()` returns `ERR_INVALID_TARGET` for an invalid target: `:self` (pull
-  yourself), `:nonCreep` (pull a structure), `:spawning` (pull a creep that is
-  still spawning).
 - `MOVE-PULL-008` `behavior` `verified_vanilla`
   `pull()` on an adjacent enemy creep returns `OK`; cross-owner pulling is
   permitted.
@@ -262,9 +245,11 @@ Coverage Notes
   `pull()` returns `OK` when the puller has fatigue > 0, but the pull does not
   resolve because the puller cannot move.
 - `MOVE-PULL-011` `matrix` `verified_vanilla`
-  `creep.pull(target)` failure return codes and precedence match the
-  canonical validation matrix for ownership, caller busy state, target
-  validity, and range.
+  `creep.pull(target)` returns the first failing check's code, in this
+  order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
+  it is spawning, `ERR_BUSY`; `:invalidTarget` the target isn't a creep,
+  `:self` it is the creep itself, or `:spawningTarget` it is spawning,
+  `ERR_INVALID_TARGET`; `:range` it isn't adjacent, `ERR_NOT_IN_RANGE`.
 - `MOVE-PULL-012` `behavior` `reported`
   When the puller dies from `ticksToLive === 1` on the same tick a pull
   resolves, the pull still completes — the pulled creep moves into the

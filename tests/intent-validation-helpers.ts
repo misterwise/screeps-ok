@@ -20,7 +20,7 @@ export async function spawnBusyCreep(shard: ShardFixture, options: BusyCreepOpti
 	const name = options.name ?? 'Busy';
 	const body = options.body ?? [MOVE];
 
-	await shard.placeStructure(roomName, {
+	const spawnId = await shard.placeStructure(roomName, {
 		pos: [25, 25],
 		structureType: STRUCTURE_SPAWN,
 		owner,
@@ -36,7 +36,7 @@ export async function spawnBusyCreep(shard: ShardFixture, options: BusyCreepOpti
 	await shard.tick();
 
 	const rc = await shard.runPlayer(owner, code`
-		Object.values(Game.spawns)[0].spawnCreep(${body}, ${name})
+		Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name})
 	`);
 	if (rc !== 0) throw new Error(`spawnBusyCreep: spawnCreep returned ${rc}`);
 
