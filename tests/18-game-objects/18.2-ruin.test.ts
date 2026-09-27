@@ -5,8 +5,7 @@ import {
 	RESOURCE_ENERGY,
 	RUIN_DECAY, RUIN_DECAY_STRUCTURES,
 	FIND_RUINS, FIND_DROPPED_RESOURCES, ATTACK_POWER,
-	STRUCTURE_CONTAINER, STRUCTURE_WALL,
-	body,
+	STRUCTURE_CONTAINER, body,
 	STRUCTURE_POWER_BANK,
 } from '../../src/index.js';
 
@@ -101,7 +100,6 @@ describe('Ruin', () => {
 			Game.getObjectById(${creepId}).withdraw(Game.getObjectById(${ruinId}), RESOURCE_ENERGY, 10)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
 		expect(creep.store.energy).toBe(10);

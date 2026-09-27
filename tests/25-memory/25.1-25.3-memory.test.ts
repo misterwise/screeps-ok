@@ -46,8 +46,7 @@ describe('Memory', () => {
 		const raw = await shard.runPlayer('p1', code`
 			RawMemory.get()
 		`) as string;
-		expect(raw).toContain('testKey');
-		expect(raw).toContain('testValue');
+		expect(JSON.parse(raw)).toEqual({ testKey: 'testValue' });
 	});
 
 	test('MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB', async ({ shard }) => {
@@ -145,8 +144,7 @@ describe('Memory', () => {
 		`) as { replaced: unknown; existing: unknown; raw: string };
 		expect(result.replaced).toBe(true);
 		expect(result.existing).toBeUndefined();
-		expect(result.raw).toContain('replaced');
-		expect(result.raw).not.toContain('original');
+		expect(JSON.parse(result.raw)).toEqual({ replaced: true });
 	});
 });
 
@@ -334,11 +332,12 @@ describe('Foreign segments', () => {
 		// Foreign segment becomes available after the request is processed.
 		const result = await shard.runPlayer('p1', code`
 			const fs = RawMemory.foreignSegment;
-			fs ? ({ username: fs.username, id: fs.id, data: fs.data }) : null
-		`) as { username: string; id: number; data: string } | null;
-		expect(result).not.toBeNull();
-		expect(result!.id).toBe(1);
-		expect(result!.data).toBe('shared-data');
+			({
+				segment: fs ? { username: fs.username, id: fs.id, data: fs.data } : null,
+				owner: Game.rooms['W1N1'].find(FIND_HOSTILE_CREEPS)[0].owner.username,
+			})
+		`) as { segment: unknown; owner: string };
+		expect(result.segment).toEqual({ username: result.owner, id: 1, data: 'shared-data' });
 	});
 
 	test('RAWMEMORY-FOREIGN-003 setPublicSegments controls which segments are exposed', async ({ shard }) => {

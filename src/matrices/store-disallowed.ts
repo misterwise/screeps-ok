@@ -1,5 +1,6 @@
 import {
 	STRUCTURE_NUKER, STRUCTURE_POWER_SPAWN,
+	RESOURCE_HYDROGEN, RESOURCE_OXYGEN, RESOURCE_ZYNTHIUM, RESOURCE_GHODIUM, RESOURCE_POWER, RESOURCE_OPS,
 } from '../index.js';
 
 // Pre-bound restricted stores: structures whose allowed resource set is fixed
@@ -21,7 +22,7 @@ export const storeDisallowedCases: readonly StoreDisallowedCase[] = [
 		capability: 'nuke',
 		rcl: 8,
 		// Nuker accepts energy + G only. Sample a mineral, a boost, power, and a commodity.
-		disallowed: ['H', 'O', 'Z', 'power', 'ops'],
+		disallowed: [RESOURCE_HYDROGEN, RESOURCE_OXYGEN, RESOURCE_ZYNTHIUM, RESOURCE_POWER, RESOURCE_OPS],
 	},
 	{
 		label: 'powerSpawn',
@@ -29,6 +30,6 @@ export const storeDisallowedCases: readonly StoreDisallowedCase[] = [
 		capability: 'powerSpawn',
 		rcl: 8,
 		// Power spawn accepts energy + power only. Sample minerals (including G) and a commodity.
-		disallowed: ['H', 'O', 'Z', 'G', 'ops'],
+		disallowed: [RESOURCE_HYDROGEN, RESOURCE_OXYGEN, RESOURCE_ZYNTHIUM, RESOURCE_GHODIUM, RESOURCE_OPS],
 	},
 ];

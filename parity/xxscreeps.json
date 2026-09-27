@@ -98,6 +98,12 @@
 			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28).",
 			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
 		},
+		"power-creep-suicide-uncapped": {
+			"actual": "`PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep.",
+			"expected": "Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives.",
+			"why": "Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does.",
+			"tests": ["INTENT-LIMIT-002:suicidePowerCreep"]
+		},
 		"portal-ignores-power-creeps": {
 			"actual": "The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is.",
 			"expected": "Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep.",

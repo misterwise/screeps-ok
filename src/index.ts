@@ -165,3 +165,4 @@ export {
 
 // Helpers
 export { body } from './helpers/body.js';
+export { powerOps, powerDuration } from './helpers/power.js';

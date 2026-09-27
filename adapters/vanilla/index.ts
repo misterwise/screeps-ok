@@ -1317,10 +1317,11 @@ class VanillaAdapter implements ScreepsOkAdapter {
 		// the resource type (e.g. `.energy = 200`). The player-side `.amount`
 		// getter derives from that field (engine game/resources.js:37). Do
 		// not store a duplicate `amount` field — it would go stale as the
-		// engine mutates `[resourceType]` during pickup/decay.
+		// engine mutates `[resourceType]` during pickup/decay. Every pile is
+		// type `energy`, whatever its resource (`_create-energy.js:44`).
 		const result = await this.db['rooms.objects'].insert({
 			room: roomName,
-			type: spec.resourceType === 'energy' ? 'energy' : 'resource',
+			type: 'energy',
 			x: spec.pos[0],
 			y: spec.pos[1],
 			resourceType: spec.resourceType,
@@ -1372,8 +1373,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			spawning: false,
 		});
 
-		// The engine reads power creeps from db['users.power_creeps'], not
-		// from users.powerCreeps. Insert a matching record there.
+		// The roster record `createPowerCreep.js` inserts, as `spawnPowerCreep.js` leaves it. It carries no
+		// position: the player getters merge it under the room object, so a dead creep would keep its room.
 		await this.db['users.power_creeps'].insert({
 			_id: result._id,
 			user: userId,
@@ -1381,7 +1382,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			className: 'operator',
 			level: pcLevel,
 			hitsMax,
-			hits: hitsMax,
 			store: spec.store ?? {},
 			storeCapacity,
 			powers,
@@ -1389,9 +1389,6 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			shard: '',
 			spawnCooldownTime: null,
 			deleteTime: null,
-			room: roomName,
-			x: spec.pos[0],
-			y: spec.pos[1],
 		});
 
 		await this.db.rooms.update({ _id: roomName }, { $set: { active: true } });

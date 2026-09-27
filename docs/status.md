@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3426%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2938%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-167-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3426%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,11 +17,15 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [3426](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 17:52 UTC |
-| 🟡 | **xxscreeps** | [2938](#xxscreeps-passing-tests) | [167](#xxscreeps-expected-failures) | — | [338](#xxscreeps-skipped-tests) | 2026-09-27 17:52 UTC |
+| 🔴 | **xxscreeps** | [2938](#xxscreeps-passing-tests) | [167](#xxscreeps-expected-failures) | — | [338](#xxscreeps-skipped-tests) | 2026-09-27 17:52 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
+
+## xxscreeps unexpected failures
+
+- `power-creep-suicide-uncapped` registers `INTENT-LIMIT-002:suicidePowerCreep`, which no test passed or failed
 
 ## vanilla expected failures
 
@@ -130,7 +134,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 60 expected-failure classifications against vanilla's canonical behavior, covering 167 tests. That includes 57 open parity gaps covering 160 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 61 expected-failure classifications against vanilla's canonical behavior, covering 167 tests. That includes 58 open parity gaps covering 160 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -152,6 +156,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `creep-combat-rejects-power-creep-targets` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:141-160`) take `Creep, Structure` and `checkHeal` (`:169-176`) `Creep` only, so a power creep target returns ERR_INVALID_TARGET. | Vanilla `game/creeps.js:607-611`, `:640-644` and `:689-693` accept a power creep wherever they accept a creep, and the processors damage or heal it. | Found 2026-09-27 when COMBAT-MELEE-007, COMBAT-RANGED-005 and COMBAT-HEAL-003 got a case per target class their rows name. The tower's copy is `tower-targets-creeps-and-destructible-only`. | [3](#xxscreeps-gap-creep-combat-rejects-power-creep-targets) |
 | `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions (Decision 28). | [11](#xxscreeps-gap-renew-recycle-target-creep-checked-late) |
 | `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28). | [8](#xxscreeps-gap-spawn-creep-accepts-non-object-options) |
+| `power-creep-suicide-uncapped` | `PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep. | Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives. | Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does. | 0 |
 | `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | [1](#xxscreeps-gap-portal-ignores-power-creeps) |
 | `invader-core-collapses-one-tick-early` | The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:180-197`) remove the core and release its room's controller once `optionalExpiryTime(#collapseTime)` reads 0 against processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so both land a tick before the timer expires. | Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh. | Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Same processor clock convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-invader-core-collapses-one-tick-early) |
 | `event-log-kept-while-room-sleeps` | A room's event log is reset only when its processor runs (`engine/processor/room.ts:105-107`); a room that sleeps through a tick keeps exposing the previous processed tick's entries, so an attack's EVENT_ATTACK still reads two ticks later with nothing done in between. | Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events. | Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick. | [1](#xxscreeps-gap-event-log-kept-while-room-sleeps) |
@@ -346,6 +351,12 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeBusy spawnCreep() validation returns the canonical code`
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeRcl spawnCreep() validation returns the canonical code`
 - `StructureSpawn SPAWN-CREATE-014:invalidOptionsBeforeNotEnough spawnCreep() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-power-creep-suicide-uncapped">
+<summary><code>power-creep-suicide-uncapped</code> — 0 tests</summary>
+
 
 </details>
 

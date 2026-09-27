@@ -461,8 +461,6 @@ export function snapshotObject(
 		case 'portal':
 			return snapshotStructure(obj, resolver, gameTime, constants);
 		case 'energy':
-		case 'power':
-		case 'resource':
 			return snapshotDroppedResource(obj);
 		case 'tombstone':
 			return snapshotTombstone(obj, gameTime);
@@ -487,7 +485,7 @@ const findTypeMap: Record<string, string[]> = {
 	deposits: ['deposit'],
 	tombstones: ['tombstone'],
 	ruins: ['ruin'],
-	droppedResources: ['energy', 'power', 'resource'],
+	droppedResources: ['energy'],
 };
 
 export function snapshotRoomObjects(

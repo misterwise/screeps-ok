@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_NOT_ENOUGH_RESOURCES, ERR_RCL_NOT_ENOUGH,
 	STRUCTURE_POWER_SPAWN, POWER_SPAWN_ENERGY_RATIO, POWER_SPAWN_ENERGY_CAPACITY, POWER_SPAWN_POWER_CAPACITY,
-	POWER_INFO, PWR_OPERATE_POWER, RESOURCE_OPS, RESOURCE_POWER,
+	POWER_INFO, PWR_OPERATE_POWER, RESOURCE_OPS, RESOURCE_POWER, powerDuration, powerOps,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 
@@ -47,7 +47,7 @@ describe('StructurePowerSpawn processPower', () => {
 		await shard.placePowerCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			powers: { [PWR_OPERATE_POWER]: level },
-			store: { [RESOURCE_OPS]: operatePower.ops! },
+			store: { [RESOURCE_OPS]: powerOps(PWR_OPERATE_POWER, level) },
 		});
 		const useRc = await shard.runPlayer('p1', code`
 			Object.values(Game.powerCreeps)[0].usePower(PWR_OPERATE_POWER, Game.getObjectById(${psId}))
@@ -81,7 +81,7 @@ describe('StructurePowerSpawn processPower', () => {
 		const stored = operatePower.effect![level - 1];
 		const psId = await operatedPowerSpawn(shard, level, stored);
 
-		await shard.tick(operatePower.duration! - 2);
+		await shard.tick(powerDuration(PWR_OPERATE_POWER, level) - 2);
 		const [ticksRemaining, gplBefore] = await shard.runPlayer('p1', code`
 			[Game.getObjectById(${psId}).effects[0].ticksRemaining, Game.gpl.progress]
 		`) as [number, number];

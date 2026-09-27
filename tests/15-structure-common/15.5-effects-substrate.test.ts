@@ -13,7 +13,7 @@ import { describe, test, expect, code,
 	OK,
 	FIND_RUINS,
 	STRUCTURE_TOWER,
-	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, POWER_INFO,
+	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, powerDuration,
 } from '../../src/index.js';
 
 type EffectEntry = { power: number; effect: number; level: number; ticksRemaining: number };
@@ -190,7 +190,7 @@ describe('15.5 Effects Substrate', () => {
 		expect(initial.count).toBe(1);
 		const fullDuration = initial.ticksRemaining;
 		// Anchored on the use tick; read two ticks later.
-		expect(fullDuration).toBe(POWER_INFO[PWR_DISRUPT_TOWER].duration! - 2);
+		expect(fullDuration).toBe(powerDuration(PWR_DISRUPT_TOWER, 1) - 2);
 
 		// Let the entry decay so a refresh is observable.
 		await shard.tick();

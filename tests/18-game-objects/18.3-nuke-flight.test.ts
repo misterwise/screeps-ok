@@ -29,7 +29,6 @@ describe('Nuke flight', () => {
 			nuker.launchNuke(new RoomPosition(25, 25, 'W2N1'))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		// Read from p2 who owns the target room and thus has visibility.
 		const nukeInfo = await shard.runPlayer('p2', code`
@@ -43,7 +42,8 @@ describe('Nuke flight', () => {
 		`) as { launchRoomName: string; timeToLand: number; x: number; y: number } | null;
 		expect(nukeInfo).not.toBeNull();
 		expect(nukeInfo!.launchRoomName).toBe('W1N1');
-		expect(nukeInfo!.timeToLand).toBe(NUKE_LAND_TIME - 2);
+		// Launched with NUKE_LAND_TIME to go; read one tick later.
+		expect(nukeInfo!.timeToLand).toBe(NUKE_LAND_TIME - 1);
 		expect(nukeInfo!.x).toBe(25);
 		expect(nukeInfo!.y).toBe(25);
 	});
@@ -69,23 +69,11 @@ describe('Nuke flight', () => {
 			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
-		const ttl1 = await shard.runPlayer('p2', code`
-			const nukes = Game.rooms['W2N1'] ? Game.rooms['W2N1'].find(FIND_NUKES) : [];
-			nukes.length > 0 ? nukes[0].timeToLand : null
-		`) as number | null;
-		expect(ttl1).not.toBeNull();
-
-		await shard.tick(3);
-
-		// runPlayer is another tick, so total elapsed since ttl1 read = 3 + 1 = 4.
-		const ttl2 = await shard.runPlayer('p2', code`
-			const nukes = Game.rooms['W2N1'] ? Game.rooms['W2N1'].find(FIND_NUKES) : [];
-			nukes.length > 0 ? nukes[0].timeToLand : null
-		`) as number | null;
-		expect(ttl2).not.toBeNull();
-		expect(ttl2).toBe(ttl1! - 4);
+		const timeToLand = code`Game.rooms['W2N1'].find(FIND_NUKES).map(nuke => nuke.timeToLand)`;
+		const readings = [];
+		for (let i = 0; i < 3; i++) readings.push(await shard.runPlayer('p2', timeToLand));
+		expect(readings).toEqual([[NUKE_LAND_TIME - 1], [NUKE_LAND_TIME - 2], [NUKE_LAND_TIME - 3]]);
 	});
 
 	for (const row of nukeFlightVisibilityCases) {
@@ -109,7 +97,6 @@ describe('Nuke flight', () => {
 				Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
 			`);
 			expect(rc).toBe(OK);
-			await shard.tick();
 
 			const observed = await shard.runPlayer(row.observer, code`
 				const room = Game.rooms[${row.roomName}];

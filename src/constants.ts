@@ -24,10 +24,12 @@ export const POWER_INFO: Record<number, {
 	className: string;
 	level: number[];
 	cooldown: number;
-	duration?: number;
+	/** Per level for some powers. */
+	duration?: number | number[];
 	effect?: number[];
 	range?: number;
-	ops?: number;
+	/** Per level for `PWR_DISRUPT_TERMINAL`. */
+	ops?: number | number[];
 	energy?: number;
 	period?: number;
 }> = C.POWER_INFO;

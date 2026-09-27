@@ -176,8 +176,10 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Restricted stores and shared-capacity stores
 - `Verification Notes`
-  Extension capacity varies by controller level and is part of this family. The
-  executable case list lives in `src/matrices/store-single.ts`.
+  Each row runs every case: the three fixed-capacity structures and an
+  extension at each controller level 0-8, level 0 an unowned room, read after
+  the engine's tick sets its capacity. The executable case lists live in
+  `src/matrices/store-single.ts`.
 
 ### STORE-RESTRICTED
 
@@ -197,8 +199,11 @@ checks both. Each definition has these fields, in this order:
   Open stores and single-resource stores
 - `Verification Notes`
   Lab remains part of this family even though its allowed mineral type binds
-  on the first deposit; `STORE-BIND-002` runs that binding for `H`, `O` and
-  `G`, a list inline in its test. The executable case lists live in
+  on the first deposit: its cases hold hydrogen, since an unbound lab's
+  `getUsedCapacity()` is its total (`utils.js:671-674`), and `STORE-BIND-002`
+  runs that binding for `H`, `O` and `G`, a list inline in its test.
+  `STORE-RESTRICTED-002`, `-003` and `-005` run each structure. The
+  executable case lists live in
   `src/matrices/store-restricted.ts` and, for the null capacities of
   resources a nuker or power spawn never takes (`STORE-RESTRICTED-004`),
   `src/matrices/store-disallowed.ts`.
@@ -279,8 +284,8 @@ checks both. Each definition has these fields, in this order:
   `upgradeBlocked` (`attackController`), `safeMode`, and a power creep's
   wall-clock `spawnCooldownTime`
 - `Verification Notes`
-  No case list enumerates the family yet: the test
-  (`tests/23-store-api/23.5-timers.test.ts`) runs `runReaction` only.
+  Each action is set up to succeed but for its cooldown, placed at `1`. The
+  executable case list lives in `src/matrices/timer-cooldown.ts`.
 
 ### TIMER-SAFEMODE
 
@@ -443,20 +448,24 @@ checks both. Each definition has these fields, in this order:
   table, overwrite semantics, and `cancelOrder(methodName)` behavior.
 - `Verification Notes`
   This family is a pairwise exclusion table, not one total global ordering.
-  Current official exclusions are:
-  `rangedHeal` blocks `heal`;
-  `attackController` blocks `rangedHeal`, `heal`;
-  `dismantle` blocks `attackController`, `rangedHeal`, `heal`;
-  `repair` blocks `dismantle`, `attackController`, `rangedHeal`, `heal`;
-  `build` blocks `repair`, `dismantle`, `attackController`, `rangedHeal`,
-  `heal`;
-  `attack` blocks `build`, `repair`, `dismantle`, `attackController`,
-  `rangedHeal`, `heal`;
-  `harvest` blocks `attack`, `build`, `repair`, `dismantle`,
-  `attackController`, `rangedHeal`, `heal`;
-  `rangedMassAttack` blocks `build`, `repair`, `rangedHeal`;
-  `rangedAttack` blocks `rangedMassAttack`, `build`, `repair`, `rangedHeal`.
-  The executable case list lives in
+  `intents.js` skips a method when any method it lists was called too:
+  `heal` blocks `rangedHeal`;
+  `rangedHeal` and `heal` block `attackController`;
+  `attackController`, `rangedHeal` and `heal` block `dismantle`;
+  `dismantle`, `attackController`, `rangedHeal` and `heal` block `repair`;
+  `repair`, `dismantle`, `attackController`, `rangedHeal` and `heal` block
+  `build`;
+  `build`, `repair`, `dismantle`, `attackController`, `rangedHeal` and
+  `heal` block `attack`;
+  `attack`, `build`, `repair`, `dismantle`, `attackController`, `rangedHeal`
+  and `heal` block `harvest`;
+  `build`, `repair` and `rangedHeal` block `rangedMassAttack`;
+  `rangedMassAttack`, `build`, `repair` and `rangedHeal` block
+  `rangedAttack`.
+  Each pair checks that the blocker's own effect landed. The
+  `attackController` pairs run in another player's room, where a source
+  refuses harvest, so `attackController` blocking `harvest` harvests a
+  deposit. The executable case list lives in
   `src/matrices/intent-creep-priority.ts`.
 
 ### CTRL-STRUCTLIMIT
@@ -1252,8 +1261,7 @@ checks both. Each definition has these fields, in this order:
 
 - `Catalog Entries`
   `POWER-OPERATE-001`, `POWER-OPERATE-002`, `POWER-DISRUPT-001`,
-  `POWER-DISRUPT-002`, `POWER-REGEN-001`, `POWER-REGEN-002`,
-  `POWER-COMBAT-001`, `POWER-GENERATE-001`, `TOWER-POWER-001`,
+  `POWER-DISRUPT-002`, `POWER-REGEN-002`, `POWER-COMBAT-001`, `POWER-GENERATE-001`, `TOWER-POWER-001`,
   `SOURCE-POWER-001`, `MINERAL-POWER-001`
 - `Canonical Source`
   `POWER_INFO` and the corresponding power processors.
@@ -1266,7 +1274,17 @@ checks both. Each definition has these fields, in this order:
   Target-validity matrices and non-table side effects
 - `Verification Notes`
   This family is intentionally table-driven; target acceptance stays separate.
-  Each row's test reads its power's `POWER_INFO` entry directly.
+  `POWER-OPERATE-002`, `POWER-DISRUPT-002` and `POWER-REGEN-002` run each
+  power of their group from `src/matrices/power-costs.ts` (each level of
+  `PWR_DISRUPT_TERMINAL`, whose ops vary by level): a power creep at exactly
+  `range` from a target the processor accepts pays the ops and starts the
+  cooldown, and one a tile further gets `ERR_NOT_IN_RANGE`, where the room has
+  such a tile (not for range 50). `POWER-OPERATE-001` and `POWER-DISRUPT-001`
+  run `src/matrices/power-effects.ts`: the four operate magnitudes no target
+  row owns at each level, and each disrupt duration (per level where it
+  varies), read from the effect's `ticksRemaining` a tick after the use. `POWER-COMBAT-001` runs each level of
+  `PWR_SHIELD` and `PWR_FORTIFY`; a level-1 fortify lasts one tick, so its
+  effect has ended by the next read.
 
 ### POWER-TARGETS
 
@@ -1437,9 +1455,9 @@ checks both. Each definition has these fields, in this order:
   nothing a player reads. Blocking priority between different methods
   (`INTENT-CREEP-001`, `-004`).
 - `Verification Notes`
-  No case list enumerates the methods yet: the test
-  (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) calls
-  `attack` twice.
+  Each method is called on two targets (or with two directions, resources or
+  texts); the first shows no effect and the second does. The executable case
+  list lives in `src/matrices/intent-creep-orders.ts`.
 
 ### INTENT-CREEP-CANCEL
 
@@ -1460,25 +1478,35 @@ checks both. Each definition has these fields, in this order:
   `notifyWhenAttacked`, whose intent sets nothing a player reads; overwrite
   behavior and cross-method priority blocking
 - `Verification Notes`
-  No case list enumerates the intents yet: the tests
-  (`tests/24-intent-resolution/24.1b-intent-overwrite.test.ts`) cancel a
-  queued `attack`, and cancel `attack` with nothing queued.
+  Each intent is queued and canceled, then queued again uncanceled on the next
+  tick, whose effect shows the cancel removed a working call. The executable
+  case list lives in `src/matrices/intent-creep-orders.ts`; `:notFound` and
+  `:moveTo` are inline in the test.
 
 ### INTENT-LIMIT
 
 - `Catalog Entries`
   `INTENT-LIMIT-001`, `INTENT-LIMIT-002`
 - `Canonical Source`
-  Official per-tick limit checks for market and power-creep management intents.
+  The global intents vanilla queues with a cap of 50:
+  `@screeps/engine/src/game/market.js:104,168,187` and
+  `game/power-creeps.js:187,200,213,242,371,408`, through the runtime's
+  `pushByName`, which drops a push past the cap and still lets the caller
+  return `OK`.
 - `Dimensions`
-  capped intent family, tick usage count
+  capped intent, in `src/matrices/intent-limits.ts`
 - `Applicability`
-  Market and power-creep management APIs with explicit per-tick caps
+  The nine intents the rows list. Each case makes 49 filler calls on one
+  target, the 50th on a second and the 51st on a third, and reads the second
+  and third a tick later.
 - `Exclusions`
-  Uncapped APIs and general creep/structure intents
+  `Game.market.deal`, capped at `MARKET_MAX_DEALS_PER_TICK` and returning
+  `ERR_FULL` past it (`MARKET-DEAL-003:dealCap`); `createOrder`, whose limit is
+  the player's open orders (`MARKET-ORDER-002`); creep and structure intents,
+  which a tick holds one of per object.
 - `Verification Notes`
-  `INTENT-LIMIT-001` covers the limit values; `INTENT-LIMIT-002` covers the
-  overflow outcome.
+  The market cases need `market`, the roster cases `powerCreepAccountApi`;
+  `suicidePowerCreep` places its power creeps and needs `powerCreeps` only.
 
 ### MEMORY-ACCESSORS
 

@@ -1,4 +1,5 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, ATTACK_POWER, BODYPART_HITS, BODYPART_COST, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CARRY_CAPACITY, FIND_TOMBSTONES, RESOURCE_ENERGY } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, body, BODYPART_HITS, BODYPART_COST, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CREEP_PART_MAX_ENERGY, CARRY_CAPACITY, FIND_TOMBSTONES, RESOURCE_ENERGY, RESOURCE_HYDROGEN } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 
 describe('Tombstone', () => {
 	test('TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store', async ({ shard }) => {
@@ -9,11 +10,7 @@ describe('Tombstone', () => {
 				{ name: 'W2N1', rcl: 1, owner: 'p2' },
 			],
 		});
-		// Target with 1 TOUGH (100 HP) — one ATTACK hit (30 damage) won't kill.
-		// Use a weak target that dies in one hit: 1 part = 100 HP, ATTACK_POWER = 30.
-		// Need target with <= ATTACK_POWER HP. Can't have < 1 part.
-		// Instead: use 1 TOUGH target and 4 ATTACK parts (4 * 30 = 120 > 100).
-		// 7 ATTACK parts = 210 damage, enough to kill a 2-part creep (200 HP)
+		// 7 ATTACK parts deal 210, past the 2-part victim's 200 hits.
 		const attackerId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
 			body: body(7, ATTACK, MOVE),
@@ -22,7 +19,7 @@ describe('Tombstone', () => {
 			pos: [25, 26], owner: 'p2',
 			body: [CARRY, MOVE],
 			name: 'victim',
-			store: { energy: 30 },
+			store: { [RESOURCE_HYDROGEN]: 30 },
 		});
 		await shard.tick();
 
@@ -32,29 +29,12 @@ describe('Tombstone', () => {
 			({ rc, time: Game.time })
 		`) as { rc: number; time: number };
 		expect(attackResult.rc).toBe(OK);
-		const attackTime = attackResult.time;
+		expect(await shard.getObject(targetId)).toBeNull();
 
-		await shard.tick();
-		// Allow an extra tick for destruction cleanup if needed
-		await shard.tick();
-
-		// Target should be dead
-		const target = await shard.getObject(targetId);
-		expect(target).toBeNull();
-
-		// Bracket the expected deathTime with bot-visible Game.time
-		const timeAfterDeath = await shard.runPlayer('p1', code`Game.time`) as number;
-
-		// Find the tombstone — target was at [25, 26]
+		// The victim dies on the attack tick; its carried hydrogen stays in the store beside the corpse energy.
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		expect(tombstones.length).toBe(1);
-		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
-		expect(tomb).toBeDefined();
-		expect(tomb!.creepName).toBe('victim');
-		// 7 ATTACK parts kill the 200-hit victim on the attack tick.
-		expect(tomb!.deathTime).toBe(attackTime);
-		expect(timeAfterDeath).toBe(attackTime + 3);
-		expect(tomb!.store).toBeDefined();
+		expect(tombstones.map(t => ({ x: t.pos.x, y: t.pos.y, creepName: t.creepName, deathTime: t.deathTime, hydrogen: t.store[RESOURCE_HYDROGEN] })))
+			.toEqual([{ x: 25, y: 26, creepName: 'victim', deathTime: attackResult.time, hydrogen: 30 }]);
 	});
 
 	test('TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death', async ({ shard }) => {
@@ -79,32 +59,20 @@ describe('Tombstone', () => {
 		});
 		await shard.tick();
 
-		// Capture TTL on the attack tick to compute exact corpse energy.
-		const ttl = await shard.runPlayer('p2', code`
-			Game.creeps['carrier'].ticksToLive
+		// The TTL the attack tick reads is the one it dies with.
+		const ttl = await shard.runPlayer('p1', code`
+			const target = Game.getObjectById(${targetId});
+			Game.getObjectById(${attackerId}).attack(target);
+			target.ticksToLive
 		`) as number;
 
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
-		await shard.tick();
-		await shard.tick();
-
-		// Engine formula: lifeRate = CREEP_CORPSE_RATE * ttl / CREEP_LIFE_TIME
-		// bodyEnergy = floor(sum of BODYPART_COST[part] * lifeRate per part)
-		// tombstone.store.energy = bodyEnergy + carried
+		// Each part returns its cost at CREEP_CORPSE_RATE, scaled by the life left (_die.js:40-57).
 		const lifeRate = CREEP_CORPSE_RATE * ttl / CREEP_LIFE_TIME;
-		let bodyEnergy = 0;
-		for (const part of targetBody) {
-			bodyEnergy += BODYPART_COST[part] * lifeRate;
-		}
-		bodyEnergy = Math.floor(bodyEnergy);
-		const expectedEnergy = bodyEnergy + carriedEnergy;
+		const bodyEnergy = Math.floor(targetBody.reduce((sum, part) => sum + Math.min(CREEP_PART_MAX_ENERGY, BODYPART_COST[part] * lifeRate), 0));
 
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find(t => t.creepName === 'carrier');
-		expect(tomb).toBeDefined();
-		expect(tomb!.store[RESOURCE_ENERGY]).toBe(expectedEnergy);
+		expect(tombstones.map(t => ({ creepName: t.creepName, energy: t.store[RESOURCE_ENERGY] })))
+			.toEqual([{ creepName: 'carrier', energy: bodyEnergy + carriedEnergy }]);
 	});
 
 	test('TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0', async ({ shard }) => {
@@ -150,7 +118,7 @@ describe('Tombstone', () => {
 	// The owner-username assertion compares post-death to the live creep's
 	// owner.username captured pre-death (both resolve through the engine's
 	// user registry, so the value is engine-specific but self-consistent).
-	async function killAndReadTombstone(shard: any) {
+	async function killAndReadTombstone(shard: ShardFixture) {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -178,10 +146,8 @@ describe('Tombstone', () => {
 		await shard.runPlayer('p1', code`
 			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
 		`);
-		await shard.tick();
-		await shard.tick();
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find((t: any) => t.creepName === 'fallen');
+		const tomb = tombstones.find(t => t.creepName === 'fallen');
 		expect(tomb).toBeDefined();
 		const fields = await shard.runPlayer('p1', code`
 			(() => {
@@ -262,9 +228,9 @@ describe('Tombstone', () => {
 		expect(fields.hits).toBe(0);
 	});
 
-	test('TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * 100', async ({ shard }) => {
+	test('TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * BODYPART_HITS', async ({ shard }) => {
 		const { fields, targetBody } = await killAndReadTombstone(shard);
-		expect(fields.hitsMax).toBe(targetBody.length * 100);
+		expect(fields.hitsMax).toBe(targetBody.length * BODYPART_HITS);
 	});
 
 	test('TOMBSTONE-016 tombstone.creep.carryCapacity equals active CARRY parts times CARRY_CAPACITY', async ({ shard }) => {
@@ -299,10 +265,8 @@ describe('Tombstone', () => {
 				c.suicide();
 			})()
 		`);
-		await shard.tick();
-		await shard.tick();
 		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find((t: any) => t.creepName === 'sayer');
+		const tomb = tombstones.find(t => t.creepName === 'sayer');
 		expect(tomb).toBeDefined();
 		const saying = await shard.runPlayer('p1', code`
 			(() => {

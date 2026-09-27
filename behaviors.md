@@ -3051,8 +3051,9 @@ neighbors and no better section exists.
   `:noFreeLevels` the player has no unallocated power level,
   `ERR_NOT_ENOUGH_RESOURCES`; `:maxLevel` the creep is at
   `POWER_CREEP_MAX_LEVEL`, `ERR_FULL`; `:invalidPower` the power isn't one of
-  its class's, `ERR_INVALID_ARGS`; `:levelRequirement` the creep's level is
-  below what the power's next level requires, `ERR_FULL`.
+  its class's, `ERR_INVALID_ARGS`; `:powerMaxLevel` the power is already at
+  level 5, or `:levelRequirement` the creep's level is below what the power's
+  next level requires, `ERR_FULL`.
 
 ### 19.2 Movement & Actions `capability: powerCreeps`
 - `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
@@ -3087,8 +3088,12 @@ neighbors and no better section exists.
 
 ### 19.4 Operate Powers `capability: powerCreeps`
 - `POWER-OPERATE-001` `matrix` `verified_vanilla` `capability: powerEffects`
-  Operate power effect magnitudes match `POWER_INFO[power].effect[level]` for
-  all numeric operate powers and supported power levels.
+  At each power level, an operate power's effect has the magnitude
+  `POWER_INFO[power].effect[level-1]` gives: `PWR_OPERATE_SPAWN` multiplies a
+  creep's spawn time (rounded up), `PWR_OPERATE_STORAGE` adds to the storage's
+  capacity, `PWR_OPERATE_EXTENSION` fills that fraction of the room's
+  extension capacity from its target, and `PWR_OPERATE_CONTROLLER` adds to a
+  level 8 controller's `CONTROLLER_MAX_UPGRADE_PER_TICK`.
 - `POWER-OPERATE-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Operate power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   operate power.
@@ -3101,12 +3106,17 @@ neighbors and no better section exists.
 
 Coverage Notes
 - The production consequences of `PWR_OPERATE_FACTORY` are owned by `11.5
-  Factory Commodity Chains`.
+  Factory Commodity Chains`; the other operate powers' magnitudes by the
+  target's rows: `TOWER-POWER-001`, `LAB-RUN-003`, `LAB-REVERSE-003`,
+  `TERMINAL-SEND-002`, `TERMINAL-SEND-004`, `POWER-SPAWN-002` and
+  `OBSERVER-003`.
 
 ### 19.5 Disrupt Powers `capability: powerCreeps`
 - `POWER-DISRUPT-001` `matrix` `verified_vanilla` `capability: powerEffects`
-  Disrupt power effect values and durations match `POWER_INFO` for each disrupt
-  power and supported power level.
+  Each disrupt power's effect lasts `POWER_INFO[power].duration` ticks, the
+  level's entry where it varies by level (`PWR_DISRUPT_SPAWN`,
+  `PWR_DISRUPT_SOURCE`); `PWR_DISRUPT_TOWER`'s magnitude is
+  `TOWER-POWER-001`'s.
 - `POWER-DISRUPT-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Disrupt power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for
   each disrupt power.
@@ -3115,25 +3125,24 @@ Coverage Notes
   invalid-target behavior match the canonical power-to-target matrix.
 
 ### 19.6 Regen Powers `capability: powerCreeps`
-- `POWER-REGEN-001` `matrix` `verified_vanilla` `capability: powerEffects`
-  Regen power effect amount, period, and duration match `POWER_INFO` for each
-  regen power and supported power level.
 - `POWER-REGEN-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Regen power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   regen power.
 
 ### 19.7 Combat POWER_INFO
-- `POWER-COMBAT-001` `matrix` `verified_vanilla`
-  `PWR_SHIELD` and `PWR_FORTIFY` effect magnitudes match `POWER_INFO` for each
-  supported power level.
+- `POWER-COMBAT-001` `matrix` `verified_vanilla` `capability: powerEffects`
+  At each power level, `PWR_SHIELD` creates a rampart with
+  `POWER_INFO[PWR_SHIELD].effect[level-1]` hits, and `PWR_FORTIFY` gives its
+  target an effect lasting `POWER_INFO[PWR_FORTIFY].duration[level-1]` ticks.
 
 ### 19.7b Combat Runtime `capability: powerCreeps`
 - `POWER-COMBAT-002` `behavior` `verified_vanilla` `capability: powerEffects`
   A successful `usePower(PWR_SHIELD)` returns `OK` and creates a temporary
   rampart at the power creep's position in the same tick.
 - `POWER-COMBAT-003` `behavior` `verified_vanilla` `capability: powerEffects`
-  The rampart created by `PWR_SHIELD` is removed when the shield effect
-  expires.
+  The rampart created by `PWR_SHIELD` is removed on the tick its effect ends,
+  `POWER_INFO[PWR_SHIELD].duration` ticks after the use: it stands through that
+  tick's player code and is gone the next.
 
 ### 19.8 Generate Ops POWER_INFO
 - `POWER-GENERATE-001` `matrix` `verified_vanilla`
@@ -3444,12 +3453,14 @@ Notes
 
 ### 23.3 Single-Resource Stores
 - `STORE-SINGLE-001` `matrix` `verified_vanilla`
-  Single-resource stores accept only their configured resource type for
-  canonical single-store structures, including spawn, extension, tower, and
-  link.
+  A single-resource store (spawn, extension, tower, link) holds only energy:
+  `getCapacity(type)`, `getUsedCapacity(type)`, and `getFreeCapacity(type)`
+  return `null` for any other resource type.
 - `STORE-SINGLE-002` `matrix` `verified_vanilla`
-  Single-store capacity constants match the canonical Screeps capacities for
-  spawn, extension by RCL, tower, and link.
+  `getCapacity(RESOURCE_ENERGY)` is `SPAWN_ENERGY_CAPACITY` for a spawn,
+  `TOWER_CAPACITY` for a tower, `LINK_CAPACITY` for a link, and
+  `EXTENSION_ENERGY_CAPACITY` at the room controller's level for an extension
+  (level 0 in an unowned room).
 - `STORE-SINGLE-003` `matrix` `verified_vanilla`
   For single-resource stores, `getCapacity(type)`, `getUsedCapacity(type)`,
   and `getFreeCapacity(type)` return numeric values for the configured
@@ -3471,8 +3482,9 @@ Notes
   disallowed resource types. Labs are excluded from this behavior because
   their mineral slot binds dynamically — see `STORE-BIND-001`/`-002`.
 - `STORE-RESTRICTED-005` `matrix` `verified_vanilla`
-  For restricted stores, `getCapacity()`, `getUsedCapacity()`, and
-  `getFreeCapacity()` without a resource argument return `null`.
+  For a power spawn, a nuker, and a lab holding a mineral, `getCapacity()`,
+  `getUsedCapacity()`, and `getFreeCapacity()` without a resource argument
+  return `null`.
 - `STORE-BIND-001` `behavior` `verified_vanilla`
   On an unbound lab (no mineral stored), `store.getCapacity(mineralType)`
   returns `LAB_MINERAL_CAPACITY` for any non-energy resource — the mineral
@@ -3534,9 +3546,10 @@ Coverage Notes
   queued under `name` it returns `ERR_NOT_FOUND`.
 - `INTENT-CREEP-004` `behavior` `verified_vanilla`
   A creep's actions resolve in the engine's own fixed order, not in the order the
-  player's code called them. `drop`, `transfer`, `withdraw` and `pickup` all
-  resolve before `harvest`, so a creep that empties and refills in one tick always
-  sees the emptying first whatever the call order was.
+  player's code called them: `drop`, `transfer`, `withdraw` and `pickup` all
+  resolve before `harvest`. A creep that empties its store by `drop` or
+  `transfer` takes the tick's harvest into it, and one that fills it by
+  `withdraw` or `pickup` overflows the harvest onto its tile.
 - `INTENT-CREEP-005` `behavior` `verified_vanilla`
   `harvest` resolves before `upgradeController`, and neither blocks the
   other: a full creep that calls `upgradeController` then `harvest` in one
@@ -3555,22 +3568,26 @@ Coverage Notes
   Resources gained by `withdraw()` are not available to other actions by that
   creep until the next tick.
 - `INTENT-RESOURCE-002` `behavior` `verified_vanilla`
-  `transfer()` removes resources from the sender in the same tick, but the
-  recipient does not receive the resources until the next tick.
+  `transfer()` changes neither the sender's nor the recipient's `store` during
+  the calling tick; on the next tick the sender holds the amount less and the
+  recipient the amount more.
 - `INTENT-RESOURCE-003` `behavior` `verified_vanilla`
-  When multiple same-tick actions compete for the same stored resource, each
-  action resolves against the creep's tick-start resources.
+  A creep's calls check its tick-start store, so a `transfer()` and a `drop()`
+  that each spend its whole load both return `OK`; the tick resolves the drop
+  first, whatever the call order, and the transfer moves nothing.
 - `INTENT-RESOURCE-004` `behavior` `verified_vanilla`
-  When same-tick capacity conflicts exist between these actions, `withdraw()`
-  is preferred over `pickup()` and `pickup()` is preferred over `transfer()`.
+  When a creep's free capacity can't take both, a `withdraw()` resolves before
+  a `pickup()` called in the same tick, whatever the call order: the withdraw
+  takes its amount and the pickup the capacity left.
 
 ### 24.3 Intent Limits
 - `INTENT-LIMIT-001` `matrix` `verified_vanilla`
-  Per-tick intent caps for market and power-creep management actions match the
-  canonical Screeps limit table.
+  `Game.market.cancelOrder`, `changeOrderPrice` and `extendOrder`, and
+  `PowerCreep.create`, `spawn`, `suicide`, `delete`, `upgrade` and `rename`,
+  are each capped at 50 calls per player per tick: the 50th call in a tick
+  takes effect.
 - `INTENT-LIMIT-002` `matrix` `verified_vanilla`
-  For each capped intent family, calls beyond the per-tick cap return `OK` but
-  do not take effect.
+  A call past one of those caps returns `OK` and takes no effect.
 
 ### 24.4 Simultaneous Actions
 - `INTENT-SIMULT-001` `behavior` `verified_vanilla`

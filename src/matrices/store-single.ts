@@ -14,20 +14,18 @@ interface StoreSingleCase {
 	rcl?: RCL;
 }
 
-// Single-resource stores hold only energy with a fixed capacity.
-// store.getCapacity() returns null (no generic capacity).
-// store.getCapacity(RESOURCE_ENERGY) returns the energy capacity.
+// Single-resource stores hold only energy (`storeCapacityResource: {energy}`, store.js:28-53).
 export const storeSingleFixedCases: readonly StoreSingleCase[] = [
 	{ label: 'spawn', structureType: STRUCTURE_SPAWN, resource: RESOURCE_ENERGY, expectedCapacity: SPAWN_ENERGY_CAPACITY },
 	{ label: 'tower', structureType: STRUCTURE_TOWER, resource: RESOURCE_ENERGY, expectedCapacity: TOWER_CAPACITY },
 	{ label: 'link', structureType: STRUCTURE_LINK, resource: RESOURCE_ENERGY, expectedCapacity: LINK_CAPACITY },
 ];
 
-// Extension capacity varies by controller level.
+// An extension's capacity follows its room's controller level (extensions/tick.js:10-16); level 0 is an unowned room.
 export const storeSingleExtensionCases: readonly StoreSingleCase[] = (
 	Object.entries(EXTENSION_ENERGY_CAPACITY) as [string, number][]
 ).map(([rclStr, capacity]) => ({
-	label: `extension rcl=${rclStr}`,
+	label: `extensionRcl${rclStr}`,
 	structureType: STRUCTURE_EXTENSION,
 	resource: RESOURCE_ENERGY as typeof RESOURCE_ENERGY,
 	expectedCapacity: capacity,

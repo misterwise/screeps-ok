@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
 	OK,
 	MOVE, ATTACK, RANGED_ATTACK, HEAL, TOUGH,
-	HEAL_POWER, RANGED_ATTACK_POWER, BODYPART_HITS,
+	HEAL_POWER, RANGED_ATTACK_POWER,
 } from '../../src/index.js';
 
 describe('Simultaneous creep actions', () => {
@@ -61,8 +61,6 @@ describe('Simultaneous creep actions', () => {
 		expect(result.moveRc).toBe(OK);
 		expect(result.rmaRc).toBe(OK);
 		expect(result.healRc).toBe(OK);
-
-		await shard.tick();
 
 		// Verify all three took effect:
 
@@ -127,8 +125,6 @@ describe('Simultaneous creep actions', () => {
 		// Both return OK at intent time.
 		expect(result.healRc).toBe(OK);
 		expect(result.attackRc).toBe(OK);
-
-		await shard.tick();
 
 		// Verify attack was blocked: hostile should be undamaged.
 		const hostileAfter = await shard.expectObject(hostileId, 'creep');

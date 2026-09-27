@@ -1,4 +1,4 @@
-import { POWER_INFO, PWR_REGEN_MINERAL } from '../index.js';
+import { POWER_INFO, PWR_REGEN_MINERAL, powerDuration } from '../index.js';
 const info = POWER_INFO[PWR_REGEN_MINERAL];
 
 interface MineralPowerCase {
@@ -14,7 +14,7 @@ export const mineralPowerCases: readonly MineralPowerCase[] =
 	info.level.map((_, i) => ({
 		powerLevel: i,
 		expectedEffect: info.effect![i],
-		expectedDuration: info.duration!,
+		expectedDuration: powerDuration(PWR_REGEN_MINERAL, i + 1),
 		expectedPeriod: info.period!,
 		expectedCooldown: info.cooldown,
 	}));

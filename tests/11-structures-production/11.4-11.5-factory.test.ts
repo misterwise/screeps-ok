@@ -1,7 +1,6 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_OWNER, ERR_NOT_ENOUGH_RESOURCES, ERR_FULL, ERR_BUSY, ERR_TIRED,
-	ERR_INVALID_ARGS, ERR_INVALID_TARGET, ERR_RCL_NOT_ENOUGH,
-	COMMODITIES, STRUCTURE_FACTORY, FACTORY_CAPACITY, PWR_OPERATE_FACTORY, POWER_INFO, RESOURCE_OPS,
+	OK, ERR_BUSY, ERR_INVALID_TARGET,
+	COMMODITIES, STRUCTURE_FACTORY, FACTORY_CAPACITY, PWR_OPERATE_FACTORY, RESOURCE_OPS, powerOps,
 	RESOURCE_BATTERY, RESOURCE_COMPOSITE,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
@@ -193,7 +192,7 @@ async function operateFactory(shard: ShardFixture, factoryId: string, level: num
 	await shard.placePowerCreep('W1N1', {
 		pos: [25, 26], owner: 'p1',
 		powers: { [PWR_OPERATE_FACTORY]: level },
-		store: { [RESOURCE_OPS]: POWER_INFO[PWR_OPERATE_FACTORY].ops! },
+		store: { [RESOURCE_OPS]: powerOps(PWR_OPERATE_FACTORY, level) },
 	});
 	const rc = await shard.runPlayer('p1', code`
 		Object.values(Game.powerCreeps)[0].usePower(PWR_OPERATE_FACTORY, Game.getObjectById(${factoryId}))

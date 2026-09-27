@@ -1,20 +1,21 @@
 import { describe, test, expect, code,
-	OK,
-	MOVE, CARRY, WORK,
-	STRUCTURE_CONTAINER,
-	CARRY_CAPACITY, CONTAINER_CAPACITY,
-	FIND_DROPPED_RESOURCES, FIND_CREEPS,
+	OK, ERR_NOT_ENOUGH_RESOURCES,
+	MOVE, CARRY,
+	STRUCTURE_CONTAINER, RESOURCE_ENERGY,
+	CARRY_CAPACITY, ENERGY_DECAY,
+	FIND_DROPPED_RESOURCES,
 } from '../../src/index.js';
 
+// A pile's amount after one tick of decay.
+const decayed = (amount: number) => amount - Math.ceil(amount / ENERGY_DECAY);
+
 describe('Same-tick resource intent visibility', () => {
-	test('INTENT-RESOURCE-001 withdraw does not make resources available to same-tick actions', async ({ shard }) => {
+	test('INTENT-RESOURCE-001 withdrawn resources are not available to the same tick\'s drop', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-		// Creep with empty carry withdraws from a container, then tries to
-		// build in the same tick. The build should fail because the withdrawn
-		// energy isn't available yet.
+		const stored = 5 * CARRY_CAPACITY;
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_CONTAINER,
-			store: { energy: 500 },
+			store: { [RESOURCE_ENERGY]: stored },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
@@ -22,29 +23,51 @@ describe('Same-tick resource intent visibility', () => {
 		});
 		await shard.tick();
 
-		// Withdraw then drop in the same tick. The drop should fail because
-		// the creep's usable energy is 0 at tick start.
 		const result = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
-			const container = Game.getObjectById(${containerId});
-			const withdrawRc = creep.withdraw(container, RESOURCE_ENERGY);
-			const dropRc = creep.drop(RESOURCE_ENERGY);
-			({ withdrawRc, dropRc, energy: creep.store.energy })
-		`) as { withdrawRc: number; dropRc: number; energy: number };
-		expect(result.withdrawRc).toBe(OK);
-		// The creep sees 0 energy at tick start so drop should fail.
-		// Energy from withdraw won't be usable until next tick.
-		// However, the engine may process withdraw+drop differently.
-		// Check: did any energy actually get dropped?
-		await shard.tick();
-		const drops = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		// If no drops exist, the withdraw wasn't available for drop in the same tick.
-		// If drops exist, both resolved against tick-start state.
-		// Record whichever behavior vanilla shows.
-		expect(typeof drops.length).toBe('number');
+			const withdrawRc = creep.withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY);
+			({ withdrawRc, dropRc: creep.drop(RESOURCE_ENERGY) })
+		`);
+		expect(result).toEqual({ withdrawRc: OK, dropRc: ERR_NOT_ENOUGH_RESOURCES });
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
+		expect(creep.store.energy).toBe(2 * CARRY_CAPACITY);
+		expect(container.store.energy).toBe(stored - 2 * CARRY_CAPACITY);
+		expect(await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES)).toEqual([]);
 	});
 
-	test('INTENT-RESOURCE-002 transfer removes from sender in same tick', async ({ shard }) => {
+	test('INTENT-RESOURCE-002 transfer changes neither store during the calling tick and both the next', async ({ shard }) => {
+		await shard.ownedRoom('p1');
+		const senderId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [CARRY, MOVE],
+			store: { [RESOURCE_ENERGY]: CARRY_CAPACITY },
+		});
+		const recipientId = await shard.placeCreep('W1N1', {
+			pos: [25, 26], owner: 'p1',
+			body: [CARRY, MOVE],
+		});
+		await shard.tick();
+
+		const result = await shard.runPlayer('p1', code`
+			const sender = Game.getObjectById(${senderId});
+			const recipient = Game.getObjectById(${recipientId});
+			const rc = sender.transfer(recipient, RESOURCE_ENERGY);
+			({ rc, sender: sender.store[RESOURCE_ENERGY], recipient: recipient.store[RESOURCE_ENERGY] })
+		`);
+		expect(result).toEqual({ rc: OK, sender: CARRY_CAPACITY, recipient: 0 });
+
+		const next = await shard.runPlayer('p1', code`
+			({
+				sender: Game.getObjectById(${senderId}).store[RESOURCE_ENERGY],
+				recipient: Game.getObjectById(${recipientId}).store[RESOURCE_ENERGY],
+			})
+		`);
+		expect(next).toEqual({ sender: 0, recipient: CARRY_CAPACITY });
+	});
+
+	test('INTENT-RESOURCE-003 a transfer and a drop of the whole load both return OK and the drop resolves first', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_CONTAINER,
@@ -52,115 +75,64 @@ describe('Same-tick resource intent visibility', () => {
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1',
 			body: [CARRY, MOVE],
-			store: { energy: CARRY_CAPACITY },
+			store: { [RESOURCE_ENERGY]: CARRY_CAPACITY },
 		});
 		await shard.tick();
 
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).transfer(
-				Game.getObjectById(${containerId}), RESOURCE_ENERGY
-			)
+		// Called in the other order: the spend order is the engine's, not the calls'.
+		const result = await shard.runPlayer('p1', code`
+			const creep = Game.getObjectById(${creepId});
+			({
+				transferRc: creep.transfer(Game.getObjectById(${containerId}), RESOURCE_ENERGY, ${CARRY_CAPACITY}),
+				dropRc: creep.drop(RESOURCE_ENERGY, ${CARRY_CAPACITY}),
+			})
 		`);
-		expect(rc).toBe(OK);
+		expect(result).toEqual({ transferRc: OK, dropRc: OK });
 
-		// After the transfer tick, creep should have 0 energy.
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy ?? 0).toBe(0);
-
-		// Container should have received the energy.
 		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
-		expect(container.store!.energy).toBe(CARRY_CAPACITY);
+		expect(creep.store.energy ?? 0).toBe(0);
+		expect(container.store.energy ?? 0).toBe(0);
+		const piles = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(piles.map(pile => ({ x: pile.pos.x, y: pile.pos.y, amount: pile.amount })))
+			.toEqual([{ x: 25, y: 26, amount: decayed(CARRY_CAPACITY) }]);
 	});
 
-	test('INTENT-RESOURCE-004 withdraw is preferred over pickup when same-tick capacity conflicts exist', async ({ shard }) => {
+	test('INTENT-RESOURCE-004 withdraw resolves before a same-tick pickup, which takes the capacity left', async ({ shard }) => {
 		await shard.ownedRoom('p1');
-
-		// Create a creep with exactly 1 CARRY part (50 capacity).
-		// Place a container with energy and a dropped resource on the same tile.
-		// Issue both withdraw and pickup in the same tick. Only one should
-		// succeed because the creep has limited carry capacity.
-		// Container and dropped pile both adjacent to the picker.
+		// Two CARRY parts: the withdraw fills 60 of the 100, leaving the pickup 40.
+		const capacity = 2 * CARRY_CAPACITY;
+		const withdrawn = 60;
 		const containerId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_CONTAINER,
-			store: { energy: 100 },
+			store: { [RESOURCE_ENERGY]: withdrawn },
 		});
-		// Dropper drops energy on its own tile, next to the picker.
-		const dropperId = await shard.placeCreep('W1N1', {
-			pos: [24, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: CARRY_CAPACITY },
-			name: 'dropper',
+		const pileId = await shard.placeDroppedResource('W1N1', {
+			pos: [24, 25], resourceType: RESOURCE_ENERGY, amount: capacity,
 		});
-		const pickerId = await shard.placeCreep('W1N1', {
+		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			name: 'picker',
+			body: [CARRY, CARRY, MOVE],
 		});
 		await shard.tick();
 
-		// Drop energy to create a dropped resource on [24,25].
-		await shard.runPlayer('p1', code`
-			Game.creeps['dropper'].drop(RESOURCE_ENERGY)
-		`);
-
-		// Now picker has 0 energy, 50 capacity. Issue both withdraw and pickup.
-		// Both should return OK, but when capacity conflicts, withdraw is preferred.
+		// Called pickup first: the engine resolves withdraw first regardless.
 		const result = await shard.runPlayer('p1', code`
-			const picker = Game.creeps['picker'];
-			const container = Game.getObjectById(${containerId});
-			const resources = picker.pos.findInRange(FIND_DROPPED_RESOURCES, 1);
-			const withdrawRc = picker.withdraw(container, RESOURCE_ENERGY);
-			const pickupRc = resources.length > 0 ? picker.pickup(resources[0]) : -99;
-			({ withdrawRc, pickupRc, dropCount: resources.length })
-		`) as { withdrawRc: number; pickupRc: number; dropCount: number };
+			const creep = Game.getObjectById(${creepId});
+			const pile = Game.getObjectById(${pileId});
+			({
+				pile: pile.amount,
+				pickupRc: creep.pickup(pile),
+				withdrawRc: creep.withdraw(Game.getObjectById(${containerId}), RESOURCE_ENERGY),
+			})
+		`) as { pile: number; pickupRc: number; withdrawRc: number };
+		expect(result).toEqual({ pile: decayed(capacity), pickupRc: OK, withdrawRc: OK });
 
-		// Both intents return OK — the engine resolves conflicts at processing time.
-		expect(result.withdrawRc).toBe(OK);
-		expect(result.pickupRc).toBe(OK);
-
-		// After processing, the creep should have CARRY_CAPACITY energy from withdraw.
-		const picker = (await shard.findInRoom('W1N1', FIND_CREEPS))
-			.find(c => c.name === 'picker');
-		expect(picker).toBeDefined();
-		expect(picker!.store.energy).toBe(CARRY_CAPACITY);
-
-		// The dropped pile is untouched because withdraw consumed all capacity;
-		// it has only lost one decay on the drop tick and one on this tick.
-		const remaining = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
-		expect(remaining.map(r => r.amount)).toEqual([CARRY_CAPACITY - 2]);
-	});
-
-	test('INTENT-RESOURCE-003 multiple same-tick transfers to same container both succeed', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-		const containerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_CONTAINER,
-		});
-		const creep1Id = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: CARRY_CAPACITY },
-			name: 'c1',
-		});
-		const creep2Id = await shard.placeCreep('W1N1', {
-			pos: [26, 25], owner: 'p1',
-			body: [CARRY, MOVE],
-			store: { energy: CARRY_CAPACITY },
-			name: 'c2',
-		});
-		await shard.tick();
-
-		// Both creeps transfer to the same container in the same tick.
-		const result = await shard.runPlayer('p1', code`
-			const container = Game.getObjectById(${containerId});
-			const rc1 = Game.creeps.c1.transfer(container, RESOURCE_ENERGY);
-			const rc2 = Game.creeps.c2.transfer(container, RESOURCE_ENERGY);
-			({ rc1, rc2 })
-		`) as { rc1: number; rc2: number };
-		expect(result.rc1).toBe(OK);
-		expect(result.rc2).toBe(OK);
-
-		// Container should have received both transfers.
+		const creep = await shard.expectObject(creepId, 'creep');
 		const container = await shard.expectStructure(containerId, STRUCTURE_CONTAINER);
-		expect(container.store!.energy).toBe(2 * CARRY_CAPACITY);
+		expect(creep.store.energy).toBe(capacity);
+		expect(container.store.energy ?? 0).toBe(0);
+		const piles = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
+		expect(piles.map(pile => pile.amount)).toEqual([decayed(result.pile - (capacity - withdrawn))]);
 	});
 });

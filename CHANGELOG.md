@@ -242,6 +242,36 @@ changes since `v0.1.0-alpha` are not itemized.
   and `BOOST-BUILD-002` by `:build` and `:repair`. `BOOST-CREEP-010` gains
   `:spawning` and `:tooManyParts` with their pairs, and its `:invalidTarget`
   is a source.
+- Power, store, timer and intent rows keyed by case (all were bare IDs or
+  ran part of their row): `INTENT-LIMIT-001`/`-002` by capped intent
+  (`:cancelOrder`, `:changeOrderPrice`, `:extendOrder`, `:createPowerCreep`,
+  `:spawnPowerCreep`, `:suicidePowerCreep`, `:deletePowerCreep`,
+  `:upgradePowerCreep`, `:renamePowerCreep`; `deal`'s cap is
+  `MARKET-DEAL-003:dealCap`); `STORE-OPEN-001`..`-003` by structure
+  (`:storage`, `:terminal`, `:container`, `:factory`); `STORE-SINGLE-001`..`-004`
+  by structure (`:spawn`, `:tower`, `:link`, `:extensionRcl0` …
+  `:extensionRcl8`, which replace `:extension`); `STORE-RESTRICTED-002`, `-003`
+  and `-005` by structure (`:lab`, `:powerSpawn`, `:nuker`); `STORE-ACCESS-001`
+  (`:structure`, `:creep`); `TIMER-COOLDOWN-001` by action (`:runReaction` …
+  `:usePower`, eleven); `INTENT-CREEP-002` by method (sixteen) and
+  `INTENT-CREEP-003` by intent (twenty-three, plus `:notFound` and
+  `:moveTo`); `INTENT-CREEP-004` (`:drop`, `:transfer`, `:withdraw`,
+  `:pickup`); `POWER-OPERATE-002`, `POWER-DISRUPT-002` and `POWER-REGEN-002` by
+  power (`:operateSpawn` …, `:disruptTerminalLevel1` … `Level5`);
+  `POWER-COMBAT-001` (`:shieldLevel1` … `:fortifyLevel5`). `INTENT-CREEP-001`
+  gains the seven `attackController` pairs, and `POWERCREEP-UPGRADE-002`
+  `:powerMaxLevel` with its pairs.
+- Dropped: `POWER-REGEN-001` (`SOURCE-POWER-001` and `MINERAL-POWER-001` own
+  each regen power's effect, period and duration per level). Re-scoped:
+  `POWER-OPERATE-001` to the operate magnitudes no target row owns, keyed
+  `:operateSpawnLevel1` … `:operateControllerLevel5`, and `POWER-DISRUPT-001`
+  to each disrupt power's duration (`:disruptSpawnLevel1` …,
+  `:disruptTower`, `:disruptSourceLevel1` …, `:disruptTerminal`). Restated
+  rows: `INTENT-RESOURCE-002` (a transfer moves both stores in the tick's
+  processing), `-003` (calls check the tick-start store; the drop resolves
+  first), `-004` (its pickup-over-transfer clause goes), `INTENT-CREEP-004`,
+  `STORE-SINGLE-001`/`-002`, `STORE-RESTRICTED-005` (a lab holding a
+  mineral) and `POWER-COMBAT-003` (the landing tick).
 - Now keyed by condition, each validation row running its conditions alone
   and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
   `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,

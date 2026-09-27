@@ -1,4 +1,4 @@
-import { POWER_INFO, PWR_REGEN_SOURCE } from '../index.js';
+import { POWER_INFO, PWR_REGEN_SOURCE, powerDuration } from '../index.js';
 const info = POWER_INFO[PWR_REGEN_SOURCE];
 
 interface SourcePowerCase {
@@ -14,7 +14,7 @@ export const sourcePowerCases: readonly SourcePowerCase[] =
 	info.level.map((_, i) => ({
 		powerLevel: i,
 		expectedEffect: info.effect![i],
-		expectedDuration: info.duration!,
+		expectedDuration: powerDuration(PWR_REGEN_SOURCE, i + 1),
 		expectedPeriod: info.period!,
 		expectedCooldown: info.cooldown,
 	}));

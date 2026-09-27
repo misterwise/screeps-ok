@@ -1,8 +1,7 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS,
 	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
-	ATTACK, MOVE, CARRY,
-	body,
+	ATTACK, MOVE, body,
 	POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB, PWR_OPERATE_EXTENSION,
 	POWER_CLASS, SAFE_MODE_DURATION,
 } from '../../src/index.js';
@@ -552,12 +551,18 @@ describe('Power creep lifecycle', () => {
 			shard.requires('powerCreepAccountApi');
 			const hostile = blockers.has('not-owner');
 			// Upgraded, GENERATE_OPS 2 wants creep level 2: a level 2 creep may, a level 1 one may not.
-			// Level 25 leaves GENERATE_OPS below 5, so only the creep's level is full.
+			// Level 25 with GENERATE_OPS at 4 leaves only the creep's level full; at 5 both are. A creep that
+			// reached GENERATE_OPS 5 is past level 22, its last requirement.
+			const fullPowers = { [PWR_OPERATE_SPAWN]: 5, [PWR_OPERATE_TOWER]: 5, [PWR_OPERATE_STORAGE]: 5 };
 			const powers: Record<number, number> = blockers.has('max-level')
-				? { [PWR_GENERATE_OPS]: 4, [PWR_OPERATE_SPAWN]: 5, [PWR_OPERATE_TOWER]: 5, [PWR_OPERATE_STORAGE]: 5, [PWR_OPERATE_LAB]: 5, [PWR_OPERATE_EXTENSION]: 1 }
-				: blockers.has('level-requirement')
-					? { [PWR_GENERATE_OPS]: 1 }
-					: { [PWR_GENERATE_OPS]: 1, [PWR_OPERATE_SPAWN]: 1 };
+				? blockers.has('power-max-level')
+					? { [PWR_GENERATE_OPS]: 5, ...fullPowers, [PWR_OPERATE_LAB]: 5 }
+					: { [PWR_GENERATE_OPS]: 4, ...fullPowers, [PWR_OPERATE_LAB]: 5, [PWR_OPERATE_EXTENSION]: 1 }
+				: blockers.has('power-max-level')
+					? { [PWR_GENERATE_OPS]: 5, ...fullPowers, [PWR_OPERATE_LAB]: 3 }
+					: blockers.has('level-requirement')
+						? { [PWR_GENERATE_OPS]: 1 }
+						: { [PWR_GENERATE_OPS]: 1, [PWR_OPERATE_SPAWN]: 1 };
 			const level = Object.values(powers).reduce((sum, value) => sum + value, 0);
 			// A creep costs one GPL level plus one per creep level; the upgrader's own account pays.
 			const used = hostile ? 0 : 1 + level;

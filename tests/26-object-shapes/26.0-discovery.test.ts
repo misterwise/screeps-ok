@@ -13,7 +13,7 @@
  * - Running on vanilla verifies the constants haven't drifted.
  * - Running on xxscreeps catches any property surface divergence.
  */
-import { describe, test, expect, code,
+import { describe, test, expect, code, OK,
 	MOVE, CARRY, WORK, CLAIM,
 	STRUCTURE_ROAD, STRUCTURE_CONTAINER, STRUCTURE_TOWER,
 	RESOURCE_ENERGY, RESOURCE_SILICON,
@@ -378,9 +378,7 @@ describe('26.0 Object Shape Conformance', () => {
 		const rc = await shard.runPlayer('p1', code`
 			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'shape_test')
 		`);
-		expect(rc).toBe(0);
-
-		await shard.tick();
+		expect(rc).toBe(OK);
 
 		const keys = await shard.runPlayer('p1', shapeCode`
 			const s = Game.getObjectById(${spawnId});

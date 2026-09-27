@@ -1,6 +1,6 @@
 import {
 	STRUCTURE_LAB, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER,
-	RESOURCE_ENERGY, RESOURCE_POWER, RESOURCE_GHODIUM,
+	RESOURCE_ENERGY, RESOURCE_POWER, RESOURCE_GHODIUM, RESOURCE_HYDROGEN,
 	LAB_ENERGY_CAPACITY, LAB_MINERAL_CAPACITY,
 	POWER_SPAWN_ENERGY_CAPACITY, POWER_SPAWN_POWER_CAPACITY,
 	NUKER_ENERGY_CAPACITY, NUKER_GHODIUM_CAPACITY,
@@ -12,17 +12,15 @@ interface StoreRestrictedCase {
 	resourceCapacities: ReadonlyArray<{ resource: string; expectedCapacity: number }>;
 }
 
-// Restricted stores accept a fixed set of resources, each with its own capacity.
-// store.getCapacity() returns null (no generic capacity).
-// store.getCapacity(resource) returns the per-resource capacity for allowed resources.
+// Restricted stores accept a fixed set of resources, each with its own capacity. The lab is bound to
+// its mineral: unbound, its mineral slot takes any resource and getUsedCapacity() is the total (STORE-BIND-001).
 export const storeRestrictedCases: readonly StoreRestrictedCase[] = [
 	{
 		label: 'lab',
 		structureType: STRUCTURE_LAB,
 		resourceCapacities: [
 			{ resource: RESOURCE_ENERGY, expectedCapacity: LAB_ENERGY_CAPACITY },
-			// Mineral type varies at runtime; capacity is fixed regardless of mineral.
-			{ resource: 'mineral', expectedCapacity: LAB_MINERAL_CAPACITY },
+			{ resource: RESOURCE_HYDROGEN, expectedCapacity: LAB_MINERAL_CAPACITY },
 		],
 	},
 	{
