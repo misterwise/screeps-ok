@@ -2092,22 +2092,6 @@ Coverage Notes
   While `PWR_OPERATE_TERMINAL` is active, terminal send energy cost is
   multiplied by `POWER_INFO[PWR_OPERATE_TERMINAL].effect[level-1]` and rounded
   up.
-- `TERMINAL-SEND-005` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` returns `ERR_INVALID_ARGS` when
-  `resourceType`, `targetRoomName`, or `description` is invalid.
-- `TERMINAL-SEND-006` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` returns
-  `ERR_NOT_ENOUGH_RESOURCES` when the terminal lacks the sent resource amount or
-  the required energy cost.
-- `TERMINAL-SEND-007` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` returns `ERR_TIRED` while the
-  terminal is on cooldown.
-- `TERMINAL-SEND-008` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` returns `ERR_RCL_NOT_ENOUGH`
-  while the terminal is inactive.
-- `TERMINAL-SEND-009` `behavior` `verified_vanilla`
-  `send(resourceType, amount, targetRoomName)` returns `ERR_NOT_OWNER` when the
-  terminal is not owned by the player.
 - `TERMINAL-SEND-010` `behavior` `verified_vanilla`
   When a queued terminal send resolves successfully, the sending terminal's
   `cooldown` becomes `TERMINAL_COOLDOWN`.
@@ -2118,10 +2102,16 @@ Coverage Notes
   When a terminal send resolves successfully, the target terminal receives the
   sent resource amount.
 - `TERMINAL-SEND-013` `matrix` `verified_vanilla`
-  `send(resourceType, amount, destination, description?)` failure return
-  codes and precedence match the canonical validation matrix for ownership,
-  active-structure state, argument validity, resource availability, and
-  cooldown.
+  `terminal.send(resourceType, amount, destination, description?)` returns the
+  first failing check's code, in this order: `:notOwner` the terminal isn't
+  the player's, `ERR_NOT_OWNER`; `:rcl` it is inactive, `ERR_RCL_NOT_ENOUGH`;
+  `:invalidRoom` `destination` isn't a room name, or `:invalidResource`
+  `resourceType` isn't a resource constant, `ERR_INVALID_ARGS`;
+  `:notEnoughAmount` the terminal holds less than `amount` of the resource,
+  `ERR_NOT_ENOUGH_RESOURCES`; `:cooldown` its `cooldown` is above 0,
+  `ERR_TIRED`; `:notEnoughEnergyCost` it lacks the energy for the transfer
+  cost, `ERR_NOT_ENOUGH_RESOURCES`; `:invalidDescription` `description` is
+  longer than 100 characters, `ERR_INVALID_ARGS`.
 - `TERMINAL-SEND-014` `behavior` `verified_vanilla`
   `send(resourceType, amount, targetRoomName)` accepts any positive
   integer `amount`; there is no lower bound above 1. A successful
@@ -2140,25 +2130,15 @@ Coverage Notes
 - `OBSERVER-001` `behavior` `verified_vanilla`
   A successful `observeRoom(roomName)` returns `OK` and makes the target room
   visible on the next tick, not the current tick.
-- `OBSERVER-002` `behavior` `verified_vanilla`
-  `observeRoom(roomName)` returns `ERR_NOT_IN_RANGE` when the target room is
-  beyond `OBSERVER_RANGE`.
 - `OBSERVER-003` `behavior` `verified_vanilla` `capability: powerEffects`
   While `PWR_OPERATE_OBSERVER` is active, `observeRoom(roomName)` ignores the
   normal `OBSERVER_RANGE` limit.
-- `OBSERVER-004` `behavior` `verified_vanilla`
-  `observeRoom(roomName)` returns `ERR_INVALID_ARGS` when `roomName` is not a
-  valid room name.
-- `OBSERVER-005` `behavior` `verified_vanilla`
-  `observeRoom(roomName)` returns `ERR_RCL_NOT_ENOUGH` while the observer is
-  inactive.
-- `OBSERVER-006` `behavior` `verified_vanilla`
-  `observeRoom(roomName)` returns `ERR_NOT_OWNER` when the observer is not owned
-  by the player.
 - `OBSERVER-007` `matrix` `verified_vanilla`
-  `observeRoom(roomName)` failure return codes and precedence match the
-  canonical validation matrix for ownership, active-structure state,
-  argument validity, and target range.
+  `observer.observeRoom(roomName)` returns the first failing check's code, in
+  this order: `:notOwner` the observer isn't the player's, `ERR_NOT_OWNER`;
+  `:invalidArgs` `roomName` isn't a room name, `ERR_INVALID_ARGS`; `:rcl` the
+  observer is inactive, `ERR_RCL_NOT_ENOUGH`; `:range` the room is more than
+  `OBSERVER_RANGE` rooms away on either axis, `ERR_NOT_IN_RANGE`.
 
 ### 13.5 Extractor
 - `EXTRACTOR-001` `behavior` `verified_vanilla`
@@ -2371,12 +2351,6 @@ Notes
   swamp- and wall-tile variants; plain is covered by `CONSTRUCTION-COST-001`.
 
 ### 15.4 Structure APIs
-- `STRUCTURE-API-001` `behavior` `verified_vanilla`
-  `destroy()` returns `ERR_NOT_OWNER` when the room controller is missing or not
-  owned by the player.
-- `STRUCTURE-API-002` `behavior` `verified_vanilla`
-  `destroy()` returns `ERR_BUSY` when hostile creeps or hostile power creeps are
-  present in the room.
 - `STRUCTURE-API-003` `behavior` `verified_vanilla`
   A successful `destroy()` returns `OK`, removes the structure in the same
   tick, and creates a ruin on that tile containing the structure's remaining
@@ -2391,8 +2365,10 @@ Notes
   `notifyWhenAttacked(enabled)` on an owned structure with a boolean argument
   returns `OK`.
 - `STRUCTURE-API-007` `matrix` `verified_vanilla`
-  `Structure.destroy()` failure return codes and precedence match the
-  canonical validation matrix for ownership and room-busy state.
+  `structure.destroy()` returns the first failing check's code, in this order:
+  `:notOwner` another player owns the room's controller, or `:noController`
+  the room has none, `ERR_NOT_OWNER`; `:busy` a hostile creep, or
+  `:busyPowerCreep` a hostile power creep, is in the room, `ERR_BUSY`.
 
 ### 15.4b Attack Notification APIs
 - `ATTACK-NOTIFY-005` `behavior` `verified_vanilla`
@@ -2742,15 +2718,15 @@ Notes
   `Flag.setColor()` updates the flag's `color` and `secondaryColor`.
 - `FLAG-006` `behavior` `verified_vanilla`
   `Flag.setPosition()` moves the flag to the requested room position.
-- `FLAG-007` `behavior` `verified_vanilla`
-  `createFlag()` returns `ERR_NAME_EXISTS` when the requested name is already
-  in use by the player.
-- `FLAG-008` `behavior` `verified_vanilla`
-  `createFlag()` returns `ERR_FULL` when the player has reached `FLAGS_LIMIT`.
 - `FLAG-009` `matrix` `verified_vanilla`
-  `Room.createFlag(x, y, name?, color?, secondaryColor?)` failure return
-  codes and precedence match the canonical validation matrix for argument
-  validity, name uniqueness, and flag cap.
+  `room.createFlag(x, y, name?, color?, secondaryColor?)` returns the first
+  failing check's code, in this order: `:invalidCoords` a coordinate is
+  outside 0-49, `ERR_INVALID_ARGS`; `:flagCapFull` the player has
+  `FLAGS_LIMIT` flags, `ERR_FULL`; `:invalidColor` `color` isn't a color
+  constant, `ERR_INVALID_ARGS`; `:nameExists` one of the player's flags has
+  the name, or `:nameCreated` a flag created earlier in the tick does,
+  `ERR_NAME_EXISTS`; `:invalidNameLength` the name is longer than 100
+  characters, `ERR_INVALID_ARGS`.
 - `FLAG-010` `behavior` `verified_vanilla`
   `RoomPosition.createFlag()` against a roomName not present in
   `Game.rooms` (no current visibility) throws

@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-34%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-35%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -59,6 +59,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull`, which no test passed or failed
+- `destroy-ignores-hostile-power-creeps` registers `STRUCTURE-API-007:busyPowerCreep`, which no test passed or failed
 - `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPart`, which no test passed or failed
 - `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotOwner`, which no test passed or failed
 - `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeRcl`, which no test passed or failed
@@ -175,7 +176,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 46 expected-failure classifications against vanilla's canonical behavior, covering 78 tests. That includes 42 open parity gaps covering 70 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 47 expected-failure classifications against vanilla's canonical behavior, covering 78 tests. That includes 43 open parity gaps covering 70 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -195,6 +196,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | 0 |
 | `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | 0 |
 | `construction-site-invalid-coords-throws` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`. | Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`). | Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it. | 0 |
+| `destroy-ignores-hostile-power-creeps` | `checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`. | Vanilla returns `ERR_BUSY` when the room holds hostile creeps or hostile power creeps (`game/structures.js:80-82`). | Found 2026-09-26 when STRUCTURE-API-007 took STRUCTURE-API-002's power-creep form as a condition; the row's test had placed only a creep. | 0 |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, range among them; screeps/engine#121 (open) proposes honoring it. Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `factory-power-effect-not-implemented` | `checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY. | Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check. | Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
 | `power-bank-ruin-spills-one-tick-late` | `createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth. | Vanilla `processor/intents/structures/_destroy.js:21-36` stamps `destroyTime: gameTime` and `decayTime: gameTime + (RUIN_DECAY_STRUCTURES[type] \|\| RUIN_DECAY)` on the destruction tick, so the next tick reads `RUIN_DECAY - 1` or `RUIN_DECAY_STRUCTURES[type] - 1`. The ruin processor spills the store when `gameTime >= decayTime - 1`, which is the ninth tick for a power bank. | POWER-BANK-004 caught the spill side. RUIN-002 caught the decay reading on 2026-09-25, when its rows were rewritten to destroy a real structure instead of seeding the decay value they asserted. Same processor clock convention as `bury-creep-stamps-next-tick`; the upstream fix is `Game.time - 1` for both stamps in `createRuin`. | [3](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
@@ -321,6 +323,12 @@ Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-construction-site-invalid-coords-throws">
 <summary><code>construction-site-invalid-coords-throws</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-destroy-ignores-hostile-power-creeps">
+<summary><code>destroy-ignores-hostile-power-creeps</code> — 0 tests</summary>
 
 
 </details>

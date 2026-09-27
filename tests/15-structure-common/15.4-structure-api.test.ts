@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS,
-	MOVE,
+	OK, ERR_NOT_OWNER, ERR_INVALID_ARGS,
+	MOVE, PWR_GENERATE_OPS,
 	FIND_STRUCTURES, FIND_RUINS,
 	STRUCTURE_RAMPART, STRUCTURE_ROAD, STRUCTURE_TOWER,
 } from '../../src/index.js';
@@ -10,52 +10,6 @@ import { structureDestroyValidationCases } from '../../src/matrices/structure-de
 const staleStructureNotifyCase = staleReceiverCases.find(row => row.key === 'structureNotifyWhenAttacked')!;
 
 describe('structure.destroy()', () => {
-	test('STRUCTURE-API-001 destroy returns ERR_NOT_OWNER when room controller is not owned by the player', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		// Place p2's rampart in p1's room — p2 doesn't own the controller.
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p2',
-			hits: 1000,
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p2', code`
-			const s = Game.getObjectById(${rampartId});
-			s ? s.destroy() : -99
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
-	});
-
-	test('STRUCTURE-API-002 destroy returns ERR_BUSY when hostile creeps are in the room', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: 1000,
-		});
-		// Place a hostile creep in the room.
-		await shard.placeCreep('W1N1', {
-			pos: [30, 30], owner: 'p2', body: [MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${rampartId}).destroy()
-		`);
-		expect(rc).toBe(ERR_BUSY);
-	});
-
 	test('STRUCTURE-API-003 destroy returns OK, removes structure, and creates a ruin with store', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
 		const towerId = await shard.placeStructure('W1N1', {
@@ -88,19 +42,25 @@ describe('structure.destroy()', () => {
 	for (const row of structureDestroyValidationCases) {
 		test(`STRUCTURE-API-007:${row.label} destroy() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = new Set(row.blockers);
+			if (blockers.has('busy-power-creep')) shard.requires('powerCreeps');
 			const roomOwner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: 3, owner: roomOwner },
+					blockers.has('no-controller')
+						? { name: 'W1N1', controller: false }
+						: { name: 'W1N1', rcl: 3, owner: roomOwner },
 					{ name: 'W2N1', rcl: 1, owner: 'p2' },
 				],
 			});
-			if (blockers.has('not-owner')) {
+			if (blockers.has('not-owner') || blockers.has('no-controller')) {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
 			if (blockers.has('busy')) {
 				await shard.placeCreep('W1N1', { pos: [30, 30], owner: 'p2', body: [MOVE] });
+			}
+			if (blockers.has('busy-power-creep')) {
+				await shard.placePowerCreep('W1N1', { pos: [30, 31], owner: 'p2', powers: { [PWR_GENERATE_OPS]: 1 } });
 			}
 			const rampartId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],

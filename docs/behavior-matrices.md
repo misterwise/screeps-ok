@@ -1690,9 +1690,8 @@ checks both. Each definition has these fields, in this order:
   Energy-cost and range-fee math, owned by separate `TERMINAL-SEND-*`
   behavior entries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → active RCL → destination
-  room-name validity → resource-type validity → sent-resource availability
-  → cooldown → terminal energy-cost availability → description validity.
+  `:notEnoughEnergyCost` sends a mineral; the same expression refuses energy
+  sent with less than `amount` plus the cost (`game/structures.js:735-737`).
   The executable case list lives in `src/matrices/terminal-send-validation.ts`.
 
 ### LINK-VALIDATION
@@ -1799,9 +1798,7 @@ checks both. Each definition has these fields, in this order:
   Visibility delivery latency, owned by separate `OBSERVER-*` behavior
   entries.
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → room-name argument
-  validity → active RCL → observer room range. The executable case list
-  lives in `src/matrices/observer-validation.ts`.
+  The executable case list lives in `src/matrices/observer-validation.ts`.
 
 ### SPAWN-CREATE-VALIDATION
 
@@ -1917,14 +1914,14 @@ checks both. Each definition has these fields, in this order:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `Structure.destroy()` ownership (structure or controller) and room-busy
-  state (hostile creeps in the room).
+  `Structure.destroy()` ownership of the room's controller (another
+  player's, or none) and room-busy state (hostile creeps or power creeps).
 - `Exclusions`
   Ruin creation outcome, owned by separate `RUIN-*` entries.
 - `Verification Notes`
   `ConstructionSite.remove()` is single-branch (`ERR_NOT_OWNER`) and
-  intentionally not part of this family. Verified vanilla API-guard order is:
-  room/controller ownership → hostile-room busy. The executable case list lives in
+  intentionally not part of this family. `:busyPowerCreep` needs
+  `powerCreeps`. The executable case list lives in
   `src/matrices/structure-destroy-validation.ts`.
 
 ### COMBAT-MELEE-VALIDATION
@@ -2517,8 +2514,11 @@ checks both. Each definition has these fields, in this order:
   validity (coords, name length, color constants), name uniqueness
   (`ERR_NAME_EXISTS`), and flag cap (`FLAGS_LIMIT`).
 - `Exclusions`
-  `RoomPosition.createFlag()` is owned by `ROOMPOS-ACTION-002`.
+  `RoomPosition.createFlag()` is owned by `ROOMPOS-ACTION-002`. A placed and
+  a same-tick flag can't share one name, and a name too long to create
+  can't have been created. Not yet listed: an invalid `secondaryColor`
+  (`ERR_INVALID_ARGS`, `game/rooms.js:1001-1003`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: coordinate validity → flag cap →
-  color validity → name uniqueness → name length. The executable case list
-  lives in `src/matrices/flag-create-validation.ts`.
+  The cap is reached by filling the tick's `Game.flags`, which vanilla
+  counts (`game/rooms.js:984`). The executable case list lives in
+  `src/matrices/flag-create-validation.ts`.

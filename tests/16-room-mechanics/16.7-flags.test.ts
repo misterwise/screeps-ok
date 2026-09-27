@@ -1,6 +1,6 @@
 import { describe, test, expect, code,
 	COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE,
-	ERR_NAME_EXISTS, ERR_FULL, FLAGS_LIMIT,
+	FLAGS_LIMIT,
 } from '../../src/index.js';
 import { flagCreateValidationCases } from '../../src/matrices/flag-create-validation.js';
 
@@ -86,34 +86,6 @@ describe('Flags', () => {
 		expect(result.secondary).toBe(COLOR_WHITE);
 	});
 
-	test('FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-
-		// Create the flag in one tick, then try to create another with the same
-		// name on the next tick — the prior flag lives in Game.flags.
-		await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createFlag(10, 10, 'dup')
-		`);
-		const rc = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].createFlag(20, 20, 'dup')
-		`);
-		expect(rc).toBe(ERR_NAME_EXISTS);
-	});
-
-	test('FLAG-008 createFlag returns ERR_FULL when Game.flags has reached FLAGS_LIMIT', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-
-		// Engine check is `_.size(Game.flags) >= FLAGS_LIMIT` (rooms.js:984).
-		// Seed FLAGS_LIMIT stub entries directly into the in-tick Game.flags
-		// map — avoids paying for 10000 real flag creations while still
-		// exercising the exact boundary the engine checks.
-		const rc = await shard.runPlayer('p1', code`
-			for (let i = 0; i < ${FLAGS_LIMIT}; i++) Game.flags['stub' + i] = {};
-			Game.rooms['W1N1'].createFlag(25, 25, 'overflow')
-		`);
-		expect(rc).toBe(ERR_FULL);
-	});
-
 	test('FLAG-006 Flag.setPosition moves the flag to the requested room position', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
@@ -142,7 +114,7 @@ describe('Flags', () => {
 			const blockers = new Set(row.blockers);
 			const name = blockers.has('invalid-name-length')
 				? 'x'.repeat(101)
-				: blockers.has('name-exists')
+				: blockers.has('name-exists') || blockers.has('name-created')
 					? 'dup'
 					: 'flag';
 			if (blockers.has('name-exists')) {
@@ -156,6 +128,7 @@ describe('Flags', () => {
 			const color = blockers.has('invalid-color') ? 99 : COLOR_RED;
 
 			const rc = await shard.runPlayer('p1', code`
+				if (${blockers.has('name-created')}) Game.rooms['W1N1'].createFlag(10, 10, ${name});
 				if (${blockers.has('flag-cap-full')}) {
 					for (let i = 0; i < ${FLAGS_LIMIT}; i++) Game.flags['stub' + i] = {};
 				}

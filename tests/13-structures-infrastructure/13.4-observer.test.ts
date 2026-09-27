@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_INVALID_ARGS, ERR_RCL_NOT_ENOUGH, ERR_NOT_OWNER,
+	OK,
 	STRUCTURE_OBSERVER,
 	OBSERVER_RANGE,
 	PWR_OPERATE_OBSERVER,
@@ -39,71 +39,6 @@ describe('StructureObserver', () => {
 			!!Game.rooms['W2N1']
 		`);
 		expect(afterVisible).toBe(true);
-	});
-
-	test('OBSERVER-002 observeRoom returns ERR_NOT_IN_RANGE for a room beyond OBSERVER_RANGE', async ({ shard }) => {
-		shard.requires('observer');
-		await shard.ownedRoom('p1', 'W1N1', 8);
-		const obsId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
-		});
-		await shard.tick();
-
-		// W1N1 to W12N1 is 11 rooms apart (> OBSERVER_RANGE of 10).
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${obsId}).observeRoom('W12N1')
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('OBSERVER-004 observeRoom returns ERR_INVALID_ARGS for an invalid room name', async ({ shard }) => {
-		shard.requires('observer');
-		await shard.ownedRoom('p1', 'W1N1', 8);
-		const obsId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${obsId}).observeRoom('not_a_room')
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	test('OBSERVER-005 observeRoom returns ERR_RCL_NOT_ENOUGH when observer is inactive', async ({ shard }) => {
-		shard.requires('observer');
-		// Observer requires RCL 8. Place one at RCL 7 — it should be inactive.
-		await shard.ownedRoom('p1', 'W1N1', 7);
-		const obsId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${obsId}).observeRoom('W2N1')
-		`);
-		expect(rc).toBe(ERR_RCL_NOT_ENOUGH);
-	});
-
-	test('OBSERVER-006 observeRoom returns ERR_NOT_OWNER when observer is not owned by the player', async ({ shard }) => {
-		shard.requires('observer');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 8, owner: 'p2' },
-			],
-		});
-		// Observer owned by p2 in p1's room.
-		const obsId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p2',
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${obsId}).observeRoom('W2N1')
-		`);
-		expect(rc).toBe(ERR_NOT_OWNER);
 	});
 
 	test('OBSERVER-003 observeRoom with PWR_OPERATE_OBSERVER ignores OBSERVER_RANGE limit', async ({ shard }) => {

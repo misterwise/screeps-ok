@@ -273,7 +273,14 @@ changes since `v0.1.0-alpha` are not itemized.
   `FACTORY-PRODUCE-003` (`FACTORY-PRODUCE-011:notEnough`), `-004`
   (`:full`), `-005` (`:powerEffect`), `-006` (`:cooldown`), `-007`
   (`:rcl`), `-008` (`:invalidArgs`), `-009` (`:levelMismatch`), `-010`
-  (`:notOwner`).
+  (`:notOwner`). `TERMINAL-SEND-005` (`TERMINAL-SEND-013:invalidRoom`,
+  `:invalidResource`, `:invalidDescription`), `-006` (`:notEnoughAmount`,
+  `:notEnoughEnergyCost`), `-007` (`:cooldown`), `-008` (`:rcl`), `-009`
+  (`:notOwner`); `OBSERVER-002` (`OBSERVER-007:range`), `-004`
+  (`:invalidArgs`), `-005` (`:rcl`), `-006` (`:notOwner`);
+  `STRUCTURE-API-001` (`STRUCTURE-API-007:notOwner`, and `:noController`,
+  new), `-002` (`:busy`, and `:busyPowerCreep`, new); `FLAG-007`
+  (`FLAG-009:nameCreated`, new), `-008` (`:flagCapFull`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up
