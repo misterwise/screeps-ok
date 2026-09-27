@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [3645](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 20:27 UTC |
-| 🟡 | **xxscreeps** | [3055](#xxscreeps-passing-tests) | [171](#xxscreeps-expected-failures) | — | [436](#xxscreeps-skipped-tests) | 2026-09-27 20:27 UTC |
+| 🟡 | **vanilla** | [3645](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 21:01 UTC |
+| 🟡 | **xxscreeps** | [3055](#xxscreeps-passing-tests) | [171](#xxscreeps-expected-failures) | — | [436](#xxscreeps-skipped-tests) | 2026-09-27 21:00 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -271,11 +271,11 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>stale-argument-throws-instead-of-invalid-target</code> — 16 tests</summary>
 
 - `creep.pull() UNDOC-STALEARG-001:creepPull creep.pull() rejects a stale cached Creep target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
+- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
 - `creep.build() UNDOC-STALEARG-001:creepBuild creep.build() rejects a stale cached ConstructionSite target`
 - `creep.repair() UNDOC-STALEARG-001:creepRepair creep.repair() rejects a stale cached Structure target`
 - `creep.dismantle() UNDOC-STALEARG-001:creepDismantle creep.dismantle() rejects a stale cached Structure target`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target`
-- `creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target`
 - `creep.attack() UNDOC-STALEARG-001:creepAttackCreep creep.attack() rejects a stale cached Creep target`
 - `creep.rangedAttack() UNDOC-STALEARG-001:creepRangedAttack creep.rangedAttack() rejects a stale cached Creep target`
 - `creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target`
@@ -283,9 +283,9 @@ Click a test count above to jump to the affected test list for that gap.
 - `StructureTower UNDOC-STALEARG-001:towerAttack StructureTower.attack() rejects a stale cached Creep target`
 - `StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target`
 - `StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target`
-- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
 - `Spawn.renewCreep UNDOC-STALEARG-001:spawnRenewCreep StructureSpawn.renewCreep() rejects a stale cached Creep target`
 - `Spawn.recycleCreep UNDOC-STALEARG-001:spawnRecycleCreep StructureSpawn.recycleCreep() rejects a stale cached Creep target`
+- `StructureLink UNDOC-STALEARG-001:linkTransferEnergy StructureLink.transferEnergy() rejects a stale cached Link target`
 
 </details>
 
