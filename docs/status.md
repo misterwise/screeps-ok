@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-25%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-33%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🟡 | **vanilla** | [2881](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 02:39 UTC |
-| 🔴 | **xxscreeps** | [2611](#xxscreeps-passing-tests) | [80](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
+| 🔴 | **xxscreeps** | [2611](#xxscreeps-passing-tests) | [79](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -49,6 +49,7 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 
 ## xxscreeps unexpected failures
 
+- `Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part`
 - `pull-range-checked-before-spawning-target` registers `MOVE-PULL-011:spawningTargetBeforeRange`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoords`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType`, which no test passed or failed
@@ -57,6 +58,13 @@ Tests tagged as known parity gaps have started passing. Investigate and drop the
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap`, which no test passed or failed
 - `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPart`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotOwner`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeRcl`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeRange`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeNotEnough`, which no test passed or failed
+- `renew-claim-creep-returns-no-bodypart` registers `RENEW-CREEP-011:claimPartBeforeFull`, which no test passed or failed
+- `recycle-inactive-spawn-checked-before-target` registers `RECYCLE-CREEP-005:invalidTargetBeforeRcl`, which no test passed or failed
 - 17 registered test(s) now pass; see Regression traps triggered
 
 ## vanilla expected failures
@@ -166,7 +174,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 45 expected-failure classifications against vanilla's canonical behavior, covering 80 tests. That includes 41 open parity gaps covering 72 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 46 expected-failure classifications against vanilla's canonical behavior, covering 79 tests. That includes 42 open parity gaps covering 71 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -211,7 +219,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | Found 2026-09-25 when DEPOSIT-004's `(49990, 50000]` band was pinned. Upstream fix: `- 1` on the decay anchor, matching the cooldown line above it. | [1](#xxscreeps-gap-deposit-decay-anchors-one-tick-late) |
 | `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | Found 2026-09-25 when CTRL-UPGRADE-010's `(0, CONTROLLER_NUKE_BLOCKED_UPGRADE]` band was pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; upstream fix is `- 1` on the anchor. | [1](#xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late) |
 | `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned. Unlike `controller-timer-anchors-one-tick-late` this write reads a tick short, not long, because vanilla's formula is relative and carries its own `+ 1`. Same file, separate line to fix. | [1](#xxscreeps-gap-controller-downgrade-step-one-tick-short) |
-| `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. | [1](#xxscreeps-gap-renew-claim-creep-returns-no-bodypart) |
+| `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too. | 0 |
+| `recycle-inactive-spawn-checked-before-target` | `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`. | Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`). | Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it. | 0 |
 | `pathfinder-search-nullish-goal-throws` | `search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick. | Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys. | Found 2026-09-25 when PATHFINDER-014's either-outcome test (accepting a throw) was made unconditional. The empty-array case (PATHFINDER-013) passes because it never enters the map callback. | [1](#xxscreeps-gap-pathfinder-search-nullish-goal-throws) |
 | `bury-power-creep-stamps-next-tick` | `buryPowerCreep` (`mods/mmo/powercreep/processor.ts:23-41`) stamps `deathTime = Game.time` and `#decayTime = Game.time + TOMBSTONE_DECAY_POWER_CREEP` from the processor clock, which reads one tick past vanilla's `gameTime`. A power creep's tombstone therefore reads `deathTime` one past the tick the player issued `suicide()` on, and `ticksToDecay` of `TOMBSTONE_DECAY_POWER_CREEP` on the next tick. | Vanilla `processor/global-intents/power/_diePowerCreep.js` stamps `deathTime: gameTime` and `decayTime: gameTime + TOMBSTONE_DECAY_POWER_CREEP` on the death tick. `deathTime` equals the tick of the `suicide()` call, and the next tick reads `TOMBSTONE_DECAY_POWER_CREEP - 1`. | Found 2026-09-25 when POWERCREEP-DEATH-001, which only checked that a live power creep had a positive TTL, was rewritten to kill one through suicide(). Same fix as `bury-creep-stamps-next-tick`, applied in the power-creep mod's copy. | [1](#xxscreeps-gap-bury-power-creep-stamps-next-tick) |
 | `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
@@ -509,9 +518,14 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-renew-claim-creep-returns-no-bodypart">
-<summary><code>renew-claim-creep-returns-no-bodypart</code> — 1 test</summary>
+<summary><code>renew-claim-creep-returns-no-bodypart</code> — 0 tests</summary>
 
-- `Spawn.renewCreep RENEW-CREEP-007 renewCreep rejects creeps with any CLAIM body part`
+
+</details>
+
+<details id="xxscreeps-gap-recycle-inactive-spawn-checked-before-target">
+<summary><code>recycle-inactive-spawn-checked-before-target</code> — 0 tests</summary>
+
 
 </details>
 

@@ -1,10 +1,10 @@
 import {
-	describe, test, expect, code,
-	OK, ERR_NOT_ENOUGH_ENERGY, ERR_NAME_EXISTS, ERR_INVALID_ARGS, ERR_BUSY,
-	WORK, CARRY, MOVE, TOUGH, BODYPART_COST,
+	describe, test, expect, code, body,
+	OK, ERR_NOT_ENOUGH_ENERGY,
+	WORK, CARRY, MOVE, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_EXTENSION,
 	CREEP_SPAWN_TIME, MAX_CREEP_SIZE,
-	TOP, TOP_RIGHT, RIGHT, BOTTOM_RIGHT, BOTTOM, BOTTOM_LEFT, LEFT, TOP_LEFT,
+	TOP, TOP_RIGHT, RIGHT, BOTTOM, LEFT,
 	FIND_CREEPS, TERRAIN_WALL,
 } from '../../src/index.js';
 import { spawnCreateValidationCases } from '../../src/matrices/spawn-create-validation.js';
@@ -151,84 +151,6 @@ describe('StructureSpawn', () => {
 		expect(third.store.energy ?? 0).toBe(50);
 	});
 
-	test('SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 0 },
-		});
-		const ext1 = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			store: { energy: 50 },
-		});
-		const ext2 = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			store: { energy: 50 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep(
-				[WORK, CARRY, MOVE],
-				'Worker1',
-				{ energyStructures: [Game.getObjectById(${ext1}), Game.getObjectById(${ext2})] }
-			)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
-	});
-
-	test('SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		const spawn1Id = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 600 },
-		});
-		const spawn2Id = await shard.placeStructure('W1N1', {
-			pos: [30, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 600 },
-		});
-		await shard.tick();
-
-		// Start spawning 'UniqueTest' on spawn1.
-		const rc1 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawn1Id}).spawnCreep([MOVE, MOVE, MOVE], 'UniqueTest')
-		`);
-		expect(rc1).toBe(OK);
-
-		// Try to spawn the same name on spawn2 while the first is still spawning.
-		const rc2 = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawn2Id}).spawnCreep([MOVE], 'UniqueTest')
-		`);
-		expect(rc2).toBe(ERR_NAME_EXISTS);
-	});
-
-	test('SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 600 },
-		});
-
-		// Place a creep with the name we'll try to spawn
-		await shard.placeCreep('W1N1', {
-			pos: [20, 20], owner: 'p1',
-			body: [MOVE], name: 'DuplicateName',
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'DuplicateName')
-		`);
-		expect(rc).toBe(ERR_NAME_EXISTS);
-	});
-
 	test('SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
@@ -256,36 +178,6 @@ describe('StructureSpawn', () => {
 		});
 	});
 
-	// ── New tests: body validation ──────────────────────────────
-
-	test('SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([], 'EmptyBody')
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	test('SPAWN-CREATE-002 spawnCreep returns ERR_INVALID_ARGS for a body exceeding MAX_CREEP_SIZE', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 999999 },
-		});
-
-		// MAX_CREEP_SIZE is 50; create a body of 51 parts.
-		const bigBody = Array(MAX_CREEP_SIZE + 1).fill('move').map(() => 'MOVE').join(',');
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([${bigBody}], 'TooBig')
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
 	test('SPAWN-CREATE-013 spawnCreep deducts the body cost from the spawn and contributing extensions', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		// Spawn alone cannot fund a WORK part (100 energy) — extension must contribute.
@@ -310,41 +202,6 @@ describe('StructureSpawn', () => {
 		const ext = await shard.expectStructure(extId, STRUCTURE_EXTENSION);
 		expect(ext.store.energy ?? 0).toBe(0);
 		expect(spawn.store.energy ?? 0).toBe(1);
-	});
-
-	test('SPAWN-CREATE-012 spawnCreep returns ERR_INVALID_ARGS for a body containing an invalid part name', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep(['notapart'], 'BadPart')
-		`);
-		expect(rc).toBe(ERR_INVALID_ARGS);
-	});
-
-	test('SPAWN-CREATE-009 spawnCreep returns ERR_BUSY when the spawn is already spawning', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 600 },
-		});
-
-		// Start spawning a creep.
-		const first = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'First')
-		`);
-		expect(first).toBe(OK);
-		// Don't tick enough for spawn to finish — CREEP_SPAWN_TIME * 1 part = 3 ticks.
-		await shard.tick();
-
-		// Try to spawn a second creep while the first is still in progress.
-		const second = await shard.runPlayer('p1', code`
-			Game.getObjectById(${spawnId}).spawnCreep([MOVE], 'Second')
-		`);
-		expect(second).toBe(ERR_BUSY);
 	});
 
 	test('SPAWN-CREATE-011 spawnCreep(..., { memory }) seeds the spawned creep initial memory', async ({ shard }) => {
@@ -537,7 +394,11 @@ describe('StructureSpawn', () => {
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 2, owner }],
+				rooms: [
+					// A spawn in a room with no controller level is inactive.
+					blockers.has('rcl') ? { name: 'W1N1' } : { name: 'W1N1', rcl: 2, owner },
+					...(blockers.has('name-spawning') ? [{ name: 'W2N1', rcl: 1, owner: 'p1' }] : []),
+				],
 			});
 			if (owner === 'p2') {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
@@ -548,8 +409,24 @@ describe('StructureSpawn', () => {
 				owner,
 				store: blockers.has('not-enough') && !blockers.has('busy') ? { energy: 0 } : { energy: 300 },
 			});
+			// The spawn holds plenty; the one structure the call lists is empty.
+			const selectedId = blockers.has('not-enough-selected')
+				? await shard.placeStructure('W1N1', {
+					pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner, store: { energy: 0 },
+				})
+				: null;
 			if (blockers.has('name-exists')) {
 				await shard.placeCreep('W1N1', { pos: [20, 21], owner: 'p1', body: [MOVE], name: 'NewCreep' });
+			}
+			if (blockers.has('name-spawning')) {
+				const otherSpawnId = await shard.placeStructure('W2N1', {
+					pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1', store: { energy: 300 },
+				});
+				await shard.tick();
+				const otherRc = await shard.runPlayer('p1', code`
+					Game.getObjectById(${otherSpawnId}).spawnCreep(${body(6, MOVE)}, 'NewCreep')
+				`);
+				expect(otherRc).toBe(OK);
 			}
 			if (blockers.has('busy')) {
 				const busyRc = await shard.runPlayer(owner, code`
@@ -558,16 +435,21 @@ describe('StructureSpawn', () => {
 				expect(busyRc).toBe(OK);
 				await shard.tick();
 			}
+			if (blockers.has('rcl')) await shard.tick();
 
 			const name = blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
-			const body = blockers.has('invalid-body') ? [] : blockers.has('not-enough') ? [WORK, WORK, WORK, WORK] : [MOVE];
-			const rc = blockers.has('invalid-directions')
-				? await shard.runPlayer('p1', code`
-					Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name}, { directions: [99] })
-				`)
-				: await shard.runPlayer('p1', code`
-					Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name})
-				`);
+			const creepBody = blockers.has('invalid-body') ? []
+				: blockers.has('oversized-body') ? body(MAX_CREEP_SIZE + 1, MOVE)
+				: blockers.has('invalid-part') ? ['notapart']
+				: blockers.has('not-enough') ? [WORK, WORK, WORK, WORK]
+				: [MOVE];
+			const directions = blockers.has('invalid-directions') ? [99] : null;
+			const rc = await shard.runPlayer('p1', code`
+				const opts = {};
+				if (${directions}) opts.directions = ${directions};
+				if (${selectedId}) opts.energyStructures = [Game.getObjectById(${selectedId})];
+				Game.getObjectById(${spawnId}).spawnCreep(${creepBody}, ${name}, opts)
+			`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}

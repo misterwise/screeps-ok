@@ -1548,10 +1548,6 @@ Coverage Notes
 ## 9. Spawning & Creep Lifecycle
 
 ### 9.1 spawnCreep
-- `SPAWN-CREATE-001` `behavior` `verified_vanilla`
-  `spawnCreep()` requires a non-empty body.
-- `SPAWN-CREATE-002` `behavior` `verified_vanilla`
-  `spawnCreep()` rejects bodies longer than `MAX_CREEP_SIZE` (50).
 - `SPAWN-CREATE-004` `behavior` `verified_vanilla`
   Spawn cost equals the sum of `BODYPART_COST` for the requested body.
 - `SPAWN-CREATE-005` `behavior` `verified_vanilla`
@@ -1560,30 +1556,27 @@ Coverage Notes
 - `SPAWN-CREATE-006` `behavior` `verified_vanilla`
   When `energyStructures` is provided, `spawnCreep()` draws energy from the
   listed structures in listed order.
-- `SPAWN-CREATE-007` `behavior` `verified_vanilla`
-  `spawnCreep()` returns `ERR_NOT_ENOUGH_ENERGY` when the selected energy
-  sources cannot pay the spawn cost.
-- `SPAWN-CREATE-008` `behavior` `verified_vanilla`
-  `spawnCreep()` returns `ERR_NAME_EXISTS` when a living or spawning creep
-  already has the requested name.
-- `SPAWN-CREATE-009` `behavior` `verified_vanilla`
-  `spawnCreep()` returns `ERR_BUSY` when the spawn is already spawning.
 - `SPAWN-CREATE-010` `behavior` `verified_vanilla`
   `spawnCreep(..., { dryRun: true })` performs feasibility checks without
   consuming energy or creating a creep.
 - `SPAWN-CREATE-011` `behavior` `verified_vanilla`
   `spawnCreep(..., { memory })` seeds the spawned creep's initial memory.
-- `SPAWN-CREATE-012` `behavior` `verified_vanilla`
-  `spawnCreep()` returns `ERR_INVALID_ARGS` when the body array contains an
-  invalid part type.
 - `SPAWN-CREATE-013` `behavior` `verified_vanilla`
   On success, `spawnCreep()` deducts the spawn cost from the spawn and
   contributing extensions.
 - `SPAWN-CREATE-014` `matrix` `verified_vanilla`
-  `spawnCreep(body, name, opts?)` failure return codes and precedence match
-  the canonical validation matrix for ownership, active-structure state,
-  caller busy state, argument validity, name uniqueness, and resource
-  availability.
+  `spawn.spawnCreep(body, name, opts?)` returns the first failing check's
+  code, in this order: `:invalidNameOrOptions` the name is longer than 100
+  characters, `ERR_INVALID_ARGS`; `:nameExists` a living creep of the player's
+  has the name, or `:nameSpawning` a spawning one does, `ERR_NAME_EXISTS`;
+  `:invalidDirections` `opts.directions` holds a value outside 1-8,
+  `ERR_INVALID_ARGS`; `:notOwner` the spawn isn't the player's,
+  `ERR_NOT_OWNER`; `:busy` it is spawning, `ERR_BUSY`; `:rcl` it is inactive,
+  `ERR_RCL_NOT_ENOUGH`; `:invalidBody` the body is empty, `:oversizedBody`
+  longer than `MAX_CREEP_SIZE`, or `:invalidPart` holds a name outside
+  `BODYPARTS_ALL`, `ERR_INVALID_ARGS`; `:notEnough` the energy available can't
+  pay for the body, or `:notEnoughSelected` the listed `energyStructures`
+  can't, `ERR_NOT_ENOUGH_ENERGY`.
 - `SPAWN-CREATE-015` `behavior` `verified_vanilla`
   Without `energyStructures`, `spawnCreep()` takes the cost from the owner's
   active spawns first, nearest the spawning spawn first, and then from its
@@ -1640,8 +1633,6 @@ Coverage Notes
   adjacent tile exists outside the chosen direction list.
 
 ### 9.4 Renew Creep
-- `RENEW-CREEP-001` `behavior` `verified_vanilla`
-  `renewCreep()` can target only an adjacent creep.
 - `RENEW-CREEP-002` `behavior` `verified_vanilla`
   A successful `renewCreep()` returns `OK`, increases the target creep's
   `ticksToLive` by
@@ -1660,21 +1651,15 @@ Coverage Notes
 - `RENEW-CREEP-006` `behavior` `verified_vanilla`
   If boost removal reduces `storeCapacity`, excess carried resources are
   dropped until the creep's store fits the new capacity.
-- `RENEW-CREEP-007` `behavior` `verified_vanilla`
-  Creeps with any `CLAIM` part cannot be renewed.
-- `RENEW-CREEP-008` `behavior` `verified_vanilla`
-  `renewCreep()` returns `ERR_NOT_ENOUGH_ENERGY` when the spawn lacks energy
-  to pay the renewal cost.
-- `RENEW-CREEP-009` `behavior` `verified_vanilla`
-  `renewCreep()` returns `ERR_BUSY` when the spawn is currently spawning a
-  creep.
-- `RENEW-CREEP-010` `behavior` `verified_vanilla`
-  `renewCreep()` returns `ERR_FULL` when the renewal would push the creep's
-  `ticksToLive` beyond `CREEP_LIFE_TIME`.
 - `RENEW-CREEP-011` `matrix` `verified_vanilla`
-  `renewCreep(creep)` failure return codes and precedence match the canonical
-  validation matrix for ownership, caller busy state, target validity, range,
-  store capacity, and resource availability.
+  `spawn.renewCreep(creep)` returns the first failing check's code, in this
+  order: `:busy` the spawn is spawning, `ERR_BUSY`; `:invalidTarget` the
+  target isn't a creep, or `:claimPart` it has a CLAIM part,
+  `ERR_INVALID_TARGET`; `:notOwner` the spawn isn't the player's,
+  `ERR_NOT_OWNER`; `:rcl` it is inactive, `ERR_RCL_NOT_ENOUGH`; `:range` the
+  creep isn't adjacent, `ERR_NOT_IN_RANGE`; `:notEnough` the room lacks the
+  renewal's energy cost, `ERR_NOT_ENOUGH_ENERGY`; `:full` the renewal would
+  take the creep's `ticksToLive` past `CREEP_LIFE_TIME`, `ERR_FULL`.
 
 ### 9.5 Recycle Creep
 - `RECYCLE-CREEP-001` `behavior` `verified_vanilla`
@@ -1686,13 +1671,13 @@ Coverage Notes
   body cost.
 - `RECYCLE-CREEP-003` `behavior` `verified_vanilla`
   Recycling returns both energy and boost compounds from the target creep.
-- `RECYCLE-CREEP-004` `behavior` `verified_vanilla`
-  `recycleCreep()` returns `ERR_NOT_IN_RANGE` when the target creep is not
-  adjacent to the spawn.
 - `RECYCLE-CREEP-005` `matrix` `verified_vanilla`
-  `recycleCreep(creep)` failure return codes and precedence match the
-  canonical validation matrix for spawn ownership, target validity,
-  target-creep ownership, and range.
+  `spawn.recycleCreep(creep)` returns the first failing check's code, in this
+  order: `:notOwnerSpawn` the spawn isn't the player's, `ERR_NOT_OWNER`;
+  `:invalidTarget` the target isn't a creep, `ERR_INVALID_TARGET`; `:rcl` the
+  spawn is inactive, `ERR_RCL_NOT_ENOUGH`; `:notOwnerCreep` the creep isn't
+  the player's, `ERR_NOT_OWNER`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`.
 
 ### 9.6 Creep Spawning State
 - `CREEP-SPAWNING-002` `behavior` `verified_vanilla`

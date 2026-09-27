@@ -250,7 +250,14 @@ changes since `v0.1.0-alpha` are not itemized.
   keep only the targets their method accepts. `BOOST-CREEP-004`
   (`BOOST-CREEP-010:range`), `-005` (`:notEnoughEnergy`,
   `:notEnoughMineral`), `-006` (`:notFound`); `UNBOOST-002`
-  (`UNBOOST-006:notFound`), `-003` (`:range`).
+  (`UNBOOST-006:notFound`), `-003` (`:range`). `SPAWN-CREATE-001`
+  (`SPAWN-CREATE-014:invalidBody`), `-002` (`:oversizedBody`, new), `-007`
+  (`:notEnoughSelected`, new), `-008` (`:nameExists`, and `:nameSpawning`,
+  new), `-009` (`:busy`), `-012` (`:invalidPart`, new); `RENEW-CREEP-001`
+  (`RENEW-CREEP-011:range`), `-007` (`:claimPart`, new), `-008`
+  (`:notEnough`), `-009` (`:busy`), `-010` (`:full`); `RECYCLE-CREEP-004`
+  (`RECYCLE-CREEP-005:range`). The three spawn matrices also gain `:rcl`, an
+  inactive spawn.
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

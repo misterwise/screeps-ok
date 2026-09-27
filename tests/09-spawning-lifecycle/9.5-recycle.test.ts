@@ -1,8 +1,8 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_NOT_OWNER,
+	OK,
 	MOVE, WORK, CARRY, BODYPART_COST,
 	STRUCTURE_SPAWN, FIND_DROPPED_RESOURCES, FIND_TOMBSTONES,
-	CREEP_CORPSE_RATE, CREEP_LIFE_TIME,
+	CREEP_LIFE_TIME,
 } from '../../src/index.js';
 import { recycleCreepValidationCases } from '../../src/matrices/recycle-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
@@ -31,26 +31,6 @@ describe('Spawn.recycleCreep', () => {
 			spawn.recycleCreep(creep)
 		`);
 		expect(rc).toBe(OK);
-	});
-
-	test('RECYCLE-CREEP-004 recycleCreep returns ERR_NOT_IN_RANGE for a non-adjacent creep', async ({ shard }) => {
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const spawnId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p1',
-			body: [MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const spawn = Game.getObjectById(${spawnId});
-			const creep = Game.getObjectById(${creepId});
-			spawn.recycleCreep(creep)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
 	test('RECYCLE-CREEP-002 recycle deposits floor(ttlRemaining / CREEP_LIFE_TIME * bodyCost) energy into a tombstone at the creep position', async ({ shard }) => {
@@ -167,7 +147,8 @@ describe('Spawn.recycleCreep', () => {
 			const creepOwner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 2, owner: spawnOwner }],
+				// A spawn in a room with no controller level is inactive.
+				rooms: [blockers.has('rcl') ? { name: 'W1N1' } : { name: 'W1N1', rcl: 2, owner: spawnOwner }],
 			});
 			if (spawnOwner === 'p2' || creepOwner === 'p2') {
 				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
@@ -185,6 +166,7 @@ describe('Spawn.recycleCreep', () => {
 					owner: creepOwner,
 					body: [WORK, CARRY, MOVE],
 				});
+			if (blockers.has('rcl')) await shard.tick();
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${spawnId}).recycleCreep(Game.getObjectById(${targetId}))

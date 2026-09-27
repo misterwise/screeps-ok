@@ -253,8 +253,14 @@
 		"renew-claim-creep-returns-no-bodypart": {
 			"actual": "`checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy.",
 			"expected": "Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks.",
-			"why": "Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason.",
-			"tests": ["RENEW-CREEP-007"]
+			"why": "Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too.",
+			"tests": ["RENEW-CREEP-011:claimPart", "RENEW-CREEP-011:claimPartBeforeNotOwner", "RENEW-CREEP-011:claimPartBeforeRcl", "RENEW-CREEP-011:claimPartBeforeRange", "RENEW-CREEP-011:claimPartBeforeNotEnough", "RENEW-CREEP-011:claimPartBeforeFull"]
+		},
+		"recycle-inactive-spawn-checked-before-target": {
+			"actual": "`checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`.",
+			"expected": "Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`).",
+			"why": "Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it.",
+			"tests": ["RECYCLE-CREEP-005:invalidTargetBeforeRcl"]
 		},
 		"pathfinder-search-nullish-goal-throws": {
 			"actual": "`search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick.",

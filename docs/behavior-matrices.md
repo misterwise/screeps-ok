@@ -1825,15 +1825,14 @@ checks both. Each definition has these fields, in this order:
   uniqueness, and energy availability.
 - `Exclusions`
   Successful directions/dryRun/memory semantics, owned by
-  `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`. The inactive-spawn RCL
-  branch is not in the executable precedence matrix because the public
-  fixture API cannot honestly create a player-visible spawn that is inactive
-  for `spawnCreep()` without adapter internals.
+  `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`. Pairs that need one name
+  on two creeps, an inactive spawn to start spawning, or two bodies at once
+  are excluded. Not yet listed: a missing name or non-object `opts`, and a
+  name another spawn took earlier in the tick.
 - `Verification Notes`
-  Verified vanilla API-guard order for the covered branches is:
-  name/options validity → name existence → directions validity → ownership
-  → busy → body validity → energy availability. The executable case list
-  lives in `src/matrices/spawn-create-validation.ts`.
+  An inactive spawn is the player's spawn in a room with no controller
+  level. A spawning namesake comes from a second room's spawn. The
+  executable case list lives in `src/matrices/spawn-create-validation.ts`.
 
 ### RENEW-CREEP-VALIDATION
 
@@ -1851,14 +1850,14 @@ checks both. Each definition has these fields, in this order:
   (spawning), target validity (creep has CLAIM part or not yours), range,
   store capacity (`ticksToLive` already at max), and energy availability.
 - `Exclusions`
-  Renew amount math, owned by `RENEW-CREEP-002..009`. The inactive-spawn RCL
-  branch is not in the executable precedence matrix because the public
-  fixture API cannot honestly create a player-visible inactive spawn for
-  `renewCreep()` without adapter internals.
+  Renew amount math, owned by `RENEW-CREEP-002..006`. Busy excludes the
+  inactive spawn, and the two invalid-target forms exclude each other. Not
+  yet listed: a spawning creep target (`ERR_INVALID_TARGET`) and another
+  player's creep (`ERR_NOT_OWNER`).
 - `Verification Notes`
-  Verified vanilla API-guard order for the covered branches is: busy →
-  target validity → ownership → range → energy availability → TTL-full.
-  The executable case list lives in `src/matrices/renew-creep-validation.ts`.
+  An inactive spawn is the player's spawn in a room with no controller
+  level. The executable case list lives in
+  `src/matrices/renew-creep-validation.ts`.
 
 ### RECYCLE-CREEP-VALIDATION
 
@@ -1876,14 +1875,11 @@ checks both. Each definition has these fields, in this order:
   ownership, and range.
 - `Exclusions`
   Recycled-resource placement (container vs. tombstone), tracked as a
-  Coverage Note in `9.5 Recycle Creep`. The inactive-spawn RCL branch is not
-  in the executable precedence matrix because the public fixture API cannot
-  honestly create a player-visible inactive spawn for `recycleCreep()`
-  without adapter internals.
+  Coverage Note in `9.5 Recycle Creep`.
 - `Verification Notes`
-  Verified vanilla API-guard order for the covered branches is:
-  spawn ownership → target validity → target ownership → range. The
-  executable case list lives in `src/matrices/recycle-creep-validation.ts`.
+  An inactive spawn is the player's spawn in a room with no controller
+  level. The executable case list lives in
+  `src/matrices/recycle-creep-validation.ts`.
 
 ### CTRL-SAFEMODE-VALIDATION
 
