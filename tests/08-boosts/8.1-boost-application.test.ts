@@ -1,7 +1,7 @@
 import { describe, test, expect, code,
-	OK, ERR_NOT_IN_RANGE, ERR_NOT_FOUND, ERR_NOT_ENOUGH_RESOURCES,
+	OK,
 	STRUCTURE_LAB, STRUCTURE_SPAWN,
-	ATTACK, MOVE, CARRY, WORK, RANGED_ATTACK,
+	ATTACK, MOVE, CARRY, WORK,
 	LAB_BOOST_MINERAL, LAB_BOOST_ENERGY, LAB_MINERAL_CAPACITY, LAB_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { boostCreepValidationCases } from '../../src/matrices/boost-creep-validation.js';
@@ -93,74 +93,6 @@ describe('Lab boostCreep', () => {
 		// Lab consumed only 1 part's worth.
 		const lab = await shard.expectStructure(labId, STRUCTURE_LAB);
 		expect(lab.store.UH).toBe(LAB_BOOST_MINERAL * 2);
-	});
-
-	test('BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL },
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			const creep = Game.getObjectById(${creepId});
-			lab.boostCreep(creep)
-		`);
-		expect(rc).toBe(ERR_NOT_IN_RANGE);
-	});
-
-	test('BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// Lab has energy but not enough mineral.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL - 1 },
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			const creep = Game.getObjectById(${creepId});
-			lab.boostCreep(creep)
-		`);
-		expect(rc).toBe(ERR_NOT_ENOUGH_RESOURCES);
-	});
-
-	test('BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// UH boosts ATTACK, but creep has only MOVE and CARRY — no matching parts.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL },
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [CARRY, MOVE],
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			const creep = Game.getObjectById(${creepId});
-			lab.boostCreep(creep)
-		`);
-		expect(rc).toBe(ERR_NOT_FOUND);
 	});
 
 	test('BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound', async ({ shard }) => {

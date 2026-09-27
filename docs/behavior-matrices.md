@@ -1645,12 +1645,11 @@ checks both. Each definition has these fields, in this order:
   availability.
 - `Exclusions`
   Successful body-part selection and boost type mapping, owned by
-  `BOOST-CREEP-001..009`.
+  `BOOST-CREEP-001..009`. Not yet listed: a spawning creep target
+  (`ERR_INVALID_TARGET`), and a `bodyPartsCount` above the creep's
+  unboosted matching parts (`ERR_NOT_FOUND`, `game/structures.js:433-437`).
 - `Verification Notes`
-  Verified vanilla API-guard order is: ownership → active RCL → target
-  validity → range → energy availability → mineral availability → matching
-  unboosted body parts. The executable case list lives in
-  `src/matrices/boost-creep-validation.ts`.
+  The executable case list lives in `src/matrices/boost-creep-validation.ts`.
 
 ### UNBOOST-VALIDATION
 
@@ -1672,9 +1671,7 @@ checks both. Each definition has these fields, in this order:
   also have boosted body-part state.
 - `Verification Notes`
   No `ERR_FULL` branch — surplus minerals spill onto the creep tile (see
-  Coverage Notes in `8.2 Unboost`). Verified vanilla API-guard order is:
-  target validity → ownership → active RCL → cooldown → boosted-part
-  availability → range. The executable case list lives in
+  Coverage Notes in `8.2 Unboost`). The executable case list lives in
   `src/matrices/unboost-validation.ts`.
 
 ### TERMINAL-SEND-VALIDATION

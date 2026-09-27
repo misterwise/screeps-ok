@@ -247,7 +247,10 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:cooldown`), `-007` (`:outOfRange`), `-014` to `-017` (`:noviceSource`,
   `:respawnSource`, `:noviceTarget`, `:respawnTarget`, new, with
   `:noviceSourceBeforeCooldown`). `COMBAT-MELEE-007` and `COMBAT-RANGED-005`
-  keep only the targets their method accepts.
+  keep only the targets their method accepts. `BOOST-CREEP-004`
+  (`BOOST-CREEP-010:range`), `-005` (`:notEnoughEnergy`,
+  `:notEnoughMineral`), `-006` (`:notFound`); `UNBOOST-002`
+  (`UNBOOST-006:notFound`), `-003` (`:range`).
 - New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
   the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New, from vanilla behavior nothing cataloged: `CTRL-UPGRADE-017` (a level-up

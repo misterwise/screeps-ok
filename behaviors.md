@@ -1437,30 +1437,23 @@ Coverage Notes
   energy per part boosted.
 - `BOOST-CREEP-003` `behavior` `verified_vanilla`
   `boostCreep(creep, bodyPartsCount)` limits the number of parts boosted.
-- `BOOST-CREEP-004` `behavior` `verified_vanilla`
-  `boostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
-- `BOOST-CREEP-005` `behavior` `verified_vanilla`
-  `boostCreep()` returns `ERR_NOT_ENOUGH_RESOURCES` when the lab lacks
-  compound or energy.
-- `BOOST-CREEP-006` `behavior` `verified_vanilla`
-  `boostCreep()` returns `ERR_NOT_FOUND` when the creep has no matching
-  unboosted parts.
 - `BOOST-CREEP-009` `behavior` `verified_vanilla`
   The lab's stored mineral compound determines which body part type is
   boosted; `boostCreep()` affects only unboosted parts of the type associated
   with the compound in the `BOOSTS` table.
 - `BOOST-CREEP-010` `matrix` `verified_vanilla`
-  `Lab.boostCreep(creep, bodyPartsCount?)` failure return codes and
-  precedence match the canonical validation matrix for ownership,
-  active-structure state, target validity, range, and resource availability.
+  `lab.boostCreep(creep, bodyPartsCount?)` returns the first failing check's
+  code, in this order: `:notOwner` the lab isn't the player's,
+  `ERR_NOT_OWNER`; `:rcl` it is inactive, `ERR_RCL_NOT_ENOUGH`;
+  `:invalidTarget` the target isn't a creep, `ERR_INVALID_TARGET`; `:range` it
+  isn't adjacent, `ERR_NOT_IN_RANGE`; `:notEnoughEnergy` the lab holds less
+  than `LAB_BOOST_ENERGY` energy, or `:notEnoughMineral` less than
+  `LAB_BOOST_MINERAL` of its compound, `ERR_NOT_ENOUGH_RESOURCES`; `:notFound`
+  the creep has no unboosted part the compound boosts, `ERR_NOT_FOUND`.
 
 ### 8.2 Unboost
 - `UNBOOST-001` `behavior` `verified_vanilla`
   `Lab.unboostCreep()` returns `OK` and removes all boosts from the creep.
-- `UNBOOST-002` `behavior` `verified_vanilla`
-  `unboostCreep()` returns `ERR_NOT_FOUND` when the creep has no boosts.
-- `UNBOOST-003` `behavior` `verified_vanilla`
-  `unboostCreep()` returns `ERR_NOT_IN_RANGE` when the creep is not adjacent.
 - `UNBOOST-004` `behavior` `verified_vanilla`
   Each unboosted body part drops `LAB_UNBOOST_MINERAL` (15) of its compound as
   a resource pile on the creep's own tile, not into the lab's store.
@@ -1470,9 +1463,13 @@ Coverage Notes
   * LAB_UNBOOST_MINERAL / LAB_REACTION_AMOUNT)` ticks. For a tier-1 boost like
   `UH` this reduces to `parts * REACTION_TIME[UH] * 3`.
 - `UNBOOST-006` `matrix` `verified_vanilla`
-  `Lab.unboostCreep(creep)` failure return codes and precedence match the
-  canonical validation matrix for ownership, target validity, range,
-  resource availability, and cooldown.
+  `lab.unboostCreep(creep)` returns the first failing check's code, in this
+  order: `:invalidTarget` the target isn't a creep, `ERR_INVALID_TARGET`;
+  `:labNotOwner` the lab isn't the player's, or `:creepNotOwner` the creep
+  isn't, `ERR_NOT_OWNER`; `:rcl` the lab is inactive, `ERR_RCL_NOT_ENOUGH`;
+  `:cooldown` its `cooldown` is above 0, `ERR_TIRED`; `:notFound` the creep
+  has no boosted part, `ERR_NOT_FOUND`; `:range` it isn't adjacent,
+  `ERR_NOT_IN_RANGE`.
 
 ### 8.3 Per-Part Boost Aggregation
 - `BOOST-AGGREGATION-001` `matrix` `verified_vanilla`
