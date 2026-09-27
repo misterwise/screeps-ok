@@ -142,7 +142,7 @@ describe('Spawn.recycleCreep', () => {
 
 	for (const row of recycleCreepValidationCases) {
 		test(`RECYCLE-CREEP-005:${row.label} recycleCreep() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const spawnOwner = blockers.has('not-owner-spawn') ? 'p2' : 'p1';
 			const creepOwner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
 			await shard.createShard({

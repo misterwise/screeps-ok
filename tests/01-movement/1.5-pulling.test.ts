@@ -262,7 +262,7 @@ describe('creep.pull()', () => {
 
 	for (const row of movePullValidationCases) {
 		test(`MOVE-PULL-011:${row.label} pull() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			// A spawning target beside a spawning puller needs two active spawns.
 			const rcl = blockers.has('busy') && blockers.has('spawning-target') ? 7 : 1;

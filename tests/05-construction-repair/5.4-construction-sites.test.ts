@@ -420,7 +420,7 @@ describe('room.createConstructionSite()', () => {
 
 	for (const row of constructionSiteCreateValidationCases) {
 		test(`CONSTRUCTION-SITE-011:${row.label} createConstructionSite() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			if (blockers.has('wall-terrain')) shard.requires('terrain', 'custom terrain walls the target tile');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const reserved = blockers.has('hostile-reservation');

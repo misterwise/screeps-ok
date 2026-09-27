@@ -83,7 +83,7 @@ describe('creep.harvest(deposit)', () => {
 	for (const row of depositHarvestValidationCases) {
 		test(`DEPOSIT-HARVEST-006:${row.label} harvest(deposit) validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('deposit');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
 				await shard.createShard({

@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	MOVE, WORK, CARRY, CLAIM, BODYPART_COST,
 	STRUCTURE_SPAWN, STRUCTURE_LAB,
 	CREEP_LIFE_TIME, CREEP_SPAWN_TIME, SPAWN_RENEW_RATIO,
-	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY,
+	FIND_DROPPED_RESOURCES, CARRY_CAPACITY, ENERGY_DECAY, SPAWN_ENERGY_CAPACITY,
 } from '../../src/index.js';
 import { renewCreepValidationCases } from '../../src/matrices/renew-creep-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
@@ -230,7 +230,7 @@ describe('Spawn.renewCreep', () => {
 
 	for (const row of renewCreepValidationCases) {
 		test(`RENEW-CREEP-011:${row.label} renewCreep() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -244,7 +244,8 @@ describe('Spawn.renewCreep', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_SPAWN,
 				owner,
-				store: blockers.has('not-enough') && !blockers.has('busy') ? { energy: 0 } : { energy: 300 },
+				// Busy, the spawn holds just what the busy spawn costs.
+				store: { energy: !blockers.has('not-enough') ? SPAWN_ENERGY_CAPACITY : blockers.has('busy') ? 3 * BODYPART_COST[MOVE] : 0 },
 			});
 			const creepId = blockers.has('invalid-target')
 				? await shard.placeSource('W1N1', { pos: blockers.has('range') ? [30, 30] : [25, 26] })

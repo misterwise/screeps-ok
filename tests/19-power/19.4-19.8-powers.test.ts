@@ -501,7 +501,7 @@ describe('Power creep renew', () => {
 
 	for (const row of powerCreepRenewValidationCases) {
 		test(`POWERCREEP-RENEW-002:${row.label} powerCreep.renew() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			shard.requires('powerCreeps');
 			// Only the account API can make an unspawned power creep.
 			if (blockers.has('busy')) shard.requires('powerCreepAccountApi');
@@ -536,7 +536,7 @@ describe('Power creep renew', () => {
 
 	for (const row of powerCreepSpawnValidationCases) {
 		test(`POWERCREEP-SPAWN-002:${row.label} powerCreep.spawn() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			shard.requires('powerCreeps');
 			// Every unspawned creep comes from the account API; only a spawned one can be placed.
 			if (!blockers.has('busy')) shard.requires('powerCreepAccountApi');

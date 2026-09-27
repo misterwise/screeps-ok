@@ -131,9 +131,10 @@ describe('lab.unboostCreep()', () => {
 	for (const row of unboostValidationCases) {
 		test(`UNBOOST-006:${row.label} unboostCreep() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const labOwner = blockers.has('lab-not-owner') ? 'p2' : 'p1';
-			const creepOwner = blockers.has('creep-not-owner') && !blockers.has('invalid-target') ? 'p2' : 'p1';
+			// Paired with invalid-target, the target that isn't the player's is the lab standing in for the creep.
+			const targetOwner = blockers.has('creep-not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
@@ -150,12 +151,12 @@ describe('lab.unboostCreep()', () => {
 				? await shard.placeStructure('W1N1', {
 					pos: targetPos,
 					structureType: STRUCTURE_LAB,
-					owner: 'p1',
+					owner: targetOwner,
 					store: { energy: LAB_ENERGY_CAPACITY },
 				})
 				: await shard.placeCreep('W1N1', {
 					pos: targetPos,
-					owner: creepOwner,
+					owner: targetOwner,
 					body: [ATTACK, MOVE],
 					boosts: blockers.has('not-found') ? {} : { 0: 'UH' },
 				});

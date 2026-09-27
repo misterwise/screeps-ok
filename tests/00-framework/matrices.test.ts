@@ -28,6 +28,18 @@ describe('matrices', () => {
 		expect(unrun.filter(name => !pending.has(name))).toEqual([]);
 		expect([...pending].filter(name => !unrun.includes(name))).toEqual([]);
 	});
+
+	// The fixture checks a pair's setup against its left single's only for rows it was given.
+	test('a test that loops a validation list registers each row', () => {
+		const lists = readdirSync(matricesDir)
+			.flatMap(name => [...stripComments(readFileSync(path.join(matricesDir, name), 'utf8')).matchAll(/^export const (\w+) = makeValidationCases\(/gm)])
+			.map(([, name]) => name);
+		expect(lists.length).toBeGreaterThan(30);
+		const unregistered = testFileClaims(path.join(root, 'tests'))
+			.filter(({ code }) => lists.some(list => new RegExp(`\\bof ${list}\\b`).test(code)) && !/\bvalidationBlockers\(/.test(code))
+			.map(({ file }) => path.relative(root, file));
+		expect(unregistered).toEqual([]);
+	});
 });
 
 describe('docs/behavior-matrices.md', () => {

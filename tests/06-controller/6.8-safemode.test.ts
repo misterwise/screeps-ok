@@ -210,7 +210,7 @@ describe('Safe mode mechanics', () => {
 
 	for (const row of ctrlSafemodeValidationCases) {
 		test(`CTRL-SAFEMODE-009:${row.label} activateSafeMode() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [

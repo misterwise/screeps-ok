@@ -15,6 +15,15 @@ export const harvestMineralValidationCases = makeValidationCases('HARVEST-MINERA
 	{ condition: 'extractor-not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'inactive-extractor', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
-] as const);
+] as const, [
+	['invalid-target', 'depleted'],
+	['invalid-target', 'no-extractor'],
+	['invalid-target', 'extractor-not-owner'],
+	['invalid-target', 'inactive-extractor'],
+	['invalid-target', 'cooldown'],
+	['no-extractor', 'extractor-not-owner'],
+	['no-extractor', 'inactive-extractor'],
+	['no-extractor', 'cooldown'],
+]);
 
 export type HarvestMineralValidationCase = typeof harvestMineralValidationCases[number];

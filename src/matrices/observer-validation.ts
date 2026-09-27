@@ -8,6 +8,9 @@ export const observerValidationCases = makeValidationCases('OBSERVER-007', [
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'rcl', expectedRc: ERR_RCL_NOT_ENOUGH },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
-] as const);
+] as const, [
+	// Range is the distance to the room name an invalid argument replaces.
+	['invalid-args', 'range'],
+]);
 
 export type ObserverValidationCase = typeof observerValidationCases[number];

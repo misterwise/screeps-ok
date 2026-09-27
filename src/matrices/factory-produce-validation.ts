@@ -14,6 +14,11 @@ export const factoryProduceValidationCases = makeValidationCases('FACTORY-PRODUC
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'full', expectedRc: ERR_FULL },
 ] as const, [
+	// A resource with no recipe has no level, reagents or output to fail on.
+	['invalid-args', 'level-mismatch'],
+	['invalid-args', 'power-effect'],
+	['invalid-args', 'not-enough'],
+	['invalid-args', 'full'],
 	['level-mismatch', 'full'],
 	['power-effect', 'full'],
 ]);

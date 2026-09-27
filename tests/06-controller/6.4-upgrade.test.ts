@@ -364,7 +364,7 @@ describe('creep.upgradeController()', () => {
 
 	for (const row of ctrlUpgradeValidationCases) {
 		test(`CTRL-UPGRADE-013:${row.label} upgradeController() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner-creep') ? 'p2' : 'p1';
 			const targetRoom = blockers.has('not-owner-controller') ? 'W2N1' : 'W1N1';
 			await shard.createShard({
@@ -399,7 +399,9 @@ describe('creep.upgradeController()', () => {
 					roomName: 'W1N1',
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
-					body: [MOVE, MOVE, MOVE],
+					pos: blockers.has('range') || targetRoom === 'W2N1' ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					// Three parts outlast the upgrade-blocked setup's ticks.
+					body: blockers.has('no-bodypart') ? [CARRY, MOVE, MOVE] : [WORK, CARRY, MOVE],
 				})
 				: await shard.placeCreep(targetRoom, {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],

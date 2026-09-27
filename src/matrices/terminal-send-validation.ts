@@ -12,6 +12,9 @@ export const terminalSendValidationCases = makeValidationCases('TERMINAL-SEND-01
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
 	{ condition: 'not-enough-energy-cost', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'invalid-description', expectedRc: ERR_INVALID_ARGS },
-] as const);
+] as const, [
+	// The energy cost grows with the distance to the room an invalid name replaces.
+	['invalid-room', 'not-enough-energy-cost'],
+]);
 
 export type TerminalSendValidationCase = typeof terminalSendValidationCases[number];

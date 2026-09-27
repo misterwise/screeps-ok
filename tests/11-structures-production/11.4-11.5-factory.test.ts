@@ -85,7 +85,7 @@ describe('Factory production', () => {
 	for (const row of factoryProduceValidationCases) {
 		test(`FACTORY-PRODUCE-011:${row.label} produce() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('factory');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],

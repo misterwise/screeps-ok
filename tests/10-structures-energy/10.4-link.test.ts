@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_TIRED, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY, } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_TIRED, STRUCTURE_LINK, STRUCTURE_STORAGE, STRUCTURE_RAMPART, LINK_LOSS_RATIO, LINK_COOLDOWN, LINK_CAPACITY, STORAGE_CAPACITY, } from '../../src/index.js';
 import { linkValidationCases } from '../../src/matrices/link-validation.js';
 import { staleReceiverCases } from '../../src/matrices/stale-receiver.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
@@ -161,7 +161,7 @@ describe('StructureLink', () => {
 
 	for (const row of linkValidationCases) {
 		test(`LINK-014:${row.label} transferEnergy() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const sourceOwner = blockers.has('source-not-owner') ? 'p2' : 'p1';
 			const targetOwner = blockers.has('target-not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
@@ -175,7 +175,7 @@ describe('StructureLink', () => {
 				pos: [25, 25],
 				structureType: STRUCTURE_LINK,
 				owner: sourceOwner,
-				store: blockers.has('not-enough') && !blockers.has('invalid-args') ? { energy: 0 }
+				store: blockers.has('not-enough') ? { energy: 0 }
 					// Less than the amount sent below.
 					: blockers.has('not-enough-amount') ? { energy: 10 }
 					: { energy: 100 },
@@ -195,6 +195,7 @@ describe('StructureLink', () => {
 					pos: [26, 25],
 					structureType: STRUCTURE_STORAGE,
 					owner: targetOwner,
+					...(blockers.has('full') ? { store: { energy: STORAGE_CAPACITY } } : {}),
 				})
 				: await shard.placeStructure(targetRoom, {
 					pos: [26, 25],

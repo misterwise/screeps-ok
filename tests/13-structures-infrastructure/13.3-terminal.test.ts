@@ -2,7 +2,7 @@ import { describe, test, expect, code,
 	OK,
 	STRUCTURE_TERMINAL, PWR_OPERATE_TERMINAL, POWER_INFO,
 	TERMINAL_COOLDOWN,
-	RESOURCE_ENERGY, RESOURCE_POWER,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN, RESOURCE_POWER,
 } from '../../src/index.js';
 import { terminalSendValidationCases } from '../../src/matrices/terminal-send-validation.js';
 
@@ -276,7 +276,7 @@ describe('Terminal send', () => {
 	for (const row of terminalSendValidationCases) {
 		test(`TERMINAL-SEND-013:${row.label} send() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('terminalSend');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -285,11 +285,13 @@ describe('Terminal send', () => {
 					{ name: 'W5N1', rcl: 6, owner: 'p1' },
 				],
 			});
-			const resourceType = blockers.has('invalid-resource') ? 'not_a_resource' : blockers.has('not-enough-energy-cost') ? 'H' : 'energy';
+			// Energy can't pay its own cost when short: a shortfall sends hydrogen, or the unknown resource.
+			const resourceType = blockers.has('invalid-resource') ? 'not_a_resource'
+				: blockers.has('not-enough-energy-cost') ? RESOURCE_HYDROGEN : RESOURCE_ENERGY;
 			const amount = 100;
-			const store: Record<string, number> = resourceType === 'H'
-				? { H: blockers.has('not-enough-amount') ? 50 : 100, energy: blockers.has('not-enough-energy-cost') ? 0 : 100000 }
-				: { energy: blockers.has('not-enough-amount') ? 50 : 100000 };
+			const store: Record<string, number> = resourceType === RESOURCE_HYDROGEN
+				? { [RESOURCE_HYDROGEN]: blockers.has('not-enough-amount') ? 50 : 100, [RESOURCE_ENERGY]: 0 }
+				: { [RESOURCE_ENERGY]: blockers.has('not-enough-energy-cost') ? 0 : blockers.has('not-enough-amount') ? 50 : 100000 };
 			const termId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],
 				structureType: STRUCTURE_TERMINAL,

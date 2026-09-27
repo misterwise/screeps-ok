@@ -31,6 +31,7 @@ export const harvestValidationCases = makeValidationCases('HARVEST-015', [
 	['plain-object-target', 'invalid-target'],
 	['plain-object-target', 'depleted'],
 	['plain-object-target', 'range'],
+	['invalid-target', 'depleted'],
 	['hostile-room', 'hostile-reservation'],
 ]);
 

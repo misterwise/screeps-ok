@@ -2,7 +2,7 @@ import { describe, test, expect, code, body,
 	OK,
 	CARRY, MOVE,
 	FIND_CREEPS, FIND_DROPPED_RESOURCES,
-	RESOURCE_ENERGY, RESOURCE_HYDROGEN,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN, RESOURCE_POWER,
 	STRUCTURE_CONTAINER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_TERMINAL,
 	STRUCTURE_LAB, STRUCTURE_NUKER, STRUCTURE_TOWER,
 	CARRY_CAPACITY, ENERGY_DECAY,
@@ -122,7 +122,7 @@ describe('creep.withdraw()', () => {
 
 	for (const row of withdrawValidationCases) {
 		test(`WITHDRAW-017:${row.label} withdraw() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			if (blockers.has('invalid-nuker')) shard.requires('nuke');
 			if (blockers.has('invalid-power-bank')) shard.requires('powerBank');
 			const disrupted = blockers.has('disrupted-terminal');
@@ -151,8 +151,9 @@ describe('creep.withdraw()', () => {
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					// A spawning creep holds nothing, so only a body without CARRY is full.
 					// Outlasts the disrupt setup's three ticks.
-					body: disrupted ? body(3, CARRY, MOVE) : [CARRY, MOVE],
+					body: blockers.has('full') ? [MOVE] : disrupted ? body(3, CARRY, MOVE) : [CARRY, MOVE],
 				})
 				: await shard.placeCreep('W1N1', {
 					pos: [25, 25],
@@ -165,7 +166,12 @@ describe('creep.withdraw()', () => {
 			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [25, 26];
 			let targetId: string;
 			if (blockers.has('invalid-target')) {
-				targetId = await shard.placeCreep('W1N1', { pos: targetPos, owner: 'p1', body: [MOVE] });
+				targetId = await shard.placeCreep('W1N1', {
+					pos: targetPos,
+					owner: blockers.has('target-not-owner') ? 'p2' : 'p1',
+					body: [CARRY, MOVE],
+					store: blockers.has('not-enough') ? {} : { energy: 50 },
+				});
 			} else if (disrupted) {
 				targetId = await shard.placeStructure('W1N1', {
 					pos: targetPos,
@@ -180,10 +186,15 @@ describe('creep.withdraw()', () => {
 					pos: targetPos,
 					structureType: blockers.has('invalid-nuker') ? STRUCTURE_NUKER : STRUCTURE_SPAWN,
 					owner: 'p2',
-					store: { energy: 300 },
+					store: blockers.has('not-enough') ? {} : { energy: 300 },
 				});
 			} else if (blockers.has('invalid-nuker')) {
-				targetId = await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_NUKER, owner: 'p1' });
+				targetId = await shard.placeStructure('W1N1', {
+					pos: targetPos,
+					structureType: STRUCTURE_NUKER,
+					owner: 'p1',
+					store: blockers.has('not-enough') ? {} : { energy: 500 },
+				});
 			} else if (blockers.has('invalid-capacity')) {
 				targetId = await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_SPAWN, owner: 'p1', store: { energy: 300 } });
 			} else {
@@ -214,8 +225,10 @@ describe('creep.withdraw()', () => {
 				await shard.tick();
 			}
 
+			// A power bank holds power; asked for energy it also holds too little.
 			const resource = blockers.has('invalid-resource') ? 'not_a_resource'
 				: blockers.has('invalid-capacity') ? RESOURCE_HYDROGEN
+				: blockers.has('invalid-power-bank') && !blockers.has('not-enough') ? RESOURCE_POWER
 				: RESOURCE_ENERGY;
 			const amount = blockers.has('invalid-args') ? -1 : blockers.has('full-amount') ? 20 : undefined;
 			const rc = amount === undefined
@@ -418,7 +431,7 @@ describe('creep.drop()', () => {
 
 	for (const row of dropValidationCases) {
 		test(`DROP-011:${row.label} drop() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
 				await shard.createShard({
@@ -607,7 +620,7 @@ describe('creep.pickup()', () => {
 
 	for (const row of pickupValidationCases) {
 		test(`PICKUP-010:${row.label} pickup() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
 				await shard.createShard({
@@ -625,7 +638,7 @@ describe('creep.pickup()', () => {
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
-					body: [CARRY, MOVE],
+					body: blockers.has('full') ? [MOVE] : [CARRY, MOVE],
 				})
 				: await shard.placeCreep('W1N1', {
 					pos: [25, 25],

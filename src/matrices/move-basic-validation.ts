@@ -14,7 +14,6 @@ export const moveBasicValidationCases = makeValidationCases('MOVE-BASIC-027', [
 ] as const, [
 	['busy', 'fatigue'],
 	['range', 'invalid-args'],
-	['fatigue', 'no-bodypart'],
 ]);
 
 export type MoveBasicValidationCase = typeof moveBasicValidationCases[number];

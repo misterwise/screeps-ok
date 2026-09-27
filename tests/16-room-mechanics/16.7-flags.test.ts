@@ -111,7 +111,7 @@ describe('Flags', () => {
 	for (const row of flagCreateValidationCases) {
 		test(`FLAG-009:${row.label} createFlag() validation returns the canonical code`, async ({ shard }) => {
 			await shard.ownedRoom('p1');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const name = blockers.has('invalid-name-length')
 				? 'x'.repeat(101)
 				: blockers.has('name-exists') || blockers.has('name-created')

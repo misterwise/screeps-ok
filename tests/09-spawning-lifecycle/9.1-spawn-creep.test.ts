@@ -390,7 +390,7 @@ describe('StructureSpawn', () => {
 
 	for (const row of spawnCreateValidationCases) {
 		test(`SPAWN-CREATE-014:${row.label} spawnCreep() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -415,8 +415,10 @@ describe('StructureSpawn', () => {
 					pos: [26, 25], structureType: STRUCTURE_EXTENSION, owner, store: { energy: 0 },
 				})
 				: null;
+			// A name too long to spawn can still be placed, so it can also exist.
+			const name = blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
 			if (blockers.has('name-exists')) {
-				await shard.placeCreep('W1N1', { pos: [20, 21], owner: 'p1', body: [MOVE], name: 'NewCreep' });
+				await shard.placeCreep('W1N1', { pos: [20, 21], owner: 'p1', body: [MOVE], name });
 			}
 			if (blockers.has('name-spawning')) {
 				const otherSpawnId = await shard.placeStructure('W2N1', {
@@ -437,7 +439,6 @@ describe('StructureSpawn', () => {
 			}
 			if (blockers.has('rcl')) await shard.tick();
 
-			const name = blockers.has('invalid-name-or-options') ? 'x'.repeat(101) : 'NewCreep';
 			const creepBody = blockers.has('invalid-body') ? []
 				: blockers.has('oversized-body') ? body(MAX_CREEP_SIZE + 1, MOVE)
 				: blockers.has('invalid-part') ? ['notapart']

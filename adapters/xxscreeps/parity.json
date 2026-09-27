@@ -81,6 +81,12 @@
 			"why": "Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order.",
 			"tests": ["MOVE-PULL-011:spawningTargetBeforeRange"]
 		},
+		"move-bodypart-checked-before-fatigue": {
+			"actual": "`checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`.",
+			"expected": "Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`).",
+			"why": "Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved.",
+			"tests": ["MOVE-BASIC-027:fatigueBeforeNoBodypart"]
+		},
 		"transfer-negative-amount-lost-on-storeless-target": {
 			"actual": "`Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`.",
 			"expected": "Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`).",

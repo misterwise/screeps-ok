@@ -9,6 +9,9 @@ export const ctrlGensafeValidationCases = makeValidationCases('CTRL-GENSAFE-005'
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
-] as const);
+] as const, [
+	// A spawning creep holds nothing.
+	['busy', 'not-enough'],
+]);
 
 export type CtrlGensafeValidationCase = typeof ctrlGensafeValidationCases[number];

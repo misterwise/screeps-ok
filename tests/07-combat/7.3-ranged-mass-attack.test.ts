@@ -144,7 +144,7 @@ describe('creep.rangedMassAttack()', () => {
 
 	for (const row of combatRmaValidationCases) {
 		test(`COMBAT-RMA-005:${row.label} rangedMassAttack() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({

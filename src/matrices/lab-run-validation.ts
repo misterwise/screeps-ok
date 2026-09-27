@@ -20,22 +20,29 @@ export const labRunValidationCases = makeValidationCases('LAB-RUN-013', [
 	{ condition: 'no-product', expectedRc: ERR_INVALID_ARGS },
 	{ condition: 'invalid-args', expectedRc: ERR_INVALID_ARGS },
 ] as const, [
-	// A container as lab1 has no range, store or mineral to fail on.
+	// A container as lab1 has no range, store or mineral to fail on, and no
+	// reagent for a product the calling lab's mineral could differ from.
 	['invalid-lab1', 'range-lab1'],
 	['invalid-lab1', 'not-enough-lab1'],
 	['invalid-lab1', 'no-product'],
+	['invalid-lab1', 'invalid-args'],
 	// The forms of lab2 exclude each other, and a lab2 that isn't another lab
-	// has no range, store or mineral to fail on.
+	// has no range, store, mineral or product to fail on.
 	['invalid-target', 'not-a-lab'],
 	['invalid-target', 'self-target'],
+	['invalid-target', 'range'],
+	['invalid-target', 'not-enough'],
 	['invalid-target', 'no-product'],
+	['invalid-target', 'invalid-args'],
 	['not-a-lab', 'self-target'],
 	['not-a-lab', 'range'],
 	['not-a-lab', 'not-enough'],
 	['not-a-lab', 'no-product'],
+	['not-a-lab', 'invalid-args'],
 	['self-target', 'range'],
 	['self-target', 'not-enough'],
 	['self-target', 'no-product'],
+	['self-target', 'invalid-args'],
 ]);
 
 export type LabRunValidationCase = typeof labRunValidationCases[number];

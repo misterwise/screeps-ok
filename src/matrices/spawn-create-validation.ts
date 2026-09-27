@@ -22,9 +22,16 @@ export const spawnCreateValidationCases = makeValidationCases('SPAWN-CREATE-014'
 	['name-exists', 'name-spawning'],
 	// An inactive spawn can't start the spawn that makes it busy.
 	['busy', 'rcl'],
+	// A spawning creep's name is one spawnCreep accepted: 100 characters at most.
+	['invalid-name-or-options', 'name-spawning'],
 	['invalid-body', 'oversized-body'],
 	['invalid-body', 'invalid-part'],
 	['oversized-body', 'invalid-part'],
+	// An empty body costs nothing, and an unknown part has no cost.
+	['invalid-body', 'not-enough'],
+	['invalid-body', 'not-enough-selected'],
+	['invalid-part', 'not-enough'],
+	['invalid-part', 'not-enough-selected'],
 ]);
 
 export type SpawnCreateValidationCase = typeof spawnCreateValidationCases[number];

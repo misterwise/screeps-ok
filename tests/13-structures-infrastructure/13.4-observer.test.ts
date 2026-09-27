@@ -85,7 +85,7 @@ describe('StructureObserver', () => {
 	for (const row of observerValidationCases) {
 		test(`OBSERVER-007:${row.label} observeRoom() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('observer');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],

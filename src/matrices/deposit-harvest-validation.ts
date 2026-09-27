@@ -10,6 +10,8 @@ export const depositHarvestValidationCases = makeValidationCases('DEPOSIT-HARVES
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
-] as const);
+] as const, [
+	['invalid-target', 'cooldown'],
+]);
 
 export type DepositHarvestValidationCase = typeof depositHarvestValidationCases[number];

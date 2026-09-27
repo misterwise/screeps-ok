@@ -12,6 +12,10 @@ export const ctrlReserveValidationCases = makeValidationCases('CTRL-RESERVE-008'
 	{ condition: 'hostile-reservation', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
 ] as const, [
+	// A spawning creep's room is its owner's: the controller beside it is owned.
+	['busy', 'invalid-controller-state'],
+	// A source replaces the controller the last two describe.
+	['invalid-target', 'invalid-controller-state'],
 	['invalid-target', 'hostile-reservation'],
 	['invalid-controller-state', 'hostile-reservation'],
 ]);

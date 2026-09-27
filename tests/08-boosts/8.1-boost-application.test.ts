@@ -135,17 +135,16 @@ describe('Lab boostCreep', () => {
 	for (const row of boostCreepValidationCases) {
 		test(`BOOST-CREEP-010:${row.label} boostCreep() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 5 : 6, owner: 'p1' }],
 			});
-			const labStore = blockers.has('not-enough-energy')
-				? { energy: 0, UH: LAB_BOOST_MINERAL }
-				: blockers.has('not-enough-mineral')
-					? { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL - 1 }
-					: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL };
+			const labStore = {
+				energy: blockers.has('not-enough-energy') ? 0 : LAB_ENERGY_CAPACITY,
+				UH: blockers.has('not-enough-mineral') ? LAB_BOOST_MINERAL - 1 : LAB_BOOST_MINERAL,
+			};
 			const labId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],
 				structureType: STRUCTURE_LAB,

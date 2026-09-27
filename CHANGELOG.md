@@ -169,6 +169,43 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Dropped, validation pairs whose second condition was never set up (the
+  test fixture now fails such a pair): `BUILD-011:busyBeforeNotEnough`,
+  `BUILD-011:invalidTargetBeforeBlockedTarget`,
+  `CTRL-ATTACK-007:invalidTargetBefore{Cooldown,InvalidControllerState}`,
+  `CTRL-CLAIM-008:busyBeforeInvalidControllerState`,
+  `CTRL-CLAIM-008:invalidTargetBeforeInvalidControllerState`,
+  `CTRL-GENSAFE-005:busyBeforeNotEnough`,
+  `CTRL-RESERVE-008:busyBeforeInvalidControllerState`,
+  `CTRL-RESERVE-008:invalidTargetBeforeInvalidControllerState`,
+  `CTRL-UPGRADE-013:busyBeforeNotEnough`,
+  `CTRL-UPGRADE-013:invalidTargetBefore{NotOwnerController,UpgradeBlocked}`,
+  `DEPOSIT-HARVEST-006:invalidTargetBeforeCooldown`,
+  `DROP-011:busyBeforeNotEnough`,
+  `FACTORY-PRODUCE-011:invalidArgsBefore{Full,LevelMismatch,NotEnough,PowerEffect}`,
+  `HARVEST-015:invalidTargetBeforeDepleted`,
+  `HARVEST-MINERAL-014:invalidTargetBefore{Cooldown,Depleted,ExtractorNotOwner,InactiveExtractor,NoExtractor}`,
+  `HARVEST-MINERAL-014:noExtractorBefore{Cooldown,ExtractorNotOwner,InactiveExtractor}`,
+  `LAB-REVERSE-013:invalidTargetBeforeSameLab`,
+  `LAB-RUN-013:{invalidLab1,notALab,selfTarget}BeforeInvalidArgs`,
+  `LAB-RUN-013:invalidTargetBefore{InvalidArgs,NotEnough,Range}`,
+  `OBSERVER-007:invalidArgsBeforeRange`,
+  `RECYCLE-CREEP-005:invalidTargetBeforeNotOwnerCreep`,
+  `RENEW-CREEP-011:invalidTargetBeforeFull`, `REPAIR-010:busyBeforeNotEnough`,
+  `SPAWN-CREATE-014:{invalidBody,invalidPart}Before{NotEnough,NotEnoughSelected}`,
+  `SPAWN-CREATE-014:invalidNameOrOptionsBeforeNameSpawning`,
+  `TERMINAL-SEND-013:invalidRoomBeforeNotEnoughEnergyCost`,
+  `TRANSFER-015:busyBeforeNotEnough`,
+  `TRANSFER-015:invalidArgsBefore{FullAmount,NotEnoughAmount}`,
+  `TRANSFER-015:invalidCapacityBefore{Full,FullAmount}`,
+  `TRANSFER-015:invalidTargetBefore{Full,FullAmount,InvalidCapacity}`,
+  `WITHDRAW-017:busyBeforeFullAmount`,
+  `WITHDRAW-017:invalidArgsBefore{FullAmount,NotEnough}`,
+  `WITHDRAW-017:invalidCapacityBeforeNotEnough`,
+  `WITHDRAW-017:invalidTargetBefore{InvalidCapacity,InvalidNuker}`. New:
+  `CTRL-SIGN-004:invalidTargetBeforeRange` and
+  `MOVE-BASIC-027:fatigueBeforeNoBodypart`, whose exclusions had called them
+  unreachable.
 - Dropped: `LEGACY-PATH-010`, `RENEW-CREEP-012`..`-014`,
   `ATTACK-NOTIFY-001`..`-004`, `CONSTRUCTION-SITE-015`, `POWER-BANK-003`,
   `STRUCTURE-API-008`, `RAMPART-DECAY-005`, `ISM-001`, `ISM-003`, `ISM-004`,

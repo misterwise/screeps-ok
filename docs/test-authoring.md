@@ -66,6 +66,7 @@ out.
 | `getObject(id)`, `findInRoom(room, FIND_*)` | Reads snapshots; `getObject` returns `null` for a missing object | — |
 | `expectRunPlayerError(player, code, kind)` | Asserts the code fails with a `syntax`, `runtime`, or `serialization` error | as `runPlayer` |
 | `requires(capability)` | Skips the test if the adapter lacks the capability | — |
+| `validationBlockers(row)` | A validation case's conditions, registered for the pair check (see [Matrix families](#matrix-families)) | — |
 
 > [!IMPORTANT]
 > `runPlayer()` already processes the code's intents within its own tick, so
@@ -319,6 +320,16 @@ it. Do not:
 If the definition is incomplete, finish it before writing the test family. If
 the applicability set is not stable, keep the claim in a Note until the
 family is explicit.
+
+A validation matrix (`makeValidationCases`) runs each condition alone, then
+each ordered pair expecting the left one's code, so a pair proves the check
+order only if its setup establishes both conditions. Open each case with
+`const blockers = shard.validationBlockers(row)` and branch the setup on it:
+the fixture fails a pair whose shard calls are its left single's, since its
+right condition never held. When one condition replaces what the other
+describes (a source standing in for the controller whose cooldown the other
+sets), exclude the pair in the case list and say why in the definition's
+Exclusions.
 
 ## Write from the idiom, not only the method
 

@@ -12,6 +12,11 @@ export const buildValidationCases = makeValidationCases('BUILD-011', [
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'blocked-target', expectedRc: ERR_INVALID_TARGET },
-] as const);
+] as const, [
+	// A spawning creep holds nothing.
+	['busy', 'not-enough'],
+	// A creep on the tile blocks a site, not the container that replaces it.
+	['invalid-target', 'blocked-target'],
+]);
 
 export type BuildValidationCase = typeof buildValidationCases[number];

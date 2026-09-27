@@ -13,6 +13,12 @@ export const ctrlUpgradeValidationCases = makeValidationCases('CTRL-UPGRADE-013'
 	{ condition: 'upgrade-blocked', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'not-owner-controller', expectedRc: ERR_NOT_OWNER },
-] as const);
+] as const, [
+	// A spawning creep holds nothing.
+	['busy', 'not-enough'],
+	// A source replaces the controller the other two describe.
+	['invalid-target', 'upgrade-blocked'],
+	['invalid-target', 'not-owner-controller'],
+]);
 
 export type CtrlUpgradeValidationCase = typeof ctrlUpgradeValidationCases[number];

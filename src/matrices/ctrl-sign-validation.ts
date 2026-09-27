@@ -7,7 +7,6 @@ export const ctrlSignValidationCases = makeValidationCases('CTRL-SIGN-004', [
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'not-controller', expectedRc: ERR_INVALID_TARGET },
 ] as const, [
-	['invalid-target', 'range'],
 	['invalid-target', 'not-controller'],
 ]);
 

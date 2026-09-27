@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
 	ATTACK, MOVE, CARRY,
 	body,
-	POWER_LEVEL_MULTIPLY, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB,
+	POWER_LEVEL_MULTIPLY, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB, PWR_OPERATE_EXTENSION,
 } from '../../src/index.js';
 import { powerCreepUpgradeValidationCases } from '../../src/matrices/power-creep-upgrade-validation.js';
 
@@ -523,14 +523,17 @@ describe('Power creep lifecycle', () => {
 
 	for (const row of powerCreepUpgradeValidationCases) {
 		test(`POWERCREEP-UPGRADE-002:${row.label} powerCreep.upgrade() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			shard.requires('powerCreeps');
 			shard.requires('powerCreepAccountApi');
 			const hostile = blockers.has('not-owner');
-			// Level 25 from five powers at 5; one GENERATE_OPS level leaves the next one wanting creep level 2.
+			// Upgraded, GENERATE_OPS 2 wants creep level 2: a level 2 creep may, a level 1 one may not.
+			// Level 25 leaves GENERATE_OPS below 5, so only the creep's level is full.
 			const powers: Record<number, number> = blockers.has('max-level')
-				? { [PWR_GENERATE_OPS]: 5, [PWR_OPERATE_SPAWN]: 5, [PWR_OPERATE_TOWER]: 5, [PWR_OPERATE_STORAGE]: 5, [PWR_OPERATE_LAB]: 5 }
-				: { [PWR_GENERATE_OPS]: 1 };
+				? { [PWR_GENERATE_OPS]: 4, [PWR_OPERATE_SPAWN]: 5, [PWR_OPERATE_TOWER]: 5, [PWR_OPERATE_STORAGE]: 5, [PWR_OPERATE_LAB]: 5, [PWR_OPERATE_EXTENSION]: 1 }
+				: blockers.has('level-requirement')
+					? { [PWR_GENERATE_OPS]: 1 }
+					: { [PWR_GENERATE_OPS]: 1, [PWR_OPERATE_SPAWN]: 1 };
 			const level = Object.values(powers).reduce((sum, value) => sum + value, 0);
 			// A creep costs one GPL level plus one per creep level; the upgrader's own account pays.
 			const used = hostile ? 0 : 1 + level;

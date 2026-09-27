@@ -22,9 +22,16 @@ export const withdrawValidationCases = makeValidationCases('WITHDRAW-017', [
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 ] as const, [
 	['busy', 'safemode-not-owner'],
+	// A spawning creep holds nothing: its free capacity is a whole number of CARRY parts.
+	['busy', 'full-amount'],
+	// A negative amount replaces the amount full-amount passes, and is never more than the target holds.
+	['invalid-args', 'full-amount'],
+	['invalid-args', 'not-enough'],
 	['invalid-resource', 'invalid-capacity'],
 	['invalid-target', 'disrupted-terminal'],
+	['invalid-target', 'invalid-nuker'],
 	['invalid-target', 'invalid-power-bank'],
+	['invalid-target', 'invalid-capacity'],
 	// A power creep can't use a power in another player's safe mode.
 	['disrupted-terminal', 'safemode-not-owner'],
 	['disrupted-terminal', 'invalid-nuker'],
@@ -34,6 +41,8 @@ export const withdrawValidationCases = makeValidationCases('WITHDRAW-017', [
 	['target-not-owner', 'invalid-power-bank'],
 	['invalid-nuker', 'invalid-power-bank'],
 	['invalid-power-bank', 'invalid-capacity'],
+	// A store with no capacity for the resource holds none of it.
+	['invalid-capacity', 'not-enough'],
 ]);
 
 export type WithdrawValidationCase = typeof withdrawValidationCases[number];

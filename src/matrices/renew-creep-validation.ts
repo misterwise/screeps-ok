@@ -16,7 +16,9 @@ export const renewCreepValidationCases = makeValidationCases('RENEW-CREEP-011', 
 ] as const, [
 	// An inactive spawn can't start the spawn that makes it busy.
 	['busy', 'rcl'],
+	// A source replaces the creep whose body and age the two describe.
 	['invalid-target', 'claim-part'],
+	['invalid-target', 'full'],
 ]);
 
 export type RenewCreepValidationCase = typeof renewCreepValidationCases[number];

@@ -12,6 +12,9 @@ export const ctrlAttackValidationCases = makeValidationCases('CTRL-ATTACK-007', 
 	{ condition: 'invalid-controller-state', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
 ] as const, [
+	// A source replaces the controller the last two describe.
+	['invalid-target', 'invalid-controller-state'],
+	['invalid-target', 'cooldown'],
 	['invalid-controller-state', 'cooldown'],
 ]);
 

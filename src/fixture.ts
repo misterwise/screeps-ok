@@ -7,6 +7,7 @@ import { loadParity, registrationFor, type Parity } from '../scripts/lib/parity.
 import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName, TickOptions } from './adapter.js';
 import type { PlayerCode } from './code.js';
 import { RunPlayerError, type RunPlayerErrorKind } from './errors.js';
+import { toLabelToken, type ValidationCase } from './matrices/validation-cases.js';
 import type {
 	ObjectSnapshot, CreepSnapshot, StructureSnapshot,
 	SiteSnapshot, SourceSnapshot, MineralSnapshot,
@@ -130,6 +131,15 @@ export interface ShardFixture extends ScreepsOkAdapter {
 	 *   shard.requires('chemistry');
 	 */
 	requires(capability: CapabilityName, reason?: string): void;
+
+	/**
+	 * The blockers a validation case sets up. Registers the case, so the
+	 * fixture can fail a pair whose setup is its left single's: the right-hand
+	 * condition was never established.
+	 *
+	 *   const blockers = shard.validationBlockers(row);
+	 */
+	validationBlockers<Name extends string>(row: ValidationCase<string, Name>): ReadonlySet<Name>;
 }
 
 function wrapAdapter(
@@ -137,6 +147,7 @@ function wrapAdapter(
 	skip: (note?: string) => never,
 	task: { meta: Record<string, unknown> },
 	gates: Set<string>,
+	recorder: SetupRecorder,
 ): ShardFixture {
 	const shard = adapter as ShardFixture;
 
@@ -176,6 +187,11 @@ function wrapAdapter(
 		skip(reason ?? `adapter capability '${capability}' is disabled`);
 	};
 
+	shard.validationBlockers = <Name extends string>(row: ValidationCase<string, Name>) => {
+		recorder.validationCase = row;
+		return new Set(row.blockers);
+	};
+
 	shard.expectRunPlayerError = async (
 		userId: string,
 		playerCode: PlayerCode,
@@ -207,7 +223,7 @@ function wrapAdapter(
 
 // A timed-out test body keeps running after vitest moves on. The fence rejects
 // its later shard calls and aborts its in-flight tick(n) between ticks.
-export function fenceShard<Shard extends object>(shard: Shard) {
+export function fenceShard<Shard extends object>(shard: Shard, recorder?: SetupRecorder) {
 	const controller = new AbortController();
 	const inFlight = new Set<Promise<void>>();
 	const fenced = new Proxy(shard, {
@@ -218,6 +234,7 @@ export function fenceShard<Shard extends object>(shard: Shard) {
 				if (controller.signal.aborted) {
 					throw new Error(`shard.${String(key)}() called after its test ended (did the test time out?)`);
 				}
+				const call = recorder?.call(String(key), args);
 				if (key === 'tick') {
 					const options = args[1] as TickOptions | undefined;
 					const signal = options?.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
@@ -225,7 +242,7 @@ export function fenceShard<Shard extends object>(shard: Shard) {
 				}
 				const result: unknown = value.apply(target, args);
 				if (result instanceof Promise) {
-					const settled = result.then(() => {}, () => {});
+					const settled = result.then(resolved => recorder?.result(resolved, call), () => {});
 					inFlight.add(settled);
 					void settled.then(() => inFlight.delete(settled));
 				}
@@ -240,6 +257,60 @@ export function fenceShard<Shard extends object>(shard: Shard) {
 			await Promise.all(inFlight);
 		},
 	};
+}
+
+// A test's shard calls, with the ids it got back renamed in the order it
+// got them, so two tests that set up the same world record the same text.
+export class SetupRecorder {
+	validationCase: ValidationCase<string, string> | undefined;
+	private readonly calls: string[] = [];
+	private readonly ids = new Map<string, string>();
+
+	call(method: string, args: unknown[]) {
+		if (method === 'validationBlockers') return undefined;
+		const call = `${method}(${JSON.stringify(args)})`;
+		this.calls.push(call);
+		return call;
+	}
+
+	// An id the call was given (a flag's name) is the test's choice, not the engine's.
+	result(value: unknown, call: string | undefined) {
+		const ids = typeof value === 'string' ? [value]
+			: [value].flat().flatMap(item => {
+				const id = (item as { id?: unknown } | null | undefined)?.id;
+				return typeof id === 'string' ? [id] : [];
+			});
+		for (const id of ids) {
+			if (!this.ids.has(id) && !call?.includes(JSON.stringify(id))) this.ids.set(id, `#${this.ids.size}`);
+		}
+	}
+
+	setup() {
+		return this.calls.map(call => [...this.ids].reduce((text, [id, ordinal]) => text.replaceAll(id, ordinal), call)).join('\n');
+	}
+}
+
+// Each validation case's setup in the running file, by `catalogId:label`.
+const caseSetups = new Map<string, string>();
+
+// A pair proves check order only if it sets up its right-hand condition too;
+// the same setup as its left single's never did. Singles run first; records
+// this case's setup into `setups`.
+export function pairSetupError(row: ValidationCase<string, string>, setup: string, setups: Map<string, string>): string | undefined {
+	setups.set(`${row.catalogId}:${row.label}`, setup);
+	if (row.blockers.length < 2) return undefined;
+	const [left, right] = row.blockers;
+	const single = `${row.catalogId}:${toLabelToken(left)}`;
+	return setups.get(single) === setup
+		? `${row.catalogId}:${row.label} sets up exactly what ${single} does, so '${right}' never holds: set it up too, or exclude the pair citing vanilla`
+		: undefined;
+}
+
+function assertPairSetUp(task: RunnerTestCase, recorder: SetupRecorder) {
+	const row = recorder.validationCase;
+	if (!row || (task.result as { pending?: boolean } | undefined)?.pending) return;
+	const error = pairSetupError(row, recorder.setup(), caseSetups);
+	if (error) throw new Error(error);
 }
 
 function taskCatalogId(task: RunnerTestCase): string | null {
@@ -285,7 +356,8 @@ export const test = base.extend<{ shard: ShardFixture }>({
 		const mod = await getAdapterModule();
 		const adapter = await mod.createAdapter();
 		const gates = new Set<string>();
-		const fence = fenceShard(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }, gates));
+		const recorder = new SetupRecorder();
+		const fence = fenceShard(wrapAdapter(adapter, skip, task as unknown as { meta: Record<string, unknown> }, gates, recorder), recorder);
 		try {
 			await use(fence.fenced);
 		} finally {
@@ -293,6 +365,7 @@ export const test = base.extend<{ shard: ShardFixture }>({
 			await adapter.teardown();
 		}
 		assertGated(task, gates);
+		assertPairSetUp(task, recorder);
 	},
 });
 

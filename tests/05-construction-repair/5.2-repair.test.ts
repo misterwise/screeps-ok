@@ -172,7 +172,7 @@ describe('creep.repair()', () => {
 
 	for (const row of repairValidationCases) {
 		test(`REPAIR-010:${row.label} repair() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
 				await shard.createShard({

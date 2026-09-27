@@ -241,7 +241,7 @@ describe('creep.attack()', () => {
 
 	for (const row of combatMeleeValidationCases) {
 		test(`COMBAT-MELEE-009:${row.label} attack() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
@@ -443,7 +443,7 @@ describe('creep.rangedAttack()', () => {
 
 	for (const row of combatRangedValidationCases) {
 		test(`COMBAT-RANGED-007:${row.label} rangedAttack() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
@@ -609,7 +609,7 @@ describe('creep.heal()', () => {
 
 	for (const row of combatHealValidationCases) {
 		test(`COMBAT-HEAL-007:${row.label} heal() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
@@ -817,7 +817,7 @@ describe('creep.heal()', () => {
 
 	for (const row of combatRangedHealValidationCases) {
 		test(`COMBAT-RANGEDHEAL-006:${row.label} rangedHeal() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({

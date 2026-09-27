@@ -1569,7 +1569,8 @@ checks both. Each definition has these fields, in this order:
   Successful product mapping, owned by `LAB-RUN-001`. Reverse-reaction
   failure ordering is owned by `LAB-REVERSE-VALIDATION`. The forms of
   lab2 exclude each other, and a lab1 or lab2 that isn't another lab pairs
-  with none of that lab's range, store or mineral conditions.
+  with none of that lab's range, store or mineral conditions, nor with the
+  product conditions its reagent would decide.
 - `Verification Notes`
   Vanilla checks lab1, then lab2 (not a lab, or the calling lab), then both
   ranges, capacity, both amounts, then the product (`game/structures.js:
@@ -1621,7 +1622,9 @@ checks both. Each definition has these fields, in this order:
   `FACTORY-PRODUCE-001` and `FACTORY-COMMODITY-*`. Level-mismatch/full and
   power-effect/full pairs are excluded from the executable matrix because
   leveled commodities reduce total stored resources before adding output, so
-  they cannot also exercise the factory full branch.
+  they cannot also exercise the factory full branch. A resource with no
+  recipe (`:invalidArgs`) excludes the four conditions its recipe would
+  decide.
 - `Verification Notes`
   The executable case list lives in `src/matrices/factory-produce-validation.ts`.
 
@@ -1690,7 +1693,8 @@ checks both. Each definition has these fields, in this order:
   amount, cooldown, and energy-cost availability.
 - `Exclusions`
   Energy-cost and range-fee math, owned by separate `TERMINAL-SEND-*`
-  behavior entries.
+  behavior entries. An invalid room name excludes the energy cost, which
+  grows with the distance to the room it replaces.
 - `Verification Notes`
   `:notEnoughEnergyCost` sends a mineral; the same expression refuses energy
   sent with less than `amount` plus the cost (`game/structures.js:735-737`).
@@ -1798,7 +1802,8 @@ checks both. Each definition has these fields, in this order:
   rooms).
 - `Exclusions`
   Visibility delivery latency, owned by separate `OBSERVER-*` behavior
-  entries.
+  entries. An invalid room name excludes range, the distance to the name it
+  replaces.
 - `Verification Notes`
   The executable case list lives in `src/matrices/observer-validation.ts`.
 
@@ -1821,7 +1826,9 @@ checks both. Each definition has these fields, in this order:
   Successful directions/dryRun/memory semantics, owned by
   `SPAWN-CREATE-005..013` and `SPAWN-TIMING-*`. Pairs that need one name
   on two creeps, an inactive spawn to start spawning, or two bodies at once
-  are excluded. Not yet listed: a missing name or non-object `opts`, and a
+  are excluded, as is a spawning namesake with a name too long to spawn,
+  and an empty body or an unknown part (no cost) with the energy
+  conditions. Not yet listed: a missing name or non-object `opts`, and a
   name another spawn took earlier in the tick.
 - `Verification Notes`
   An inactive spawn is the player's spawn in a room with no controller
@@ -1845,7 +1852,8 @@ checks both. Each definition has these fields, in this order:
   store capacity (`ticksToLive` already at max), and energy availability.
 - `Exclusions`
   Renew amount math, owned by `RENEW-CREEP-002..006`. Busy excludes the
-  inactive spawn, and the two invalid-target forms exclude each other. Not
+  inactive spawn, and the two invalid-target forms exclude each other and
+  the creep's age, a property of the creep the source replaces. Not
   yet listed: a spawning creep target (`ERR_INVALID_TARGET`) and another
   player's creep (`ERR_NOT_OWNER`).
 - `Verification Notes`
@@ -1869,7 +1877,8 @@ checks both. Each definition has these fields, in this order:
   ownership, and range.
 - `Exclusions`
   Recycled-resource placement (container vs. tombstone), tracked as a
-  Coverage Note in `9.5 Recycle Creep`.
+  Coverage Note in `9.5 Recycle Creep`. An invalid target (a source) has no
+  owner to fail on.
 - `Verification Notes`
   An inactive spawn is the player's spawn in a room with no controller
   level. The executable case list lives in
@@ -2049,7 +2058,9 @@ checks both. Each definition has these fields, in this order:
   requirements (`WORK`), resource availability (energy), target validity
   (not a construction site or blocked tile), and range.
 - `Exclusions`
-  Progress-per-tick math, owned by `BUILD-001..010`.
+  Progress-per-tick math, owned by `BUILD-001..010`. A spawning creep holds
+  nothing, so busy already holds not-enough; an invalid target excludes the
+  blocked site it replaces.
 - `Verification Notes`
   The executable case list lives in `src/matrices/build-validation.ts`.
 
@@ -2069,7 +2080,8 @@ checks both. Each definition has these fields, in this order:
   requirements (`WORK`), resource availability (energy), target validity
   (not a structure), and range.
 - `Exclusions`
-  Hits-per-tick math, owned by `REPAIR-001..009`.
+  Hits-per-tick math, owned by `REPAIR-001..009`. A spawning creep holds
+  nothing, so busy already holds not-enough.
 - `Verification Notes`
   The executable case list lives in `src/matrices/repair-validation.ts`.
 
@@ -2115,13 +2127,16 @@ checks both. Each definition has these fields, in this order:
   Reservation-reduction math, owned by `CTRL-RESERVE-007`. The
   invalid-controller-state/cooldown pair is excluded because attack cooldown
   is only established by successfully attacking a controller, which makes the
-  later invalid-controller-state setup unavailable through public API state.
+  later invalid-controller-state setup unavailable through public API state;
+  an invalid target excludes both, properties of the controller it replaces.
   Another player's safe mode, checked after the cooldown, is owned by
   `CTRL-SAFEMODE-006`. Not yet listed: a controller under
   `EFFECT_INVULNERABILITY` returns `ERR_INVALID_TARGET` last
   (`game/creeps.js:911-913`).
 - `Verification Notes`
-  The executable case list lives in `src/matrices/ctrl-attack-validation.ts`.
+  A spawning attacker's room is its owner's, so `:busy` attacks its own
+  controller (allowed, `CTRL-ATTACK-005`) from a spawn beside it. The
+  executable case list lives in `src/matrices/ctrl-attack-validation.ts`.
 
 ### CTRL-CLAIM-VALIDATION
 
@@ -2144,7 +2159,9 @@ checks both. Each definition has these fields, in this order:
   `ERR_FULL` branch is not in the executable matrix because that room status
   is not exposed by the public fixture API, nor is another player's safe
   mode (`ERR_NO_BODYPART`) after the controller checks. An owned and a
-  reserved controller exclude each other.
+  reserved controller exclude each other, and an invalid target excludes
+  both, properties of the controller it replaces. A spawning creep's room is
+  its owner's, so busy's controller is already owned.
 - `Verification Notes`
   A reservation is made in-test with `reserveController`. The executable
   case list lives in `src/matrices/ctrl-claim-validation.ts`.
@@ -2168,7 +2185,9 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Reservation-reduction (handled via `attackController`), owned by
   `CTRL-RESERVE-007`. An owned and a reserved controller exclude each
-  other.
+  other, and an invalid target excludes both, properties of the controller it
+  replaces. A spawning creep's room is its owner's, so busy's controller is
+  already owned.
 - `Verification Notes`
   A reservation is made in-test with `reserveController`. The executable
   case list lives in `src/matrices/ctrl-reserve-validation.ts`.
@@ -2192,7 +2211,9 @@ checks both. Each definition has these fields, in this order:
   ownership.
 - `Exclusions`
   Progress math and level-advance side effects, owned by
-  `CTRL-UPGRADE-001..012`.
+  `CTRL-UPGRADE-001..012`. A spawning creep holds nothing, so busy already
+  holds not-enough; an invalid target excludes the upgrade block and the
+  controller's owner, properties of the controller it replaces.
 - `Verification Notes`
   A final invalid-controller-state guard exists in source but is not
   player-observable through public controller state. The executable case
@@ -2215,7 +2236,8 @@ checks both. Each definition has these fields, in this order:
   availability (Ghodium), target validity (not yours or no controller),
   and range.
 - `Exclusions`
-  `safeModeAvailable` increment side-effect, owned by `CTRL-GENSAFE-003`.
+  `safeModeAvailable` increment side-effect, owned by `CTRL-GENSAFE-003`. A
+  spawning creep holds nothing, so busy already holds not-enough.
 - `Verification Notes`
   The executable case list lives in `src/matrices/ctrl-gensafe-validation.ts`.
 
@@ -2235,8 +2257,8 @@ checks both. Each definition has these fields, in this order:
   (target is a registered object), range, and target-is-controller validity.
 - `Exclusions`
   Persisted-sign visibility, owned by `CTRL-SIGN-001..003`. Invalid-target
-  cannot be paired with range or not-controller because an invalid target has
-  no meaningful range or non-controller object state.
+  (a source, no structure) cannot be paired with not-controller, a
+  structure that isn't a controller.
 - `Verification Notes`
   The executable case list lives in `src/matrices/ctrl-sign-validation.ts`.
 
@@ -2262,9 +2284,9 @@ checks both. Each definition has these fields, in this order:
   `DEPOSIT-HARVEST-VALIDATION`. Busy is excluded with both hostile-room
   conditions because a spawning creep cannot be placed in a room another
   player controls or reserves through the public fixture API. The four
-  invalid-target forms exclude each other, the three with no target
-  object exclude depletion and range, and a controller is owned or
-  reserved, not both.
+  invalid-target forms exclude each other and depletion (a property of the
+  source they replace), the three with no target object also exclude range,
+  and a controller is owned or reserved, not both.
 - `Verification Notes`
   The omitted, `null` and id-less targets fail one expression
   (`game/creeps.js:346`); an object of another type fails after the
@@ -2290,7 +2312,10 @@ checks both. Each definition has these fields, in this order:
   resource availability (mineral amount), and cooldown (extractor
   cooldown).
 - `Exclusions`
-  Harvest yield math, owned by `HARVEST-MINERAL-001..013`.
+  Harvest yield math, owned by `HARVEST-MINERAL-001..013`. An invalid target
+  excludes depletion and every extractor condition, which vanilla checks
+  only for a mineral (`game/creeps.js:365-385`), and no extractor excludes
+  the extractor's owner, activity and cooldown.
 - `Verification Notes`
   Extractor activity is part of this family because it gates the mineral
   branch in vanilla. The executable case list lives in
@@ -2313,7 +2338,8 @@ checks both. Each definition has these fields, in this order:
   and cooldown (`Deposit.cooldown`).
 - `Exclusions`
   Harvest yield math, owned by `DEPOSIT-HARVEST-001..005`. Deposit decay
-  on overharvest is owned by `DEPOSIT-*` lifecycle entries.
+  on overharvest is owned by `DEPOSIT-*` lifecycle entries. An invalid
+  target excludes cooldown, the deposit's own property.
 - `Verification Notes`
   The executable case list lives in
   `src/matrices/deposit-harvest-validation.ts`.
@@ -2335,7 +2361,8 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   Resource-pile merge/separate semantics, owned by `DROP-001..010`. The two
   resource-availability conditions exclude each other: each sets what the
-  creep carries.
+  creep carries. A spawning creep holds nothing, so busy already holds
+  not-enough.
 - `Verification Notes`
   The executable case list lives in `src/matrices/drop-validation.ts`.
 
@@ -2355,15 +2382,15 @@ checks both. Each definition has these fields, in this order:
   target, fatigue, body-part requirements (`MOVE`), and argument validity
   (direction constant).
 - `Exclusions`
-  Collision resolution, owned by `MOVE-COLLISION-*`. Busy/fatigue and
-  fatigue/no-bodypart are excluded because spawning creeps do not accrue
-  fatigue and fatigue cannot be generated without MOVE parts through public
-  movement state; range/invalid-args because the argument is a creep or a
-  direction, not both.
+  Collision resolution, owned by `MOVE-COLLISION-*`. Busy/fatigue is
+  excluded because spawning creeps do not accrue fatigue; range/invalid-args
+  because the argument is a creep or a direction, not both.
 - `Verification Notes`
   Vanilla checks a creep target's range before fatigue and body parts
   (`game/creeps.js:135-138`), so an adjacent creep target returns `OK` from
-  a fatigued or MOVE-less creep. The executable case list lives in
+  a fatigued or MOVE-less creep. `:fatigueBeforeNoBodypart` moves a
+  `[MOVE, WORK×5]` creep while a hostile's ranged attack destroys its MOVE
+  part. The executable case list lives in
   `src/matrices/move-basic-validation.ts`.
 
 ### MOVE-PULL-VALIDATION
@@ -2428,8 +2455,12 @@ checks both. Each definition has these fields, in this order:
   Successful transfer side effects (link cooldown, factory store),
   owned by `TRANSFER-001..014`. Pairs that need two resource types or two
   targets at once: the unknown and omitted resource type with each other
-  and with the capacity and lab-mineral conditions, the lab with the
-  storeless target, the capacity case, and the two full-spawn cases.
+  and with the capacity and lab-mineral conditions; the lab with the
+  capacity case and the two full-spawn cases; and the storeless target with
+  the capacity, lab-mineral and full conditions, properties of the store it
+  replaces. A target with no capacity for the resource is already full. A
+  spawning creep's store is empty, so busy already holds not-enough, and a
+  negative amount replaces the amount the two amount conditions pass.
 - `Verification Notes`
   The negative-amount check comes first (`game/creeps.js:435-437`), so its
   case passes a valid resource type. `:labMineral` cases need `chemistry`.
@@ -2457,7 +2488,12 @@ checks both. Each definition has these fields, in this order:
   placed in a hostile safe-mode room through public fixture state; the
   disrupted terminal with safe mode because a power creep can't use a power
   in another player's safe mode; a power bank with a rampart owner because
-  it has no player owner; and pairs that need two targets at once.
+  it has no player owner; and pairs that need two targets at once, the
+  creep target with the conditions of the structure it replaces among them.
+  A spawning creep holds nothing, so its free capacity is never below an
+  amount it could hold; a negative amount replaces the full-amount amount
+  and is never more than the target holds; and a store with no capacity for
+  the resource holds none of it.
 - `Verification Notes`
   `:disruptedTerminal` cases need `powerCreeps` and `powerEffects`: a power
   creep casts `PWR_DISRUPT_TERMINAL` in-test. `:invalidNuker` needs `nuke`

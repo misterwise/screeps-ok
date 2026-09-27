@@ -140,7 +140,7 @@ describe('creep.transfer()', () => {
 
 	for (const row of transferValidationCases) {
 		test(`TRANSFER-015:${row.label} transfer() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			if (blockers.has('lab-mineral')) shard.requires('chemistry');
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const rcl = blockers.has('lab-mineral') ? 6 : 1;

@@ -91,12 +91,14 @@ describe('creep.move()', () => {
 
 	for (const row of moveBasicValidationCases) {
 		test(`MOVE-BASIC-027:${row.label} move() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			if (owner === 'p2') {
+			// A fatigued creep loses its MOVE part to p2's fire.
+			const moveBreaker = blockers.has('fatigue') && blockers.has('no-bodypart') ? 'p2' : undefined;
+			if (owner === 'p2' || moveBreaker) {
 				await shard.createShard({
 					players: ['p1', 'p2'],
-					rooms: [{ name: 'W1N1', rcl: 1, owner: 'p2' }],
+					rooms: [{ name: 'W1N1', rcl: 1, owner: moveBreaker ? 'p1' : 'p2' }],
 				});
 				if (!blockers.has('busy') && !blockers.has('fatigue')) {
 					await shard.placeCreep('W1N1', {
@@ -125,6 +127,7 @@ describe('creep.move()', () => {
 				creepId = await placeFatiguedCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					moveBreaker,
 				});
 			} else {
 				creepId = await shard.placeCreep('W1N1', {

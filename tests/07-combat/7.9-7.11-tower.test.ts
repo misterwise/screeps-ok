@@ -283,7 +283,7 @@ describe('StructureTower', () => {
 
 	for (const row of towerAttackValidationCases) {
 		test(`TOWER-ATTACK-005:${row.label} tower.attack() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -315,7 +315,7 @@ describe('StructureTower', () => {
 
 	for (const row of towerHealValidationCases) {
 		test(`TOWER-HEAL-005:${row.label} tower.heal() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -347,7 +347,7 @@ describe('StructureTower', () => {
 
 	for (const row of towerRepairValidationCases) {
 		test(`TOWER-REPAIR-005:${row.label} tower.repair() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],

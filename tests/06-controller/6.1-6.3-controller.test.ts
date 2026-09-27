@@ -153,32 +153,32 @@ describe('controller mechanics', () => {
 
 	for (const row of ctrlClaimValidationCases) {
 		test(`CTRL-CLAIM-008:${row.label} claimController() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			const reserved = blockers.has('hostile-reservation');
-			// W1N1's controller is owned (the invalid-controller-state form); a
-			// reserved one is the neutral W2N1's.
-			const targetRoom = reserved ? 'W2N1' : 'W1N1';
+			// W2N1's controller is neutral, or reserved; W1N1's is owned, the
+			// invalid-controller-state form and all a spawning creep can reach.
+			const targetRoom = blockers.has('invalid-controller-state') || blockers.has('busy') && !reserved ? 'W1N1' : 'W2N1';
 			await shard.createShard({
 				players: blockers.has('gcl-not-enough') ? [{ name: 'p1', gcl: { level: 1 } }, 'p2'] : ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: 1, owner: roomOwner },
-					...(reserved ? [{ name: 'W2N1' }] : []),
+					// RCL 3 affords the extensions a spawning CLAIM part needs.
+					{ name: 'W1N1', rcl: blockers.has('busy') ? 3 : 1, owner: roomOwner },
+					{ name: 'W2N1' },
 				],
 			});
-			if (reserved) {
-				await reserveRoom(shard, 'p2', 'W2N1');
-				if (blockers.has('busy') || owner === 'p2') {
-					await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
-				}
+			if (reserved) await reserveRoom(shard, 'p2', 'W2N1');
+			if (targetRoom === 'W2N1' && (blockers.has('busy') || owner === 'p2')) {
+				await shard.placeCreep('W2N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
 			const ctrlPos = await shard.getControllerPos(targetRoom);
 			const creepId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
-					body: [MOVE],
+					pos: blockers.has('range') || reserved ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
 				})
 				: await shard.placeCreep(targetRoom, {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
@@ -186,7 +186,7 @@ describe('controller mechanics', () => {
 					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
 				});
 			const sourceId = blockers.has('invalid-target')
-				? await shard.placeSource('W1N1', { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
+				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
 				: null;
 
 			const rc = blockers.has('invalid-target')
@@ -477,13 +477,14 @@ describe('controller mechanics', () => {
 
 	for (const row of ctrlReserveValidationCases) {
 		test(`CTRL-RESERVE-008:${row.label} reserveController() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: 1, owner: roomOwner },
+					// RCL 3 affords the extensions a spawning CLAIM part needs.
+					{ name: 'W1N1', rcl: blockers.has('busy') ? 3 : 1, owner: roomOwner },
 					{ name: 'W2N1' },
 				],
 			});
@@ -500,7 +501,8 @@ describe('controller mechanics', () => {
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
-					body: [MOVE],
+					pos: blockers.has('range') || reserved ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
 				})
 				: await shard.placeCreep(targetRoom, {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
@@ -635,34 +637,35 @@ describe('controller mechanics', () => {
 
 	for (const row of ctrlSignValidationCases) {
 		test(`CTRL-SIGN-004:${row.label} signController() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			await shard.ownedRoom('p1');
 			const ctrlPos = await shard.getControllerPos('W1N1');
 			const signerId = blockers.has('busy')
-				? await spawnBusyCreep(shard, { owner: 'p1', body: [MOVE] })
+				? await spawnBusyCreep(shard, {
+					owner: 'p1',
+					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					body: [MOVE],
+				})
 				: await shard.placeCreep('W1N1', {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
 					owner: 'p1',
 					body: [MOVE],
 				});
-			const sourceId = blockers.has('not-controller')
-				? await shard.placeStructure('W1N1', {
-					pos: blockers.has('range') ? [30, 30] : [ctrlPos!.x + 1, ctrlPos!.y + 1],
-					structureType: STRUCTURE_CONTAINER,
-				})
-				: null;
-
-			const rc = blockers.has('invalid-target')
-				? await shard.runPlayer('p1', code`
-					Game.getObjectById(${signerId}).signController(null, 'hello')
-				`)
+			// A source is no structure; a container is a structure but no controller.
+			const targetPos: [number, number] = blockers.has('range') ? [30, 30] : [ctrlPos!.x + 1, ctrlPos!.y + 1];
+			const targetId = blockers.has('invalid-target')
+				? await shard.placeSource('W1N1', { pos: targetPos })
 				: blockers.has('not-controller')
-					? await shard.runPlayer('p1', code`
-						Game.getObjectById(${signerId}).signController(Game.getObjectById(${sourceId}), 'hello')
-					`)
-					: await shard.runPlayer('p1', code`
-						Game.getObjectById(${signerId}).signController(Game.rooms['W1N1'].controller, 'hello')
-					`);
+					? await shard.placeStructure('W1N1', { pos: targetPos, structureType: STRUCTURE_CONTAINER })
+					: null;
+
+			const rc = targetId
+				? await shard.runPlayer('p1', code`
+					Game.getObjectById(${signerId}).signController(Game.getObjectById(${targetId}), 'hello')
+				`)
+				: await shard.runPlayer('p1', code`
+					Game.getObjectById(${signerId}).signController(Game.rooms['W1N1'].controller, 'hello')
+				`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
@@ -710,30 +713,30 @@ describe('controller mechanics', () => {
 
 	for (const row of ctrlAttackValidationCases) {
 		test(`CTRL-ATTACK-007:${row.label} attackController() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const usesNeutralTarget = blockers.has('invalid-controller-state');
-			const targetRoom = usesNeutralTarget || owner === 'p1' && blockers.has('busy') ? 'W2N1' : 'W1N1';
-			const spawnRoom = blockers.has('busy') ? 'W1N1' : targetRoom;
+			const targetRoom = usesNeutralTarget ? 'W2N1' : 'W1N1';
+			// A spawning attacker's room is its owner's, and attacking one's own controller is allowed
+			// (CTRL-ATTACK-005). RCL 3 affords the extensions a CLAIM part needs.
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: 2, owner: blockers.has('busy') ? owner : 'p2' },
-					...(targetRoom === 'W2N1'
-						? [{ name: 'W2N1', rcl: 2, ...(usesNeutralTarget ? {} : { owner: 'p2' }) }]
-						: []),
+					{ name: 'W1N1', rcl: 3, owner: blockers.has('busy') ? owner : 'p2' },
+					...(usesNeutralTarget ? [{ name: 'W2N1' }] : []),
 				],
 			});
 			const ctrlPos = await shard.getControllerPos(targetRoom);
-			if (owner === 'p2' && !blockers.has('busy') || targetRoom === 'W2N1' && blockers.has('busy')) {
+			if (owner === 'p2' && !blockers.has('busy') || usesNeutralTarget && blockers.has('busy')) {
 				await shard.placeCreep(targetRoom, { pos: [20, 20], owner: 'p1', body: [MOVE] });
 			}
 			const attackerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
-					roomName: spawnRoom,
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
-					body: [MOVE, MOVE, MOVE],
+					pos: blockers.has('range') || usesNeutralTarget ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
+					// Three parts outlast the cooldown setup's ticks.
+					body: blockers.has('no-bodypart') ? [MOVE, MOVE, MOVE] : [CLAIM, MOVE, MOVE],
 				})
 				: await shard.placeCreep(targetRoom, {
 					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
@@ -743,7 +746,7 @@ describe('controller mechanics', () => {
 			const sourceId = blockers.has('invalid-target')
 				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
 				: null;
-			if (blockers.has('cooldown') && !blockers.has('invalid-target') && !blockers.has('no-bodypart') && !blockers.has('range')) {
+			if (blockers.has('cooldown')) {
 				const setupId = await shard.placeCreep(targetRoom, {
 					pos: [ctrlPos!.x, ctrlPos!.y + 1],
 					owner: 'p1',

@@ -10,6 +10,8 @@ export const dropValidationCases = makeValidationCases('DROP-011', [
 	{ condition: 'not-enough', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 	{ condition: 'not-enough-amount', expectedRc: ERR_NOT_ENOUGH_RESOURCES },
 ] as const, [
+	// A spawning creep holds nothing, so busy already holds not-enough.
+	['busy', 'not-enough'],
 	['not-enough', 'not-enough-amount'],
 ]);
 

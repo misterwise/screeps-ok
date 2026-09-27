@@ -67,7 +67,7 @@ describe('creep.generateSafeMode()', () => {
 
 	for (const row of ctrlGensafeValidationCases) {
 		test(`CTRL-GENSAFE-005:${row.label} generateSafeMode() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			if (owner === 'p2') {
 				await shard.createShard({
@@ -86,6 +86,7 @@ describe('creep.generateSafeMode()', () => {
 				? await spawnBusyCreep(shard, {
 					owner,
 					observerOwner: owner === 'p2' ? 'p1' : undefined,
+					pos: blockers.has('range') ? [25, 25] : [ctrlPos!.x + 1, ctrlPos!.y],
 					body: [MOVE, MOVE, MOVE],
 				})
 				: await shard.placeCreep('W1N1', {

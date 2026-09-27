@@ -220,7 +220,7 @@ describe('creep.harvest(mineral)', () => {
 
 	for (const row of harvestMineralValidationCases) {
 		test(`HARVEST-MINERAL-014:${row.label} harvest(mineral) validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
 			const rcl = blockers.has('inactive-extractor') ? 5 : 6;
 			if (owner === 'p2' || blockers.has('extractor-not-owner')) {

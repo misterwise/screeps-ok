@@ -41,7 +41,7 @@ describe('structure.destroy()', () => {
 
 	for (const row of structureDestroyValidationCases) {
 		test(`STRUCTURE-API-007:${row.label} destroy() validation returns the canonical code`, async ({ shard }) => {
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			if (blockers.has('busy-power-creep')) shard.requires('powerCreeps');
 			const roomOwner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({

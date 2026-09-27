@@ -160,7 +160,7 @@ describe('Lab runReaction', () => {
 	for (const row of labRunValidationCases) {
 		test(`LAB-RUN-013:${row.label} runReaction() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -387,7 +387,7 @@ describe('Lab reverseReaction', () => {
 	for (const row of labReverseValidationCases) {
 		test(`LAB-REVERSE-013:${row.label} reverseReaction() validation returns the canonical code`, async ({ shard }) => {
 			shard.requires('chemistry');
-			const blockers = new Set(row.blockers);
+			const blockers = shard.validationBlockers(row);
 			const labOwner = blockers.has('not-owner') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -404,9 +404,7 @@ describe('Lab reverseReaction', () => {
 			});
 			// OH reverses to H in lab1 and O in lab2. A far lab is at range 3.
 			let lab1Id: string;
-			if (blockers.has('invalid-target') && blockers.has('same-lab')) {
-				lab1Id = labId;
-			} else if (blockers.has('invalid-lab1')) {
+			if (blockers.has('invalid-lab1')) {
 				lab1Id = await shard.placeStructure('W1N1', {
 					pos: [25, 27], structureType: STRUCTURE_CONTAINER, store: { energy: 100 },
 				});
