@@ -3,7 +3,10 @@ import { describe, test, expect, code } from '../../src/index.js';
 describe('Deprecation notice dedup', () => {
 	test('DEPRECATED-DEDUP-001 identical notices in the same tick collapse to one log; the next tick re-emits', async ({ shard }) => {
 		shard.requires('deprecationNotices');
-		await shard.ownedRoom('p1');
+		await shard.createShard({
+			players: ['p1', 'p2'],
+			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1', rcl: 1, owner: 'p2' }],
+		});
 
 		// Fire the same deprecated API twice in one tick.
 		await shard.runPlayer('p1', code`
@@ -45,5 +48,15 @@ describe('Deprecation notice dedup', () => {
 			line.includes('avoid') && line.includes('costCallback'),
 		);
 		expect(avoidMatches).toHaveLength(1);
+
+		// Each player's console logs its own notice in the same tick.
+		await shard.runPlayers({
+			p1: code`Game.map.isRoomAvailable('W1N1'); null`,
+			p2: code`Game.map.isRoomAvailable('W1N1'); null`,
+		});
+		for (const player of ['p1', 'p2']) {
+			const logs = await shard.captureConsoleLogs(player);
+			expect(logs.filter(line => line.includes('Game.map.isRoomAvailable'))).toHaveLength(1);
+		}
 	});
 });

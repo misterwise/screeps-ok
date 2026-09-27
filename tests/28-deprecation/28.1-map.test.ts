@@ -25,21 +25,15 @@ describe('Game.map deprecation notices', () => {
 		shard.requires('deprecationNotices');
 		await shard.ownedRoom('p1');
 
-		// Cover both call shapes: positional (x, y, roomName) and pos object.
-		const result = await shard.runPlayer('p1', code`
-			({
-				positional: Game.map.getTerrainAt(25, 25, 'W1N1'),
-				object: Game.map.getTerrainAt(new RoomPosition(25, 25, 'W1N1')),
-			})
-		`) as { positional: string; object: string };
-		expect(result.positional).toBe('plain');
-		expect(result.object).toBe('plain');
-
-		// Both call sites share the same message and dedup per tick → exactly one line.
-		const logs = await shard.captureConsoleLogs('p1');
-		const matches = logs.filter(line =>
-			line.includes('Game.map.getTerrainAt') && line.includes('getRoomTerrain'),
-		);
-		expect(matches).toHaveLength(1);
+		// Each call shape in its own tick, since a tick logs a message once.
+		const forms = [
+			code`Game.map.getTerrainAt(25, 25, 'W1N1')`,
+			code`Game.map.getTerrainAt(new RoomPosition(25, 25, 'W1N1'))`,
+		];
+		for (const form of forms) {
+			expect(await shard.runPlayer('p1', form)).toBe('plain');
+			const logs = await shard.captureConsoleLogs('p1');
+			expect(logs.filter(line => line.includes('Game.map.getTerrainAt') && line.includes('getRoomTerrain'))).toHaveLength(1);
+		}
 	});
 });

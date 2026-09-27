@@ -1,4 +1,4 @@
-import { describe, test, expect, code } from '../../src/index.js';
+import { describe, test, expect, code, MAP_VISUAL_SIZE_LIMIT, ROOM_VISUAL_SIZE_LIMIT } from '../../src/index.js';
 
 // RoomVisual is rendering-only, so its effect is out of scope; what player code
 // can observe is the runtime surface: the class, the shared per-room buffer,
@@ -67,6 +67,11 @@ describe('RoomVisual runtime surface', () => {
 						polyPos: v.poly([p1, p2]) === v,
 						textXY: v.text('a', 1, 1) === v,
 						textPos: v.text('a', p1) === v,
+						linePlain: v.line({ x: 3, y: 4 }, { x: 5, y: 6 }) === v,
+						circlePlain: v.circle({ x: 3, y: 4 }) === v,
+						rectPlain: v.rect({ x: 3, y: 4 }, 2, 2) === v,
+						polyPlain: v.poly([{ x: 3, y: 4 }, { x: 5, y: 6 }]) === v,
+						textPlain: v.text('a', { x: 3, y: 4 }) === v,
 						import: v.import('') === v,
 					},
 					size: typeof v.getSize(),
@@ -77,7 +82,8 @@ describe('RoomVisual runtime surface', () => {
 
 		expect(result.chains).toEqual({
 			lineXY: true, linePos: true, circleXY: true, circlePos: true, rectXY: true, rectPos: true,
-			polyTuples: true, polyPos: true, textXY: true, textPos: true, import: true,
+			polyTuples: true, polyPos: true, textXY: true, textPos: true,
+			linePlain: true, circlePlain: true, rectPlain: true, polyPlain: true, textPlain: true, import: true,
 		});
 		expect(result.size).toBe('number');
 		expect(result.exported).toBe('string');
@@ -129,6 +135,10 @@ describe('Visual size accounting and limits', () => {
 		expect(result.afterMap[1]).toBeGreaterThan(0);
 		expect(result.afterClear[0]).toBe(0);
 		expect(result.afterClear[1]).toBe(result.afterMap[1]);
+
+		// Drawn this tick, both start the next at 0.
+		await shard.runPlayer('p1', code`new RoomVisual('W1N1').text('hello', 1, 1); Game.map.visual.text('x', new RoomPosition(1, 1, 'W1N1')); null`);
+		expect(await shard.runPlayer('p1', code`[new RoomVisual('W1N1').getSize(), Game.map.visual.getSize()]`)).toEqual([0, 0]);
 	});
 
 	test('VISUAL-SIZE-002 import(export()) restores the same getSize in the same visual and in another room', async ({ shard }) => {
@@ -187,7 +197,7 @@ describe('Visual size accounting and limits', () => {
 
 		// Every drawing that fits is kept; the first that would cross the limit throws.
 		expect(result.threw).toBe(true);
-		expect(result.calls).toBe(Math.floor(500 * 1024 / result.entry));
+		expect(result.calls).toBe(Math.floor(ROOM_VISUAL_SIZE_LIMIT / result.entry));
 		expect(result.size).toBe(result.calls * result.entry);
 		expect(result.afterClear).toBe(0);
 		expect(result.recovered).toBeGreaterThan(0);
@@ -217,7 +227,7 @@ describe('Visual size accounting and limits', () => {
 
 		// Every drawing that fits is kept; the first that would cross the limit throws.
 		expect(result.threw).toBe(true);
-		expect(result.calls).toBe(Math.floor(1000 * 1024 / result.entry));
+		expect(result.calls).toBe(Math.floor(MAP_VISUAL_SIZE_LIMIT / result.entry));
 		expect(result.size).toBe(result.calls * result.entry);
 		expect(result.afterClear).toBe(0);
 		expect(result.recovered).toBeGreaterThan(0);

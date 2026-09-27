@@ -18,6 +18,7 @@ describe('CPU shard limits', () => {
 		const result = await shard.runPlayer('p1', code`
 			({ own: Game.cpu.shardLimits[Game.shard.name], limit: Game.cpu.limit })
 		`) as { own: number; limit: number };
+		expect(typeof result.limit).toBe('number');
 		expect(result.own).toBe(result.limit);
 	});
 

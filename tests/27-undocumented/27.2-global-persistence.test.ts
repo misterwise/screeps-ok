@@ -66,21 +66,11 @@ describe('Undocumented API Surface — global / VM persistence', () => {
 		// the read view exposes the cached module under the name it was required as, and that
 		// deleting it actually evicts the entry (how a wasm bot frees its instantiated bytes).
 		const result = await shard.runPlayer('p1', code`
-			require('main');
-			const before = require.cache['main'];
+			const exported = require('main');
+			const cachedIsExports = require.cache['main'] === exported;
 			const deleteOk = delete require.cache['main'];
-			const after = require.cache['main'];
-			({
-				cacheType: typeof require.cache,
-				cachedBeforeDelete: before !== undefined,
-				deleteOk,
-				evictedAfterDelete: after === undefined,
-			})
-		`) as { cacheType: string; cachedBeforeDelete: boolean; deleteOk: boolean; evictedAfterDelete: boolean };
-
-		expect(result.cacheType).toBe('object');
-		expect(result.cachedBeforeDelete).toBe(true);
-		expect(result.deleteOk).toBe(true);
-		expect(result.evictedAfterDelete).toBe(true);
+			({ cachedIsExports, deleteOk, evicted: !('main' in require.cache) })
+		`);
+		expect(result).toEqual({ cachedIsExports: true, deleteOk: true, evicted: true });
 	});
 });

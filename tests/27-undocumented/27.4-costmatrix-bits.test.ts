@@ -21,53 +21,46 @@ describe('Undocumented API Surface — CostMatrix._bits', () => {
 	test('UNDOC-COSTMATRIX-002 _bits[x*50+y] equals get(x, y) across the grid', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
+		// A value per cell that differs from its transpose's, so a row/column swap shows.
 		const result = await shard.runPlayer('p1', code`
 			const cm = new PathFinder.CostMatrix();
-			cm.set(3, 7, 42);
-			cm.set(0, 0, 1);
-			cm.set(49, 49, 99);
-			cm.set(25, 12, 200);
-			({
-				a: cm._bits[3 * 50 + 7] === cm.get(3, 7) && cm.get(3, 7) === 42,
-				b: cm._bits[0 * 50 + 0] === cm.get(0, 0) && cm.get(0, 0) === 1,
-				c: cm._bits[49 * 50 + 49] === cm.get(49, 49) && cm.get(49, 49) === 99,
-				d: cm._bits[25 * 50 + 12] === cm.get(25, 12) && cm.get(25, 12) === 200,
-			})
-		`) as { a: boolean; b: boolean; c: boolean; d: boolean };
-
-		expect(result).toEqual({ a: true, b: true, c: true, d: true });
+			const value = (x, y) => (x * 7 + y * 13) % 256;
+			for (let x = 0; x < 50; x++) for (let y = 0; y < 50; y++) cm.set(x, y, value(x, y));
+			let mismatches = 0;
+			for (let x = 0; x < 50; x++) {
+				for (let y = 0; y < 50; y++) {
+					if (cm._bits[x * 50 + y] !== cm.get(x, y) || cm.get(x, y) !== value(x, y)) mismatches++;
+				}
+			}
+			mismatches
+		`);
+		expect(result).toBe(0);
 	});
 
 	test('UNDOC-COSTMATRIX-003 writes via _bits are observable through get() and affect PathFinder.search', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
+		// Every tile but the diagonal walled off, once through _bits and once through set().
 		const result = await shard.runPlayer('p1', code`
-			const cm = new PathFinder.CostMatrix();
-			cm._bits[10 * 50 + 20] = 77;
+			const walled = write => {
+				const cm = new PathFinder.CostMatrix();
+				for (let x = 0; x < 50; x++) for (let y = 0; y < 50; y++) if (x !== y) write(cm, x, y, 255);
+				return cm;
+			};
+			const viaBits = walled((cm, x, y, v) => { cm._bits[x * 50 + y] = v; });
+			const viaSet = walled((cm, x, y, v) => cm.set(x, y, v));
+			const from = new RoomPosition(5, 5, 'W1N1');
+			const search = cm => {
+				const found = PathFinder.search(from, { pos: new RoomPosition(45, 45, 'W1N1'), range: 0 }, { roomCallback: () => cm, maxOps: 2000 });
+				return { cost: found.cost, incomplete: found.incomplete, path: found.path.map(p => [p.x, p.y]) };
+			};
+			({ get: viaBits.get(10, 20), bits: search(viaBits), set: search(viaSet) })
+		`) as { get: number; bits: { cost: number; incomplete: boolean; path: number[][] }; set: unknown };
 
-			const roomName = Object.keys(Game.rooms)[0];
-			const from = new RoomPosition(5, 5, roomName);
-			const to = new RoomPosition(45, 45, roomName);
-			const blocker = new PathFinder.CostMatrix();
-			for (let x = 0; x < 50; x++) {
-				for (let y = 0; y < 50; y++) {
-					if (x === y) continue;
-					blocker._bits[x * 50 + y] = 255;
-				}
-			}
-			const path = PathFinder.search(from, { pos: to, range: 0 }, {
-				roomCallback: () => blocker,
-				maxOps: 2000,
-			});
-
-			({
-				getMatches: cm.get(10, 20) === 77,
-				searchRan: Array.isArray(path.path),
-			})
-		`) as { getMatches: boolean; searchRan: boolean };
-
-		expect(result.getMatches).toBe(true);
-		expect(result.searchRan).toBe(true);
+		const diagonal = Array.from({ length: 40 }, (_, i) => [6 + i, 6 + i]);
+		expect(result.get).toBe(255);
+		expect(result.bits).toEqual({ cost: 40, incomplete: false, path: diagonal });
+		expect(result.set).toEqual(result.bits);
 	});
 
 	test('UNDOC-COSTMATRIX-004 serialize/deserialize preserves _bits byte-for-byte', async ({ shard }) => {

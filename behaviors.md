@@ -3931,10 +3931,10 @@ Notes
   `module.exports`: properties written through either object are observable
   through the other during that tick.
 - `UNDOC-GLOBAL-004` `behavior` `verified_vanilla`
-  The module loader exposes `require.cache` as an object, and
-  `delete require.cache[name]` succeeds (returns `true`) without throwing — the
-  standard module-cache surface bundlers use to free a module after load (e.g.
-  the rustyscreeps wasm loader frees its `.wasm` bytes this way).
+  After `require(name)`, `require.cache[name]` holds the exports `require`
+  returned, and `delete require.cache[name]` returns `true` and evicts the
+  entry — the module-cache surface bundlers use to free a module after load
+  (the rustyscreeps wasm loader frees its `.wasm` bytes this way).
 
 Notes
 - VM reset *timing* (when a global reset occurs) is engine-scheduler
@@ -4052,9 +4052,8 @@ encoding is engine-internal.
 ### 27.8 SYSTEM_USERNAME Global
 
 - `UNDOC-SYSUSER-001` `behavior` `verified_vanilla`
-  `SYSTEM_USERNAME` is defined as a non-empty string constant on the global
-  scope (reachable as `SYSTEM_USERNAME` or `global.SYSTEM_USERNAME` from
-  user code).
+  `SYSTEM_USERNAME` is the string `'Screeps'` on the global scope (reachable
+  as `SYSTEM_USERNAME` or `global.SYSTEM_USERNAME` from user code).
 - `UNDOC-SYSUSER-002` `behavior` `verified_vanilla`
   A controller carrying a server-set sign (novice and respawn areas)
   reports `sign.username === SYSTEM_USERNAME`, in place of any player's
@@ -4358,8 +4357,7 @@ General contract for every entry below:
 - `DEPRECATED-PATH-001` `behavior` `verified_vanilla`
   A call to `PathFinder.use(false)` emits a deprecation log line to the
   caller's console naming `PathFinder.use`. A call to `PathFinder.use(true)`
-  does not emit the notice. The toggle still takes effect on subsequent
-  pathfinding calls in either case.
+  does not emit the notice.
 - `DEPRECATED-PATH-002` `behavior` `verified_vanilla`
   When the new pathfinder is active (the default), passing a truthy
   `opts.avoid` to any pathfinder-integrated API — `Room.findPath`,
@@ -4393,11 +4391,14 @@ General contract for every entry below:
   most once to the caller's console. Repeated triggering calls in the
   same tick (e.g. two `Game.map.isRoomAvailable` calls, or
   `Room.findPath({avoid})` followed by
-  `Room.findClosestByPath({avoid})` which share the same avoid-message
+  `RoomPosition.findClosestByPath({avoid})` which share the same avoid-message
   text) produce exactly one log line. Dedup scope is per-tick per-player:
   the same message is eligible to be logged again on a subsequent tick.
 
 Notes
+- No row claims `PathFinder.use`'s toggle: vanilla's `PathFinder` keeps the
+  register of the tick its global was created on (`game/path-finder.js:8-14`,
+  `:73`), so the toggle reaches `Room.findPath` only on that tick.
 - `DEPRECATED-PATH-002` and `DEPRECATED-PATH-003` fire only when the new
   pathfinder is the active resolver. Because the new pathfinder is the
   default, the notice fires by default; disabling it via
@@ -4513,8 +4514,8 @@ Notes
 
 ### 29.6 PowerCreep Shard Home `capability: powerCreeps`
 - `SHARD-PCREEP-001` `behavior` `verified_vanilla`
-  An unspawned `PowerCreep` (created via `Game.gpl` allocation but not
-  yet spawned at a power spawn) exposes `pc.shard === undefined`.
+  An unspawned `PowerCreep`, one never spawned since `PowerCreep.create` or
+  one that died, exposes `pc.shard === undefined`.
 - `SHARD-PCREEP-002` `behavior` `documented`
   A spawned `PowerCreep` exposes `pc.shard` as the name of its shard,
   `Game.shard.name`.

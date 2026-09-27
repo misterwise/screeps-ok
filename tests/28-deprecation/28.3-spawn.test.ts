@@ -1,5 +1,5 @@
 import { describe, test, expect, code,
-	OK, WORK, CARRY, MOVE, STRUCTURE_SPAWN,
+	OK, WORK, CARRY, MOVE, STRUCTURE_SPAWN, RESOURCE_UTRIUM_HYDRIDE,
 } from '../../src/index.js';
 
 describe('StructureSpawn.renewCreep deprecation notice', () => {
@@ -15,7 +15,7 @@ describe('StructureSpawn.renewCreep deprecation notice', () => {
 			pos: [25, 26], owner: 'p1',
 			body: [WORK, CARRY, MOVE],
 			ticksToLive: 100,
-			boosts: { 0: 'UH' },
+			boosts: { 0: RESOURCE_UTRIUM_HYDRIDE },
 		});
 		await shard.tick();
 

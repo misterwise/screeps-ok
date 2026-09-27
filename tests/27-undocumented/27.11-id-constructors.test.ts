@@ -3,7 +3,7 @@ import {
 	MOVE, WORK, CARRY, ATTACK,
 	FIND_RUINS, FIND_TOMBSTONES,
 	STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_WALL,
-	RESOURCE_ENERGY,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 import { idConstructorCases } from '../../src/matrices/id-constructors.js';
@@ -15,6 +15,8 @@ interface ConstructorResult {
 	liveId: EncodedValue;
 	id: EncodedValue;
 	posRoomName: EncodedValue;
+	pos: EncodedValue;
+	livePos: EncodedValue;
 	roomName: EncodedValue;
 	liveFields: Record<string, EncodedValue>;
 	constructedFields: Record<string, EncodedValue>;
@@ -134,7 +136,7 @@ async function setupCaseObject(shard: ShardFixture, objectType: typeof idConstru
 			await shard.ownedRoom('p1');
 			const id = await shard.placeMineral('W1N1', {
 				pos: [31, 25],
-				mineralType: 'H',
+				mineralType: RESOURCE_HYDROGEN,
 				mineralAmount: 0,
 				ticksToRegeneration: 100,
 			});
@@ -193,6 +195,8 @@ describe('Undocumented API Surface — id constructors', () => {
 					liveId: encode(live && live.id),
 					id: encode(constructed.id),
 					posRoomName: encode(constructed.pos && constructed.pos.roomName),
+					pos: encode(constructed.pos && [constructed.pos.x, constructed.pos.y]),
+					livePos: encode([live.pos.x, live.pos.y]),
 					roomName: encode(constructed.room && constructed.room.name),
 					liveFields,
 					constructedFields,
@@ -203,6 +207,7 @@ describe('Undocumented API Surface — id constructors', () => {
 			expect(result.id).toEqual(result.liveId);
 			expect(result.id).toMatchObject({ defined: true });
 			expect(result.posRoomName).toEqual({ defined: true, value: 'W1N1' });
+			expect(result.pos).toEqual(result.livePos);
 			expect(result.roomName).toEqual({ defined: true, value: 'W1N1' });
 			for (const field of row.fields) {
 				expect(result.constructedFields[field]).toEqual(result.liveFields[field]);

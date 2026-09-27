@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_FULL } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_FULL, NOTIFY_MAX_PER_TICK } from '../../src/index.js';
 
 // Game.notify(message, groupInterval) queues an email notification. Its EFFECT is
 // never observable from player code, which is exactly why it is easy to omit — and
@@ -24,24 +24,11 @@ describe('Game.notify runtime surface', () => {
 	test('GAME-NOTIFY-002 the per-tick intent cap returns ERR_FULL and resets next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const first = await shard.runPlayer('p1', code`
-			(function () {
-				const codes = [];
-				for (let i = 0; i < 25; i++) codes.push(Game.notify('n' + i));
-				return { at19: codes[19], at20: codes[20], at24: codes[24] };
-			})()
-		`) as { at19: number; at20: number; at24: number };
-
-		expect(first.at19).toBe(OK);
-		expect(first.at20).toBe(ERR_FULL);
-		expect(first.at24).toBe(ERR_FULL);
-
-		await shard.tick();
-
-		// The budget is per TICK, not per context — a persistent counter that is
-		// never reset would leave the bot permanently unable to notify.
-		const next = await shard.runPlayer('p1', code`Game.notify('fresh tick')`);
-		expect(next).toBe(OK);
+		// The budget is per tick, not per context: a counter never reset would leave the bot unable to notify.
+		const notifyPastCap = code`Array.from({ length: ${NOTIFY_MAX_PER_TICK + 1} }, (_, i) => Game.notify('n' + i))`;
+		const expected = [...Array(NOTIFY_MAX_PER_TICK).fill(OK), ERR_FULL];
+		expect(await shard.runPlayer('p1', notifyPastCap)).toEqual(expected);
+		expect(await shard.runPlayer('p1', notifyPastCap)).toEqual(expected);
 	});
 });
 
@@ -107,11 +94,13 @@ describe('Game.map.visual runtime surface', () => {
 						text: throws(function () { v.text('a', b); }),
 					};
 				}
+				// poly takes position-like entries.
+				out.polyPlain = throws(function () { v.poly([bad.plain, good]); });
 				return out;
 			})()
-		`) as Record<string, Record<string, boolean>>;
+		`);
 
 		const allThrow = { circle: true, lineFirst: true, lineSecond: true, rect: true, text: true };
-		expect(result).toEqual({ plain: allThrow, number: allThrow, missing: allThrow });
+		expect(result).toEqual({ plain: allThrow, number: allThrow, missing: allThrow, polyPlain: false });
 	});
 });

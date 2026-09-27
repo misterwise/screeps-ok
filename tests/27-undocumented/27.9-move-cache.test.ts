@@ -8,39 +8,21 @@ describe('Undocumented API Surface — creep.memory._move (moveTo reusePath cach
 		});
 		await shard.tick();
 
+		// game/creeps.js:285-290: the target, the tick, the serialized path and the creep's room.
 		const result = await shard.runPlayer('p1', code`
 			const creep = Game.creeps['walker'];
 			const rc = creep.moveTo(10, 10, { reusePath: 5 });
 			const mv = creep.memory._move;
-			({
-				rc: rc,
-				hasMv: mv !== undefined && mv !== null,
-				keys: mv ? Object.keys(mv).sort() : [],
-				timeIsNum: mv && typeof mv.time === 'number',
-				pathIsStr: mv && typeof mv.path === 'string',
-				roomIsStr: mv && typeof mv.room === 'string',
-				destShape: mv && mv.dest && typeof mv.dest.x === 'number' && typeof mv.dest.y === 'number',
-			})
-		`) as {
-			rc: number;
-			hasMv: boolean;
-			keys: string[];
-			timeIsNum: boolean;
-			pathIsStr: boolean;
-			roomIsStr: boolean;
-			destShape: boolean;
-		};
-
-		expect(result.rc).toBe(OK);
-		expect(result.hasMv).toBe(true);
-		expect(result.keys).toContain('path');
-		expect(result.keys).toContain('dest');
-		expect(result.keys).toContain('time');
-		expect(result.keys).toContain('room');
-		expect(result.timeIsNum).toBe(true);
-		expect(result.pathIsStr).toBe(true);
-		expect(result.roomIsStr).toBe(true);
-		expect(result.destShape).toBe(true);
+			({ rc, keys: Object.keys(mv).sort(), dest: mv.dest, timeIsTick: mv.time === Game.time, pathIsStr: typeof mv.path === 'string', room: mv.room })
+		`);
+		expect(result).toEqual({
+			rc: OK,
+			keys: ['dest', 'path', 'room', 'time'],
+			dest: { x: 10, y: 10, room: 'W1N1' },
+			timeIsTick: true,
+			pathIsStr: true,
+			room: 'W1N1',
+		});
 	});
 
 	test('UNDOC-MOVECACHE-002 _move.path round-trips through Room.deserializePath / Room.serializePath', async ({ shard }) => {

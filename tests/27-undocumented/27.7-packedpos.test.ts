@@ -1,24 +1,15 @@
 import { describe, test, expect, code } from '../../src/index.js';
 
 describe('Undocumented API Surface — RoomPosition.__packedPos', () => {
-	test('UNDOC-PACKEDPOS-001 every RoomPosition has a non-negative integer __packedPos', async ({ shard }) => {
+	test('UNDOC-PACKEDPOS-001 every RoomPosition has a 32-bit signed integer __packedPos', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
+		// An east/south room sets the room code's upper bit.
 		const result = await shard.runPlayer('p1', code`
-			const a = new RoomPosition(0, 0, 'W1N1');
-			const b = new RoomPosition(25, 37, 'W1N1');
-			const c = new RoomPosition(49, 49, 'E5S5');
-			({
-				aPacked: a.__packedPos,
-				bPacked: b.__packedPos,
-				cPacked: c.__packedPos,
-			})
-		`) as { aPacked: unknown; bPacked: unknown; cPacked: unknown };
-
-		for (const [name, v] of Object.entries(result)) {
-			expect(typeof v, `${name} type`).toBe('number');
-			expect(Number.isInteger(v as number), `${name} isInteger`).toBe(true);
-		}
+			[new RoomPosition(0, 0, 'W1N1'), new RoomPosition(25, 37, 'W1N1'), new RoomPosition(49, 49, 'E5S5')]
+				.map(pos => typeof pos.__packedPos === 'number' && (pos.__packedPos | 0) === pos.__packedPos)
+		`);
+		expect(result).toEqual([true, true, true]);
 	});
 
 	test('UNDOC-PACKEDPOS-002 same (x, y, roomName) produce equal __packedPos values', async ({ shard }) => {

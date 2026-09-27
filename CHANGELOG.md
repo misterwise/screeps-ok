@@ -272,6 +272,18 @@ changes since `v0.1.0-alpha` are not itemized.
   first), `-004` (its pickup-over-transfer clause goes), `INTENT-CREEP-004`,
   `STORE-SINGLE-001`/`-002`, `STORE-RESTRICTED-005` (a lab holding a
   mineral) and `POWER-COMBAT-003` (the landing tick).
+- Undocumented, deprecation and shard rows keyed by case:
+  `DEPRECATED-PATH-002` and `-003` by API (`:findPath`, `:findPathTo`,
+  `:findClosestByPath`; each ran all three in one tick, where the notice's
+  per-tick dedup hid a missing one), `UNDOC-STALERECV-002` (`:read`,
+  `:action`), `UNDOC-MEMHACK-011` (`:delete`, `:assignUndefined`) and
+  `SHARD-PCREEP-001` (`:neverSpawned`, and the new `:afterDeath`, which needs
+  only `powerCreeps`). Restated rows: `SHARD-PCREEP-001` (never spawned or
+  dead), `UNDOC-GLOBAL-004` (`require.cache[name]` holds the exports and
+  `delete` evicts it), `UNDOC-SYSUSER-001` (the value, `'Screeps'`), and
+  `DEPRECATED-PATH-001`, which no longer claims `PathFinder.use`'s toggle
+  takes effect: vanilla's reaches `Room.findPath` only on a global's first
+  tick.
 - Now keyed by condition, each validation row running its conditions alone
   and in pairs: `POWERCREEP-CREATE-002` (`:invalidName`, `:noFreeLevels`,
   `:nameExists`, `:invalidClass`), `POWERCREEP-ENABLE-002` (`:notOwner`,

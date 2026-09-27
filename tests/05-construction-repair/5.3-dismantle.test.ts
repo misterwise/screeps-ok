@@ -220,9 +220,10 @@ describe('creep.dismantle()', () => {
 
 	test(`${staleDismantleCase.catalogId}:${staleDismantleCase.label} creep.dismantle() rejects a stale cached Structure target`, async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 3);
+		// A CARRY part, so the store a dismantle would fill is there to stay empty.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [WORK, MOVE],
+			body: [WORK, CARRY, MOVE],
 		});
 		const rampartId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
@@ -240,5 +241,8 @@ describe('creep.dismantle()', () => {
 		await expectStaleArgumentRejected(shard, 'p1', staleDismantleCase, code`
 			Game.getObjectById(${creepId}).dismantle(globalThis.__screepsOkStaleArgDismantle)
 		`);
+
+		const creep = await shard.expectObject(creepId, 'creep');
+		expect(creep.store.energy ?? 0).toBe(0);
 	});
 });

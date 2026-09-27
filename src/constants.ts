@@ -368,6 +368,13 @@ export const MARKET_FEE: number = C.MARKET_FEE;
 export const MARKET_MAX_ORDERS: number = C.MARKET_MAX_ORDERS;
 // Deals a player may make per tick: intents.pushByName's limit (game/market.js:149).
 export const MARKET_MAX_DEALS_PER_TICK = 10 as const;
+// Notifications a player may queue per tick: intents.push's limit (game/game.js:175).
+export const NOTIFY_MAX_PER_TICK = 20 as const;
+// Bytes a room's visual, and the map's, may hold in a tick (game/console.js:64).
+export const ROOM_VISUAL_SIZE_LIMIT = 500 * 1024;
+export const MAP_VISUAL_SIZE_LIMIT = 1000 * 1024;
+// The username the server's own signs and objects carry.
+export const SYSTEM_USERNAME: string = C.SYSTEM_USERNAME;
 export const COLOR_RED: number = C.COLOR_RED;
 export const COLOR_BLUE: number = C.COLOR_BLUE;
 export const COLOR_GREEN: number = C.COLOR_GREEN;

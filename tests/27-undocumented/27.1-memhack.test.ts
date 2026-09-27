@@ -97,13 +97,7 @@ describe('Undocumented API Surface — memhack', () => {
 	test('UNDOC-MEMHACK-006 mutations to delete+assign-replaced Memory with _parsed set persist to raw memory at tick end', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		// Bootstrap: the canonical memhack pattern's first tick reads Memory
-		// normally (populating the engine's internal parsed-memory cache);
-		// xxscreeps's tick-end serializer only picks up the `_parsed` object
-		// if the engine has seen Memory accessed through its getter at least
-		// once since module-level state was reset. Vanilla's tick-end
-		// adapter safety-net papers over this, but real bot code always
-		// bootstraps anyway — this test mirrors real usage.
+		// The canonical pattern's first tick reads Memory through its getter, as a bot bootstraps.
 		await shard.runPlayer('p1', code`
 			Memory.bootstrap = 'seeded';
 			'ok'
@@ -119,29 +113,10 @@ describe('Undocumented API Surface — memhack', () => {
 		`);
 
 		const result = await shard.runPlayer('p1', code`
-			({
-				rawHasInjected: RawMemory.get().includes('"injected":true'),
-				rawHasData: RawMemory.get().includes('"data":42'),
-				rawHasLater: RawMemory.get().includes('"laterAdded":"yes"'),
-				directInjected: Memory.injected,
-				directData: Memory.data,
-				directLater: Memory.laterAdded,
-			})
-		`) as {
-			rawHasInjected: boolean;
-			rawHasData: boolean;
-			rawHasLater: boolean;
-			directInjected: unknown;
-			directData: unknown;
-			directLater: unknown;
-		};
-
-		expect(result.rawHasInjected).toBe(true);
-		expect(result.rawHasData).toBe(true);
-		expect(result.rawHasLater).toBe(true);
-		expect(result.directInjected).toBe(true);
-		expect(result.directData).toBe(42);
-		expect(result.directLater).toBe('yes');
+			({ raw: JSON.parse(RawMemory.get()), memory: { injected: Memory.injected, data: Memory.data, laterAdded: Memory.laterAdded } })
+		`);
+		const saved = { injected: true, data: 42, laterAdded: 'yes' };
+		expect(result).toEqual({ raw: saved, memory: saved });
 	});
 
 	test('UNDOC-MEMHACK-007 creep.memory first access pins the in-tick object while RawMemory.set wins next tick', async ({ shard }) => {
@@ -329,40 +304,28 @@ describe('Undocumented API Surface — memhack', () => {
 		expect(nextTick.raw).toBe('{"rooms":{"W1N1":{"fromRaw":true}}}');
 	});
 
-	test('UNDOC-MEMHACK-011 access then delete RawMemory._parsed skips end-of-tick save', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+	// Read Memory (populating _parsed), mutate it, then clear _parsed in the same tick.
+	const skipSaveForms = [
+		{ key: 'delete', tick: code`Memory.seed; Memory.mutated = 'should-not-persist'; delete RawMemory._parsed; 'ok'` },
+		{ key: 'assignUndefined', tick: code`Memory.seed; Memory.mutated = 'should-not-persist'; RawMemory._parsed = undefined; 'ok'` },
+	];
+	for (const { key, tick } of skipSaveForms) {
+		test(`UNDOC-MEMHACK-011:${key} clearing RawMemory._parsed after access skips end-of-tick save`, async ({ shard }) => {
+			await shard.ownedRoom('p1');
 
-		// Tick 1: seed a baseline value to observe across the skip.
-		await shard.runPlayer('p1', code`
-			Memory.seed = 'baseline';
-			'ok'
-		`);
+			// Tick 1: seed a baseline value to observe across the skip.
+			await shard.runPlayer('p1', code`Memory.seed = 'baseline'; 'ok'`);
 
-		// Tick 2: read Memory (populates _parsed), mutate, then delete _parsed.
-		// Tick-end serialization checks `if (_parsed)` — falsy means no save,
-		// so the mutation is dropped and tick 1's raw is preserved.
-		await shard.runPlayer('p1', code`
-			Memory.seed;
-			Memory.mutated = 'should-not-persist';
-			delete RawMemory._parsed;
-			'ok'
-		`);
+			// Tick 2: tick-end serialization checks `if (_parsed)`, so the mutation is dropped.
+			await shard.runPlayer('p1', tick);
 
-		// Tick 3: raw still reflects tick 1's saved value, AND `Memory` reflects
-		// a fresh parse of that raw — the mutation never persisted. The
-		// `Memory.x` assertions implicitly require cross-tick re-parse, which
-		// vanilla guarantees; xxscreeps's parsed-`json` cache violates it (see
-		// `memory-parsed-json-not-refreshed-across-ticks`).
-		const result = await shard.runPlayer('p1', code`
-			({ raw: RawMemory.get(), seed: Memory.seed, mutated: Memory.mutated })
-		`) as { raw: string; seed: unknown; mutated: unknown };
-
-		expect(result.seed).toBe('baseline');
-		expect(result.mutated).toBeUndefined();
-		const parsed = JSON.parse(result.raw) as Record<string, unknown>;
-		expect(parsed.seed).toBe('baseline');
-		expect(parsed.mutated).toBeUndefined();
-	});
+			// Tick 3: raw still holds tick 1's save, and Memory is a fresh parse of it.
+			const result = await shard.runPlayer('p1', code`
+				({ raw: JSON.parse(RawMemory.get()), seed: Memory.seed, mutated: Memory.mutated ?? null })
+			`);
+			expect(result).toEqual({ raw: { seed: 'baseline' }, seed: 'baseline', mutated: null });
+		});
+	}
 
 	test('UNDOC-MEMHACK-010 spawn.memory first access pins the in-tick object while RawMemory.set wins next tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');

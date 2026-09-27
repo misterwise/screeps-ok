@@ -256,7 +256,7 @@ describe('Spawn.renewCreep', () => {
 		await shard.ownedRoom('p1');
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
-			store: { energy: 300 },
+			store: { energy: SPAWN_ENERGY_CAPACITY },
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 26], owner: 'p1', body: [MOVE], name: 'RenewTarget',
@@ -273,5 +273,8 @@ describe('Spawn.renewCreep', () => {
 		await expectStaleArgumentRejected(shard, 'p1', staleArgSpawnRenewCreepCase, code`
 			Game.getObjectById(${spawnId}).renewCreep(globalThis.__screepsOkStaleArgRenewCreep)
 		`);
+
+		const spawn = await shard.expectStructure(spawnId, STRUCTURE_SPAWN);
+		expect(spawn.store.energy).toBe(SPAWN_ENERGY_CAPACITY);
 	});
 });

@@ -98,6 +98,12 @@
 			"why": "Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition (Decision 28).",
 			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
 		},
+		"power-creep-shard-null-when-unspawned": {
+			"actual": "`PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`.",
+			"expected": "Vanilla's getter is `o.shard || undefined` (`game/power-creeps.js:53`), and death writes `shard: null` (`_diePowerCreep.js:54-55`), so an unspawned power creep reads `undefined`.",
+			"why": "Found 2026-09-27 by SHARD-PCREEP-001:afterDeath, the row's first case reachable without `powerCreepAccountApi`. Canonical claim is documented too: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' xxscreeps' own doc comment says `null`.",
+			"tests": ["SHARD-PCREEP-001:afterDeath"]
+		},
 		"power-creep-suicide-uncapped": {
 			"actual": "`PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep.",
 			"expected": "Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives.",

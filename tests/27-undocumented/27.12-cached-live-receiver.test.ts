@@ -3,7 +3,7 @@ import { describe, test, expect, code, OK, WORK, CARRY, MOVE, TOP } from '../../
 // Counterpart to the destroyed-receiver matrix (§27.12): a cached wrapper whose
 // backing object STILL EXISTS next tick stays usable — reads and actions both work.
 describe('cached live receiver across ticks', () => {
-	test('UNDOC-STALERECV-002 a read method on a creep cached last tick returns its value (no throw)', async ({ shard }) => {
+	test('UNDOC-STALERECV-002:read a read method on a creep cached last tick returns its value (no throw)', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
@@ -16,7 +16,6 @@ describe('cached live receiver across ticks', () => {
 		await shard.runPlayer('p1', code`
 			globalThis.__okCachedCreep = Game.getObjectById(${creepId}); true
 		`);
-		await shard.tick();
 
 		const activeWork = await shard.runPlayer('p1', code`
 			globalThis.__okCachedCreep.getActiveBodyparts(${WORK})
@@ -24,7 +23,7 @@ describe('cached live receiver across ticks', () => {
 		expect(activeWork).toBe(1);
 	});
 
-	test('UNDOC-STALERECV-002 an action on a creep cached last tick dispatches and executes', async ({ shard }) => {
+	test('UNDOC-STALERECV-002:action an action on a creep cached last tick dispatches and executes', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1' }],
@@ -37,13 +36,11 @@ describe('cached live receiver across ticks', () => {
 		await shard.runPlayer('p1', code`
 			globalThis.__okCachedCreep2 = Game.getObjectById(${creepId}); true
 		`);
-		await shard.tick();
 
 		const rc = await shard.runPlayer('p1', code`
 			globalThis.__okCachedCreep2.move(${TOP})
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		// The intent is not silently dropped: the creep actually moved.
 		const pos = await shard.runPlayer('p1', code`

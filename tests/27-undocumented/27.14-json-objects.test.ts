@@ -2,7 +2,7 @@ import {
 	describe, test, expect, code,
 	MOVE, WORK, CARRY,
 	COLOR_BLUE, COLOR_RED,
-	RESOURCE_ENERGY, RESOURCE_SILICON,
+	RESOURCE_ENERGY, RESOURCE_HYDROGEN, RESOURCE_SILICON,
 	STRUCTURE_ROAD, STRUCTURE_SPAWN, STRUCTURE_TOWER,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
@@ -108,7 +108,7 @@ async function setupJsonObjectCase(shard: ShardFixture, key: JsonObjectCaseKey):
 			await shard.ownedRoom('p1');
 			const id = await shard.placeMineral('W1N1', {
 				pos: [21, 20],
-				mineralType: 'H',
+				mineralType: RESOURCE_HYDROGEN,
 				mineralAmount: 50000,
 			});
 			await shard.tick();
