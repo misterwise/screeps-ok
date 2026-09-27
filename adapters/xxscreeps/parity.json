@@ -1,5 +1,11 @@
 {
 	"expected_failures": {
+		"gcl-progress-total-absolute-threshold": {
+			"actual": "`Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357.",
+			"expected": "Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next.",
+			"why": "Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0.",
+			"tests": ["GCL-001:levelTwo", "GCL-001:levelThree"]
+		},
 		"reserve-cap-clamps-instead-of-rejecting": {
 			"actual": "`reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick.",
 			"expected": "Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer.",

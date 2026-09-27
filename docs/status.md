@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2642%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-1%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -17,7 +17,7 @@
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
 | 🔴 | **vanilla** | [2897](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-27 00:03 UTC |
-| 🟡 | **xxscreeps** | [2642](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-27 00:02 UTC |
+| 🔴 | **xxscreeps** | [2642](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-27 00:02 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -26,6 +26,11 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 ## vanilla unexpected failures
 
 - `power-creep-shard-empty-on-open-source-driver` registers `SHARD-PCREEP-002`, which no test passed or failed
+
+## xxscreeps unexpected failures
+
+- `gcl-progress-total-absolute-threshold` registers `GCL-001:levelTwo`, which no test passed or failed
+- `gcl-progress-total-absolute-threshold` registers `GCL-001:levelThree`, which no test passed or failed
 
 ## vanilla expected failures
 
@@ -117,7 +122,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 40 expected-failure classifications against vanilla's canonical behavior, covering 77 tests. That includes 35 open parity gaps covering 68 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 77 tests. That includes 36 open parity gaps covering 68 tests and 5 intentional divergences covering 9 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -125,6 +130,7 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
+| `gcl-progress-total-absolute-threshold` | `Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357. | Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next. | Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0. | 0 |
 | `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix. The row's saturation phase also depends on `reserve-fresh-reservation-one-tick-long`: with only the cap fixed, the 50-CLAIM saturators stall near 4950 and the row still fails, so it flips only when both are fixed. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step, though only the unclaim row pins the divergence; the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
@@ -162,6 +168,12 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
 
 Click a test count above to jump to the affected test list for that gap.
+
+<details id="xxscreeps-gap-gcl-progress-total-absolute-threshold">
+<summary><code>gcl-progress-total-absolute-threshold</code> — 0 tests</summary>
+
+
+</details>
 
 <details id="xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting">
 <summary><code>reserve-cap-clamps-instead-of-rejecting</code> — 1 test</summary>

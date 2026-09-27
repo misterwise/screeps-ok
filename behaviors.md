@@ -1296,6 +1296,14 @@ Coverage Notes
   roads, walls and containers are always active, and a type allowed once at
   RCL 8 is never counted (`docs/behavior-matrices.md` → CTRL-STRUCTLIMIT).
 
+### 6.11 Account GCL
+- `GCL-001` `matrix` `verified_vanilla`
+  `Game.gcl.level`, `progress`, and `progressTotal` follow the vanilla GCL
+  formula from the account's GCL points at level edges:
+  `level = floor((points / GCL_MULTIPLY) ** (1 / GCL_POW)) + 1`,
+  `progress = points - base` for `base = (level - 1) ** GCL_POW * GCL_MULTIPLY`,
+  and `progressTotal = level ** GCL_POW * GCL_MULTIPLY - base`.
+
 ---
 
 ## 7. Combat

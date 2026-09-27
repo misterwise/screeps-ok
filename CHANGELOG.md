@@ -163,6 +163,8 @@ changes since `v0.1.0-alpha` are not itemized.
   buffer element, and the new `ROOM-TERRAIN-004` owns
   `getRawBuffer(destinationArray)`), and 21.3's `MAP-TERRAIN-001` owns
   `Game.map.getRoomTerrain`.
+- New: `GCL-001`, keyed by level edge (`:belowLevelTwo`, `:levelTwo`,
+  `:levelThree`), pins `Game.gcl`'s values, where only its keys were pinned.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this
   shard's entry equals `Game.cpu.limit`), `CPU-SHARD-003` (a changed total
   is `ERR_INVALID_ARGS`; now `behavior`), `CPU-SHARD-004` (`OK`, then

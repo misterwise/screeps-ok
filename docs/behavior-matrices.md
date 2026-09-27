@@ -1161,6 +1161,24 @@ checks both. Each definition has these fields, in this order:
   entry, `powerBank`; RUIN-002 has a test for it and one for a default
   (a destroyed container), in `tests/18-game-objects/18.2-ruin.test.ts`.
 
+### GCL-LEVELS
+
+- `Catalog Entries`
+  `GCL-001`
+- `Canonical Source`
+  `Game.gcl` in `@screeps/engine/src/game/game.js:130-131,158-162`, from
+  `GCL_MULTIPLY` and `GCL_POW`.
+- `Dimensions`
+  GCL level edge
+- `Applicability`
+  The last point of level 1, and the first point of levels 2 and 3 (level 3's
+  threshold is the first that isn't a whole number)
+- `Exclusions`
+  GCL growth from upgrading (`CTRL-UPGRADE-008`) and the room limit a level
+  sets (`CTRL-CLAIM-005`)
+- `Verification Notes`
+  The case list is inline in `tests/06-controller/6.11-gcl.test.ts`.
+
 ### GPL-LEVELS
 
 - `Catalog Entries`
