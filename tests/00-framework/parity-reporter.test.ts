@@ -27,7 +27,7 @@ function gap(tests: string[]) {
 }
 
 // Runs the reporter over fake results against a parity.json holding `tests`.
-function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; unhandled?: string[] } = {}) {
+function verdictFor(tests: string[], results: [string, State][], fullRun: boolean, errors: { module?: string[]; suite?: string[]; unhandled?: string[] } = {}) {
 	const dir = tempDir();
 	writeFileSync(path.join(dir, 'parity.json'), JSON.stringify({
 		expected_failures: { 'some-gap': gap(tests) },
@@ -44,9 +44,10 @@ function verdictFor(tests: string[], results: [string, State][], fullRun: boolea
 	vi.spyOn(console, 'log').mockImplementation(() => {});
 	const cases = results.map(([fullName, state]) => ({ fullName, result: () => ({ state }) }));
 	const moduleErrors = (errors.module ?? []).map(message => ({ message }));
+	const suites = [{ errors: () => (errors.suite ?? []).map(message => ({ message })) }];
 	const unhandled = (errors.unhandled ?? []).map(message => ({ message }));
 	reporter.onTestRunEnd(
-		[{ moduleId: TEST_FILE, children: { allTests: () => cases }, errors: () => moduleErrors } as unknown as TestModule],
+		[{ moduleId: TEST_FILE, children: { allTests: () => cases, allSuites: () => suites }, errors: () => moduleErrors } as unknown as TestModule],
 		unhandled as never,
 	);
 	return JSON.parse(readFileSync(verdictPath, 'utf8'));
@@ -74,6 +75,11 @@ describe('parity reporter', () => {
 		const registered: [string, State][] = [['GAP-001 fails as registered', 'failed']];
 		expect(verdictFor(['GAP-001'], registered, true, { module: ['SyntaxError'] }).genuineFailures).toBe(1);
 		expect(verdictFor(['GAP-001'], registered, true, { unhandled: ['TypeError'] }).genuineFailures).toBe(1);
+	});
+
+	test('a suite that fails outside its tests, such as an empty describe, is a genuine failure', () => {
+		const registered: [string, State][] = [['GAP-001 fails as registered', 'failed']];
+		expect(verdictFor(['GAP-001'], registered, true, { suite: ['Error: No test found in suite'] }).genuineFailures).toBe(1);
 	});
 
 	test('a test\'s `:row` id wins over its describe\'s bare id', () => {
@@ -222,10 +228,11 @@ describe('parity exit code', () => {
 });
 
 describe('JSON reports', () => {
-	function report(files: { tests: [string, State][]; message?: string; name?: string }[]) {
+	function report(files: { tests: [string, State][]; message?: string; name?: string; status?: State }[]) {
 		return {
 			testResults: files.map((f, i) => ({
 				name: f.name ?? `/suite/tests/01-section/1.${i}-some.test.ts`,
+				status: f.status ?? (f.message || f.tests.some(([, state]) => state === 'failed') ? 'failed' : 'passed'),
 				message: f.message ?? '',
 				assertionResults: f.tests.map(([fullName, status]) => ({ fullName, status })),
 			})),
@@ -247,6 +254,12 @@ describe('JSON reports', () => {
 		expect(judged.verdict).toEqual({
 			expectedFailures: 1, unexpectedPasses: 1, genuineFailures: 2, orphanedRegistrations: 1, untaggedTests: 0,
 		});
+	});
+
+	test('a file that failed with no failed test and no message is a genuine failure', () => {
+		// vitest's JSON report gives an empty describe no message, only the file's failed status.
+		const judged = judgeReport(report([{ tests: [['OTHER-001 passes', 'passed']], status: 'failed' }]), loadParity(path.join(tempDir(), 'parity.json')));
+		expect(judged.verdict.genuineFailures).toBe(1);
 	});
 
 	test('framework and contract sections need no catalog ids', () => {

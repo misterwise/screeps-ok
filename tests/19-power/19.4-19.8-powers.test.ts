@@ -388,9 +388,6 @@ describe('Combat powers', () => {
 	});
 });
 
-describe('Operate powers — additional', () => {
-});
-
 // Setup for one POWER-TARGETS case: a power creep in range of a single target structure.
 async function placePowerTarget(shard: ShardFixture, row: PowerTargetCase, structureType: string, powerEnabled: boolean) {
 	await shard.createShard({

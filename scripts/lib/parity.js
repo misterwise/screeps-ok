@@ -145,13 +145,17 @@ export function classifyResults({ gapForId, skipForId }, results, { fullRun }) {
 }
 
 // A vitest JSON report (or ci-merge-reports' merge of shards) as the results
-// the reporter reads live. vitest fills a file's `message` only for an error
-// outside its tests: collection, hooks.
+// the reporter reads live. vitest fills a file's `message` for an error
+// outside its tests (collection, hooks), but a suite with no tests only fails
+// the file, so a failed file with no failed test is an error too.
 export function reportResults(report) {
 	const results = [];
 	const fileErrors = [];
 	for (const file of report.testResults) {
 		if (file.message) fileErrors.push({ file: file.name, message: file.message });
+		else if (file.status === 'failed' && !file.assertionResults.some(a => a.status === 'failed')) {
+			fileErrors.push({ file: file.name, message: 'a suite failed outside its tests' });
+		}
 		for (const a of file.assertionResults) {
 			results.push({ fullName: a.fullName, state: a.status, file: file.name, meta: a.meta });
 		}

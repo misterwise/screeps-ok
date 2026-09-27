@@ -32,10 +32,12 @@ export default class ParityReporter implements Reporter {
 
 	onTestRunEnd(testModules: ReadonlyArray<TestModule>, unhandledErrors: ReadonlyArray<SerializedError> = []): void {
 		const results: TestResult[] = [];
-		// A file that failed to collect has no failed tests, and nothing registers an unhandled error.
+		// A file that failed to collect, or a suite that failed outside its tests (an empty
+		// describe, a hook), has no failed test to register, and nor has an unhandled error.
 		let errorCount = unhandledErrors.length;
 		for (const mod of testModules) {
 			errorCount += mod.errors().length;
+			for (const suite of mod.children.allSuites()) errorCount += suite.errors().length;
 			for (const testCase of mod.children.allTests()) {
 				results.push({ fullName: testCase.fullName, state: testCase.result().state, file: mod.moduleId });
 			}
