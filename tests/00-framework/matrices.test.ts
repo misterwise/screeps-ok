@@ -16,7 +16,10 @@ const pending = new Set([
 
 describe('matrices', () => {
 	test('a case list runs in the test of the row it enumerates', () => {
-		const suite = testFileClaims(path.join(root, 'tests')).map(({ code }) => code).join('\n');
+		// An imported list the test never uses doesn't run: imports are cut before the match.
+		const suite = testFileClaims(path.join(root, 'tests'))
+			.map(({ code }) => code.replace(/^import\b[\s\S]*?\bfrom\s+['"][^'"]+['"];?/gm, ''))
+			.join('\n');
 		const unrun = readdirSync(matricesDir)
 			.flatMap(name => [...stripComments(readFileSync(path.join(matricesDir, name), 'utf8')).matchAll(/^export const (\w+)/gm)])
 			.map(([, name]) => name)

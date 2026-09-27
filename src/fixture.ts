@@ -4,7 +4,7 @@ import { test as base, describe, expect, type RunnerTask, type RunnerTestCase } 
 import { baseCatalogId, testCatalogId } from '../scripts/lib/catalog-id.js';
 import { parseCatalog } from '../scripts/lib/parse-catalog.js';
 import { loadParity, registrationFor, type Parity } from '../scripts/lib/parity.js';
-import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName } from './adapter.js';
+import type { ScreepsOkAdapter, PlayerReturnValue, CapabilityName, TickOptions } from './adapter.js';
 import type { PlayerCode } from './code.js';
 import { RunPlayerError, type RunPlayerErrorKind } from './errors.js';
 import type {
@@ -207,7 +207,7 @@ function wrapAdapter(
 
 // A timed-out test body keeps running after vitest moves on. The fence rejects
 // its later shard calls and aborts its in-flight tick(n) between ticks.
-function fenceShard(shard: ShardFixture) {
+export function fenceShard<Shard extends object>(shard: Shard) {
 	const controller = new AbortController();
 	const inFlight = new Set<Promise<void>>();
 	const fenced = new Proxy(shard, {
@@ -218,7 +218,11 @@ function fenceShard(shard: ShardFixture) {
 				if (controller.signal.aborted) {
 					throw new Error(`shard.${String(key)}() called after its test ended (did the test time out?)`);
 				}
-				if (key === 'tick') args[1] = { ...(args[1] as object | undefined), signal: controller.signal };
+				if (key === 'tick') {
+					const options = args[1] as TickOptions | undefined;
+					const signal = options?.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
+					args[1] = { ...options, signal };
+				}
 				const result: unknown = value.apply(target, args);
 				if (result instanceof Promise) {
 					const settled = result.then(() => {}, () => {});
@@ -247,6 +251,11 @@ function taskCatalogId(task: RunnerTestCase): string | null {
 // Each catalog row's capabilities: its section's tag and its own.
 let rowCapabilities: Map<string, string[]> | undefined;
 
+// The capabilities a test's row is tagged with that the test never gated.
+export function ungatedCapabilities(id: string, gates: ReadonlySet<string>, rows: ReadonlyMap<string, readonly string[]>): string[] {
+	return (rows.get(baseCatalogId(id)) ?? []).filter(cap => !gates.has(cap));
+}
+
 // A test of a capability-tagged row must call shard.requires for each tag, or
 // it runs on adapters without the capability. Checked when the test ends, so
 // gates a matrix passes as data count too.
@@ -257,7 +266,7 @@ function assertGated(task: RunnerTestCase, gates: Set<string>) {
 	if (!id) return;
 	rowCapabilities ??= new Map(parseCatalog(fileURLToPath(new URL('../behaviors.md', import.meta.url)))
 		.map(entry => [entry.id, entry.capabilities]));
-	const ungated = (rowCapabilities.get(baseCatalogId(id)) ?? []).filter(cap => !gates.has(cap));
+	const ungated = ungatedCapabilities(id, gates, rowCapabilities);
 	if (ungated.length > 0) {
 		throw new Error(`${id}: behaviors.md tags its row ${ungated.map(cap => `capability:${cap}`).join(', ')}; call shard.requires('${ungated[0]}')${ungated.length > 1 ? ' for each' : ''}`);
 	}

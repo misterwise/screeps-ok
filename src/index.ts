@@ -18,7 +18,7 @@ export type {
 	PlaceObjectSpec, PlaceObjectSpecs, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 } from './adapter.js';
-export { checkRoomSpec, gclPoints } from './adapter.js';
+export { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from './adapter.js';
 export { withCornerWalls } from './terrain-fixture.js';
 export type { SupportedFindConstant, NeutralFindSelector } from './find.js';
 export { selectorFromFindConstant } from './find.js';
@@ -124,7 +124,7 @@ export {
 	FACTORY_CAPACITY,
 	// Mineral density
 	DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH, DENSITY_ULTRA,
-	MINERAL_DENSITY,
+	MINERAL_DENSITY, MINERAL_DENSITY_PROBABILITY,
 	// RawMemory segment limits
 	MAX_ACTIVE_SEGMENTS, MAX_SEGMENT_COUNT, MAX_SEGMENT_SIZE,
 	// Nuke

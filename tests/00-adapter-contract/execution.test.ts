@@ -1,5 +1,17 @@
-import { describe, test, expect, code, MOVE, CARRY, DENSITY_MODERATE } from '../../src/index.js';
+import {
+	describe, test, expect, code, MOVE, CARRY, DENSITY_LOW, DENSITY_MODERATE, DENSITY_HIGH,
+	MINERAL_DENSITY, MINERAL_DENSITY_PROBABILITY, RESOURCE_HYDROGEN, RESOURCE_OXYGEN,
+} from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
 import { RunPlayerError } from '../../src/errors.js';
+
+// A LOW mineral redraws its density on every regeneration (minerals/tick.js:19-30), one Math.random each.
+async function regeneratingLowMineral(shard: ShardFixture, pos: [number, number], ticksToRegeneration: number) {
+	return shard.placeMineral('W1N1', {
+		pos, mineralType: pos[0] < 25 ? RESOURCE_HYDROGEN : RESOURCE_OXYGEN,
+		density: DENSITY_LOW, mineralAmount: 0, ticksToRegeneration,
+	});
+}
 
 describe('adapter contract: execution', () => {
 	describe('runPlayer', () => {
@@ -194,6 +206,20 @@ describe('adapter contract: execution', () => {
 			expect(results.p1).toBe(results.p2);
 		});
 
+		test('runPlayers normalizes each result as runPlayer does', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [
+					{ name: 'W1N1', rcl: 1, owner: 'p1' },
+					{ name: 'W2N1', rcl: 1, owner: 'p2' },
+				],
+			});
+			expect(await shard.runPlayers({ p1: code`undefined`, p2: code`({ time: typeof Game.time })` }))
+				.toEqual({ p1: null, p2: { time: 'number' } });
+			await expect(shard.runPlayers({ p1: code`1`, p2: code`Game.rooms.W2N1` }))
+				.rejects.toMatchObject({ errorKind: 'serialization' });
+		});
+
 		test('runPlayers advances game time by exactly 1', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1', 'p2'],
@@ -236,16 +262,63 @@ describe('adapter contract: execution', () => {
 			const after = await shard.getGameTime();
 			expect(after).toBe(before + 5);
 		});
+
+		test('an aborted signal stops tick before another tick starts', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1' }],
+			});
+			const before = await shard.getGameTime();
+			const reason = new Error('stop');
+			await expect(shard.tick(3, { signal: AbortSignal.abort(reason) })).rejects.toBe(reason);
+			expect(await shard.getGameTime()).toBe(before);
+		});
 	});
 
 	describe('tick options.random', () => {
-		test('rejects out-of-range values without advancing time', async ({ shard }) => {
+		test('rejects out-of-range and non-finite values without advancing time', async ({ shard }) => {
 			shard.requires('randomInjection');
 			await shard.ownedRoom('p1');
 			const before = await shard.getGameTime();
 			await expect(shard.tick(1, { random: [1.0] })).rejects.toThrow(/random\[0\]/);
+			for (const bad of [NaN, Infinity, -0.1]) {
+				await expect(shard.tick(1, { random: [0.5, bad] })).rejects.toThrow(/random\[1\]/);
+			}
 			const after = await shard.getGameTime();
 			expect(after).toBe(before);
+		});
+
+		test('consumes one sequence across every tick of the call', async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			const first = await regeneratingLowMineral(shard, [20, 20], 1);
+			const second = await regeneratingLowMineral(shard, [30, 30], 2);
+			// One draw per tick: the first picks MODERATE, the second HIGH; a sequence reset per tick would pick MODERATE twice.
+			const moderate = (MINERAL_DENSITY_PROBABILITY[DENSITY_LOW] + MINERAL_DENSITY_PROBABILITY[DENSITY_MODERATE]) / 2;
+			const high = (MINERAL_DENSITY_PROBABILITY[DENSITY_MODERATE] + MINERAL_DENSITY_PROBABILITY[DENSITY_HIGH]) / 2;
+			await shard.tick(2, { random: [moderate, high] });
+			expect([
+				(await shard.expectObject(first, 'mineral')).density,
+				(await shard.expectObject(second, 'mineral')).density,
+			]).toEqual([DENSITY_MODERATE, DENSITY_HIGH]);
+		});
+
+		test('restores Math.random after the call, and after a call that throws', async ({ shard }) => {
+			shard.requires('randomInjection');
+			await shard.ownedRoom('p1');
+			await shard.tick(1, { random: [] });
+			// A sequence left in place would be exhausted by the regeneration's draw.
+			const first = await regeneratingLowMineral(shard, [20, 20], 1);
+			await shard.tick(2);
+			expect((await shard.expectObject(first, 'mineral')).mineralAmount).toBe(MINERAL_DENSITY[DENSITY_LOW]);
+
+			await regeneratingLowMineral(shard, [30, 30], 1);
+			await expect(shard.tick(1, { random: [] })).rejects.toThrow(/exhausted/);
+			// The aborted tick's world is not the contract; a fresh one shows Math.random is back.
+			await shard.ownedRoom('p1');
+			const second = await regeneratingLowMineral(shard, [30, 30], 1);
+			await shard.tick(2);
+			expect((await shard.expectObject(second, 'mineral')).mineralAmount).toBe(MINERAL_DENSITY[DENSITY_LOW]);
 		});
 
 		test('throws when sequence exhausted by processor random calls', async ({ shard }) => {

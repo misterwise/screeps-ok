@@ -80,7 +80,7 @@ That includes:
   engine's checks read it: `PlayerSpec.gcl` as `Game.gcl` reads it
   (`gclPoints()` gives the engine's points; default level is the rooms the
   player owns plus one, at least 2), and `PlayerSpec.power` in points
-  (default 10,000,000)
+  (default `DEFAULT_PLAYER_POWER`, 10,000,000)
 - create the requested rooms. The world contains every requested room and may
   contain more (an adapter may build on an engine's own test world), so its
   extent is engine-reported rather than derived from the spec. Tests that
@@ -109,8 +109,7 @@ That includes:
   `setTerrain()` alike: the map generator never leaves a corner passable, so a
   plain room has 48 exit tiles per side
 
-If a room has an owner and no explicit `rcl`, adapters should treat it as
-controller level `1`.
+If a room has an owner and no explicit `rcl`, its controller is level `1`.
 
 ### Typed placement helpers
 

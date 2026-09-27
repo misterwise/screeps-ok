@@ -7,7 +7,18 @@ import {
 	FIND_DEPOSITS, OK, REACTION_TIME, CREEP_SPAWN_TIME, DEPOSIT_EXHAUST_MULTIPLY, DEPOSIT_EXHAUST_POW,
 	RESOURCE_SILICON, RESOURCE_METAL,
 	STRUCTURE_CONTROLLER, STRUCTURE_PORTAL,
+	BODYPART_HITS, CARRY_CAPACITY, CONSTRUCTION_COST, SOURCE_ENERGY_CAPACITY,
+	FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES,
+	DEPOSIT_DECAY_TIME, POWER_BANK_DECAY, POWER_BANK_HITS,
 } from '../../src/index.js';
+import type { ShardFixture } from '../../src/fixture.js';
+
+async function controllerSnapshot(shard: ShardFixture, roomName: string) {
+	const controller = (await shard.findInRoom(roomName, FIND_STRUCTURES))
+		.find(s => s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER);
+	if (!controller) throw new Error(`${roomName} has no controller`);
+	return shard.expectStructure(controller.id, STRUCTURE_CONTROLLER);
+}
 
 describe('adapter contract: inspection', () => {
 	describe('getObject', () => {
@@ -31,21 +42,23 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
+			// With no tick between them, the snapshot reads what player code reads.
 			const obj = await shard.expectObject(id, 'creep');
-			expect(obj.id).toBeDefined();
+			const seen = await shard.runPlayer('p1', code`
+				const c = Game.getObjectById(${id});
+				({ ticksToLive: c.ticksToLive, body: c.body.map(part => part.type) })
+			`) as { ticksToLive: number; body: string[] };
 			expect(obj.name).toBe('TestCreep');
-			expect(obj.pos.x).toBe(25);
-			expect(obj.pos.y).toBe(25);
-			expect(obj.pos.roomName).toBe('W1N1');
-			expect(typeof obj.hits).toBe('number');
-			expect(typeof obj.hitsMax).toBe('number');
-			expect(typeof obj.fatigue).toBe('number');
-			expect(obj.body).toHaveLength(3);
+			expect(obj.pos).toEqual({ x: 25, y: 25, roomName: 'W1N1' });
+			expect(obj.hits).toBe(3 * BODYPART_HITS);
+			expect(obj.hitsMax).toBe(3 * BODYPART_HITS);
+			expect(obj.fatigue).toBe(0);
+			expect(obj.body.map(part => part.type)).toEqual(seen.body);
 			expect(obj.owner).toBe('p1');
-			expect(typeof obj.ticksToLive).toBe('number');
-			expect(typeof obj.spawning).toBe('boolean');
-			expect(typeof obj.store).toBe('object');
-			expect(typeof obj.storeCapacity).toBe('number');
+			expect(obj.ticksToLive).toBe(seen.ticksToLive);
+			expect(obj.spawning).toBe(false);
+			expect(obj.store).toEqual({ energy: 10 });
+			expect(obj.storeCapacity).toBe(CARRY_CAPACITY);
 		});
 
 		test('structure snapshot has correct kind', async ({ shard }) => {
@@ -71,27 +84,27 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'site');
-			expect(typeof obj.progress).toBe('number');
-			expect(typeof obj.progressTotal).toBe('number');
+			expect(obj.progress).toBe(0);
+			expect(obj.progressTotal).toBe(CONSTRUCTION_COST[STRUCTURE_ROAD]);
 			expect(obj.owner).toBe('p1');
 		});
 
 		test('source snapshot has energy fields', async ({ shard }) => {
-			await shard.createShard({
-				players: ['p1'],
-				rooms: [{ name: 'W1N1' }],
-			});
+			await shard.ownedRoom('p1');
 			const id = await shard.placeSource('W1N1', {
 				pos: [10, 10],
 				energy: 1500,
-				energyCapacity: 3000,
+				energyCapacity: SOURCE_ENERGY_CAPACITY,
 			});
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'source');
-			expect(typeof obj.energy).toBe('number');
-			expect(typeof obj.energyCapacity).toBe('number');
-			expect(typeof obj.ticksToRegeneration).toBe('number');
+			const seen = await shard.runPlayer('p1', code`
+				Game.getObjectById(${id}).ticksToRegeneration
+			`);
+			expect(obj.energy).toBe(1500);
+			expect(obj.energyCapacity).toBe(SOURCE_ENERGY_CAPACITY);
+			expect(obj.ticksToRegeneration).toBe(seen);
 		});
 
 		test('runPlayer preserves undefined as null in return values', async ({ shard }) => {
@@ -142,7 +155,7 @@ describe('adapter contract: inspection', () => {
 
 			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
 			expect(creeps.length).toBe(2);
-			expect(creeps.every((c: any) => c.kind === 'creep')).toBe(true);
+			expect(creeps.map(c => c.kind)).toEqual(['creep', 'creep']);
 		});
 
 		test('finds structures', async ({ shard }) => {
@@ -155,8 +168,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-			expect(structures.map((s: any) => s.structureType).sort()).toEqual([STRUCTURE_CONTROLLER, STRUCTURE_ROAD].sort());
-			expect(structures.every((s: any) => s.kind === 'structure')).toBe(true);
+			expect(structures.map(s => s.kind === 'structure' && s.structureType).sort()).toEqual([STRUCTURE_CONTROLLER, STRUCTURE_ROAD].sort());
 		});
 
 		test('finds construction sites', async ({ shard }) => {
@@ -167,8 +179,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
-			expect(sites.length).toBe(1);
-			expect(sites.every((s: any) => s.kind === 'site')).toBe(true);
+			expect(sites.map(s => s.kind)).toEqual(['site']);
 		});
 
 		test('finds sources', async ({ shard }) => {
@@ -180,8 +191,7 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const sources = await shard.findInRoom('W1N1', FIND_SOURCES);
-			expect(sources.length).toBe(1);
-			expect(sources.every((s: any) => s.kind === 'source')).toBe(true);
+			expect(sources.map(s => s.kind)).toEqual(['source']);
 		});
 
 		test('finds minerals', async ({ shard }) => {
@@ -193,8 +203,15 @@ describe('adapter contract: inspection', () => {
 			await shard.tick();
 
 			const minerals = await shard.findInRoom('W1N1', FIND_MINERALS);
-			expect(minerals.length).toBe(1);
-			expect(minerals.every((m: any) => m.kind === 'mineral')).toBe(true);
+			expect(minerals.map(m => m.kind)).toEqual(['mineral']);
+		});
+
+		test('rejects player-relative constants', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			for (const find of [FIND_MY_CREEPS, FIND_HOSTILE_CREEPS, FIND_MY_STRUCTURES]) {
+				// @ts-expect-error the type refuses them already; a JavaScript caller reaches the adapter's check
+				await expect(shard.findInRoom('W1N1', find)).rejects.toThrow();
+			}
 		});
 
 		test('returns empty array for empty room type', async ({ shard }) => {
@@ -268,8 +285,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('deposit');
+			const obj = await shard.expectObject(id, 'deposit');
 			expect(obj.id).toBe(id);
 			expect(obj.depositType).toBe(RESOURCE_METAL);
 			// lastCooldown follows the harvested total, as it does after real harvests.
@@ -278,10 +294,8 @@ describe('adapter contract: inspection', () => {
 			expect(obj.cooldown).toBe(24);
 			expect(obj.ticksToDecay).toBe(99);
 
-			const deposits = await shard.findInRoom('W1N1', FIND_DEPOSITS) as any[];
-			expect(deposits).toHaveLength(1);
-			expect(deposits[0].id).toBe(id);
-			expect(deposits[0].kind).toBe('deposit');
+			const deposits = await shard.findInRoom('W1N1', FIND_DEPOSITS);
+			expect(deposits.map(d => [d.kind, d.id])).toEqual([['deposit', id]]);
 		});
 
 		test('keeper lair snapshot includes ticksToSpawn', async ({ shard }) => {
@@ -292,9 +306,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe(STRUCTURE_KEEPER_LAIR);
+			const obj = await shard.expectStructure(id, STRUCTURE_KEEPER_LAIR);
 			expect(obj.ticksToSpawn).toBe(99);
 		});
 
@@ -308,9 +320,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe(STRUCTURE_INVADER_CORE);
+			const obj = await shard.expectStructure(id, STRUCTURE_INVADER_CORE);
 			expect(obj.level).toBe(2);
 			expect(obj.ticksToDeploy).toBe(74);
 		});
@@ -326,9 +336,7 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe(STRUCTURE_POWER_BANK);
+			const obj = await shard.expectStructure(id, STRUCTURE_POWER_BANK);
 			expect(obj.power).toBe(2500);
 			expect(obj.hits).toBe(1000000);
 			expect(obj.hitsMax).toBe(2000000);
@@ -351,11 +359,58 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const obj = await shard.getObject(id) as any;
-			expect(obj?.kind).toBe('structure');
-			expect(obj.structureType).toBe(STRUCTURE_PORTAL);
+			const obj = await shard.expectStructure(id, STRUCTURE_PORTAL);
 			expect(obj.destination).toEqual({ x: 30, y: 31, roomName: 'W2N1' });
 			expect(obj.ticksToDecay).toBe(199);
+		});
+	});
+
+	// Read before a tick, the snapshot shows each default the spec writes down.
+	describe('placeObject defaults', () => {
+		test('portal: no decay', async ({ shard }) => {
+			shard.requires('portals');
+			await shard.createShard({ players: ['p1'], rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1' }] });
+			const id = await shard.placeObject('W1N1', 'portal', { pos: [25, 25], destination: { room: 'W2N1', x: 30, y: 31 } });
+			expect((await shard.expectStructure(id, STRUCTURE_PORTAL)).ticksToDecay).toBeNull();
+		});
+
+		test('deposit: unharvested, no cooldown, a fresh decay timer', async ({ shard }) => {
+			shard.requires('deposit');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', 'deposit', { pos: [20, 20], depositType: RESOURCE_SILICON });
+			expect(await shard.expectObject(id, 'deposit')).toMatchObject({ lastCooldown: 0, cooldown: 0, ticksToDecay: DEPOSIT_DECAY_TIME });
+		});
+
+		test('keeper lair: no spawn scheduled', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', STRUCTURE_KEEPER_LAIR, { pos: [25, 25] });
+			expect((await shard.expectStructure(id, STRUCTURE_KEEPER_LAIR)).ticksToSpawn).toBeNull();
+		});
+
+		test('invader core: deployed and idle', async ({ shard }) => {
+			shard.requires('invaderCore');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', STRUCTURE_INVADER_CORE, { pos: [25, 25], level: 1 });
+			expect(await shard.expectStructure(id, STRUCTURE_INVADER_CORE)).toMatchObject({ ticksToDeploy: null, spawning: null });
+		});
+
+		test('power bank: full hits, a fresh decay timer', async ({ shard }) => {
+			shard.requires('powerBank');
+			await shard.ownedRoom('p1');
+			const id = await shard.placeObject('W1N1', STRUCTURE_POWER_BANK, { pos: [25, 25], power: 2500 });
+			expect(await shard.expectStructure(id, STRUCTURE_POWER_BANK))
+				.toMatchObject({ hits: POWER_BANK_HITS, hitsMax: POWER_BANK_HITS, ticksToDecay: POWER_BANK_DECAY });
+		});
+	});
+
+	describe('captureConsoleLogs', () => {
+		test('returns the latest call\'s console lines in emission order', async ({ shard }) => {
+			shard.requires('deprecationNotices');
+			await shard.ownedRoom('p1');
+			await shard.runPlayer('p1', code`console.log('a'); console.log('b'); 1`);
+			expect(await shard.captureConsoleLogs('p1')).toEqual(['a', 'b']);
+			await shard.runPlayer('p1', code`console.log('c'); 1`);
+			expect(await shard.captureConsoleLogs('p1')).toEqual(['c']);
 		});
 	});
 
@@ -381,6 +436,24 @@ describe('adapter contract: inspection', () => {
 		});
 	});
 
+	describe('snapshot nulls', () => {
+		test('a getter that reads undefined is null, and a per-resource store has a null storeCapacity', async ({ shard }) => {
+			await shard.createShard({
+				players: ['p1'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1' }, { name: 'W2N1' }],
+			});
+			const sourceId = await shard.placeSource('W1N1', { pos: [10, 10] });
+			const spawnId = await shard.placeStructure('W1N1', {
+				pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
+			});
+			await shard.tick();
+
+			expect((await shard.expectObject(sourceId, 'source')).ticksToRegeneration).toBeNull();
+			expect((await controllerSnapshot(shard, 'W2N1')).ticksToDowngrade).toBeNull();
+			expect((await shard.expectStructure(spawnId, STRUCTURE_SPAWN)).storeCapacity).toBeNull();
+		});
+	});
+
 	describe('snapshot timer relativity', () => {
 		// Snapshot timer fields name themselves after the player API getters
 		// (Source.ticksToRegeneration, Container.ticksToDecay, etc.) which
@@ -395,15 +468,11 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-			const ctrl = sites.find((s: any) =>
-				s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER) as any;
+			const ctrl = await controllerSnapshot(shard, 'W1N1');
 			const playerView = await shard.runPlayer('p1', code`
 				Game.rooms['W1N1'].controller.ticksToDowngrade
 			`) as number;
 
-			expect(ctrl).toBeDefined();
-			expect(typeof ctrl.ticksToDowngrade).toBe('number');
 			// findInRoom and runPlayer's user code both observe the current
 			// gameTime; with no tick between them, the snapshot field must
 			// equal what player code reads. A snapshot that returns the raw
@@ -420,14 +489,11 @@ describe('adapter contract: inspection', () => {
 			});
 			await shard.tick();
 
-			const sites = await shard.findInRoom('W1N1', FIND_STRUCTURES);
-			const ctrl = sites.find((s: any) =>
-				s.kind === 'structure' && s.structureType === STRUCTURE_CONTROLLER) as any;
+			const ctrl = await controllerSnapshot(shard, 'W1N1');
 			const playerView = await shard.runPlayer('p1', code`
-				Game.rooms['W1N1'].controller.safeMode || 0
-			`) as number;
+				Game.rooms['W1N1'].controller.safeMode
+			`);
 
-			expect(typeof ctrl.safeMode).toBe('number');
 			expect(ctrl.safeMode).toBe(playerView);
 			// Seeded 200 at creation; one tick has elapsed.
 			expect(ctrl.safeMode).toBe(199);

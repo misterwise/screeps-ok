@@ -10,7 +10,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from 'screeps-ok';
-import { checkRoomSpec, gclPoints } from 'screeps-ok';
+import { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from 'screeps-ok';
 import type { ObjectSnapshot } from 'screeps-ok';
 import type { PlayerCode } from 'screeps-ok';
 import { RunPlayerError } from 'screeps-ok';
@@ -369,7 +369,7 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 				(typeof entry !== 'string' ? entry.gcl : undefined) ?? { level: Math.max(ownedRooms + 1, 2) }));
 			this.playerPower.set(handle, typeof entry !== 'string' && entry.power !== undefined
 				? entry.power
-				: 10000000);
+				: DEFAULT_PLAYER_POWER);
 		}
 
 		for (const roomSpec of spec.rooms) {

@@ -1,4 +1,4 @@
-import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_OBSERVER, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, CREEP_LIFE_TIME, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY } from '../../src/index.js';
+import { describe, test, expect, code, MOVE, CARRY, WORK, ATTACK, CLAIM, FIND_CREEPS, FIND_STRUCTURES, FIND_SOURCES, FIND_MINERALS, STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_ROAD, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_KEEPER_LAIR, STRUCTURE_INVADER_CORE, STRUCTURE_POWER_BANK, STRUCTURE_LINK, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_OBSERVER, RESOURCE_ENERGY, CARRY_CAPACITY, CONTAINER_HITS, CREEP_LIFE_TIME, PWR_OPERATE_LAB, PWR_GENERATE_OPS, ERR_GCL_NOT_ENOUGH, CONSTRUCTION_COST, CONTROLLER_DOWNGRADE, CONTROLLER_LEVELS, CONTAINER_DECAY_TIME, CONTAINER_DECAY_TIME_OWNED, ROAD_DECAY_TIME, RAMPART_DECAY_TIME, MINERAL_DENSITY, DENSITY_HIGH, ENERGY_DECAY, BODYPART_HITS, SOURCE_ENERGY_CAPACITY, COLOR_RED, COLOR_BLUE, DEFAULT_PLAYER_POWER, POWER_LEVEL_MULTIPLY, POWER_LEVEL_POW } from '../../src/index.js';
 import {
 	TERRAIN_FIXTURE_ROOM, TERRAIN_FIXTURE_SPEC, TERRAIN_FIXTURE_LANDMARKS,
 } from '../../src/terrain-fixture.js';
@@ -71,9 +71,7 @@ describe('adapter contract: setup', () => {
 					my: room?.controller?.my,
 				})
 			`);
-			expect((result as any).hasRoom).toBe(true);
-			expect((result as any).level).toBe(4);
-			expect((result as any).my).toBe(true);
+			expect(result).toEqual({ hasRoom: true, level: 4, my: true });
 		});
 
 		test('owned controller snapshot exposes default downgrade timer and progressTotal', async ({ shard }) => {
@@ -140,14 +138,27 @@ describe('adapter contract: setup', () => {
 		test('PlayerSpec.gcl sets Game.gcl, and defaults to room for one more claim', async ({ shard }) => {
 			// Level 3's threshold isn't whole; level 2's is, so its progress reads back exactly.
 			await shard.createShard({
-				players: [{ name: 'p1', gcl: { level: 3 } }, { name: 'p2', gcl: { level: 2, progress: 5 } }, 'p3'],
+				players: [{ name: 'p1', gcl: { level: 3 } }, { name: 'p2', gcl: { level: 2, progress: 5 } }, 'p3', 'p4'],
 				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p3' }, { name: 'W2N1', rcl: 1, owner: 'p3' }],
 			});
 			const readGcl = code`({ level: Game.gcl.level, progress: Game.gcl.progress })`;
-			const gcl = await shard.runPlayers({ p1: readGcl, p2: readGcl, p3: readGcl });
-			expect((gcl.p1 as { level: number }).level).toBe(3);
-			expect(gcl.p2).toEqual({ level: 2, progress: 5 });
-			expect((gcl.p3 as { level: number }).level).toBe(3);
+			const readLevel = code`Game.gcl.level`;
+			const gcl = await shard.runPlayers({ p1: readLevel, p2: readGcl, p3: readLevel, p4: readLevel });
+			// p3 owns two rooms; p4 owns none and still gets the floor of 2.
+			expect(gcl).toEqual({ p1: 3, p2: { level: 2, progress: 5 }, p3: 3, p4: 2 });
+		});
+
+		test('PlayerSpec.power defaults to DEFAULT_PLAYER_POWER', async ({ shard }) => {
+			shard.requires('powerSpawn');
+			await shard.ownedRoom('p1');
+			const level = Math.floor((DEFAULT_PLAYER_POWER / POWER_LEVEL_MULTIPLY) ** (1 / POWER_LEVEL_POW));
+			expect(await shard.runPlayer('p1', code`({ level: Game.gpl.level, progress: Game.gpl.progress })`))
+				.toEqual({ level, progress: DEFAULT_PLAYER_POWER - level ** POWER_LEVEL_POW * POWER_LEVEL_MULTIPLY });
+		});
+
+		test('an owned room without rcl has a level 1 controller', async ({ shard }) => {
+			await shard.createShard({ players: ['p1'], rooms: [{ name: 'W1N1', owner: 'p1' }] });
+			expect(await shard.runPlayer('p1', code`Game.rooms.W1N1.controller.level`)).toBe(1);
 		});
 
 		test('PlayerSpec.gcl override is honored at user creation (gates extra claims)', async ({ shard }) => {
@@ -455,10 +466,9 @@ describe('adapter contract: setup', () => {
 
 			const result = await shard.runPlayer('p1', code`
 				const c = Game.getObjectById(${id});
-				c ? ({ hits: c.hits, carry: c.store.getUsedCapacity('energy') }) : null
+				({ hits: c.hits, carry: c.store.getUsedCapacity(RESOURCE_ENERGY) })
 			`);
-			expect(result).not.toBeNull();
-			expect((result as any).carry).toBe(25);
+			expect(result).toEqual({ hits: 2 * BODYPART_HITS, carry: 25 });
 		});
 
 		test('creep appears in findInRoom', async ({ shard }) => {
@@ -471,11 +481,10 @@ describe('adapter contract: setup', () => {
 			await shard.tick();
 
 			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
-			const placed = creeps.filter((c: any) => c.kind === 'creep');
-			expect(placed.length).toBe(1);
+			expect(creeps.map(c => c.kind)).toEqual(['creep']);
 		});
 
-		test('srcKeeper NPC owner handle resolves without ShardSpec.players entry', async ({ shard }) => {
+		test('NPC owner handles resolve without ShardSpec.players entries', async ({ shard }) => {
 			await shard.createShard({
 				players: ['p1'],
 				rooms: [{ name: 'W1N1' }],
@@ -486,11 +495,18 @@ describe('adapter contract: setup', () => {
 				body: [MOVE],
 				name: 'SourceKeeperProbe',
 			});
+			await shard.placeCreep('W1N1', {
+				pos: [27, 25],
+				owner: 'sk',
+				body: [MOVE],
+				name: 'InvaderProbe',
+			});
 			await shard.tick();
 
 			const creeps = await shard.findInRoom('W1N1', FIND_CREEPS);
-			const creep = creeps.find(c => c.name === 'SourceKeeperProbe');
-			expect(creep).toMatchObject({ owner: 'srcKeeper' });
+			expect(creeps.map(c => c.kind === 'creep' && [c.name, c.owner]).sort()).toEqual([
+				['InvaderProbe', 'sk'], ['SourceKeeperProbe', 'srcKeeper'],
+			]);
 		});
 
 		test('spec.boosts tags the target body parts with the boost mineral', async ({ shard }) => {
@@ -610,6 +626,19 @@ describe('adapter contract: setup', () => {
 				Game.getObjectById(${id}).store.getUsedCapacity('energy')
 			`);
 			expect(result).toBe(200);
+		});
+
+		test('structure store replaces the engine default rather than adding to it', async ({ shard }) => {
+			await shard.ownedRoom('p1');
+			// Read before a tick: a spawn below capacity regenerates 1 energy per tick.
+			const id = await shard.placeStructure('W1N1', {
+				pos: [25, 25],
+				structureType: STRUCTURE_SPAWN,
+				owner: 'p1',
+				store: { energy: 50 },
+			});
+			const spawn = await shard.expectStructure(id, STRUCTURE_SPAWN);
+			expect(spawn.store).toEqual({ energy: 50 });
 		});
 
 		test('structure hits is initialized', async ({ shard }) => {
@@ -796,8 +825,8 @@ describe('adapter contract: setup', () => {
 			await shard.tick();
 
 			const obj = await shard.expectObject(id, 'source');
-			expect(obj.energyCapacity).toBe(3000);
-			expect(obj.energy).toBe(3000);
+			expect(obj.energyCapacity).toBe(SOURCE_ENERGY_CAPACITY);
+			expect(obj.energy).toBe(SOURCE_ENERGY_CAPACITY);
 		});
 
 		test('places a depleted source', async ({ shard }) => {
@@ -879,26 +908,21 @@ describe('adapter contract: setup', () => {
 				pos: [25, 25],
 				owner: 'p1',
 				name: 'TestFlag',
-				color: 1,
-				secondaryColor: 2,
+				color: COLOR_RED,
+				secondaryColor: COLOR_BLUE,
 			});
 
 			const result = await shard.runPlayer('p1', code`
 				const flag = Game.flags['TestFlag'];
-				flag ? ({
+				({
 					name: flag.name,
 					color: flag.color,
 					secondaryColor: flag.secondaryColor,
 					x: flag.pos.x,
 					y: flag.pos.y,
-				}) : null
+				})
 			`);
-			expect(result).not.toBeNull();
-			expect((result as any).name).toBe('TestFlag');
-			expect((result as any).color).toBe(1);
-			expect((result as any).secondaryColor).toBe(2);
-			expect((result as any).x).toBe(25);
-			expect((result as any).y).toBe(25);
+			expect(result).toEqual({ name: 'TestFlag', color: COLOR_RED, secondaryColor: COLOR_BLUE, x: 25, y: 25 });
 		});
 
 		test('rejects flag names containing engine data delimiters', async ({ shard }) => {

@@ -62,7 +62,15 @@ changes since `v0.1.0-alpha` are not itemized.
   a level. `gclPoints()` converts it to the points your engine stores; write
   them to the user record the engine's claim check reads. The default is the
   rooms the player owns plus one, at least 2 (it was 10,000,000 points, level
-  3, on vanilla). `PlayerSpec.power` states its default: 10,000,000 points.
+  3, on vanilla). `PlayerSpec.power` states its default: 10,000,000 points,
+  exported as `DEFAULT_PLAYER_POWER`.
+- An owned room without an `rcl` has a level 1 controller: the spec had said
+  "should". Contract tests now pin it, with the snapshot's `null` for a
+  getter's `undefined`, a structure `store` that replaces the engine's
+  default, `runPlayers`' result normalization, `options.random`'s non-finite
+  values and restored `Math.random`, a pre-aborted `options.signal`,
+  `findInRoom`'s refusal of player-relative constants, the `placeObject`
+  defaults, and `captureConsoleLogs`.
 - `placeObject` takes a typed spec for `portal`, `deposit`, `keeperLair`,
   `invaderCore` and `powerBank` (`PlaceObjectSpecs`), with timers named for
   their getters. Renamed: `decayTime` → `ticksToDecay`, `cooldownTime` →

@@ -189,7 +189,6 @@ describe('adapter contract: tile coexistence', () => {
 		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
 		const atTile = structures.filter(s => s.pos.x === 25 && s.pos.y === 25);
 		const types = atTile.map(s => s.structureType).sort();
-		expect(types).toContain(STRUCTURE_ROAD);
-		expect(types).toContain(STRUCTURE_RAMPART);
+		expect(types).toEqual([STRUCTURE_RAMPART, STRUCTURE_ROAD].sort());
 	});
 });

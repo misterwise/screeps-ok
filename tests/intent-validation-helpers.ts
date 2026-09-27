@@ -3,7 +3,7 @@ import type { ShardFixture } from '../src/fixture.js';
 import type { PlayerCode } from '../src/code.js';
 import type { StaleArgumentCase } from '../src/matrices/stale-argument.js';
 import {
-	code, CARRY, CLAIM, FIND_CREEPS, MOVE, STRUCTURE_SPAWN, WORK,
+	code, CARRY, CLAIM, FIND_CREEPS, MOVE, OK, STRUCTURE_SPAWN, WORK,
 } from '../src/index.js';
 
 interface BusyCreepOptions {
@@ -38,7 +38,7 @@ export async function spawnBusyCreep(shard: ShardFixture, options: BusyCreepOpti
 	const rc = await shard.runPlayer(owner, code`
 		Game.getObjectById(${spawnId}).spawnCreep(${body}, ${name})
 	`);
-	if (rc !== 0) throw new Error(`spawnBusyCreep: spawnCreep returned ${rc}`);
+	if (rc !== OK) throw new Error(`spawnBusyCreep: spawnCreep returned ${rc}`);
 
 	const creeps = await shard.findInRoom(roomName, FIND_CREEPS);
 	const creep = creeps.find(candidate => candidate.name === name);
@@ -59,7 +59,7 @@ export async function reserveRoom(shard: ShardFixture, reserver: string, roomNam
 	const rc = await shard.runPlayer(reserver, code`
 		Game.getObjectById(${reserverId}).reserveController(Game.rooms[${roomName}].controller)
 	`);
-	if (rc !== 0) throw new Error(`reserveRoom: reserveController returned ${rc}`);
+	if (rc !== OK) throw new Error(`reserveRoom: reserveController returned ${rc}`);
 }
 
 interface FatiguedCreepOptions {
@@ -88,7 +88,7 @@ export async function placeFatiguedCreep(shard: ShardFixture, options: FatiguedC
 	const rc = await shard.runPlayer(owner, code`
 		Game.getObjectById(${creepId}).move(TOP)
 	`);
-	if (rc !== 0) throw new Error(`placeFatiguedCreep: move returned ${rc}`);
+	if (rc !== OK) throw new Error(`placeFatiguedCreep: move returned ${rc}`);
 
 	const creep = await shard.expectObject(creepId, 'creep');
 	if (creep.fatigue <= 0) throw new Error('placeFatiguedCreep: creep did not become fatigued');

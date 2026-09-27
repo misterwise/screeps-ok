@@ -38,3 +38,26 @@ export function testFileClaims(testsDir) {
 		return { file, code, ids };
 	});
 }
+
+// A skipped or todo test claims its id while running nothing; gates go through
+// shard.requires() or a parity.json skip. `file: modifier` per use.
+export function modifiedTests(claims) {
+	return claims.flatMap(({ file, code }) =>
+		[...code.matchAll(/\b(?:test|it|describe)(?:\.\w+)*\.(?:skip|todo|only|fails|skipIf|runIf)\b/g)]
+			.map(([match]) => `${file}: ${match}`));
+}
+
+// Cases sharing one bare id, or a key cut short at `+` or `>`, can't be
+// registered or reported apart. `file: title` per interpolated title that
+// doesn't key its id by the whole case.
+export function unkeyedTitles(claims) {
+	const keyed = /^(?:[A-Z]+-(?:[A-Z]+-)?[0-9]{3}|\$\{[\w.]*catalogId\})(?::(?:[a-zA-Z0-9]|\$\{[^}]+\})+)?(?: |$)/;
+	return claims.flatMap(({ file, code }) =>
+		[...code.matchAll(/\btest\(\s*`([^`]*\$\{[^`]*)`/g)]
+			.map(([, title]) => title)
+			.filter(title => {
+				const id = title.match(keyed);
+				return !id || !id[0].includes(':') && !id[0].startsWith('${');
+			})
+			.map(title => `${file}: ${title}`));
+}

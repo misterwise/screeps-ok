@@ -28,10 +28,12 @@ export interface PlayerSpec {
 	gcl?: GclSpec;
 	/**
 	 * The player's processed account power in points, from which the engine
-	 * derives `Game.gpl`. Defaults to 10,000,000.
+	 * derives `Game.gpl`. Defaults to `DEFAULT_PLAYER_POWER`.
 	 */
 	power?: number;
 }
+
+export const DEFAULT_PLAYER_POWER = 10_000_000;
 
 export interface GclSpec {
 	/** `Game.gcl.level`. */

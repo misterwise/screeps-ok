@@ -31,11 +31,10 @@ describe('adapter contract: code tag', () => {
 	});
 
 	test('branded PlayerCode type prevents raw strings at compile time', () => {
-		// This is a compile-time check — raw strings should not be assignable to PlayerCode
+		// `npm run check` typechecks tests/, so the expect-error fails it if a raw string becomes assignable.
 		const tagged: PlayerCode = code`1 + 1`;
-		expect(typeof tagged).toBe('string');
-
-		// The following would be a type error if uncommented:
-		// const raw: PlayerCode = `1 + 1`;  // Type 'string' is not assignable to type 'PlayerCode'
+		// @ts-expect-error a raw string is not PlayerCode
+		const raw: PlayerCode = `1 + 1`;
+		expect([tagged, raw]).toEqual(['1 + 1', '1 + 1']);
 	});
 });

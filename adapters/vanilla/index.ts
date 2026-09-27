@@ -7,7 +7,7 @@ import type {
 	InvaderRaidRoomStateSpec, InvaderRaidSpawnerOptions, RoomSpec, TickOptions,
 	PlaceObjectSpec, PortalSpec, DepositSpec, KeeperLairSpec, InvaderCoreSpec, PowerBankSpec,
 } from '../../src/adapter.js';
-import { checkRoomSpec, gclPoints } from '../../src/adapter.js';
+import { checkRoomSpec, gclPoints, DEFAULT_PLAYER_POWER } from '../../src/adapter.js';
 import { EventEmitter } from 'node:events';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -937,7 +937,7 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			const roomName = ownedRooms[0]?.name ?? spec.rooms[0].name;
 
 			const gcl = gclPoints(playerSpec.gcl ?? { level: Math.max(ownedRooms.length + 1, 2) });
-			const power = playerSpec.power ?? 10000000;
+			const power = playerSpec.power ?? DEFAULT_PLAYER_POWER;
 
 			// Insert user directly
 			const user = await this.db.users.insert({

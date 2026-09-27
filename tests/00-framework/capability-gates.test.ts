@@ -1,15 +1,17 @@
-import { describe, test } from '../../src/index.js';
+import { describe, expect, test } from 'vitest';
+import { ungatedCapabilities } from '../../src/fixture.js';
 
-// DEPOSIT-HARVEST-001's section is tagged `capability:deposit`, which both
-// built-in adapters support, so requires() never skips these. Neither is the
-// row's real test.
+// The fixture fails a test when the list is not empty.
 describe('capability gates', () => {
-	test.fails('DEPOSIT-HARVEST-001 fails when the test never calls shard.requires(\'deposit\')', async ({ shard }) => {
-		await shard.ownedRoom('p1');
+	const rows = new Map([['GAP-001', ['deposit', 'market']], ['GAP-002', []]]);
+
+	test('a tagged row\'s test owes each tag it never gated, keyed or not', () => {
+		expect(ungatedCapabilities('GAP-001:key', new Set(['deposit']), rows)).toEqual(['market']);
+		expect(ungatedCapabilities('GAP-001', new Set(), rows)).toEqual(['deposit', 'market']);
 	});
 
-	test('DEPOSIT-HARVEST-001 passes when the gate comes from matrix data', async ({ shard }) => {
-		for (const entry of [{ cap: 'deposit' as const }]) shard.requires(entry.cap);
-		await shard.ownedRoom('p1');
+	test('gates from matrix data count, and an untagged row owes none', () => {
+		expect(ungatedCapabilities('GAP-001', new Set(['market', 'deposit']), rows)).toEqual([]);
+		expect(ungatedCapabilities('GAP-002', new Set(), rows)).toEqual([]);
 	});
 });

@@ -60,16 +60,14 @@ describe('adapter contract: hard family prerequisites', () => {
 
 			const result = await shard.runPlayer('p1', code`
 				const p = Game.getObjectById(${portalId});
-				p ? ({
+				({
 					type: p.structureType,
-					destRoom: p.destination.roomName ?? p.destination.room,
+					destRoom: p.destination.roomName,
 					destX: p.destination.x,
 					destY: p.destination.y,
-				}) : null
-			`) as any;
-			expect(result).not.toBeNull();
-			expect(result.type).toBe(STRUCTURE_PORTAL);
-			expect(result.destRoom).toBe('W2N1');
+				})
+			`);
+			expect(result).toEqual({ type: STRUCTURE_PORTAL, destRoom: 'W2N1', destX: 25, destY: 25 });
 		});
 	});
 
@@ -85,19 +83,9 @@ describe('adapter contract: hard family prerequisites', () => {
 			});
 			await shard.tick();
 
-			const exitInfo = await shard.runPlayer('p1', code`
-				const exits = Game.rooms['W1N1'].find(FIND_EXIT_LEFT);
-				exits.length > 0 ? ({ x: exits[0].x, y: exits[0].y }) : null
-			`) as { x: number; y: number } | null;
-
-			if (!exitInfo) {
-				// No left exit — skip gracefully.
-				return;
-			}
-
-			// Place creep adjacent to the exit tile.
+			// Only the room's corners are walled, so (0, 25) is a left exit tile.
 			const creepId = await shard.placeCreep('W1N1', {
-				pos: [exitInfo.x + 1, exitInfo.y], owner: 'p1', body: [MOVE],
+				pos: [1, 25], owner: 'p1', body: [MOVE],
 				name: 'Traveler',
 			});
 			await shard.tick();
@@ -115,8 +103,7 @@ describe('adapter contract: hard family prerequisites', () => {
 			// The creep should now be in W2N1 at x=49.
 			const creeps = await shard.findInRoom('W2N1', FIND_CREEPS);
 			const traveler = creeps.find(c => c.name === 'Traveler');
-			expect(traveler).toBeDefined();
-			expect(traveler!.pos.x).toBe(49);
+			expect(traveler?.pos).toEqual({ x: 49, y: 25, roomName: 'W2N1' });
 		});
 	});
 });

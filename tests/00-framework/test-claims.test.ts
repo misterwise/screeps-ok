@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, test } from 'vitest';
 import { adapterCapabilities, capabilityDescriptions } from '../../scripts/lib/capabilities.js';
-import { testFileClaims } from '../../scripts/lib/test-claims.js';
+import { modifiedTests, testFileClaims, unkeyedTitles } from '../../scripts/lib/test-claims.js';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -39,28 +39,32 @@ describe('test file claims', () => {
 		]);
 	});
 
-	// A skipped or todo test claims its id while running nothing; gates go through shard.requires() or a parity.json skip.
 	test('a catalog test carries no vitest modifier that skips, inverts or narrows the run', () => {
+		const root = tree({
+			'tests/01-section/1.1-some.test.ts': [
+				`test.skip('GAP-001 skipped', () => {});`,
+				`describe.only('GAP-002', () => {});`,
+				`test('GAP-003 runs', () => {});`,
+			].join('\n'),
+		});
+		expect(modifiedTests(testFileClaims(path.join(root, 'tests'))).map(line => line.split(': ')[1])).toEqual(['test.skip', 'describe.only']);
 		const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-		const modified = testFileClaims(path.join(repo, 'tests')).flatMap(({ file, code }) =>
-			[...code.matchAll(/\b(?:test|it|describe)(?:\.\w+)*\.(?:skip|todo|only|fails|skipIf|runIf)\b/g)]
-				.map(([match]) => `${path.relative(repo, file)}: ${match}`));
-		expect(modified).toEqual([]);
+		expect(modifiedTests(testFileClaims(path.join(repo, 'tests')))).toEqual([]);
 	});
 
-	// Cases sharing one bare id, or a key cut short at `+` or `>`, can't be registered or reported apart.
 	test('a test title that interpolates a case keys its id by the whole case', () => {
+		const root = tree({
+			'tests/01-section/1.1-some.test.ts': [
+				'test(`GAP-001 [${label}] bare`, () => {});',
+				'test(`GAP-002:${a}+${b} cut short`, () => {});',
+				'test(`GAP-003:${toLabelToken(label)} keyed`, () => {});',
+				'test(`${row.catalogId}:${row.label} from data`, () => {});',
+			].join('\n'),
+		});
+		expect(unkeyedTitles(testFileClaims(path.join(root, 'tests'))).map(line => line.split(': ')[1]))
+			.toEqual(['GAP-001 [${label}] bare', 'GAP-002:${a}+${b} cut short']);
 		const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-		const keyed = /^(?:[A-Z]+-(?:[A-Z]+-)?[0-9]{3}|\$\{[\w.]*catalogId\})(?::(?:[a-zA-Z0-9]|\$\{[^}]+\})+)?(?: |$)/;
-		const unkeyed = testFileClaims(path.join(repo, 'tests')).flatMap(({ file, code }) =>
-			[...code.matchAll(/\btest\(\s*`([^`]*\$\{[^`]*)`/g)]
-				.map(([, title]) => title)
-				.filter(title => {
-					const id = title.match(keyed);
-					return !id || !id[0].includes(':') && !id[0].startsWith('${');
-				})
-				.map(title => `${path.relative(repo, file)}: ${title}`));
-		expect(unkeyed).toEqual([]);
+		expect(unkeyedTitles(testFileClaims(path.join(repo, 'tests')))).toEqual([]);
 	});
 });
 
