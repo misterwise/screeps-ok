@@ -11,7 +11,11 @@ export const ctrlAttackValidationCases = makeValidationCases('CTRL-ATTACK-007', 
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
 	{ condition: 'invalid-controller-state', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'cooldown', expectedRc: ERR_TIRED },
+	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
 ] as const, [
+	// A spawning creep's room is its owner's, and a neutral controller's room has no safe mode.
+	['busy', 'safe-mode'],
+	['invalid-controller-state', 'safe-mode'],
 	// A source replaces the controller the last two describe.
 	['invalid-target', 'invalid-controller-state'],
 	['invalid-target', 'cooldown'],

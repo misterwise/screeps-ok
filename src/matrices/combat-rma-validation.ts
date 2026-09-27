@@ -5,6 +5,10 @@ export const combatRmaValidationCases = makeValidationCases('COMBAT-RMA-005', [
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'busy', expectedRc: ERR_BUSY },
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
-] as const);
+	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
+] as const, [
+	// A spawning creep's room is its owner's, never in another player's safe mode.
+	['busy', 'safe-mode'],
+]);
 
 export type CombatRmaValidationCase = typeof combatRmaValidationCases[number];

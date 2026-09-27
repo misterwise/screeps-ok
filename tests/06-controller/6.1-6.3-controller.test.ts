@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	CLAIM, MOVE,
 	STRUCTURE_CONTAINER,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
-	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX,
+	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX, SAFE_MODE_DURATION,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 import { ctrlAttackValidationCases } from '../../src/matrices/ctrl-attack-validation.js';
@@ -719,10 +719,14 @@ describe('controller mechanics', () => {
 			const targetRoom = usesNeutralTarget ? 'W2N1' : 'W1N1';
 			// A spawning attacker's room is its owner's, and attacking one's own controller is allowed
 			// (CTRL-ATTACK-005). RCL 3 affords the extensions a CLAIM part needs.
+			const safeMode = blockers.has('safe-mode');
 			await shard.createShard({
 				players: ['p1', 'p2'],
 				rooms: [
-					{ name: 'W1N1', rcl: 3, owner: blockers.has('busy') ? owner : 'p2' },
+					{
+						name: 'W1N1', rcl: 3, owner: blockers.has('busy') ? owner : 'p2',
+						...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}),
+					},
 					...(usesNeutralTarget ? [{ name: 'W2N1' }] : []),
 				],
 			});
@@ -747,12 +751,14 @@ describe('controller mechanics', () => {
 				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
 				: null;
 			if (blockers.has('cooldown')) {
+				// Safe mode refuses p1's attack; p2 may attack its own controller.
+				const setupOwner = safeMode ? 'p2' : 'p1';
 				const setupId = await shard.placeCreep(targetRoom, {
 					pos: [ctrlPos!.x, ctrlPos!.y + 1],
-					owner: 'p1',
+					owner: setupOwner,
 					body: [CLAIM, MOVE],
 				});
-				const first = await shard.runPlayer('p1', code`
+				const first = await shard.runPlayer(setupOwner, code`
 					Game.getObjectById(${setupId}).attackController(Game.rooms[${targetRoom}].controller)
 				`);
 				expect(first).toBe(OK);

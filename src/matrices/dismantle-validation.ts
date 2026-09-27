@@ -9,6 +9,10 @@ export const dismantleValidationCases = makeValidationCases('DISMANTLE-009', [
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
-] as const);
+	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
+] as const, [
+	// A spawning creep's room is its owner's, never in another player's safe mode.
+	['busy', 'safe-mode'],
+]);
 
 export type DismantleValidationCase = typeof dismantleValidationCases[number];

@@ -1,9 +1,15 @@
 import { describe, test, expect, code,
-	OK, ERR_TIRED, ERR_NO_BODYPART,
-	STRUCTURE_LAB, STRUCTURE_RAMPART,
-	ATTACK, MOVE,
-	LAB_REACTION_AMOUNT, REACTION_TIME,
+	OK, ERR_TIRED,
+	STRUCTURE_CONTAINER, STRUCTURE_LAB, STRUCTURE_RAMPART,
+	ATTACK, CARRY, CLAIM, HEAL, MOVE, RANGED_ATTACK, WORK,
+	LAB_REACTION_AMOUNT, PWR_GENERATE_OPS, REACTION_TIME, RESOURCE_ENERGY,
 } from '../../src/index.js';
+import { timerSafeModeCases } from '../../src/matrices/timer-safemode.js';
+
+const safeModeActionPart: Record<string, string> = {
+	attack: ATTACK, rangedAttack: RANGED_ATTACK, rangedMassAttack: RANGED_ATTACK, dismantle: WORK,
+	withdraw: CARRY, heal: HEAL, rangedHeal: HEAL, attackController: CLAIM,
+};
 
 describe('Timer gating', () => {
 	test('TIMER-COOLDOWN-001 action gated by cooldownTime becomes available on the tick cooldown reaches 0', async ({ shard }) => {
@@ -44,62 +50,42 @@ describe('Timer gating', () => {
 		expect(await shard.runPlayer('p1', react)).toEqual({ cooldown: 0, rc: OK });
 	});
 
-	test('TIMER-SAFEMODE-001 safeMode timer counts down and effects end when it reaches 0', async ({ shard }) => {
-		// SAFE_MODE_DURATION is 20000 ticks, which is infeasible to tick
-		// through end-to-end. RoomSpec.safeMode pre-sets the active timer
-		// to a low remaining-tick value so the expiration path is reachable
-		// in a few ticks. The getter at `structures.js:187` returns
-		// `safeMode - gameTime` (or undefined when safeMode <= gameTime).
-		// Note: each runPlayer call advances gameTime by 1 (the eval rides
-		// on the next engine tick), so reads also consume time.
-		//
-		// This test owns the post-expiration "effects end" assertion: no
-		// other test in the suite verifies that hostile combat actions
-		// blocked during safe mode become unblocked once the timer hits 0.
-		// CTRL-SAFEMODE-006 only checks the during-safemode block path.
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeMode: 10 }],
+	for (const row of timerSafeModeCases) {
+		test(`TIMER-SAFEMODE-001:${row.action} a hostile ${row.action} is refused while safeMode reads 1 and allowed the next tick`, async ({ shard }) => {
+			if (row.powerCreep) shard.requires('powerCreeps');
+			// usePower checks power before safe mode (game/power-creeps.js:255).
+			await shard.createShard({
+				players: ['p1', 'p2'],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: 'p1', safeMode: 2, powerEnabled: row.action === 'usePower' }],
+			});
+			const ctrlPos = await shard.getControllerPos('W1N1');
+			const actorPos: [number, number] = row.target === 'controller' ? [ctrlPos!.x + 1, ctrlPos!.y + 1] : [25, 26];
+			const targetId = row.target === 'rampart'
+				? await shard.placeStructure('W1N1', { pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1', hits: 10000 })
+				: row.target === 'container'
+					? await shard.placeStructure('W1N1', { pos: [25, 25], structureType: STRUCTURE_CONTAINER, store: { [RESOURCE_ENERGY]: 500 } })
+					: row.target === 'friendlyCreep'
+						? await shard.placeCreep('W1N1', { pos: [25, 25], owner: 'p2', body: [MOVE] })
+						: null;
+			const actorId = row.powerCreep
+				? await shard.placePowerCreep('W1N1', { pos: actorPos, owner: 'p2', powers: { [PWR_GENERATE_OPS]: 1 } })
+				: await shard.placeCreep('W1N1', { pos: actorPos, owner: 'p2', body: [safeModeActionPart[row.action], MOVE] });
+			// Seeded 2; this tick leaves the last one.
+			await shard.tick();
+
+			// Reads the timer and makes the call in one tick; the target is the controller when none was placed.
+			const probe = code`
+				const actor = Game.getObjectById(${actorId});
+				const target = ${targetId} === null ? Game.rooms.W1N1.controller : Game.getObjectById(${targetId});
+				const calls = {
+					rangedMassAttack: () => actor.rangedMassAttack(),
+					withdraw: () => actor.withdraw(target, RESOURCE_ENERGY),
+					usePower: () => actor.usePower(PWR_GENERATE_OPS),
+				};
+				({ safeMode: Game.rooms.W1N1.controller.safeMode ?? null, rc: (calls[${row.action}] ?? (() => actor[${row.action}](target)))() })
+			`;
+			expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: 1, rc: row.refusedRc });
+			expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: null, rc: OK });
 		});
-
-		// Friendly target + hostile attacker for the unblock probe.
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: 10000,
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2', body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		const sm0 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.safeMode ?? 0
-		`) as number;
-		// Seeded 10 at creation; one tick has elapsed.
-		expect(sm0).toBe(9);
-
-		// While safe mode is active, the hostile attack is short-circuited
-		// to ERR_NO_BODYPART (same path covered by CTRL-SAFEMODE-006).
-		const blockedRc = await shard.runPlayer('p2', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId}))
-		`);
-		expect(blockedRc).toBe(ERR_NO_BODYPART);
-
-		// Four ticks separate the reads: sm0's, the blocked attack, and tick(2).
-		await shard.tick(2);
-		const sm1 = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.safeMode ?? 0
-		`) as number;
-		expect(sm1).toBe(sm0 - 4);
-
-		// Run to the last safe-mode tick; the attack is blocked while it reads 1
-		// and allowed on the next tick, when the getter reports undefined.
-		await shard.tick(sm1 - 2);
-		const probe = code`({
-			safeMode: Game.rooms['W1N1'].controller.safeMode ?? null,
-			rc: Game.getObjectById(${attackerId}).attack(Game.getObjectById(${rampartId})),
-		})`;
-		expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: 1, rc: ERR_NO_BODYPART });
-		expect(await shard.runPlayer('p2', probe)).toEqual({ safeMode: null, rc: OK });
-	});
+	}
 });

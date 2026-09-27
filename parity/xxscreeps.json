@@ -81,6 +81,18 @@
 			"why": "Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order.",
 			"tests": ["MOVE-PULL-011:spawningTargetBeforeRange"]
 		},
+		"heal-safe-mode-checked-before-target": {
+			"actual": "`checkHeal` and `checkRangedHeal` (`mods/classic/combat/creep.ts:169-186`) run `checkSafeMode` straight after the body-part check, so a heal in another player's safe mode returns `ERR_NO_BODYPART` before an invalid target, and `heal` before range.",
+			"expected": "Vanilla checks `heal`'s target and range before safe mode (`game/creeps.js:689-699`) and `rangedHeal`'s target before safe mode (`:717-724`), returning `ERR_INVALID_TARGET` or `ERR_NOT_IN_RANGE`.",
+			"why": "Found 2026-09-27 when safe mode's refusal became a condition of each method's validation matrix (it had been one code-only row).",
+			"tests": ["COMBAT-HEAL-007:invalidTargetBeforeSafeMode", "COMBAT-HEAL-007:rangeBeforeSafeMode", "COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode"]
+		},
+		"attack-controller-safe-mode-checked-before-cooldown": {
+			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`.",
+			"expected": "Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`).",
+			"why": "Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row).",
+			"tests": ["CTRL-ATTACK-007:cooldownBeforeSafeMode"]
+		},
 		"move-bodypart-checked-before-fatigue": {
 			"actual": "`checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`.",
 			"expected": "Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`).",

@@ -738,13 +738,13 @@ Coverage Notes
   order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy`
   it is spawning, `ERR_BUSY`; `:noBodypart` it has no active WORK part,
   `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a structure with a
-  `CONSTRUCTION_COST` (a controller, say), `ERR_INVALID_TARGET`; `:range` it
-  isn't adjacent, `ERR_NOT_IN_RANGE`.
+  `CONSTRUCTION_COST` (a keeper lair, say), `ERR_INVALID_TARGET`; `:range` it
+  isn't adjacent, `ERR_NOT_IN_RANGE`; `:safeMode` it stands in another
+  player's room under safe mode, `ERR_NO_BODYPART`.
 
 Coverage Notes
 - Dismantle boost magnitudes are owned by `BOOST-DISMANTLE-001`
   (section 8.10).
-- Safe mode blocking dismantle is owned by `CTRL-SAFEMODE-006` (section 6.8).
 
 ### 5.4 Construction Sites
 - `CONSTRUCTION-SITE-001` `behavior` `verified_vanilla`
@@ -924,7 +924,8 @@ Coverage Notes
   CLAIM part, `ERR_NO_BODYPART`; `:range` the controller isn't adjacent,
   `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is neither owned nor
   reserved, `ERR_INVALID_TARGET`; `:cooldown` its `upgradeBlocked` is above 0,
-  `ERR_TIRED`.
+  `ERR_TIRED`; `:safeMode` the creep stands in another player's room under
+  safe mode, `ERR_NO_BODYPART`.
 
 ### 6.4 Upgrade Controller
 - `CTRL-UPGRADE-001` `behavior` `verified_vanilla`
@@ -1056,11 +1057,6 @@ Coverage Notes
 - `CTRL-SAFEMODE-002` `behavior` `verified_vanilla`
   Safe mode activation starts a SAFE_MODE_COOLDOWN period during which
   `activateSafeMode()` cannot be used again.
-- `CTRL-SAFEMODE-006` `matrix` `verified_vanilla`
-  Hostile creep intents in a foreign safe-moded room short-circuit at the
-  Creep prototype guard with a method-specific return code, across
-  `attack()`, `rangedAttack()`, `rangedMassAttack()`, `dismantle()`,
-  `withdraw()`, `heal()`, `rangedHeal()`, and `attackController()`.
 - `CTRL-SAFEMODE-008` `behavior` `verified_vanilla`
   When `activateSafeMode()` is called on two different owned controllers in the
   same tick, both calls return `OK` but only the most recent call's intent is
@@ -1141,8 +1137,9 @@ Coverage Notes
   `creep.attack(target)` returns the first failing check's code, in this
   order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
   is spawning, `ERR_BUSY`; `:noBodypart` it has no active ATTACK part,
-  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep, power creep or
-  structure, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
+  `ERR_NO_BODYPART`; `:safeMode` it stands in another player's room under
+  safe mode, `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep,
+  power creep or structure, `ERR_INVALID_TARGET`; `:range` it isn't adjacent,
   `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
@@ -1163,9 +1160,10 @@ Coverage Notes
   `creep.rangedAttack(target)` returns the first failing check's code, in this
   order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
   is spawning, `ERR_BUSY`; `:noBodypart` it has no active RANGED_ATTACK part,
-  `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep, power creep or
-  structure, `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles away,
-  `ERR_NOT_IN_RANGE`.
+  `ERR_NO_BODYPART`; `:safeMode` it stands in another player's room under
+  safe mode, `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep,
+  power creep or structure, `ERR_INVALID_TARGET`; `:range` it is more than 3
+  tiles away, `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
 - Ranged attack boost magnitudes are owned by `BOOST-RANGED-001`
@@ -1188,7 +1186,8 @@ Coverage Notes
   `creep.rangedMassAttack()` returns the first failing check's code, in this
   order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
   is spawning, `ERR_BUSY`; `:noBodypart` it has no active RANGED_ATTACK part,
-  `ERR_NO_BODYPART`.
+  `ERR_NO_BODYPART`; `:safeMode` it stands in another player's room under
+  safe mode, `ERR_NO_BODYPART`.
 
 ### 7.4 Heal
 - `COMBAT-HEAL-001` `behavior` `verified_vanilla`
@@ -1205,7 +1204,9 @@ Coverage Notes
   `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it is
   spawning, `ERR_BUSY`; `:noBodypart` it has no active HEAL part,
   `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep or power creep,
-  `ERR_INVALID_TARGET`; `:range` it isn't adjacent, `ERR_NOT_IN_RANGE`.
+  `ERR_INVALID_TARGET`; `:range` it isn't adjacent, `ERR_NOT_IN_RANGE`;
+  `:safeMode` it stands in another player's room under safe mode,
+  `ERR_NO_BODYPART`.
 
 Coverage Notes
 - Heal boost magnitudes are owned by `BOOST-HEAL-001` (section 8.6).
@@ -1224,7 +1225,8 @@ Coverage Notes
   order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`; `:busy` it
   is spawning, `ERR_BUSY`; `:noBodypart` it has no active HEAL part,
   `ERR_NO_BODYPART`; `:invalidTarget` the target isn't a creep or power creep,
-  `ERR_INVALID_TARGET`; `:range` it is more than 3 tiles away,
+  `ERR_INVALID_TARGET`; `:safeMode` it stands in another player's room under
+  safe mode, `ERR_NO_BODYPART`; `:range` it is more than 3 tiles away,
   `ERR_NOT_IN_RANGE`.
 
 Coverage Notes
@@ -1421,9 +1423,10 @@ Coverage Notes
   hostile creep stomping while safe mode is active.
 
 Coverage Notes
-- Hostile creep action blocking (attack, rangedAttack, rangedMassAttack,
-  dismantle, withdraw, heal, rangedHeal, attackController) is owned by
-  `CTRL-SAFEMODE-006` (section 6.8).
+- A hostile creep action's safe-mode refusal is a condition of its
+  validation row: `COMBAT-MELEE-009`, `COMBAT-RANGED-007`, `COMBAT-RMA-005`,
+  `COMBAT-HEAL-007`, `COMBAT-RANGEDHEAL-006`, `DISMANTLE-009`,
+  `WITHDRAW-017` and `CTRL-ATTACK-007`.
 
 ---
 
@@ -3447,8 +3450,10 @@ Notes
 - `TIMER-SAFEMODE-001` `matrix` `verified_vanilla`
   Each action a room's safe mode refuses a hostile caller is refused on the
   tick the controller's `safeMode` reads `1` and allowed on the next, when it
-  reads `undefined`: the eight hostile creep intents of `CTRL-SAFEMODE-006`,
-  and a power creep's `usePower` and `enableRoom` in that room.
+  reads `undefined`: a hostile creep's `attack`, `rangedAttack`,
+  `rangedMassAttack`, `dismantle`, `withdraw`, `heal`, `rangedHeal` and
+  `attackController`, and a power creep's `usePower` and `enableRoom` in that
+  room.
 
 Coverage Notes
 - Effect expiry has no shared edge (some checks use `endTime > time`, others

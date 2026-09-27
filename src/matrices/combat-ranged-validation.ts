@@ -7,8 +7,12 @@ export const combatRangedValidationCases = makeValidationCases('COMBAT-RANGED-00
 	{ condition: 'not-owner', expectedRc: ERR_NOT_OWNER },
 	{ condition: 'busy', expectedRc: ERR_BUSY },
 	{ condition: 'no-bodypart', expectedRc: ERR_NO_BODYPART },
+	{ condition: 'safe-mode', expectedRc: ERR_NO_BODYPART },
 	{ condition: 'invalid-target', expectedRc: ERR_INVALID_TARGET },
 	{ condition: 'range', expectedRc: ERR_NOT_IN_RANGE },
-] as const);
+] as const, [
+	// A spawning creep's room is its owner's, never in another player's safe mode.
+	['busy', 'safe-mode'],
+]);
 
 export type CombatRangedValidationCase = typeof combatRangedValidationCases[number];

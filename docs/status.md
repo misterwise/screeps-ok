@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-1%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -25,6 +25,10 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 
 ## xxscreeps unexpected failures
 
+- `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:invalidTargetBeforeSafeMode`, which no test passed or failed
+- `heal-safe-mode-checked-before-target` registers `COMBAT-HEAL-007:rangeBeforeSafeMode`, which no test passed or failed
+- `heal-safe-mode-checked-before-target` registers `COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode`, which no test passed or failed
+- `attack-controller-safe-mode-checked-before-cooldown` registers `CTRL-ATTACK-007:cooldownBeforeSafeMode`, which no test passed or failed
 - `move-bodypart-checked-before-fatigue` registers `MOVE-BASIC-027:fatigueBeforeNoBodypart`, which no test passed or failed
 
 ## vanilla expected failures
@@ -134,7 +138,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 48 expected-failure classifications against vanilla's canonical behavior, covering 111 tests. That includes 44 open parity gaps covering 103 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 50 expected-failure classifications against vanilla's canonical behavior, covering 111 tests. That includes 46 open parity gaps covering 103 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -152,6 +156,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
 | `stale-argument-throws-instead-of-invalid-target` | Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class. | Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`). | UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead. | [16](#xxscreeps-gap-stale-argument-throws-instead-of-invalid-target) |
 | `pull-range-checked-before-spawning-target` | `checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`. | Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`). | Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order. | [1](#xxscreeps-gap-pull-range-checked-before-spawning-target) |
+| `heal-safe-mode-checked-before-target` | `checkHeal` and `checkRangedHeal` (`mods/classic/combat/creep.ts:169-186`) run `checkSafeMode` straight after the body-part check, so a heal in another player's safe mode returns `ERR_NO_BODYPART` before an invalid target, and `heal` before range. | Vanilla checks `heal`'s target and range before safe mode (`game/creeps.js:689-699`) and `rangedHeal`'s target before safe mode (`:717-724`), returning `ERR_INVALID_TARGET` or `ERR_NOT_IN_RANGE`. | Found 2026-09-27 when safe mode's refusal became a condition of each method's validation matrix (it had been one code-only row). | 0 |
+| `attack-controller-safe-mode-checked-before-cooldown` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`. | Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`). | Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row). | 0 |
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | 0 |
 | `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | [1](#xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target) |
 | `construction-site-invalid-coords-throws` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`. | Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`). | Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it. | [7](#xxscreeps-gap-construction-site-invalid-coords-throws) |
@@ -288,6 +294,18 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>pull-range-checked-before-spawning-target</code> — 1 test</summary>
 
 - `creep.pull() MOVE-PULL-011:spawningTargetBeforeRange pull() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-heal-safe-mode-checked-before-target">
+<summary><code>heal-safe-mode-checked-before-target</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-attack-controller-safe-mode-checked-before-cooldown">
+<summary><code>attack-controller-safe-mode-checked-before-cooldown</code> — 0 tests</summary>
+
 
 </details>
 

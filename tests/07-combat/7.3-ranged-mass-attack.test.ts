@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, STRUCTURE_RAMPART, STRUCTURE_ROAD, BODYPART_HITS, body } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, TOUGH, RANGED_ATTACK, RANGED_ATTACK_POWER, STRUCTURE_RAMPART, STRUCTURE_ROAD, BODYPART_HITS, SAFE_MODE_DURATION, body } from '../../src/index.js';
 import { combatRmaValidationCases } from '../../src/matrices/combat-rma-validation.js';
 import { rangedMassAttackRangeCases } from '../../src/matrices/ranged-mass-attack.js';
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
@@ -146,11 +146,16 @@ describe('creep.rangedMassAttack()', () => {
 		test(`COMBAT-RMA-005:${row.label} rangedMassAttack() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
+			const safeMode = blockers.has('safe-mode');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
 			});
+			if (safeMode && owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
 
 			const attackerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {

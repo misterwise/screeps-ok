@@ -169,6 +169,15 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Dropped: `CTRL-SAFEMODE-006` (`:attack` … `:attackController`). Another
+  player's safe mode is now a condition of each method's validation row, at
+  vanilla's place in its check order: `COMBAT-MELEE-009`,
+  `COMBAT-RANGED-007`, `COMBAT-RMA-005`, `COMBAT-HEAL-007`,
+  `COMBAT-RANGEDHEAL-006`, `DISMANTLE-009` and `CTRL-ATTACK-007` gain
+  `:safeMode` and its pairs; withdraw's was already
+  `WITHDRAW-017:safemodeNotOwner`. `TIMER-SAFEMODE-001` is keyed by action
+  (`:attack` … `:attackController`, `:usePower`, `:enableRoom`) and runs all
+  ten.
 - Dropped, validation pairs whose second condition was never set up (the
   test fixture now fails such a pair): `BUILD-011:busyBeforeNotEnough`,
   `BUILD-011:invalidTargetBeforeBlockedTarget`,

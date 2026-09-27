@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN, } from '../../src/index.js';
+import { describe, test, expect, code, OK, ERR_NOT_IN_RANGE, MOVE, ATTACK, TOUGH, RANGED_ATTACK, HEAL, body, ATTACK_POWER, RANGED_ATTACK_POWER, HEAL_POWER, RANGED_HEAL_POWER, BODYPART_HITS, STRUCTURE_RAMPART, STRUCTURE_SPAWN, SAFE_MODE_DURATION, } from '../../src/index.js';
 import { staleArgumentCases } from '../../src/matrices/stale-argument.js';
 import { expectStaleArgumentRejected } from '../intent-validation-helpers.js';
 
@@ -243,11 +243,16 @@ describe('creep.attack()', () => {
 		test(`COMBAT-MELEE-009:${row.label} attack() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
+			const safeMode = blockers.has('safe-mode');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
 			});
+			if (safeMode && owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
 
 			const attackerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
@@ -445,11 +450,16 @@ describe('creep.rangedAttack()', () => {
 		test(`COMBAT-RANGED-007:${row.label} rangedAttack() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
+			const safeMode = blockers.has('safe-mode');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
 			});
+			if (safeMode && owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
 
 			const attackerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
@@ -611,11 +621,16 @@ describe('creep.heal()', () => {
 		test(`COMBAT-HEAL-007:${row.label} heal() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
+			const safeMode = blockers.has('safe-mode');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
 			});
+			if (safeMode && owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
 
 			const healerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {
@@ -819,11 +834,16 @@ describe('creep.heal()', () => {
 		test(`COMBAT-RANGEDHEAL-006:${row.label} rangedHeal() validation returns the canonical code`, async ({ shard }) => {
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
-			const roomOwner = owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
+			// Safe mode is p2's, in p2's room; p1 keeps a creep there to see.
+			const safeMode = blockers.has('safe-mode');
+			const roomOwner = safeMode || owner === 'p2' && blockers.has('busy') ? 'p2' : 'p1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner }],
+				rooms: [{ name: 'W1N1', rcl: 1, owner: roomOwner, ...(safeMode ? { safeMode: SAFE_MODE_DURATION } : {}) }],
 			});
+			if (safeMode && owner === 'p2') {
+				await shard.placeCreep('W1N1', { pos: [20, 20], owner: 'p1', body: [MOVE] });
+			}
 
 			const healerId = blockers.has('busy')
 				? await spawnBusyCreep(shard, {

@@ -289,9 +289,10 @@ checks both. Each definition has these fields, in this order:
 - `Canonical Source`
   Vanilla's game-layer safe-mode refusals, which read the controller's
   `safeMode` getter (`@screeps/engine/src/game/structures.js:184`, `undefined`
-  once the timer has run out): `game/creeps.js` for the intents
-  `CTRL-SAFEMODE-006` lists, `game/power-creeps.js:258` (`usePower`,
-  `ERR_INVALID_ARGS`) and `:311` (`enableRoom`, `ERR_INVALID_TARGET`).
+  once the timer has run out): `game/creeps.js`'s guard
+  `!this.room.controller.my && this.room.controller.safeMode` for the eight
+  creep intents, `game/power-creeps.js:258` (`usePower`, `ERR_INVALID_ARGS`)
+  and `:311` (`enableRoom`, `ERR_INVALID_TARGET`).
 - `Dimensions`
   gated action
 - `Applicability`
@@ -299,11 +300,15 @@ checks both. Each definition has these fields, in this order:
   (`safeMode` reads `1`) and the tick after
 - `Exclusions`
   Safe mode's effect on movement and on construction-site stomping
-  (`SAFEMODE-COMBAT-002`), and `claimController`, whose guard is unreachable
-  (`CTRL-SAFEMODE-006`)
+  (`SAFEMODE-COMBAT-002`), and `claimController`, whose guard is unreachable:
+  a safe-moded controller is owned, which `claimController` refuses first.
+  Each action's refusal code and its place in the check order belong to its
+  validation row (`COMBAT-MELEE-009:safeMode`, `WITHDRAW-017:safemodeNotOwner`,
+  …).
 - `Verification Notes`
-  No case list enumerates the family yet: the test
-  (`tests/23-store-api/23.5-timers.test.ts`) runs a hostile `attack` only.
+  A hostile p2 acts in p1's room while p1 reads the timer in the same tick.
+  `usePower` runs in a power-enabled room, which the check before safe mode
+  requires. The executable case list lives in `src/matrices/timer-safemode.ts`.
 
 ### NPC-OWNERSHIP
 
@@ -453,36 +458,6 @@ checks both. Each definition has these fields, in this order:
   `rangedAttack` blocks `rangedMassAttack`, `build`, `repair`, `rangedHeal`.
   The executable case list lives in
   `src/matrices/intent-creep-priority.ts`.
-
-### CTRL-SAFEMODE-BLOCKED
-
-- `Catalog Entries`
-  `CTRL-SAFEMODE-006`
-- `Canonical Source`
-  Official Creep prototype guards in `@screeps/engine/src/game/creeps.js`,
-  cross-checked against matching processor blocks in
-  `@screeps/engine/src/processor/intents/creeps/*.js`. All listed methods
-  share the API guard
-  `!this.room.controller.my && this.room.controller.safeMode`.
-- `Dimensions`
-  hostile creep intent method
-- `Applicability`
-  `attack()`, `rangedAttack()`, `rangedMassAttack()`, `dismantle()`,
-  `withdraw()`, `heal()`, `rangedHeal()`, `attackController()`. Per-method
-  return codes (matrix records both): `withdraw()` returns `ERR_NOT_OWNER`,
-  the others return `ERR_NO_BODYPART`.
-- `Exclusions`
-  Safe-mode activation requirements, movement restrictions, and non-creep
-  actions (towers, nukes, power creep powers, structure intents).
-  `claimController()` is intentionally excluded: its source contains the
-  same safe-mode guard, but the guard is unreachable because a safe-moded
-  controller is always `level >= 1` and `claimController()` rejects any
-  target with `level > 0` first.
-- `Verification Notes`
-  Applicability set verified closed by source audit of every Creep
-  prototype method in `@screeps/engine/src/game/creeps.js` for the guard
-  shape above. Each listed action has a concrete vanilla-passing scenario
-  in `safeModeBlockedActionCases` (`src/matrices/ctrl-safemode-blocked.ts`).
 
 ### CTRL-STRUCTLIMIT
 
@@ -1906,8 +1881,8 @@ checks both. Each definition has these fields, in this order:
   another active safe mode, an attack's `upgradeBlocked` or a low timer
   would refuse, so it pairs with none of them.
 - `Verification Notes`
-  Distinct from `CTRL-SAFEMODE-BLOCKED`, which describes how active safe
-  mode blocks hostile actions. The three `ERR_TIRED` conditions are one
+  Distinct from `TIMER-SAFEMODE`, which describes how long active safe mode
+  blocks hostile actions. The three `ERR_TIRED` conditions are one
   expression (`game/structures.js:219-222`); `:upgradeBlocked` is set by
   another player's `attackController`. The executable case list lives in
   `src/matrices/ctrl-safemode-validation.ts`.
@@ -1948,11 +1923,10 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.attack(target)` ownership, caller busy state (spawning),
-  body-part requirements (`ATTACK`), target validity (not a hostile
-  creep/PC/structure), and range.
+  body-part requirements (`ATTACK`), another player's safe mode, target
+  validity (not a hostile creep/PC/structure), and range.
 - `Exclusions`
-  Counter-damage rules, owned by `COMBAT-MELEE-008`. Another player's
-  safe mode, checked after the body part, is owned by `CTRL-SAFEMODE-006`.
+  Counter-damage rules, owned by `COMBAT-MELEE-008`. Busy excludes safe mode: a spawning creep's room is its owner's.
   Not yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
   returns `ERR_INVALID_TARGET` before range (`game/creeps.js:613-616`).
 - `Verification Notes`
@@ -1971,10 +1945,10 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.rangedAttack(target)` ownership, caller busy state, body-part
-  requirements (`RANGED_ATTACK`), target validity, and range (≤ 3).
+  requirements (`RANGED_ATTACK`), another player's safe mode, target
+  validity, and range (≤ 3).
 - `Exclusions`
-  Rampart redirection, owned by `COMBAT-RANGED-006`. Another player's safe
-  mode, checked after the body part, is owned by `CTRL-SAFEMODE-006`. Not
+  Rampart redirection, owned by `COMBAT-RANGED-006`. Busy excludes safe mode: a spawning creep's room is its owner's. Not
   yet listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY`
   returns `ERR_INVALID_TARGET` after range (`game/creeps.js:649-652`).
 - `Verification Notes`
@@ -1992,11 +1966,11 @@ checks both. Each definition has these fields, in this order:
   failure condition, expected return code, precedence when multiple blockers
   are present
 - `Applicability`
-  `creep.rangedMassAttack()` ownership, caller busy state, and body-part
-  requirements (`RANGED_ATTACK`).
+  `creep.rangedMassAttack()` ownership, caller busy state, body-part
+  requirements (`RANGED_ATTACK`), and another player's safe mode.
 - `Exclusions`
   Damage falloff and rampart redirection, owned by
-  `COMBAT-RMA-001..004` and the existing `COMBAT-RMA` matrix.
+  `COMBAT-RMA-001..004` and the existing `COMBAT-RMA` matrix. Busy excludes safe mode: a spawning creep's room is its owner's.
 - `Verification Notes`
   No target argument means no target-validity or range branches. The
   executable case list lives in `src/matrices/combat-rma-validation.ts`.
@@ -2014,11 +1988,11 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.heal(target)` ownership, caller busy state, body-part
-  requirements (`HEAL`), target validity (target not a creep/PC), and
-  range.
+  requirements (`HEAL`), target validity (target not a creep/PC), range,
+  and another player's safe mode.
 - `Exclusions`
   Heal-amount math and self-heal mechanics, owned by separate
-  `COMBAT-HEAL-*` entries.
+  `COMBAT-HEAL-*` entries. Busy excludes safe mode: a spawning creep's room is its owner's.
 - `Verification Notes`
   The executable case list lives in `src/matrices/combat-heal-validation.ts`.
 
@@ -2035,9 +2009,11 @@ checks both. Each definition has these fields, in this order:
   are present
 - `Applicability`
   `creep.rangedHeal(target)` ownership, caller busy state, body-part
-  requirements (`HEAL`), target validity, and range (≤ 3).
+  requirements (`HEAL`), target validity, another player's safe mode, and
+  range (≤ 3).
 - `Exclusions`
   Heal amount falloff, owned by separate `COMBAT-RANGEDHEAL-*` entries.
+  Busy excludes safe mode: a spawning creep's room is its owner's.
 - `Verification Notes`
   The executable case list lives in
   `src/matrices/combat-rangedheal-validation.ts`.
@@ -2099,10 +2075,9 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.dismantle(target)` ownership, caller busy state, body-part
   requirements (`WORK`), target validity (not a dismantleable structure),
-  and range.
+  range, and another player's safe mode.
 - `Exclusions`
-  Dismantle yield math, owned by `DISMANTLE-001..008`. Another player's
-  safe mode, checked after range, is owned by `CTRL-SAFEMODE-006`. Not yet
+  Dismantle yield math, owned by `DISMANTLE-001..008`. Busy excludes safe mode: a spawning creep's room is its owner's. Not yet
   listed: a target under `PWR_FORTIFY` or `EFFECT_INVULNERABILITY` returns
   `ERR_INVALID_TARGET` after that (`game/creeps.js:1040-1043`).
 - `Verification Notes`
@@ -2122,21 +2097,24 @@ checks both. Each definition has these fields, in this order:
 - `Applicability`
   `creep.attackController(target)` ownership, caller busy state, body-part
   requirements (`CLAIM`), target validity (no controller, own controller,
-  unowned), range, and cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`).
+  unowned), range, cooldown (`CONTROLLER_ATTACK_BLOCKED_UPGRADE`), and
+  another player's safe mode.
 - `Exclusions`
   Reservation-reduction math, owned by `CTRL-RESERVE-007`. The
   invalid-controller-state/cooldown pair is excluded because attack cooldown
   is only established by successfully attacking a controller, which makes the
   later invalid-controller-state setup unavailable through public API state;
   an invalid target excludes both, properties of the controller it replaces.
-  Another player's safe mode, checked after the cooldown, is owned by
-  `CTRL-SAFEMODE-006`. Not yet listed: a controller under
+  Safe mode excludes busy (a spawning creep's room is its owner's) and the
+  unowned controller, whose room nobody owns. Not yet listed: a controller under
   `EFFECT_INVULNERABILITY` returns `ERR_INVALID_TARGET` last
   (`game/creeps.js:911-913`).
 - `Verification Notes`
   A spawning attacker's room is its owner's, so `:busy` attacks its own
-  controller (allowed, `CTRL-ATTACK-005`) from a spawn beside it. The
-  executable case list lives in `src/matrices/ctrl-attack-validation.ts`.
+  controller (allowed, `CTRL-ATTACK-005`) from a spawn beside it. Under safe
+  mode the cooldown comes from p2 attacking its own controller, which safe
+  mode allows. The executable case list lives in
+  `src/matrices/ctrl-attack-validation.ts`.
 
 ### CTRL-CLAIM-VALIDATION
 
