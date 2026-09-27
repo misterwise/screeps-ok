@@ -42,32 +42,6 @@ describe('Flags', () => {
 		expect(result!.secondary).toBe(COLOR_BLUE);
 	});
 
-	test('FLAG-003 player cannot exceed FLAGS_LIMIT total flags', async ({ shard }) => {
-		await shard.ownedRoom('p1');
-
-		// We can't create 10000 flags in a test. Instead, verify createFlag
-		// returns ERR_FULL (-8) when the limit is reached. Since we can't
-		// pre-populate flags easily, verify the error path by checking createFlag
-		// with a duplicate name returns ERR_NAME_EXISTS.
-		// Actually — the catalog says the limit is FLAGS_LIMIT. Let's just verify
-		// that createFlag with a valid call returns the name (positive case),
-		// since testing the limit of 10000 is impractical.
-		// The best we can do is verify createFlag doesn't error on the first flag.
-		// Let's create a few flags and verify they're all present.
-		const result = await shard.runPlayer('p1', code`
-			const names = [];
-			for (let i = 0; i < 5; i++) {
-				const name = 'flag' + i;
-				Game.rooms['W1N1'].createFlag(10 + i, 10, name);
-				names.push(name);
-			}
-			const found = names.filter(n => !!Game.flags[n]);
-			({ created: names.length, found: found.length })
-		`) as { created: number; found: number };
-		expect(result.created).toBe(5);
-		expect(result.found).toBe(5);
-	});
-
 	test('FLAG-004 Flag.remove() removes the flag from the player flag set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 

@@ -25,7 +25,7 @@ describe('StructureRampart', () => {
 		});
 	}
 
-	test('RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep', async ({ shard }) => {
+	test('TOWER-ATTACK-006 tower.attack on a tile with a rampart damages the rampart, not the creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [
@@ -61,7 +61,7 @@ describe('StructureRampart', () => {
 		expect(rampart.hits).toBe(10000000 - TOWER_POWER_ATTACK);
 	});
 
-	test('RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart', async ({ shard }) => {
+	test('COMBAT-MELEE-005 creep.attack on a rampart-covered structure damages the rampart', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

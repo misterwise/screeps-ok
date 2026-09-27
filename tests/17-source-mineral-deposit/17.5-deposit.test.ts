@@ -98,7 +98,7 @@ describe('Deposit lifecycle', () => {
 		expect(readings).toEqual([DEPOSIT_DECAY_TIME - 1, DEPOSIT_DECAY_TIME - 2]);
 	});
 
-	test('DEPOSIT-005 repeated harvests increase lastCooldown and the next cooldown', async ({ shard }) => {
+	test('DEPOSIT-002 repeated harvests increase lastCooldown and the next cooldown', async ({ shard }) => {
 		shard.requires('deposit');
 		const { depositId, creepId } = await placeHarvestedDeposit(shard);
 

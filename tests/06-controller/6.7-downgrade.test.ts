@@ -60,63 +60,6 @@ describe('Controller downgrade', () => {
 		expect(result!.my).toBe(false);
 	});
 
-	test('CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1', ticksToDowngrade: 50 }],
-		});
-		await shard.tick();
-
-		const ttdBefore = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.ticksToDowngrade
-		`) as number;
-
-		// Advance a few ticks so the timer decreases.
-		await shard.tick(5);
-
-		const ttdMid = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.ticksToDowngrade
-		`) as number;
-		expect(ttdMid).toBeLessThan(ttdBefore);
-
-		// Upgrade the controller to reset the timer.
-		const ctrlPos = await shard.getControllerPos('W1N1');
-		expect(ctrlPos).not.toBeNull();
-		const workerId = await shard.placeCreep('W1N1', {
-			pos: [ctrlPos!.x + 1, ctrlPos!.y], owner: 'p1',
-			body: ['work', 'carry', 'move'],
-			store: { energy: 50 },
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${workerId}).upgradeController(
-				Game.rooms['W1N1'].controller
-			)
-		`);
-
-		const ttdAfter = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.ticksToDowngrade
-		`) as number;
-		// Upgrading should have increased the timer.
-		expect(ttdAfter).toBeGreaterThan(ttdMid);
-	});
-
-	test('CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values', () => {
-		// Matrix: verify the @screeps/common-sourced downgrade timer table
-		// matches the documented values for each RCL.
-		expect(CONTROLLER_DOWNGRADE).toEqual({
-			1: 20_000,
-			2: 10_000,
-			3: 20_000,
-			4: 40_000,
-			5: 80_000,
-			6: 120_000,
-			7: 150_000,
-			8: 200_000,
-		});
-	});
-
 	test('CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],

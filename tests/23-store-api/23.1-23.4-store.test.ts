@@ -169,7 +169,7 @@ describe('Store', () => {
 
 	// ── STORE-RESTRICTED: per-resource capacity limits ───────────────────
 
-	test('STORE-RESTRICTED-001 lab getCapacity returns per-resource caps', async ({ shard }) => {
+	test('STORE-RESTRICTED-002 lab getCapacity returns per-resource caps', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 6);
 		// Lab must hold a mineral for getCapacity(mineral) to return the cap.
 		const id = await shard.placeStructure('W1N1', {

@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	MOVE, TOUGH, ATTACK, body,
 	STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_ROAD,
 	TOWER_POWER_ATTACK, TOWER_POWER_HEAL, TOWER_POWER_REPAIR,
-	TOWER_ENERGY_COST, BODYPART_HITS, RAMPART_HITS,
+	RAMPART_HITS,
 } from '../../src/index.js';
 
 describe('Tower intent priority', () => {
@@ -11,80 +11,6 @@ describe('Tower intent priority', () => {
 	// Tower with energy, an enemy creep (attack target), a damaged friendly
 	// creep (heal target), and a damaged friendly rampart (repair target).
 	// All within optimal range (range <= 5) for deterministic amounts.
-
-	test('TOWER-INTENT-001 a tower performs at most one of attack, heal, or repair in a tick', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 3, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const towerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-			store: { energy: 1000 },
-		});
-
-		// Enemy creep at range 3 (attack target)
-		const enemyId = await shard.placeCreep('W1N1', {
-			pos: [25, 28], owner: 'p2',
-			body: body(9, TOUGH, MOVE),
-		});
-
-		// Friendly creep at range 2 (heal target) — damage it first
-		const friendlyId = await shard.placeCreep('W1N1', {
-			pos: [25, 27], owner: 'p1',
-			body: body(5, TOUGH, MOVE),
-		});
-		const damager = await shard.placeCreep('W1N1', {
-			pos: [24, 27], owner: 'p2',
-			body: body(10, ATTACK, MOVE),
-		});
-		await shard.runPlayer('p2', code`
-			Game.getObjectById(${damager}).attack(Game.getObjectById(${friendlyId}))
-		`);
-		await shard.tick();
-
-		const injured = await shard.expectObject(friendlyId, 'creep');
-		expect(injured.hits).toBeLessThan(10 * BODYPART_HITS);
-
-		// Damaged rampart at range 1 (repair target)
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: RAMPART_HITS,
-		});
-
-		// Snapshot before intents
-		const enemyBefore = await shard.expectObject(enemyId, 'creep');
-		const friendlyBefore = await shard.expectObject(friendlyId, 'creep');
-		const rampartBefore = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-
-		// Issue all three intents in one tick
-		await shard.runPlayer('p1', code`
-			const tower = Game.getObjectById(${towerId});
-			const healRc = tower.heal(Game.getObjectById(${friendlyId}));
-			const repairRc = tower.repair(Game.getObjectById(${rampartId}));
-			const attackRc = tower.attack(Game.getObjectById(${enemyId}));
-			({ healRc, repairRc, attackRc })
-		`);
-		await shard.tick();
-
-		const enemyAfter = await shard.expectObject(enemyId, 'creep');
-		const friendlyAfter = await shard.expectObject(friendlyId, 'creep');
-		const rampartAfter = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-
-		// Count how many effects actually resolved
-		const attackResolved = enemyAfter.hits < enemyBefore.hits;
-		const healResolved = friendlyAfter.hits > friendlyBefore.hits;
-		const repairResolved = rampartAfter.hits > rampartBefore.hits;
-		const effectCount = [attackResolved, healResolved, repairResolved].filter(Boolean).length;
-
-		expect(effectCount).toBe(1);
-
-		// Tower spent exactly one action's energy
-		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
-		expect(tower.store.energy).toBe(1000 - TOWER_ENERGY_COST);
-	});
 
 	test('TOWER-INTENT-002 when heal, repair, and attack are all queued, heal is preferred', async ({ shard }) => {
 		await shard.createShard({

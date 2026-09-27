@@ -724,8 +724,6 @@ Coverage Notes
   Dropped resources decay by `ceil(amount / ENERGY_DECAY)` per tick.
 - `DROP-DECAY-002` `behavior` `verified_vanilla`
   A dropped resource disappears when its amount reaches 0.
-- `DROP-DECAY-004` `behavior` `verified_vanilla`
-  Dropped resources are created when a creep overflows its carry capacity.
 - `DROP-DECAY-005` `behavior` `verified_vanilla`
   Any player's creep can pick up any dropped resource.
 - `DROP-DECAY-006` `behavior` `verified_vanilla`
@@ -966,8 +964,6 @@ Coverage Notes
   The controller must be unowned (level 0).
 - `CTRL-RESERVE-004` `behavior` `verified_vanilla`
   Range is 1 (adjacent).
-- `CTRL-RESERVE-005` `behavior` `verified_vanilla`
-  Reservation is capped at CONTROLLER_RESERVE_MAX (5000 ticks).
 - `CTRL-RESERVE-006` `behavior` `verified_vanilla`
   The reservation timer decreases by 1 per tick when no creep is actively
   reserving the controller. (Observable via the player-facing `ticksToEnd`
@@ -1124,11 +1120,6 @@ Coverage Notes
   drops to 0, owner is cleared, and `my === false` (the previously-owned
   sentinel — `unclaim`-style processors set `user` to `null`, distinct from
   the never-owned `my === undefined` covered by CTRL-CLAIM-007).
-- `CTRL-DOWNGRADE-003` `behavior` `verified_vanilla`
-  `upgradeController()` resets the controller's downgrade timer.
-- `CTRL-DOWNGRADE-004` `behavior` `verified_vanilla`
-  Each RCL has a downgrade timer: 1→20K, 2→10K, 3→20K, 4→40K, 5→80K,
-  6→120K, 7→150K, 8→200K.
 - `CTRL-DOWNGRADE-005` `behavior` `verified_vanilla`
   The timer decrements by 1 each tick the controller is not upgraded.
 - `CTRL-DOWNGRADE-006` `behavior` `verified_vanilla`
@@ -1153,8 +1144,7 @@ Coverage Notes
   Each tick in which the controller is upgraded credits exactly
   `CONTROLLER_DOWNGRADE_RESTORE` (100) to `ticksToDowngrade` net of that
   tick's own decay: sampled once per upgrading tick from a timer well
-  inside its range, the reads rise by exactly 100 per tick. Narrows
-  `CTRL-DOWNGRADE-003`, which only claims the timer moves.
+  inside its range, the reads rise by exactly 100 per tick.
 - `CTRL-DOWNGRADE-013` `behavior` `verified_vanilla`
   The restore is clamped at the level ceiling: an upgrading tick that would
   carry `ticksToDowngrade` past `CONTROLLER_DOWNGRADE[level]` lands it
@@ -1227,7 +1217,7 @@ Coverage Notes
 - `CTRL-STRUCTLIMIT-001` `matrix` `verified_vanilla`
   For each structure type `isActive()` counts and each controller level, at
   most `CONTROLLER_STRUCTURES[type][level]` owned structures of that type are
-  active.
+  active: the ones closest to the controller.
 - `CTRL-STRUCTLIMIT-002` `behavior` `verified_vanilla`
   Owned structures above the room's current controller-level limit remain
   present but inactive until the room again satisfies the limit.
@@ -1386,16 +1376,13 @@ Coverage Notes
 
 ### 7.7 Simultaneous Damage & Healing
 - `COMBAT-SIMULT-001` `behavior` `verified_vanilla`
-  Damage and healing are resolved simultaneously:
-  `newHits = oldHits + healing - damage`.
-- `COMBAT-SIMULT-002` `behavior` `verified_vanilla`
-  A creep survives if healing equals or exceeds damage in the same tick.
+  Damage and healing on a creep in one tick resolve together:
+  `newHits = oldHits + healing - damage`, each the sum over every source, and
+  the creep dies only if that leaves it at `0` hits or less, so healing that
+  matches the damage keeps it alive and a lethal hit healed back leaves it at
+  the net.
 - `COMBAT-SIMULT-003` `behavior` `verified_vanilla`
   Overkill damage does not carry over to the next tick.
-- `COMBAT-SIMULT-004` `behavior` `verified_vanilla`
-  A creep dies only if hits reach 0 after simultaneous resolution.
-- `COMBAT-SIMULT-005` `behavior` `verified_vanilla`
-  Multiple sources of damage and healing are summed independently.
 
 ### 7.8 Tower Attack
 - `TOWER-ATTACK-001` `behavior` `verified_vanilla`
@@ -1415,6 +1402,9 @@ Coverage Notes
   `tower.attack(target)` failure return codes and precedence match the
   canonical validation matrix for ownership, active-structure state, target
   validity, and resource availability.
+- `TOWER-ATTACK-006` `behavior` `verified_vanilla`
+  `tower.attack()` on an object standing on a rampart's tile damages the
+  rampart instead.
 
 ### 7.9 Tower Heal
 - `TOWER-HEAL-001` `behavior` `verified_vanilla`
@@ -1454,8 +1444,6 @@ Coverage Notes
   validity, and resource availability.
 
 ### 7.11 Tower Action Priority
-- `TOWER-INTENT-001` `behavior` `verified_vanilla`
-  A tower performs at most one of attack, heal, or repair in a tick.
 - `TOWER-INTENT-002` `behavior` `verified_vanilla`
   When heal, repair, and attack intents are all queued for the same tower in
   one tick, heal is preferred over repair and repair is preferred over attack.
@@ -1473,15 +1461,10 @@ Coverage Notes
 
 ### 7.13 Nukes — Launch `capability: nuke`
 - `NUKE-LAUNCH-001` `behavior` `verified_vanilla`
-  Launching requires `NUKER_ENERGY_CAPACITY` (300000) energy and
-  `NUKER_GHODIUM_CAPACITY` (5000) ghodium.
-- `NUKE-LAUNCH-002` `behavior` `verified_vanilla`
-  Nuker enters a long cooldown after launch (`NUKER_COOLDOWN`, 100000 ticks).
+  A successful launch spends `NUKER_ENERGY_CAPACITY` energy and
+  `NUKER_GHODIUM_CAPACITY` ghodium, emptying the nuker.
 - `NUKE-LAUNCH-003` `behavior` `verified_vanilla`
   Maximum range is `NUKE_RANGE` (10 rooms).
-- `NUKE-LAUNCH-004` `behavior` `verified_vanilla`
-  Creates an in-flight Nuke object visible in the target room via
-  `FIND_NUKES`.
 - `NUKE-LAUNCH-005` `behavior` `verified_vanilla`
   `launchNuke()` returns `ERR_NOT_ENOUGH_RESOURCES` when energy or ghodium is
   insufficient.
@@ -1529,10 +1512,6 @@ Coverage Notes
 - `NUKE-IMPACT-001` `behavior` `verified_vanilla`
   Nuke lands after `NUKE_LAND_TIME` (50000 ticks); `nuke.timeToLand` is set on
   launch.
-- `NUKE-IMPACT-002` `behavior` `verified_vanilla`
-  Damage at ground zero (range 0) is `NUKE_DAMAGE[0]` (10,000,000).
-- `NUKE-IMPACT-003` `behavior` `verified_vanilla`
-  Damage in radius 1–2 is `NUKE_DAMAGE[2]` (5,000,000).
 - `NUKE-IMPACT-005` `behavior` `verified_vanilla`
   Ramparts do not protect creeps from nuke damage; every creep in the room
   dies.
@@ -1571,10 +1550,6 @@ Coverage Notes
 Coverage Notes
 - A rampart absorbing nuke damage for the structures under it is
   `RAMPART-PROTECT-008` (section 12.1).
-- `NUKE-IMPACT-002` and `NUKE-IMPACT-003` already pin the center and a single
-  east-axis sample for ranges 1 and 2; `NUKE-IMPACT-014` extends that to the
-  full 49-tile box (25 in-blast cells + 24 range-3 cells) so the geometry and
-  the range-3 boundary are verified per tile.
 
 ### 7.15 Safe Mode — Combat Effects
 - `SAFEMODE-COMBAT-001` `behavior` `verified_vanilla`
@@ -1608,12 +1583,6 @@ Coverage Notes
 - `BOOST-CREEP-006` `behavior` `verified_vanilla`
   `boostCreep()` returns `ERR_NOT_FOUND` when the creep has no matching
   unboosted parts.
-- `BOOST-CREEP-007` `behavior` `verified_vanilla`
-  A boosted `ATTACK` part deals increased damage matching the compound's
-  multiplier.
-- `BOOST-CREEP-008` `behavior` `verified_vanilla`
-  A boosted `HEAL` part heals increased HP matching the compound's
-  multiplier.
 - `BOOST-CREEP-009` `behavior` `verified_vanilla`
   The lab's stored mineral compound determines which body part type is
   boosted; `boostCreep()` affects only unboosted parts of the type associated
@@ -1724,9 +1693,6 @@ Coverage Notes
   `spawnCreep()` requires a non-empty body.
 - `SPAWN-CREATE-002` `behavior` `verified_vanilla`
   `spawnCreep()` rejects bodies longer than `MAX_CREEP_SIZE` (50).
-- `SPAWN-CREATE-003` `behavior` `verified_vanilla`
-  `spawnCreep()` requires a name that is unique among living and spawning
-  creeps.
 - `SPAWN-CREATE-004` `behavior` `verified_vanilla`
   Spawn cost equals the sum of `BODYPART_COST` for the requested body.
 - `SPAWN-CREATE-005` `behavior` `verified_vanilla`
@@ -1739,8 +1705,8 @@ Coverage Notes
   `spawnCreep()` returns `ERR_NOT_ENOUGH_ENERGY` when the selected energy
   sources cannot pay the spawn cost.
 - `SPAWN-CREATE-008` `behavior` `verified_vanilla`
-  `spawnCreep()` returns `ERR_NAME_EXISTS` when the requested name is already
-  in use.
+  `spawnCreep()` returns `ERR_NAME_EXISTS` when a living or spawning creep
+  already has the requested name.
 - `SPAWN-CREATE-009` `behavior` `verified_vanilla`
   `spawnCreep()` returns `ERR_BUSY` when the spawn is already spawning.
 - `SPAWN-CREATE-010` `behavior` `verified_vanilla`
@@ -1865,28 +1831,24 @@ Coverage Notes
   target-creep ownership, and range.
 
 ### 9.6 Creep Spawning State
-- `CREEP-SPAWNING-001` `behavior` `verified_vanilla`
-  `creep.spawning` is `true` while the creep is being spawned.
 - `CREEP-SPAWNING-002` `behavior` `verified_vanilla`
   `creep.ticksToLive` is `undefined` while the creep is spawning.
-- `CREEP-SPAWNING-003` `behavior` `verified_vanilla`
-  A spawning creep cannot perform creep actions.
 - `CREEP-SPAWNING-004` `behavior` `verified_vanilla`
   A spawning creep's body parts are visible before spawning completes.
 - `CREEP-SPAWNING-005` `behavior` `verified_vanilla`
   When a spawn finishes producing a creep, `StructureSpawn.spawning` is
   `null` from the next tick onward, until another `spawnCreep()` succeeds.
-  Distinct from `CREEP-SPAWNING-001`, which covers `creep.spawning ===
+  Distinct from `SPAWN-TIMING-002`, which covers `creep.spawning ===
   true` during production; this entry covers the spawn-side post-
   completion transition.
 - `CREEP-SPAWNING-006` `behavior` `verified_vanilla`
   A creep created by `spawnCreep()` appears in `Game.creeps` the same tick
-  with `creep.spawning === true`. Distinct from `CREEP-SPAWNING-001`, which
+  with `creep.spawning === true`. Distinct from `SPAWN-TIMING-002`, which
   reads `spawning` on a later tick; this entry pins the same-tick view of a
   just-spawned creep.
 - `CREEP-SPAWNING-007` `behavior` `verified_vanilla`
-  An intent (e.g. `move`) on a creep spawned the same tick returns
-  `ERR_BUSY` without throwing, since the just-spawned creep is spawning.
+  An intent (e.g. `move`) on a spawning creep returns `ERR_BUSY` without
+  throwing, on the tick it was spawned and each tick after until it emerges.
 
 ### 9.7 Aging & Death
 - `CREEP-LIFETIME-001` `behavior` `verified_vanilla`
@@ -1899,9 +1861,6 @@ Coverage Notes
 - `CREEP-DEATH-001` `behavior` `verified_vanilla`
   A creep with `ticksToLive === 1` dies during that tick's resolution and does
   not appear on the next tick.
-- `CREEP-DEATH-002` `behavior` `verified_vanilla`
-  A creep's death creates a tombstone during that tick's resolution, and the
-  tombstone appears on the next tick at the position of death.
 - `CREEP-DEATH-003` `behavior` `verified_vanilla`
   When a live container is on the death tile, death resources are diverted into
   that container before any remainder is placed into the tombstone.
@@ -1968,12 +1927,6 @@ Coverage Notes
 ## 10. Structures — Energy & Storage
 
 ### 10.1 Extension
-- `EXTENSION-001` `behavior` `verified_vanilla`
-  An active extension contributes exactly its stored energy to
-  `room.energyAvailable`.
-- `EXTENSION-002` `behavior` `verified_vanilla`
-  An active extension contributes exactly its energy capacity to
-  `room.energyCapacityAvailable`.
 
 Coverage Notes
 - Extension inactivity from controller-structure limits is owned by section
@@ -2248,12 +2201,6 @@ Coverage Notes
 ## 12. Structures — Military
 
 ### 12.1 Rampart — Protection
-- `RAMPART-PROTECT-001` `behavior` `verified_vanilla`
-  A melee `attack()` targeting an object on a rampart tile damages the rampart
-  instead of the covered target.
-- `RAMPART-PROTECT-002` `behavior` `verified_vanilla`
-  `dismantle()` targeting an object on a rampart tile damages the rampart
-  instead of the covered target.
 - `RAMPART-PROTECT-003` `behavior` `verified_vanilla`
   A non-public hostile rampart blocks hostile creep movement onto its tile.
 - `RAMPART-PROTECT-004` `behavior` `verified_vanilla`
@@ -2456,8 +2403,9 @@ same-shard portal mechanics and the shape of both same-shard and
 cross-shard `destination` values.
 
 - `PORTAL-001` `behavior` `verified_vanilla`
-  A creep or power creep standing on a same-shard portal tile appears at the
-  portal destination on the next tick.
+  A creep or power creep standing on a same-shard portal tile, whether placed
+  there or arriving by a move, appears at the portal destination on the next
+  tick without a further move intent.
 - `PORTAL-002` `behavior` `verified_vanilla`
   A same-shard portal exposes `portal.destination` as a `RoomPosition` object.
 - `PORTAL-003` `behavior` `verified_vanilla`
@@ -2466,9 +2414,6 @@ cross-shard `destination` values.
 - `PORTAL-004` `behavior` `verified_vanilla`
   A temporary portal exposes `ticksToDecay`, and a permanent portal returns
   `undefined` for `ticksToDecay`.
-- `PORTAL-005` `behavior` `verified_vanilla`
-  A creep or power creep standing on a portal tile is transported by the
-  portal on the next tick without issuing a move intent.
 - `PORTAL-006` `behavior` `verified_vanilla`
   A temporary portal's `ticksToDecay` counts down by 1 each tick, reaching 0
   and then -1 while the portal still stands; the portal is removed on the
@@ -2623,25 +2568,11 @@ Coverage Notes
   Destroyable structures expose `hits` and `hitsMax`.
 - `STRUCTURE-HITS-003` `behavior` `verified_vanilla`
   A structure at 0 hits is destroyed in the same tick.
-- `STRUCTURE-HITS-004` `behavior` `verified_vanilla`
-  Destroying a structure by non-nuke means creates a ruin on that tile
-  containing the structure's remaining store.
-- `STRUCTURE-HITS-005` `behavior` `verified_vanilla`
-  A ruin's `ticksToDecay` decrements by 1 each tick; when it reaches 0, the
-  ruin is removed and any remaining store contents become dropped resources on
-  the same tile.
 
 ### 15.2 isActive & RCL
-- `STRUCTURE-ACTIVE-001` `behavior` `verified_vanilla`
-  For owned structure types limited by `CONTROLLER_STRUCTURES`, `isActive()`
-  returns `true` only for the allowed same-type structures closest to the room
-  controller at the current controller level.
 - `STRUCTURE-ACTIVE-002` `behavior` `verified_vanilla`
   Inactive structures still exist in the room but their gated gameplay actions
   fail active-structure checks.
-- `STRUCTURE-ACTIVE-003` `behavior` `verified_vanilla`
-  A structure becomes active again if the room controller later satisfies its
-  active-limit requirements.
 - `STRUCTURE-ACTIVE-004` `behavior` `verified_vanilla`
   Structures with no owner or no controller limit table entry return `true`
   from `isActive()`.
@@ -2653,11 +2584,8 @@ Notes
 
 ### 15.3 Construction Costs
 - `CONSTRUCTION-COST-001` `matrix` `verified_vanilla`
-  Buildable structure construction costs match the canonical
-  `CONSTRUCTION_COST` table.
-- `CONSTRUCTION-COST-002` `behavior` `verified_vanilla`
-  A construction site's `progressTotal` equals its structure's construction
-  cost.
+  A construction site's `progressTotal` is `CONSTRUCTION_COST[structureType]`
+  for each buildable structure type.
 - `CONSTRUCTION-COST-003` `matrix` `verified_vanilla`
   A road construction site's `progressTotal` scales by the terrain ratio of
   the underlying tile: `CONSTRUCTION_COST_ROAD_SWAMP_RATIO` (5×) on swamp
@@ -3024,8 +2952,6 @@ Notes
   `Game.flags`.
 - `FLAG-002` `behavior` `verified_vanilla`
   A created flag stores its `name`, `color`, and `secondaryColor`.
-- `FLAG-003` `behavior` `verified_vanilla`
-  A player cannot exceed `FLAGS_LIMIT` total flags.
 - `FLAG-004` `behavior` `verified_vanilla`
   `Flag.remove()` removes the flag from the player's flag set.
 - `FLAG-005` `behavior` `verified_vanilla`
@@ -3147,7 +3073,8 @@ neighbors and no better section exists.
 - `DEPOSIT-002` `behavior` `verified_vanilla`
   `deposit.lastCooldown` equals
   `ceil(DEPOSIT_EXHAUST_MULTIPLY * harvested^DEPOSIT_EXHAUST_POW)` for the
-  deposit's current harvested count.
+  deposit's harvested count after each harvest, so it grows as harvests
+  accumulate.
 - `DEPOSIT-003` `behavior` `verified_vanilla`
   After a successful harvest, `deposit.cooldown` exposes the remaining wait in
   ticks until the next harvest becomes available, and returns `0` once that
@@ -3156,9 +3083,6 @@ neighbors and no better section exists.
   Each successful harvest restarts `deposit.ticksToDecay` at
   `DEPOSIT_DECAY_TIME` from the harvest tick; it then decreases by `1` each
   tick.
-- `DEPOSIT-005` `behavior` `verified_vanilla`
-  Repeated successful harvests can increase a deposit's exposed
-  `lastCooldown` and future `cooldown`.
 - `DEPOSIT-006` `behavior` `verified_vanilla`
   When `ticksToDecay` reaches `0`, the deposit object is removed from the room.
 
@@ -3171,9 +3095,6 @@ neighbors and no better section exists.
   When a creep is killed, a tombstone appears at its death position exposing
   the dead creep's name, the game time of death, and the creep's remaining
   store.
-- `TOMBSTONE-002` `behavior` `verified_vanilla`
-  A creep tombstone's initial `ticksToDecay` equals
-  `body.length * TOMBSTONE_DECAY_PER_PART`.
 - `TOMBSTONE-003` `behavior` `verified_vanilla`
   The tombstone's `store` contains the creep's carried resources plus
   body-part corpse energy computed from `CREEP_CORPSE_RATE`, the creep's
@@ -3230,10 +3151,11 @@ neighbors and no better section exists.
   Ruin resources can be withdrawn subject to the normal `withdraw()`
   preconditions and blockers.
 - `RUIN-004` `behavior` `verified_vanilla`
-  When a structure is destroyed, a ruin is created at its position in the
-  same tick.
+  When a structure is destroyed by anything but a nuke, a ruin holding its
+  remaining store is created at its position in the same tick.
 - `RUIN-005` `behavior` `verified_vanilla`
-  A ruin is removed from the room when its `ticksToDecay` reaches `0`.
+  A ruin is removed from the room when its `ticksToDecay` reaches `0`, its
+  remaining store left on the tile as dropped resources.
 - `RUIN-006` `behavior` `verified_vanilla`
   A ruin's `ticksToDecay` strictly decreases by one each subsequent tick
   until removal.
@@ -3247,15 +3169,10 @@ neighbors and no better section exists.
   `launchRoomName` and `timeToLand`.
 - `NUKE-FLIGHT-002` `behavior` `verified_vanilla`
   `nuke.timeToLand` decreases by `1` each tick until the landing tick.
-- `NUKE-FLIGHT-003` `behavior` `verified_vanilla`
-  An in-flight nuke is visible in the target room before it lands.
 - `NUKE-FLIGHT-004` `matrix` `verified_vanilla`
   In-flight nuke visibility matches the canonical player-perspective matrix,
   including target-room visibility, launch-room absence, and no target-room
   visibility.
-- `NUKE-FLIGHT-005` `behavior` `verified_vanilla`
-  After a nuke lands, the in-flight `Nuke` object is removed from the target
-  room and no longer appears in `FIND_NUKES`.
 
 ---
 
@@ -3344,9 +3261,6 @@ neighbors and no better section exists.
 - `POWERCREEP-MOVE-001` `behavior` `verified_vanilla`
   A successful power creep move generates no fatigue on plain, swamp, or road
   terrain.
-- `POWERCREEP-MOVE-002` `behavior` `verified_vanilla`
-  A successful move onto a road applies `ROAD_WEAROUT_POWER_CREEP` road wear
-  in the same tick.
 - `POWERCREEP-ACTION-001` `matrix` `verified_vanilla`
   While spawned, `transfer()`, `withdraw()`, `pickup()`, `drop()`, and `say()`
   use the same public semantics and return codes as the corresponding creep
@@ -3378,12 +3292,6 @@ neighbors and no better section exists.
 - `POWER-OPERATE-002` `matrix` `verified_vanilla` `capability: powerEffects`
   Operate power `cooldown`, `range`, and `ops` cost match `POWER_INFO` for each
   operate power.
-- `POWER-OPERATE-003` `behavior` `verified_vanilla` `capability: powerEffects`
-  `PWR_OPERATE_OBSERVER` allows `observeRoom()` beyond the observer's normal
-  range while the effect is active.
-- `POWER-OPERATE-004` `behavior` `verified_vanilla` `capability: powerEffects`
-  `PWR_OPERATE_FACTORY` changes the target factory's effective production level
-  according to the power level while the effect is active.
 - `POWER-OPERATE-005` `matrix` `verified_vanilla` `capability: powerEffects`
   For room-bound operate powers, target validity matches the canonical
   power-to-target matrix.
@@ -3730,12 +3638,9 @@ Notes
   `getFreeCapacity()` without a resource argument return `null`.
 
 ### 23.4 Restricted Stores
-- `STORE-RESTRICTED-001` `matrix` `verified_vanilla`
-  For restricted stores, each allowed resource type has its own capacity
-  limit.
 - `STORE-RESTRICTED-002` `matrix` `verified_vanilla`
-  Restricted-store capacity constants match the canonical Screeps capacities
-  for lab, power spawn, and nuker.
+  Each resource type a restricted store allows has its own capacity, the
+  canonical constant for lab, power spawn, and nuker.
 - `STORE-RESTRICTED-003` `matrix` `verified_vanilla`
   For restricted stores, `getCapacity(type)`, `getUsedCapacity(type)`, and
   `getFreeCapacity(type)` return numeric values for allowed resource types.
@@ -4279,38 +4184,6 @@ objects for the same entity within a tick.
   the object returned by a lookup in a subsequent tick (cross-tick object
   discard). (Documents the expected reset so bots know heap-only caches
   reset per tick.)
-- `UNDOC-CTOR-001` `behavior` `verified_vanilla`
-  `new Creep(id)` produces an object whose public `id`, `name`, `pos`, and
-  `owner` fields match `Game.getObjectById(id)` for the same creep within
-  the tick.
-- `UNDOC-CTOR-002` `behavior` `verified_vanilla`
-  `new Source(id)` produces an object whose public `id`, `pos`, `energy`, and
-  `energyCapacity` fields match `Game.getObjectById(id)` for the same source
-  within the tick.
-- `UNDOC-CTOR-003` `behavior` `verified_vanilla`
-  `new Structure(id)` produces an object whose public `id`, `pos`,
-  and `structureType` fields match `Game.getObjectById(id)` for the same
-  structure within the tick.
-- `UNDOC-CTOR-004` `behavior` `verified_vanilla`
-  `new Resource(id)` produces an object whose public `id`, `pos`,
-  `resourceType`, and `amount` fields match `Game.getObjectById(id)` for the
-  same dropped resource within the tick.
-- `UNDOC-CTOR-005` `behavior` `verified_vanilla`
-  `new ConstructionSite(id)` produces an object whose public `id`, `pos`, and
-  `structureType` fields match `Game.getObjectById(id)` for the same
-  construction site within the tick.
-- `UNDOC-CTOR-006` `behavior` `verified_vanilla`
-  `new Mineral(id)` produces an object whose public `id`, `pos`,
-  `mineralType`, and `mineralAmount` fields match `Game.getObjectById(id)`
-  for the same mineral within the tick.
-- `UNDOC-CTOR-007` `behavior` `verified_vanilla`
-  `new Tombstone(id)` produces an object whose public `id`, `pos`,
-  `deathTime`, `ticksToDecay`, and energy store amount fields match
-  `Game.getObjectById(id)` for the same tombstone within the tick.
-- `UNDOC-CTOR-008` `behavior` `verified_vanilla`
-  `new Ruin(id)` produces an object whose public `id`, `pos`,
-  `structureType`, `destroyTime`, `ticksToDecay`, and energy store amount
-  fields match `Game.getObjectById(id)` for the same ruin within the tick.
 
 ### 27.7 RoomPosition `__packedPos`
 

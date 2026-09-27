@@ -1,9 +1,8 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_IN_RANGE, ERR_NOT_FOUND, ERR_NOT_ENOUGH_RESOURCES,
 	STRUCTURE_LAB, STRUCTURE_SPAWN,
-	ATTACK, MOVE, CARRY, WORK, TOUGH, HEAL, RANGED_ATTACK,
+	ATTACK, MOVE, CARRY, WORK, RANGED_ATTACK,
 	LAB_BOOST_MINERAL, LAB_BOOST_ENERGY, LAB_MINERAL_CAPACITY, LAB_ENERGY_CAPACITY,
-	ATTACK_POWER, HEAL_POWER,
 } from '../../src/index.js';
 import { boostCreepValidationCases } from '../../src/matrices/boost-creep-validation.js';
 
@@ -162,107 +161,6 @@ describe('Lab boostCreep', () => {
 			lab.boostCreep(creep)
 		`);
 		expect(rc).toBe(ERR_NOT_FOUND);
-	});
-
-	test('BOOST-CREEP-007 boosted ATTACK part deals increased damage', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// UH provides 2x attack multiplier.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, UH: LAB_BOOST_MINERAL },
-		});
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		await shard.tick();
-
-		// Boost the attacker.
-		const boostRc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			const creep = Game.getObjectById(${attackerId});
-			lab.boostCreep(creep)
-		`);
-		expect(boostRc).toBe(OK);
-
-		// Place a target creep to attack.
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [26, 26], owner: 'p1',
-			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE],
-		});
-		await shard.tick();
-
-		const targetBefore = await shard.expectObject(targetId, 'creep');
-		const hpBefore = targetBefore.hits;
-
-		await shard.runPlayer('p1', code`
-			const attacker = Game.getObjectById(${attackerId});
-			const target = Game.getObjectById(${targetId});
-			attacker.attack(target)
-		`);
-
-		const targetAfter = await shard.expectObject(targetId, 'creep');
-		// 1 ATTACK part with UH (2x multiplier) → 1 * ATTACK_POWER * 2 = 60 damage.
-		expect(hpBefore - targetAfter.hits).toBe(ATTACK_POWER * 2);
-	});
-
-	test('BOOST-CREEP-008 boosted HEAL part heals increased HP', async ({ shard }) => {
-		shard.requires('chemistry');
-		await shard.ownedRoom('p1', 'W1N1', 6);
-
-		// LO provides 2x heal multiplier.
-		const labId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-			store: { energy: LAB_ENERGY_CAPACITY, LO: LAB_BOOST_MINERAL },
-		});
-		const healerId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			body: [HEAL, MOVE],
-		});
-		// Attacker to deal damage to the heal target.
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [26, 27], owner: 'p1',
-			body: [ATTACK, MOVE],
-		});
-		// Target to be damaged then healed. Enough HP to survive the attack.
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [26, 26], owner: 'p1',
-			body: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE],
-		});
-		await shard.tick();
-
-		// Boost the healer.
-		const boostRc = await shard.runPlayer('p1', code`
-			const lab = Game.getObjectById(${labId});
-			const healer = Game.getObjectById(${healerId});
-			lab.boostCreep(healer)
-		`);
-		expect(boostRc).toBe(OK);
-
-		// Damage the target with the attacker.
-		await shard.runPlayer('p1', code`
-			const attacker = Game.getObjectById(${attackerId});
-			const target = Game.getObjectById(${targetId});
-			attacker.attack(target)
-		`);
-
-		const targetDamaged = await shard.expectObject(targetId, 'creep');
-		const hpAfterAttack = targetDamaged.hits;
-		// Target should have taken ATTACK_POWER damage.
-		expect(hpAfterAttack).toBe(600 - ATTACK_POWER);
-
-		// Now heal the target with the boosted healer.
-		await shard.runPlayer('p1', code`
-			const healer = Game.getObjectById(${healerId});
-			const target = Game.getObjectById(${targetId});
-			healer.heal(target)
-		`);
-
-		const targetHealed = await shard.expectObject(targetId, 'creep');
-		// 1 HEAL part with LO (2x multiplier) → 1 * HEAL_POWER * 2 = 24 HP healed.
-		expect(targetHealed.hits - hpAfterAttack).toBe(HEAL_POWER * 2);
 	});
 
 	test('BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound', async ({ shard }) => {

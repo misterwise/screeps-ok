@@ -183,7 +183,7 @@ checks both. Each definition has these fields, in this order:
 ### STORE-RESTRICTED
 
 - `Catalog Entries`
-  `STORE-RESTRICTED-001`, `STORE-RESTRICTED-002`, `STORE-RESTRICTED-003`,
+  `STORE-RESTRICTED-002`, `STORE-RESTRICTED-003`,
   `STORE-RESTRICTED-004`, `STORE-RESTRICTED-005`, `STORE-BIND-002`
 - `Canonical Source`
   Official store model in `@screeps/engine/src/game/store.js`,
@@ -643,8 +643,7 @@ checks both. Each definition has these fields, in this order:
   `SHAPE-NUKE-001` and `NUKE-FLIGHT-002`.
 - `Verification Notes`
   Include target-room visibility, launch-room absence, and the no-target-room
-  visibility case. `NUKE-FLIGHT-003` owns the simpler positive visibility
-  behavior.
+  visibility case.
   The executable case list lives in `src/matrices/nuke-flight-visibility.ts`.
 
 ### NUKE-IMPACT-OBJECTS

@@ -1,14 +1,14 @@
 import { describe, test, expect, code,
 	OK, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE, ERR_INVALID_TARGET,
 	POWER_INFO, POWER_CREEP_LIFE_TIME, TOMBSTONE_DECAY_POWER_CREEP,
-	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, PWR_OPERATE_LAB, PWR_OPERATE_OBSERVER,
+	PWR_OPERATE_TOWER, PWR_DISRUPT_TOWER, PWR_OPERATE_LAB,
 	PWR_OPERATE_FACTORY, PWR_OPERATE_TERMINAL, PWR_OPERATE_SPAWN, PWR_OPERATE_POWER,
 	PWR_REGEN_SOURCE, PWR_REGEN_MINERAL, PWR_DISRUPT_SOURCE,
 	PWR_SHIELD, PWR_FORTIFY,
 	ERR_TIRED,
 	RESOURCE_ENERGY, RESOURCE_OPS,
-	STRUCTURE_TOWER, STRUCTURE_LAB, STRUCTURE_FACTORY, STRUCTURE_TERMINAL,
-	STRUCTURE_POWER_SPAWN, STRUCTURE_SPAWN, STRUCTURE_OBSERVER,
+	STRUCTURE_TOWER, STRUCTURE_LAB, STRUCTURE_TERMINAL,
+	STRUCTURE_POWER_SPAWN, STRUCTURE_SPAWN,
 	ATTACK, MOVE, TOUGH,
 	STRUCTURE_RAMPART, STRUCTURE_CONTROLLER, STRUCTURE_STORAGE, STRUCTURE_EXTENSION,
 	FIND_STRUCTURES,
@@ -138,38 +138,6 @@ describe('Operate powers', () => {
 	});
 
 	// POWER-OPERATE-004: PWR_OPERATE_FACTORY changes production level (already tested in FACTORY-COMMODITY-003)
-	test('POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerEffects');
-		shard.requires('factory');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
-		});
-
-		const factoryId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_FACTORY, owner: 'p1',
-			store: { utrium_bar: 20, zynthium_bar: 20, energy: 20 },
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_OPERATE_FACTORY]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		// Activate PWR_OPERATE_FACTORY.
-		await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			pc.usePower(PWR_OPERATE_FACTORY, Game.getObjectById(${factoryId}))
-		`);
-
-		// With power active, level 1 commodity (composite) should be producible.
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${factoryId}).produce(RESOURCE_COMPOSITE)
-		`);
-		expect(rc).toBe(OK);
-	});
 });
 
 describe('Disrupt powers', () => {
@@ -421,38 +389,6 @@ describe('Combat powers', () => {
 });
 
 describe('Operate powers — additional', () => {
-	test('POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		shard.requires('powerEffects');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1', powerEnabled: true }],
-		});
-
-		const obsId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_OBSERVER, owner: 'p1',
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 26], owner: 'p1',
-			powers: { [PWR_OPERATE_OBSERVER]: 1 },
-			store: { ops: 200 },
-		});
-		await shard.tick();
-
-		// Apply PWR_OPERATE_OBSERVER.
-		const rc = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			pc.usePower(PWR_OPERATE_OBSERVER, Game.getObjectById(${obsId}))
-		`);
-		expect(rc).toBe(OK);
-
-		// Verify the effect is on the observer.
-		const effects = await shard.runPlayer('p1', code`
-			const obs = Game.getObjectById(${obsId});
-			obs.effects ? obs.effects.map(e => e.effect) : []
-		`) as number[];
-		expect(effects).toContain(PWR_OPERATE_OBSERVER);
-	});
 });
 
 // Setup for one POWER-TARGETS case: a power creep in range of a single target structure.

@@ -410,56 +410,6 @@ describe('controller mechanics', () => {
 		expect(rc).toBe(ERR_NOT_IN_RANGE);
 	});
 
-	test('CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX', async ({ shard }) => {
-		// Engine processor (reserveController.js:39-41) rejects a reserve
-		// intent if the new endTime would exceed gameTime + CONTROLLER_RESERVE_MAX.
-		// Use the three non-edge tiles adjacent to the canonical controller at
-		// (1,1). Three 50-CLAIM reservers can drive the controller near the cap
-		// in a few dozen reserve ticks without relying on engine internals.
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1' },
-			],
-		});
-		const ctrlPos = await shard.getControllerPos('W2N1');
-		const body = Array.from({ length: 50 }, () => CLAIM);
-		const reserverPositions: Array<[number, number]> = [
-			[ctrlPos!.x + 1, ctrlPos!.y],
-			[ctrlPos!.x, ctrlPos!.y + 1],
-			[ctrlPos!.x + 1, ctrlPos!.y + 1],
-		];
-		const creepIds = await Promise.all(reserverPositions.map(pos =>
-			shard.placeCreep('W2N1', {
-				pos,
-				owner: 'p1',
-				body,
-			})
-		));
-		await shard.tick();
-
-		// runPlayer() already advances one processing tick. Three reservers add
-		// at most 150 reservation per tick, minus the 1 natural decay, so
-		// 34 reserve ticks are enough to saturate from zero.
-		for (let i = 0; i < 34; i++) {
-			await shard.runPlayer('p1', code`
-				const controller = Game.rooms['W2N1'].controller;
-				for (const id of ${creepIds}) {
-					Game.getObjectById(id).reserveController(controller);
-				}
-			`);
-		}
-
-		const ticksToEnd = await shard.runPlayer('p1', code`
-			Game.rooms['W2N1'].controller.reservation.ticksToEnd
-		`) as number;
-		// Once saturated, the last successful reserve leaves the player-visible
-		// value within one 50-tick reserve effect of the cap.
-		expect(ticksToEnd).toBeLessThanOrEqual(CONTROLLER_RESERVE_MAX);
-		expect(ticksToEnd).toBeGreaterThan(CONTROLLER_RESERVE_MAX - 50);
-	}, 30_000);
-
 	test('CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver', async ({ shard }) => {
 		// Engine controllers/tick.js:10 — reservation is cleared when
 		// gameTime >= endTime - 1. The stored endTime is absolute and does not

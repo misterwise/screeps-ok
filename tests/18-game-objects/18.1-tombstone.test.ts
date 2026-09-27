@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, ATTACK_POWER, BODYPART_HITS, BODYPART_COST, TOMBSTONE_DECAY_PER_PART, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CARRY_CAPACITY, FIND_TOMBSTONES, RESOURCE_ENERGY } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, CARRY, ATTACK, TOUGH, body, ATTACK_POWER, BODYPART_HITS, BODYPART_COST, CREEP_CORPSE_RATE, CREEP_LIFE_TIME, CARRY_CAPACITY, FIND_TOMBSTONES, RESOURCE_ENERGY } from '../../src/index.js';
 
 describe('Tombstone', () => {
 	test('TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store', async ({ shard }) => {
@@ -55,40 +55,6 @@ describe('Tombstone', () => {
 		expect(tomb!.deathTime).toBe(attackTime);
 		expect(timeAfterDeath).toBe(attackTime + 3);
 		expect(tomb!.store).toBeDefined();
-	});
-
-	test('TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 1, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		// 4-part target (400 HP) needs 14+ ATTACK parts to one-shot (14 * 30 = 420)
-		const bodyParts = [TOUGH, TOUGH, TOUGH, MOVE];
-		const attackerId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: body(14, ATTACK, MOVE),
-		});
-		const targetId = await shard.placeCreep('W1N1', {
-			pos: [25, 26], owner: 'p2',
-			body: bodyParts,
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${attackerId}).attack(Game.getObjectById(${targetId}))
-		`);
-		await shard.tick();
-		await shard.tick();
-
-		const tombstones = await shard.findInRoom('W1N1', FIND_TOMBSTONES);
-		const tomb = tombstones.find(t => t.pos.x === 25 && t.pos.y === 26);
-		expect(tomb).toBeDefined();
-		const gameTime = await shard.getGameTime();
-		const expectedInitial = bodyParts.length * TOMBSTONE_DECAY_PER_PART;
-		expect(tomb!.ticksToDecay).toBe(expectedInitial - (gameTime - tomb!.deathTime));
 	});
 
 	test('TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death', async ({ shard }) => {

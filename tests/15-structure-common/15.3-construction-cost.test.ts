@@ -2,7 +2,6 @@ import { describe, test, expect, code,
 	OK, CONSTRUCTION_COST, STRUCTURE_ROAD,
 	CONSTRUCTION_COST_ROAD_SWAMP_RATIO, CONSTRUCTION_COST_ROAD_WALL_RATIO,
 	FIND_CONSTRUCTION_SITES, TERRAIN_SWAMP, TERRAIN_WALL,
-	STRUCTURE_EXTENSION,
 } from '../../src/index.js';
 import { constructionCostCases } from '../../src/matrices/construction-cost.js';
 
@@ -34,19 +33,6 @@ describe('Construction costs', () => {
 			expect(site.progressTotal).toBe(expectedCost);
 		});
 	}
-
-	test('CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost', async ({ shard }) => {
-		// Use a specific type (extension, cost=3000) to verify progressTotal
-		// matches the canonical CONSTRUCTION_COST entry.
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const siteId = await shard.placeSite('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			structureType: STRUCTURE_EXTENSION,
-		});
-
-		const site = await shard.expectObject(siteId, 'site');
-		expect(site.progressTotal).toBe(CONSTRUCTION_COST[STRUCTURE_EXTENSION]);
-	});
 
 	// ── CONSTRUCTION-COST-003: road site progressTotal scales by terrain ratio ──
 	// Engine @screeps/engine/src/game/rooms.js createConstructionSite scales

@@ -89,41 +89,6 @@ describe('Nuke flight', () => {
 	});
 
 	// ---- NUKE-FLIGHT-003: in-flight nuke is visible in target room ----
-	test('NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room', async ({ shard }) => {
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-
-		const nukerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		await shard.tick();
-
-		const nukeCount = await shard.runPlayer('p2', code`
-			const nukes = Game.rooms['W2N1'] ? Game.rooms['W2N1'].find(FIND_NUKES) : [];
-			nukes.length
-		`);
-		expect(nukeCount).toBe(1);
-
-		await shard.tick(5);
-
-		const nukeCountLater = await shard.runPlayer('p2', code`
-			const nukes = Game.rooms['W2N1'] ? Game.rooms['W2N1'].find(FIND_NUKES) : [];
-			nukes.length
-		`);
-		expect(nukeCountLater).toBe(1);
-	});
 
 	for (const row of nukeFlightVisibilityCases) {
 		test(`NUKE-FLIGHT-004:${row.label} in-flight nuke visibility follows player perspective`, async ({ shard }) => {
@@ -160,29 +125,4 @@ describe('Nuke flight', () => {
 			});
 		});
 	}
-
-	test('NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES', async ({ shard }) => {
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-		const nukeId = await shard.placeNuke('W1N1', {
-			pos: [25, 25],
-			launchRoomName: 'W2N1',
-			timeToLand: 3,
-		});
-
-		const before = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].find(FIND_NUKES).length
-		`);
-		expect(before).toBe(1);
-
-		await shard.tick(3);
-		const after = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].find(FIND_NUKES).length
-		`);
-		expect(after).toBe(0);
-		expect(await shard.getObject(nukeId)).toBeNull();
-	});
 });

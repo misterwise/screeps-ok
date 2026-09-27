@@ -8,7 +8,7 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 
 describe('Structure isActive()', () => {
-	test('STRUCTURE-ACTIVE-001 isActive returns true only for allowed structures at the current RCL', async ({ shard }) => {
+	test('CTRL-STRUCTLIMIT-001:closestFirst isActive returns true only for allowed structures at the current RCL', async ({ shard }) => {
 		// At RCL 2, exactly the allowed number of closest same-type structures are active.
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const limit = CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][2];
@@ -61,7 +61,7 @@ describe('Structure isActive()', () => {
 		expect(target.hits).toBe(BODYPART_HITS);
 	});
 
-	test('STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements', async ({ shard }) => {
+	test('CTRL-STRUCTLIMIT-002 a structure becomes active again when RCL satisfies its requirements', async ({ shard }) => {
 		// Tower at RCL 2 is inactive; at RCL 3 it becomes active.
 		// We test at RCL 3 directly — the CTRL-STRUCTLIMIT-002 matrix already
 		// proves inactive at RCL 2. Here we confirm the transition to active.

@@ -165,6 +165,28 @@ changes since `v0.1.0-alpha` are not itemized.
   `Game.map.getRoomTerrain`. `STRUCTURE-ACTIVE-005`, which pinned the tie
   between equally distant structures to vanilla's storage scan order, an
   order nothing specifies.
+- Dropped as restatements of another row, which now carries any test the
+  dropped row had that it lacked (survivor in parentheses): `CTRL-RESERVE-005`
+  (`-010`), `CTRL-DOWNGRADE-003` (`-012`), `CTRL-DOWNGRADE-004` (`-013`),
+  `COMBAT-SIMULT-002`/`-004`/`-005` (`-001`), `TOWER-INTENT-001` (`-003`),
+  `NUKE-LAUNCH-002` (`-012`), `NUKE-LAUNCH-004` and `NUKE-FLIGHT-003`
+  (`NUKE-FLIGHT-001`), `NUKE-IMPACT-002`/`-003` (`-014`), `NUKE-FLIGHT-005`
+  (`NUKE-IMPACT-013`), `BOOST-CREEP-007`/`-008` (`BOOST-ATTACK-001`,
+  `BOOST-HEAL-001`), `SPAWN-CREATE-003` (`-008`), `CREEP-SPAWNING-001`
+  (`SPAWN-TIMING-002`), `CREEP-SPAWNING-003` (`-007`), `RAMPART-PROTECT-001`
+  (the new `TOWER-ATTACK-006`), `RAMPART-PROTECT-002` (`COMBAT-MELEE-005`),
+  `PORTAL-005` (`-001`), `FLAG-003` (`-008`), `DEPOSIT-005` (`-002`),
+  `EXTENSION-001`/`-002` (`ROOM-ENERGY-001`/`-002`), `STRUCTURE-ACTIVE-001`
+  (`CTRL-STRUCTLIMIT-001:closestFirst`), `STRUCTURE-ACTIVE-003`
+  (`CTRL-STRUCTLIMIT-002`), `STRUCTURE-HITS-004`/`-005` (`RUIN-004`/`-005`),
+  `CONSTRUCTION-COST-002` (`-001`), `TOMBSTONE-002` (`CREEP-DEATH-006`),
+  `CREEP-DEATH-002` (`TOMBSTONE-001`), `POWERCREEP-MOVE-002`
+  (`ROAD-WEAR-001:powerCreep`), `POWER-OPERATE-003` (`OBSERVER-003`),
+  `POWER-OPERATE-004` (`FACTORY-COMMODITY-003`), `UNDOC-CTOR-001`..`-008`
+  (`UNDOC-IDCTOR-001`), `DROP-DECAY-004` (`HARVEST-006`),
+  `STORE-RESTRICTED-001` (`-002`).
+- New: `TOWER-ATTACK-006` (a tower's attack on an object under a rampart hits
+  the rampart), whose test had run as `RAMPART-PROTECT-001`.
 - New: `GCL-001`, keyed by level edge (`:belowLevelTwo`, `:levelTwo`,
   `:levelThree`), pins `Game.gcl`'s values, where only its keys were pinned.
 - Re-scoped to what the API documentation states: `CPU-SHARD-001` (this

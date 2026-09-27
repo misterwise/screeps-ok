@@ -17,7 +17,7 @@ describe('creep death', () => {
 		expect(dead).toBeNull();
 	});
 
-	test('CREEP-DEATH-002 death creates a tombstone at the position of death', async ({ shard }) => {
+	test('TOMBSTONE-001 death creates a tombstone at the position of death', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [20, 30], owner: 'p1',

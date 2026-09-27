@@ -277,7 +277,7 @@ describe('creep.say()', () => {
 });
 
 describe('Creep spawning state', () => {
-	test('CREEP-SPAWNING-001 creep.spawning is true while the creep is being spawned', async ({ shard }) => {
+	test('SPAWN-TIMING-002 creep.spawning is true while the creep is being spawned', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const spawnId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_SPAWN, owner: 'p1',
@@ -318,7 +318,7 @@ describe('Creep spawning state', () => {
 		expect(ttl).toBeNull();
 	});
 
-	test('CREEP-SPAWNING-003 a spawning creep cannot perform actions', async ({ shard }) => {
+	test('CREEP-SPAWNING-007 a spawning creep cannot perform actions', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1', 'p2'],
 			rooms: [

@@ -150,7 +150,7 @@ describe('StructureSpawn', () => {
 		expect(rc).toBe(ERR_NOT_ENOUGH_ENERGY);
 	});
 
-	test('SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep', async ({ shard }) => {
+	test('SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],

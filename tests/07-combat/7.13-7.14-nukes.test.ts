@@ -109,40 +109,6 @@ describe('Nuke launch — section 7.13', () => {
 		expect(nuker.store.G ?? 0).toBe(0);
 	});
 
-	test('NUKE-LAUNCH-002 nuker cooldown is set after launch', async ({ shard }) => {
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const nukerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		// Cooldown is 0 before launch.
-		const before = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).cooldown
-		`);
-		expect(before).toBe(0);
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Cooldown is anchored on the launch tick; read two ticks later.
-		const after = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).cooldown
-		`) as number;
-		expect(after).toBe(NUKER_COOLDOWN - 2);
-	});
-
 	test('NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK', async ({ shard }) => {
 		shard.requires('nuke');
 		// W1N1 → W2N1 = distance 1 (well within NUKE_RANGE = 10).
@@ -163,41 +129,6 @@ describe('Nuke launch — section 7.13', () => {
 			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(25, 25, 'W2N1'))
 		`);
 		expect(rc).toBe(OK);
-	});
-
-	test('NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room', async ({ shard }) => {
-		// Companion to NUKE-FLIGHT-001 (section 18.3); kept here so the launch
-		// catalog has its own coverage. Verifies the Nuke object is observable.
-		shard.requires('nuke');
-		await shard.createShard({
-			players: ['p1', 'p2'],
-			rooms: [
-				{ name: 'W1N1', rcl: 8, owner: 'p1' },
-				{ name: 'W2N1', rcl: 1, owner: 'p2' },
-			],
-		});
-		const nukerId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_NUKER, owner: 'p1',
-			store: { energy: NUKER_ENERGY_CAPACITY, G: NUKER_GHODIUM_CAPACITY },
-		});
-		await shard.tick();
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${nukerId}).launchNuke(new RoomPosition(15, 20, 'W2N1'))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		// Read from p2 (who owns the target room).
-		const nuke = await shard.runPlayer('p2', code`
-			const nukes = Game.rooms['W2N1'].find(FIND_NUKES);
-			nukes.length > 0 ? { x: nukes[0].pos.x, y: nukes[0].pos.y, room: nukes[0].pos.roomName, ttl: nukes[0].timeToLand } : null
-		`) as { x: number; y: number; room: string; ttl: number } | null;
-		expect(nuke).not.toBeNull();
-		expect(nuke!.x).toBe(15);
-		expect(nuke!.y).toBe(20);
-		expect(nuke!.room).toBe('W2N1');
-		expect(nuke!.ttl).toBe(NUKE_LAND_TIME - 2);
 	});
 
 	test('NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient', async ({ shard }) => {
@@ -613,56 +544,6 @@ describe('Nuke impact — section 7.14', () => {
 			nukes[0] ? nukes[0].timeToLand : null
 		`) as number | null;
 		expect(ttl).toBe(NUKE_LAND_TIME - 2);
-	});
-
-	test('NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]', async ({ shard }) => {
-		// Engine: @screeps/engine/dist/processor/intents/nukes/tick.js:43-44 —
-		// `range == 0 ? C.NUKE_DAMAGE[0] : C.NUKE_DAMAGE[2]`. The center tile takes
-		// NUKE_DAMAGE[0] (10,000,000); all other tiles in the 5x5 area take NUKE_DAMAGE[2] (5M).
-		shard.requires('nuke');
-		await shard.ownedRoom('p1', 'W1N1', 8);
-
-		// A high-hits rampart absorbs the full center damage so we can read it directly.
-		const centerHits = NUKE_DAMAGE[0] + 5_000_000;
-		const rampartId = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: centerHits,
-		});
-		await shard.placeNuke('W1N1', {
-			pos: [25, 25], launchRoomName: 'W1N1', timeToLand: 1,
-		});
-		await shard.tick(2);
-
-		const rampart = await shard.expectStructure(rampartId, STRUCTURE_RAMPART);
-		expect(centerHits - rampart.hits).toBe(NUKE_DAMAGE[0]);
-	});
-
-	test('NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]', async ({ shard }) => {
-		// Engine: ranges 1 and 2 share the falloff value NUKE_DAMAGE[2] (5,000,000).
-		// Verify this for both a radius-1 tile and a radius-2 tile.
-		shard.requires('nuke');
-		await shard.ownedRoom('p1', 'W1N1', 8);
-
-		const r1Hits = NUKE_DAMAGE[2] + 1_000_000;
-		const r2Hits = NUKE_DAMAGE[2] + 1_000_000;
-		const r1Id = await shard.placeStructure('W1N1', {
-			pos: [26, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: r1Hits,
-		});
-		const r2Id = await shard.placeStructure('W1N1', {
-			pos: [27, 25], structureType: STRUCTURE_RAMPART, owner: 'p1',
-			hits: r2Hits,
-		});
-		await shard.placeNuke('W1N1', {
-			pos: [25, 25], launchRoomName: 'W1N1', timeToLand: 1,
-		});
-		await shard.tick(2);
-
-		const r1 = await shard.expectStructure(r1Id, STRUCTURE_RAMPART);
-		expect(r1Hits - r1.hits).toBe(NUKE_DAMAGE[2]);
-
-		const r2 = await shard.expectStructure(r2Id, STRUCTURE_RAMPART);
-		expect(r2Hits - r2.hits).toBe(NUKE_DAMAGE[2]);
 	});
 
 	// Rampart absorbing nuke damage on behalf of structures underneath is the

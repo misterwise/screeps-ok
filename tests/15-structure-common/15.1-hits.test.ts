@@ -83,7 +83,7 @@ describe('Structure hits', () => {
 		expect(obj).toBeNull();
 	});
 
-	test('STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store', async ({ shard }) => {
+	test('RUIN-004 destroying a structure creates a ruin containing remaining store', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const extId = await shard.placeStructure('W1N1', {
 			pos: [25, 25], structureType: STRUCTURE_EXTENSION, owner: 'p1',
@@ -102,7 +102,7 @@ describe('Structure hits', () => {
 		expect(ruin!.store.energy).toBe(50);
 	});
 
-	test('STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount', async ({ shard }) => {
+	test('RUIN-005 on decay, ruin is removed and its store spills as a dropped pile at full amount', async ({ shard }) => {
 		await shard.ownedRoom('p1', 'W1N1', 2);
 		const ruinId = await shard.placeRuin('W1N1', {
 			pos: [25, 25],

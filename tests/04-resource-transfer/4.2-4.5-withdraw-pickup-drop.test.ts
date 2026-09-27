@@ -1,7 +1,7 @@
 import { describe, test, expect, code, body,
 	OK, ERR_NOT_OWNER, ERR_NOT_IN_RANGE, ERR_NOT_ENOUGH_RESOURCES,
 	ERR_FULL, ERR_INVALID_TARGET, ERR_INVALID_ARGS, ERR_BUSY,
-	WORK, CARRY, MOVE,
+	CARRY, MOVE,
 	FIND_CREEPS, FIND_DROPPED_RESOURCES,
 	RESOURCE_ENERGY,
 	STRUCTURE_CONTAINER, STRUCTURE_RAMPART, STRUCTURE_SPAWN, STRUCTURE_TERMINAL,
@@ -1159,38 +1159,6 @@ describe('Dropped resource decay', () => {
 		await shard.tick();
 		const after = await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES);
 		expect(after.find(r => r.pos.x === 25 && r.pos.y === 25)).toBeUndefined();
-	});
-
-	test('DROP-DECAY-004 harvesting above carry capacity drops the overflow on the creep tile', async ({ shard }) => {
-		// Engine harvest.js:60-65: when sum > storeCapacity after harvest,
-		// the overflow is dispatched through ./drop(creep, { amount, resourceType }).
-		// Setup: 5 WORK = 10 energy/tick, 1 CARRY = 50 capacity, start with 45
-		// energy → sum becomes 55, overflow 5 dropped.
-		await shard.ownedRoom('p1');
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: body(5, WORK, CARRY, MOVE),
-			store: { energy: 45 },
-		});
-		const sourceId = await shard.placeSource('W1N1', {
-			pos: [25, 26], energy: 3000, energyCapacity: 3000,
-		});
-		await shard.tick();
-
-		await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).harvest(Game.getObjectById(${sourceId}))
-		`);
-
-		// After the intent tick: creep is capped at CARRY_CAPACITY (50); the
-		// 5-energy overflow is dropped on the creep tile (25,25).
-		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.energy).toBe(CARRY_CAPACITY);
-
-		const piles = (await shard.findInRoom('W1N1', FIND_DROPPED_RESOURCES))
-			.filter(r => r.pos.x === 25 && r.pos.y === 25 && r.resourceType === 'energy');
-		expect(piles.length).toBe(1);
-		// The overflow was 5; decay ceil(5/1000)=1 → 4 after the tick's decay pass.
-		expect(piles[0].amount).toBe(4);
 	});
 
 	test('DROP-DECAY-005 any player\'s creep can pick up any dropped resource', async ({ shard }) => {

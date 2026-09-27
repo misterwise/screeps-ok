@@ -1,7 +1,6 @@
 import { describe, test, expect, code,
 	OK, ERR_NOT_OWNER, ERR_BUSY, ERR_INVALID_ARGS, ERR_NOT_IN_RANGE,
-	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER, STRUCTURE_ROAD,
-	ROAD_WEAROUT_POWER_CREEP,
+	STRUCTURE_POWER_SPAWN, POWER_CREEP_LIFE_TIME, STRUCTURE_CONTAINER,
 	ATTACK, MOVE, CARRY,
 	body,
 	POWER_LEVEL_MULTIPLY, PWR_GENERATE_OPS, PWR_OPERATE_SPAWN, PWR_OPERATE_TOWER, PWR_OPERATE_STORAGE, PWR_OPERATE_LAB,
@@ -555,44 +554,4 @@ describe('Power creep lifecycle', () => {
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
-
-	test('POWERCREEP-MOVE-002 power creep move onto a road triggers road wear', async ({ shard }) => {
-		shard.requires('powerCreeps');
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 8, owner: 'p1' }],
-		});
-
-		// Place a road at [25, 24] (where the PC will move to).
-		const roadId = await shard.placeStructure('W1N1', {
-			pos: [25, 24], structureType: STRUCTURE_ROAD, owner: 'p1',
-			hits: 5000,
-		});
-		await shard.placePowerCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			powers: {},
-			store: { ops: 10 },
-		});
-		await shard.tick();
-		const ttdBefore = (await shard.expectStructure(roadId, STRUCTURE_ROAD)).ticksToDecay;
-
-		// Move onto the road.
-		const rc = await shard.runPlayer('p1', code`
-			Object.values(Game.powerCreeps)[0].move(TOP)
-		`);
-		expect(rc).toBe(OK);
-
-		// Verify the power creep moved.
-		const pos = await shard.runPlayer('p1', code`
-			const pc = Object.values(Game.powerCreeps)[0];
-			({ x: pc.pos.x, y: pc.pos.y })
-		`) as { x: number; y: number };
-		expect(pos.y).toBe(24);
-
-		// Wear advances the decay timer, not hits: ROAD_WEAROUT_POWER_CREEP plus
-		// the 2 ticks elapsed (move + position read).
-		const road = await shard.expectStructure(roadId, STRUCTURE_ROAD);
-		expect(road.ticksToDecay).toBe(ttdBefore! - ROAD_WEAROUT_POWER_CREEP - 2);
-		expect(road.hits).toBe(5000);
-	});
 });

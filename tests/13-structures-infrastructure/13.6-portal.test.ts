@@ -99,7 +99,7 @@ describe('Portal mechanics', () => {
 		expect(decay).toBeNull();
 	});
 
-	test('PORTAL-005 creep landing on a portal tile is transported next tick without a move intent', async ({ shard }) => {
+	test('PORTAL-001 creep landing on a portal tile is transported next tick without a move intent', async ({ shard }) => {
 		shard.requires('portals');
 		await shard.createShard({
 			players: ['p1'],

@@ -64,7 +64,7 @@ describe('Simultaneous damage & healing resolution', () => {
 		expect(after.hits).toBe(mid.hits + HEAL_POWER - ATTACK_POWER);
 	});
 
-	test('COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick', async ({ shard }) => {
+	test('COMBAT-SIMULT-001 a creep survives if healing equals damage in the same tick', async ({ shard }) => {
 		// Heal exactly equals damage → tick.js applies damage then heal, so hits
 		// returns to its original value. Death check at the end of the tick finds
 		// hits > 0 and the creep survives unchanged.
@@ -161,7 +161,7 @@ describe('Simultaneous damage & healing resolution', () => {
 		expect(attacker.hits).toBe(attacker.hitsMax);
 	});
 
-	test('COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution', async ({ shard }) => {
+	test('COMBAT-SIMULT-001 a creep dies only if hits reach 0 after simultaneous resolution', async ({ shard }) => {
 		// Setup: damage > hits, healing brings net change above 0 → creep survives.
 		// Verify the death check happens AFTER both damage and heal apply.
 		await shard.createShard({
@@ -216,7 +216,7 @@ describe('Simultaneous damage & healing resolution', () => {
 		expect(after.hits).toBe(60);
 	});
 
-	test('COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)', async ({ shard }) => {
+	test('COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)', async ({ shard }) => {
 		// Death case for the same rule. Self-heal cannot save a creep when incoming
 		// damage > current hits + heal: damage and heal are summed first, then the
 		// death check sees hits <= 0. Both intents return OK at submission because
@@ -285,7 +285,7 @@ describe('Simultaneous damage & healing resolution', () => {
 		expect(ts).toBeDefined();
 	});
 
-	test('COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently', async ({ shard }) => {
+	test('COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently', async ({ shard }) => {
 		// Two attackers + two healers in the same tick. _damageToApply and _healToApply
 		// accumulate across all sources before the tick.js resolution step.
 		await shard.createShard({
