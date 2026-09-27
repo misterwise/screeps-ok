@@ -5,7 +5,7 @@
 <!-- BADGES:START -->
 [![vanilla](https://img.shields.io/badge/vanilla-3645%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3055%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-171-yellow)](docs/status.md#xxscreeps-expected-failures)
 <!-- BADGES:END -->
-![status](https://img.shields.io/badge/status-alpha-blue)
+![status](https://img.shields.io/badge/status-beta-blue)
 
 Behavioral conformance test suite for Screeps server implementations. Write
 a test once, run it against any engine.
@@ -96,18 +96,18 @@ rebuild for the current runtime.
 
 ## Downstream Consumption
 
-During the alpha, `screeps-ok` is consumed by cloning this repository and
-running the suite in-place. Publishing as a package that a downstream engine
-installs with `npm i -D screeps-ok` is tracked as a pre-publish release
-gate — package metadata is not yet a stable installation contract.
+`screeps-ok` is consumed by cloning this repository at a release tag and
+running the suite in-place against your adapter. It is not published to npm;
+if a package install (`npm i -D screeps-ok`) would help your engine, open an
+issue.
 
 When a test fails in your engine, start at
 [When a Test Fails](docs/adapter-guide.md#when-a-test-fails) in the adapter
 guide.
 
 Changes a consumer must act on (adapter contract, catalog IDs, runner
-semantics) are recorded in [`CHANGELOG.md`](CHANGELOG.md) under Unreleased.
-The first versioned release is the beta, cut with the first npm publish.
+semantics) are recorded in [`CHANGELOG.md`](CHANGELOG.md) under each
+release, and under Unreleased until the next tag.
 
 ## Acknowledgments
 

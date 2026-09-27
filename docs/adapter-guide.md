@@ -12,11 +12,13 @@ For the current normative contract, see
 The canonical tests live in `screeps-ok`. Your engine repository should own its
 adapter and point the `screeps-ok` runner at it.
 
-During the alpha, `screeps-ok` is consumed by cloning this repository and
-invoking the runner in-place. A published `npm i -D screeps-ok` flow is
-tracked as a release gate — see the README "Downstream Consumption" note.
-From a repo clone, the packaged runner already accepts an external adapter
-module path:
+`screeps-ok` is consumed by cloning this repository at a release tag and
+invoking the runner in-place; it is not published to npm (see the README
+"Downstream Consumption" note). Passages below that name
+`node_modules/screeps-ok/` or `npm update` describe a package install: from a
+clone, read those paths in your checkout, and point your `parity.json`'s
+`extends` at the clone's `parity/<engine>.json` by relative path. The runner
+accepts an external adapter module path:
 
 ```bash
 ./bin/run.js --adapter ./path/to/screeps-ok-adapter.ts --preflight none

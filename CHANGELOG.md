@@ -18,10 +18,12 @@ they can surface new failures on an engine; register those in your
 `parity.json`.
 
 Add an entry under **Unreleased** in the same PR as any consumer-facing
-change. The first versioned release is the beta, cut with the first npm
-publish; until then consumers track `master` and this section.
+change. Each release is a git tag (`v0.3.0-beta`); consumers clone at a tag.
+The package is not published to npm.
 
 ## Unreleased
+
+## 0.3.0 (beta) — 2026-09-27
 
 Consumer-facing changes from the September 2026 framework review. Earlier
 changes since `v0.1.0-alpha` are not itemized.
