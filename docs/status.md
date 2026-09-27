@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-6%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3047%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-18%20failing-red)](#xxscreeps-unexpected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -31,6 +31,18 @@ _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown
 - `heal-safe-mode-checked-before-target` registers `COMBAT-RANGEDHEAL-006:invalidTargetBeforeSafeMode`, which no test passed or failed
 - `attack-controller-safe-mode-checked-before-cooldown` registers `CTRL-ATTACK-007:cooldownBeforeSafeMode`, which no test passed or failed
 - `move-bodypart-checked-before-fatigue` registers `MOVE-BASIC-027:fatigueBeforeNoBodypart`, which no test passed or failed
+- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeNameCreatedThisTick`, which no test passed or failed
+- `construction-site-invalid-coords-throws` registers `CONSTRUCTION-SITE-011:invalidCoordsBeforeNameTaken`, which no test passed or failed
+- `claim-reserve-controller-type-checked-first` registers `CTRL-CLAIM-008:noBodypartBeforeNotController`, which no test passed or failed
+- `claim-reserve-controller-type-checked-first` registers `CTRL-CLAIM-008:rangeBeforeNotController`, which no test passed or failed
+- `claim-reserve-controller-type-checked-first` registers `CTRL-RESERVE-008:rangeBeforeNotController`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTick`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeNotOwner`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeHostileReservation`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeRclOrStructureCap`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeInvalidTarget`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeWallTerrain`, which no test passed or failed
+- `construction-site-name-created-returns-name-exists` registers `CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeSiteCapFull`, which no test passed or failed
 
 ## vanilla expected failures
 
@@ -139,7 +151,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 49 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 46 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 51 expected-failure classifications against vanilla's canonical behavior, covering 110 tests. That includes 48 open parity gaps covering 103 tests and 3 intentional divergences covering 7 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -162,6 +174,8 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | 0 |
 | `transfer-negative-amount-lost-on-storeless-target` | `Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`. | Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`). | Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first. | [1](#xxscreeps-gap-transfer-negative-amount-lost-on-storeless-target) |
 | `construction-site-invalid-coords-throws` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`. | Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`). | Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it. | [7](#xxscreeps-gap-construction-site-invalid-coords-throws) |
+| `claim-reserve-controller-type-checked-first` | `checkClaimController` and `checkReserveController` (`mods/classic/controller/creep.ts:164-205`) run `checkTarget(target, StructureController)` before the CLAIM part and range, so a structure that isn't a controller returns `ERR_INVALID_TARGET` from a creep with no CLAIM part or out of range. | Vanilla checks a target is any structure first, then the CLAIM part (claim only) and range, and only then that it is a controller (`game/creeps.js:856-868`, `:963-972`), returning `ERR_NO_BODYPART` or `ERR_NOT_IN_RANGE`. | Found 2026-09-27 when CTRL-CLAIM-008 and CTRL-RESERVE-008 took vanilla's not-a-controller branch as a condition (Decision 28). | 0 |
+| `construction-site-name-created-returns-name-exists` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:59-64`) returns `ERR_NAME_EXISTS` for a spawn name an earlier call took this tick, and records the name before `checkCreateConstructionSite` runs, so a create that then fails still takes it. | Vanilla returns `ERR_INVALID_ARGS` for a name created earlier in the tick (`game/rooms.js:1045-1047`), and records a name only when the create succeeds (`:1088`). | Found 2026-09-27 when CONSTRUCTION-SITE-011 took vanilla's spawn-name branches as conditions (Decision 28). | 0 |
 | `destroy-ignores-hostile-power-creeps` | `checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`. | Vanilla returns `ERR_BUSY` when the room holds hostile creeps or hostile power creeps (`game/structures.js:80-82`). | Found 2026-09-26 when STRUCTURE-API-007 took STRUCTURE-API-002's power-creep form as a condition; the row's test had placed only a creep. | [1](#xxscreeps-gap-destroy-ignores-hostile-power-creeps) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, range among them; screeps/engine#121 (open) proposes honoring it. Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
 | `factory-power-effect-not-implemented` | `checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY. | Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check. | Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`. | [2](#xxscreeps-gap-factory-power-effect-not-implemented) |
@@ -333,6 +347,18 @@ Click a test count above to jump to the affected test list for that gap.
 - `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation createConstructionSite() validation returns the canonical code`
 - `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap createConstructionSite() validation returns the canonical code`
 - `room.createConstructionSite() CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull createConstructionSite() validation returns the canonical code`
+
+</details>
+
+<details id="xxscreeps-gap-claim-reserve-controller-type-checked-first">
+<summary><code>claim-reserve-controller-type-checked-first</code> — 0 tests</summary>
+
+
+</details>
+
+<details id="xxscreeps-gap-construction-site-name-created-returns-name-exists">
+<summary><code>construction-site-name-created-returns-name-exists</code> — 0 tests</summary>
+
 
 </details>
 

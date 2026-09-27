@@ -12,21 +12,11 @@ describe('Controller downgrade', () => {
 		});
 		await shard.tick();
 
-		// Verify starting level.
-		const before = await shard.runPlayer('p1', code`
-			({ level: Game.rooms['W1N1'].controller.level,
-			   ttd: Game.rooms['W1N1'].controller.ticksToDowngrade })
-		`) as { level: number; ttd: number };
-		expect(before.level).toBe(2);
-		expect(before.ttd).toBeLessThanOrEqual(3);
-
-		// Advance past the downgrade timer.
-		await shard.tick(before.ttd + 1);
-
-		const after = await shard.runPlayer('p1', code`
-			Game.rooms['W1N1'].controller.level
-		`) as number;
-		expect(after).toBe(1);
+		// Seeded 3; read each tick: the level drops on the tick the timer would read 0.
+		const read = code`({ level: Game.rooms['W1N1'].controller.level, ttd: Game.rooms['W1N1'].controller.ticksToDowngrade })`;
+		const reads = [await shard.runPlayer('p1', read), await shard.runPlayer('p1', read), await shard.runPlayer('p1', read)] as { level: number; ttd: number }[];
+		expect(reads.slice(0, 2)).toEqual([{ level: 2, ttd: 2 }, { level: 2, ttd: 1 }]);
+		expect(reads[2].level).toBe(1);
 	});
 
 	test('CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0', async ({ shard }) => {
@@ -40,7 +30,7 @@ describe('Controller downgrade', () => {
 		});
 		// Place a creep in W1N1 for visibility after losing ownership.
 		await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1', body: ['move'],
+			pos: [25, 25], owner: 'p1', body: [MOVE],
 		});
 		await shard.tick();
 
@@ -52,12 +42,10 @@ describe('Controller downgrade', () => {
 		await shard.tick(ttd + 1);
 
 		const result = await shard.runPlayer('p1', code`
-			const ctrl = Game.rooms['W1N1']?.controller;
-			ctrl ? ({ level: ctrl.level, my: ctrl.my }) : null
-		`) as { level: number; my: boolean } | null;
-		expect(result).not.toBeNull();
-		expect(result!.level).toBe(0);
-		expect(result!.my).toBe(false);
+			const ctrl = Game.rooms['W1N1'].controller;
+			({ level: ctrl.level, my: ctrl.my, owner: ctrl.owner ?? null })
+		`);
+		expect(result).toEqual({ level: 0, my: false, owner: null });
 	});
 
 	test('CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded', async ({ shard }) => {
@@ -79,11 +67,9 @@ describe('Controller downgrade', () => {
 			time: Game.time,
 		})`) as { ttd: number; time: number };
 
-		// Rate must be exactly 1 per elapsed tick (use in-game time so adapter
-		// queueing quirks are accounted for).
-		const elapsed = after.time - before.time;
-		expect(elapsed).toBeGreaterThanOrEqual(10);
-		expect(before.ttd - after.ttd).toBe(elapsed);
+		// The first read's own tick plus ten.
+		expect(after.time - before.time).toBe(11);
+		expect(before.ttd - after.ttd).toBe(11);
 	});
 
 	test('CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]', async ({ shard }) => {
@@ -111,7 +97,7 @@ describe('Controller downgrade', () => {
 		expect(after.progress).toBe(headStart);
 	});
 
-	test('CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected', async ({ shard }) => {
+	test('CTRL-DOWNGRADE-007 a level loss re-arms the timer by CONTROLLER_DOWNGRADE[new level] / 2 + 1', async ({ shard }) => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 3, owner: 'p1', ticksToDowngrade: 3 }],
@@ -137,8 +123,6 @@ describe('Controller downgrade', () => {
 		const ttdAfter = await shard.runPlayer('p1', code`
 			Game.rooms['W1N1'].controller.ticksToDowngrade
 		`) as number;
-		// The re-armed timer is the multi-level claim; running it out (~5000 ticks)
-		// times out on CI vanilla, and the second expiry is CTRL-DOWNGRADE-001's path.
 		expect(ttdAfter).toBe(2 + CONTROLLER_DOWNGRADE[2] / 2 + 1 - 12);
 	});
 

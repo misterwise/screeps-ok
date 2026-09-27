@@ -169,6 +169,19 @@ changes since `v0.1.0-alpha` are not itemized.
   (`:not-owner` → `:notOwner`); `FACTORY-PRODUCE-001` and
   `FACTORY-COMMODITY-001` from the resource name (`:ghodium_melt` →
   `:ghodiumMelt`).
+- Controller and construction rows: `CTRL-UPGRADE-007` is keyed by level
+  (`:level1` … `:level8`) and reads a controller; `CTRL-STRUCTLIMIT-002`'s
+  below/at pairs had shared one key per type and are `:<type>Below` and
+  `:<type>At` (`:spawn` → `:spawnAt`), with new `:downgrade` and `:levelUp`
+  transitions; `CTRL-STRUCTLIMIT-001:closestFirst` is gone (each
+  `CTRL-STRUCTLIMIT-001` case now checks the farthest structure is the
+  inactive one). New conditions: `CONSTRUCTION-SITE-011` `:nameCreatedThisTick`
+  and `:nameTaken`, `CTRL-CLAIM-008` `:novice` and `:notController`,
+  `CTRL-RESERVE-008` `:notController`, each with its pairs. Restated rows:
+  `DISMANTLE-002` (energy is `floor(hits × DISMANTLE_COST)`, not 0.25 per
+  hit), `CTRL-DOWNGRADE-006` and `-007`, `CTRL-GENSAFE-001`, `CTRL-RESERVE-010`
+  (no `EVENT_RESERVE_CONTROLLER`; the action-log clause goes) and `ROOMPOS-001`
+  (out-of-range coordinates throw).
 - Movement and resource rows keyed by case: `MOVE-COLLISION-003` (`:sameOwner`,
   `:hostile`), `MOVE-COLLISION-005` (`:own`, `:hostile`; the row now says any
   stationary creep blocks), `TRANSFER-002` and `WITHDRAW-002` (`:sourceLimited`,

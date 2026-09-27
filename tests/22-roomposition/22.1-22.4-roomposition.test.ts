@@ -1,4 +1,4 @@
-import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, STRUCTURE_SPAWN, LOOK_CREEPS, LOOK_TERRAIN } from '../../src/index.js';
+import { describe, test, expect, code, OK, MOVE, WORK, CARRY, FIND_CREEPS, FIND_CONSTRUCTION_SITES, FIND_FLAGS, STRUCTURE_ROAD, STRUCTURE_SPAWN, LOOK_CREEPS, LOOK_TERRAIN, BOTTOM_RIGHT } from '../../src/index.js';
 import { body } from '../../src/helpers/body.js';
 
 describe('RoomPosition spatial queries', () => {
@@ -119,17 +119,11 @@ describe('RoomPosition find helpers', () => {
 	test('ROOMPOS-FIND-005 findPathTo returns a path from this position to the target', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		const result = await shard.runPlayer('p1', code`
-			const path = new RoomPosition(10, 10, 'W1N1').findPathTo(15, 15);
-			({
-				isArray: Array.isArray(path),
-				length: path.length,
-				firstHasXY: path[0] ? ('x' in path[0] && 'y' in path[0]) : false,
-			})
-		`) as { isArray: boolean; length: number; firstHasXY: boolean };
-		expect(result.isArray).toBe(true);
-		expect(result.length).toBe(5);
-		expect(result.firstHasXY).toBe(true);
+		// Five diagonal steps: the only shortest path.
+		const path = await shard.runPlayer('p1', code`
+			new RoomPosition(10, 10, 'W1N1').findPathTo(15, 15)
+		`) as unknown[];
+		expect(path).toEqual([11, 12, 13, 14, 15].map(v => ({ x: v, y: v, dx: 1, dy: 1, direction: BOTTOM_RIGHT })));
 	});
 
 	test('ROOMPOS-FIND-007 findClosestByPath returns null when no reachable target exists', async ({ shard }) => {
@@ -270,19 +264,25 @@ describe('RoomPosition find helpers', () => {
 
 	test('ROOMPOS-FIND-006 opts.filter applies to the candidate set', async ({ shard }) => {
 		await shard.ownedRoom('p1');
+		// alice is nearer; the filter leaves bob to each helper that takes one.
 		await shard.placeCreep('W1N1', {
-			pos: [20, 20], owner: 'p1', body: [MOVE], name: 'alice',
+			pos: [20, 19], owner: 'p1', body: [MOVE], name: 'alice',
 		});
 		await shard.placeCreep('W1N1', {
 			pos: [20, 21], owner: 'p1', body: [MOVE], name: 'bob',
 		});
+		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
-			const pos = new RoomPosition(20, 20, 'W1N1');
-			const found = pos.findInRange(FIND_CREEPS, 5, { filter: c => c.name === 'bob' });
-			found.length
+			const pos = new RoomPosition(20, 18, 'W1N1');
+			const opts = { filter: c => c.name !== 'alice' };
+			({
+				byPath: pos.findClosestByPath(FIND_CREEPS, opts).name,
+				byRange: pos.findClosestByRange(FIND_CREEPS, opts).name,
+				inRange: pos.findInRange(FIND_CREEPS, 5, opts).map(c => c.name),
+			})
 		`);
-		expect(result).toBe(1);
+		expect(result).toEqual({ byPath: 'bob', byRange: 'bob', inRange: ['bob'] });
 	});
 });
 
@@ -294,19 +294,10 @@ describe('RoomPosition look', () => {
 		});
 		await shard.tick();
 
-		const result = await shard.runPlayer('p1', code`
-			const items = new RoomPosition(25, 25, 'W1N1').look();
-			({
-				isArray: Array.isArray(items),
-				hasType: items.every(i => typeof i.type === 'string'),
-				types: items.map(i => i.type).sort(),
-			})
-		`) as { isArray: boolean; hasType: boolean; types: string[] };
-		expect(result.isArray).toBe(true);
-		expect(result.hasType).toBe(true);
-		// Should include at least terrain and the creep
-		expect(result.types).toContain('terrain');
-		expect(result.types).toContain('creep');
+		const types = await shard.runPlayer('p1', code`
+			new RoomPosition(25, 25, 'W1N1').look().map(i => i.type).sort()
+		`);
+		expect(types).toEqual([LOOK_CREEPS, LOOK_TERRAIN]);
 	});
 
 	test('ROOMPOS-LOOK-003 lookFor(type) returns an empty array when no entries exist', async ({ shard }) => {
@@ -323,24 +314,13 @@ describe('RoomPosition actions', () => {
 	test('ROOMPOS-ACTION-002 createFlag returns the flag name and creates the flag at the RoomPosition coordinates', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
-		// createFlag at a specific position. Returns the flag name on success.
+		// The flag is in Game.flags in the call's own tick.
 		const result = await shard.runPlayer('p1', code`
 			const rc = new RoomPosition(30, 30, 'W1N1').createFlag('testFlag');
-			rc
-		`);
-		// createFlag returns the flag name string on success.
-		expect(result).toBe('testFlag');
-
-		// Verify the flag exists at the correct position in the same tick.
-		const flagCheck = await shard.runPlayer('p1', code`
 			const flag = Game.flags['testFlag'];
-			flag ? ({ name: flag.name, x: flag.pos.x, y: flag.pos.y, roomName: flag.pos.roomName }) : null
-		`) as { name: string; x: number; y: number; roomName: string } | null;
-		expect(flagCheck).not.toBeNull();
-		expect(flagCheck!.name).toBe('testFlag');
-		expect(flagCheck!.x).toBe(30);
-		expect(flagCheck!.y).toBe(30);
-		expect(flagCheck!.roomName).toBe('W1N1');
+			({ rc, flag: { name: flag.name, x: flag.pos.x, y: flag.pos.y, roomName: flag.pos.roomName } })
+		`);
+		expect(result).toEqual({ rc: 'testFlag', flag: { name: 'testFlag', x: 30, y: 30, roomName: 'W1N1' } });
 	});
 
 	test('ROOMPOS-ACTION-001 createConstructionSite returns OK and creates the site on the next tick', async ({ shard }) => {
@@ -353,7 +333,6 @@ describe('RoomPosition actions', () => {
 			new RoomPosition(30, 30, 'W1N1').createConstructionSite(STRUCTURE_ROAD)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const sites = await shard.findInRoom('W1N1', FIND_CONSTRUCTION_SITES);
 		const road = sites.find(s => s.structureType === STRUCTURE_ROAD && s.pos.x === 30 && s.pos.y === 30);

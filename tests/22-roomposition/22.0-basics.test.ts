@@ -5,15 +5,32 @@ import { describe, test, expect, code,
 } from '../../src/index.js';
 
 describe('RoomPosition basics', () => {
-	test('ROOMPOS-001 RoomPosition exposes x, y, and roomName', async ({ shard }) => {
+	test('ROOMPOS-001 RoomPosition exposes x, y, and roomName, bounded to 0..49', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 
 		const result = await shard.runPlayer('p1', code`
 			const pos = new RoomPosition(10, 20, 'W1N1');
-			({ x: pos.x, y: pos.y, roomName: pos.roomName })
-		`) as { x: number; y: number; roomName: string };
+			const thrown = attempt => { try { attempt(); return false; } catch (e) { return e instanceof Error; } };
+			const edge = new RoomPosition(0, 49, 'W1N1');
+			edge.x = 49;
+			edge.y = 0;
+			({
+				pos: { x: pos.x, y: pos.y, roomName: pos.roomName },
+				edge: { x: edge.x, y: edge.y },
+				thrown: [
+					thrown(() => new RoomPosition(-1, 20, 'W1N1')),
+					thrown(() => new RoomPosition(10, 50, 'W1N1')),
+					thrown(() => { pos.x = 50; }),
+					thrown(() => { pos.y = -1; }),
+				],
+			})
+		`);
 
-		expect(result).toEqual({ x: 10, y: 20, roomName: 'W1N1' });
+		expect(result).toEqual({
+			pos: { x: 10, y: 20, roomName: 'W1N1' },
+			edge: { x: 49, y: 0 },
+			thrown: [true, true, true, true],
+		});
 	});
 });
 
@@ -56,8 +73,8 @@ describe('RoomPosition find helpers', () => {
 	});
 });
 
-describe('Room look APIs', () => {
-	test('ROOMPOS-LOOK-002 lookForAt(type, x, y) returns only entries of the requested LOOK_* type at that position', async ({ shard }) => {
+describe('RoomPosition look APIs', () => {
+	test('ROOMPOS-LOOK-002 RoomPosition.lookFor(type) returns only that type\'s entries, [] when there are none', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1', body: [MOVE], name: 'LookTest',
@@ -65,13 +82,10 @@ describe('Room look APIs', () => {
 		await shard.tick();
 
 		const result = await shard.runPlayer('p1', code`
-			({
-				creeps: Game.rooms['W1N1'].lookForAt(LOOK_CREEPS, 25, 25).map(c => c.name),
-				structures: Game.rooms['W1N1'].lookForAt(LOOK_STRUCTURES, 25, 25).length,
-			})
-		`) as { creeps: string[]; structures: number };
+			const pos = new RoomPosition(25, 25, 'W1N1');
+			({ creeps: pos.lookFor(LOOK_CREEPS).map(c => c.name), structures: pos.lookFor(LOOK_STRUCTURES) })
+		`);
 
-		expect(result.creeps).toEqual(['LookTest']);
-		expect(result.structures).toBe(0);
+		expect(result).toEqual({ creeps: ['LookTest'], structures: [] });
 	});
 });

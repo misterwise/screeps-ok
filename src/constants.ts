@@ -327,6 +327,7 @@ export const GCL_MULTIPLY: number = C.GCL_MULTIPLY;
 export const GCL_POW: number = C.GCL_POW;
 export const POWER_LEVEL_MULTIPLY: number = C.POWER_LEVEL_MULTIPLY;
 export const POWER_LEVEL_POW: number = C.POWER_LEVEL_POW;
+export const GCL_NOVICE: number = C.GCL_NOVICE;
 export const POWER_CLASS: { OPERATOR: string } = C.POWER_CLASS;
 export const POWER_CREEP_LIFE_TIME: number = C.POWER_CREEP_LIFE_TIME;
 export const POWER_SPAWN_ENERGY_RATIO: number = C.POWER_SPAWN_ENERGY_RATIO;

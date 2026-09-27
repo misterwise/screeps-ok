@@ -17,7 +17,7 @@ describe('creep.build()', () => {
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25],
 			owner: 'p1',
-			body: [WORK, CARRY, MOVE],
+			body: [WORK, WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
@@ -34,10 +34,8 @@ describe('creep.build()', () => {
 		`);
 		expect(returnCode).toBe(OK);
 
-		await shard.tick();
-
 		const site = await shard.expectObject(siteId, 'site');
-		expect(site.progress).toBe(BUILD_POWER);
+		expect(site.progress).toBe(2 * BUILD_POWER);
 	});
 
 	test('BUILD-002 spends 1 energy per build progress point', async ({ shard }) => {

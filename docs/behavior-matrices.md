@@ -497,9 +497,8 @@ checks both. Each definition has these fields, in this order:
 - `Exclusions`
   The upgrade amount per tick, and level-up (`CTRL-UPGRADE-012`)
 - `Verification Notes`
-  The test (`tests/06-controller/6.4-upgrade.test.ts`) still compares
-  `CONTROLLER_LEVELS` with a literal table and never reads a controller, so
-  no engine runs the row yet.
+  The case list (levels 1-8) is inline in
+  `tests/06-controller/6.4-upgrade.test.ts`, keyed `:level1` … `:level8`.
 
 ### TOWER-RANGE
 
@@ -2150,16 +2149,18 @@ checks both. Each definition has these fields, in this order:
   validity (already owned/reserved/no controller), and range.
 - `Exclusions`
   Successful claim side-effects (`safeModeAvailable`, downgrade timer
-  reset) — owned by separate `CTRL-CLAIM-*` entries. The novice-room
-  `ERR_FULL` branch is not in the executable matrix because that room status
-  is not exposed by the public fixture API, nor is another player's safe
-  mode (`ERR_NO_BODYPART`) after the controller checks. An owned and a
+  reset) — owned by separate `CTRL-CLAIM-*` entries. Another player's safe
+  mode (`ERR_NO_BODYPART`) after the controller checks is unreachable: a
+  safe-moded controller is owned. An owned and a
   reserved controller exclude each other, and an invalid target excludes
-  both, properties of the controller it replaces. A spawning creep's room is
-  its owner's, so busy's controller is already owned.
+  both, properties of the controller it replaces, as a container (no
+  controller) does. A spawning creep's room is its owner's, so busy's
+  controller is already owned.
 - `Verification Notes`
-  A reservation is made in-test with `reserveController`. The executable
-  case list lives in `src/matrices/ctrl-claim-validation.ts`.
+  A reservation is made in-test with `reserveController`. `:novice` needs
+  `roomStatus`: `RoomSpec.status` makes the claimer's room a novice area and
+  p1 owns `GCL_NOVICE` rooms. The executable case list lives in
+  `src/matrices/ctrl-claim-validation.ts`.
 
 ### CTRL-RESERVE-VALIDATION
 
@@ -2181,8 +2182,8 @@ checks both. Each definition has these fields, in this order:
   Reservation-reduction (handled via `attackController`), owned by
   `CTRL-RESERVE-007`. An owned and a reserved controller exclude each
   other, and an invalid target excludes both, properties of the controller it
-  replaces. A spawning creep's room is its owner's, so busy's controller is
-  already owned.
+  replaces, as a container (no controller) does. A spawning creep's room is
+  its owner's, so busy's controller is already owned.
 - `Verification Notes`
   A reservation is made in-test with `reserveController`. The executable
   case list lives in `src/matrices/ctrl-reserve-validation.ts`.
@@ -2540,11 +2541,13 @@ checks both. Each definition has these fields, in this order:
   `CONSTRUCTION-SITE-012`/`-013`, and structure stacking by
   `CONSTRUCTION-SITE-017`. Pairs whose two conditions set the same thing
   (the coordinate, the type, the controller's owner, the tile) are
-  excluded. Not yet listed: a spawn name another spawn or spawn site holds,
-  or one created earlier in the tick (`ERR_INVALID_ARGS`,
-  `game/rooms.js:1045-1050`).
+  excluded, as are the spawn-name conditions with a type that isn't a spawn,
+  with each other, and with a name too long for any create to have taken
+  (`game/rooms.js:1041-1051`).
 - `Verification Notes`
-  A reservation is made in-test with `reserveController`, and the player
+  A name created this tick is taken by a create in a second room the player
+  owns, in the same snippet. A reservation is made in-test with
+  `reserveController`, and the player
   reads `controller.reservation` before the call (see
   `CONSTRUCTION-SITE-013`'s test). `:wallTerrain` needs `terrain`. The
   executable case list lives in

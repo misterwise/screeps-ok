@@ -102,7 +102,19 @@
 			"actual": "`Room.createConstructionSite` (`mods/classic/construction/room.ts:49`) builds `new RoomPosition(xx, yy, this.name)` before validating, so an out-of-room coordinate throws `Invalid arguments in RoomPosition constructor`.",
 			"expected": "Vanilla returns `ERR_INVALID_ARGS` for an undefined or out-of-room coordinate, before any other check (`game/rooms.js:1032-1034`).",
 			"why": "Found 2026-09-26 when CONSTRUCTION-SITE-011 took vanilla's first check as a condition; no row had owned it.",
-			"tests": ["CONSTRUCTION-SITE-011:invalidCoords", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation", "CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull"]
+			"tests": ["CONSTRUCTION-SITE-011:invalidCoords", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNameCreatedThisTick", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNameTaken", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation", "CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull"]
+		},
+		"claim-reserve-controller-type-checked-first": {
+			"actual": "`checkClaimController` and `checkReserveController` (`mods/classic/controller/creep.ts:164-205`) run `checkTarget(target, StructureController)` before the CLAIM part and range, so a structure that isn't a controller returns `ERR_INVALID_TARGET` from a creep with no CLAIM part or out of range.",
+			"expected": "Vanilla checks a target is any structure first, then the CLAIM part (claim only) and range, and only then that it is a controller (`game/creeps.js:856-868`, `:963-972`), returning `ERR_NO_BODYPART` or `ERR_NOT_IN_RANGE`.",
+			"why": "Found 2026-09-27 when CTRL-CLAIM-008 and CTRL-RESERVE-008 took vanilla's not-a-controller branch as a condition (Decision 28).",
+			"tests": ["CTRL-CLAIM-008:noBodypartBeforeNotController", "CTRL-CLAIM-008:rangeBeforeNotController", "CTRL-RESERVE-008:rangeBeforeNotController"]
+		},
+		"construction-site-name-created-returns-name-exists": {
+			"actual": "`Room.createConstructionSite` (`mods/classic/construction/room.ts:59-64`) returns `ERR_NAME_EXISTS` for a spawn name an earlier call took this tick, and records the name before `checkCreateConstructionSite` runs, so a create that then fails still takes it.",
+			"expected": "Vanilla returns `ERR_INVALID_ARGS` for a name created earlier in the tick (`game/rooms.js:1045-1047`), and records a name only when the create succeeds (`:1088`).",
+			"why": "Found 2026-09-27 when CONSTRUCTION-SITE-011 took vanilla's spawn-name branches as conditions (Decision 28).",
+			"tests": ["CONSTRUCTION-SITE-011:nameCreatedThisTick", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeNotOwner", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeHostileReservation", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeInvalidTarget", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeWallTerrain", "CONSTRUCTION-SITE-011:nameCreatedThisTickBeforeSiteCapFull"]
 		},
 		"destroy-ignores-hostile-power-creeps": {
 			"actual": "`checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`.",

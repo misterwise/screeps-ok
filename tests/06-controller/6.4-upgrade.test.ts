@@ -9,23 +9,23 @@ import { ctrlUpgradeValidationCases } from '../../src/matrices/ctrl-upgrade-vali
 import { spawnBusyCreep } from '../intent-validation-helpers.js';
 
 describe('creep.upgradeController()', () => {
-	test('CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy', async ({ shard }) => {
+	test('CTRL-UPGRADE-001 each WORK part adds UPGRADE_CONTROLLER_POWER progress per tick', async ({ shard }) => {
 		await shard.ownedRoom('p1');
 		const ctrlPos = await shard.getControllerPos('W1N1');
 
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: [WORK, CARRY, MOVE],
+			body: [WORK, WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
 			const creep = Game.getObjectById(${creepId});
-			const ctrl = creep.room.controller;
-			creep.upgradeController(ctrl)
+			creep.upgradeController(creep.room.controller)
 		`);
 		expect(rc).toBe(OK);
+		expect(await shard.runPlayer('p1', code`Game.rooms.W1N1.controller.progress`)).toBe(2 * UPGRADE_CONTROLLER_POWER);
 	});
 
 	test('CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick', async ({ shard }) => {
@@ -108,19 +108,13 @@ describe('creep.upgradeController()', () => {
 		expect(creep.store.energy).toBe(100 - CONTROLLER_MAX_UPGRADE_PER_TICK);
 	});
 
-	test('CTRL-UPGRADE-007 CONTROLLER_LEVELS progress thresholds match the canonical table', () => {
-		// Matrix: verify the @screeps/common-sourced table matches the
-		// documented thresholds. This oracle check does not need a shard.
-		expect(CONTROLLER_LEVELS).toEqual({
-			1: 200,
-			2: 45_000,
-			3: 135_000,
-			4: 405_000,
-			5: 1_215_000,
-			6: 3_645_000,
-			7: 10_935_000,
+	for (const level of [1, 2, 3, 4, 5, 6, 7, 8]) {
+		test(`CTRL-UPGRADE-007:level${level} progressTotal reads ${level < 8 ? 'CONTROLLER_LEVELS[level]' : 'undefined'} at level ${level}`, async ({ shard }) => {
+			await shard.ownedRoom('p1', 'W1N1', level);
+			expect(await shard.runPlayer('p1', code`Game.rooms.W1N1.controller.progressTotal`))
+				.toBe(level < 8 ? CONTROLLER_LEVELS[level] : null);
 		});
-	});
+	}
 
 	test('CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress', async ({ shard }) => {
 		await shard.ownedRoom('p1');
@@ -257,17 +251,15 @@ describe('creep.upgradeController()', () => {
 	});
 
 	test('CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold', async ({ shard }) => {
-		// Engine upgradeController.js:63-74 — when progress + boostedEffect crosses
-		// CONTROLLER_LEVELS[level], the controller advances to level+1 and progress
-		// resets to (progress + boostedEffect - nextLevelProgress). RCL 1 threshold
-		// is 200; a 25-WORK creep upgrading 8 ticks crosses it.
+		// Engine upgradeController.js:63-74: crossing CONTROLLER_LEVELS[level] advances the
+		// level and keeps progress + effect - threshold. 30 WORK over 7 upgrades is 210.
 		await shard.ownedRoom('p1', 'W1N1', 1);
 		const ctrlPos = await shard.getControllerPos('W1N1');
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: body(25, WORK, CARRY, MOVE),
-			store: { energy: 500 },
+			body: body(30, WORK, 5, CARRY, MOVE),
+			store: { energy: 250 },
 		});
 
 		const levelBefore = await shard.runPlayer('p1', code`
@@ -275,8 +267,7 @@ describe('creep.upgradeController()', () => {
 		`) as number;
 		expect(levelBefore).toBe(1);
 
-		// 25 WORK × 8 upgrades = 200 progress, exactly the RCL 1 threshold.
-		for (let i = 0; i < 8; i++) {
+		for (let i = 0; i < 7; i++) {
 			await shard.runPlayer('p1', code`
 				Game.getObjectById(${creepId}).upgradeController(
 					Game.rooms['W1N1'].controller
@@ -288,9 +279,7 @@ describe('creep.upgradeController()', () => {
 			level: Game.rooms['W1N1'].controller.level,
 			progress: Game.rooms['W1N1'].controller.progress,
 		})`) as { level: number; progress: number };
-		expect(result.level).toBe(2);
-		// Exactly the threshold was spent, so no overflow carries into RCL 2.
-		expect(result.progress).toBe(0);
+		expect(result).toEqual({ level: 2, progress: 7 * 30 * UPGRADE_CONTROLLER_POWER - CONTROLLER_LEVELS[1] });
 	});
 
 	test('CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold', async ({ shard }) => {

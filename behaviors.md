@@ -722,7 +722,8 @@ Coverage Notes
 - `DISMANTLE-001` `behavior` `verified_vanilla`
   Each WORK part dismantles 50 hits per tick from a structure.
 - `DISMANTLE-002` `behavior` `verified_vanilla`
-  Dismantling returns 0.25 energy per hit to the creep's store.
+  Dismantling puts `floor(hits dismantled × DISMANTLE_COST)` energy in the
+  creep's store: `DISMANTLE_POWER × DISMANTLE_COST` (0.25) per WORK part.
 - `DISMANTLE-004` `behavior` `verified_vanilla`
   When a rampart covers the target tile, `dismantle()` damage is redirected
   to the rampart instead of the underlying structure (same redirect as
@@ -777,7 +778,9 @@ Coverage Notes
   first failing check's code, in this order: `:invalidCoords` a coordinate
   is outside 0-49, `:invalidType` the type isn't in `CONSTRUCTION_COST`, or
   `:invalidArgs` a spawn's name is longer than 100 characters,
-  `ERR_INVALID_ARGS`; `:notOwner` another player owns the room's
+  `:nameCreatedThisTick` an earlier call this tick took it, or `:nameTaken`
+  a spawn or spawn site has it, `ERR_INVALID_ARGS`; `:notOwner` another
+  player owns the room's
   controller, or `:hostileReservation` reserves it, for any type,
   `ERR_NOT_OWNER`; `:rclOrStructureCap` the room's level allows no more of
   the type, `ERR_RCL_NOT_ENOUGH`; `:invalidTarget` a construction site
@@ -852,10 +855,12 @@ Coverage Notes
   `creep.claimController(target)` returns the first failing check's code, in
   this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
   `:busy` it is spawning, `ERR_BUSY`; `:gclNotEnough` the player's GCL allows
-  no more rooms, `ERR_GCL_NOT_ENOUGH`; `:invalidTarget` the target isn't a
-  structure, `ERR_INVALID_TARGET`; `:noBodypart` the creep has no active CLAIM
-  part, `ERR_NO_BODYPART`; `:range` the controller isn't adjacent,
-  `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is owned, or
+  no more rooms, `ERR_GCL_NOT_ENOUGH`; `:novice` the player owns
+  `GCL_NOVICE` rooms and the creep stands in a novice area, `ERR_FULL`;
+  `:invalidTarget` the target isn't a structure, `ERR_INVALID_TARGET`;
+  `:noBodypart` the creep has no active CLAIM part, `ERR_NO_BODYPART`;
+  `:range` the target isn't adjacent, `ERR_NOT_IN_RANGE`; `:notController` it
+  isn't a controller, `:invalidControllerState` it is owned, or
   `:hostileReservation` another player reserves it, `ERR_INVALID_TARGET`.
 
 ### 6.2 Reserve Controller
@@ -877,10 +882,11 @@ Coverage Notes
   `creep.reserveController(target)` returns the first failing check's code, in
   this order: `:notOwner` the creep isn't the player's, `ERR_NOT_OWNER`;
   `:busy` it is spawning, `ERR_BUSY`; `:invalidTarget` the target isn't a
-  structure, `ERR_INVALID_TARGET`; `:range` the controller isn't adjacent,
-  `ERR_NOT_IN_RANGE`; `:invalidControllerState` it is owned, or
-  `:hostileReservation` another player reserves it, `ERR_INVALID_TARGET`;
-  `:noBodypart` the creep has no active CLAIM part, `ERR_NO_BODYPART`.
+  structure, `ERR_INVALID_TARGET`; `:range` the target isn't adjacent,
+  `ERR_NOT_IN_RANGE`; `:notController` it isn't a controller,
+  `:invalidControllerState` it is owned, or `:hostileReservation` another
+  player reserves it, `ERR_INVALID_TARGET`; `:noBodypart` the creep has no
+  active CLAIM part, `ERR_NO_BODYPART`.
 - `CTRL-RESERVE-009` `behavior` `verified_vanilla`
   Renewing an existing reservation credits exactly `CONTROLLER_RESERVE` (1)
   tick per CLAIM part and nothing else, so against the 1-per-tick decay of
@@ -893,7 +899,7 @@ Coverage Notes
   The `CONTROLLER_RESERVE_MAX` cap rejects rather than clamps: a reserve
   intent whose full credit would push `endTime` past
   `gameTime + CONTROLLER_RESERVE_MAX` is dropped entirely (no `endTime`
-  change, no actionLog entry, no event), and the timer decays that tick. So
+  change, no `EVENT_RESERVE_CONTROLLER`), and the timer decays that tick. So
   player-visible `ticksToEnd` never reads `CONTROLLER_RESERVE_MAX` itself, and
   a renewer crediting more than 1 per tick cannot hold the timer flat at the
   ceiling — it sawtooths (`4999, 4998, 4999, …` for two CLAIM parts). (Engine
@@ -995,8 +1001,8 @@ Coverage Notes
 
 ### 6.6 Generate Safe Mode
 - `CTRL-GENSAFE-001` `behavior` `verified_vanilla`
-  `generateSafeMode()` requires 1000 ghodium (SAFE_MODE_COST) in the creep's
-  store.
+  A successful `generateSafeMode()` takes `SAFE_MODE_COST` (1000) ghodium from
+  the creep's store.
 - `CTRL-GENSAFE-003` `behavior` `verified_vanilla`
   On success, increments the controller's safeModeAvailable count.
 - `CTRL-GENSAFE-005` `matrix` `verified_vanilla`
@@ -1020,10 +1026,12 @@ Coverage Notes
 - `CTRL-DOWNGRADE-006` `behavior` `verified_vanilla`
   On downgrade from level N > 1 to N-1, the controller's `progress` is
   incremented by `Math.round(CONTROLLER_LEVELS[N-1] * 0.9)` (a head start
-  toward re-upgrading); progress is only cleared to 0 when the controller
-  drops to level 0 (unowned).
+  toward re-upgrading).
 - `CTRL-DOWNGRADE-007` `behavior` `verified_vanilla`
-  The controller can downgrade through multiple levels if neglected.
+  A level loss re-arms the downgrade timer rather than resetting it: after
+  losing a level to N, `ticksToDowngrade` reads what remained plus
+  `CONTROLLER_DOWNGRADE[N] / 2 + 1`, so a neglected controller loses its next
+  level that much later (`processor/intents/controllers/tick.js:65`).
 - `CTRL-DOWNGRADE-009` `behavior` `verified_vanilla`
   Every downgrade step, to level 0 included, resets the controller's
   `safeModeAvailable` to 0.
@@ -3309,7 +3317,9 @@ Notes
 ### 22.1 Construction & Properties
 - `ROOMPOS-001` `behavior` `verified_vanilla`
   `new RoomPosition(x, y, roomName)` exposes `x`, `y`, and `roomName`, and
-  coordinates are bounded to the inclusive `0..49` range.
+  coordinates are bounded to the inclusive `0..49` range: the constructor,
+  and setting `x` or `y`, throws an `Error` for one outside it
+  (`game/rooms.js:1280-1318`).
 
 ### 22.2 Spatial Queries
 - `ROOMPOS-SPATIAL-001` `behavior` `verified_vanilla`

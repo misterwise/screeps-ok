@@ -18,7 +18,7 @@ describe('creep.dismantle()', () => {
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [WORK, MOVE],
+			body: [WORK, WORK, MOVE],
 		});
 		const wallId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_WALL,
@@ -29,10 +29,9 @@ describe('creep.dismantle()', () => {
 			Game.getObjectById(${creepId}).dismantle(Game.getObjectById(${wallId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const wall = await shard.expectObject(wallId, 'structure');
-		expect(wall.hits).toBe(1000 - DISMANTLE_POWER);
+		expect(wall.hits).toBe(1000 - 2 * DISMANTLE_POWER);
 	});
 
 	test('DISMANTLE-002 energy gain is floor(damage * DISMANTLE_COST)', async ({ shard }) => {
@@ -40,23 +39,22 @@ describe('creep.dismantle()', () => {
 			players: ['p1'],
 			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
 		});
+		// Ten WORK parts dismantle 500 hits: 2.5 energy, floored to 2.
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [WORK, WORK, CARRY, MOVE],
+			body: [...body(10, WORK), CARRY, MOVE],
 		});
 		const wallId = await shard.placeStructure('W1N1', {
 			pos: [25, 26], structureType: STRUCTURE_WALL,
 			owner: 'p1', hits: 1000,
 		});
 
-		await shard.runPlayer('p1', code`
+		expect(await shard.runPlayer('p1', code`
 			Game.getObjectById(${creepId}).dismantle(Game.getObjectById(${wallId}))
-		`);
-		await shard.tick();
+		`)).toBe(OK);
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// floor(2 * DISMANTLE_POWER * DISMANTLE_COST) = floor(100 * 0.005) = 0
-		expect(creep.store?.energy ?? 0).toBe(Math.floor(2 * DISMANTLE_POWER * DISMANTLE_COST));
+		expect(creep.store.energy).toBe(Math.floor(10 * DISMANTLE_POWER * DISMANTLE_COST));
 	});
 
 	test('DISMANTLE-004 damage is redirected to a rampart on the target tile', async ({ shard }) => {

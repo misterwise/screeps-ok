@@ -1082,7 +1082,8 @@ class VanillaAdapter implements ScreepsOkAdapter {
 			hitsMax: body.length * 100,
 			fatigue: 0,
 			spawning: false,
-			store: spec.store ?? {},
+			// A spawned creep's record starts with energy 0 (create-creep.js:84); processors add to it.
+			store: { energy: 0, ...spec.store },
 			storeCapacity,
 			ageTime: gameTime + (spec.ticksToLive ?? C.CREEP_LIFE_TIME),
 			actionLog: {},

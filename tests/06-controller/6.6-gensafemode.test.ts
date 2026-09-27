@@ -1,4 +1,4 @@
-import { describe, test, expect, code,
+import { describe, test, expect, code, body,
 	OK,
 	MOVE, CARRY,
 	RESOURCE_GHODIUM,
@@ -15,11 +15,8 @@ describe('creep.generateSafeMode()', () => {
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [ctrlPos!.x + 1, ctrlPos!.y],
 			owner: 'p1',
-			body: [CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY,
-				CARRY, CARRY, CARRY, CARRY, CARRY, MOVE],
-			store: { G: SAFE_MODE_COST },
+			body: body(20, CARRY, MOVE),
+			store: { [RESOURCE_GHODIUM]: SAFE_MODE_COST },
 		});
 
 		const rc = await shard.runPlayer('p1', code`
@@ -28,10 +25,9 @@ describe('creep.generateSafeMode()', () => {
 			)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		expect(creep.store.G ?? 0).toBe(0);
+		expect(creep.store).toEqual({});
 	});
 
 	test('CTRL-GENSAFE-003 generateSafeMode increments the controller\'s safeModeAvailable', async ({ shard }) => {

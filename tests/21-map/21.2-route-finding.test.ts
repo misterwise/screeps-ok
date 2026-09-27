@@ -13,13 +13,11 @@ describe('Game.map route finding', () => {
 			],
 		});
 
+		// W1N2 is north of W1N1.
 		const route = await shard.runPlayer('p1', code`
 			Game.map.findRoute('W1N1', 'W1N2')
-		`) as Array<{ exit: number; room: string }>;
-		expect(Array.isArray(route)).toBe(true);
-		expect(route.length).toBe(1);
-		expect(route[0]).toHaveProperty('exit');
-		expect(route[0]).toHaveProperty('room');
+		`);
+		expect(route).toEqual([{ exit: FIND_EXIT_TOP, room: 'W1N2' }]);
 	});
 
 	test('MAP-ROUTE-002 findRoute returns ERR_NO_PATH for an invalid room name', async ({ shard }) => {

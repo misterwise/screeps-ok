@@ -1,38 +1,10 @@
 import { describe, test, expect, code,
 	OK, ERR_RCL_NOT_ENOUGH,
 	BODYPART_HITS, MOVE,
-	STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_LINK,
-	STRUCTURE_LAB, STRUCTURE_EXTRACTOR, STRUCTURE_TERMINAL, STRUCTURE_OBSERVER,
-	STRUCTURE_SPAWN, STRUCTURE_ROAD, STRUCTURE_CONTAINER,
-	CONTROLLER_STRUCTURES,
+	STRUCTURE_TOWER, STRUCTURE_ROAD, STRUCTURE_CONTAINER,
 } from '../../src/index.js';
 
 describe('Structure isActive()', () => {
-	test('CTRL-STRUCTLIMIT-001:closestFirst isActive returns true only for allowed structures at the current RCL', async ({ shard }) => {
-		// At RCL 2, exactly the allowed number of closest same-type structures are active.
-		await shard.ownedRoom('p1', 'W1N1', 2);
-		const limit = CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][2];
-		const ids: string[] = [];
-		for (let i = 0; i < limit + 1; i++) {
-			ids.push(await shard.placeStructure('W1N1', {
-				pos: [5 + i, 5], structureType: STRUCTURE_EXTENSION, owner: 'p1',
-			}));
-		}
-		await shard.tick();
-
-		const result = await shard.runPlayer('p1', code`
-			const ids = ${ids};
-			({
-				activeIds: ids.filter(id => Game.getObjectById(id).isActive()),
-				inactiveIds: ids.filter(id => !Game.getObjectById(id).isActive()),
-			})
-		`) as { activeIds: string[]; inactiveIds: string[] };
-		expect(result).toEqual({
-			activeIds: ids.slice(0, limit),
-			inactiveIds: ids.slice(limit),
-		});
-	});
-
 	test('STRUCTURE-ACTIVE-002 inactive structures reject gated gameplay actions', async ({ shard }) => {
 		// Place a tower at RCL 2 (towers require RCL 3) and verify a gated action rejects.
 		await shard.createShard({
@@ -61,22 +33,6 @@ describe('Structure isActive()', () => {
 		expect(target.hits).toBe(BODYPART_HITS);
 	});
 
-	test('CTRL-STRUCTLIMIT-002 a structure becomes active again when RCL satisfies its requirements', async ({ shard }) => {
-		// Tower at RCL 2 is inactive; at RCL 3 it becomes active.
-		// We test at RCL 3 directly — the CTRL-STRUCTLIMIT-002 matrix already
-		// proves inactive at RCL 2. Here we confirm the transition to active.
-		await shard.ownedRoom('p1', 'W1N1', 3);
-		const id = await shard.placeStructure('W1N1', {
-			pos: [25, 25], structureType: STRUCTURE_TOWER, owner: 'p1',
-		});
-		await shard.tick();
-
-		const active = await shard.runPlayer('p1', code`
-			Game.getObjectById(${id}).isActive()
-		`);
-		expect(active).toBe(true);
-	});
-
 	test('STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive', async ({ shard }) => {
 		// Roads and containers have no controller structure limit.
 		await shard.ownedRoom('p1', 'W1N1', 1);
@@ -88,13 +44,14 @@ describe('Structure isActive()', () => {
 		});
 		await shard.tick();
 
+		// A controller is owned but has no CONTROLLER_STRUCTURES entry (game/structures.js:112).
 		const results = await shard.runPlayer('p1', code`
 			({
 				road: Game.getObjectById(${roadId}).isActive(),
 				container: Game.getObjectById(${containerId}).isActive(),
+				controller: Game.rooms.W1N1.controller.isActive(),
 			})
-		`) as { road: boolean; container: boolean };
-		expect(results.road).toBe(true);
-		expect(results.container).toBe(true);
+		`);
+		expect(results).toEqual({ road: true, container: true, controller: true });
 	});
 });

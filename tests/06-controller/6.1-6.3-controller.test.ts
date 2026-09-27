@@ -3,7 +3,7 @@ import { describe, test, expect, code,
 	CLAIM, MOVE,
 	STRUCTURE_CONTAINER,
 	CONTROLLER_ATTACK_BLOCKED_UPGRADE, CONTROLLER_CLAIM_DOWNGRADE,
-	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX, SAFE_MODE_DURATION,
+	CONTROLLER_RESERVE, CONTROLLER_RESERVE_MAX, SAFE_MODE_DURATION, GCL_NOVICE,
 } from '../../src/index.js';
 import type { ShardFixture } from '../../src/fixture.js';
 import { ctrlAttackValidationCases } from '../../src/matrices/ctrl-attack-validation.js';
@@ -63,22 +63,12 @@ describe('controller mechanics', () => {
 			creep.signController(creep.room.controller, 'screeps-ok was here')
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const sign = await shard.runPlayer('p1', code`
-			const actor = Game.getObjectById(${creepId});
 			const sign = Game.rooms['W1N1'].controller.sign;
-			sign ? ({
-				text: sign.text,
-				owner: sign.username ?? sign.owner?.username ?? sign.owner,
-				expectedOwner: actor.owner.username,
-			}) : null
-		`) as { text: string; owner: string; expectedOwner: string } | null;
-		expect(sign).toEqual({
-			text: 'screeps-ok was here',
-			owner: sign?.expectedOwner,
-			expectedOwner: sign?.expectedOwner,
-		});
+			({ text: sign.text, username: sign.username, player: Game.getObjectById(${creepId}).owner.username })
+		`) as { text: string; username: string; player: string };
+		expect(sign).toEqual({ text: 'screeps-ok was here', username: sign.player, player: sign.player });
 	});
 
 	test('CTRL-RESERVE-001 reserveController returns OK and creates a reservation for the player', async ({ shard }) => {
@@ -104,20 +94,14 @@ describe('controller mechanics', () => {
 			creep.reserveController(creep.room.controller)
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
+		// The next tick; the exact length is CTRL-RESERVE-011's.
 		const reservation = await shard.runPlayer('p1', code`
-			const actor = Game.getObjectById(${creepId});
 			const reservation = Game.rooms['W2N1'].controller.reservation;
-			reservation ? ({
-				owner: reservation.username ?? reservation.owner?.username ?? reservation.owner,
-				expectedOwner: actor.owner.username,
-				ticksToEnd: reservation.ticksToEnd,
-			}) : null
-		`) as { owner: string; expectedOwner: string; ticksToEnd: number } | null;
-		expect(reservation).not.toBeNull();
-		expect(reservation?.owner).toBe(reservation?.expectedOwner);
-		expect((reservation?.ticksToEnd ?? 0)).toBeGreaterThan(0);
+			({ username: reservation.username, player: Game.getObjectById(${creepId}).owner.username, ticksToEnd: reservation.ticksToEnd })
+		`) as { username: string; player: string; ticksToEnd: number };
+		expect(reservation.username).toBe(reservation.player);
+		expect(reservation.ticksToEnd).toBeGreaterThan(0);
 	});
 
 	test('CTRL-CLAIM-007 controller.my returns undefined on a never-owned controller', async ({ shard }) => {
@@ -160,12 +144,18 @@ describe('controller mechanics', () => {
 			// W2N1's controller is neutral, or reserved; W1N1's is owned, the
 			// invalid-controller-state form and all a spawning creep can reach.
 			const targetRoom = blockers.has('invalid-controller-state') || blockers.has('busy') && !reserved ? 'W1N1' : 'W2N1';
+			// Novice: the claimer's room is a novice area and p1 already owns GCL_NOVICE rooms.
+			const novice = blockers.has('novice');
+			if (novice) shard.requires('roomStatus');
+			const claimerRoom = blockers.has('busy') ? 'W1N1' : targetRoom;
+			const status = (room: string) => novice && room === claimerRoom ? { status: 'novice' as const } : {};
 			await shard.createShard({
 				players: blockers.has('gcl-not-enough') ? [{ name: 'p1', gcl: { level: 1 } }, 'p2'] : ['p1', 'p2'],
 				rooms: [
 					// RCL 3 affords the extensions a spawning CLAIM part needs.
-					{ name: 'W1N1', rcl: blockers.has('busy') ? 3 : 1, owner: roomOwner },
-					{ name: 'W2N1' },
+					{ name: 'W1N1', rcl: blockers.has('busy') ? 3 : 1, owner: roomOwner, ...status('W1N1') },
+					{ name: 'W2N1', ...status('W2N1') },
+					...Array.from({ length: novice ? GCL_NOVICE - 1 : 0 }, (_, i) => ({ name: `W${3 + i}N1`, rcl: 1, owner: 'p1' })),
 				],
 			});
 			if (reserved) await reserveRoom(shard, 'p2', 'W2N1');
@@ -185,17 +175,17 @@ describe('controller mechanics', () => {
 					owner,
 					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
 				});
-			const sourceId = blockers.has('invalid-target')
+			// Beside the claimer: a source is no structure, a container no controller.
+			const targetId = blockers.has('invalid-target')
 				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
-				: null;
+				: blockers.has('not-controller')
+					? await shard.placeStructure(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1], structureType: STRUCTURE_CONTAINER })
+					: null;
 
-			const rc = blockers.has('invalid-target')
-				? await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).claimController(Game.getObjectById(${sourceId}))
-				`)
-				: await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).claimController(Game.rooms[${targetRoom}].controller)
-				`);
+			const rc = await shard.runPlayer('p1', code`
+				const target = ${targetId} === null ? Game.rooms[${targetRoom}].controller : Game.getObjectById(${targetId});
+				Game.getObjectById(${creepId}).claimController(target)
+			`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}
@@ -423,22 +413,27 @@ describe('controller mechanics', () => {
 			`);
 		}
 
-		// Only the two-CLAIM renewer keeps reserving; read before each renewal.
+		// Only the two-CLAIM renewer keeps reserving; read before each renewal,
+		// with the reserve events the previous tick logged.
 		const readings: number[] = [];
+		const events: number[] = [];
 		for (let i = 0; i < 6; i++) {
 			const probe = await shard.runPlayer('p1', code`
-				const controller = Game.rooms['W2N1'].controller;
-				const ticksToEnd = controller.reservation.ticksToEnd;
-				const rc = Game.getObjectById(${renewerId}).reserveController(controller);
-				({ ticksToEnd, rc })
-			`) as { ticksToEnd: number; rc: number };
+				const room = Game.rooms['W2N1'];
+				const ticksToEnd = room.controller.reservation.ticksToEnd;
+				const logged = room.getEventLog().filter(e => e.event === EVENT_RESERVE_CONTROLLER).length;
+				const rc = Game.getObjectById(${renewerId}).reserveController(room.controller);
+				({ ticksToEnd, logged, rc })
+			`) as { ticksToEnd: number; logged: number; rc: number };
 			expect(probe.rc).toBe(OK);
 			readings.push(probe.ticksToEnd);
+			events.push(probe.logged);
 		}
-		// Saturated at MAX - 1: each overshooting renewal is refused and the
-		// timer decays, so the next one fits and restores it.
+		// Saturated at MAX - 1: each overshooting renewal is refused, logs nothing and
+		// the timer decays, so the next one fits, logs its event and restores it.
 		const peak = CONTROLLER_RESERVE_MAX - 1;
 		expect(readings).toEqual([peak, peak - 1, peak, peak - 1, peak, peak - 1]);
+		expect(events.slice(1)).toEqual([0, 1, 0, 1, 0]);
 	}, 60_000);
 
 	test('CTRL-RESERVE-011 a fresh reservation reads exactly its CLAIM credit as ticksToEnd', async ({ shard }) => {
@@ -509,17 +504,17 @@ describe('controller mechanics', () => {
 					owner,
 					body: blockers.has('no-bodypart') ? [MOVE] : [CLAIM, MOVE],
 				});
-			const sourceId = blockers.has('invalid-target')
+			// Beside the reserver: a source is no structure, a container no controller.
+			const targetId = blockers.has('invalid-target')
 				? await shard.placeSource(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1] })
-				: null;
+				: blockers.has('not-controller')
+					? await shard.placeStructure(targetRoom, { pos: [ctrlPos!.x + 1, ctrlPos!.y + 1], structureType: STRUCTURE_CONTAINER })
+					: null;
 
-			const rc = blockers.has('invalid-target')
-				? await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).reserveController(Game.getObjectById(${sourceId}))
-				`)
-				: await shard.runPlayer('p1', code`
-					Game.getObjectById(${creepId}).reserveController(Game.rooms[${targetRoom}].controller)
-				`);
+			const rc = await shard.runPlayer('p1', code`
+				const target = ${targetId} === null ? Game.rooms[${targetRoom}].controller : Game.getObjectById(${targetId});
+				Game.getObjectById(${creepId}).reserveController(target)
+			`);
 			expect(rc).toBe(row.expectedRc);
 		});
 	}

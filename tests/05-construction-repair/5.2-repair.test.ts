@@ -16,32 +16,7 @@ describe('creep.repair()', () => {
 		});
 		const creepId = await shard.placeCreep('W1N1', {
 			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
-			store: { energy: 50 },
-		});
-		const roadId = await shard.placeStructure('W1N1', {
-			pos: [25, 26], structureType: STRUCTURE_ROAD,
-			hits: 100, // damaged (max 5000)
-		});
-
-		const rc = await shard.runPlayer('p1', code`
-			Game.getObjectById(${creepId}).repair(Game.getObjectById(${roadId}))
-		`);
-		expect(rc).toBe(OK);
-		await shard.tick();
-
-		const road = await shard.expectObject(roadId, 'structure');
-		expect(road.hits).toBe(100 + REPAIR_POWER);
-	});
-
-	test('REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired', async ({ shard }) => {
-		await shard.createShard({
-			players: ['p1'],
-			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
-		});
-		const creepId = await shard.placeCreep('W1N1', {
-			pos: [25, 25], owner: 'p1',
-			body: [WORK, CARRY, MOVE],
+			body: [WORK, WORK, CARRY, MOVE],
 			store: { energy: 50 },
 		});
 		const roadId = await shard.placeStructure('W1N1', {
@@ -53,11 +28,33 @@ describe('creep.repair()', () => {
 			Game.getObjectById(${creepId}).repair(Game.getObjectById(${roadId}))
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
+
+		const road = await shard.expectObject(roadId, 'structure');
+		expect(road.hits).toBe(100 + 2 * REPAIR_POWER);
+	});
+
+	test('REPAIR-002 repairing spends 1 energy per REPAIR_POWER hits repaired', async ({ shard }) => {
+		await shard.createShard({
+			players: ['p1'],
+			rooms: [{ name: 'W1N1', rcl: 2, owner: 'p1' }],
+		});
+		const creepId = await shard.placeCreep('W1N1', {
+			pos: [25, 25], owner: 'p1',
+			body: [WORK, WORK, CARRY, MOVE],
+			store: { energy: 50 },
+		});
+		const roadId = await shard.placeStructure('W1N1', {
+			pos: [25, 26], structureType: STRUCTURE_ROAD,
+			hits: 100,
+		});
+
+		const rc = await shard.runPlayer('p1', code`
+			Game.getObjectById(${creepId}).repair(Game.getObjectById(${roadId}))
+		`);
+		expect(rc).toBe(OK);
 
 		const creep = await shard.expectObject(creepId, 'creep');
-		// Repair costs 1 energy per REPAIR_POWER hits repaired (1 WORK = 1 energy/tick)
-		expect(creep.store.energy).toBe(49);
+		expect(creep.store.energy).toBe(50 - 2 * REPAIR_POWER * REPAIR_COST);
 	});
 
 	test('REPAIR-005 repair() succeeds at Chebyshev range 3 and fails at range 4', async ({ shard }) => {

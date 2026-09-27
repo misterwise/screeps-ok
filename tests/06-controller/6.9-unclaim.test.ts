@@ -15,7 +15,8 @@ describe('StructureController.unclaim()', () => {
 		await shard.createShard({
 			players: ['p1'],
 			rooms: [
-				{ name: 'W1N1', rcl: 3, owner: 'p1' },
+				// Safe mode on, so its reset shows.
+				{ name: 'W1N1', rcl: 3, owner: 'p1', safeMode: 100 },
 				{ name: 'W2N1', rcl: 1, owner: 'p1' }, // keep p1 active
 			],
 		});
@@ -32,17 +33,15 @@ describe('StructureController.unclaim()', () => {
 			Game.rooms['W1N1'].controller.unclaim()
 		`);
 		expect(rc).toBe(OK);
-		await shard.tick();
 
 		const state = await shard.runPlayer('p1', code`
-			const ctrl = Game.rooms['W1N1']?.controller;
-			ctrl ? ({ level: ctrl.level, my: ctrl.my, owner: ctrl.owner?.username ?? null })
-			     : null
-		`) as { level: number; my: boolean; owner: string | null } | null;
-		expect(state).not.toBeNull();
-		expect(state!.level).toBe(0);
-		expect(state!.my).toBe(false);
-		expect(state!.owner).toBeNull();
+			const ctrl = Game.rooms['W1N1'].controller;
+			({
+				level: ctrl.level, my: ctrl.my, owner: ctrl.owner ?? null,
+				undefinedGetters: ['progress', 'ticksToDowngrade', 'safeMode'].filter(key => ctrl[key] === undefined),
+			})
+		`);
+		expect(state).toEqual({ level: 0, my: false, owner: null, undefinedGetters: ['progress', 'ticksToDowngrade', 'safeMode'] });
 
 		// The spawn still exists as a room object; no ruin is created.
 		const structures = await shard.findInRoom('W1N1', FIND_STRUCTURES);
