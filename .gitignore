@@ -10,6 +10,9 @@ server/
 # npm pack output
 *.tgz
 
-# Private agent docs (symlinked from ~/Coding/agent-docs)
+# Private, local-only agent docs
 .agent
 CLAUDE.local.md
+
+# A clone's own checks, which .githooks/pre-commit runs when present
+.githooks/pre-commit.local

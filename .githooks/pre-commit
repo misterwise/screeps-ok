@@ -29,6 +29,11 @@ if ! (cd "$snapshot" && node scripts/check.js); then
 	exit 1
 fi
 
+# A clone's own untracked checks, if it has any.
+if [[ -x .githooks/pre-commit.local ]] && ! .githooks/pre-commit.local; then
+	exit 1
+fi
+
 in_snapshot() { git --work-tree="$snapshot" "$@"; }
 generated=(README.md docs/status.md docs/coverage.html starter parity)
 

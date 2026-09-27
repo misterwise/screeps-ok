@@ -7,6 +7,7 @@ do not need every document in `docs/`.
 
 - New to the repo: [`../README.md`](../README.md)
 - Setting up or opening a PR: [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
+- Working through a coding agent: [`../AGENTS.md`](../AGENTS.md)
 
 ## Public Reference Docs
 

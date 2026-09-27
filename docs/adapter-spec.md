@@ -20,6 +20,8 @@ The adapter must not:
 - expose engine-private objects or references to tests
 - reimplement gameplay semantics that belong in the engine
 - patch around engine bugs in ways that hide parity differences
+- manufacture an outcome the engine didn't produce: no resets, fallbacks, or
+  clamps
 
 ## Core Invariants
 
@@ -470,6 +472,8 @@ Rules:
   meaningfully
 - report `false` when the engine or adapter does not currently support the
   feature area
+- declare each flag as a literal, never derived from whether an import or
+  probe succeeded
 - capability-gated tests should skip when the capability is `false`
 - capability-gated tests should use an explicit runtime skip helper rather than
   silently `return` from the test body

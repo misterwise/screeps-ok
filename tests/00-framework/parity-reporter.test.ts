@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
@@ -129,6 +129,28 @@ describe('parity reporter', () => {
 		], false);
 		expect(verdict.untaggedTests).toBe(2);
 		expect(parityExitCode(1, verdict)).toBe(1);
+	});
+
+	test('the docs quote only lines the reporter prints, and a line they leave out names its own fix', () => {
+		verdictFor(['GAP-001', 'GAP-002', 'GAP-003'], [
+			['GAP-001 fails as registered', 'failed'],
+			['GAP-002 passes though registered', 'passed'],
+			['a catalog test with no id', 'passed'],
+		], true);
+		const printed = vi.mocked(console.log).mock.calls
+			.map(([line]) => String(line).trim())
+			.filter(line => line.startsWith('Parity:'))
+			.map(line => line.replace(/^Parity: \d+/, 'Parity: N'));
+		// The package ships the adapter guide but not CONTRIBUTING.md; check the docs this copy has.
+		const quoted = ['../../CONTRIBUTING.md', '../../docs/adapter-guide.md']
+			.map(doc => new URL(doc, import.meta.url))
+			.filter(doc => existsSync(doc))
+			.flatMap(doc => [...readFileSync(doc, 'utf8').matchAll(/`(Parity: N [^`]+)`/g)])
+			.map(([, line]) => line);
+		expect(quoted).not.toHaveLength(0);
+		expect(printed).toHaveLength(4);
+		expect(quoted.filter(q => !printed.some(p => p.startsWith(q)))).toEqual([]);
+		expect(printed.filter(p => !quoted.some(q => p.startsWith(q)) && !p.includes(' — '))).toEqual([]);
 	});
 
 	test('a filtered or sharded run does not count orphans', () => {

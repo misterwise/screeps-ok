@@ -53,6 +53,7 @@
     "lint": "tsc --noEmit",
     "check": "node scripts/check.js",
     "validate:capabilities": "node scripts/validate-capabilities.js",
+    "validate:docs": "node scripts/validate-docs.js",
     "validate:package": "node scripts/validate-package.js"
   },
   "bin": {

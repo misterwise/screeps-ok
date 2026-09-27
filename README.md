@@ -3,7 +3,7 @@
 > _If your engine agrees, it's Screeps._
 
 <!-- BADGES:START -->
-[![vanilla](https://img.shields.io/badge/vanilla-2896%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2641%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](docs/status.md#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2897%20passing-brightgreen)](docs/status.md#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](docs/status.md#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2642%20passing-brightgreen)](docs/status.md#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](docs/status.md#xxscreeps-expected-failures)
 <!-- BADGES:END -->
 ![status](https://img.shields.io/badge/status-alpha-blue)
 
@@ -22,6 +22,7 @@ The browsable coverage dashboard is published at
 - [`docs/adapter-spec.md`](docs/adapter-spec.md) — normative adapter contract
 - [`docs/adapter-guide.md`](docs/adapter-guide.md) — practical adapter authoring
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — first-time setup and PR checklist
+- [`AGENTS.md`](AGENTS.md) — rules and routes for coding agents
 - [`docs/index.md`](docs/index.md) — full doc map
 
 ## Prerequisites
@@ -100,6 +101,10 @@ running the suite in-place. Publishing as a package that a downstream engine
 installs with `npm i -D screeps-ok` is tracked as a pre-publish release
 gate — package metadata is not yet a stable installation contract, and
 `"exports"` still resolves to raw TypeScript.
+
+When a test fails in your engine, start at
+[When a Test Fails](docs/adapter-guide.md#when-a-test-fails) in the adapter
+guide.
 
 Changes a consumer must act on (adapter contract, catalog IDs, runner
 semantics) are recorded in [`CHANGELOG.md`](CHANGELOG.md) under Unreleased.

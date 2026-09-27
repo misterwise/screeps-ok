@@ -81,6 +81,9 @@ changes since `v0.1.0-alpha` are not itemized.
 - `placeSource` without `energyCapacity` gives the capacity the room's state
   sets (keeper with no controller, full when owned or reserved, else neutral),
   where it was 3000 everywhere; `energy` defaults to full.
+- Capability flags are literals, never derived from whether an import or probe
+  succeeded, and an adapter never manufactures an outcome the engine didn't
+  produce: no resets, fallbacks, or clamps.
 - `setTerrain()` is setup-only: before the shard's first tick it replaces the
   terrain player code reads, and after it the call throws and changes
   nothing. An adapter had been allowed to accept it after a tick.

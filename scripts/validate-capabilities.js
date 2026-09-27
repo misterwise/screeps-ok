@@ -4,11 +4,13 @@
  *
  * Catches the common mistake of adding a test under a capability-tagged
  * section in behaviors.md without gating it — which would cause spurious
- * failures on adapters that don't support the capability.
+ * failures on adapters that don't support the capability. Also holds this
+ * repo's adapters to declaring each flag as a literal (docs/adapter-spec.md).
  *
  * Usage:
  *   node scripts/validate-capabilities.js
  */
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { baseCatalogId, catalogIdsIn } from './lib/catalog-id.js';
@@ -47,13 +49,37 @@ for (const { file, code } of testFileClaims(testsDir)) {
 	}
 }
 
-// 3. Report
+// 3. Each adapter's capabilities block holds only `flag: true|false` lines and
+// comments; a flag computed from whether an import loaded hides a broken wiring.
+const literalErrors = [];
+const adaptersDir = path.join(root, 'adapters');
+for (const name of readdirSync(adaptersDir)) {
+	const relFile = `adapters/${name}/index.ts`;
+	if (!existsSync(path.join(root, relFile))) continue;
+	const lines = readFileSync(path.join(root, relFile), 'utf8').split('\n');
+	const start = lines.findIndex(line => /\bcapabilities: AdapterCapabilities = \{$/.test(line.trim()));
+	if (start === -1) {
+		literalErrors.push(`  ${relFile}: no \`capabilities: AdapterCapabilities = {\` block`);
+		continue;
+	}
+	for (let i = start + 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (line === '};') break;
+		if (line === '' || line.startsWith('//') || /^\w+: (?:true|false),?(?:\s*\/\/.*)?$/.test(line)) continue;
+		literalErrors.push(`  ${relFile}:${i + 1}: capability is not a literal: ${line}`);
+	}
+}
+
+// 4. Report
 if (errors.length > 0) {
 	console.error(`Found ${errors.length} test(s) missing capability gates:\n`);
 	for (const e of errors) {
 		console.error(`  ${e.file}: ${e.id} requires capability '${e.capability}' but no shard.requires('${e.capability}') found`);
 	}
-	process.exit(1);
-} else {
-	console.log(`All ${requiredCapabilities.size} capability-gated catalog entries are properly gated in tests.`);
 }
+if (literalErrors.length > 0) {
+	console.error(`Found ${literalErrors.length} capability declaration(s) that aren't literals:\n`);
+	for (const line of literalErrors) console.error(line);
+}
+if (errors.length > 0 || literalErrors.length > 0) process.exit(1);
+console.log(`All ${requiredCapabilities.size} capability-gated catalog entries are properly gated in tests, and every adapter declares its flags as literals.`);

@@ -67,6 +67,21 @@ for free, which is the cheapest form of color in the docs.
 - ```` ```markdown ```` — meta-examples of markdown syntax
 - ```` ```text ```` — when no language fits, prefer this over a bare fence
 
+## Paths and links
+
+`npm run check` resolves what the docs point at, so write references it can
+check:
+
+- Relative links and their `#anchors` must resolve. An anchor is the
+  heading's GitHub slug.
+- A path in code that starts with a top-level directory (`src/`, `scripts/`,
+  `tests/`, `adapters/`, `docs/`, …) must exist in this repo.
+- Name another package's file by its package,
+  `@screeps/engine/src/game/creeps.js`, never by a bare `src/…` path.
+- Write placeholders as `<adapter>` or `NN-*`; the check skips paths holding
+  one. A consumer's own `adapters/screeps-ok/` tree is exempt.
+- No absolute paths into anyone's home directory.
+
 ## A concrete example
 
 ```markdown

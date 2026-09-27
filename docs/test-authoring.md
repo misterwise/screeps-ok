@@ -352,6 +352,21 @@ a method, check the entry against how bots actually reach it:
 If the entry only survives the direct call, add the idiom-shaped row next to
 it rather than widening the existing one.
 
+## Traps
+
+Setups that have produced wrong tests. When a test disagrees with vanilla,
+rule these out, then read the vanilla engine source
+(`node_modules/@screeps/engine/src/`) before deciding the catalog entry is
+wrong, and cite the file and line when it is.
+
+- **Sparse rooms.** Apart from a controller at `(1, 1)` and walls on its four
+  corner tiles, a default room holds nothing the test didn't place: no
+  sources, minerals, or other structures. `moveTo` may still detour around
+  what the test does place, so assert range rather than exact direction when
+  the entry doesn't specify one.
+- **Damage order.** Damage lands on body parts in array order from index 0,
+  whatever their type. Put the part the assertion is about first.
+
 ## Review checklist
 
 Before a canonical test is accepted, each of these should be a "yes":

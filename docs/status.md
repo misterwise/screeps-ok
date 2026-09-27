@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-2896%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2641%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2897%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-10-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2642%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-77-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [2896](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-26 22:36 UTC |
-| 🟡 | **xxscreeps** | [2641](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-26 22:34 UTC |
+| 🟡 | **vanilla** | [2897](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-27 00:03 UTC |
+| 🟡 | **xxscreeps** | [2642](#xxscreeps-passing-tests) | [77](#xxscreeps-expected-failures) | — | [195](#xxscreeps-skipped-tests) | 2026-09-27 00:02 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -524,7 +524,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2896 tests across 157 files</summary>
+<summary>2897 tests across 157 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -754,7 +754,7 @@ Click a count to jump to the affected test list.
 - docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
 - docs/behavior-matrices.md every path a definition names exists
 
-**`tests/00-framework/parity-reporter.test.ts`** (20)
+**`tests/00-framework/parity-reporter.test.ts`** (21)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
@@ -764,6 +764,7 @@ Click a count to jump to the affected test list.
 - parity reporter a row's own registration wins over its bare id's
 - parity reporter a name that runs on past an id carries no id to register
 - parity reporter a catalog test whose name carries no single id fails the run
+- parity reporter the docs quote only lines the reporter prints, and a line they leave out names its own fix
 - parity reporter a filtered or sharded run does not count orphans
 - parity reporter only an unfiltered run is full and writes the report the docs and CI read
 - parity file loading a missing parity.json means no registrations
@@ -4241,7 +4242,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2641 tests across 142 files</summary>
+<summary>2642 tests across 142 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4471,7 +4472,7 @@ Click a count to jump to the affected test list.
 - docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
 - docs/behavior-matrices.md every path a definition names exists
 
-**`tests/00-framework/parity-reporter.test.ts`** (20)
+**`tests/00-framework/parity-reporter.test.ts`** (21)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
@@ -4481,6 +4482,7 @@ Click a count to jump to the affected test list.
 - parity reporter a row's own registration wins over its bare id's
 - parity reporter a name that runs on past an id carries no id to register
 - parity reporter a catalog test whose name carries no single id fails the run
+- parity reporter the docs quote only lines the reporter prints, and a line they leave out names its own fix
 - parity reporter a filtered or sharded run does not count orphans
 - parity reporter only an unfiltered run is full and writes the report the docs and CI read
 - parity file loading a missing parity.json means no registrations

@@ -369,6 +369,20 @@ wrong things.
 If a market slice, power creeps, terrain editing, or some structure class is
 not ready, report that cleanly via the narrowest matching capability.
 
+### Softening setup failures
+
+Setup and wiring fail loudly. Don't wrap an engine import in `try`/`catch`,
+don't substitute a fallback object, and don't derive a capability flag from
+whether an import succeeded: flags are literals. Broken wiring should stop the
+run, not turn into skips or plausible-looking snapshots.
+
+### Letting setup ticks show in seeded values
+
+If `createShard` runs ticks of its own (the vanilla adapter runs one so the
+engine loads player code), a timer seeded relative to the current tick, such
+as `ticksToDowngrade` or `safeMode`, arrives short by those ticks. Offset
+relative seeds by the ticks setup consumes.
+
 ### Wrapping all errors as runtime
 
 If your adapter catches all exceptions from player code and maps them
@@ -453,6 +467,32 @@ At minimum, add a short README or comment block explaining:
 If someone cannot understand those points quickly, the adapter is not yet ready
 for outside consumption.
 
+## When a Test Fails
+
+Every test title starts with a catalog ID (`HARVEST-001 …`,
+`STRUCTURE-HITS-001:storage …`), and the ID leads to everything else:
+
+1. Read the entry: find the ID in `behaviors.md` (under
+   `node_modules/screeps-ok/` when installed). The entry, not the test,
+   defines the behavior.
+2. Find the test: `grep -rl 'HARVEST-001' node_modules/screeps-ok/tests`.
+3. Rerun only that test:
+   `npx screeps-ok --adapter ./adapters/screeps-ok/index.ts --preflight none -- -t "HARVEST-001"`.
+4. Decide whose problem it is:
+   - The adapter mistranslates setup, execution, or a snapshot: fix the
+     adapter against [`adapter-spec.md`](adapter-spec.md).
+   - The engine lacks the whole feature area: report its capability `false`
+     so the tests skip.
+   - The engine diverges from the entry: fix the engine, or register the gap
+     as described below.
+   - The test or the entry looks wrong: open an issue on `screeps-ok` citing
+     the vanilla source or API docs that disagree. Don't edit the installed
+     copy.
+
+The run's exit code already accounts for registered gaps. A non-zero exit
+prints `Parity:` lines naming what needs attention, covered in the next
+section and in `CONTRIBUTING.md` under Reading Parity Results.
+
 ## Declaring Expected Failures (parity.json)
 
 Your `adapters/screeps-ok/parity.json` is an overlay on top of the canonical
@@ -469,7 +509,9 @@ you with sensible defaults:
 
 Tests always assert canonical (vanilla) behavior. The parity reporter merges
 `base ∪ expected_failures` and removes anything in `expected_passes`; failing
-tests in the merged set are reclassified as expected and don't break CI.
+tests in the merged set are reclassified as expected and don't break CI. The
+reporter lists them under `Parity: N expected failure(s)`, which needs no
+action.
 
 ### Most common: you fixed a gap in your engine
 
