@@ -58,10 +58,10 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <p class="subtitle">Behavioral conformance catalog vs. test suite</p>
 
 <div class="stats">
-  <div class="stat-card"><div class="num">1125</div><div class="label">catalog IDs</div></div>
-  <div class="stat-card"><div class="num green">1115</div><div class="label">tested</div></div>
+  <div class="stat-card"><div class="num">1121</div><div class="label">catalog IDs</div></div>
+  <div class="stat-card"><div class="num green">1112</div><div class="label">tested</div></div>
   <div class="stat-card"><div class="num yellow">0</div><div class="label">feasible untested</div></div>
-  <div class="stat-card"><div class="num">10</div><div class="label">blocked</div></div>
+  <div class="stat-card"><div class="num">9</div><div class="label">blocked</div></div>
   <div class="stat-card"><div class="num">99%</div><div class="label">overall</div></div>
   <div class="stat-card"><div class="num">100%</div><div class="label">of feasible</div></div>
 </div>
@@ -266,8 +266,8 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <div class="bar-row">
   <span class="bar-label" title="29. Multi-Shard">29. Multi-Shard</span>
   <div class="bar-track">
-    <div class="bar-fill" style="width:58%;background:var(--yellow)"></div>
-    <span class="bar-text">11/19</span>
+    <div class="bar-fill" style="width:53%;background:var(--yellow)"></div>
+    <span class="bar-text">8/15</span>
   </div>
 </div>
 <div class="bar-row">
@@ -290,7 +290,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 <thead><tr><th>Category</th><th>Count</th><th>IDs</th></tr></thead>
 <tbody>
 <tr><td><span class="badge badge-muted">capability: cpuShardLimits</span></td><td>1</td><td><code>CPU-SHARD-004</code></td></tr>
-<tr><td><span class="badge badge-muted">capability: interShardMemory</span></td><td>2</td><td><code>ISM-005</code> <code>ISM-006</code></td></tr>
+<tr><td><span class="badge badge-muted">capability: interShardMemory</span></td><td>1</td><td><code>ISM-005</code></td></tr>
 <tr><td><span class="badge badge-muted">capability: multiShard</span></td><td>5</td><td><code>INTERSHARD-PORTAL-001</code> <code>INTERSHARD-PORTAL-002</code> <code>SHARD-MEMORY-001</code> <code>SHARD-MEMORY-002</code> <code>SHARD-PCREEP-002</code></td></tr>
 <tr><td><span class="badge badge-muted">fixture-blocked</span></td><td>2</td><td><code>UNDOC-SYSUSER-002</code> <code>CPU-HALT-001</code></td></tr>
 </tbody>
@@ -10166,34 +10166,7 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
   <td><small></small></td>
 </tr>
 <tr data-status="tested" data-blocker="">
-  <td><code>ISM-001</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>29. Multi-Shard</td>
-  <td>behavior</td>
-  <td>verified_vanilla</td>
-  <td>interShardMemory</td>
-  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
   <td><code>ISM-002</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>29. Multi-Shard</td>
-  <td>behavior</td>
-  <td>verified_vanilla</td>
-  <td>interShardMemory</td>
-  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ISM-003</code></td>
-  <td><span class="badge badge-green">tested</span></td>
-  <td>29. Multi-Shard</td>
-  <td>matrix</td>
-  <td>verified_vanilla</td>
-  <td>interShardMemory</td>
-  <td><small>tests/29-multi-shard/29.3-intershard-memory-local.test.ts</small></td>
-</tr>
-<tr data-status="tested" data-blocker="">
-  <td><code>ISM-004</code></td>
   <td><span class="badge badge-green">tested</span></td>
   <td>29. Multi-Shard</td>
   <td>behavior</td>
@@ -10203,15 +10176,6 @@ footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border
 </tr>
 <tr data-status="untested" data-blocker="capability: interShardMemory">
   <td><code>ISM-005</code></td>
-  <td><span class="badge badge-muted">capability: interShardMemory</span></td>
-  <td>29. Multi-Shard</td>
-  <td>behavior</td>
-  <td>needs_vanilla_verification</td>
-  <td>interShardMemory, multiShard</td>
-  <td><small></small></td>
-</tr>
-<tr data-status="untested" data-blocker="capability: interShardMemory">
-  <td><code>ISM-006</code></td>
   <td><span class="badge badge-muted">capability: interShardMemory</span></td>
   <td>29. Multi-Shard</td>
   <td>behavior</td>

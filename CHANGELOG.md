@@ -149,7 +149,11 @@ changes since `v0.1.0-alpha` are not itemized.
   `:ghodiumMelt`).
 - Dropped: `LEGACY-PATH-010`, `RENEW-CREEP-012`..`-014`,
   `ATTACK-NOTIFY-001`..`-004`, `CONSTRUCTION-SITE-015`, `POWER-BANK-003`,
-  `STRUCTURE-API-008`, `RAMPART-DECAY-005`.
+  `STRUCTURE-API-008`, `RAMPART-DECAY-005`, `ISM-001`, `ISM-003`, `ISM-004`,
+  `ISM-006`: the API documentation states no value before the first
+  `setLocal`, no rejection mode, no over-limit behavior and no cross-shard
+  delay, and no open-source engine implements `InterShardMemory`.
+  `ISM-005` no longer claims `null` for a shard that never wrote.
 - `SOURCE-REGEN-001` is keyed by room state: `:owned`, `:reserved`,
   `:neutral`, `:keeper`.
 - Keyed by row as their tests now run their case lists: `RAWMEMORY-002`

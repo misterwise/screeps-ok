@@ -1433,25 +1433,6 @@ checks both. Each definition has these fields, in this order:
   `RAWMEMORY-003`. The executable case list lives in
   `src/matrices/rawmemory-segments.ts`.
 
-### ISM-SETLOCAL-TYPES
-
-- `Catalog Entries`
-  `ISM-003`
-- `Canonical Source`
-  The Screeps API documentation for `InterShardMemory.setLocal(data)`, which
-  takes a string. The open-source engine ships no `InterShardMemory`.
-- `Dimensions`
-  argument type
-- `Applicability`
-  `string` (accepted); `number`, `object`, `null` and `undefined` (rejected)
-- `Exclusions`
-  The size limit (`ISM-004`) and remote shards
-- `Verification Notes`
-  The case list is inline in
-  `tests/29-multi-shard/29.3-intershard-memory-local.test.ts`, which accepts
-  a throw or a silent no-op for each rejected type. No reference adapter
-  declares `interShardMemory`.
-
 ### CPU-SHARD-LIMITS
 
 - `Catalog Entries`

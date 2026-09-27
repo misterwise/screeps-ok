@@ -4976,29 +4976,18 @@ such a portal — none of which are testable on a single-shard harness.
   `Memory` isolation in 29.5).
 
 ### 29.3 InterShardMemory `capability: interShardMemory`
-- `ISM-001` `behavior` `verified_vanilla`
-  `InterShardMemory.getLocal()` returns `null` on every tick before the
-  first successful `setLocal` on the same shard.
 - `ISM-002` `behavior` `verified_vanilla`
   After `InterShardMemory.setLocal(s)` with string `s`, a subsequent
   `InterShardMemory.getLocal()` on the same tick returns exactly `s`.
-- `ISM-003` `matrix` `verified_vanilla`
-  `InterShardMemory.setLocal` argument-type matrix: a `string` value is
-  accepted; `number`, `object`, `null`, and `undefined` are rejected. The
-  exact rejection mode (TypeError vs. silent no-op) is to be pinned
-  during verification.
-- `ISM-004` `behavior` `verified_vanilla`
-  `InterShardMemory.setLocal(s)` with `s.length > 102400` (100 KiB)
-  rejects without updating the local segment; a subsequent `getLocal()`
-  returns the prior value (or `null` if none was set).
 - `ISM-005` `behavior` `needs_vanilla_verification` `capability: multiShard`
-  `InterShardMemory.getRemote(shardName)` returns the string most
-  recently passed to `setLocal` on shard `shardName`, or `null` if that
-  shard has never set a local value.
-- `ISM-006` `behavior` `needs_vanilla_verification` `capability: multiShard`
-  `InterShardMemory.getRemote(otherShard)` reflects writes made on
-  `otherShard` only after the cross-shard sync interval elapses; the
-  exact interval is to be pinned during verification.
+  `InterShardMemory.getRemote(shardName)` returns the string shard
+  `shardName` stored with `setLocal`.
+
+Notes
+- The API documentation is this section's only source, and it states no
+  value before the first `setLocal`, no rejection for a non-string or
+  oversized value (only that each shard has 100 KB), and no cross-shard
+  delay, so the catalog pins none of them.
 
 ### 29.4 CPU Shard Limits `capability: cpuShardLimits`
 - `CPU-SHARD-001` `behavior` `needs_vanilla_verification`
