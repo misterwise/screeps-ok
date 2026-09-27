@@ -34,7 +34,7 @@
     "vitest.config.ts"
   ],
   "scripts": {
-    "prepare": "node scripts/install-git-hooks.js",
+    "prepare": "node scripts/install-git-hooks.js && npm run build",
     "prepack": "node scripts/generate-starter.js && npm run build && node scripts/validate-package.js",
     "build:starter": "node scripts/generate-starter.js",
     "preflight": "node scripts/preflight.js",
