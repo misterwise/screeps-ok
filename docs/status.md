@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3%20failing-red)](#vanilla-unexpected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-5%20failing-red)](#xxscreeps-unexpected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-2881%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-2628%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-80-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,30 +16,16 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🔴 | **vanilla** | [2897](#vanilla-passing-tests) | [10](#vanilla-expected-failures) | — | [7](#vanilla-skipped-tests) | 2026-09-27 00:03 UTC |
-| 🔴 | **xxscreeps** | [2642](#xxscreeps-passing-tests) | [76](#xxscreeps-expected-failures) | [1](#xxscreeps-unexpected-failures) | [195](#xxscreeps-skipped-tests) | 2026-09-27 00:02 UTC |
+| 🟡 | **vanilla** | [2881](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-27 02:39 UTC |
+| 🟡 | **xxscreeps** | [2628](#xxscreeps-passing-tests) | [80](#xxscreeps-expected-failures) | — | [190](#xxscreeps-skipped-tests) | 2026-09-27 02:38 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
 _Click any count to jump to the test list. Timestamps in UTC — GitHub markdown cannot render browser-local time._
 
-## vanilla unexpected failures
-
-- `deposit-harvest-logs-no-event` registers `ROOM-EVENTLOG-028`, which no test passed or failed
-- `terrain-raw-buffer-throws-on-plain-array` registers `ROOM-TERRAIN-005`, which no test passed or failed
-- `power-creep-shard-empty-on-open-source-driver` registers `SHARD-PCREEP-002`, which no test passed or failed
-
-## xxscreeps unexpected failures
-
-- `Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order`
-- `terrain-raw-buffer-fills-any-array` registers `ROOM-TERRAIN-005`, which no test passed or failed
-- `gcl-progress-total-absolute-threshold` registers `GCL-001:levelTwo`, which no test passed or failed
-- `gcl-progress-total-absolute-threshold` registers `GCL-001:levelThree`, which no test passed or failed
-- `controller-unclaim-clears-safe-mode-cooldown` registers `CTRL-DOWNGRADE-010:levelZero`, which no test passed or failed
-
 ## vanilla expected failures
 
-vanilla currently declares 11 expected-failure classifications against vanilla's canonical behavior, covering 10 tests. That includes 11 open parity gaps covering 10 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
+vanilla currently declares 11 expected-failure classifications against vanilla's canonical behavior, covering 13 tests. That includes 11 open parity gaps covering 13 tests and 0 intentional divergences covering 0 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -47,12 +33,12 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
-| `deposit-harvest-logs-no-event` | Vanilla's harvest processor pushes EVENT_HARVEST for a source (`@screeps/engine/src/processor/intents/creeps/harvest.js:63`) and a mineral (`:110`) but not for a deposit, so a deposit harvest leaves no entry in `room.getEventLog()`. | A deposit harvest logs EVENT_HARVEST with the creep as objectId, the deposit as data.targetId, and the amount harvested. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_HARVEST as 'A creep performed harvest in the room' with targetId and amount, and a deposit harvest is a harvest. | 0 |
-| `terrain-raw-buffer-throws-on-plain-array` | Vanilla's `Room.Terrain.getRawBuffer` (`@screeps/engine/src/game/rooms.js:1235-1240`) calls `Uint8Array.prototype.set` on the destination, which throws a TypeError for anything that isn't a typed array. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. | 0 |
+| `deposit-harvest-logs-no-event` | Vanilla's harvest processor pushes EVENT_HARVEST for a source (`@screeps/engine/src/processor/intents/creeps/harvest.js:63`) and a mineral (`:110`) but not for a deposit, so a deposit harvest leaves no entry in `room.getEventLog()`. | A deposit harvest logs EVENT_HARVEST with the creep as objectId, the deposit as data.targetId, and the amount harvested. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_HARVEST as 'A creep performed harvest in the room' with targetId and amount, and a deposit harvest is a harvest. | [1](#vanilla-gap-deposit-harvest-logs-no-event) |
+| `terrain-raw-buffer-throws-on-plain-array` | Vanilla's `Room.Terrain.getRawBuffer` (`@screeps/engine/src/game/rooms.js:1235-1240`) calls `Uint8Array.prototype.set` on the destination, which throws a TypeError for anything that isn't a typed array. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. | [1](#vanilla-gap-terrain-raw-buffer-throws-on-plain-array) |
 | `pull-fatigue-stranded-on-puller-ttl-death` | When the puller dies from `ticksToLive === 1` on the same tick a pull resolves and the puller is iterated before the pulled creep, vanilla strands the move's fatigue on the pulled creep instead of letting it die with the puller. `_add-fatigue.js:24-26` walks `_pulled` from inside per-creep `creeps/tick.js`; the puller's tick runs `movement.execute` then the lifetime check that calls `_die` and `delete roomObjects[object._id]`. The pulled creep's later `movement.execute` (`movement.js:248-251`) cannot follow `_pulled` to the now-deleted puller, so the chain walk stops and the move's body-weight fatigue lands on the pulled creep — visibly stuck if the pulled creep has no MOVE parts to clear it. Vanilla itself produces the intended outcome (fatigue=0) when the pulled creep is iterated first, so this is an order-dependent quirk rather than a designed contract. | The move's fatigue is buried with the dying puller; the pulled creep ends the tick at fatigue 0 regardless of placement / iteration order. xxscreeps achieves this by routing pull-aware fatigue during a unified move-intent pass (`packages/xxscreeps/mods/creep/processor.ts:221-227`) before any per-object tick processor calls `buryCreep`. | Canonical claim is reported: screeps/engine#156 (open) fixes the order-dependent fatigue as a vanilla bug. | [1](#vanilla-gap-pull-fatigue-stranded-on-puller-ttl-death) |
 | `eventlog-structure-destroy-intent-missing` | Stable vanilla's owner-initiated `Structure.destroy()` intent (`@screeps/engine/src/processor/intents/room/destroy-structure.js:1-26`) calls the internal `_destroy` helper but never emits an event. `EVENT_OBJECT_DESTROYED` is emitted only from the attack path (`_damage.js:51`) and the creep-death path (`_die.js:97`). | Owner-initiated Structure.destroy() emits EVENT_OBJECT_DESTROYED with data.type equal to the destroyed structureType. | Canonical claim is documented: the Room.getEventLog reference defines EVENT_OBJECT_DESTROYED as 'A game object is destroyed or killed' with `type` the destroyed object's type, which an owner's destroy() satisfies. | [1](#vanilla-gap-eventlog-structure-destroy-intent-missing) |
 | `power-creep-name-truncated-to-50-chars` | Stable vanilla truncates power-creep names to 50 chars in the intent processors (`@screeps/engine/src/processor/global-intents/power/createPowerCreep.js:21` and `renamePowerCreep.js:16` both call `name.substring(0,50)`). The game-level validators accept up to 100 chars (`power-creeps.js:364`, `:396`) so the truncation is silent: create/rename returns OK and the stored name is the first 50 chars. | Power creeps preserve 100-character names exactly through create and rename. | Canonical claim is documented: PowerCreep.create states 'The name length limit is 100 characters.' | [2](#vanilla-gap-power-creep-name-truncated-to-50-chars) |
-| `power-creep-shard-empty-on-open-source-driver` | Vanilla's spawn processor stamps the shard name its driver passes (`@screeps/engine/src/processor/global-intents/power/spawnPowerCreep.js:25`), and the open-source driver passes `shardName: ''` (`@screeps/driver/lib/index.js:446`) while naming the shard `os.hostname()` in `Game.shard` (`index.js:36-40`). The getter `o.shard \|\| undefined` (`game/power-creeps.js:53`) reads `undefined` for a spawned power creep. | A spawned power creep's `shard` is `Game.shard.name`. | Canonical claim is documented: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' | 0 |
+| `power-creep-shard-empty-on-open-source-driver` | Vanilla's spawn processor stamps the shard name its driver passes (`@screeps/engine/src/processor/global-intents/power/spawnPowerCreep.js:25`), and the open-source driver passes `shardName: ''` (`@screeps/driver/lib/index.js:446`) while naming the shard `os.hostname()` in `Game.shard` (`index.js:36-40`). The getter `o.shard \|\| undefined` (`game/power-creeps.js:53`) reads `undefined` for a spawned power creep. | A spawned power creep's `shard` is `Game.shard.name`. | Canonical claim is documented: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' | [1](#vanilla-gap-power-creep-shard-empty-on-open-source-driver) |
 | `power-creep-ticks-to-live-not-undefined-when-unspawned` | Stable vanilla's `ticksToLive` getter (`@screeps/engine/src/game/power-creeps.js:72`) is `(o) => o.ageTime - runtimeData.time` with no unspawned-or-dead branch, so unspawned power creeps yield `NaN` rather than `undefined`. | Power creeps expose `ticksToLive` as `undefined` whenever unspawned (including after death). | Canonical claim is documented: PowerCreep.ticksToLive is 'Undefined if the creep is not spawned in the world.' screeps/engine#148 (open) fixes vanilla's NaN. | [2](#vanilla-gap-power-creep-ticks-to-live-not-undefined-when-unspawned) |
 | `market-history-empty-array-missing` | Stable vanilla's `Game.market.getHistory` (`@screeps/engine/src/game/market.js:41-52`) returns `{}` for an invalid resource (line 48) and `JSON.parse(JSON.stringify(history[resource] \|\| {}))` for a valid-but-empty resource (line 50) — always an object, never `[]`. | Game.market.getHistory returns an empty array for invalid resources and valid resources with no history. | Canonical claim is documented: Game.market.getHistory 'Returns an array of objects'. screeps/engine#131 (open) fixes vanilla's object return. | [1](#vanilla-gap-market-history-empty-array-missing) |
 | `roomposition-find-closest-by-path-range-ignored` | Stable vanilla's `_findClosestByPath2` (`@screeps/engine/src/game/rooms.js:304-374`) never reads `opts.range`: it hardcodes `{range: 1, pos: i}` on the PathFinder goal at line 328 and post-filters reachability with `lastPos.isNearTo(obj)` at line 368. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, whose range option finds a path to a position in that linear range of the target. screeps/engine#121 (open) proposes honoring it. It fails on both adapters; it is not an xxscreeps bug. | [1](#vanilla-gap-roomposition-find-closest-by-path-range-ignored) |
@@ -62,14 +48,16 @@ These are known differences that may still be fixed upstream or in the adapter. 
 Click a test count above to jump to the affected test list for that gap.
 
 <details id="vanilla-gap-deposit-harvest-logs-no-event">
-<summary><code>deposit-harvest-logs-no-event</code> — 0 tests</summary>
+<summary><code>deposit-harvest-logs-no-event</code> — 1 test</summary>
 
+- `room.getEventLog() ROOM-EVENTLOG-028 harvesting a deposit logs EVENT_HARVEST`
 
 </details>
 
 <details id="vanilla-gap-terrain-raw-buffer-throws-on-plain-array">
-<summary><code>terrain-raw-buffer-throws-on-plain-array</code> — 0 tests</summary>
+<summary><code>terrain-raw-buffer-throws-on-plain-array</code> — 1 test</summary>
 
+- `Room terrain access ROOM-TERRAIN-005 Room.Terrain.getRawBuffer(destinationArray) returns ERR_INVALID_ARGS for a plain array`
 
 </details>
 
@@ -96,8 +84,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="vanilla-gap-power-creep-shard-empty-on-open-source-driver">
-<summary><code>power-creep-shard-empty-on-open-source-driver</code> — 0 tests</summary>
+<summary><code>power-creep-shard-empty-on-open-source-driver</code> — 1 test</summary>
 
+- `PowerCreep shard home SHARD-PCREEP-002 a spawned PowerCreep reports Game.shard.name as its shard`
 
 </details>
 
@@ -141,7 +130,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 76 tests. That includes 37 open parity gaps covering 68 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 41 expected-failure classifications against vanilla's canonical behavior, covering 80 tests. That includes 37 open parity gaps covering 72 tests and 4 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -149,11 +138,11 @@ These are known differences that may still be fixed upstream or in the adapter. 
 
 | Gap | Actual | Vanilla behavior | Why | Tests |
 | --- | --- | --- | --- | :-: |
-| `terrain-raw-buffer-fills-any-array` | `Terrain.getRawBuffer` (`game/terrain.ts:97-105`) writes the 2500 values into whatever destination it is given, a plain array included, and returns it. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Found 2026-09-26 by ROOM-TERRAIN-005. Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. Vanilla throws instead (its own gap), so neither engine returns the code. | 0 |
-| `gcl-progress-total-absolute-threshold` | `Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357. | Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next. | Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0. | 0 |
+| `terrain-raw-buffer-fills-any-array` | `Terrain.getRawBuffer` (`game/terrain.ts:97-105`) writes the 2500 values into whatever destination it is given, a plain array included, and returns it. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Found 2026-09-26 by ROOM-TERRAIN-005. Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. Vanilla throws instead (its own gap), so neither engine returns the code. | [1](#xxscreeps-gap-terrain-raw-buffer-fills-any-array) |
+| `gcl-progress-total-absolute-threshold` | `Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357. | Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next. | Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0. | [2](#xxscreeps-gap-gcl-progress-total-absolute-threshold) |
 | `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix. The row's saturation phase also depends on `reserve-fresh-reservation-one-tick-long`: with only the cap fixed, the 50-CLAIM saturators stall near 4950 and the row still fails, so it flips only when both are fixed. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
 | `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
-| `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step (CTRL-DOWNGRADE-010:levelZero); the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix. | [1](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
+| `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step (CTRL-DOWNGRADE-010:levelZero); the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix. | [2](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | No upstream report yet; raise the RoomObject toJSON with laverdet before a PR. Room, RoomPosition and Flag already serialize and stay pinned. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
 | `commonjs-main-exports-alias-missing` | The eval channel (console + adapter delivery, `driver/runtime/index.ts` eval handler) runs expressions at sandbox global scope with no per-eval `module`/`exports` bindings. In the isolated sandbox the names resolve to leaked build plumbing instead: `exports` is the `{}` set for the webpack'd runtime bundle (`driver/sandbox/isolated/index.ts`, never deleted after boot, unlike `ivm`/`nodeUtilImport`) and `module` is the runtime library itself (webpack `library: 'module'`, `libraryTarget: 'var'` in `driver/webpack.ts`), so `module.exports` is `undefined` and writing through it throws TypeError. Real CommonJS modules are unaffected: `makeRequire` already applies `[require, module, module.exports]`, so `exports.loop = ...` in main.js works. | In vanilla's executing CommonJS user module, bare `exports` aliases `module.exports`, so writes through either object are observable through the other during the tick. Vanilla's console channel satisfies this by evaluating each command as an anonymous module with a fresh throwaway `{exports: {}}` record passed as `(module, exports)` (`@screeps/driver` runtime-driver.js evalCode) — NOT the main module record. | Reported upstream as an encapsulation-leak observation in laverdet/xxscreeps#328 (2026-07-20). No player-bot replication, so it is not queued for a PR; the gap stays open pending laverdet's read. | [1](#xxscreeps-gap-commonjs-main-exports-alias-missing) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Stale cached argument calls must reject without queueing an intent. The matrix accepts any rejection shape (runtime throw or non-OK return code). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. The fix belongs in `checkTarget`, which would close the whole stale-argument axis (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
@@ -190,14 +179,17 @@ These are known differences that may still be fixed upstream or in the adapter. 
 Click a test count above to jump to the affected test list for that gap.
 
 <details id="xxscreeps-gap-terrain-raw-buffer-fills-any-array">
-<summary><code>terrain-raw-buffer-fills-any-array</code> — 0 tests</summary>
+<summary><code>terrain-raw-buffer-fills-any-array</code> — 1 test</summary>
 
+- `Room terrain access ROOM-TERRAIN-005 Room.Terrain.getRawBuffer(destinationArray) returns ERR_INVALID_ARGS for a plain array`
 
 </details>
 
 <details id="xxscreeps-gap-gcl-progress-total-absolute-threshold">
-<summary><code>gcl-progress-total-absolute-threshold</code> — 0 tests</summary>
+<summary><code>gcl-progress-total-absolute-threshold</code> — 2 tests</summary>
 
+- `Game.gcl GCL-001:levelTwo Game.gcl follows vanilla GCL math at level 2, progress 0`
+- `Game.gcl GCL-001:levelThree Game.gcl follows vanilla GCL math at level 3, progress 0`
 
 </details>
 
@@ -217,8 +209,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown">
-<summary><code>controller-unclaim-clears-safe-mode-cooldown</code> — 1 test</summary>
+<summary><code>controller-unclaim-clears-safe-mode-cooldown</code> — 2 tests</summary>
 
+- `Controller downgrade CTRL-DOWNGRADE-010:levelZero the downgrade step to level 0 also starts a fresh safe-mode cooldown`
 - `StructureController.unclaim() CTRL-UNCLAIM-005 unclaim() starts a fresh safe-mode cooldown rather than clearing it`
 
 </details>
@@ -529,35 +522,32 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## vanilla skipped tests
 
-vanilla has 7 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Registered** skips are tests `adapters/vanilla/parity.json` lists under `skips`, which the fixture doesn't run.
+vanilla has 4 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/vanilla/index.ts`). **Registered** skips are tests `adapters/vanilla/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#vanilla-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#vanilla-skip-capability-cpushardlimits) |
+| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [1](#vanilla-skip-capability-intershardmemory) |
 
 Click a count to jump to the affected test list.
-
-<details id="vanilla-skip-capability-intershardmemory">
-<summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
-
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
-
-- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
-- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
-- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
-- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
-
-</details>
 
 <details id="vanilla-skip-capability-cpushardlimits">
 <summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
 
 **`tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`** (3)
 
-- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits maps shard names to non-negative integers
-- CPU shard limits CPU-SHARD-002 sum of shardLimits values equals the daily allowance
-- CPU shard limits CPU-SHARD-003 setShardLimits sync error branches
+- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits keys this shard to Game.cpu.limit
+- CPU shard limits CPU-SHARD-003 setShardLimits rejects limits that change the total
+- CPU shard limits CPU-SHARD-004 setShardLimits succeeds once, then is busy
+
+</details>
+
+<details id="vanilla-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 1 test across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (1)
+
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
 
 </details>
 
@@ -565,7 +555,7 @@ Click a count to jump to the affected test list.
 ## vanilla passing tests
 
 <details>
-<summary>2897 tests across 157 files</summary>
+<summary>2881 tests across 158 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -757,12 +747,21 @@ Click a count to jump to the affected test list.
 - capability gates DEPOSIT-HARVEST-001 fails when the test never calls shard.requires('deposit')
 - capability gates DEPOSIT-HARVEST-001 passes when the gate comes from matrix data
 
-**`tests/00-framework/catalog-id.test.ts`** (4)
+**`tests/00-framework/catalog-id.test.ts`** (6)
 
 - catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
+- catalog ids a row id that appears twice fails the parse
+- catalog ids an id the text names that no row has is reported with its line
 - catalog ids conforming row ids parse
 - catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
 - catalog ids a report's test file reads from its suite root wherever the run was
+
+**`tests/00-framework/catalog-labels.test.ts`** (4)
+
+- catalog labels a row with no label, or one outside the vocabulary, fails the parse
+- catalog labels a row's text on its header line fails the parse; capability tags may follow the label
+- catalog labels verified_vanilla fails on a row vanilla lacks the capability for or registers
+- catalog labels a tested row vanilla runs green is verified_vanilla; an untested one keeps its source
 
 **`tests/00-framework/ci-shards.test.ts`** (2)
 
@@ -795,11 +794,12 @@ Click a count to jump to the affected test list.
 - docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
 - docs/behavior-matrices.md every path a definition names exists
 
-**`tests/00-framework/parity-reporter.test.ts`** (21)
+**`tests/00-framework/parity-reporter.test.ts`** (23)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
 - parity reporter a file that fails to collect or an unhandled error is a genuine failure
+- parity reporter a suite that fails outside its tests, such as an empty describe, is a genuine failure
 - parity reporter a test's `:row` id wins over its describe's bare id
 - parity reporter a bare id's registration gates every `:row` of it
 - parity reporter a row's own registration wins over its bare id's
@@ -816,6 +816,7 @@ Click a count to jump to the affected test list.
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
 - parity exit code keeps vitest's failure when the verdict saw nothing to forgive
 - JSON reports a report gets the verdict the reporter gives the same results live
+- JSON reports a file that failed with no failed test and no message is a genuine failure
 - JSON reports framework and contract sections need no catalog ids
 - JSON reports a report is judged by the overlay merged onto its base
 
@@ -884,7 +885,7 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (14)
+**`tests/01-movement/1.2-fatigue.test.ts`** (11)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
@@ -894,9 +895,6 @@ Click a count to jump to the affected test list.
 - creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
 - creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
 - creep fatigue MOVE-FATIGUE-005 moving onto swamp generates 10 fatigue per weighted body part
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZO (2x reduction)
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZHO2 (3x reduction)
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount XZHO2 (4x reduction)
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 excess MOVE capacity does not produce negative fatigue
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
 - MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
@@ -951,7 +949,7 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other
 - creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
-- creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
+- creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates
 
 **`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
 
@@ -1228,7 +1226,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (145)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (144)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -1372,7 +1370,6 @@ Click a count to jump to the affected test list.
 - creep.pickup() UNDOC-STALEARG-001:creepPickup creep.pickup() rejects a stale cached Resource target
 - Dropped resource decay DROP-DECAY-001 dropped energy decays by ceil(amount / ENERGY_DECAY) per tick
 - Dropped resource decay DROP-DECAY-002 dropped resource disappears when amount reaches 0
-- Dropped resource decay DROP-DECAY-004 harvesting above carry capacity drops the overflow on the creep tile
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
@@ -1554,7 +1551,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (111)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (110)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -1596,7 +1593,6 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX
 - controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
@@ -1713,7 +1709,13 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl7 6 of 7 labs are active at RCL 7
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl8 10 of 11 labs are active at RCL 8
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (51)
+**`tests/06-controller/6.11-gcl.test.ts`** (3)
+
+- Game.gcl GCL-001:belowLevelTwo Game.gcl follows vanilla GCL math at level 1, progress 999999
+- Game.gcl GCL-001:levelTwo Game.gcl follows vanilla GCL math at level 2, progress 0
+- Game.gcl GCL-001:levelThree Game.gcl follows vanilla GCL math at level 3, progress 0
+
+**`tests/06-controller/6.4-upgrade.test.ts`** (52)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -1726,6 +1728,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
+- creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 - creep.upgradeController() CTRL-UPGRADE-015 a controller whose downgrade timer is far from its ceiling does not level up when progress crosses the threshold
 - creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore
@@ -1793,13 +1796,13 @@ Click a count to jump to the affected test list.
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-002 RCL 1 controller becomes unowned at level 0
-- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
-- Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
 - Controller downgrade CTRL-DOWNGRADE-007 a controller can downgrade through multiple levels if neglected
-- Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
-- Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-009:levelOne a downgrade step landing on level >= 1 resets safeModeAvailable to 0
+- Controller downgrade CTRL-DOWNGRADE-010:levelOne a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-009:levelZero the downgrade step to level 0 also resets safeModeAvailable to 0
+- Controller downgrade CTRL-DOWNGRADE-010:levelZero the downgrade step to level 0 also starts a fresh safe-mode cooldown
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 - Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
 - Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there
@@ -1931,20 +1934,17 @@ Click a count to jump to the affected test list.
 - creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target
 - creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target
 
-**`tests/07-combat/7.12-tower-intent.test.ts`** (5)
+**`tests/07-combat/7.12-tower-intent.test.ts`** (4)
 
-- Tower intent priority TOWER-INTENT-001 a tower performs at most one of attack, heal, or repair in a tick
 - Tower intent priority TOWER-INTENT-002 when heal, repair, and attack are all queued, heal is preferred
 - Tower intent priority TOWER-INTENT-003 lower-priority tower intents do not execute after the chosen action resolves
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (101)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (97)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
-- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
 - Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
 - Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
 - Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
 - Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
@@ -1975,8 +1975,6 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKER-PROPS-001:energyCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
-- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
-- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
@@ -2087,11 +2085,11 @@ Click a count to jump to the affected test list.
 **`tests/07-combat/7.7-simultaneous.test.ts`** (6)
 
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick
-- Simultaneous damage & healing resolution COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 a creep survives if healing equals damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-003 overkill damage does not carry over to the next tick
-- Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
-- Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
-- Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 a creep dies only if hits reach 0 after simultaneous resolution
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently
 
 **`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
 
@@ -2148,7 +2146,7 @@ Click a count to jump to the affected test list.
 - StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target
 - StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target
 
-**`tests/08-boosts/8.1-boost-application.test.ts`** (37)
+**`tests/08-boosts/8.1-boost-application.test.ts`** (35)
 
 - Lab boostCreep BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted
 - Lab boostCreep BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part
@@ -2156,8 +2154,6 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - Lab boostCreep BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral
 - Lab boostCreep BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts
-- Lab boostCreep BOOST-CREEP-007 boosted ATTACK part deals increased damage
-- Lab boostCreep BOOST-CREEP-008 boosted HEAL part heals increased HP
 - Lab boostCreep BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound
 - Lab boostCreep BOOST-CREEP-010:notOwner boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:rcl boostCreep() validation returns the canonical code
@@ -2266,14 +2262,15 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (48)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
+- StructureSpawn SPAWN-CREATE-015 without energyStructures, spawnCreep drains spawns nearest-first, then extensions nearest-first
 - StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
 - StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
 - StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
-- StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep
+- StructureSpawn SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep
 - StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
 - StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
 - StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
@@ -2399,9 +2396,9 @@ Click a count to jump to the affected test list.
 - creep.say() CREEP-SAY-001 say() makes the message visible to the owner for one tick
 - creep.say() CREEP-SAY-002 say(message, true) makes the message visible to all players
 - creep.say() CREEP-SAY-003 without the public flag, only the owner sees the message
-- Creep spawning state CREEP-SPAWNING-001 creep.spawning is true while the creep is being spawned
+- Creep spawning state SPAWN-TIMING-002 creep.spawning is true while the creep is being spawned
 - Creep spawning state CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning
-- Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
+- Creep spawning state CREEP-SPAWNING-007 a spawning creep cannot perform actions
 - Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
 - Creep spawning state CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds
 - Creep spawning state CREEP-SPAWNING-006 a creep spawned this tick reports spawning=true the same tick
@@ -2416,7 +2413,7 @@ Click a count to jump to the affected test list.
 **`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (9)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
-- creep death CREEP-DEATH-002 death creates a tombstone at the position of death
+- creep death TOMBSTONE-001 death creates a tombstone at the position of death
 - creep death CREEP-DEATH-003 death resources go into a same-tile container first
 - creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
@@ -2428,11 +2425,6 @@ Click a count to jump to the affected test list.
 **`tests/09-spawning-lifecycle/9.9-spawn-power.test.ts`** (1)
 
 - Spawn power effects SPAWN-TIMING-005 custom directions are ignored for a 1-tick spawn under PWR_OPERATE_SPAWN
-
-**`tests/10-structures-energy/10.1-extension.test.ts`** (2)
-
-- StructureExtension EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable
-- StructureExtension EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable
 
 **`tests/10-structures-energy/10.1b-spawn-energy.test.ts`** (2)
 
@@ -2819,8 +2811,8 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-DECAY-003 [rcl=6] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=7] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=8] owned rampart hitsMax matches the canonical table
-- StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep
-- StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart
+- StructureRampart TOWER-ATTACK-006 tower.attack on a tile with a rampart damages the rampart, not the creep
+- StructureRampart COMBAT-MELEE-005 creep.attack on a rampart-covered structure damages the rampart
 - StructureRampart RAMPART-PROTECT-003 a non-public hostile rampart blocks hostile creep movement
 - StructureRampart RAMPART-PROTECT-004 hostile creep can move onto a public rampart
 - StructureRampart RAMPART-PROTECT-005 setPublic(true) sets isPublic to true
@@ -2943,7 +2935,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
 - Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
-- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-001 creep landing on a portal tile is transported next tick without a move intent
 - Portal mechanics PORTAL-006 temporary portal counts down ticksToDecay and is removed at decay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
@@ -3020,18 +3012,17 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-002 destroyable structures expose hits and hitsMax
 - Structure hits STRUCTURE-HITS-003 a structure at 0 hits is destroyed in the same tick
-- Structure hits STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store
-- Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
+- Structure hits RUIN-004 destroying a structure creates a ruin containing remaining store
+- Structure hits RUIN-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
 
-**`tests/15-structure-common/15.2-isactive.test.ts`** (5)
+**`tests/15-structure-common/15.2-isactive.test.ts`** (4)
 
-- Structure isActive() STRUCTURE-ACTIVE-001 isActive returns true only for allowed structures at the current RCL
+- Structure isActive() CTRL-STRUCTLIMIT-001:closestFirst isActive returns true only for allowed structures at the current RCL
 - Structure isActive() STRUCTURE-ACTIVE-002 inactive structures reject gated gameplay actions
-- Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
+- Structure isActive() CTRL-STRUCTLIMIT-002 a structure becomes active again when RCL satisfies its requirements
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
-- Structure isActive() STRUCTURE-ACTIVE-005 same-type structures at equal controller distance: isActive by engine scan order
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (19)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (18)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -3049,7 +3040,6 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
 - Construction costs CONSTRUCTION-COST-001:nuker costs 100000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
-- Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
@@ -3152,8 +3142,8 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-001 [plain] Room.Terrain.get(x, y) returns the expected terrain mask
 - Room terrain access ROOM-TERRAIN-001 [wall] Room.Terrain.get(x, y) returns the expected terrain mask
 - Room terrain access ROOM-TERRAIN-001 [swamp] Room.Terrain.get(x, y) returns the expected terrain mask
-- Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
-- Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
+- Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns a 2500-element Uint8Array indexed y * 50 + x
+- Room terrain access ROOM-TERRAIN-004 Room.Terrain.getRawBuffer(destinationArray) fills and returns destinationArray
 
 **`tests/16-room-mechanics/16.6-eventlog.test.ts`** (33)
 
@@ -3191,11 +3181,10 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (24)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
-- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
 - Flags FLAG-004 Flag.remove() removes the flag from the player flag set
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
 - Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
@@ -3281,13 +3270,12 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula for its harvested count
 - Deposit lifecycle DEPOSIT-003 deposit cooldown counts down the wait after a harvest and reads 0 once it has elapsed
 - Deposit lifecycle DEPOSIT-004 a harvest restarts ticksToDecay at DEPOSIT_DECAY_TIME and it then decreases by 1 each tick
-- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown and the next cooldown
+- Deposit lifecycle DEPOSIT-002 repeated harvests increase lastCooldown and the next cooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (18)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (17)
 
 - Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
-- Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
@@ -3316,15 +3304,13 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 - Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (5)
 
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
-- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
 - Nuke flight NUKE-FLIGHT-004:targetRoomVisibleToTargetOwner in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:launchRoomDoesNotListTargetNuke in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:targetRoomHiddenFromLauncherWithoutVisibility in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
 **`tests/19-power/19.0-gpl.test.ts`** (9)
 
@@ -3338,7 +3324,7 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-004 one GPL level allows one allocated power creep level
 - Game.gpl GPL-005 creating and upgrading power creeps does not change Game.gpl
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (29)
+**`tests/19-power/19.1-lifecycle.test.ts`** (28)
 
 - Power creep lifecycle POWERCREEP-CREATE-001 PowerCreep.create returns OK and queues a new power creep with requested shape
 - Power creep lifecycle POWERCREEP-CREATE-002 PowerCreep.create fails for invalid arguments
@@ -3368,14 +3354,12 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:noFreeLevelsBeforeLevelRequirement powerCreep.upgrade() validation returns the canonical code
 - Power creep lifecycle POWERCREEP-UPGRADE-002:maxLevelBeforeInvalidPower powerCreep.upgrade() validation returns the canonical code
-- Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (74)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (72)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
-- Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
 - Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
 - Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
 - Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
@@ -3383,7 +3367,6 @@ Click a count to jump to the affected test list.
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
 - Combat powers POWER-COMBAT-001 PWR_SHIELD and PWR_FORTIFY exist in POWER_INFO with effect arrays
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
-- Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
 - Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
 - Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
@@ -3504,11 +3487,9 @@ Click a count to jump to the affected test list.
 - Game.map route finding MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map route finding MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 
-**`tests/21-map/21.3-terrain.test.ts`** (3)
+**`tests/21-map/21.3-terrain.test.ts`** (1)
 
-- Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms
-- Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
-- Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
+- Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns a Room.Terrain for visible and non-visible rooms
 
 **`tests/22-roomposition/22.0-basics.test.ts`** (4)
 
@@ -3567,7 +3548,7 @@ Click a count to jump to the affected test list.
 - Store STORE-SINGLE-002 getCapacity() with no argument returns null for energy-only stores
 - Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
 - Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
-- Store STORE-RESTRICTED-001 lab getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-002 lab getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
@@ -3653,13 +3634,17 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (22)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (26)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
 - Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
 - Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
+- Memory MEMORY-007:room room.memory is Memory.rooms[name]
+- Memory MEMORY-007:spawn spawn.memory is Memory.spawns[name]
+- Memory MEMORY-007:flag flag.memory is Memory.flags[name]
+- Memory MEMORY-007:powerCreep powerCreep.memory is Memory.powerCreeps[name]
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002:activeCount setActiveSegments takes at most MAX_ACTIVE_SEGMENTS ids
@@ -3842,21 +3827,13 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
 
-**`tests/27-undocumented/27.6-identity.test.ts`** (13)
+**`tests/27-undocumented/27.6-identity.test.ts`** (5)
 
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-001 new Creep(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-002 new Source(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-003 new Structure(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-004 new Resource(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-005 new ConstructionSite(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-006 new Mineral(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-007 new Tombstone(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
@@ -3939,23 +3916,23 @@ Click a count to jump to the affected test list.
 
 ## xxscreeps skipped tests
 
-xxscreeps has 195 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
+xxscreeps has 190 skipped tests, grouped by the mechanism that gated them. **Capability** skips mean the adapter declares the feature unsupported in `capabilities` (see `adapters/xxscreeps/index.ts`). **Registered** skips are tests `adapters/xxscreeps/parity.json` lists under `skips`, which the fixture doesn't run.
 
 | Category | Cause | What it means | Tests |
 | --- | --- | --- | :-: |
-| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [92](#xxscreeps-skip-capability-powereffects) |
+| capability | `powerEffects` | `usePower` applies its `PWR_*` effect to the target: the `effects` array on the host, the gameplay consequence, and the ops/cooldown the use costs. | [90](#xxscreeps-skip-capability-powereffects) |
 | capability | `powerCreepAccountApi` | Account-level power-creep management from game code: `PowerCreep.create` plus the `rename` / `upgrade` / `delete` instance methods, and the unspawned-roster states only they can reach. | [39](#xxscreeps-skip-capability-powercreepaccountapi) |
 | capability | `market` | Full market order lifecycle, deals, history, and adapter-side order placement. | [22](#xxscreeps-skip-capability-market) |
 | capability | `invaderRaidSpawner` | Per-room inactive Invader raid spawning orchestration. | [21](#xxscreeps-skip-capability-invaderraidspawner) |
 | capability | `roomStatus` | Public room-status setup through RoomSpec.status. | [7](#xxscreeps-skip-capability-roomstatus) |
 | capability | `deprecationNotices` | Vanilla's `register.deprecated` per-tick log notices for deprecated Game.map / PathFinder / findPath / renewCreep APIs (catalog §28). | [7](#xxscreeps-skip-capability-deprecationnotices) |
-| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [4](#xxscreeps-skip-capability-intershardmemory) |
 | capability | `cpuShardLimits` | Game.cpu.shardLimits read and Game.cpu.setShardLimits write APIs. | [3](#xxscreeps-skip-capability-cpushardlimits) |
+| capability | `interShardMemory` | InterShardMemory.{getLocal,setLocal,getRemote} APIs. | [1](#xxscreeps-skip-capability-intershardmemory) |
 
 Click a count to jump to the affected test list.
 
 <details id="xxscreeps-skip-capability-powereffects">
-<summary><code>capability:powerEffects</code> — 92 tests across 15 files</summary>
+<summary><code>capability:powerEffects</code> — 90 tests across 15 files</summary>
 
 **`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (1)
 
@@ -4051,18 +4028,16 @@ Click a count to jump to the affected test list.
 - Mineral power effects MINERAL-POWER-001:levelFour PWR_REGEN_MINERAL adds its effect once per period
 - Mineral power effects MINERAL-POWER-001:levelFive PWR_REGEN_MINERAL adds its effect once per period
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (36)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (34)
 
 - Operate powers POWER-OPERATE-001 operate power effect magnitudes match POWER_INFO
 - Operate powers POWER-OPERATE-002 operate power cooldown, range, and ops match POWER_INFO
-- Operate powers POWER-OPERATE-004 PWR_OPERATE_FACTORY changes factory effective production level
 - Disrupt powers POWER-DISRUPT-001 disrupt power effect values match POWER_INFO
 - Disrupt powers POWER-DISRUPT-002 disrupt power cooldown, range, and ops match POWER_INFO
 - Regen powers POWER-REGEN-001 regen source effect amount matches POWER_INFO
 - Regen powers POWER-REGEN-002 regen power cooldown, range, and ops match POWER_INFO
 - Combat powers POWER-COMBAT-002 PWR_SHIELD creates a temporary rampart at the power creep position
 - Combat powers POWER-COMBAT-003 PWR_SHIELD rampart is removed when the effect expires
-- Operate powers — additional POWER-OPERATE-003 PWR_OPERATE_OBSERVER extends observation range
 - Power target matrix POWER-OPERATE-005:operateSpawnValid usePower on its target type charges ops and starts the cooldown
 - Power target matrix POWER-OPERATE-005:operateSpawnInvalid usePower on another target type is dropped without cost
 - Power target matrix POWER-OPERATE-005:operateTowerValid usePower on its target type charges ops and starts the cooldown
@@ -4256,26 +4231,23 @@ Click a count to jump to the affected test list.
 
 </details>
 
-<details id="xxscreeps-skip-capability-intershardmemory">
-<summary><code>capability:interShardMemory</code> — 4 tests across 1 file</summary>
-
-**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (4)
-
-- InterShardMemory — local segment ISM-001 getLocal() returns null before any setLocal
-- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
-- InterShardMemory — local segment ISM-003 setLocal accepts string and rejects non-string types
-- InterShardMemory — local segment ISM-004 setLocal rejects strings longer than 100 KiB without touching the segment
-
-</details>
-
 <details id="xxscreeps-skip-capability-cpushardlimits">
 <summary><code>capability:cpuShardLimits</code> — 3 tests across 1 file</summary>
 
 **`tests/29-multi-shard/29.4-cpu-shard-limits.test.ts`** (3)
 
-- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits maps shard names to non-negative integers
-- CPU shard limits CPU-SHARD-002 sum of shardLimits values equals the daily allowance
-- CPU shard limits CPU-SHARD-003 setShardLimits sync error branches
+- CPU shard limits CPU-SHARD-001 Game.cpu.shardLimits keys this shard to Game.cpu.limit
+- CPU shard limits CPU-SHARD-003 setShardLimits rejects limits that change the total
+- CPU shard limits CPU-SHARD-004 setShardLimits succeeds once, then is busy
+
+</details>
+
+<details id="xxscreeps-skip-capability-intershardmemory">
+<summary><code>capability:interShardMemory</code> — 1 test across 1 file</summary>
+
+**`tests/29-multi-shard/29.3-intershard-memory-local.test.ts`** (1)
+
+- InterShardMemory — local segment ISM-002 setLocal(s) round-trips through getLocal() on the same tick
 
 </details>
 
@@ -4283,7 +4255,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>2642 tests across 142 files</summary>
+<summary>2628 tests across 144 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -4475,12 +4447,21 @@ Click a count to jump to the affected test list.
 - capability gates DEPOSIT-HARVEST-001 fails when the test never calls shard.requires('deposit')
 - capability gates DEPOSIT-HARVEST-001 passes when the gate comes from matrix data
 
-**`tests/00-framework/catalog-id.test.ts`** (4)
+**`tests/00-framework/catalog-id.test.ts`** (6)
 
 - catalog ids a row id outside FAMILY-001 / FAMILY-SUBFAMILY-001 fails the parse
+- catalog ids a row id that appears twice fails the parse
+- catalog ids an id the text names that no row has is reported with its line
 - catalog ids conforming row ids parse
 - catalog ids a test's `:row` is one camelCase token, digits allowed after the first letter
 - catalog ids a report's test file reads from its suite root wherever the run was
+
+**`tests/00-framework/catalog-labels.test.ts`** (4)
+
+- catalog labels a row with no label, or one outside the vocabulary, fails the parse
+- catalog labels a row's text on its header line fails the parse; capability tags may follow the label
+- catalog labels verified_vanilla fails on a row vanilla lacks the capability for or registers
+- catalog labels a tested row vanilla runs green is verified_vanilla; an untested one keeps its source
 
 **`tests/00-framework/ci-shards.test.ts`** (2)
 
@@ -4513,11 +4494,12 @@ Click a count to jump to the affected test list.
 - docs/behavior-matrices.md every matrix entry has a definition and every case list is named by one
 - docs/behavior-matrices.md every path a definition names exists
 
-**`tests/00-framework/parity-reporter.test.ts`** (21)
+**`tests/00-framework/parity-reporter.test.ts`** (23)
 
 - parity reporter a full run counts a registration no test ran as orphaned
 - parity reporter a registration whose tests only skipped is orphaned
 - parity reporter a file that fails to collect or an unhandled error is a genuine failure
+- parity reporter a suite that fails outside its tests, such as an empty describe, is a genuine failure
 - parity reporter a test's `:row` id wins over its describe's bare id
 - parity reporter a bare id's registration gates every `:row` of it
 - parity reporter a row's own registration wins over its bare id's
@@ -4534,6 +4516,7 @@ Click a count to jump to the affected test list.
 - parity exit code keeps vitest's code for genuine failures and when no verdict was written
 - parity exit code keeps vitest's failure when the verdict saw nothing to forgive
 - JSON reports a report gets the verdict the reporter gives the same results live
+- JSON reports a file that failed with no failed test and no message is a genuine failure
 - JSON reports framework and contract sections need no catalog ids
 - JSON reports a report is judged by the overlay merged onto its base
 
@@ -4602,7 +4585,7 @@ Click a count to jump to the affected test list.
 - creep.moveTo() MOVE-BASIC-019 moveTo({noPathFinding: true}) returns ERR_NOT_FOUND without reusable path
 - creep.moveTo() MOVE-BASIC-022 moveTo() returns ERR_INVALID_TARGET for invalid target
 
-**`tests/01-movement/1.2-fatigue.test.ts`** (14)
+**`tests/01-movement/1.2-fatigue.test.ts`** (11)
 
 - creep fatigue MOVE-FATIGUE-001 a creep composed only of MOVE parts generates no fatigue on plains
 - creep fatigue MOVE-FATIGUE-001 non-MOVE parts on plains generate 2 fatigue each, balanced by one MOVE part
@@ -4612,9 +4595,6 @@ Click a count to jump to the affected test list.
 - creep fatigue MOVE-FATIGUE-003 empty CARRY parts do not contribute weight for fatigue calculation
 - creep fatigue MOVE-FATIGUE-004 non-empty CARRY parts contribute weight for fatigue calculation like other non-MOVE parts
 - creep fatigue MOVE-FATIGUE-005 moving onto swamp generates 10 fatigue per weighted body part
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZO (2x reduction)
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount ZHO2 (3x reduction)
-- MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount XZHO2 (4x reduction)
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 excess MOVE capacity does not produce negative fatigue
 - MOVE-FATIGUE-008 fatigue reduction cannot go below zero MOVE-FATIGUE-008 tick reduction on residual fatigue floors at zero
 - MOVE-FATIGUE-007 damaged MOVE parts do not contribute to fatigue reduction MOVE-FATIGUE-007 a 0-HP MOVE part stops reducing fatigue
@@ -4670,7 +4650,7 @@ Click a count to jump to the affected test list.
 - creep movement collision MOVE-COLLISION-003 two hostile creeps can also swap tiles by moving toward each other
 - creep movement collision MOVE-COLLISION-004 creep can move onto a tile vacated by another creep moving away
 - creep movement collision MOVE-COLLISION-005 hostile creep blocks movement onto its tile
-- creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates or all stay
+- creep movement collision MOVE-COLLISION-006 circular chain (A→B→C→A) rotates
 
 **`tests/01-movement/1.7-power-creep-movement.test.ts`** (1)
 
@@ -4945,7 +4925,7 @@ Click a count to jump to the affected test list.
 - creep.transfer() UNDOC-STALEARG-001:creepTransferStructure creep.transfer() rejects a stale cached Structure target
 - creep.transfer() UNDOC-STALEARG-001:creepTransferCreep creep.transfer() rejects a stale cached Creep target
 
-**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (143)
+**`tests/04-resource-transfer/4.2-4.5-withdraw-pickup-drop.test.ts`** (142)
 
 - creep.withdraw() WITHDRAW-001 withdraws energy from container
 - creep.withdraw() WITHDRAW-002 withdraws partial amount
@@ -5087,7 +5067,6 @@ Click a count to jump to the affected test list.
 - creep.pickup() PICKUP-010:fullBeforeRange pickup() validation returns the canonical code
 - Dropped resource decay DROP-DECAY-001 dropped energy decays by ceil(amount / ENERGY_DECAY) per tick
 - Dropped resource decay DROP-DECAY-002 dropped resource disappears when amount reaches 0
-- Dropped resource decay DROP-DECAY-004 harvesting above carry capacity drops the overflow on the creep tile
 - Dropped resource decay DROP-DECAY-005 any player's creep can pick up any dropped resource
 - Dropped resource decay DROP-DECAY-006 dropped resources expose amount and resourceType via Resource API
 
@@ -5269,7 +5248,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (109)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (108)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -5311,7 +5290,6 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-002 reserveController returns ERR_NO_BODYPART without a CLAIM part
 - controller mechanics CTRL-RESERVE-003 reserveController returns ERR_INVALID_TARGET when the controller is owned
 - controller mechanics CTRL-RESERVE-004 reserveController returns ERR_NOT_IN_RANGE when not adjacent to the controller
-- controller mechanics CTRL-RESERVE-005 reservation is capped at CONTROLLER_RESERVE_MAX
 - controller mechanics CTRL-RESERVE-006 reservation ticksToEnd decreases by 1 per tick without a reserver
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
@@ -5426,7 +5404,11 @@ Click a count to jump to the affected test list.
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl7 6 of 7 labs are active at RCL 7
 - CTRL-STRUCTLIMIT-001: structure count limits CTRL-STRUCTLIMIT-001:labRcl8 10 of 11 labs are active at RCL 8
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (48)
+**`tests/06-controller/6.11-gcl.test.ts`** (1)
+
+- Game.gcl GCL-001:belowLevelTwo Game.gcl follows vanilla GCL math at level 1, progress 999999
+
+**`tests/06-controller/6.4-upgrade.test.ts`** (49)
 
 - creep.upgradeController() CTRL-UPGRADE-001 returns OK when adjacent to own controller with energy
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -5438,6 +5420,7 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
 - creep.upgradeController() CTRL-UPGRADE-009 upgradeController returns ERR_INVALID_TARGET while upgradeBlocked is active
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
+- creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
 - creep.upgradeController() CTRL-UPGRADE-012 controller advances to the next level when progress reaches the threshold
 - creep.upgradeController() CTRL-UPGRADE-014 store missing energy key returns ERR_NOT_ENOUGH_RESOURCES; progress unchanged; no event
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
@@ -5499,15 +5482,14 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (9)
+**`tests/06-controller/6.7-downgrade.test.ts`** (8)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
-- Controller downgrade CTRL-DOWNGRADE-003 upgradeController resets the downgrade timer
-- Controller downgrade CTRL-DOWNGRADE-004 CONTROLLER_DOWNGRADE per-RCL table matches the canonical values
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
 - Controller downgrade CTRL-DOWNGRADE-006 downgrade from level N > 1 increments progress by 90% of CONTROLLER_LEVELS[N-1]
-- Controller downgrade CTRL-DOWNGRADE-009 a downgrade step landing on level >= 1 resets safeModeAvailable to 0
-- Controller downgrade CTRL-DOWNGRADE-010 a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-009:levelOne a downgrade step landing on level >= 1 resets safeModeAvailable to 0
+- Controller downgrade CTRL-DOWNGRADE-010:levelOne a downgrade step landing on level >= 1 starts a fresh safe-mode cooldown
+- Controller downgrade CTRL-DOWNGRADE-009:levelZero the downgrade step to level 0 also resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 - Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
 
@@ -5636,20 +5618,17 @@ Click a count to jump to the affected test list.
 - creep.heal() UNDOC-STALEARG-001:creepHeal creep.heal() rejects a stale cached Creep target
 - creep.heal() UNDOC-STALEARG-001:creepRangedHeal creep.rangedHeal() rejects a stale cached Creep target
 
-**`tests/07-combat/7.12-tower-intent.test.ts`** (5)
+**`tests/07-combat/7.12-tower-intent.test.ts`** (4)
 
-- Tower intent priority TOWER-INTENT-001 a tower performs at most one of attack, heal, or repair in a tick
 - Tower intent priority TOWER-INTENT-002 when heal, repair, and attack are all queued, heal is preferred
 - Tower intent priority TOWER-INTENT-003 lower-priority tower intents do not execute after the chosen action resolves
 - Tower target acceptance TOWER-ATTACK-003 tower.attack() accepts hostile creeps, rejects non-attackable targets
 - Tower target acceptance TOWER-REPAIR-003 tower.repair() accepts damaged structures, rejects creeps and non-repairable targets
 
-**`tests/07-combat/7.13-7.14-nukes.test.ts`** (97)
+**`tests/07-combat/7.13-7.14-nukes.test.ts`** (93)
 
 - Nuke launch — section 7.13 NUKE-LAUNCH-001 launch requires NUKER_ENERGY_CAPACITY energy and NUKER_GHODIUM_CAPACITY ghodium
-- Nuke launch — section 7.13 NUKE-LAUNCH-002 nuker cooldown is set after launch
 - Nuke launch — section 7.13 NUKE-LAUNCH-003 launching to a room within NUKE_RANGE returns OK
-- Nuke launch — section 7.13 NUKE-LAUNCH-004 a successful launch creates an in-flight Nuke object in the target room
 - Nuke launch — section 7.13 NUKE-LAUNCH-005 launchNuke returns ERR_NOT_ENOUGH_RESOURCES when energy or ghodium is insufficient
 - Nuke launch — section 7.13 NUKE-LAUNCH-006 launchNuke returns ERR_TIRED when the nuker is on cooldown
 - Nuke launch — section 7.13 NUKE-LAUNCH-007 launchNuke returns ERR_NOT_IN_RANGE when target room is beyond NUKE_RANGE
@@ -5676,8 +5655,6 @@ Click a count to jump to the affected test list.
 - Nuke launch — section 7.13 NUKER-PROPS-001:energyCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke launch — section 7.13 NUKER-PROPS-001:ghodiumCapacityAlias StructureNuker legacy property mirrors store or capacity
 - Nuke impact — section 7.14 NUKE-IMPACT-001 a nuke lands at NUKE_LAND_TIME ticks after launch
-- Nuke impact — section 7.14 NUKE-IMPACT-002 damage at ground zero (radius 0) equals NUKE_DAMAGE[0]
-- Nuke impact — section 7.14 NUKE-IMPACT-003 damage in radius 1–2 equals NUKE_DAMAGE[2]
 - Nuke impact — section 7.14 NUKE-IMPACT-005 ramparts do not protect creeps from nuke damage
 - Nuke impact — section 7.14 NUKE-IMPACT-006 dropped resources, sites, tombstones, and ruins in the room are removed
 - Nuke impact — section 7.14 NUKE-IMPACT-007 nukes do not create tombstones or ruins from objects they destroy
@@ -5774,11 +5751,11 @@ Click a count to jump to the affected test list.
 **`tests/07-combat/7.7-simultaneous.test.ts`** (6)
 
 - Simultaneous damage & healing resolution COMBAT-SIMULT-001 newHits = oldHits + healing - damage in the same tick
-- Simultaneous damage & healing resolution COMBAT-SIMULT-002 a creep survives if healing equals damage in the same tick
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 a creep survives if healing equals damage in the same tick
 - Simultaneous damage & healing resolution COMBAT-SIMULT-003 overkill damage does not carry over to the next tick
-- Simultaneous damage & healing resolution COMBAT-SIMULT-004 a creep dies only if hits reach 0 after simultaneous resolution
-- Simultaneous damage & healing resolution COMBAT-SIMULT-004 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
-- Simultaneous damage & healing resolution COMBAT-SIMULT-005 multiple sources of damage and healing are summed independently
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 a creep dies only if hits reach 0 after simultaneous resolution
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 same-tick heal does not save a creep when damage exceeds hits + heal (Issue 201)
+- Simultaneous damage & healing resolution COMBAT-SIMULT-001 multiple sources of damage and healing are summed independently
 
 **`tests/07-combat/7.9-7.11-tower.test.ts`** (52)
 
@@ -5835,7 +5812,7 @@ Click a count to jump to the affected test list.
 - StructureTower UNDOC-STALEARG-001:towerHeal StructureTower.heal() rejects a stale cached Creep target
 - StructureTower UNDOC-STALEARG-001:towerRepair StructureTower.repair() rejects a stale cached Structure target
 
-**`tests/08-boosts/8.1-boost-application.test.ts`** (37)
+**`tests/08-boosts/8.1-boost-application.test.ts`** (35)
 
 - Lab boostCreep BOOST-CREEP-001 boostCreep returns OK and marks body parts as boosted
 - Lab boostCreep BOOST-CREEP-002 boostCreep consumes LAB_BOOST_MINERAL and LAB_BOOST_ENERGY per part
@@ -5843,8 +5820,6 @@ Click a count to jump to the affected test list.
 - Lab boostCreep BOOST-CREEP-004 boostCreep returns ERR_NOT_IN_RANGE when creep is not adjacent
 - Lab boostCreep BOOST-CREEP-005 boostCreep returns ERR_NOT_ENOUGH_RESOURCES when lab lacks mineral
 - Lab boostCreep BOOST-CREEP-006 boostCreep returns ERR_NOT_FOUND when no matching unboosted parts
-- Lab boostCreep BOOST-CREEP-007 boosted ATTACK part deals increased damage
-- Lab boostCreep BOOST-CREEP-008 boosted HEAL part heals increased HP
 - Lab boostCreep BOOST-CREEP-009 boostCreep affects only body parts matching the lab compound
 - Lab boostCreep BOOST-CREEP-010:notOwner boostCreep() validation returns the canonical code
 - Lab boostCreep BOOST-CREEP-010:rcl boostCreep() validation returns the canonical code
@@ -5953,14 +5928,15 @@ Click a count to jump to the affected test list.
 - BOOST-CARRY-001 carry capacity boost magnitudes XKH2O (4x)
 - BOOST-CARRY-002 boosted CARRY parts still contribute zero fatigue when empty BOOST-CARRY-002 empty boosted CARRY does not add weight for fatigue
 
-**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (48)
+**`tests/09-spawning-lifecycle/9.1-spawn-creep.test.ts`** (49)
 
 - StructureSpawn SPAWN-CREATE-004 spawnCreep succeeds when available energy exactly matches the summed BODYPART_COST
 - StructureSpawn SPAWN-CREATE-004 spawnCreep fails when available energy is 1 below the summed BODYPART_COST
+- StructureSpawn SPAWN-CREATE-015 without energyStructures, spawnCreep drains spawns nearest-first, then extensions nearest-first
 - StructureSpawn SPAWN-CREATE-005 spawnCreep draws energy only from the listed energyStructures
 - StructureSpawn SPAWN-CREATE-006 spawnCreep draws energy from listed energyStructures in listed order
 - StructureSpawn SPAWN-CREATE-007 spawnCreep returns ERR_NOT_ENOUGH_ENERGY when the selected energy sources cannot pay the spawn cost
-- StructureSpawn SPAWN-CREATE-003 spawnCreep rejects a name that collides with a currently spawning creep
+- StructureSpawn SPAWN-CREATE-008 spawnCreep rejects a name that collides with a currently spawning creep
 - StructureSpawn SPAWN-CREATE-008 spawnCreep returns ERR_NAME_EXISTS for duplicate name
 - StructureSpawn SPAWN-CREATE-010 spawnCreep(..., { dryRun: true }) does not consume energy or create a creep
 - StructureSpawn SPAWN-CREATE-001 spawnCreep returns ERR_INVALID_ARGS for an empty body
@@ -6084,9 +6060,9 @@ Click a count to jump to the affected test list.
 - creep.say() CREEP-SAY-001 say() makes the message visible to the owner for one tick
 - creep.say() CREEP-SAY-002 say(message, true) makes the message visible to all players
 - creep.say() CREEP-SAY-003 without the public flag, only the owner sees the message
-- Creep spawning state CREEP-SPAWNING-001 creep.spawning is true while the creep is being spawned
+- Creep spawning state SPAWN-TIMING-002 creep.spawning is true while the creep is being spawned
 - Creep spawning state CREEP-SPAWNING-002 creep.ticksToLive is undefined while spawning
-- Creep spawning state CREEP-SPAWNING-003 a spawning creep cannot perform actions
+- Creep spawning state CREEP-SPAWNING-007 a spawning creep cannot perform actions
 - Creep spawning state CREEP-SPAWNING-004 a spawning creep body parts are visible before spawning completes
 - Creep spawning state CREEP-SPAWNING-005 StructureSpawn.spawning is null after spawn completion until another spawn succeeds
 - Creep spawning state CREEP-SPAWNING-006 a creep spawned this tick reports spawning=true the same tick
@@ -6101,17 +6077,12 @@ Click a count to jump to the affected test list.
 **`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (7)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
-- creep death CREEP-DEATH-002 death creates a tombstone at the position of death
+- creep death TOMBSTONE-001 death creates a tombstone at the position of death
 - creep death CREEP-DEATH-003 death resources go into a same-tile container first
 - creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
 - creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
 - creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone
-
-**`tests/10-structures-energy/10.1-extension.test.ts`** (2)
-
-- StructureExtension EXTENSION-001 an active extension contributes exactly its stored energy to room.energyAvailable
-- StructureExtension EXTENSION-002 an active extension contributes exactly its energy capacity to room.energyCapacityAvailable
 
 **`tests/10-structures-energy/10.1b-spawn-energy.test.ts`** (2)
 
@@ -6491,8 +6462,8 @@ Click a count to jump to the affected test list.
 - StructureRampart RAMPART-DECAY-003 [rcl=6] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=7] owned rampart hitsMax matches the canonical table
 - StructureRampart RAMPART-DECAY-003 [rcl=8] owned rampart hitsMax matches the canonical table
-- StructureRampart RAMPART-PROTECT-001 tower.attack on a tile with a rampart damages the rampart, not the creep
-- StructureRampart RAMPART-PROTECT-002 creep.attack on a rampart-covered structure damages the rampart
+- StructureRampart TOWER-ATTACK-006 tower.attack on a tile with a rampart damages the rampart, not the creep
+- StructureRampart COMBAT-MELEE-005 creep.attack on a rampart-covered structure damages the rampart
 - StructureRampart RAMPART-PROTECT-003 a non-public hostile rampart blocks hostile creep movement
 - StructureRampart RAMPART-PROTECT-004 hostile creep can move onto a public rampart
 - StructureRampart RAMPART-PROTECT-005 setPublic(true) sets isPublic to true
@@ -6607,7 +6578,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-001 creep on a same-shard portal tile appears at the destination next tick
 - Portal mechanics PORTAL-002 same-shard portal exposes destination as a RoomPosition
 - Portal mechanics PORTAL-004 permanent portal has undefined ticksToDecay
-- Portal mechanics PORTAL-005 creep landing on a portal tile is transported next tick without a move intent
+- Portal mechanics PORTAL-001 creep landing on a portal tile is transported next tick without a move intent
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
 **`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (11)
@@ -6649,17 +6620,17 @@ Click a count to jump to the affected test list.
 - Structure hits STRUCTURE-HITS-001:factory initializes with 1000 hits
 - Structure hits STRUCTURE-HITS-002 destroyable structures expose hits and hitsMax
 - Structure hits STRUCTURE-HITS-003 a structure at 0 hits is destroyed in the same tick
-- Structure hits STRUCTURE-HITS-004 destroying a structure creates a ruin containing remaining store
-- Structure hits STRUCTURE-HITS-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
+- Structure hits RUIN-004 destroying a structure creates a ruin containing remaining store
+- Structure hits RUIN-005 on decay, ruin is removed and its store spills as a dropped pile at full amount
 
 **`tests/15-structure-common/15.2-isactive.test.ts`** (4)
 
-- Structure isActive() STRUCTURE-ACTIVE-001 isActive returns true only for allowed structures at the current RCL
+- Structure isActive() CTRL-STRUCTLIMIT-001:closestFirst isActive returns true only for allowed structures at the current RCL
 - Structure isActive() STRUCTURE-ACTIVE-002 inactive structures reject gated gameplay actions
-- Structure isActive() STRUCTURE-ACTIVE-003 a structure becomes active again when RCL satisfies its requirements
+- Structure isActive() CTRL-STRUCTLIMIT-002 a structure becomes active again when RCL satisfies its requirements
 - Structure isActive() STRUCTURE-ACTIVE-004 unowned structures with no controller limit return true from isActive
 
-**`tests/15-structure-common/15.3-construction-cost.test.ts`** (19)
+**`tests/15-structure-common/15.3-construction-cost.test.ts`** (18)
 
 - Construction costs CONSTRUCTION-COST-001:spawn costs 15000
 - Construction costs CONSTRUCTION-COST-001:extension costs 3000
@@ -6677,7 +6648,6 @@ Click a count to jump to the affected test list.
 - Construction costs CONSTRUCTION-COST-001:container costs 5000
 - Construction costs CONSTRUCTION-COST-001:nuker costs 100000
 - Construction costs CONSTRUCTION-COST-001:factory costs 100000
-- Construction costs CONSTRUCTION-COST-002 construction site progressTotal equals its structure construction cost
 - Construction costs CONSTRUCTION-COST-003:wall road site progressTotal is 150× base cost
 - Construction costs CONSTRUCTION-COST-003:swamp road site progressTotal is 5× base cost
 
@@ -6752,13 +6722,14 @@ Click a count to jump to the affected test list.
 - Room terrain access ROOM-TERRAIN-001 [plain] Room.Terrain.get(x, y) returns the expected terrain mask
 - Room terrain access ROOM-TERRAIN-001 [wall] Room.Terrain.get(x, y) returns the expected terrain mask
 - Room terrain access ROOM-TERRAIN-001 [swamp] Room.Terrain.get(x, y) returns the expected terrain mask
-- Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns the room terrain as a 2500-byte Uint8Array
-- Room terrain access ROOM-TERRAIN-003 Game.map.getRoomTerrain(roomName) provides equivalent terrain access to new Room.Terrain(roomName)
+- Room terrain access ROOM-TERRAIN-002 Room.Terrain.getRawBuffer() returns a 2500-element Uint8Array indexed y * 50 + x
+- Room terrain access ROOM-TERRAIN-004 Room.Terrain.getRawBuffer(destinationArray) fills and returns destinationArray
 
-**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (33)
+**`tests/16-room-mechanics/16.6-eventlog.test.ts`** (34)
 
 - room.getEventLog() ROOM-EVENTLOG-001 getEventLog returns the current tick parsed event array
 - room.getEventLog() ROOM-EVENTLOG-003 getEventLog(true) returns the raw JSON string
+- room.getEventLog() ROOM-EVENTLOG-028 harvesting a deposit logs EVENT_HARVEST
 - room.getEventLog() ROOM-EVENTLOG-002 current-tick event entries use the canonical event-type and payload mapping
 - room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick
 - room.getEventLog() ROOM-EVENTLOG-005 EVENT_OBJECT_DESTROYED is emitted on creep death and carries data.type === "creep"
@@ -6791,11 +6762,10 @@ Click a count to jump to the affected test list.
 - room.getEventLog() ROOM-EVENTLOG-024 EVENT_OBJECT_DESTROYED precedes EVENT_ATTACK in the per-target log on a kill-shot
 - room.getEventLog() ROOM-EVENTLOG-025 EVENT_ATTACK_TYPE_HIT_BACK precedes the original EVENT_ATTACK in the log
 
-**`tests/16-room-mechanics/16.7-flags.test.ts`** (24)
+**`tests/16-room-mechanics/16.7-flags.test.ts`** (23)
 
 - Flags FLAG-001 Room.createFlag creates a flag visible in Game.flags for the creating player
 - Flags FLAG-002 a created flag stores name, color, and secondaryColor
-- Flags FLAG-003 player cannot exceed FLAGS_LIMIT total flags
 - Flags FLAG-004 Flag.remove() removes the flag from the player flag set
 - Flags FLAG-005 Flag.setColor updates the flag color and secondaryColor
 - Flags FLAG-007 createFlag returns ERR_NAME_EXISTS for a duplicate name
@@ -6865,12 +6835,11 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-001:mist deposit exposes the canonical depositType
 - Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula for its harvested count
 - Deposit lifecycle DEPOSIT-003 deposit cooldown counts down the wait after a harvest and reads 0 once it has elapsed
-- Deposit lifecycle DEPOSIT-005 repeated harvests increase lastCooldown and the next cooldown
+- Deposit lifecycle DEPOSIT-002 repeated harvests increase lastCooldown and the next cooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (16)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (15)
 
-- Tombstone TOMBSTONE-002 creep tombstone ticksToDecay equals body.length * TOMBSTONE_DECAY_PER_PART
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
@@ -6896,15 +6865,13 @@ Click a count to jump to the affected test list.
 - Ruin RUIN-006 ruin ticksToDecay strictly decreases each tick
 - Ruin RUIN-007 ruin.structure exposes destroyed structure identity, hits, and ownership
 
-**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (7)
+**`tests/18-game-objects/18.3-nuke-flight.test.ts`** (5)
 
 - Nuke flight NUKE-FLIGHT-001 launching a nuke creates a Nuke object in the target room with launchRoomName and timeToLand
 - Nuke flight NUKE-FLIGHT-002 nuke.timeToLand decreases by 1 each tick
-- Nuke flight NUKE-FLIGHT-003 an in-flight nuke is visible via FIND_NUKES in the target room
 - Nuke flight NUKE-FLIGHT-004:targetRoomVisibleToTargetOwner in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:launchRoomDoesNotListTargetNuke in-flight nuke visibility follows player perspective
 - Nuke flight NUKE-FLIGHT-004:targetRoomHiddenFromLauncherWithoutVisibility in-flight nuke visibility follows player perspective
-- Nuke flight NUKE-FLIGHT-005 landed nuke object is removed and no longer appears in FIND_NUKES
 
 **`tests/19-power/19.0-gpl.test.ts`** (6)
 
@@ -6915,7 +6882,7 @@ Click a count to jump to the affected test list.
 - Game.gpl GPL-002:levelTwo Game.gpl follows vanilla account-power math at 4000 power
 - Game.gpl GPL-002:levelThree Game.gpl follows vanilla account-power math at 9000 power
 
-**`tests/19-power/19.1-lifecycle.test.ts`** (8)
+**`tests/19-power/19.1-lifecycle.test.ts`** (7)
 
 - Power creep lifecycle POWERCREEP-LIFETIME-001 spawned power creep ticksToLive decreases by 1 each tick
 - Power creep lifecycle POWERCREEP-MOVE-001 power creep move generates no fatigue
@@ -6924,7 +6891,6 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-ENABLE-002 enableRoom fails for invalid target or out of range
 - Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
-- Power creep lifecycle POWERCREEP-MOVE-002 power creep move onto a road triggers road wear
 
 **`tests/19-power/19.4-19.8-powers.test.ts`** (25)
 
@@ -6984,11 +6950,9 @@ Click a count to jump to the affected test list.
 - Game.map route finding MAP-ROUTE-004 findExit returns the first route step exit constant
 - Game.map route finding MAP-ROUTE-005 findExit returns ERR_NO_PATH when no route exists and ERR_INVALID_ARGS for same room
 
-**`tests/21-map/21.3-terrain.test.ts`** (3)
+**`tests/21-map/21.3-terrain.test.ts`** (1)
 
-- Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns terrain access for visible and non-visible rooms
-- Game.map terrain MAP-TERRAIN-002 terrain.get(x, y) returns 0, TERRAIN_MASK_WALL, or TERRAIN_MASK_SWAMP
-- Game.map terrain MAP-TERRAIN-003 terrain.getRawBuffer() returns a 2500-element buffer matching get()
+- Game.map terrain MAP-TERRAIN-001 getRoomTerrain returns a Room.Terrain for visible and non-visible rooms
 
 **`tests/22-roomposition/22.0-basics.test.ts`** (4)
 
@@ -7047,7 +7011,7 @@ Click a count to jump to the affected test list.
 - Store STORE-SINGLE-002 getCapacity() with no argument returns null for energy-only stores
 - Store STORE-SINGLE-003 getCapacity(non-energy) returns null for energy-only stores
 - Store STORE-SINGLE-004 getUsedCapacity(RESOURCE_ENERGY) returns energy amount for energy-only stores
-- Store STORE-RESTRICTED-001 lab getCapacity returns per-resource caps
+- Store STORE-RESTRICTED-002 lab getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-002 nuker getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-003 powerSpawn getCapacity returns per-resource caps
 - Store STORE-RESTRICTED-004:nuker restricted store returns null for disallowed resources
@@ -7127,13 +7091,17 @@ Click a count to jump to the affected test list.
 - Simultaneous creep actions INTENT-SIMULT-001 move, rangedMassAttack, and heal all execute in the same tick
 - Simultaneous creep actions INTENT-SIMULT-002 heal on a healthy creep returns OK and blocks lower-priority actions
 
-**`tests/25-memory/25.1-25.3-memory.test.ts`** (21)
+**`tests/25-memory/25.1-25.3-memory.test.ts`** (25)
 
 - Memory MEMORY-001 RawMemory.set before first Memory access replaces what Memory sees
 - Memory MEMORY-002 RawMemory.set after Memory access does not replace the parsed Memory
 - Memory MEMORY-003 Memory mutations are serialized back to RawMemory at tick end
 - Memory MEMORY-004 RawMemory.set throws when raw memory exceeds 2 MB
 - Memory MEMORY-006 set → access → mutate persists the mutated parse across ticks
+- Memory MEMORY-007:room room.memory is Memory.rooms[name]
+- Memory MEMORY-007:spawn spawn.memory is Memory.spawns[name]
+- Memory MEMORY-007:flag flag.memory is Memory.flags[name]
+- Memory MEMORY-007:powerCreep powerCreep.memory is Memory.powerCreeps[name]
 - Memory MEMORY-005 RawMemory.set after Memory access persists across ticks
 - RawMemory RAWMEMORY-001 RawMemory.set and get round-trip on the same tick
 - RawMemory RAWMEMORY-002:activeCount setActiveSegments takes at most MAX_ACTIVE_SEGMENTS ids
@@ -7286,21 +7254,13 @@ Click a count to jump to the affected test list.
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-001 creep.memory and Memory.creeps[name] are aliased within a tick
 - Undocumented API Surface — creep.memory accessor UNDOC-CREEPMEM-002 deleting Memory.creeps[name] makes creep.memory read as an empty object that writes back
 
-**`tests/27-undocumented/27.6-identity.test.ts`** (13)
+**`tests/27-undocumented/27.6-identity.test.ts`** (5)
 
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-001 Game.creeps[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-002 Game.rooms[name] returns the same reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-003 Game.getObjectById and Room.find return the same structure reference within a tick
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-004 ad-hoc property assigned to a game object is readable via a later same-tick lookup
 - Undocumented API Surface — within-tick object identity UNDOC-IDENTITY-005 ad-hoc properties assigned in one tick are NOT present on the object in a subsequent tick
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-001 new Creep(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-002 new Source(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-003 new Structure(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-004 new Resource(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-005 new ConstructionSite(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-006 new Mineral(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-007 new Tombstone(id) exposes the same public fields as Game.getObjectById(id)
-- Undocumented API Surface — within-tick object identity UNDOC-CTOR-008 new Ruin(id) exposes the same public fields as Game.getObjectById(id)
 
 **`tests/27-undocumented/27.7-packedpos.test.ts`** (4)
 
@@ -7325,6 +7285,10 @@ Click a count to jump to the affected test list.
 - Shard identity SHARD-IDENT-001 Game.shard.name is a non-empty string
 - Shard identity SHARD-IDENT-002 Game.shard.type is one of {normal, ptr, season}
 - Shard identity SHARD-IDENT-003 Game.shard.ptr === (Game.shard.type === "ptr")
+
+**`tests/29-multi-shard/29.6-shard-pcreep.test.ts`** (1)
+
+- PowerCreep shard home SHARD-PCREEP-002 a spawned PowerCreep reports Game.shard.name as its shard
 
 **`tests/30-cpu-runtime/30.1-heap-statistics.test.ts`** (1)
 
