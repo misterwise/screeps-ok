@@ -177,9 +177,6 @@ Coverage Notes
   non-MOVE parts.
 - `MOVE-FATIGUE-005` `behavior` `verified_vanilla`
   Moving onto swamp generates fatigue equal to 10 per weighted body part.
-- `MOVE-FATIGUE-006` `matrix` `verified_vanilla`
-  Boosted MOVE parts reduce fatigue per tick by the boosted amount for `ZO`,
-  `ZHO2`, and `XZHO2`.
 - `MOVE-FATIGUE-007` `behavior` `verified_vanilla`
   Damaged (0 HP) MOVE parts do not contribute to fatigue reduction.
 - `MOVE-FATIGUE-008` `behavior` `verified_vanilla`
@@ -1756,8 +1753,9 @@ Coverage Notes
 
 ### 8.12 Move Boosts
 - `BOOST-MOVE-001` `matrix` `verified_vanilla`
-  Move boost effect magnitudes match the canonical Screeps `BOOSTS` table for
-  `ZO`, `ZHO2`, and `XZHO2`.
+  A MOVE part boosted with `ZO`, `ZHO2`, or `XZHO2` reduces fatigue by
+  `2 × BOOSTS.move[compound].fatigue` per tick, in place of the unboosted 2
+  (`MOVE-FATIGUE-002`).
 
 Coverage Notes
 - Concrete fatigue outcomes from move boosts are also covered in movement

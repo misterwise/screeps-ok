@@ -674,11 +674,12 @@ describe('BOOST-MOVE-001 move boost fatigue reduction magnitudes', () => {
 				pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
 				store: { energy: LAB_ENERGY_CAPACITY, [compound]: LAB_BOOST_MINERAL },
 			});
-			// 1 MOVE + 1 CARRY (weighted). On plains: fatigue = 2 per weighted part = 2.
-			// Boosted MOVE reduces fatigue by 2*multiplier per tick.
+			// 4 WORK + 1 MOVE: a plains move generates 8 fatigue, and the boosted
+			// MOVE removes 2 * multiplier of it that tick, leaving 4, 2 or 0 for
+			// the three compounds (6 unboosted).
 			const creepId = await shard.placeCreep('W1N1', {
 				pos: [25, 26], owner: 'p1',
-				body: [MOVE, CARRY],
+				body: body(4, WORK, MOVE),
 			});
 			await shard.tick();
 
@@ -687,22 +688,14 @@ describe('BOOST-MOVE-001 move boost fatigue reduction magnitudes', () => {
 			`);
 			await shard.tick();
 
-			// Move the creep and check fatigue.
 			const rc = await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).move(RIGHT)
+				Game.getObjectById(${creepId}).move(LEFT)
 			`);
 			expect(rc).toBe(OK);
 
-			const fatigue = await shard.runPlayer('p1', code`
-				Game.getObjectById(${creepId}).fatigue
-			`) as number;
-			// Plains fatigue = 2 (1 weighted part * 2). Boosted MOVE reduces
-			// by 2*multiplier immediately. For multiplier >= 2, fatigue should
-			// be 0 after reduction. For multiplier == 1 (unboosted baseline),
-			// fatigue = max(0, 2 - 2*1) = 0 as well (1 MOVE perfectly carries
-			// 1 weighted part). With boosted MOVE, the fatigue never accumulates
-			// above 0 because reduction exceeds generation.
-			expect(fatigue).toBe(0);
+			const creep = await shard.expectObject(creepId, 'creep');
+			expect(creep.pos.x).toBe(24);
+			expect(creep.fatigue).toBe(8 - 2 * multiplier);
 		});
 	}
 });

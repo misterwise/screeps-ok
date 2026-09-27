@@ -1,7 +1,6 @@
 import { describe, test, expect, code,
 	MOVE, WORK, CARRY, RANGED_ATTACK, OK, ERR_TIRED,
-	BOOSTS, BODYPART_HITS,
-	STRUCTURE_LAB, LAB_BOOST_MINERAL, LAB_ENERGY_CAPACITY,
+	BODYPART_HITS,
 	body,
 } from '../../src/index.js';
 
@@ -135,48 +134,6 @@ describe('creep fatigue', () => {
 		// 1 MOVE part reduces fatigue by 2 → final = 8.
 		expect(creep.fatigue).toBe(8);
 	});
-});
-
-// MOVE-FATIGUE-006 — Boosted MOVE parts reduce fatigue per tick by the
-// boosted amount. Iterate every move boost compound from BOOSTS.
-const moveBoostCompounds = Object.entries(
-	BOOSTS.move as Record<string, Record<string, number>>,
-);
-
-describe('MOVE-FATIGUE-006 boosted MOVE parts reduce fatigue by the boosted amount', () => {
-	for (const [compound, effects] of moveBoostCompounds) {
-		const multiplier = effects.fatigue;
-
-		test(`${compound} (${multiplier}x reduction)`, async ({ shard }) => {
-			shard.requires('chemistry');
-			await shard.ownedRoom('p1', 'W1N1', 6);
-
-			const labId = await shard.placeStructure('W1N1', {
-				pos: [25, 25], structureType: STRUCTURE_LAB, owner: 'p1',
-				store: { energy: LAB_ENERGY_CAPACITY, [compound]: LAB_BOOST_MINERAL },
-			});
-			// 4 WORK + 1 MOVE: each plain move generates 8 fatigue (4 weighted * 2).
-			// One boosted MOVE reduces fatigue by 2*multiplier per tick. With
-			// multiplier in {2, 3, 4} and unboosted baseline 1, residual fatigue
-			// after a single move is max(0, 8 - 2*multiplier) — distinct per
-			// compound.
-			const creepId = await shard.placeCreep('W1N1', {
-				pos: [25, 26], owner: 'p1',
-				body: body(4, WORK, MOVE),
-			});
-			await shard.tick();
-
-			await shard.runPlayer('p1', code`
-				Game.getObjectById(${labId}).boostCreep(Game.getObjectById(${creepId}))
-			`);
-			await shard.tick();
-
-			await shard.runPlayer('p1', code`Game.getObjectById(${creepId}).move(LEFT)`);
-
-			const creep = await shard.expectObject(creepId, 'creep');
-			expect(creep.fatigue).toBe(Math.max(0, 8 - 2 * multiplier));
-		});
-	}
 });
 
 describe('MOVE-FATIGUE-008 fatigue reduction cannot go below zero', () => {

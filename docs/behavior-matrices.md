@@ -702,22 +702,20 @@ checks both. Each definition has these fields, in this order:
   `BOOST-ATTACK-001`, `BOOST-RANGED-001`, `BOOST-HEAL-001`,
   `BOOST-TOUGH-001`, `BOOST-HARVEST-001`, `BOOST-BUILD-001`,
   `BOOST-DISMANTLE-001`, `BOOST-UPGRADE-001`, `BOOST-MOVE-001`,
-  `BOOST-CARRY-001`, `MOVE-FATIGUE-006`
+  `BOOST-CARRY-001`
 - `Canonical Source`
   `BOOSTS` and the official action processors that consume those effects.
 - `Dimensions`
   body part type, compound, affected mechanic
 - `Applicability`
-  All reviewed boost families in section `8`, and the move compounds'
-  fatigue reduction (`MOVE-FATIGUE-006`, the magnitudes `BOOST-MOVE-001`
-  also claims)
+  All reviewed boost families in section `8`
 - `Exclusions`
   Mixed-part aggregation and boost application/removal costs
 - `Verification Notes`
   Numeric boost magnitudes are owned here; mechanic-specific non-table rules
   remain in the local boost facets. The case list is
   `src/matrices/boost-tables.ts`, which no test runs yet: the section 8 tests
-  and `MOVE-FATIGUE-006` loop over `BOOSTS` directly.
+  loop over `BOOSTS` directly.
 
 ### CREEP-DEATH-SOURCES
 
