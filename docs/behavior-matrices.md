@@ -107,13 +107,12 @@ checks both. Each definition has these fields, in this order:
   object-typed arguments target singleton room objects that cannot be
   removed (`Source`, `Mineral`, `StructureController`) are excluded.
 - `Verification Notes`
-  Each row must be verified against vanilla before being added. The matrix
-  asserts (a) the call did not return `OK` (it threw a runtime error or
-  returned a non-OK code) and (b) no observable side effect occurred (no
-  matching `Room.getEventLog()` entry, no state change consistent with
-  the action having run). Engines may surface different rejection shapes;
-  the matrix accepts any rejection. The executable case list lives in
-  `src/matrices/stale-argument.ts`.
+  Each row must be verified against vanilla before being added. Each case
+  pins vanilla's rejection (`expected`): `ERR_INVALID_TARGET`, or a runtime
+  error for `Creep.withdraw`, whose check reads `data(target.id).store`
+  before the target test (`game/creeps.js:509`). A case whose action spends
+  from or fills the receiver's store also checks the store is unchanged.
+  The executable case list lives in `src/matrices/stale-argument.ts`.
 
 ### JSON-OBJECT
 

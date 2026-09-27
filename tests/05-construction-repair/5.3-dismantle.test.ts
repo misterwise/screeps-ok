@@ -273,7 +273,7 @@ describe('creep.dismantle()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(rampartId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleDismantleCase, code`
 			Game.getObjectById(${creepId}).dismantle(globalThis.__screepsOkStaleArgDismantle)
 		`);
 	});

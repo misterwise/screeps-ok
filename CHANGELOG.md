@@ -216,6 +216,9 @@ changes since `v0.1.0-alpha` are not itemized.
   extension, link, tower, lab) and is keyed by type and level
   (`:extensionRcl2`); roads, walls, containers, ramparts and the one-per-room
   types were never counted.
+- `UNDOC-STALEARG-001` pins vanilla's rejection for each case:
+  `ERR_INVALID_TARGET`, and a runtime error for `:creepWithdrawStructure`. It
+  had accepted either.
 - Re-scoped: `MAP-ROOM-005` covers worlds that straddle the map origin, and
   `SPAWN-TIMING-005`'s test now exercises its row (directions ignored on a
   one-tick `PWR_OPERATE_SPAWN` spawn).

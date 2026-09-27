@@ -420,7 +420,7 @@ describe('creep.transfer()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(extensionId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleTransferStructureCase, code`
 			Game.getObjectById(${creepId}).transfer(globalThis.__screepsOkStaleArgExtension, RESOURCE_ENERGY)
 		`);
 
@@ -448,7 +448,7 @@ describe('creep.transfer()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(receiverId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleTransferCreepCase, code`
 			Game.getObjectById(${giverId}).transfer(globalThis.__screepsOkStaleArgCreep, RESOURCE_ENERGY)
 		`);
 

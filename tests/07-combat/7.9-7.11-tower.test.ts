@@ -459,7 +459,7 @@ describe('StructureTower', () => {
 		});
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleArgTowerAttackCase, code`
 			Game.getObjectById(${towerId}).attack(globalThis.__screepsOkStaleArgTowerAttack)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
@@ -484,7 +484,7 @@ describe('StructureTower', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleArgTowerHealCase, code`
 			Game.getObjectById(${towerId}).heal(globalThis.__screepsOkStaleArgTowerHeal)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);
@@ -510,7 +510,7 @@ describe('StructureTower', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(rampartId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleArgTowerRepairCase, code`
 			Game.getObjectById(${towerId}).repair(globalThis.__screepsOkStaleArgTowerRepair)
 		`);
 		const tower = await shard.expectStructure(towerId, STRUCTURE_TOWER);

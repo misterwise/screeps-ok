@@ -319,7 +319,7 @@ describe('creep.build()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(siteId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleBuildCase, code`
 			Game.getObjectById(${creepId}).build(globalThis.__screepsOkStaleArgSite)
 		`);
 

@@ -211,7 +211,7 @@ describe('Spawn.recycleCreep', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(creepId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleArgSpawnRecycleCreepCase, code`
 			Game.getObjectById(${spawnId}).recycleCreep(globalThis.__screepsOkStaleArgRecycleCreep)
 		`);
 	});

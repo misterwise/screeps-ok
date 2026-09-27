@@ -4351,25 +4351,17 @@ Coverage Notes
 Bots can keep heap references to game-object wrappers across ticks. When the
 underlying object is removed before a later public method call on that cached
 receiver, vanilla resolves current backing data by receiver id and throws a
-runtime error before normal validation or intent queueing. The matrix
-verifies that stale access is *blocked* with a runtime error rather than
-silently allowed; the engine-specific message is not load-bearing. Vanilla
-emits `Could not find an object with ID...`; xxscreeps releases all
-`RoomObject` wrappers at end-of-tick and emits
-`Accessed a released object from a previous tick`. Engines that block stale
-access more aggressively than vanilla (e.g. by also rejecting cross-tick
-access to a *live* object) still satisfy this matrix; that broader behavior
-is owned by `UNDOC-STALERECV-002`.
+runtime error before normal validation or intent queueing. Rejecting
+cross-tick access to a *live* object is a different claim, owned by
+`UNDOC-STALERECV-002`.
 
 - `UNDOC-STALERECV-001` `matrix` `verified_vanilla`
   Public methods in the stale cached receiver matrix throw a runtime error
   when called on a cached `RoomObject` wrapper after its backing object has
-  been removed. The matrix asserts `errorKind === 'runtime'` only; engines
-  may surface different error wordings (vanilla typically throws
-  `Could not find an object with ID ...`; xxscreeps emits
-  `Accessed a released object from a previous tick`;
-  `StructureSpawn.recycleCreep` on vanilla throws a TypeError because that
-  one method bypasses the `data()` helper).
+  been removed. The row pins the error kind, not its message: vanilla
+  throws `Could not find an object with ID ...`, except
+  `StructureSpawn.recycleCreep`, which bypasses the `data()` helper and
+  throws a TypeError.
 - `UNDOC-STALERECV-002` `behavior` `verified_vanilla`
   A cached `RoomObject` wrapper whose backing object still exists on a
   later tick remains usable: read methods resolve against the wrapper's
@@ -4380,13 +4372,6 @@ is owned by `UNDOC-STALERECV-002`.
   rejection. Bots cache creep/structure wrappers across ticks and rely on
   this; an engine that invalidates all wrappers at end-of-tick breaks
   them even though it passes the stale matrix.
-
-Stale-receiver parity tracking lands in three buckets: (1) both engines
-throw — parity, no gap; (2) one engine surfaces an ungraceful error
-wording (e.g. vanilla `recycleCreep` TypeError on `.off`) but still rejects
-the call — parity, noted in matrix prose, no gap; (3) one engine returns
-`OK` and dispatches a stale intent — real parity gap, recorded in
-`adapters/<engine>/parity.json` and `docs/<engine>-parity-gaps.md`.
 
 Coverage Notes
 - Confirmed rows currently cover cached removed `ConstructionSite.remove()`,
@@ -4409,30 +4394,16 @@ Framework Notes
 Bots can keep heap references to game-object wrappers across ticks and pass
 them as target arguments to action methods on a fresh receiver in a later
 tick. When the cached argument's backing object has been removed before the
-call, vanilla rejects the call without dispatching an intent — typically by
-returning `ERR_INVALID_TARGET` once the live target lookup fails, though
-some methods throw a runtime error before validation runs. The matrix
-verifies that stale-target access is *rejected* with no observable side
-effect; the engine-specific rejection shape (runtime throw vs return code)
-is not load-bearing.
+call, vanilla's live target lookup fails and the call is rejected without
+dispatching an intent.
 
 - `UNDOC-STALEARG-001` `matrix` `verified_vanilla`
-  Public action methods in the stale cached argument matrix reject the
-  call when invoked on a fresh receiver with a cached `RoomObject` wrapper
-  whose backing object has been removed. Each row asserts (a) the call did
-  not return `OK` (it threw a runtime error or returned a non-OK code) and
-  (b) the action's observable effect did not occur (no matching
-  `Room.getEventLog()` entry, no state change on the fresh receiver
-  consistent with the action having run). Engines may surface different
-  rejection shapes; the matrix accepts any rejection.
-
-Stale-argument parity tracking lands in three buckets: (1) both engines
-reject — parity, no gap; (2) one engine surfaces an ungraceful rejection
-shape (e.g. runtime throw where the other returns `ERR_INVALID_TARGET`)
-but still rejects the call — parity, noted in matrix prose, no gap;
-(3) one engine returns `OK` and dispatches a stale intent — real parity
-gap, recorded in `adapters/<engine>/parity.json` and
-`docs/<engine>-parity-gaps.md`.
+  Public action methods in the stale cached argument matrix, invoked on a
+  fresh receiver with a cached `RoomObject` wrapper whose backing object
+  has been removed, return `ERR_INVALID_TARGET`, except `Creep.withdraw`,
+  which reads the target's store by id first and throws a runtime error
+  (`Could not find an object with ID ...`). A receiver whose store the
+  action would spend from or fill is unchanged the next tick.
 
 Coverage Notes
 - Confirmed rows are listed in `src/matrices/stale-argument.ts`.

@@ -293,7 +293,7 @@ describe('creep.repair()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(rampartId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleRepairCase, code`
 			Game.getObjectById(${creepId}).repair(globalThis.__screepsOkStaleArgRampart)
 		`);
 

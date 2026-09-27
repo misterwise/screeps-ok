@@ -1,3 +1,5 @@
+import { ERR_INVALID_TARGET } from '../index.js';
+
 export interface StaleArgumentCase {
 	catalogId: 'UNDOC-STALEARG-001';
 	key:
@@ -23,6 +25,8 @@ export interface StaleArgumentCase {
 	receiver: string;
 	method: string;
 	argReceiver: string;
+	// Vanilla's rejection: the code returned, or `runtime` for a thrown error.
+	expected: typeof ERR_INVALID_TARGET | 'runtime';
 }
 
 export const staleArgumentCases: readonly StaleArgumentCase[] = [
@@ -33,6 +37,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'transfer',
 		argReceiver: 'Structure',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -41,6 +46,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'transfer',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -49,6 +55,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'withdraw',
 		argReceiver: 'Structure',
+		expected: 'runtime',
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -57,6 +64,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'attack',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -65,6 +73,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'heal',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -73,6 +82,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'rangedAttack',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -81,6 +91,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'rangedHeal',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -89,6 +100,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'repair',
 		argReceiver: 'Structure',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -97,6 +109,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'dismantle',
 		argReceiver: 'Structure',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -105,6 +118,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'build',
 		argReceiver: 'ConstructionSite',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -113,6 +127,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'pickup',
 		argReceiver: 'Resource',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -121,6 +136,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'Creep',
 		method: 'pull',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -129,6 +145,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureTower',
 		method: 'attack',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -137,6 +154,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureTower',
 		method: 'heal',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -145,6 +163,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureTower',
 		method: 'repair',
 		argReceiver: 'Structure',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -153,6 +172,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureLink',
 		method: 'transferEnergy',
 		argReceiver: 'StructureLink',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -161,6 +181,7 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureSpawn',
 		method: 'renewCreep',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 	{
 		catalogId: 'UNDOC-STALEARG-001',
@@ -169,5 +190,6 @@ export const staleArgumentCases: readonly StaleArgumentCase[] = [
 		receiver: 'StructureSpawn',
 		method: 'recycleCreep',
 		argReceiver: 'Creep',
+		expected: ERR_INVALID_TARGET,
 	},
 ] as const;

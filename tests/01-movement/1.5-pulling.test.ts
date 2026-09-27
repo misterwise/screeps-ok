@@ -515,7 +515,7 @@ describe('creep.pull()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', stalePullCase, code`
 			Game.getObjectById(${pullerId}).pull(globalThis.__screepsOkStaleArgPullTarget)
 		`);
 	});

@@ -1,8 +1,9 @@
+import { expect } from 'vitest';
 import type { ShardFixture } from '../src/fixture.js';
 import type { PlayerCode } from '../src/code.js';
-import type { PlayerReturnValue } from '../src/adapter.js';
+import type { StaleArgumentCase } from '../src/matrices/stale-argument.js';
 import {
-	code, CARRY, FIND_CREEPS, MOVE, OK, RunPlayerError, STRUCTURE_SPAWN, WORK,
+	code, CARRY, FIND_CREEPS, MOVE, STRUCTURE_SPAWN, WORK,
 } from '../src/index.js';
 
 interface BusyCreepOptions {
@@ -81,23 +82,12 @@ export async function placeFatiguedCreep(shard: ShardFixture, options: FatiguedC
 export async function expectStaleArgumentRejected(
 	shard: ShardFixture,
 	userId: string,
+	row: StaleArgumentCase,
 	playerCode: PlayerCode,
 ): Promise<void> {
-	let threw = false;
-	let rc: PlayerReturnValue | undefined;
-	try {
-		rc = await shard.runPlayer(userId, playerCode);
-	} catch (err) {
-		if (err instanceof RunPlayerError) {
-			threw = true;
-		} else {
-			throw err;
-		}
-	}
-	if (!threw && rc === OK) {
-		throw new Error(
-			`expectStaleArgumentRejected: runPlayer returned OK; ` +
-			`expected runtime throw or non-OK code from a stale-argument call`,
-		);
+	if (row.expected === 'runtime') {
+		await shard.expectRunPlayerError(userId, playerCode, 'runtime');
+	} else {
+		expect(await shard.runPlayer(userId, playerCode)).toBe(row.expected);
 	}
 }

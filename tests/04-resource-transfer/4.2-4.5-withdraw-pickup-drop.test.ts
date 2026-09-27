@@ -499,7 +499,7 @@ describe('creep.withdraw()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(towerId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleWithdrawStructureCase, code`
 			Game.getObjectById(${creepId}).withdraw(globalThis.__screepsOkStaleArgWithdrawTower, RESOURCE_ENERGY)
 		`);
 
@@ -1099,7 +1099,7 @@ describe('creep.pickup()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(dropId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', stalePickupCase, code`
 			Game.getObjectById(${carrierId}).pickup(globalThis.__screepsOkStaleArgResource)
 		`);
 

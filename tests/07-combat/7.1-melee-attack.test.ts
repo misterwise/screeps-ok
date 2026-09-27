@@ -348,7 +348,7 @@ describe('creep.attack()', () => {
 		});
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleAttackCase, code`
 			Game.getObjectById(${attackerId}).attack(globalThis.__screepsOkStaleArgAttackTarget)
 		`);
 	});
@@ -594,7 +594,7 @@ describe('creep.rangedAttack()', () => {
 		});
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleRangedAttackCase, code`
 			Game.getObjectById(${attackerId}).rangedAttack(globalThis.__screepsOkStaleArgRangedAttackTarget)
 		`);
 	});
@@ -1047,7 +1047,7 @@ describe('creep.heal()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleHealCase, code`
 			Game.getObjectById(${healerId}).heal(globalThis.__screepsOkStaleArgHealTarget)
 		`);
 	});
@@ -1069,7 +1069,7 @@ describe('creep.heal()', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleRangedHealCase, code`
 			Game.getObjectById(${healerId}).rangedHeal(globalThis.__screepsOkStaleArgRangedHealTarget)
 		`);
 	});

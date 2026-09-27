@@ -416,7 +416,7 @@ describe('StructureLink', () => {
 		expect(rc1).toBe(OK);
 		expect(await shard.getObject(targetId)).toBeNull();
 
-		await expectStaleArgumentRejected(shard, 'p1', code`
+		await expectStaleArgumentRejected(shard, 'p1', staleArgLinkTransferCase, code`
 			Game.getObjectById(${sourceId}).transferEnergy(globalThis.__screepsOkStaleArgLink, 50)
 		`);
 		const source = await shard.expectStructure(sourceId, STRUCTURE_LINK);

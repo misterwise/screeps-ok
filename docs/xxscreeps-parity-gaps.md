@@ -79,7 +79,14 @@ Last refreshed: 2026-09-25 against pin `4795a332`.
 - Tests: UNDOC-STALEARG-001:creepPickup.
 - Status: CONFIRMED.
 - Cause: `Creep.pickup()` (`packages/xxscreeps/mods/creep/creep.ts:335-339`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:516-523`) calls `checkTarget(target, Resource)` (`packages/xxscreeps/game/checks.ts:43-52`), which reads only `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `creep.store` and `target.pos` for range, neither of which triggers the guard either. `intents.save(this, 'pickup', resource.id)` then queues the intent against the cached id; the processor finds no backing resource and silently no-ops. The other 17 stale-argument matrix rows reject the call because their per-target checks read schema-backed fields (e.g. `target.store` for transfer/withdraw, `target.hits` for attack/heal/repair) that do trip the guard — `pickup` happens to be the only row whose canonical check chain doesn't.
-- Plan: have `checkTarget` (or `checkPickup` directly) read a schema-backed field of the target so a released wrapper trips the guard uniformly. The architectural fix is to make `checkTarget` raise the released-object error for stale wrappers, which closes the entire stale-argument axis at once rather than per-method.
+- Plan: vanilla returns `ERR_INVALID_TARGET` here (`game/creeps.js:574-576`), so the fix is a liveness test in `checkTarget` that returns that code for a released wrapper, not a read that trips the guard. The same test closes `stale-argument-throws-instead-of-invalid-target`.
+
+### stale-argument-throws-instead-of-invalid-target
+
+- Tests: UNDOC-STALEARG-001, the 16 cases other than `creepWithdrawStructure` and `creepPickup`.
+- Status: CONFIRMED 2026-09-26, when the row was pinned to vanilla's per-case outcome (it had accepted any rejection).
+- Cause: the end-of-tick `detach` (`driver/runtime/index.ts:212`) makes a cached wrapper throw on its first schema-backed read, and these methods' check chains read one (`target.store` in `checkTransferTarget`, for one) before anything tests whether the target still exists. Vanilla looks the id up in the tick's registry first and returns `ERR_INVALID_TARGET` (`Creep.attack`, `game/creeps.js:607-610`).
+- Plan: the `checkTarget` liveness test above. `Creep.withdraw` must keep throwing: vanilla reads `data(target.id).store` before its target test (`creeps.js:509`).
 
 ### live-cached-receiver-released
 
