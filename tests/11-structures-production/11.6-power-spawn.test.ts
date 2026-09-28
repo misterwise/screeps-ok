@@ -98,7 +98,7 @@ describe('StructurePowerSpawn processPower', () => {
 			power: 0,
 		});
 		expect(await shard.runPlayer('p1', code`Game.gpl.progress`)).toBe(gplBefore + stored);
-	}, 60_000);
+	}, 300_000); // ~1000 ticks, and CI's vanilla runs ~0.2s a tick
 
 	// ---- POWER-SPAWN-003: ERR_NOT_ENOUGH_RESOURCES when lacking power or energy ----
 	test('POWER-SPAWN-003 processPower returns ERR_NOT_ENOUGH_RESOURCES when lacking power', async ({ shard }) => {
