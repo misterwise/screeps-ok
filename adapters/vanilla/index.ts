@@ -66,6 +66,7 @@ const VANILLA_TERRAIN_REVISION_ENV_KEY = 'screeps-ok:terrainRevision';
 const VANILLA_ROOM_STATUS_REVISION_ENV_KEY = 'screeps-ok:roomStatusRevision';
 const RUNNER_SANDBOX_PATCH_FILE = 'runner-sandbox-patch.cjs';
 const PROCESSOR_RANDOM_PATCH_FILE = 'processor-random-patch.cjs';
+const TCP_NODELAY_PATCH_FILE = 'tcp-nodelay-patch.cjs';
 const PROCESSOR_RANDOM_SEQUENCE_FILE = 'processor-random-sequence.json';
 const PROCESSOR_RANDOM_SENTINEL_FILE = 'processor-random-exhausted.flag';
 const PROCESSOR_RANDOM_SEQUENCE_ENV_KEY = 'SCREEPS_OK_RANDOM_SEQUENCE_FILE';
@@ -89,6 +90,28 @@ function silenceDriverSigtermLog(): void {
 			process.removeListener('SIGTERM', listener);
 		}
 	}
+}
+
+// The storage RPC's small frames meet Nagle's algorithm and Linux's 40ms delayed ACK, which
+// held each exchange ~40ms (CI ticks ran ~210ms). Every storage socket, both ends, sends at once.
+function writeTcpNoDelayPatch(root: string): string {
+	const patchPath = path.join(root, TCP_NODELAY_PATCH_FILE);
+	writeFileSync(patchPath, `'use strict';
+const net = require('net');
+const applied = Symbol.for('screeps-ok.tcpNoDelay');
+if (net[applied]) return;
+net[applied] = true;
+const connect = net.Socket.prototype.connect;
+net.Socket.prototype.connect = function (...args) {
+	this.setNoDelay(true);
+	return connect.apply(this, args);
+};
+const createServer = net.createServer;
+net.createServer = function (...args) {
+	return createServer.apply(this, args).on('connection', socket => socket.setNoDelay(true));
+};
+`);
+	return patchPath;
 }
 
 function writeRunnerSandboxPatch(root: string): string {
@@ -304,10 +327,11 @@ function installSandboxPatches(
 	runnerPatchPath: string,
 	processorPatchPath: string,
 	processorEnv: Record<string, string>,
+	noDelayPatchPath: string,
 ): void {
 	const originalStartProcess = server.startProcess.bind(server);
 	server.startProcess = async (name: string, execPath: string, env: Record<string, string>) => {
-		let childEnv = env;
+		let childEnv = { ...env, NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, noDelayPatchPath) };
 		if (name === 'engine_runner') {
 			childEnv = { ...childEnv, NODE_OPTIONS: appendNodeRequire(childEnv.NODE_OPTIONS, runnerPatchPath) };
 		}
@@ -494,6 +518,9 @@ async function getServer(): Promise<any> {
 		mkdirSync(logdir, { recursive: true });
 		const runnerSandboxPatch = writeRunnerSandboxPatch(root);
 		const processorRandomPatch = writeProcessorRandomPatch(root);
+		// This process's driver talks to storage too.
+		const noDelayPatch = writeTcpNoDelayPatch(root);
+		nodeRequire(noDelayPatch);
 		processorRandomSequencePath = path.join(root, PROCESSOR_RANDOM_SEQUENCE_FILE);
 		processorRandomSentinelPath = path.join(root, PROCESSOR_RANDOM_SENTINEL_FILE);
 		try { unlinkSync(processorRandomSequencePath); } catch {}
@@ -514,7 +541,7 @@ async function getServer(): Promise<any> {
 		installSandboxPatches(server, runnerSandboxPatch, processorRandomPatch, {
 			[PROCESSOR_RANDOM_SEQUENCE_ENV_KEY]: processorRandomSequencePath,
 			[PROCESSOR_RANDOM_SENTINEL_ENV_KEY]: processorRandomSentinelPath,
-		});
+		}, noDelayPatch);
 		try {
 			await server.world.reset();
 			await server.start();
