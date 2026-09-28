@@ -18,6 +18,12 @@ on:
       - '!docs/**'
       - '!LICENSE'
       - 'behaviors.md'
+  workflow_dispatch:
+    inputs:
+      tick-profile:
+        description: Log the vanilla adapter's per-stage tick timings
+        type: boolean
+        default: false
 
 jobs:
   lint:
@@ -101,6 +107,8 @@ jobs:
 
       - name: Run ${{ matrix.adapter }} suite (shard ${{ matrix.shard }}/4)
         run: npm test ${{ matrix.adapter }} -- --shard=${{ matrix.shard }}/4
+        env:
+          SCREEPS_OK_TICK_PROFILE: ${{ inputs.tick-profile && '1' || '' }}
 
       - name: Upload ${{ matrix.adapter }}-${{ matrix.shard }} report
         if: always()

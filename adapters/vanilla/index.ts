@@ -394,6 +394,36 @@ async function guardedTick(server: any): Promise<void> {
 	if (runnerFatal) throw runnerFatal;
 }
 
+// SCREEPS_OK_TICK_PROFILE=1 logs server.tick()'s ms per stage every window: users (engine_runner),
+// rooms (engine_processor), other (driver commits, global processor, game-time bookkeeping).
+const TICK_PROFILE_WINDOW = 100;
+
+function profileTicks(server: any): void {
+	let ticks = 0, total = 0, users = 0, rooms = 0, userCount = 0, roomCount = 0;
+	const timed = (queue: any, onDone: (ms: number) => void, onAdd: (n: number) => void) => {
+		const { whenAllDone, addMulti } = queue;
+		queue.addMulti = (ids: string[]) => { onAdd(ids.length); return addMulti.call(queue, ids); };
+		queue.whenAllDone = async () => {
+			const start = performance.now();
+			try { return await whenAllDone.call(queue); } finally { onDone(performance.now() - start); }
+		};
+	};
+	timed(server.usersQueue, ms => { users += ms; }, n => { userCount += n; });
+	timed(server.roomsQueue, ms => { rooms += ms; }, n => { roomCount += n; });
+	const tick = server.tick.bind(server);
+	server.tick = async () => {
+		const start = performance.now();
+		try { return await tick(); } finally {
+			total += performance.now() - start;
+			if (++ticks === TICK_PROFILE_WINDOW) {
+				const per = (ms: number) => (ms / ticks).toFixed(1);
+				console.log(`[tick-profile ${process.pid}] ${ticks} ticks, ms/tick: total ${per(total)}, users ${per(users)} (${(userCount / ticks).toFixed(1)} users), rooms ${per(rooms)} (${(roomCount / ticks).toFixed(1)} rooms), other ${per(total - users - rooms)}`);
+				ticks = total = users = rooms = userCount = roomCount = 0;
+			}
+		}
+	};
+}
+
 function writeProcessorRandomSequence(sequence: readonly number[] | undefined): void {
 	if (!processorRandomSequencePath || !processorRandomSentinelPath) return;
 	try { unlinkSync(processorRandomSentinelPath); } catch {}
@@ -497,6 +527,7 @@ async function getServer(): Promise<any> {
 			runnerFatal = null;
 			continue;
 		}
+		if (process.env.SCREEPS_OK_TICK_PROFILE) profileTicks(server);
 		sharedServer = server;
 		registerSharedServerCleanup();
 		return sharedServer;
