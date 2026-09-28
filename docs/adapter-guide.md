@@ -14,11 +14,11 @@ adapter and point the `screeps-ok` runner at it.
 
 `screeps-ok` is consumed by cloning this repository at a release tag and
 invoking the runner in-place; it is not published to npm (see the README
-"Downstream Consumption" note). Passages below that name
-`node_modules/screeps-ok/` or `npm update` describe a package install: from a
-clone, read those paths in your checkout, and point your `parity.json`'s
-`extends` at the clone's `parity/<engine>.json` by relative path. The runner
-accepts an external adapter module path:
+"Downstream Consumption" note). Link the clone into your engine's repository
+(`npm i -D file:../screeps-ok`, after `npm ci` in the clone builds `dist/`)
+so your `tsc` resolves `'screeps-ok'` and your `parity.json`'s `extends`
+resolves `screeps-ok/parity/<engine>.json`; `node_modules/screeps-ok/` below
+is then the clone. The runner accepts an external adapter module path:
 
 ```bash
 ./bin/run.js --adapter ./path/to/screeps-ok-adapter.ts --preflight none
@@ -531,8 +531,8 @@ it as an unexpected pass, and CI goes red. Add the base gap id to
 ```
 
 The entry vanishes from the merged set, the test stays passing, CI is green.
-The next `screeps-ok` release prunes the base entry; after `npm update`,
-your override becomes a no-op (harmless to leave, fine to delete).
+The next `screeps-ok` release prunes the base entry; once your clone is on
+it, your override is a no-op (harmless to leave, fine to delete).
 
 To find the gap id: the reporter prints `Parity: N unexpected pass(es)` with
 the gap id alongside the affected test ids. Or grep `node_modules/screeps-ok/parity/<engine>.json` for the failing catalog id.
@@ -558,7 +558,7 @@ gap moves into the base on the next release:
 }
 ```
 
-When upstream catalogs the same gap and publishes, the base covers it and
+When upstream catalogs the same gap in a release, the base covers it and
 your overlay entry becomes redundant. Reusing the upstream gap id (once you
 know it) makes that transition silent.
 

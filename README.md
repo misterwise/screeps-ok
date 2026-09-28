@@ -96,9 +96,12 @@ rebuild for the current runtime.
 
 ## Downstream Consumption
 
-`screeps-ok` is consumed by cloning this repository at a release tag and
-running the suite in-place against your adapter. It is not published to npm;
-if a package install (`npm i -D screeps-ok`) would help your engine, open an
+`screeps-ok` is consumed by cloning this repository at a release tag,
+running `npm ci` in the clone, and running the suite in-place against your
+adapter. Link the clone into your engine's repository with
+`npm i -D file:../screeps-ok`, so your `tsc` resolves `'screeps-ok'` and
+your `parity.json` can extend `screeps-ok/parity/<engine>.json`. It is not
+published to npm; if a package install would help your engine, open an
 issue.
 
 When a test fails in your engine, start at

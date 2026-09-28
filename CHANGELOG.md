@@ -58,16 +58,19 @@ rest.
 
 1. Update your adapter for each item under Adapter contract below.
    `tests/00-adapter-contract/` checks them. Delete the adapter's
-   `limitations`: each
-   flag skipped tests that now run (`pullSelfHang` → `MOVE-PULL-011:self`,
-   `controllerDowngrade` → the `CTRL-DOWNGRADE` tests and
-   `CTRL-SAFEMODE-009:downgradeTimer`, `xxscreepsPathFinderUseMissing` →
-   `LEGACY-PATH-003`). If your engine still can't run one, list it under
-   `skips` in your `parity.json`.
+   `limitations`: each flag skipped tests that now run (`pullSelfHang` →
+   `MOVE-PULL-011:self`; `controllerDowngrade` → the `CTRL-DOWNGRADE` tests,
+   `CTRL-SAFEMODE-009:downgradeTimer` and a contract test;
+   `xxscreepsPathFinderUseMissing` → `LEGACY-PATH-003`). If your engine still
+   can't run one, list it under `skips` in your `parity.json`.
 2. Make your `parity.json` load; a file that breaks its schema now fails the
    run. Remove the legacy `summary` and `status` keys, give every gap
    `actual`, `expected` and a non-empty `tests`, and drop any
-   `expected_passes` entry that names a gap the base no longer registers.
+   `expected_passes` entry that names a gap the base no longer registers. An
+   `extends` that doesn't resolve now fails the run, where it had logged an
+   error and loaded no registrations: link your screeps-ok clone into your
+   repository (`npm i -D file:../screeps-ok`) so
+   `screeps-ok/parity/<engine>.json` resolves.
 3. Run the full suite once, unfiltered and unsharded. It fails on each
    registration that matches no test, including tests your adapter skips for a
    missing capability. Look each ID up under Test IDs that moved or went below
@@ -95,7 +98,9 @@ Each item needs a change in your adapter unless it says otherwise.
   a corner passable.
 - Snapshots report the player getter's value on the tick: no defaults, no
   clamps, `undefined` becomes `null`, and `storeCapacity` is
-  `store.getCapacity()`.
+  `store.getCapacity()`. A controller snapshot's `sign`, `reservation` and
+  `safeMode`, once optional, are required and `null` when absent, and
+  `effects` is typed and `null` when the getter is `undefined`.
 - `placePowerCreep` derives `hits`/`hitsMax` as `1000 * (level + 1)` and store
   capacity as `100 * (level + 1)`.
 - Placement rejects a `cooldown` on a structure with no public cooldown.
@@ -379,7 +384,6 @@ which the new `TOWER-ATTACK-006` owns):
 
 | Was | Register now | Why |
 | --- | --- | --- |
-| `CTRL-STRUCTLIMIT-002:<type>` | `:<type>Below` and `:<type>At` (`:spawn` → `:spawnAt`) | The below and at cases shared one key per type. |
 | `GPL-002a`, `GPL-002b`, `GPL-002c`, `GPL-002d`, `GPL-002e` | `GPL-002:belowLevelOne`, `:levelOne`, … | A letter suffix carries no ID, so nothing could register them. |
 | `INTENT-CREEP-001:attack`, `INTENT-CREEP-001:build`, `INTENT-CREEP-001:dismantle`, `INTENT-CREEP-001:heal`, `INTENT-CREEP-001:rangedHeal`, `INTENT-CREEP-001:rangedMassAttack`, `INTENT-CREEP-001:repair` | One key per pair, `:<blocker>Blocks<blocked>` (`:healBlocksRangedHeal`) | The key was the blocking method, which named several pairs. |
 | `LAB-RUN-001:H`, `LAB-RUN-001:L`, `LAB-RUN-001:O`, `LAB-RUN-001:X`, `LAB-RUN-001:Z` | Each reaction's product (`:OH` for H + O, `:UH2O`) | Keys were reagent pairs (`H+O`) that the old reporter cut at `+`, so one key covered every reaction with that first reagent. |
@@ -430,7 +434,8 @@ turn a registered gap into an unexpected pass, which fails the run.
   (the default order a spawn draws energy from), `TERMINAL-SEND-015` (a
   send's energy cost wraps across opposite world edges) and
   `TOWER-ATTACK-006` (a tower attack on an object under a rampart hits the
-  rampart).
+  rampart). `POWER-GENERATE-001` to `-003` are renamed rows; see the key
+  table above.
 - **New validation conditions,** each run alone and in pairs: vanilla
   branches no row had covered. `BOOST-CREEP-010` `:spawning` and
   `:tooManyParts`; `:fortified` (a target under `PWR_FORTIFY`) in
@@ -470,8 +475,7 @@ turn a registered gap into an unexpected pass, which fails the run.
   the farthest structure is the inactive one), `FACTORY-COMMODITY-001`,
   `UNDOC-GLOBAL-004`, `UNDOC-SYSUSER-001` (`'Screeps'`), `SHARD-PCREEP-001`
   and `-002` (`-002` now runs on one shard), `CPU-SHARD-001`, `-003` and
-  `-004` (what the API docs state), `ISM-005` (no `null` claim for a shard
-  that never wrote), `DEPRECATED-PATH-001` (`PathFinder.use`'s toggle
+  `-004` (what the API docs state), `DEPRECATED-PATH-001` (`PathFinder.use`'s toggle
   reaches `Room.findPath` only on a global's first tick), `MAP-ROOM-005`
   (worlds straddling the map origin), `SPAWN-TIMING-005`,
   `POWER-OPERATE-001` and `POWER-DISRUPT-001` (the magnitudes and durations
@@ -488,7 +492,8 @@ turn a registered gap into an unexpected pass, which fails the run.
   so your `tsc` reads declarations under `skipLibCheck` instead of checking
   the framework's source under your compiler flags. `npm install` builds
   `dist/`, in a clone and for a git dependency alike (`npm run build` rebuilds
-  it). Inside the suite, vitest resolves `'screeps-ok'` to `src/`, the copy
+  it); a repository that links the clone (`npm i -D file:../screeps-ok`)
+  reads it there. Inside the suite, vitest resolves `'screeps-ok'` to `src/`, the copy
   the tests import.
 - The starter adapter (`starter/xxscreeps/`) and the shipped
   `parity/xxscreeps.json` base are regenerated for this contract.
