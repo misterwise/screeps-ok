@@ -456,6 +456,25 @@ The intended workflow is:
 Temporary local regression tests are fine while developing a fix, but the
 steady-state goal is one canonical suite.
 
+### Moving to a New Release
+
+1. Read the [`CHANGELOG.md`](../CHANGELOG.md) sections between your tag and
+   the new one. A minor release lists what you must act on, with its own
+   Upgrading steps; a patch release needs nothing, though new rows and
+   tighter assertions can surface failures.
+2. Check out the new tag in your clone and run `npm ci`, which rebuilds
+   `dist/` for your linked repository.
+3. Update your adapter for any contract changes, then run
+   `tests/00-adapter-contract/` alone: a contract failure makes every other
+   result suspect.
+4. Run the full suite once, unfiltered and unsharded, and act on each
+   `Parity:` line ([Reading Parity Results](../CONTRIBUTING.md#reading-parity-results)):
+   look up an orphaned registration in that release's ID changes, drop or
+   override a registration whose test now passes, and fix or register each
+   new failure.
+5. If you copied the starter adapter, diff your copy against the new
+   `starter/` to pick up adapter fixes.
+
 ## What To Document in Your Adapter
 
 At minimum, add a short README or comment block explaining:

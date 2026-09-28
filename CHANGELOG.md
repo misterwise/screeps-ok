@@ -19,7 +19,8 @@ they can surface new failures on an engine; register those in your
 
 Add an entry under **Unreleased** in the same PR as any consumer-facing
 change. Each release is a git tag (`v0.3.0-beta`); consumers clone at a tag.
-The package is not published to npm.
+The package is not published to npm. Moving your clone to a new release is
+described in `docs/adapter-guide.md` under Moving to a New Release.
 
 ## Unreleased
 
