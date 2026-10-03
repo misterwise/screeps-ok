@@ -4,7 +4,7 @@
 
 > _If your engine agrees, it's Screeps._
 
-[![vanilla](https://img.shields.io/badge/vanilla-3645%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3055%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-171-yellow)](#xxscreeps-expected-failures)
+[![vanilla](https://img.shields.io/badge/vanilla-3645%20passing-brightgreen)](#vanilla-passing-tests) [![vanilla expected-fail](https://img.shields.io/badge/vanilla%20expected--fail-13-yellow)](#vanilla-expected-failures) [![xxscreeps](https://img.shields.io/badge/xxscreeps-3087%20passing-brightgreen)](#xxscreeps-passing-tests) [![xxscreeps expected-fail](https://img.shields.io/badge/xxscreeps%20expected--fail-139-yellow)](#xxscreeps-expected-failures)
 
 > [!NOTE]
 > This page is generated from the latest vitest run for each adapter
@@ -16,8 +16,8 @@
 
 | | Adapter | Passed | Expected-fail | Failed | Skipped | Last run |
 | :-: | --- | --: | --: | --: | --: | --- |
-| 🟡 | **vanilla** | [3645](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-09-28 01:46 UTC |
-| 🟡 | **xxscreeps** | [3055](#xxscreeps-passing-tests) | [171](#xxscreeps-expected-failures) | — | [436](#xxscreeps-skipped-tests) | 2026-09-28 01:45 UTC |
+| 🟡 | **vanilla** | [3645](#vanilla-passing-tests) | [13](#vanilla-expected-failures) | — | [4](#vanilla-skipped-tests) | 2026-10-03 00:17 UTC |
+| 🟡 | **xxscreeps** | [3087](#xxscreeps-passing-tests) | [139](#xxscreeps-expected-failures) | — | [436](#xxscreeps-skipped-tests) | 2026-10-03 00:11 UTC |
 
 🟢 fully passing · 🟡 all failing tests are registered parity gaps · 🔴 unexpected failures
 
@@ -130,7 +130,7 @@ Click a test count above to jump to the affected test list for that gap.
 
 ## xxscreeps expected failures
 
-xxscreeps currently declares 63 expected-failure classifications against vanilla's canonical behavior, covering 171 tests. That includes 60 open parity gaps covering 163 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
+xxscreeps currently declares 50 expected-failure classifications against vanilla's canonical behavior, covering 139 tests. That includes 47 open parity gaps covering 131 tests and 3 intentional divergences covering 8 tests. Each classification is verified by a test that continues to run as a regression trap.
 
 ### Open parity gaps
 
@@ -140,8 +140,6 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | --- | --- | --- | --- | :-: |
 | `terrain-raw-buffer-fills-any-array` | `Terrain.getRawBuffer` (`game/terrain.ts:97-105`) writes the 2500 values into whatever destination it is given, a plain array included, and returns it. | `getRawBuffer(destinationArray)` returns ERR_INVALID_ARGS when destinationArray isn't a typed array. | Found 2026-09-26 by ROOM-TERRAIN-005. Canonical claim is documented: Room.Terrain.getRawBuffer lists 'ERR_INVALID_ARGS: destinationArray type is incompatible'. Vanilla throws instead (its own gap), so neither engine returns the code. | [1](#xxscreeps-gap-terrain-raw-buffer-fills-any-array) |
 | `gcl-progress-total-absolute-threshold` | `Game.gcl` (`mods/classic/controller/game.ts:14-19`) reports `progressTotal` as the next level's absolute threshold, `floor((level + 1) ** GCL_POW * GCL_MULTIPLY)`, and measures `progress` from the floored current threshold: level 2 reads `progressTotal` 5278031, level 3 reads `progress` 1 where vanilla reads 0.357. | Vanilla `game/game.js:130-131,158-162`: `progress = points - (level - 1) ** GCL_POW * GCL_MULTIPLY` and `progressTotal = level ** GCL_POW * GCL_MULTIPLY` less that same unrounded base, the points from this level to the next. | Found 2026-09-26 by GCL-001, the catalog's first row to pin Game.gcl's values. The API docs agree with vanilla: progressTotal is 'The progress required to reach the next level.' Level 1 reads alike, its base being 0. | [2](#xxscreeps-gap-gcl-progress-total-absolute-threshold) |
-| `reserve-cap-clamps-instead-of-rejecting` | `reserveController` (`mods/classic/controller/processor.ts`) applies the cap as `Math.min(Game.time + CONTROLLER_RESERVE_MAX, reservationEndTime + power)`, so an overshooting renewal still succeeds and pins `endTime` to the ceiling. At saturation a two-CLAIM renewer reads a flat `ticksToEnd` of 5000 every tick. | Vanilla `processor/intents/creeps/reserveController.js:39-41` returns before touching `endTime` when `endTime + effect > gameTime + CONTROLLER_RESERVE_MAX`, so the overshooting intent is dropped (no update, no actionLog, no event) and the timer decays that tick. Player-visible `ticksToEnd` peaks at 4999 and sawtooths (`4999, 4998, 4999, …`) under a two-CLAIM renewer. | Found 2026-09-12 while landing screeps-ok PR #8: CTRL-RESERVE-005's `(MAX - 50, MAX]` band admitted both behaviors. Survives xxscreeps#388, which fixed only the renewal credit in the same branch; needs its own upstream fix. The row's saturation phase also depends on `reserve-fresh-reservation-one-tick-long`: with only the cap fixed, the 50-CLAIM saturators stall near 4950 and the row still fails, so it flips only when both are fixed. | [1](#xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting) |
-| `reserve-fresh-reservation-one-tick-long` | The creep `reserveController` (`mods/classic/controller/processor.ts`) starts a fresh reservation at `Game.time + power + 1`, and the invader core's copy (`mods/modern/stronghold/processor.ts`) at `(Game.time + 1) + power`. `Game.time` in an intent processor already reads one tick past vanilla's `gameTime`, so a fresh reservation reads `ticksToEnd` one higher than its credit on the next tick and expires a tick late. | Vanilla `processor/intents/creeps/reserveController.js:31-45` and `invader-core/reserveController.js:22-37` start a fresh reservation at `gameTime + 1` and then add the effect, so the next tick reads exactly the credit: `N * CONTROLLER_RESERVE` for an N-CLAIM creep, `INVADER_CORE_CONTROLLER_POWER * CONTROLLER_RESERVE` for a core. | Found 2026-09-25 while fixing `reserve-cap-clamps-instead-of-rejecting`; CTRL-RESERVE-001 and -006 only asserted a positive reading, and no row covered the core's reservation. Same one-tick-ahead convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-reserve-fresh-reservation-one-tick-long) |
 | `controller-unclaim-clears-safe-mode-cooldown` | `release()` (`mods/classic/controller/processor.ts`) zeroes `#safeModeCooldownTime`, so `safeModeCooldown` reads `undefined` after unclaim. The same helper runs on the terminal (level-0) downgrade step (CTRL-DOWNGRADE-010:levelZero); the non-terminal downgrade step starts a fresh cooldown and matches vanilla (CTRL-DOWNGRADE-010 passes). | Vanilla's unclaim processor step SETS `safeModeCooldown` to `gameTime + SAFE_MODE_COOLDOWN` in non-novice rooms rather than clearing it, observable as a cooldown just under SAFE_MODE_COOLDOWN on the following tick. | NOT fixed by xxscreeps#318 (consumed at pin f01f0a23): the centralized `release()` resets cover `safeModeAvailable`/`isPowerEnabled` but leave the cooldown cleared instead of restarted, so this needs its own upstream fix. | [2](#xxscreeps-gap-controller-unclaim-clears-safe-mode-cooldown) |
 | `game-object-json-omits-prototype-accessors` | `JSON.stringify()` succeeds for the matrix but serializes almost nothing: a creep emits only `{room, id, name}` — no `pos`, `body`, `hits`, `store`, `ticksToLive`, `owner`, `my`, `fatigue`. Probed 2026-07-25. The public surface is enumerable accessors on the PROTOTYPE (`withOverlay`, `schema/overlay.ts:65` keys enumerability off the `#` prefix), and with no game-object `toJSON`, `JSON.stringify` sees only own keys. `RoomPosition.prototype.toJSON` (`game/position.ts:416`) is correct — `JSON.stringify(creep.pos)` alone yields `{"x":25,"y":25,"roomName":"W1N1"}` — so nested position fields are collateral. | Vanilla `JSON.stringify()` on canonical visible game objects returns parseable JSON whose representative public fields match the live object, including nested position fields. `defineGameObjectProperties` (`@screeps/engine/src/utils.js`) also defines prototype accessors, but installs a `toJSON` (`:535`) that walks them with `for...in` (inherited enumerable keys included), skipping `_`-prefixed slots. | No upstream report yet; raise the RoomObject toJSON with laverdet before a PR. Room, RoomPosition and Flag already serialize and stay pinned. | [15](#xxscreeps-gap-game-object-json-omits-prototype-accessors) |
 | `stale-pickup-target-allowed` | `Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops. | Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`). | Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md). | [1](#xxscreeps-gap-stale-pickup-target-allowed) |
@@ -152,14 +150,13 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `renew-recycle-target-creep-checked-late` | `checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one. | Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state. | Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions. | [11](#xxscreeps-gap-renew-recycle-target-creep-checked-late) |
 | `spawn-creep-accepts-non-object-options` | `StructureSpawn.spawnCreep` (`mods/classic/spawn/spawn.ts:279-282`) reads `options.directions` and `options.energyStructures` off whatever it is given, so `spawnCreep(body, name, 1)` runs the remaining checks and spawns. | Vanilla `game/structures.js:1063-1066` returns ERR_INVALID_ARGS when `options` isn't an object, in the same first check as a missing name. | Found 2026-09-27 when SPAWN-CREATE-014 took non-object options as a condition. | [8](#xxscreeps-gap-spawn-creep-accepts-non-object-options) |
 | `attack-controller-ignores-invulnerability` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`). | Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check. | Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`). | [1](#xxscreeps-gap-attack-controller-ignores-invulnerability) |
-| `controller-downgrade-replaces-progress` | A controller's level loss (`mods/classic/controller/processor.ts:258`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held. | Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`. | Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start. | [1](#xxscreeps-gap-controller-downgrade-replaces-progress) |
+| `controller-downgrade-replaces-progress` | A controller's level loss (`mods/classic/controller/processor.ts:262`) sets `#progress` to `round(CONTROLLER_LEVELS[level] * 0.9)`, discarding the progress the controller held. | Vanilla `processor/intents/controllers/tick.js:66` adds the head start: `progress += Math.round(CONTROLLER_LEVELS[level] * 0.9)`. | Found 2026-09-27 by CTRL-DOWNGRADE-006, the row's first test to seed progress before the loss (`RoomSpec.progress`); from 0 both read the head start. | [1](#xxscreeps-gap-controller-downgrade-replaces-progress) |
 | `power-creep-shard-null-when-unspawned` | `PowerCreep.shard` (`mods/mmo/powercreep/powercreep.ts:112`) reads `null` while `#ageTime` is `0`, which death restores (`model.ts:163-169`), so a power creep that died reads `null`. | Vanilla's getter is `o.shard \|\| undefined` (`game/power-creeps.js:53`), and death writes `shard: null` (`_diePowerCreep.js:54-55`), so an unspawned power creep reads `undefined`. | Found 2026-09-27 by SHARD-PCREEP-001:afterDeath, the row's first case reachable without `powerCreepAccountApi`. Canonical claim is documented too: PowerCreep.shard is 'The name of the shard where the power creep is spawned, or undefined.' xxscreeps' own doc comment says `null`. | [1](#xxscreeps-gap-power-creep-shard-null-when-unspawned) |
 | `power-creep-suicide-uncapped` | `PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep. | Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives. | Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does. | [1](#xxscreeps-gap-power-creep-suicide-uncapped) |
 | `portal-ignores-power-creeps` | The portal tick processor (`mods/portal/processor.ts:15-23`) teleports only `Creep` objects on its tile, so a power creep standing on a same-shard portal stays where it is. | Vanilla `processor/intents/power-creeps/tick.js:44-47` sends a power creep on a same-shard portal tile to the portal's destination, as `creeps/tick.js` does a creep. | Found 2026-09-27 when PORTAL-001 got the power creep its row names; the tests had run creeps only. | [1](#xxscreeps-gap-portal-ignores-power-creeps) |
-| `invader-core-collapses-one-tick-early` | The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:180-197`) remove the core and release its room's controller once `optionalExpiryTime(#collapseTime)` reads 0 against processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so both land a tick before the timer expires. | Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh. | Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Same processor clock convention as `controller-timer-anchors-one-tick-late`. | [2](#xxscreeps-gap-invader-core-collapses-one-tick-early) |
-| `event-log-kept-while-room-sleeps` | A room's event log is reset only when its processor runs (`engine/processor/room.ts:105-107`); a room that sleeps through a tick keeps exposing the previous processed tick's entries, so an attack's EVENT_ATTACK still reads two ticks later with nothing done in between. | Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events. | Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick. | [1](#xxscreeps-gap-event-log-kept-while-room-sleeps) |
+| `invader-core-collapses-one-tick-early` | The collapse pre-tick processors (`mods/modern/stronghold/processor.ts:177-194`) remove the core and release its room's controller on `expiresNextTick(#collapseTime)`, i.e. while one tick still remains, so both land a tick before the timer expires. | Vanilla `processor/intents/invader-core/tick.js:11-24` clears the controller when the collapse effect's `endTime <= gameTime`: a core seeded `ticksToCollapse: 6` still stands, and its controller is still owned, on the sixth tick's snapshot, and both change on the seventh. | Found 2026-09-27 when INVADER-CORE-004/-005 were pinned to the landing tick (they had ticked eight times past a six-tick timer). Unchanged by the pin `b6d4c3ba` processor-clock fix (xxscreeps 92aa02fe): the old `optionalExpiryTime(...) === 0` test on the advanced clock became `expiresNextTick` on the current one, the same boundary. | [2](#xxscreeps-gap-invader-core-collapses-one-tick-early) |
+| `event-log-kept-while-room-sleeps` | A room's event log is reset in memory each time its processor runs (`engine/processor/room.ts:105-107`), but a tick with no `didUpdate()` saves by copying the previous tick's blob (`:233-235`), event log included, and a sleeping room isn't processed at all. Either way the previous processed tick's entries stay readable: an attack's EVENT_ATTACK still reads two ticks later with nothing done in between, and a refused `reserveController` (which updates nothing) re-exposes the last accepted renewal's EVENT_RESERVE_CONTROLLER. | Vanilla rebuilds each room's event log every tick, so `getEventLog()` holds only the entries of the tick just processed: empty on a tick with no events. | Found 2026-09-27 when ROOM-EVENTLOG-004, whose test had filtered for an EVENT_ATTACK nothing produced, was pinned to an attack followed by an idle tick. CTRL-RESERVE-010 joined at pin `b6d4c3ba`: xxscreeps#391 fixed its cap (the `ticksToEnd` sawtooth now matches), leaving only its every-other-tick event assertion, which this gap fails. | [2](#xxscreeps-gap-event-log-kept-while-room-sleeps) |
 | `mineral-harvest-event-logs-capped-amount` | The `harvest` intent processor (`mods/classic/harvestable/processor.ts:35-44`) logs the amount the target's harvest hook returns, which for a mineral is capped by the amount left. | Vanilla `processor/intents/creeps/harvest.js:88-110` logs `harvestAmount`, the WORK parts' harvest power, whatever the mineral had left. | Found 2026-09-27 when ROOM-EVENTLOG-002 got its five sources as cases; the mineral case harvests a nearly empty mineral to tell the two apart. | [1](#xxscreeps-gap-mineral-harvest-event-logs-capped-amount) |
-| `mineral-regen-timer-one-tick-long` | The mineral tick processor (`mods/classic/mineral/processor.ts:28-31`) starts a depleted mineral's timer at `Game.time + MINERAL_REGEN_TIME` with processor `Game.time`, which already reads one tick past vanilla's `gameTime`, so `ticksToRegeneration` reads `MINERAL_REGEN_TIME` on the tick after and runs a tick long. | Vanilla `processor/intents/minerals/tick.js:10-13` sets `nextRegenerationTime = gameTime + MINERAL_REGEN_TIME` on the mineral's first depleted tick, so the next tick reads `MINERAL_REGEN_TIME - 1`. | Found 2026-09-27 when MINERAL-REGEN-004 stopped reading a timer the adapter placed and let the engine start it. The source timer (SOURCE-REGEN-003) matches vanilla. Same processor clock convention as `controller-timer-anchors-one-tick-late`. | [1](#xxscreeps-gap-mineral-regen-timer-one-tick-long) |
 | `tower-targets-creeps-and-destructible-only` | `StructureTower.attack` and `heal` (`mods/classic/defense/tower.ts:51-69`) pass `Creep` to `checkTower`, which also runs `checkDestructible` (`:113-122`), so attack rejects power creeps and structures and heal rejects power creeps with ERR_INVALID_TARGET, and repair rejects the hitless controller. | Vanilla `game/structures.js:766-826`: `attack` accepts a creep, power creep or any registered structure, `heal` a creep or power creep, `repair` any registered structure; the controller is registered (`game/game.js:298-300`) and none checks hits. | Found 2026-09-27 when TOWER-*-003 got a case list for each target class; the tests had run a creep and a construction site only. | [6](#xxscreeps-gap-tower-targets-creeps-and-destructible-only) |
 | `attack-controller-safe-mode-checked-before-cooldown` | `checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`. | Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`). | Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row). | [1](#xxscreeps-gap-attack-controller-safe-mode-checked-before-cooldown) |
 | `move-bodypart-checked-before-fatigue` | `checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`. | Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`). | Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved. | [1](#xxscreeps-gap-move-bodypart-checked-before-fatigue) |
@@ -169,35 +166,25 @@ These are known differences that may still be fixed upstream or in the adapter. 
 | `construction-site-name-created-returns-name-exists` | `Room.createConstructionSite` (`mods/classic/construction/room.ts:59-64`) returns `ERR_NAME_EXISTS` for a spawn name an earlier call took this tick, and records the name before `checkCreateConstructionSite` runs, so a create that then fails still takes it. | Vanilla returns `ERR_INVALID_ARGS` for a name created earlier in the tick (`game/rooms.js:1045-1047`), and records a name only when the create succeeds (`:1088`). | Found 2026-09-27 when CONSTRUCTION-SITE-011 took vanilla's spawn-name branches as conditions. | [7](#xxscreeps-gap-construction-site-name-created-returns-name-exists) |
 | `destroy-ignores-hostile-power-creeps` | `checkDestroy` (`mods/classic/structure/structure.ts:260-271`) returns `ERR_BUSY` only for `FIND_HOSTILE_CREEPS`, so a hostile power creep alone in the room lets `destroy()` return `OK`. | Vanilla returns `ERR_BUSY` when the room holds hostile creeps or hostile power creeps (`game/structures.js:80-82`). | Found 2026-09-26 when STRUCTURE-API-007 took STRUCTURE-API-002's power-creep form as a condition; the row's test had placed only a creep. | [1](#xxscreeps-gap-destroy-ignores-hostile-power-creeps) |
 | `roomposition-find-closest-by-path-range-ignored` | RoomPosition.findClosestByPath with opts.range returns null for a target reachable at the requested range but blocked at range 1. | RoomPosition.findClosestByPath uses opts.range as the goal range when deciding reachability. | Canonical claim is documented: RoomPosition.findClosestByPath takes Room.findPath's options, range among them; screeps/engine#121 (open) proposes honoring it. Stable vanilla hardcodes goal range 1 and post-filters with isNearTo, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-roomposition-find-closest-by-path-range-ignored) |
-| `factory-power-effect-not-implemented` | `checkProduce` (`mods/modern/factory/factory.ts:140-176`) only compares the recipe level with the stored `#level` (`checkRecipeLevel`, `:133-137`) and never looks for an operate effect, so a leveled factory producing its own level's commodity returns OK (or ERR_NOT_ENOUGH_RESOURCES from the component check) with no active PWR_OPERATE_FACTORY. | Vanilla `game/structures.js:1456` returns ERR_BUSY for a leveled recipe when the factory has `level > 0` but no active PWR_OPERATE_FACTORY effect at that recipe's level, ahead of the component check. | Re-triaged 2026-07-27, no longer intentional: the row does not need a live power at all. `level` is a stored factory field the harness seeds directly, so the missing branch is `checkProduce` comparing the recipe's required level against a factory that already carries one. The in-source comment deferring it to the effects substrate is stale now that pin 38ee6170 ships the power-creep mod. Actionable upstream independently of `powerEffects`. | [3](#xxscreeps-gap-factory-power-effect-not-implemented) |
-| `power-bank-ruin-spills-one-tick-late` | `createRuin` (`mods/classic/structure/ruin.ts:68-87`) stamps `destroyTime = Game.time` and `#decayTime = Game.time + decay` from the processor clock, which reads one tick past vanilla's `gameTime`. Every ruin reads `ticksToDecay` one higher on each tick (500 for a container and 10 for a power bank on the tick after destruction), and because the ruin processor waits for `ticksToDecay === 0`, a destroyed power bank spills its power on the tenth tick after destruction instead of the ninth. | Vanilla `processor/intents/structures/_destroy.js:21-36` stamps `destroyTime: gameTime` and `decayTime: gameTime + (RUIN_DECAY_STRUCTURES[type] \|\| RUIN_DECAY)` on the destruction tick, so the next tick reads `RUIN_DECAY - 1` or `RUIN_DECAY_STRUCTURES[type] - 1`. The ruin processor spills the store when `gameTime >= decayTime - 1`, which is the ninth tick for a power bank. | POWER-BANK-004 caught the spill side. RUIN-002 caught the decay reading on 2026-09-25, when its rows were rewritten to destroy a real structure instead of seeding the decay value they asserted. Same processor clock convention as `bury-creep-stamps-next-tick`; the upstream fix is `Game.time - 1` for both stamps in `createRuin`. | [3](#xxscreeps-gap-power-bank-ruin-spills-one-tick-late) |
 | `moveto-all-routes-blocked-walks-into-creeps` | creep.moveTo with ignoreCreeps:false returns OK and walks the creep one tile toward the goal even when every walkable tile within range of the target is occupied by a stationary creep (screeps/engine#63). | creep.moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by a stationary creep. | Canonical claim is reported: screeps/engine#63 reports the walk-into-creeps behavior as a vanilla bug and this row asserts the intended outcome. Stable vanilla has not fixed it, so this row is registered on BOTH adapters and is NOT an xxscreeps bug — do not queue it as upstream xxscreeps work. | [1](#xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps) |
-| `stronghold-deploy-trigger-one-tick-late` | The invader-core object tick processor (`mods/modern/stronghold/processor.ts`) deploys when `#deployTime < Game.time`, so a core seeded with `deployTime: 1` still holds its template at the first processed tick and spawns it at the second. The core also publishes `ticksToDeploy === 0` for a full tick before deploying — its own mod test pins that as intended (`invulnerable through Game.time === deployTime`). The five bunker layouts themselves match the matrix exactly once the trigger fires (probed 2026-07-27 at pin 38ee6170, all five templates). | Vanilla's stronghold pretick deploys when `core.deployTime <= gameTime + 1` (`processor/intents/invader-core/stronghold/stronghold.js:26`), so the layout is present one tick after placement and the player never observes `ticksToDeploy === 0` — the countdown runs 4, 3, 2, 1, then deployed. | Engine-side trigger divergence, not adapter translation: both adapters seed the same absolute deploy tick and produce the identical countdown, so compensating in the adapter would have to shift the observable `ticksToDeploy` sequence instead. Worth an upstream report — one extra invulnerable tick per stronghold. | [5](#xxscreeps-gap-stronghold-deploy-trigger-one-tick-late) |
 | `live-cached-receiver-released` | xxscreeps invalidates every cached `RoomObject` wrapper at end of tick regardless of whether the backing object still exists: the runtime releases each room's shared-memory buffer via `detach(room, ...)` (`driver/runtime/index.ts:212`), so any schema-backed access on a wrapper cached from a previous tick throws `Accessed a released object from a previous tick`, even for a creep that is alive and visible. Both the read path (`getActiveBodyparts`) and the action path (`move`) throw. | Vanilla keeps a cached wrapper usable while its backing object exists: read methods return values and action methods dispatch intents that execute (a `move()` via a last-tick wrapper returns OK and displaces the creep next tick). Only a dangling reference to a removed object is rejected (UNDOC-STALERECV-001). | Surfaced 2026-07-13 by a real bot run against xxscreeps (screeps-ok PR #2). Wrapper release is per tick, not per object, and the release keeps shared memory safe, so a fix needs an upstream design conversation before a PR (see docs/xxscreeps-parity-gaps.md). | [2](#xxscreeps-gap-live-cached-receiver-released) |
 | `creep-attack-cannot-target-power-creep` | `checkAttack` and `checkRangedAttack` (`mods/classic/combat/creep.ts:145,156`) call `checkTarget(target, Creep, Structure)`, and `PowerCreep` extends `RoomObject` rather than `Creep`, so `creep.attack(powerCreep)` returns ERR_INVALID_TARGET and no damage is ever dealt. Only the intent check rejects — the damage path behind it is complete: `PowerCreep['#applyDamage']` accumulates `tickRawDamage` and the object tick processor buries the creep at `hits <= 0`. | Vanilla accepts power creeps as attack targets — the guard is `!register.creeps[id] && !register.powerCreeps[id] && !register.structures[id]` (`game/creeps.js:607`) — so a melee creep in range kills a power creep, which then reverts to unspawned with `ticksToLive === undefined`. | Engine-side target-check omission, not adapter translation. Small upstream fix: admit `PowerCreep` to the combat target union. POWERCREEP-DEATH-002 is also a vanilla expected-failure (for the unrelated NaN-TTL reason in screeps/engine#148); the two adapters fail it for different causes. | [1](#xxscreeps-gap-creep-attack-cannot-target-power-creep) |
-| `power-creep-renew-stamps-next-tick-age` | `RoomProcessor` builds its `GameState` at `nextTime` (`engine/processor/room.ts:98`), so an intent processor already runs with `Game.time` set to the tick the player will observe next. The renew processor's `creep['#ageTime'] = Game.time + POWER_CREEP_LIFE_TIME` (`mods/mmo/powercreep/processor.ts`) therefore lands one tick further out than vanilla's, and the creep reads a full `POWER_CREEP_LIFE_TIME` on the tick after the renew. | Vanilla stamps `ageTime = gameTime + POWER_CREEP_LIFE_TIME` with `gameTime` being the tick whose intents are running (`processor/intents/power-creeps/renew.js`), so the observation on the following tick is `POWER_CREEP_LIFE_TIME - 1` and the renewed creep lives exactly POWER_CREEP_LIFE_TIME more ticks. | Engine-side clock convention: xxscreeps power creeps outlive vanilla's by one tick per renew. Not adapter-fixable — the adapter seeds and reads the same absolute tick on both sides; compensating would mean rewriting the observed value. | [1](#xxscreeps-gap-power-creep-renew-stamps-next-tick-age) |
-| `power-cooldown-stamps-next-tick` | The usePower processor stamps `entry.cooldownTime = Game.time + info.cooldown` (`mods/mmo/powercreep/processor.ts:144`) from the processor clock, which reads one tick past vanilla's `gameTime`. The tick after a `usePower(PWR_GENERATE_OPS)` reads `powers[PWR_GENERATE_OPS].cooldown` as the full `POWER_INFO` cooldown, and the power stays `ERR_TIRED` one tick longer. | Vanilla `processor/intents/power-creeps/usePower.js` stamps `cooldownTime: gameTime + powerInfo.cooldown` on the use tick and the getter returns `cooldownTime - Game.time` (`game/power-creeps.js:58`), so the next tick reads `cooldown - 1`. | Found 2026-09-26 when POWER-GENERATE-001, which compared POWER_INFO against itself, was rewritten to use the power at each level. Same processor clock convention as `power-creep-renew-stamps-next-tick-age`; the upstream fix is `- 1` on the stamp. | [5](#xxscreeps-gap-power-cooldown-stamps-next-tick) |
 | `room-getpositionat-out-of-bounds-throws` | `Room.getPositionAt` (`game/room/look.ts:133`) is a bare `new RoomPosition(xx, yy, this.name)`, and the constructor guard (`game/position.ts:79`) throws `TypeError: Invalid arguments in RoomPosition constructor` for any coordinate outside 0..49. | Vanilla `Room.prototype.getPositionAt` (`game/rooms.js:971`) returns `null` when either coordinate is outside 0..49 and only constructs a position otherwise. | Engine-side range check omission, not adapter translation. One-line upstream fix: return null before constructing. Surfaced by the external contributor's PR #5 rows. | [1](#xxscreeps-gap-room-getpositionat-out-of-bounds-throws) |
 | `map-visual-clear-returns-undefined` | `clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call. | Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method. | Engine-side omission, not adapter translation. One-line upstream fix: `return this`. Surfaced by the external contributor's PR #5 rows; the room-visual row pins the same code path. | [2](#xxscreeps-gap-map-visual-clear-returns-undefined) |
 | `room-visual-roomname-missing` | `RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`. | Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`. | Engine-side surface omission, not adapter translation. One-line upstream fix: assign the public property in the constructor. | [1](#xxscreeps-gap-room-visual-roomname-missing) |
 | `map-visual-accepts-non-roomposition` | `extractPositions` (`mods/meta/visual/visual.ts:211`) duck-types on `typeof arg.x === 'number'`: a plain `{ x, y, roomName }` object is encoded like a real position, and a number passes straight through as a coordinate, so `Game.map.visual.circle(5)` and `.text('a', { x: 1, y: 1, roomName: 'W1N1' })` draw instead of throwing. Only a missing argument throws, from `encodeRoomPosition` on `undefined`. | Vanilla's map visual `circle`, `line`, `rect`, and `text` (`game/map.js:283-343`) guard every position argument with `instanceof RoomPosition` and throw `Invalid pos, RoomPosition expected` otherwise; `poly` is unguarded on both sides. | Engine-side validation omission, not adapter translation. Small upstream fix: an `instanceof RoomPosition` check in the map-visual position path. The plain-object half is arguably a leniency, but the numeric half draws at a garbage location and hides a caller bug. | [1](#xxscreeps-gap-map-visual-accepts-non-roomposition) |
 | `spawning-cancel-returns-undefined` | `StructureSpawn.Spawning.cancel()` (`mods/classic/spawn/spawn.ts:60-64`) runs `chainIntentChecks(...)` without returning its result, so the call evaluates to `undefined`. The `cancelSpawning` intent is still saved and the cancel itself takes effect next tick. | Vanilla `game/structures.js:1327-1333` returns `OK` after setting the `cancelSpawning` intent, and `ERR_NOT_OWNER` for a foreign spawn. | Engine-side omission, not adapter translation. One-line upstream fix: `return chainIntentChecks(...)`. A bot that checks `cancel() === OK` reads every cancel as failed. | [1](#xxscreeps-gap-spawning-cancel-returns-undefined) |
-| `controller-level-up-ignores-downgrade-timer` | The `upgradeController` processor (`mods/classic/controller/processor.ts:175-189`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade. | Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling. | Engine-side missing gate, not adapter translation. Upstream fix: add the timer condition to the level-up branch. Surfaced by the coverage sweep that followed screeps-ok PRs #3-#8. | [1](#xxscreeps-gap-controller-level-up-ignores-downgrade-timer) |
-| `controller-timer-anchors-one-tick-late` | The controller tick (`mods/classic/controller/processor.ts:238-240`) writes `1 + Math.min(downgradeTime + CONTROLLER_DOWNGRADE_RESTORE, Game.time + CONTROLLER_DOWNGRADE[level])` and the level-up branch (`:184`) writes `Game.time + CONTROLLER_DOWNGRADE[level] / 2`. The relative branch matches vanilla exactly (CTRL-DOWNGRADE-012 passes), but every `Game.time`-anchored write reads one tick high on the following tick: `ticksToDowngrade` is `CONTROLLER_DOWNGRADE[level] + 1` at the clamp and `CONTROLLER_DOWNGRADE[2] / 2 + CONTROLLER_DOWNGRADE_RESTORE + 1` after a level-up. | Vanilla `processor/intents/controllers/tick.js:38-42` and `processor/intents/creeps/upgradeController.js:68` anchor on the tick whose intents are running, so the next-tick reads are exactly the ceiling and exactly half the new ceiling plus one restore. | Same engine-side clock convention as `power-creep-renew-stamps-next-tick-age`: the processor's `GameState` is built at `nextTime` (`engine/processor/room.ts:97-98`), so `Game.time` sits one tick ahead of vanilla's `gameTime`. The same file already compensates with `- 1` on its other absolute anchors (`:61`, `:207-208`, `:259`); the two-line upstream fix is `- 1` on the level-up half-timer and moving the `1 +` inside the relative arm of the clamp. Not adapter-fixable, since the adapter seeds and reads the same absolute tick on both engines. | [2](#xxscreeps-gap-controller-timer-anchors-one-tick-late) |
-| `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:155`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | Engine-side ordering gap, not adapter translation. Upstream fix: `after: 'harvest'` on the `upgradeController` processor, or the equivalent `before` on `harvest`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
+| `controller-level-up-ignores-downgrade-timer` | The `upgradeController` processor (`mods/classic/controller/processor.ts:179-189`) advances the level as soon as `#progress >= CONTROLLER_LEVELS[level]`, with no condition on `#downgradeTime`. An RCL 1 controller seeded at 500 ticks reaches level 2 on the crossing upgrade. | Vanilla `processor/intents/creeps/upgradeController.js:63-64` also requires `downgradeTime + CONTROLLER_DOWNGRADE_RESTORE >= gameTime + CONTROLLER_DOWNGRADE[level]`; when that fails, progress accumulates past the threshold and the level holds until the timer is restored to within one restore of its ceiling. | Engine-side missing gate, not adapter translation. Upstream fix: add the timer condition to the level-up branch. Surfaced by the coverage sweep that followed screeps-ok PRs #3-#8. | [1](#xxscreeps-gap-controller-level-up-ignores-downgrade-timer) |
+| `harvest-not-ordered-before-upgradecontroller` | Creep intents are ranked only by their declared `before`/`after` constraints (`engine/processor/index.ts:140-190`). `harvest` declares `{ before: 'move' }` (`mods/classic/harvestable/processor.ts:32`) and `upgradeController` declares `{ after: 'build' }` (`mods/classic/controller/processor.ts:159`), so nothing relates the two and `upgradeController` resolves first: a full creep ends the tick still at `CARRY_CAPACITY` with only the harvest excess on the ground. | Vanilla's fixed `creepActions` list (`processor/intents/creeps/intents.js:15`) runs `harvest` (index 8) before `upgradeController` (index 17): the whole harvest drops and the store then reads `CARRY_CAPACITY - 2 * UPGRADE_CONTROLLER_POWER`. | Engine-side ordering gap, not adapter translation. Upstream fix: `after: 'harvest'` on the `upgradeController` processor, or the equivalent `before` on `harvest`. | [1](#xxscreeps-gap-harvest-not-ordered-before-upgradecontroller) |
 | `circular-memory-tick-completes` | `flush()` (`mods/meta/memory/memory.ts:271-283`) catches the tick-end `JSON.stringify` failure, logs it with `console.error`, and skips only the Memory write; the tick otherwise completes, so its intents still apply and the player's code returns normally. | Vanilla serializes `RawMemory._parsed` outside any try/catch (`@screeps/driver/lib/runtime/runtime.js:246-248`), so the throw escapes the runtime run and `make.js` stores neither the tick's intents nor its Memory; the runner reports the error and the isolate carries on next tick. | Found 2026-09-25: the vanilla adapter used to reset a cyclic `RawMemory` itself, which manufactured the old 'subtree silently dropped' reading of UNDOC-MEMJSON-005 on vanilla. | [1](#xxscreeps-gap-circular-memory-tick-completes) |
 | `segment-over-limit-drops-segment-not-tick` | `flushSegments()` (`mods/meta/memory/memory.ts`) logs a segment over 100 KB with `console.error` and leaves it unsaved; the tick otherwise completes. | Vanilla throws when it saves a segment over 100 KB (`@screeps/driver/lib/runtime/runtime.js:264`), so the tick fails and the runner reports the error. | Found 2026-09-26 wiring RAWMEMORY-002 to its segment-limit matrix; the same tick-end split as circular-memory-tick-completes. | [1](#xxscreeps-gap-segment-over-limit-drops-segment-not-tick) |
 | `costmatrix-set-wraps-instead-of-clamping` | `CostMatrix.set` (`game/pathfinder/cost-matrix.ts:39-41`) writes the value straight into the `Uint8Array`, so out-of-range costs wrap modulo 256: `set(x, y, -1)` reads back 255 (unwalkable) and `set(x, y, 256)` reads back 0 (terrain default). | Vanilla `CostMatrix.prototype.set` (`@screeps/engine/src/game/path-finder.js:22-26`) stores `Math.min(Math.max(0, val), 255)`, so -1 reads back 0 and 256 reads back 255. | Found 2026-09-25 when COSTMATRIX-005's `0..255` range check was tightened to the clamped values; any value wraps into range, so the old assertion admitted both. A bot that adds a penalty on top of 255, or subtracts below 0, gets the inverted tile. | [1](#xxscreeps-gap-costmatrix-set-wraps-instead-of-clamping) |
 | `terminal-send-cost-ignores-world-wrap` | `StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96. | Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate. | Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites. | [1](#xxscreeps-gap-terminal-send-cost-ignores-world-wrap) |
-| `bury-creep-stamps-next-tick` | `buryCreep` (`mods/classic/creep/processor.ts:38-89`) stamps the tombstone from processor `Game.time`, which already reads one tick past vanilla's `gameTime`: `deathTime = Game.time` (`:40`) reads one higher than the tick the player saw the creep die on, `#creep.ticksToLive` copies the creep's `ticksToLive` getter (`:83`) and so reads one lower, the corpse's `lifeRate` reads the same getter (`:46`), so a recycled or suicided creep returns a tick's less body energy and boost, and `#decayTime = Game.time + body.length * TOMBSTONE_DECAY_PER_PART` (`:86`) makes `ticksToDecay` read one higher on every tick and spills the store (`:478-484`) a tick late. | Vanilla `processor/intents/creeps/_die.js` stamps `deathTime: gameTime`, `creepTicksToLive: ageTime - gameTime` and `decayTime: gameTime + body.length * TOMBSTONE_DECAY_PER_PART` on the death tick. So `deathTime` equals the `Game.time` the killing blow was issued on, `creep.ticksToLive` is one less than the TTL the creep read on the tick before, `ticksToDecay` reads `body.length * TOMBSTONE_DECAY_PER_PART - 1` on the next tick, and `tombstones/tick.js` spills the store when `gameTime >= decayTime - 1`. | Found 2026-09-25 when the tombstone rows' bands were pinned: CREEP-DEATH-006 `[expected - 1, expected]`, CREEP-DEATH-007 `amount > 0`, TOMBSTONE-001 `deathTime` bracketed by the attack and read ticks, and TOMBSTONE-012 within two ticks. Same processor clock convention as `controller-timer-anchors-one-tick-late`. The upstream fix is one `Game.time - 1` local for the three stamps in `buryCreep`. | [7](#xxscreeps-gap-bury-creep-stamps-next-tick) |
-| `deposit-decay-anchors-one-tick-late` | The deposit harvest processor (`mods/modern/deposit/processor.ts:48`) refreshes `#nextDecayTime = Game.time + DEPOSIT_DECAY_TIME`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so `ticksToDecay` reads one higher after every harvest. The same processor compensates its cooldown anchor with `- 1` (`:46`), but not the decay anchor. | Vanilla `processor/intents/creeps/harvest.js` sets `decayTime: DEPOSIT_DECAY_TIME + gameTime` on the harvest tick, so two ticks later `ticksToDecay` reads `DEPOSIT_DECAY_TIME - 2`. | Found 2026-09-25 when DEPOSIT-004's `(49990, 50000]` band was pinned. Upstream fix: `- 1` on the decay anchor, matching the cooldown line above it. | [1](#xxscreeps-gap-deposit-decay-anchors-one-tick-late) |
-| `nuke-upgrade-block-anchors-one-tick-late` | Nuke landing (`mods/modern/nuker/processor.ts:118`) sets `#upgradeBlockedUntil = Game.time + CONTROLLER_NUKE_BLOCKED_UPGRADE`. Processor `Game.time` reads one tick past vanilla's `gameTime`, so the controller's `upgradeBlocked` reads one higher on every tick after the landing. | Vanilla `processor/intents/nukes/tick.js:72-74` sets `upgradeBlocked: gameTime + CONTROLLER_NUKE_BLOCKED_UPGRADE` on the landing tick, so four ticks later the controller reads `CONTROLLER_NUKE_BLOCKED_UPGRADE - 4`. | Found 2026-09-25 when CTRL-UPGRADE-010's `(0, CONTROLLER_NUKE_BLOCKED_UPGRADE]` band was pinned. Same processor clock convention as `controller-timer-anchors-one-tick-late`; upstream fix is `- 1` on the anchor. | [1](#xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late) |
-| `controller-downgrade-step-one-tick-short` | A non-terminal downgrade step (`mods/classic/controller/processor.ts:257`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads one tick lower: `CONTROLLER_DOWNGRADE[level] / 2` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned. Unlike `controller-timer-anchors-one-tick-late` this write reads a tick short, not long, because vanilla's formula is relative and carries its own `+ 1`. Same file, separate line to fix. | [1](#xxscreeps-gap-controller-downgrade-step-one-tick-short) |
+| `controller-downgrade-step-two-ticks-short` | Regression at pin `b6d4c3ba`, from one tick short to two: a non-terminal downgrade step (`mods/classic/controller/processor.ts:261`) resets `#downgradeTime = Game.time + CONTROLLER_DOWNGRADE[level] / 2`, anchoring on the processor clock instead of extending the old timer. The step fires on the same tick as vanilla, but the new timer reads `CONTROLLER_DOWNGRADE[level] / 2 - 1` on the next tick instead of `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Vanilla `processor/intents/controllers/tick.js:65` extends the old timer, `downgradeTime += CONTROLLER_DOWNGRADE[level] / 2 + 1`. The step fires when `gameTime >= downgradeTime - 1`, so the tick after the loss reads `CONTROLLER_DOWNGRADE[level] / 2 + 1`. | Found 2026-09-25 when CTRL-DOWNGRADE-007's `(0, CONTROLLER_DOWNGRADE[2]]` band was pinned; it then read one tick short. xxscreeps 92aa02fe moved processor `Game.time` back one tick to the tick the player observed and adjusted this file's other anchors, but not this one, so it now reads two short. The upstream fix is `Game.time + CONTROLLER_DOWNGRADE[level] / 2 + 2`, or extending the old timer as vanilla does. | [1](#xxscreeps-gap-controller-downgrade-step-two-ticks-short) |
 | `renew-claim-creep-returns-no-bodypart` | `checkRenewCreep` (`mods/classic/spawn/spawn.ts:381-398`) rejects a creep with a CLAIM part as `ERR_NO_BODYPART`, and only in the last check, after owner, active, range and energy. | Vanilla `StructureSpawn.prototype.renewCreep` (`@screeps/engine/src/game/structures.js:1242-1244`) treats a CLAIM creep as an invalid target and returns `ERR_INVALID_TARGET` in the target-validity guard, ahead of the owner, RCL, range, energy and full checks. | Found 2026-09-25 when RENEW-CREEP-007's `not.toBe(OK)` was pinned. Both engines refuse the renew, but a bot branching on the code sees a different reason. RENEW-CREEP-011 took the CLAIM creep as a condition on 2026-09-26; its pairs show the late position too. | [7](#xxscreeps-gap-renew-claim-creep-returns-no-bodypart) |
 | `recycle-inactive-spawn-checked-before-target` | `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-379`) checks the spawn is active before the target, so an inactive spawn recycling a non-creep returns `ERR_RCL_NOT_ENOUGH`. | Vanilla checks the target first and returns `ERR_INVALID_TARGET` (`game/structures.js:1274-1280`). | Found 2026-09-26 when RECYCLE-CREEP-005 took the inactive spawn as a condition; no row had owned it. | [2](#xxscreeps-gap-recycle-inactive-spawn-checked-before-target) |
 | `pathfinder-search-nullish-goal-throws` | `search` (`driver/pathfinder/pathfinder.ts:38-55`) wraps a non-array goal in an array and reads `goal.roomName` on it, so a `null` or `undefined` goal throws `TypeError: Cannot read properties of null (reading 'roomName')` and aborts the player's tick. | Vanilla `PathFinder.search` (`@screeps/engine/src/game/path-finder.js:60-61`) returns `{ path: [], ops: 0 }` for a nullish goal or an empty goal array, with no `cost` or `incomplete` keys. | Found 2026-09-25 when PATHFINDER-014's either-outcome test (accepting a throw) was made unconditional. The empty-array case (PATHFINDER-013) passes because it never enters the map callback. | [1](#xxscreeps-gap-pathfinder-search-nullish-goal-throws) |
-| `bury-power-creep-stamps-next-tick` | `buryPowerCreep` (`mods/mmo/powercreep/processor.ts:23-41`) stamps `deathTime = Game.time` and `#decayTime = Game.time + TOMBSTONE_DECAY_POWER_CREEP` from the processor clock, which reads one tick past vanilla's `gameTime`. A power creep's tombstone therefore reads `deathTime` one past the tick the player issued `suicide()` on, and `ticksToDecay` of `TOMBSTONE_DECAY_POWER_CREEP` on the next tick. | Vanilla `processor/global-intents/power/_diePowerCreep.js` stamps `deathTime: gameTime` and `decayTime: gameTime + TOMBSTONE_DECAY_POWER_CREEP` on the death tick. `deathTime` equals the tick of the `suicide()` call, and the next tick reads `TOMBSTONE_DECAY_POWER_CREEP - 1`. | Found 2026-09-25 when POWERCREEP-DEATH-001, which only checked that a live power creep had a positive TTL, was rewritten to kill one through suicide(). Same fix as `bury-creep-stamps-next-tick`, applied in the power-creep mod's copy. | [1](#xxscreeps-gap-bury-power-creep-stamps-next-tick) |
-| `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:7`) removes a portal when its processor-time `ticksToDecay` reaches 0, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an overdue time, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
+| `portal-removed-before-decay-time-passes` | The portal tick processor (`mods/portal/processor.ts:8`) removes a portal on `expiresNextTick(#decayTime)`, while one tick still remains, which is two ticks before vanilla for the same stored `decayTime`. The last reading a player sees is 1: a portal seeded to decay in 3 reads `[2, 1]` and is then gone. The getter (`mods/portal/portal.ts:51`) reads through `optionalExpiryTime`, which throws on an expiry at or before `Game.time`, so it cannot report vanilla's trailing 0 and -1. | Vanilla `processor/intents/portals/tick.js` removes a portal only once `gameTime > decayTime`, and its getter returns `decayTime - time` unclamped, so a portal seeded to decay in 3 reads `[2, 1, 0, -1]` before it disappears. This removal edge is unlike vanilla's other decaying objects, which go when `gameTime >= decayTime - 1`. | Found 2026-09-25 when PORTAL-006, which waited decayTicks + 2 ticks before checking removal, was pinned to the exact sequence. It predates laverdet/xxscreeps#392, which only moves where the unstable-to-decaying anchor lands. Matching vanilla would mean a getter that reads an overdue expiry, against the throw-on-overdue convention, so this is a question for upstream before it is a fix. | [1](#xxscreeps-gap-portal-removed-before-decay-time-passes) |
 
 Click a test count above to jump to the affected test list for that gap.
 
@@ -213,21 +200,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 - `Game.gcl GCL-001:levelTwo Game.gcl follows vanilla GCL math at level 2, progress 0`
 - `Game.gcl GCL-001:levelThree Game.gcl follows vanilla GCL math at level 3, progress 0`
-
-</details>
-
-<details id="xxscreeps-gap-reserve-cap-clamps-instead-of-rejecting">
-<summary><code>reserve-cap-clamps-instead-of-rejecting</code> — 1 test</summary>
-
-- `controller mechanics CTRL-RESERVE-010 a renewal that would overshoot CONTROLLER_RESERVE_MAX is dropped, not clamped`
-
-</details>
-
-<details id="xxscreeps-gap-reserve-fresh-reservation-one-tick-long">
-<summary><code>reserve-fresh-reservation-one-tick-long</code> — 2 tests</summary>
-
-- `controller mechanics CTRL-RESERVE-011 a fresh reservation reads exactly its CLAIM credit as ticksToEnd`
-- `Invader core INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power`
 
 </details>
 
@@ -389,8 +361,9 @@ Click a test count above to jump to the affected test list for that gap.
 </details>
 
 <details id="xxscreeps-gap-event-log-kept-while-room-sleeps">
-<summary><code>event-log-kept-while-room-sleeps</code> — 1 test</summary>
+<summary><code>event-log-kept-while-room-sleeps</code> — 2 tests</summary>
 
+- `controller mechanics CTRL-RESERVE-010 a renewal that would overshoot CONTROLLER_RESERVE_MAX is dropped, not clamped`
 - `room.getEventLog() ROOM-EVENTLOG-004 room events are only exposed for the current tick`
 
 </details>
@@ -399,13 +372,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>mineral-harvest-event-logs-capped-amount</code> — 1 test</summary>
 
 - `room.getEventLog() ROOM-EVENTLOG-002:mineralHarvest logs the actor, target and canonical payload`
-
-</details>
-
-<details id="xxscreeps-gap-mineral-regen-timer-one-tick-long">
-<summary><code>mineral-regen-timer-one-tick-long</code> — 1 test</summary>
-
-- `mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick`
 
 </details>
 
@@ -493,39 +459,10 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-factory-power-effect-not-implemented">
-<summary><code>factory-power-effect-not-implemented</code> — 3 tests</summary>
-
-- `Factory production FACTORY-PRODUCE-011:powerEffect produce() validation returns the canonical code`
-- `Factory production FACTORY-PRODUCE-011:powerEffectBeforeNotEnough produce() validation returns the canonical code`
-- `Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY produces level 0 commodities only`
-
-</details>
-
-<details id="xxscreeps-gap-power-bank-ruin-spills-one-tick-late">
-<summary><code>power-bank-ruin-spills-one-tick-late</code> — 3 tests</summary>
-
-- `Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile`
-- `Ruin RUIN-002:container a destroyed structure with no RUIN_DECAY_STRUCTURES entry leaves a RUIN_DECAY ruin`
-- `Ruin RUIN-002:powerBank a destroyed power bank leaves a ruin with its RUIN_DECAY_STRUCTURES decay`
-
-</details>
-
 <details id="xxscreeps-gap-moveto-all-routes-blocked-walks-into-creeps">
 <summary><code>moveto-all-routes-blocked-walks-into-creeps</code> — 1 test</summary>
 
 - `creep movement collision MOVE-COLLISION-007 moveTo with ignoreCreeps:false returns ERR_NO_PATH when every viable route is blocked by stationary creeps`
-
-</details>
-
-<details id="xxscreeps-gap-stronghold-deploy-trigger-one-tick-late">
-<summary><code>stronghold-deploy-trigger-one-tick-late</code> — 5 tests</summary>
-
-- `Stronghold layout STRONGHOLD-LAYOUT-001:bunker1 deploying the invader core places the canonical structure layout`
-- `Stronghold layout STRONGHOLD-LAYOUT-001:bunker2 deploying the invader core places the canonical structure layout`
-- `Stronghold layout STRONGHOLD-LAYOUT-001:bunker3 deploying the invader core places the canonical structure layout`
-- `Stronghold layout STRONGHOLD-LAYOUT-001:bunker4 deploying the invader core places the canonical structure layout`
-- `Stronghold layout STRONGHOLD-LAYOUT-001:bunker5 deploying the invader core places the canonical structure layout`
 
 </details>
 
@@ -541,24 +478,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>creep-attack-cannot-target-power-creep</code> — 1 test</summary>
 
 - `Power creep lifecycle POWERCREEP-DEATH-002 after a spawned power creep dies, ticksToLive is undefined again`
-
-</details>
-
-<details id="xxscreeps-gap-power-creep-renew-stamps-next-tick-age">
-<summary><code>power-creep-renew-stamps-next-tick-age</code> — 1 test</summary>
-
-- `Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive`
-
-</details>
-
-<details id="xxscreeps-gap-power-cooldown-stamps-next-tick">
-<summary><code>power-cooldown-stamps-next-tick</code> — 5 tests</summary>
-
-- `PWR_GENERATE_OPS POWER-GENERATE-001:levelOne amount, cooldown, and ops cost match POWER_INFO for each supported power level`
-- `PWR_GENERATE_OPS POWER-GENERATE-001:levelTwo amount, cooldown, and ops cost match POWER_INFO for each supported power level`
-- `PWR_GENERATE_OPS POWER-GENERATE-001:levelThree amount, cooldown, and ops cost match POWER_INFO for each supported power level`
-- `PWR_GENERATE_OPS POWER-GENERATE-001:levelFour amount, cooldown, and ops cost match POWER_INFO for each supported power level`
-- `PWR_GENERATE_OPS POWER-GENERATE-001:levelFive amount, cooldown, and ops cost match POWER_INFO for each supported power level`
 
 </details>
 
@@ -605,14 +524,6 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-controller-timer-anchors-one-tick-late">
-<summary><code>controller-timer-anchors-one-tick-late</code> — 2 tests</summary>
-
-- `creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore`
-- `Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there`
-
-</details>
-
 <details id="xxscreeps-gap-harvest-not-ordered-before-upgradecontroller">
 <summary><code>harvest-not-ordered-before-upgradecontroller</code> — 1 test</summary>
 
@@ -648,35 +559,8 @@ Click a test count above to jump to the affected test list for that gap.
 
 </details>
 
-<details id="xxscreeps-gap-bury-creep-stamps-next-tick">
-<summary><code>bury-creep-stamps-next-tick</code> — 7 tests</summary>
-
-- `Spawn.recycleCreep RECYCLE-CREEP-002 recycling leaves floor(remaining TTL / CREEP_LIFE_TIME × body cost) energy in a tombstone`
-- `Spawn.recycleCreep RECYCLE-CREEP-003 recycling a boosted creep returns its boost compound and energy with the body`
-- `creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone`
-- `creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART`
-- `creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources`
-- `Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store`
-- `Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL`
-
-</details>
-
-<details id="xxscreeps-gap-deposit-decay-anchors-one-tick-late">
-<summary><code>deposit-decay-anchors-one-tick-late</code> — 1 test</summary>
-
-- `Deposit lifecycle DEPOSIT-004 a harvest restarts ticksToDecay at DEPOSIT_DECAY_TIME and it then decreases by 1 each tick`
-
-</details>
-
-<details id="xxscreeps-gap-nuke-upgrade-block-anchors-one-tick-late">
-<summary><code>nuke-upgrade-block-anchors-one-tick-late</code> — 1 test</summary>
-
-- `creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room`
-
-</details>
-
-<details id="xxscreeps-gap-controller-downgrade-step-one-tick-short">
-<summary><code>controller-downgrade-step-one-tick-short</code> — 1 test</summary>
+<details id="xxscreeps-gap-controller-downgrade-step-two-ticks-short">
+<summary><code>controller-downgrade-step-two-ticks-short</code> — 1 test</summary>
 
 - `Controller downgrade CTRL-DOWNGRADE-007 a level loss re-arms the timer by CONTROLLER_DOWNGRADE[new level] / 2 + 1`
 
@@ -707,13 +591,6 @@ Click a test count above to jump to the affected test list for that gap.
 <summary><code>pathfinder-search-nullish-goal-throws</code> — 1 test</summary>
 
 - `PathFinder PATHFINDER-014 Nullish goal returns path: [] and ops: 0`
-
-</details>
-
-<details id="xxscreeps-gap-bury-power-creep-stamps-next-tick">
-<summary><code>bury-power-creep-stamps-next-tick</code> — 1 test</summary>
-
-- `Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone`
 
 </details>
 
@@ -5537,7 +5414,7 @@ Click a count to jump to the affected test list.
 ## xxscreeps passing tests
 
 <details>
-<summary>3055 tests across 146 files</summary>
+<summary>3087 tests across 147 files</summary>
 
 **`tests/00-adapter-contract/code-tag.test.ts`** (4)
 
@@ -6583,7 +6460,7 @@ Click a count to jump to the affected test list.
 
 - owner-scoped construction site access CONSTRUCTION-SITE-018 FIND_MY_CONSTRUCTION_SITES and Game.constructionSites expose the placed site
 
-**`tests/06-controller/6.1-6.3-controller.test.ts`** (119)
+**`tests/06-controller/6.1-6.3-controller.test.ts`** (120)
 
 - controller mechanics CTRL-CLAIM-001 claimController returns OK and sets the unowned controller to level 1 for the claimant
 - controller mechanics CTRL-SIGN-001 signController writes the provided text to the controller sign
@@ -6629,6 +6506,7 @@ Click a count to jump to the affected test list.
 - controller mechanics CTRL-RESERVE-007 attackController reduces a hostile reservation endTime by CONTROLLER_RESERVE per CLAIM part
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with one CLAIM part holds ticksToEnd unchanged
 - controller mechanics CTRL-RESERVE-009 renewing a reservation with two CLAIM parts adds one tick per tick
+- controller mechanics CTRL-RESERVE-011 a fresh reservation reads exactly its CLAIM credit as ticksToEnd
 - controller mechanics CTRL-RESERVE-008:notOwner reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:busy reserveController() validation returns the canonical code
 - controller mechanics CTRL-RESERVE-008:invalidTarget reserveController() validation returns the canonical code
@@ -6756,7 +6634,7 @@ Click a count to jump to the affected test list.
 
 - Game.gcl GCL-001:belowLevelTwo Game.gcl follows vanilla GCL math at level 1, progress 999999
 
-**`tests/06-controller/6.4-upgrade.test.ts`** (50)
+**`tests/06-controller/6.4-upgrade.test.ts`** (52)
 
 - creep.upgradeController() CTRL-UPGRADE-001 each WORK part adds UPGRADE_CONTROLLER_POWER progress per tick
 - creep.upgradeController() CTRL-UPGRADE-002 consumes UPGRADE_CONTROLLER_POWER energy per WORK part per tick
@@ -6771,10 +6649,12 @@ Click a count to jump to the affected test list.
 - creep.upgradeController() CTRL-UPGRADE-007:level7 progressTotal reads CONTROLLER_LEVELS[level] at level 7
 - creep.upgradeController() CTRL-UPGRADE-007:level8 progressTotal reads undefined at level 8
 - creep.upgradeController() CTRL-UPGRADE-008 upgradeController increments Game.gcl.progress
+- creep.upgradeController() CTRL-UPGRADE-010 upgradeController is blocked after a nuke lands in the room
 - creep.upgradeController() CTRL-UPGRADE-011 partial upgrade uses only available energy when below full amount
 - creep.upgradeController() CTRL-UPGRADE-017 a level-up adds one safe-mode charge
 - creep.upgradeController() CTRL-UPGRADE-012:excess an upgrade across the threshold advances the level and keeps the excess
 - creep.upgradeController() CTRL-UPGRADE-012:levelEight an upgrade across the threshold advances the level and keeps the excess
+- creep.upgradeController() CTRL-UPGRADE-016 a level-up sets the downgrade timer to half the new level ceiling plus that tick's restore
 - creep.upgradeController() CTRL-UPGRADE-013:notOwnerCreep upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:busy upgradeController() validation returns the canonical code
 - creep.upgradeController() CTRL-UPGRADE-013:noBodypart upgradeController() validation returns the canonical code
@@ -6828,7 +6708,7 @@ Click a count to jump to the affected test list.
 - creep.generateSafeMode() CTRL-GENSAFE-005:notEnoughBeforeRange generateSafeMode() validation returns the canonical code
 - creep.generateSafeMode() CTRL-GENSAFE-005:invalidTargetBeforeRange generateSafeMode() validation returns the canonical code
 
-**`tests/06-controller/6.7-downgrade.test.ts`** (7)
+**`tests/06-controller/6.7-downgrade.test.ts`** (8)
 
 - Controller downgrade CTRL-DOWNGRADE-001 controller loses a level when ticksToDowngrade reaches 0
 - Controller downgrade CTRL-DOWNGRADE-005 ticksToDowngrade decrements by 1 each tick when the controller is not upgraded
@@ -6837,6 +6717,7 @@ Click a count to jump to the affected test list.
 - Controller downgrade CTRL-DOWNGRADE-009:levelZero the downgrade step to level 0 also resets safeModeAvailable to 0
 - Controller downgrade CTRL-DOWNGRADE-011 downgrade to level 0 resets isPowerEnabled to false
 - Controller downgrade CTRL-DOWNGRADE-012 each upgrading tick credits exactly CONTROLLER_DOWNGRADE_RESTORE to ticksToDowngrade
+- Controller downgrade CTRL-DOWNGRADE-013 the restore is clamped at the level ceiling and reads exactly CONTROLLER_DOWNGRADE[level] there
 
 **`tests/06-controller/6.8-safemode.test.ts`** (21)
 
@@ -7493,9 +7374,11 @@ Click a count to jump to the affected test list.
 - Spawn.renewCreep RENEW-CREEP-011:rangeBeforeFull renewCreep() validation returns the canonical code
 - Spawn.renewCreep RENEW-CREEP-011:notEnoughBeforeFull renewCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (16)
+**`tests/09-spawning-lifecycle/9.5-recycle.test.ts`** (18)
 
 - Spawn.recycleCreep RECYCLE-CREEP-001 recycleCreep destroys an adjacent owned creep in the tick it is called
+- Spawn.recycleCreep RECYCLE-CREEP-002 recycling leaves floor(remaining TTL / CREEP_LIFE_TIME × body cost) energy in a tombstone
+- Spawn.recycleCreep RECYCLE-CREEP-003 recycling a boosted creep returns its boost compound and energy with the body
 - Spawn.recycleCreep UNDOC-STALERECV-001:spawnRecycleCreep stale cached StructureSpawn.recycleCreep() throws a runtime error
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerSpawn recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:invalidTarget recycleCreep() validation returns the canonical code
@@ -7512,12 +7395,13 @@ Click a count to jump to the affected test list.
 - Spawn.recycleCreep RECYCLE-CREEP-005:rclBeforeRange recycleCreep() validation returns the canonical code
 - Spawn.recycleCreep RECYCLE-CREEP-005:notOwnerCreepBeforeRange recycleCreep() validation returns the canonical code
 
-**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (17)
+**`tests/09-spawning-lifecycle/9.6-9.8-creep-spawning.test.ts`** (18)
 
 - creep.suicide() CREEP-SUICIDE-001 destroys the creep
 - creep.suicide() CREEP-SUICIDE-002 suicide creates a tombstone at the creep position
 - creep.suicide() CREEP-SUICIDE-003 suicide returns ERR_NOT_OWNER on another player's creep
 - creep.suicide() CREEP-SUICIDE-004 suicide returns ERR_BUSY on a spawning creep
+- creep.suicide() CREEP-DEATH-009 suicide at high remaining TTL also reclaims body energy into the tombstone
 - creep.suicide() CREEP-DEATH-010 CLAIM body reclaims body energy at the CREEP_CLAIM_LIFE_TIME rate
 - creep.suicide() CREEP-DEATH-008:suicide preserves carried resources in the tombstone
 - creep.suicide() CREEP-DEATH-008:ticksToLive preserves carried resources in the tombstone
@@ -7538,14 +7422,16 @@ Click a count to jump to the affected test list.
 - creep lifetime CREEP-LIFETIME-002 creep without CLAIM starts with CREEP_LIFE_TIME ticksToLive
 - creep lifetime CREEP-LIFETIME-003 creep with CLAIM part starts with CREEP_CLAIM_LIFE_TIME ticksToLive
 
-**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (6)
+**`tests/09-spawning-lifecycle/9.7b-death.test.ts`** (8)
 
 - creep death CREEP-DEATH-001 creep with ticksToLive === 1 dies and does not appear on the next tick
 - creep death CREEP-DEATH-003 death resources go into a same-tile container first
 - creep death CREEP-DEATH-004 tombstone stores resources not diverted to a container
 - creep death CREEP-DEATH-005 tombstone resource amounts do not decay while tombstone lives
+- creep death CREEP-DEATH-006 tombstone decay equals body.length * TOMBSTONE_DECAY_PER_PART
 - creep death CREEP-DEATH-011 rate=0 death (NPC suicide) leaves an empty tombstone
 - creep death CREEP-DEATH-012 mixed-resource deposits fill container sequentially before overflowing to tombstone
+- creep death CREEP-DEATH-007 when tombstone decays, remaining resources become dropped resources
 
 **`tests/10-structures-energy/10.1b-spawn-energy.test.ts`** (2)
 
@@ -7933,7 +7819,7 @@ Click a count to jump to the affected test list.
 - Lab reverseReaction LAB-REVERSE-013:invalidReversePairBeforeFullLab2 reverseReaction() validation returns the canonical code
 - Lab reverseReaction LAB-REVERSE-013:fullBeforeFullLab2 reverseReaction() validation returns the canonical code
 
-**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (96)
+**`tests/11-structures-production/11.4-11.5-factory.test.ts`** (99)
 
 - Factory production FACTORY-PRODUCE-001:alloy produce(alloy) consumes components and yields 20
 - Factory production FACTORY-PRODUCE-001:battery produce(battery) consumes components and yields 50
@@ -7963,6 +7849,7 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-011:invalidArgs produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:levelMismatch produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:rcl produce() validation returns the canonical code
+- Factory production FACTORY-PRODUCE-011:powerEffect produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:notEnough produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:full produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:notOwnerBeforeCooldown produce() validation returns the canonical code
@@ -7985,6 +7872,7 @@ Click a count to jump to the affected test list.
 - Factory production FACTORY-PRODUCE-011:rclBeforePowerEffect produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:rclBeforeNotEnough produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:rclBeforeFull produce() validation returns the canonical code
+- Factory production FACTORY-PRODUCE-011:powerEffectBeforeNotEnough produce() validation returns the canonical code
 - Factory production FACTORY-PRODUCE-011:notEnoughBeforeFull produce() validation returns the canonical code
 - Factory commodity chains FACTORY-COMMODITY-001:alloy COMMODITIES[alloy].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:battery COMMODITIES[battery].level is undefined
@@ -8031,6 +7919,7 @@ Click a count to jump to the affected test list.
 - Factory commodity chains FACTORY-COMMODITY-001:X COMMODITIES[X].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:Z COMMODITIES[Z].level is undefined
 - Factory commodity chains FACTORY-COMMODITY-001:zynthiumBar COMMODITIES[zynthium_bar].level is undefined
+- Factory commodity chains FACTORY-COMMODITY-002 factory without PWR_OPERATE_FACTORY produces level 0 commodities only
 
 **`tests/11-structures-production/11.6-power-spawn.test.ts`** (5)
 
@@ -8158,7 +8047,7 @@ Click a count to jump to the affected test list.
 - Portal mechanics PORTAL-004:permanent a permanent portal has undefined ticksToDecay
 - Portal mechanics PORTAL-003 cross-shard portal exposes destination as { shard, room }
 
-**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (10)
+**`tests/14-structures-npc/14.1-14.2-npc.test.ts`** (11)
 
 - Keeper lair KEEPER-LAIR-001 keeper lair ticksToSpawn decreases each tick and clears when the keeper spawns
 - Keeper lair KEEPER-LAIR-002:keeperMissing a keeper lair with no keeper starts an ENERGY_REGEN_TIME spawn timer
@@ -8167,14 +8056,24 @@ Click a count to jump to the affected test list.
 - Invader core INVADER-CORE-001 ticksToDeploy counts down
 - Invader core INVADER-CORE-002 invader core exposes its level
 - Invader core INVADER-CORE-003 invader core spawns a creep when spawning completes
+- Invader core INVADER-CORE-006 a core reserving a neutral controller starts at exactly its reserve power
 - NPC ownership NPC-OWNERSHIP-001:keeperLair a keeperLair is not my, and Source Keeper owns it
 - NPC ownership NPC-OWNERSHIP-001:powerBank a powerBank is not my, and Power Bank owns it
 - NPC ownership NPC-OWNERSHIP-001:invaderCore a invaderCore is not my, and Invader owns it
 
-**`tests/14-structures-npc/14.3-power-bank.test.ts`** (2)
+**`tests/14-structures-npc/14.3-power-bank.test.ts`** (3)
 
 - Power bank POWER-BANK-001 attacking a power bank reflects POWER_BANK_HIT_BACK of the damage back to the attacker
 - Power bank POWER-BANK-002 ticksToDecay decrements each tick toward power bank removal
+- Power bank POWER-BANK-004 destroyed power bank drops its stored power as a resource on the tile
+
+**`tests/14-structures-npc/14.5-stronghold-layout.test.ts`** (5)
+
+- Stronghold layout STRONGHOLD-LAYOUT-001:bunker1 deploying the invader core places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001:bunker2 deploying the invader core places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001:bunker3 deploying the invader core places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001:bunker4 deploying the invader core places the canonical structure layout
+- Stronghold layout STRONGHOLD-LAYOUT-001:bunker5 deploying the invader core places the canonical structure layout
 
 **`tests/15-structure-common/15.1-hits.test.ts`** (18)
 
@@ -8398,9 +8297,10 @@ Click a count to jump to the affected test list.
 - source regeneration SOURCE-REGEN-005 a source at full capacity has no active regeneration timer
 - source regeneration SOURCE-REGEN-006 after a room is claimed, the next regeneration refills its source to the new capacity
 
-**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (14)
+**`tests/17-source-mineral-deposit/17.3-mineral-regen.test.ts`** (15)
 
 - mineral regeneration MINERAL-REGEN-003 a full mineral reports ticksToRegeneration as undefined
+- mineral regeneration MINERAL-REGEN-004 a depleted mineral has ticksToRegeneration that decreases by 1 each tick
 - mineral regeneration MINERAL-REGEN-002 when regeneration timer completes, mineral restores to density amount
 - mineral regeneration MINERAL-REGEN-005 mineral type remains the same after regeneration
 - mineral regeneration MINERAL-REGEN-006 mineral.density exposes the placed density level
@@ -8415,7 +8315,7 @@ Click a count to jump to the affected test list.
 - mineral regeneration MINERAL-REGEN-009:highRedensify DENSITY_HIGH redensifies when injected gate < MINERAL_DENSITY_CHANGE
 - mineral regeneration MINERAL-REGEN-009:highUnchanged DENSITY_HIGH stays unchanged when injected gate >= MINERAL_DENSITY_CHANGE
 
-**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (8)
+**`tests/17-source-mineral-deposit/17.5-deposit.test.ts`** (9)
 
 - Deposit lifecycle DEPOSIT-001:silicon deposit exposes the canonical depositType
 - Deposit lifecycle DEPOSIT-001:metal deposit exposes the canonical depositType
@@ -8423,11 +8323,13 @@ Click a count to jump to the affected test list.
 - Deposit lifecycle DEPOSIT-001:mist deposit exposes the canonical depositType
 - Deposit lifecycle DEPOSIT-002 deposit lastCooldown matches the exhaust formula for its harvested count
 - Deposit lifecycle DEPOSIT-003 deposit cooldown counts down the wait after a harvest and reads 0 once it has elapsed
+- Deposit lifecycle DEPOSIT-004 a harvest restarts ticksToDecay at DEPOSIT_DECAY_TIME and it then decreases by 1 each tick
 - Deposit lifecycle DEPOSIT-002 repeated harvests increase lastCooldown and the next cooldown
 - Deposit lifecycle DEPOSIT-006 deposit is removed when ticksToDecay reaches 0
 
-**`tests/18-game-objects/18.1-tombstone.test.ts`** (15)
+**`tests/18-game-objects/18.1-tombstone.test.ts`** (17)
 
+- Tombstone TOMBSTONE-001 killing a creep creates a tombstone with the creep name, death time, and store
 - Tombstone TOMBSTONE-003 tombstone store contains the resources the creep was carrying at death
 - Tombstone TOMBSTONE-004 tombstone is removed when ticksToDecay reaches 0
 - Tombstone TOMBSTONE-005 tombstone ticksToDecay strictly decreases each tick
@@ -8437,6 +8339,7 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-009 tombstone.creep.name matches deceased name
 - Tombstone TOMBSTONE-010 tombstone.creep.spawning is false
 - Tombstone TOMBSTONE-011 tombstone.creep.my is false for a non-owning observer
+- Tombstone TOMBSTONE-012 tombstone.creep.ticksToLive preserves the deceased creep near-death TTL
 - Tombstone TOMBSTONE-013 tombstone.creep.fatigue is 0
 - Tombstone TOMBSTONE-014 tombstone.creep.hits is 0
 - Tombstone TOMBSTONE-015 tombstone.creep.hitsMax equals body.length * BODYPART_HITS
@@ -8444,9 +8347,11 @@ Click a count to jump to the affected test list.
 - Tombstone TOMBSTONE-017 tombstone.creep.store and carry are an empty store sized to carryCapacity
 - Tombstone TOMBSTONE-018 tombstone.creep.saying exposes the deceased public saying at death
 
-**`tests/18-game-objects/18.2-ruin.test.ts`** (6)
+**`tests/18-game-objects/18.2-ruin.test.ts`** (8)
 
 - Ruin RUIN-001 a ruin exposes structureType, destroyTime, store, and decay timer
+- Ruin RUIN-002:container a destroyed structure with no RUIN_DECAY_STRUCTURES entry leaves a RUIN_DECAY ruin
+- Ruin RUIN-002:powerBank a destroyed power bank leaves a ruin with its RUIN_DECAY_STRUCTURES decay
 - Ruin RUIN-003 ruin resources can be withdrawn
 - Ruin RUIN-004 a structure destroyed by an attack leaves a ruin with its store in the same tick
 - Ruin RUIN-005 a ruin is removed when ticksToDecay reaches 0, leaving its store on the tile
@@ -8491,7 +8396,7 @@ Click a count to jump to the affected test list.
 - Power creep lifecycle POWERCREEP-DELETE-003 delete returns ERR_NOT_OWNER for unowned power creep
 - Power creep lifecycle POWERCREEP-ACTION-001 transfer, withdraw, pickup, drop use standard creep semantics
 
-**`tests/19-power/19.4-19.8-powers.test.ts`** (24)
+**`tests/19-power/19.4-19.8-powers.test.ts`** (26)
 
 - Operate powers POWER-OPERATE-006 usePower returns ERR_TIRED when the seeded power cooldown is active
 - Power target matrix POWERCREEP-ENABLE-003:operateSpawn usePower returns ERR_INVALID_ARGS in a room without power enabled
@@ -8504,6 +8409,7 @@ Click a count to jump to the affected test list.
 - Power target matrix POWERCREEP-ENABLE-003:operatePower usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWERCREEP-ENABLE-003:operateController usePower returns ERR_INVALID_ARGS in a room without power enabled
 - Power target matrix POWERCREEP-ENABLE-003:operateFactory usePower returns ERR_INVALID_ARGS in a room without power enabled
+- Power creep renew POWERCREEP-RENEW-001 renew resets ticksToLive
 - Power creep renew POWERCREEP-RENEW-002:notOwner powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:invalidTarget powerCreep.renew() validation returns the canonical code
 - Power creep renew POWERCREEP-RENEW-002:rcl powerCreep.renew() validation returns the canonical code
@@ -8517,9 +8423,15 @@ Click a count to jump to the affected test list.
 - Power creep renew POWERCREEP-SPAWN-002:busyBeforeInvalidTarget powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-SPAWN-002:busyBeforeNotOwner powerCreep.spawn() validation returns the canonical code
 - Power creep renew POWERCREEP-SPAWN-002:busyBeforeRcl powerCreep.spawn() validation returns the canonical code
+- Power creep renew POWERCREEP-DEATH-001 power creep death creates a tombstone
 
-**`tests/19-power/19.9-generate-ops.test.ts`** (2)
+**`tests/19-power/19.9-generate-ops.test.ts`** (7)
 
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelOne amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelTwo amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelThree amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelFour amount, cooldown, and ops cost match POWER_INFO for each supported power level
+- PWR_GENERATE_OPS POWER-GENERATE-001:levelFive amount, cooldown, and ops cost match POWER_INFO for each supported power level
 - PWR_GENERATE_OPS POWER-GENERATE-002 usePower(PWR_GENERATE_OPS) returns OK and adds ops to the power creep store
 - PWR_GENERATE_OPS POWER-GENERATE-003 overflow ops are dropped on the same tile
 

@@ -185,9 +185,9 @@ class XxscreepsAdapter implements ScreepsOkAdapter {
 		// `/api/game/power-creeps/*` routes (`mods/mmo/powercreep/backend.ts`).
 		// The runtime `PowerCreep` class has no create/rename/upgrade/delete.
 		powerCreepAccountApi: false,
-		// `usePower` validates every power but only `PWR_GENERATE_OPS` has a
-		// processor branch (`mods/mmo/powercreep/processor.ts`); the rest return
-		// OK and drop without applying an effect or charging ops.
+		// `usePower` validates every power but applies only `PWR_GENERATE_OPS` and
+		// `PWR_OPERATE_FACTORY` (`mods/mmo/powercreep/processor.ts`); the rest
+		// return OK and drop without applying an effect or charging ops.
 		powerEffects: false,
 		powerSpawn: true,
 		factory: true,
