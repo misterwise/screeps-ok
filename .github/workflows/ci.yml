@@ -110,6 +110,13 @@ jobs:
         env:
           SCREEPS_OK_TICK_PROFILE: ${{ inputs.tick-profile && '1' || '' }}
 
+      # A test fork that dies silently (tinypool ERR_IPC_CHANNEL_CLOSED) leaves
+      # no trace in the job log; the kernel log names a segfaulting library or
+      # an OOM kill.
+      - name: Kernel crash log
+        if: failure()
+        run: sudo dmesg --ctime | grep -iE 'segfault|traps:|general protection|killed process|out of memory|oom' || echo 'No segfault or OOM entries in the kernel log.'
+
       - name: Upload ${{ matrix.adapter }}-${{ matrix.shard }} report
         if: always()
         uses: actions/upload-artifact@v7

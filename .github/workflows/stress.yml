@@ -1,0 +1,78 @@
+name: Stress
+
+# Repeats one test shard across parallel runners to catch a rare failure that
+# a single CI run seldom hits. A lost fork shows up as a failed run; the
+# kernel log then names the crashing library or the OOM kill.
+on:
+  workflow_dispatch:
+    inputs:
+      adapter:
+        description: Adapter to run
+        type: choice
+        options:
+          - xxscreeps
+          - vanilla
+        default: xxscreeps
+      shard:
+        description: Shard to repeat, as CI names it (index/count)
+        type: string
+        default: 3/4
+      repeats:
+        description: Runs per job (ten jobs run in parallel)
+        type: number
+        default: 5
+
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    steps:
+      - name: Check out screeps-ok
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          cache: npm
+
+      # Same key as ci.yml, so a stress run reuses CI's built node_modules.
+      - name: Restore node_modules
+        id: node-modules-cache
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: node_modules-${{ inputs.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**', 'scripts/setup.js') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Build adapter prerequisites
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm run setup:${{ inputs.adapter }}
+
+      - name: Run ${{ inputs.adapter }} shard ${{ inputs.shard }} ${{ inputs.repeats }} times
+        env:
+          ADAPTER: ${{ inputs.adapter }}
+          SHARD: ${{ inputs.shard }}
+          REPEATS: ${{ inputs.repeats }}
+        run: |
+          for i in $(seq 1 "$REPEATS"); do
+            echo "::group::Run $i of $REPEATS"
+            if ! npm test "$ADAPTER" -- --shard="$SHARD"; then
+              echo "::endgroup::"
+              echo "::error::Run $i of $REPEATS failed"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+
+      - name: Kernel crash log
+        if: failure()
+        run: sudo dmesg --ctime | grep -iE 'segfault|traps:|general protection|killed process|out of memory|oom' || echo 'No segfault or OOM entries in the kernel log.'
