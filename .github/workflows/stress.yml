@@ -21,6 +21,14 @@ on:
         description: Runs per job (ten jobs run in parallel)
         type: number
         default: 5
+      extra-args:
+        description: Extra vitest arguments, space-separated (e.g. --isolate)
+        type: string
+        default: ''
+      env:
+        description: Extra environment for the test command, as space-separated NAME=value pairs
+        type: string
+        default: ''
 
 jobs:
   stress:
@@ -62,10 +70,14 @@ jobs:
           ADAPTER: ${{ inputs.adapter }}
           SHARD: ${{ inputs.shard }}
           REPEATS: ${{ inputs.repeats }}
+          EXTRA_ARGS: ${{ inputs.extra-args }}
+          EXTRA_ENV: ${{ inputs.env }}
         run: |
+          read -r -a extra_args <<< "$EXTRA_ARGS"
+          read -r -a extra_env <<< "$EXTRA_ENV"
           for i in $(seq 1 "$REPEATS"); do
             echo "::group::Run $i of $REPEATS"
-            if ! npm test "$ADAPTER" -- --shard="$SHARD"; then
+            if ! env "${extra_env[@]}" npm test "$ADAPTER" -- --shard="$SHARD" "${extra_args[@]}"; then
               echo "::endgroup::"
               echo "::error::Run $i of $REPEATS failed"
               exit 1
