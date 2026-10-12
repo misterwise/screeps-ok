@@ -24,6 +24,17 @@ described in `docs/adapter-guide.md` under Moving to a New Release.
 
 ## Unreleased
 
+- screeps-ok needs Node 26 or newer, as xxscreeps now does: the pinned
+  `@xxscreeps/pathfinder` 0.5.0 prebuild loads only on Node 26. Switch Node,
+  reinstall dependencies, and rerun the `setup:*` command for your adapter.
+  The vanilla adapter overrides `@screeps/driver`'s `isolated-vm` and `nan`
+  with releases that build on Node 26.
+- The xxscreeps pin moves to `8e2df39e`. Its mods manifest no longer carries
+  provider URLs, so `starter/xxscreeps/` loads mod providers through the
+  virtual `xxscreeps:mods/*` modules, and it passes the world to
+  `runShardTickProcessors`. Make the same two changes to an adapter built from
+  the starter.
+
 ## 0.3.0 (beta) — 2026-09-27
 
 The first beta. In September 2026 the adapter contract, the catalog and the

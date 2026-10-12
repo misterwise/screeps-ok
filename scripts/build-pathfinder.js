@@ -30,7 +30,7 @@ import { hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
 
 const require = createRequire(import.meta.url);
 // Match upstream's pathfinder.yml so the binary targets the same node ABI.
-const nodeHeadersVersion = '24.15.0';
+const nodeHeadersVersion = '26.10.0';
 
 const repoRoot = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const pinFile = join(repoRoot, '.xxscreeps-pin');

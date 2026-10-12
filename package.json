@@ -4,7 +4,7 @@
   "description": "Behavioral conformance suite for Screeps server implementations",
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -67,11 +67,17 @@
     "vitest": "^3"
   },
   "devDependencies": {
-    "@types/node": "^24",
+    "@types/node": "^26",
     "screeps": "^4.3.0",
     "screeps-server-mockup": "^1.5.1",
     "typescript": "^5.7",
     "vitest": "^3"
+  },
+  "overrides": {
+    "@screeps/driver": {
+      "isolated-vm": "7.0.1",
+      "nan": "2.29.0"
+    }
   },
   "private": false,
   "license": "MIT"

@@ -87,16 +87,20 @@ describe('StructureObserver', () => {
 			shard.requires('observer');
 			const blockers = shard.validationBlockers(row);
 			const owner = blockers.has('not-owner') ? 'p2' : 'p1';
+			const roomName = blockers.has('invalid-args') ? 'not_a_room' : blockers.has('range') ? 'W12N1' : 'W2N1';
 			await shard.createShard({
 				players: ['p1', 'p2'],
-				rooms: [{ name: 'W1N1', rcl: blockers.has('rcl') ? 7 : 8, owner: 'p1' }],
+				rooms: [
+					{ name: 'W1N1', rcl: blockers.has('rcl') ? 7 : 8, owner: 'p1' },
+					// The observed room is part of the world; only the invalid-args case names none.
+					...(blockers.has('invalid-args') ? [] : [{ name: roomName }]),
+				],
 			});
 			const obsId = await shard.placeStructure('W1N1', {
 				pos: [25, 25],
 				structureType: STRUCTURE_OBSERVER,
 				owner,
 			});
-			const roomName = blockers.has('invalid-args') ? 'not_a_room' : blockers.has('range') ? 'W12N1' : 'W2N1';
 
 			const rc = await shard.runPlayer('p1', code`
 				Game.getObjectById(${obsId}).observeRoom(${roomName})

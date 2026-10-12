@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const minNodeMajor = 24;
+const minNodeMajor = 26;
 const adapter = process.argv[2] ?? 'all';
 const validAdapters = new Set(['all', 'xxscreeps', 'vanilla']);
 
@@ -22,8 +22,8 @@ if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 		`Node ${process.version} is unsupported.`,
 		[
 			`screeps-ok requires Node >=${minNodeMajor}.`,
-			'Switch to Node 24.x or newer, then reinstall dependencies so native addons rebuild for the active runtime.',
-			'Example: nvm use 24 && rm -rf node_modules && npm ci, then the npm run setup:* for your adapter',
+			'Switch to Node 26.x or newer, then reinstall dependencies so native addons rebuild for the active runtime.',
+			'Example: nvm use 26 && rm -rf node_modules && npm ci, then the npm run setup:* for your adapter',
 		],
 	);
 }

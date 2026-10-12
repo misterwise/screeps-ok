@@ -35,7 +35,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.14.1
+          node-version: 26.10.0
           cache: npm
 
       - name: Restore node_modules
@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: node_modules
-          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**') }}
+          key: node_modules-lint-${{ runner.os }}-${{ runner.arch }}-node26.10.0-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
@@ -87,7 +87,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.14.1
+          node-version: 26.10.0
           cache: npm
 
       - name: Restore node_modules
@@ -95,7 +95,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: node_modules
-          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node24.14.1-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**', 'scripts/setup.js') }}
+          key: node_modules-${{ matrix.adapter }}-full-${{ runner.os }}-${{ runner.arch }}-node26.10.0-${{ hashFiles('package-lock.json', '.xxscreeps-pin', 'scripts/build-xxscreeps.js', 'scripts/pathfinder-vendor.js', 'vendor/pathfinder/**', 'scripts/setup.js') }}
 
       - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
@@ -136,7 +136,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.14.1
+          node-version: 26.10.0
 
       - name: Download shard reports
         uses: actions/download-artifact@v8

@@ -112,27 +112,18 @@ import {
 import { loadPowerCreepsBlob as loadPowerCreepRosterBlob } from 'xxscreeps/mods/mmo/powercreep/model.js';
 
 // Module-level initialization
-import { mods } from 'xxscreeps/config/mods.js';
-import type { Provide } from 'xxscreeps/config/loader.js';
 import { initializeIntentConstraints } from 'xxscreeps/engine/processor/index.js';
 import { initializeGameEnvironment } from 'xxscreeps/game/index.js';
 
-// Upstream's mods overhaul (db0d77e) replaced importMods with a virtual-module
-// Node loader; we run in-process, so load providers from the resolved manifest.
-async function importMods(provide: Provide) {
-	for (const mod of mods) {
-		const url = mod.provides[provide];
-		if (url !== undefined) await import(url);
-	}
-}
-
-await importMods('game');
+// Each mod's providers load through the virtual `xxscreeps:mods/*` modules that
+// register-loader.ts serves, as upstream's own entry points import them.
+await import('xxscreeps:mods/game');
 // `driver` mods register `runnerConnector` hooks (flag, memory, visual,
 // controller). These must be imported before `createSimulation` runs so the
 // sandbox wiring in `UserSandbox.create` can iterate them.
-await importMods('driver');
-await importMods('backend');
-await importMods('processor');
+await import('xxscreeps:mods/driver');
+await import('xxscreeps:mods/backend');
+await import('xxscreeps:mods/processor');
 initializeGameEnvironment();
 initializeIntentConstraints();
 
@@ -1708,7 +1699,7 @@ async function createSimulation(
 						nextRoomInstances.set(roomName, room);
 					}
 
-					await runShardTickProcessors(shard, time);
+					await runShardTickProcessors(shard, world, time);
 
 					const nextTime = time + 1;
 					await shard.data.set('time', nextTime);

@@ -39,19 +39,19 @@
 			"tests": ["UNDOC-JSONOBJ-001:ownedCreep", "UNDOC-JSONOBJ-001:hostileCreep", "UNDOC-JSONOBJ-001:controller", "UNDOC-JSONOBJ-001:ownedStructure", "UNDOC-JSONOBJ-001:hostileStructure", "UNDOC-JSONOBJ-001:source", "UNDOC-JSONOBJ-001:mineral", "UNDOC-JSONOBJ-001:droppedResource", "UNDOC-JSONOBJ-001:constructionSite", "UNDOC-JSONOBJ-001:tombstone", "UNDOC-JSONOBJ-001:ruin", "UNDOC-JSONOBJ-001:deposit", "UNDOC-JSONOBJ-001:nuke", "UNDOC-JSONOBJ-001:ownedPowerCreep", "UNDOC-JSONOBJ-001:hostilePowerCreep"]
 		},
 		"stale-pickup-target-allowed": {
-			"actual": "`Creep.pickup()` (`mods/classic/creep/creep.ts:452-456`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:47-56`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops.",
+			"actual": "`Creep.pickup()` (`mods/classic/creep/creep.ts:458-462`) accepts a stale cached `Resource` argument and returns `OK`, queueing a pickup intent against the stale resource id. `checkPickup` (`creep.ts:685-692`) calls `checkTarget(target, Resource)` (`game/checks.ts:73-82`), which reads `target.room` and `target instanceof Resource` — both succeed on a released wrapper because they don't go through the schema-backed property accesses that trip xxscreeps's released-object guard. The remaining checks read `target.resourceType` for the capacity test and `target.pos` for `checkRange(creep, target, 1)`, and neither trips the guard either. The subsequent `intents.save(this, 'pickup', resource.id)` reads the cached `id` and queues the intent; the processor finds no backing resource and silently no-ops.",
 			"expected": "Vanilla returns `ERR_INVALID_TARGET` and queues nothing: the stale id is not in the tick's `register.energy` (`game/creeps.js:574-576`).",
 			"why": "Found 2026-05-07 by the UNDOC-STALEARG-001 matrix: pickup is the one row of 18 whose check chain reads no schema-backed field of the target, so the released-object guard never fires. A liveness test in `checkTarget` that returns `ERR_INVALID_TARGET` would close this and `stale-argument-throws-instead-of-invalid-target` together (see docs/xxscreeps-parity-gaps.md).",
 			"tests": ["UNDOC-STALEARG-001:creepPickup"]
 		},
 		"stale-argument-throws-instead-of-invalid-target": {
-			"actual": "Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:697`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:47-56`) reads only `target.room` and the class.",
+			"actual": "Sixteen of the matrix's methods throw `Accessed a released object from a previous tick` on the stale argument. The runtime detaches every room's objects when a tick ends (`driver/runtime/index.ts:212`), and each method's check chain reads a field the detached room backs (`target.store` in `checkTransferTarget`, `mods/classic/creep/creep.ts:707`, for one) before anything tests whether the target still exists; `checkTarget` (`game/checks.ts:73-82`) reads only `target.room` and the class.",
 			"expected": "Vanilla returns `ERR_INVALID_TARGET`: each method looks the target's id up in the tick's registry and rejects a miss before reading its data (`Creep.attack`, `game/creeps.js:607-610`). Only `Creep.withdraw` throws, reading `data(target.id).store` first (`creeps.js:509`).",
 			"why": "UNDOC-STALEARG-001 accepted any rejection until 2026-09-26, when each case was pinned to vanilla's outcome: a bot that compares a cached target's result with `ERR_INVALID_TARGET` throws on xxscreeps instead.",
 			"tests": ["UNDOC-STALEARG-001:creepTransferStructure", "UNDOC-STALEARG-001:creepTransferCreep", "UNDOC-STALEARG-001:creepAttackCreep", "UNDOC-STALEARG-001:creepHeal", "UNDOC-STALEARG-001:creepRangedAttack", "UNDOC-STALEARG-001:creepRangedHeal", "UNDOC-STALEARG-001:creepRepair", "UNDOC-STALEARG-001:creepDismantle", "UNDOC-STALEARG-001:creepBuild", "UNDOC-STALEARG-001:creepPull", "UNDOC-STALEARG-001:towerAttack", "UNDOC-STALEARG-001:towerHeal", "UNDOC-STALEARG-001:towerRepair", "UNDOC-STALEARG-001:linkTransferEnergy", "UNDOC-STALEARG-001:spawnRenewCreep", "UNDOC-STALEARG-001:spawnRecycleCreep"]
 		},
 		"pull-range-checked-before-spawning-target": {
-			"actual": "`checkPull` (`mods/classic/creep/creep.ts:676-683`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`.",
+			"actual": "`checkPull` (`mods/classic/creep/creep.ts:687-694`) checks range before the target's `spawning`, so pulling a spawning creep that isn't adjacent returns `ERR_NOT_IN_RANGE`.",
 			"expected": "Vanilla rejects a spawning target with the other invalid targets, before range, and returns `ERR_INVALID_TARGET` (`game/creeps.js:1102-1109`).",
 			"why": "Found 2026-09-26 when MOVE-PULL-011 took MOVE-PULL-007's forms as conditions: the old spawning-target test was adjacent, so it couldn't see the order.",
 			"tests": ["MOVE-PULL-011:spawningTargetBeforeRange"]
@@ -69,7 +69,7 @@
 			"tests": ["COMBAT-MELEE-007:powerCreep", "COMBAT-RANGED-005:powerCreep", "COMBAT-HEAL-003:powerCreep"]
 		},
 		"renew-recycle-target-creep-checked-late": {
-			"actual": "`checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:631-638`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one.",
+			"actual": "`checkRenewCreep` and `checkRecycleCreep` (`mods/classic/spawn/spawn.ts:372-399`) test the target creep's owner and spawning state through `checkCommon` → `checkCarrier` (`mods/classic/creep/creep.ts:637-644`) after the spawn's owner and active state, returning ERR_NOT_OWNER for another player's creep and ERR_BUSY for a spawning one.",
 			"expected": "Vanilla `game/structures.js:1238-1247` (renew) and `:1273-1283` (recycle) return ERR_INVALID_TARGET for a spawning target in the target check, before any owner check, and renew tests the creep's owner with the spawn's, before the spawn's active state.",
 			"why": "Found 2026-09-27 when RENEW-CREEP-011 and RECYCLE-CREEP-005 took a spawning target and renew another player's creep as conditions.",
 			"tests": ["RENEW-CREEP-011:spawningTarget", "RENEW-CREEP-011:spawningTargetBeforeClaimPart", "RENEW-CREEP-011:spawningTargetBeforeNotOwner", "RENEW-CREEP-011:spawningTargetBeforeNotOwnerCreep", "RENEW-CREEP-011:spawningTargetBeforeRcl", "RENEW-CREEP-011:spawningTargetBeforeRange", "RENEW-CREEP-011:spawningTargetBeforeNotEnough", "RENEW-CREEP-011:notOwnerCreepBeforeRcl", "RECYCLE-CREEP-005:spawningTarget", "RECYCLE-CREEP-005:spawningTargetBeforeNotOwnerCreep", "RECYCLE-CREEP-005:spawningTargetBeforeRange"]
@@ -81,7 +81,7 @@
 			"tests": ["SPAWN-CREATE-014:invalidOptions", "SPAWN-CREATE-014:invalidOptionsBeforeNameExists", "SPAWN-CREATE-014:invalidOptionsBeforeNameSpawning", "SPAWN-CREATE-014:invalidOptionsBeforeNameTaken", "SPAWN-CREATE-014:invalidOptionsBeforeNotOwner", "SPAWN-CREATE-014:invalidOptionsBeforeBusy", "SPAWN-CREATE-014:invalidOptionsBeforeRcl", "SPAWN-CREATE-014:invalidOptionsBeforeNotEnough"]
 		},
 		"attack-controller-ignores-invulnerability": {
-			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`).",
+			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-161`) doesn't check the controller's `EFFECT_INVULNERABILITY` (`#upgradeInvulnerableUntil`, `mods/modern/effects/game.ts:42-50`), so an attack on a stronghold's controller returns OK. Its processor then cuts the downgrade timer, which the stronghold holds at its deploy tick, past the current tick, and the controller's next tick throws `Invalid expiry time` (`game/object.ts:207`).",
 			"expected": "Vanilla `game/creeps.js:911` returns ERR_INVALID_TARGET for a controller whose `effects` hold an active `EFFECT_INVULNERABILITY`, after every other check.",
 			"why": "Found 2026-09-27 by CTRL-ATTACK-007:invulnerable, reachable once InvaderCoreSpec.ownsController gave the contract a stronghold's controller (the backend's `strongholds.js:111-124`).",
 			"tests": ["CTRL-ATTACK-007:invulnerable"]
@@ -99,7 +99,7 @@
 			"tests": ["SHARD-PCREEP-001:afterDeath"]
 		},
 		"power-creep-suicide-uncapped": {
-			"actual": "`PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:347-352`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep.",
+			"actual": "`PowerCreep.suicide` (`mods/mmo/powercreep/powercreep.ts:343-348`) saves a per-creep intent the processor applies (`processor.ts:116-120`), with no per-player count, so every suicide a player calls in a tick kills its creep.",
 			"expected": "Vanilla `game/power-creeps.js:200` queues suicide as a global intent capped at 50 a tick; the 51st call returns OK and its creep lives.",
 			"why": "Found 2026-09-27 by INTENT-LIMIT-002, the row's first test to make a call past a cap; the roster intents sharing the cap run only where `powerCreepAccountApi` does.",
 			"tests": ["INTENT-LIMIT-002:suicidePowerCreep"]
@@ -135,19 +135,19 @@
 			"tests": ["TOWER-ATTACK-003:powerCreep", "TOWER-ATTACK-003:structure", "TOWER-ATTACK-003:controller", "TOWER-HEAL-003:powerCreep", "TOWER-REPAIR-003:controller", "TOWER-ATTACK-006:structure"]
 		},
 		"attack-controller-safe-mode-checked-before-cooldown": {
-			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-162`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`.",
+			"actual": "`checkAttackController` (`mods/classic/controller/creep.ts:147-161`) runs `checkSafeMode` before the controller's state and `upgradeBlocked`, so an attack on a cooling controller in another player's safe mode returns `ERR_NO_BODYPART`.",
 			"expected": "Vanilla checks `upgradeBlocked` before safe mode and returns `ERR_TIRED` (`game/creeps.js:905-910`).",
 			"why": "Found 2026-09-27 when safe mode's refusal became a condition of CTRL-ATTACK-007 (it had been one code-only row).",
 			"tests": ["CTRL-ATTACK-007:cooldownBeforeSafeMode"]
 		},
 		"move-bodypart-checked-before-fatigue": {
-			"actual": "`checkMove` (`mods/classic/creep/creep.ts:669-671`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`.",
+			"actual": "`checkMove` (`mods/classic/creep/creep.ts:680-682`) runs `checkCommon(creep, C.MOVE)` before `checkFatigue`, so a fatigued creep with no active MOVE part returns `ERR_NO_BODYPART`.",
 			"expected": "Vanilla checks fatigue before body parts and returns `ERR_TIRED` (`game/creeps.js:144-149`).",
 			"why": "Found 2026-09-27 when MOVE-BASIC-027's fatigue/no-bodypart pair, excluded as unreachable, was set up: a hostile's ranged attack destroys the MOVE part of a creep that just moved.",
 			"tests": ["MOVE-BASIC-027:fatigueBeforeNoBodypart"]
 		},
 		"transfer-negative-amount-lost-on-storeless-target": {
-			"actual": "`Creep.transfer` (`mods/classic/creep/creep.ts:523-526`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`.",
+			"actual": "`Creep.transfer` (`mods/classic/creep/creep.ts:529-532`) passes the amount through `calculateChecked`, which returns `NaN` when the target has no store (`mods/classic/resource/store.ts:320-326`), so `checkResourceArgs` never sees a negative `amount` and the storeless target returns `ERR_INVALID_TARGET`.",
 			"expected": "Vanilla rejects a negative `amount` with `ERR_INVALID_ARGS` before it looks at the target (`game/creeps.js:435-437`).",
 			"why": "Found 2026-09-26 when TRANSFER-015's invalid-args case, which had also passed an unknown resource type, was split into a negative amount alone: the resource check had returned the expected code first.",
 			"tests": ["TRANSFER-015:invalidArgsBeforeInvalidTarget"]
@@ -159,7 +159,7 @@
 			"tests": ["CONSTRUCTION-SITE-011:invalidCoords", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidType", "CONSTRUCTION-SITE-011:invalidCoordsBeforeInvalidArgs", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNameCreatedThisTick", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNameTaken", "CONSTRUCTION-SITE-011:invalidCoordsBeforeNotOwner", "CONSTRUCTION-SITE-011:invalidCoordsBeforeHostileReservation", "CONSTRUCTION-SITE-011:invalidCoordsBeforeRclOrStructureCap", "CONSTRUCTION-SITE-011:invalidCoordsBeforeSiteCapFull"]
 		},
 		"claim-reserve-controller-type-checked-first": {
-			"actual": "`checkClaimController` and `checkReserveController` (`mods/classic/controller/creep.ts:164-205`) run `checkTarget(target, StructureController)` before the CLAIM part and range, so a structure that isn't a controller returns `ERR_INVALID_TARGET` from a creep with no CLAIM part or out of range.",
+			"actual": "`checkClaimController` and `checkReserveController` (`mods/classic/controller/creep.ts:163-213`) run `checkTarget(target, StructureController)` before the CLAIM part and range, so a structure that isn't a controller returns `ERR_INVALID_TARGET` from a creep with no CLAIM part or out of range.",
 			"expected": "Vanilla checks a target is any structure first, then the CLAIM part (claim only) and range, and only then that it is a controller (`game/creeps.js:856-868`, `:963-972`), returning `ERR_NO_BODYPART` or `ERR_NOT_IN_RANGE`.",
 			"why": "Found 2026-09-27 when CTRL-CLAIM-008 and CTRL-RESERVE-008 took vanilla's not-a-controller branch as a condition.",
 			"tests": ["CTRL-CLAIM-008:noBodypartBeforeNotController", "CTRL-CLAIM-008:rangeBeforeNotController", "CTRL-RESERVE-008:rangeBeforeNotController"]
@@ -214,13 +214,13 @@
 			"tests": ["ROOM-API-001"]
 		},
 		"map-visual-clear-returns-undefined": {
-			"actual": "`clear()` on the shared visual class (`mods/meta/visual/visual.ts:397`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call.",
+			"actual": "`clear()` on the shared visual class (`mods/meta/visual/visual.ts:441`) resets the buffer but falls off the end without `return this`, so both `Game.map.visual.clear()` and `RoomVisual.clear()` break a chained call.",
 			"expected": "Vanilla's map visual `clear` (`game/map.js:350`) and `RoomVisual.prototype.clear` (`game/rooms.js:1206`) return the visual object for chaining, like every drawing method.",
 			"why": "Engine-side omission, not adapter translation. One-line upstream fix: `return this`. Surfaced by the external contributor's PR #5 rows; the room-visual row pins the same code path.",
 			"tests": ["VISUAL-MAP-001", "VISUAL-ROOM-002:clear"]
 		},
 		"room-visual-roomname-missing": {
-			"actual": "`RoomVisual` (`mods/meta/visual/visual.ts:444`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`.",
+			"actual": "`RoomVisual` (`mods/meta/visual/visual.ts:489`) keeps the room name only inside its private description string and the shared-state lookup; the instance has no `roomName` property, so `room.visual.roomName` and `new RoomVisual('W9N9').roomName` read `undefined`.",
 			"expected": "Vanilla's constructor (`game/rooms.js:1146`) sets `this.roomName = roomName`, and the API documents `roomName` as a property of `RoomVisual`.",
 			"why": "Engine-side surface omission, not adapter translation. One-line upstream fix: assign the public property in the constructor.",
 			"tests": ["VISUAL-ROOM-001:roomName"]
@@ -268,7 +268,7 @@
 			"tests": ["COSTMATRIX-005"]
 		},
 		"terminal-send-cost-ignores-world-wrap": {
-			"actual": "`StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:96`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 13-wide world charges 284 per 1000 against an estimate of 96.",
+			"actual": "`StructureTerminal.send` validation (`mods/classic/brokerage/terminal.ts:92`) and the send processor's charge (`mods/classic/brokerage/processor.ts:19`) call `Game.map.getRoomLinearDistance(from, to)` without `continuous`, so a send across opposite world edges pays the straight-line distance. `Game.market.calcTransactionCost` (`mods/classic/brokerage/market.ts:61`) does pass `true`, so the charge exceeds the estimate: W0N1 → W10N1 in the harness's 11-wide world charges 284 per 1000 against an estimate of 33.",
 			"expected": "Vanilla validates (`processor/intents/terminal/send.js:19`) and charges (`processor/global-intents/market.js:34`) with `calcRoomsDistance(from, to, true)`, the same wrapped distance `calcTransactionCost` uses, so the charge equals the estimate.",
 			"why": "Found 2026-09-25 when the adapter contract made world size engine-reported and TERMINAL-SEND-015 pinned a wrapping send; the wrap had been unobservable because every terminal test used rooms too close to wrap. Upstream candidate: pass `true` at both call sites.",
 			"tests": ["TERMINAL-SEND-015"]

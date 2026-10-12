@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { compareSemver, hashTree, pathfinderTriplet } from './pathfinder-vendor.js';
 
 const require = createRequire(import.meta.url);
-const minNodeMajor = 24;
+const minNodeMajor = 26;
 const tscBin = require.resolve('typescript/bin/tsc');
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');

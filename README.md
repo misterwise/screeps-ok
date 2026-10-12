@@ -29,7 +29,7 @@ The browsable coverage dashboard is published at
 
 Both adapters compile native modules via `node-gyp`:
 
-- **Node 24.x or newer**
+- **Node 26.x or newer**
 - **git** — `xxscreeps` is installed directly from GitHub
 - **C/C++ toolchain** — `xcode-select --install` (macOS), `build-essential
   python3` (Debian/Ubuntu), or `"Development Tools" python3` (RHEL/Fedora)
@@ -40,7 +40,7 @@ source, so its first run is slower than later ones.
 ## Quick Start
 
 ```bash
-nvm use 24
+nvm use 26
 git clone https://github.com/misterwise/screeps-ok.git
 cd screeps-ok
 npm install

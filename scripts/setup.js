@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const minNodeMajor = 24;
+const minNodeMajor = 26;
 const target = process.argv[2];
 const validTargets = new Set(['xxscreeps', 'vanilla']);
 
@@ -19,7 +19,7 @@ if (!validTargets.has(target)) {
 const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
 if (!Number.isFinite(nodeMajor) || nodeMajor < minNodeMajor) {
 	console.error(`[screeps-ok] Setup requires Node >=${minNodeMajor}. Current runtime is ${process.version}.`);
-	console.error('[screeps-ok] Switch to Node 24.x or newer and reinstall dependencies before building native addons.');
+	console.error('[screeps-ok] Switch to Node 26.x or newer and reinstall dependencies before building native addons.');
 	process.exit(1);
 }
 

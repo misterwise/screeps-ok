@@ -9,7 +9,7 @@ If you want the full document map, including maintainer-only docs, see
 
 ## Before You Start
 
-- Use Node 24.x or newer.
+- Use Node 26.x or newer.
 - Install dependencies from the repository root with `npm install`.
 - Build only the adapter you need first:
   - `npm run setup:xxscreeps`
@@ -23,7 +23,7 @@ dependencies and rerun the relevant `setup:*` command before testing again.
 Start with the fast adapter first. It has the shortest feedback loop.
 
 ```bash
-nvm use 24
+nvm use 26
 npm install
 npm run setup:xxscreeps
 npm test -- xxscreeps tests/00-adapter-contract/error-model.test.ts
