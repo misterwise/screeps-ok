@@ -6,7 +6,8 @@ version bump. When the pinned source under `packages/pathfinder` moves past
 the latest release, the prebuild lags behind the pin — pathfinder fixes exist
 in source but never run in the suite.
 
-This directory holds a complete package built from the pinned source:
+While the prebuild lags, this directory holds a complete package built from
+the pinned source:
 
 - `package/` — wrapper (`package.json`, compiled `dist/`, `module/` loader)
 - `platform/<triplet>/pf.<triplet>.node` — native binaries for the platforms
@@ -16,11 +17,15 @@ This directory holds a complete package built from the pinned source:
 `scripts/build-xxscreeps.js` applies it automatically during
 `npm run setup:xxscreeps` **unless** the registry version is newer than
 `manifest.version` — so the moment upstream publishes a release that
-supersedes this build, every setup reverts to the official prebuild and this
-directory can be deleted.
+supersedes the build, every setup reverts to the official prebuild and the
+build can be deleted.
 
-Refresh (only needed when a pin bump changes `packages/pathfinder`; setup
-prints a warning when the source drifts from `manifest.sourceTreeHash`):
+No build is vendored now. The registry prebuild superseded the last one
+(0.3.0) at 0.4.0, and pin `8e2df39e` consumes 0.5.0.
+
+Build one only when the pinned `packages/pathfinder` carries a fix the latest
+release lacks (with a build present, setup warns when the source drifts from
+`manifest.sourceTreeHash`):
 
 ```
 npm run pf:build            # host platform (macOS: brew install cmake ninja boost lld llvm)
